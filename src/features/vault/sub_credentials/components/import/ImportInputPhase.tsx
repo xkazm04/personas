@@ -12,6 +12,7 @@ interface ImportInputPhaseProps {
 
 export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, onBack }: ImportInputPhaseProps) {
   const { t, tx } = useTranslation();
+  const vi = t.vault.import;
   const source = IMPORT_SOURCES.find((s) => s.id === sourceId)!;
 
   const placeholder = sourceId === 'env_file'
@@ -35,19 +36,19 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div
-          className="w-7 h-7 rounded-lg border flex items-center justify-center"
+          className="w-7 h-7 rounded-card border flex items-center justify-center"
           style={{ backgroundColor: `${source.color}12`, borderColor: `${source.color}30` }}
         >
           <Terminal className="w-3.5 h-3.5" style={{ color: source.color }} />
         </div>
         <div>
-          <h3 className="text-sm font-medium text-foreground">{tx(t.vault.credential_import.import_from, { source: source.label })}</h3>
-          <p className="text-sm text-muted-foreground/70">{cliHint}</p>
+          <h3 className="typo-body font-medium text-foreground">{tx(t.vault.credential_import.import_from, { source: source.label })}</h3>
+          <p className="typo-body text-foreground">{cliHint}</p>
         </div>
       </div>
 
@@ -57,17 +58,17 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
         placeholder={placeholder}
         rows={10}
         autoFocus
-        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm font-mono placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-modal text-foreground typo-code font-mono placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
 
       <div className="flex justify-end">
         <button
           onClick={onParse}
           disabled={!rawInput.trim()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Upload className="w-4 h-4" />
-          Parse Secrets
+          {vi.parse_secrets}
         </button>
       </div>
     </div>

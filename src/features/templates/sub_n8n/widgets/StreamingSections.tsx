@@ -66,7 +66,7 @@ function SectionDetail({ section }: { section: StreamingSection }) {
       {allMessages.map((m, i) => (
         <p
           key={i}
-          className={`text-sm leading-tight ${
+          className={`typo-body leading-tight ${
             m.type === 'error' ? 'text-red-400/80' : 'text-amber-400/70'
           }`}
         >
@@ -92,7 +92,7 @@ const SectionRow = memo(function SectionRow({
 
   return (
     <div
-      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
+      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2 rounded-modal border transition-colors ${
         isLatest
           ? 'border-primary/15 bg-secondary/30'
           : 'border-transparent bg-transparent'
@@ -100,7 +100,7 @@ const SectionRow = memo(function SectionRow({
     >
       {/* Icon */}
       <div
-        className={`flex-shrink-0 w-6 h-6 rounded-lg ${bg} flex items-center justify-center mt-0.5`}
+        className={`flex-shrink-0 w-6 h-6 rounded-card ${bg} flex items-center justify-center mt-0.5`}
       >
         <Icon className={`w-3 h-3 ${color}`} />
       </div>
@@ -108,7 +108,7 @@ const SectionRow = memo(function SectionRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-foreground/85 truncate font-medium">
+          <span className="typo-body text-foreground/85 truncate font-medium">
             {section.label}
           </span>
           <StatusIcon section={section} />
@@ -162,18 +162,18 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
     <div
       aria-live="polite"
       aria-busy={isStreaming}
-      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden"
     >
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Streaming Sections
+          <span className="typo-heading font-semibold uppercase tracking-wider text-foreground">
+            {t.templates.n8n.streaming_sections}
           </span>
         </div>
         {sections.length > 0 && (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
+          <div className="flex items-center gap-3 typo-body text-foreground">
             {validCount > 0 && (
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400/70" />
@@ -209,7 +209,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
         {/* Loading indicator */}
         {isStreaming && (
           <div
-            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 typo-body text-foreground"
           >
             <LoadingSpinner size="xs" />
             {t.templates.n8n.awaiting_next_section}

@@ -77,16 +77,16 @@ function WeeklyDigestToggle() {
   if (!digestSetting.loaded) return null;
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+    <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary/60" />
-        <span className="text-sm font-medium text-foreground/80">{st.weekly_digest}</span>
+        <span className="typo-body font-medium text-foreground">{st.weekly_digest}</span>
       </div>
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-medium text-foreground/80">{st.digest_title}</span>
-          <p className="text-sm text-muted-foreground/80">
-            Weekly notification summarizing health issues across all agents with a total health score
+          <span className="typo-body font-medium text-foreground">{st.digest_title}</span>
+          <p className="typo-body text-foreground">
+            {st.digest_description}
           </p>
         </div>
         <button
@@ -154,18 +154,18 @@ export default function NotificationSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+          <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
             <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary/60" />
-              <span className="text-sm font-medium text-foreground/80">{st.healing_severity}</span>
+              <span className="typo-body font-medium text-foreground">{st.healing_severity}</span>
             </div>
 
             <div className="divide-y divide-primary/10">
               {SEVERITY_ROWS.map(({ key, label, description, color }) => (
                 <div key={key} className="flex items-center justify-between px-4 py-3">
                   <div className="space-y-0.5">
-                    <span className={`text-sm font-medium ${color}`}>{label}</span>
-                    <p className="text-sm text-muted-foreground/80">{description}</p>
+                    <span className={`typo-body font-medium ${color}`}>{label}</span>
+                    <p className="typo-body text-foreground">{description}</p>
                   </div>
                   <button
                     onClick={() => toggle(key)}
@@ -187,8 +187,8 @@ export default function NotificationSettings() {
           {/* Weekly Health Digest */}
           <WeeklyDigestToggle />
 
-          <p className="text-sm text-muted-foreground/80">
-            Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.
+          <p className="typo-body text-foreground">
+            {st.notification_hint}
           </p>
         </div>
       </ContentBody>

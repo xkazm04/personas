@@ -140,11 +140,11 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             agentTab === 'all' && !isCreatingPersona
               ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
           }`}
         >
           <List className="w-4 h-4 flex-shrink-0" />
-          All Agents
+          {t.shared.sidebar_extra.all_agents_label}
           <span className="ml-auto text-[11px] text-foreground/90">{personas.length}</span>
         </button>
 
@@ -154,7 +154,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <div className="mt-1 space-y-0.5">
             <div className="flex items-center justify-between px-3 py-1">
               <span className="text-[10px] uppercase tracking-wider text-violet-400/50 font-medium">
-                Draft builds {activeDrafts.length > 1 ? `(${activeDrafts.length})` : ''}
+                {t.shared.sidebar_extra.draft_builds}{activeDrafts.length > 1 ? ` (${activeDrafts.length})` : ''}
               </span>
             </div>
             {activeDrafts.map((draft) => {
@@ -170,7 +170,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
                       ? 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
-                      : 'text-muted-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
+                      : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300'
                   }`}
                   title={`Switch to draft: ${displayName} (${draft.phase})`}
                 >
@@ -265,7 +265,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                         <PersonaIcon icon={p.icon} color={p.color} />
                       )}
                       <span className={`truncate text-[13px] min-w-0 ${
-                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground/70'
+                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
                       }`}>{p.name}</span>
                       {!isRunning && <HealthDot grade={healthGrades[p.id]} />}
                       <span
@@ -296,7 +296,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'team'
                   ? 'bg-amber-500/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80'
               }`}
             >
               <Users className="w-4 h-4 flex-shrink-0" />
@@ -308,7 +308,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'cloud'
                   ? 'bg-amber-500/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80'
               }`}
             >
               <Cloud className="w-4 h-4 flex-shrink-0" />
@@ -323,8 +323,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                     onClick={() => setCloudTab(item.id as CloudTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       cloudTab === item.id
-                        ? 'bg-primary/10 text-foreground/80'
-                        : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                        ? 'bg-primary/10 text-foreground'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}
                   >
                     {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}

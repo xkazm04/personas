@@ -21,7 +21,7 @@ interface ActivityDiagramModalProps {
 }
 
 export default function ActivityDiagramModal({ isOpen, onClose, templateName, flows, titleOverride, subtitleOverride }: ActivityDiagramModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [activeFlowIndex, setActiveFlowIndex] = useState(0);
   const [inspectedNode, setInspectedNode] = useState<FlowNode | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -41,18 +41,18 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/30">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
             <Workflow className="w-5 h-5 text-violet-400" />
           </div>
           <div>
-            <h2 id="activity-diagram-title" className="text-base font-semibold text-foreground/90">{titleOverride || templateName}</h2>
-            <p className="text-sm text-muted-foreground/90">
+            <h2 id="activity-diagram-title" className="typo-body-lg font-semibold text-foreground/90">{titleOverride || templateName}</h2>
+            <p className="typo-body text-foreground">
               {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
-          <X className="w-4 h-4 text-muted-foreground/80" />
+        <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
+          <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
@@ -67,10 +67,10 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 setInspectedNode(null);
                 setPopoverPos(null);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium transition-all whitespace-nowrap ${
                 index === activeFlowIndex
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
-                  : 'bg-secondary/40 border border-transparent text-muted-foreground/80 hover:bg-secondary/60 hover:text-muted-foreground'
+                  : 'bg-secondary/40 border border-transparent text-foreground hover:bg-secondary/60 hover:text-muted-foreground'
               }`}
             >
               <span className={`w-2 h-2 rounded-full ${index === activeFlowIndex ? 'bg-violet-400' : 'bg-muted-foreground/30'}`} />
@@ -105,7 +105,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             }}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground/80">
+          <div className="flex items-center justify-center h-full text-foreground">
             {t.templates.diagrams.no_flow_data}
           </div>
         )}
@@ -124,12 +124,12 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       {/* Footer -- Flow Description */}
       {activeFlow && (
         <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
-          <p className="text-sm text-muted-foreground/90">{activeFlow.description}</p>
-          <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground/80">
-            <span>{activeFlow.nodes.length} nodes</span>
-            <span>{activeFlow.edges.length} edges</span>
-            <span>{activeFlow.nodes.filter(n => n.type === 'connector').length} connector(s)</span>
-            <span>{activeFlow.nodes.filter(n => n.type === 'decision').length} decision(s)</span>
+          <p className="typo-body text-foreground">{activeFlow.description}</p>
+          <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
+            <span>{tx(t.templates.diagrams.nodes_count, { count: activeFlow.nodes.length })}</span>
+            <span>{tx(t.templates.diagrams.edges_count, { count: activeFlow.edges.length })}</span>
+            <span>{tx(t.templates.diagrams.connectors_count, { count: activeFlow.nodes.filter(n => n.type === 'connector').length })}</span>
+            <span>{tx(t.templates.diagrams.decisions_count, { count: activeFlow.nodes.filter(n => n.type === 'decision').length })}</span>
           </div>
         </div>
       )}

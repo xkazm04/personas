@@ -58,7 +58,7 @@ export function CrashLogsSection() {
   };
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
       <div
         role="button"
         tabIndex={0}
@@ -66,10 +66,10 @@ export function CrashLogsSection() {
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors cursor-pointer"
       >
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500/10">
+        <div className="w-6 h-6 rounded-card flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
-        <span className="typo-label text-foreground/80">
+        <span className="typo-label text-foreground">
           Crash Logs
         </span>
         {totalCount > 0 && (
@@ -85,13 +85,13 @@ export function CrashLogsSection() {
                 void handleClear();
               }}
               disabled={clearing}
-              className="flex items-center gap-1 px-2 py-1 typo-body rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
             >
               <Trash2 className="w-3 h-3" />
               Clear
             </button>
           )}
-          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80" />}
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function CrashLogsSection() {
           >
             <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
               {totalCount === 0 && (
-                <p className="typo-body text-muted-foreground/80 py-2">No crash logs recorded.</p>
+                <p className="typo-body text-foreground py-2">No crash logs recorded.</p>
               )}
 
               {/* Rust backend crash logs (panics, auto-cred) */}
@@ -111,7 +111,7 @@ export function CrashLogsSection() {
                 const crashColor = isAutoCred ? 'text-amber-400/60' : 'text-red-400/60';
                 const CrashIcon = isAutoCred ? AlertTriangle : XCircle;
                 return (
-                <div key={log.filename} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={log.filename} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
@@ -122,7 +122,7 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-primary/5 px-3 py-2">
-                      <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                      <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                         {log.content}
                       </pre>
                     </div>
@@ -133,7 +133,7 @@ export function CrashLogsSection() {
 
               {/* Frontend crashes persisted to SQLite */}
               {frontendDbLogs.map((log) => (
-                <div key={log.id} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={log.id} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
@@ -144,16 +144,16 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.id && (
                     <div className="border-t border-primary/5 px-3 py-2 space-y-1">
-                      <p className="typo-body text-muted-foreground/80">
+                      <p className="typo-body text-foreground">
                         {log.createdAt}{log.appVersion ? ` (v${log.appVersion})` : ''}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                           {log.stack}
                         </pre>
                       )}
                       {log.componentStack && (
-                        <pre className="typo-code text-muted-foreground/70 whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto leading-relaxed mt-1">
                           --- Component Stack ---{'\n'}{log.componentStack}
                         </pre>
                       )}
@@ -164,7 +164,7 @@ export function CrashLogsSection() {
 
               {/* Fallback: localStorage-only crashes not yet in SQLite */}
               {uniqueLsLogs.map((log, i) => (
-                <div key={`fe-${i}`} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={`fe-${i}`} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
@@ -175,11 +175,11 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === `fe-${i}` && (
                     <div className="border-t border-primary/5 px-3 py-2 space-y-1">
-                      <p className="typo-body text-muted-foreground/80">
+                      <p className="typo-body text-foreground">
                         {log.timestamp}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-muted-foreground/90 whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
                           {log.stack}
                         </pre>
                       )}

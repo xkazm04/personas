@@ -28,6 +28,7 @@ interface CodebaseProjectPickerProps {
 
 export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCredentialNameChange, multiSelect }: CodebaseProjectPickerProps) {
   const { t } = useTranslation();
+  const ps = t.vault.picker_section;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -103,25 +104,25 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <Code2 className="w-7 h-7 text-indigo-400/60" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground/80">{t.common.no_results}</p>
-          <p className="text-xs text-muted-foreground/60 max-w-xs">
-            Add a project in Dev Tools first to connect a codebase to your agents.
+          <p className="typo-body font-medium text-foreground">{t.common.no_results}</p>
+          <p className="typo-caption text-foreground max-w-xs">
+            {ps.add_project_first}
           </p>
         </div>
         <button
           type="button"
           onClick={goToDevTools}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
         >
-          Go to Dev Tools
+          {ps.go_to_dev_tools}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+          className="typo-caption text-foreground hover:text-foreground/70 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     );
@@ -135,20 +136,20 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
       {/* Credential name input */}
       {onCredentialNameChange && (
         <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            Credential Name
+          <label className="block typo-body font-medium text-foreground mb-1.5">
+            {ps.credential_name}
           </label>
           <input
             type="text"
             value={credentialName ?? ''}
             onChange={(e) => onCredentialNameChange(e.target.value)}
             placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground/60">
+      <p className="typo-caption text-foreground">
         {multiSelect
           ? 'Select projects to include in cross-project analysis.'
           : 'Select a project to connect as a codebase source for your agents.'}
@@ -166,16 +167,16 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors"
+          className="px-4 py-2 rounded-card typo-body text-foreground hover:text-foreground/70 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

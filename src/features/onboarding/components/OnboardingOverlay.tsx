@@ -69,19 +69,19 @@ export default function OnboardingOverlay() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
           <div>
             <h2 id="onboarding-overlay-title" className="typo-heading text-foreground/90">
               {t.onboarding.title}
             </h2>
-            <p className="typo-body text-muted-foreground/70">{t.onboarding.subtitle}</p>
+            <p className="typo-body text-foreground">{t.onboarding.subtitle}</p>
           </div>
         </div>
         <button
           onClick={dismissOnboarding}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
           title={t.onboarding.skip_tooltip}
         >
           <X className="w-4 h-4" />
@@ -128,7 +128,7 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'adopt' && !showAdoptionWizard && (
               <div className="flex flex-col items-center py-8 gap-4">
                 <LoadingSpinner size="xl" className="text-violet-400" />
-                <p className="typo-body text-muted-foreground/70">{t.onboarding.opening_wizard}</p>
+                <p className="typo-body text-foreground">{t.onboarding.opening_wizard}</p>
               </div>
             )}
 
@@ -146,7 +146,7 @@ export default function OnboardingOverlay() {
       <div className="flex items-center justify-between px-6 py-3.5 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
         <button
           onClick={dismissOnboarding}
-          className="px-4 py-2 typo-heading rounded-xl border border-primary/15 text-muted-foreground/60 hover:bg-secondary/50 transition-colors"
+          className="px-4 py-2 typo-heading rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
         >
           {t.onboarding.skip_button}
         </button>
@@ -155,7 +155,7 @@ export default function OnboardingOverlay() {
           {onboardingStep === 'appearance' && (
             <button
               onClick={handleNextFromAppearance}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
             >
               {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
@@ -167,7 +167,7 @@ export default function OnboardingOverlay() {
               onClick={handleNextFromDiscover}
               disabled={isScanning}
               title={isScanning ? t.onboarding.scanning_tooltip : undefined}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
@@ -179,7 +179,7 @@ export default function OnboardingOverlay() {
               onClick={handleNextFromPick}
               disabled={!onboardingSelectedReviewId || templates.length === 0}
               title={!onboardingSelectedReviewId ? t.onboarding.select_template_tooltip : undefined}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.onboarding.adopt_button}
               <ArrowRight className="w-4 h-4" />
@@ -189,7 +189,7 @@ export default function OnboardingOverlay() {
           {onboardingStep === 'execute' && onboardingStepCompleted['execute'] && (
             <button
               onClick={handleFinish}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >
               <Check className="w-4 h-4" />
               {t.onboarding.done_button}

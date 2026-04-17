@@ -63,20 +63,20 @@ export function TemplateSearchControls({
     <>
       {/* Count */}
       {total > 0 && (
-        <span className="text-sm text-muted-foreground/50 tabular-nums flex-shrink-0 hidden sm:inline">
+        <span className="typo-data text-foreground tabular-nums flex-shrink-0 hidden sm:inline">
           {loadedCount < total ? `${loadedCount}/${total}` : `${total}`}
         </span>
       )}
 
       {/* View mode toggle */}
       {onViewModeChange && (
-        <div className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0">
+        <div className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0">
           <button
             onClick={() => onViewModeChange('list')}
             className={`p-1.5 transition-colors ${
               viewMode === 'list'
                 ? 'bg-violet-500/20 text-violet-300'
-                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
             title={t.templates.search.list_view}
           >
@@ -87,7 +87,7 @@ export function TemplateSearchControls({
             className={`p-1.5 transition-colors ${
               viewMode === 'explore'
                 ? 'bg-violet-500/20 text-violet-300'
-                : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
             }`}
             title={t.templates.search.explore_view}
           >
@@ -117,7 +117,7 @@ export function TemplateSearchControls({
       {hasRecommendations && onOpenRecommended && (
         <button
           onClick={onOpenRecommended}
-          className="p-2 rounded-lg border border-primary/10 hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors flex-shrink-0"
+          className="p-2 rounded-card border border-primary/10 hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors flex-shrink-0"
           title={t.templates.search.recommended_for_you}
         >
           <Star className="w-4 h-4" />

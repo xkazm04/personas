@@ -32,7 +32,7 @@ export function TrustBadge({ trustLevel, compact = false, className = '' }: Trus
   if (compact) {
     return (
       <div
-        className={`inline-flex items-center justify-center w-6 h-6 rounded-lg ${colors.bg} ${className}`}
+        className={`inline-flex items-center justify-center w-6 h-6 rounded-card ${colors.bg} ${className}`}
         title={label}
       >
         <Icon className={`w-3.5 h-3.5 ${colors.text}`} />
@@ -42,7 +42,7 @@ export function TrustBadge({ trustLevel, compact = false, className = '' }: Trus
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-sm font-medium rounded-lg border ${colors.bg} ${colors.text} ${colors.border} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-body font-medium rounded-card border ${colors.bg} ${colors.text} ${colors.border} ${className}`}
     >
       <Icon className="w-3 h-3" />
       {label}

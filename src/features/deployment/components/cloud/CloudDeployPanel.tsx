@@ -15,6 +15,7 @@ import { CloudSchedulesPanel } from '@/features/deployment/components/cloud/Clou
 import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/deployment/hooks/useCloudHealthMonitor';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +43,7 @@ const TABS: TabDef[] = [
 // ---------------------------------------------------------------------------
 
 export default function CloudDeployPanel() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('connection');
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -181,7 +183,7 @@ export default function CloudDeployPanel() {
       <ContentHeader
         icon={<Cloud className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
-        title="Cloud Execution"
+        title={t.deployment.cloud_execution}
         actions={
           <div className="flex items-center gap-2">
             <ConnectionStatusBadge
@@ -279,7 +281,7 @@ function LatencyBadge({ ms }: { ms: number }) {
 
   return (
     <span
-      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border ${bg} ${border} ${color}`}
+      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
       title={`Health-check round-trip latency: ${ms}ms`}
     >
       <Activity className="w-3 h-3" />

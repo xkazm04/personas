@@ -80,11 +80,11 @@ export function N8nEntitiesTab({
   if (isEmpty) {
     return (
       <div className="text-center py-12 space-y-2">
-        <ListChecks className="w-10 h-10 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm font-medium text-muted-foreground/60">
-          No entities selected.
+        <ListChecks className="w-10 h-10 text-foreground mx-auto" />
+        <p className="typo-body font-medium text-foreground">
+          {t.templates.n8n.no_entities_selected}
         </p>
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-foreground">
           {t.templates.n8n.go_back_to_analyze}
         </p>
       </div>
@@ -96,19 +96,19 @@ export function N8nEntitiesTab({
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground/80">
+          <p className="typo-body text-foreground">
             {resolved.hasDraftTools
               ? t.templates.n8n.entities_generated
               : t.templates.n8n.entities_from_workflow}
           </p>
           {cs.readyCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <CheckCircle2 className="w-2.5 h-2.5" />
               {cs.readyCount} ready
             </span>
           )}
           {cs.missingCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
               <AlertCircle className="w-2.5 h-2.5" />
               {cs.missingCount} missing
             </span>
@@ -118,7 +118,7 @@ export function N8nEntitiesTab({
           {onGoToAnalyze && (
             <button
               onClick={onGoToAnalyze}
-              className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
             >
               {t.templates.n8n.edit_selection}
             </button>
@@ -127,7 +127,7 @@ export function N8nEntitiesTab({
             <button
               onClick={() => void cs.handleTestAll()}
               disabled={cs.testingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {cs.testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
               {t.templates.n8n.test_all}
@@ -139,7 +139,7 @@ export function N8nEntitiesTab({
       {/* -- Connectors section -- */}
       {hasConnectors && (
         <div className="space-y-2">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
+          <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground uppercase tracking-wider">
             <Link className="w-3 h-3" />
             {tx(t.templates.n8n.connectors_count, { count: connectorItems.length })}
           </h5>
@@ -162,8 +162,8 @@ export function N8nEntitiesTab({
 
       {/* -- General Tools (no connector required) -- */}
       {hasGeneralTools && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
+        <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
+          <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5">
             <Wrench className="w-3 h-3" />
             {tx(t.templates.n8n.general_tools_count, { count: generalTools.length })}
           </h5>
@@ -171,7 +171,7 @@ export function N8nEntitiesTab({
             {generalTools.map((tool) => (
               <span
                 key={tool.name}
-                className="px-2.5 py-1 text-sm font-mono rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                className="px-2.5 py-1 typo-code font-mono rounded-modal bg-blue-500/10 text-blue-400 border border-blue-500/20"
                 title={tool.description ?? undefined}
               >
                 {tool.name}
@@ -183,15 +183,15 @@ export function N8nEntitiesTab({
 
       {/* -- Triggers -- */}
       {hasTriggers && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
-          <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
+        <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
+          <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5">
             <Zap className="w-3 h-3" />
             {tx(t.templates.n8n.triggers_count, { count: triggerItems.length })}
           </h5>
           <div className="space-y-1.5">
             {triggerItems.map((trigger, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-foreground/90">
-                <span className="px-1.5 py-0.5 text-sm font-mono rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div key={i} className="flex items-center gap-2 typo-body text-foreground/90">
+                <span className="px-1.5 py-0.5 typo-code font-mono rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {trigger.trigger_type}
                 </span>
                 <span className="truncate">{trigger.description}</span>
@@ -203,7 +203,7 @@ export function N8nEntitiesTab({
 
       {/* Embedded credential design modal */}
       {cs.designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-xl">
+        <div className="mt-4 border border-violet-500/20 rounded-modal">
           <CredentialDesignModal
             open={cs.designOpen}
             embedded

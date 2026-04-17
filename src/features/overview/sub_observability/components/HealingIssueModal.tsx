@@ -133,34 +133,34 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           <h3 id="healing-issue-title" className="typo-heading text-foreground/90 mb-2">{issue.title}</h3>
           <div className="flex items-center gap-2 flex-wrap">
             {isCircuitBreaker ? (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}`}>
                 <Zap className="w-3 h-3" /> circuit breaker
               </span>
             ) : isAutoFixPending ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-amber-500/10 text-amber-400 border-amber-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border bg-amber-500/10 text-amber-400 border-amber-500/20">
                 <LoadingSpinner size="xs" /> retrying
               </span>
             ) : isAutoFixed ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                 <CheckCircle className="w-3 h-3" /> auto-fixed
               </span>
             ) : (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border ${sev.bg} ${sev.text} ${sev.border}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
                 <AlertTriangle className="w-3 h-3" /> {issue.severity}
               </span>
             )}
             {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                 <RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} /> {isAutoFixPending ? 'retry in progress' : 'healed via retry'}
               </span>
             )}
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-lg border ${cat.bg} ${cat.text} ${cat.border}`}>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}
             </span>
-            <span className="text-sm text-muted-foreground/80">{new Date(issue.created_at).toLocaleDateString()}</span>
+            <span className="text-sm text-foreground">{new Date(issue.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
+        <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -168,7 +168,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
       {/* Description */}
       <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
         {isCircuitBreaker && (
-          <div className={`flex items-start gap-2.5 p-3.5 rounded-xl ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.border}`}>
+          <div className={`flex items-start gap-2.5 p-3.5 rounded-modal ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.border}`}>
             <Zap className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="typo-heading text-red-300/90">{t.overview.healing_issue_modal.persona_auto_disabled}</p>
@@ -179,26 +179,26 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           </div>
         )}
         <div>
-          <h4 className="text-sm font-mono uppercase text-muted-foreground/90 mb-2">{t.overview.healing_issue_modal.analysis}</h4>
-          <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{issue.description}</div>
+          <h4 className="text-sm font-mono uppercase text-foreground mb-2">{t.overview.healing_issue_modal.analysis}</h4>
+          <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.description}</div>
         </div>
         {issue.suggested_fix && (
-          <div className={`p-4 rounded-xl ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
+          <div className={`p-4 rounded-modal ${SEVERITY_STYLES.success.bg} ${SEVERITY_STYLES.success.border}`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Wrench className="w-3.5 h-3.5 text-emerald-400" />
                 <h4 className="text-sm font-mono uppercase text-emerald-400/80">{t.overview.healing_issue_modal.suggested_fix}</h4>
               </div>
-              <button onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg transition-colors">
+              <button onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-card transition-colors">
                 {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
               </button>
             </div>
-            <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
+            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{issue.suggested_fix}</div>
           </div>
         )}
         {issue.execution_id && (
-          <div className="text-sm font-mono text-muted-foreground/80">Execution: {issue.execution_id}</div>
+          <div className="text-sm font-mono text-foreground">Execution: {issue.execution_id}</div>
         )}
       </div>
 
@@ -206,12 +206,12 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
       {!isAutoFixed && !isAutoFixPending && (
         <div className="px-5 py-4 border-t border-primary/10 space-y-2">
           {(issue.severity === 'high' || issue.severity === 'critical') && (
-            <div className="flex items-center gap-1.5 text-sm text-amber-400/60">
+            <div className="flex items-center gap-1.5 typo-body text-amber-400/60">
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
               This issue is marked as {issue.severity} severity
             </div>
           )}
-          <p className="text-sm text-muted-foreground/80">
+          <p className="typo-body text-foreground">
             {t.overview.healing_issue_modal.marking_resolved_note}
           </p>
         </div>
@@ -220,7 +220,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         {isAutoFixPending && (
           <div className="flex items-center gap-1.5 mr-auto">
             <LoadingSpinner size="sm" className="text-amber-400" />
-            <span className="text-sm text-amber-400/60">Retry in progress — status will update when complete</span>
+            <span className="typo-body text-amber-400/60">Retry in progress — status will update when complete</span>
           </div>
         )}
         {isAutoFixed && (
@@ -228,10 +228,10 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <div>
               <CheckCircle className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" />
             </div>
-            <span className="text-sm text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
+            <span className="typo-body text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
           </div>
         )}
-        <button onClick={onClose} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-foreground/95 rounded-xl hover:bg-secondary/60 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
           Close
         </button>
         {!isAutoFixed && !isAutoFixPending && (
@@ -239,7 +239,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             onClick={onResolve}
             disabled={resolving}
             title="Manual fix applied outside the healing system"
-            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-modal hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolving ? <LoadingSpinner size="xs" /> : <CheckCircle className="w-3.5 h-3.5" />}
             {resolving ? t.overview.healing_issue_modal.resolving : t.overview.healing_issue_modal.mark_resolved}

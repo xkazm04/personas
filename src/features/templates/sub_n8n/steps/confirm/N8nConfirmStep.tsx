@@ -90,14 +90,14 @@ export function N8nConfirmStep({
 
       {/* Persona preview card */}
       {!created && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
-          <p className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
-            Persona Preview
+        <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
+          <p className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-3">
+            {t.templates.n8n.persona_preview}
           </p>
 
           <div className="flex items-center gap-4 mb-4">
             <div
-              className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-elevation-3"
+              className="animate-fade-scale-in w-14 h-14 rounded-modal flex items-center justify-center typo-heading-lg border shadow-elevation-3"
               style={{
                 backgroundColor: `${draft.color ?? '#8b5cf6'}18`,
                 borderColor: `${draft.color ?? '#8b5cf6'}30`,
@@ -107,10 +107,10 @@ export function N8nConfirmStep({
               {draft.icon ?? '\u2728'}
             </div>
             <div>
-              <p className="text-base font-semibold text-foreground/90">
+              <p className="typo-body-lg font-semibold text-foreground/90">
                 {draft.name ?? 'Unnamed Persona'}
               </p>
-              <p className="text-sm text-muted-foreground/70 mt-0.5">
+              <p className="typo-body text-foreground mt-0.5">
                 {draft.description ?? 'No description provided'}
               </p>
             </div>
@@ -153,7 +153,7 @@ export function N8nConfirmStep({
                 return (
                   <span
                     key={cap.type}
-                    className={`px-2 py-0.5 text-sm font-mono rounded border ${style ? `${style.bg} ${style.text}` : ''}`}
+                    className={`px-2 py-0.5 typo-code font-mono rounded border ${style ? `${style.bg} ${style.text}` : ''}`}
                     title={cap.context}
                   >
                     {cap.label.toLowerCase()}
@@ -165,11 +165,11 @@ export function N8nConfirmStep({
 
           {/* Tool-credential validation warning */}
           {toolsNeedingCredentials.length > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-3">
+            <div className="flex items-start gap-2 p-3 rounded-modal bg-amber-500/5 border border-amber-500/15 mb-3">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-400/70">
+              <div className="typo-body text-amber-400/70">
                 <p className="font-medium">
-                  {toolsNeedingCredentials.length} tool{toolsNeedingCredentials.length !== 1 ? 's' : ''} require credentials not yet configured:
+                  {t.templates.n8n.tools_require_credentials.replace('{count}', String(toolsNeedingCredentials.length))}
                 </p>
                 <p className="mt-0.5 font-mono">
                   {toolsNeedingCredentials.map((t) => `${t.name} (${t.requires_credential_type})`).join(', ')}
@@ -183,7 +183,7 @@ export function N8nConfirmStep({
             <div className="mt-3 border-t border-primary/10 pt-3">
               <button
                 onClick={() => setShowPrompt(!showPrompt)}
-                className="flex items-center gap-2 text-sm text-muted-foreground/70 hover:text-muted-foreground transition-colors w-full"
+                className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
               >
                 {showPrompt ? (
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -194,9 +194,9 @@ export function N8nConfirmStep({
               </button>
               {showPrompt && (
                 <div
-                  className="animate-fade-slide-in mt-2 p-3 rounded-lg bg-background/40 border border-primary/10 overflow-hidden"
+                  className="animate-fade-slide-in mt-2 p-3 rounded-card bg-background/40 border border-primary/10 overflow-hidden"
                 >
-                  <div className="text-sm max-h-48 overflow-y-auto leading-relaxed">
+                  <div className="typo-body max-h-48 overflow-y-auto leading-relaxed">
                     <MarkdownRenderer content={draft.system_prompt} />
                   </div>
                 </div>
@@ -208,8 +208,8 @@ export function N8nConfirmStep({
 
       {/* Confirmation hint */}
       {!created && (
-        <p className="text-sm text-amber-300/70 text-center">
-          Review the details above, then click "Confirm & Save Persona" to create.
+        <p className="typo-body text-amber-300/70 text-center">
+          {t.templates.n8n.confirm_hint}
         </p>
       )}
     </div>
@@ -225,10 +225,10 @@ function EntityCard({ icon: Icon, count, label, color }: {
   color: ColorKey;
 }) {
   return (
-    <div className={`px-2 py-3 rounded-xl border text-center ${ENTITY_CARD_COLORS[color]}`}>
+    <div className={`px-2 py-3 rounded-modal border text-center ${ENTITY_CARD_COLORS[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="text-base font-semibold text-foreground/80 tabular-nums">{count}</p>
-      <p className="text-sm text-muted-foreground/70 uppercase tracking-wider">{label}</p>
+      <p className="typo-body-lg font-semibold text-foreground tabular-nums">{count}</p>
+      <p className="typo-body text-foreground uppercase tracking-wider">{label}</p>
     </div>
   );
 }
@@ -243,7 +243,7 @@ function TagList({ items, color }: {
       {items.map((item) => (
         <span
           key={item.key}
-          className={`px-2 py-0.5 text-sm font-mono rounded border ${TAG_COLORS[color as ColorKey] ?? ''}`}
+          className={`px-2 py-0.5 typo-code font-mono rounded border ${TAG_COLORS[color as ColorKey] ?? ''}`}
           title={item.title}
         >
           {item.label}

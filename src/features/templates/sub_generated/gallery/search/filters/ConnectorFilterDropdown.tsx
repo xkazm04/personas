@@ -67,12 +67,12 @@ export function ConnectorFilterDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
       >
         <Filter className="w-3.5 h-3.5" />
         {t.templates.search.connectors_label}
         {connectorFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-sm font-medium">
+          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 typo-body font-medium">
             {connectorFilter.length}
           </span>
         )}
@@ -80,17 +80,17 @@ export function ConnectorFilterDropdown({
       </button>
 
       {isOpen && (
-        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-elevation-3 min-w-[280px] overflow-hidden">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full left-0 mt-1 z-20 bg-background border border-primary/20 rounded-modal shadow-elevation-3 min-w-[280px] overflow-hidden">
           <div className="px-3 py-2 border-b border-primary/10">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={dropdownSearch}
                 onChange={(e) => setDropdownSearch(e.target.value)}
                 placeholder={t.templates.search.search_connectors}
-                className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-modal text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
               />
             </div>
           </div>
@@ -106,13 +106,13 @@ export function ConnectorFilterDropdown({
                   className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-primary/5 transition-colors"
                 >
                   <div
-                    className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: `${meta.color}20` }}
                   >
                     <ConnectorIcon meta={meta} size="w-4 h-4" />
                   </div>
-                  <span className="text-sm text-foreground/90 flex-1">{highlightMatch(meta.label, debouncedSearch.trim())}</span>
-                  <span className="text-sm text-muted-foreground/50 tabular-nums px-1.5 py-0.5 rounded-full bg-secondary/60">
+                  <span className="typo-body text-foreground/90 flex-1">{highlightMatch(meta.label, debouncedSearch.trim())}</span>
+                  <span className="typo-data text-foreground tabular-nums px-1.5 py-0.5 rounded-full bg-secondary/60">
                     {item.count}
                   </span>
                   <div
@@ -128,7 +128,7 @@ export function ConnectorFilterDropdown({
               );
             })}
             {filtered.length === 0 && (
-              <div className="px-3.5 py-3 text-sm text-muted-foreground/60 italic text-center">
+              <div className="px-3.5 py-3 typo-body text-foreground italic text-center">
                 {dropdownSearch ? t.templates.search.no_matching_connectors : t.templates.search.no_connectors_available}
               </div>
             )}
@@ -141,7 +141,7 @@ export function ConnectorFilterDropdown({
                   setConnectorFilter([]);
                   setIsOpen(false);
                 }}
-                className="w-full px-3.5 py-2 text-left text-sm text-muted-foreground/90 hover:text-foreground/95 hover:bg-primary/5 rounded-xl transition-colors"
+                className="w-full px-3.5 py-2 text-left typo-body text-foreground hover:text-foreground/95 hover:bg-primary/5 rounded-modal transition-colors"
               >
                 {t.templates.search.clear_all}
               </button>

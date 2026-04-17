@@ -99,7 +99,7 @@ export default function ConnectionEdge({
         >
           <div className="flex items-center justify-center h-full">
             <span
-              className="px-2 py-0.5 text-sm font-mono rounded-full border backdrop-blur-sm"
+              className="px-2 py-0.5 typo-code font-mono rounded-full border backdrop-blur-sm"
               style={{
                 backgroundColor: colorWithAlpha(typeStyle.stroke, 0.08),
                 borderColor: colorWithAlpha(typeStyle.stroke, 0.19),

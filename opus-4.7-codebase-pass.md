@@ -1,9 +1,16 @@
-# Opus 4.7 Codebase Audit & Upgrade Pass — Personas Desktop
+# Opus 4.7 Ship-Readiness Pass — Personas Desktop
 
-A stress-test prompt for Claude Opus 4.7 via Claude Code CLI. Goal: measure how
-reliably the model can (a) identify genuine upgrade opportunities in this
-codebase, (b) prioritize them honestly, and (c) execute atomic, reviewable
-improvements without violating existing conventions.
+A goal-directed playbook for Claude Opus 4.7 via Claude Code CLI. **The goal is
+no longer "audit for fun" — it is to make Personas Desktop shippable as an
+open-source product that a stranger can clone, build, run, and contribute to.**
+
+Work happens across **specialized pass tracks** (Fix, Polish, Structure,
+OSS-Readiness, Security/Privacy, Distribution, Docs). Each track has a tight
+scope, entry/exit criteria, and its own verification contract. Pick tracks
+based on what the product needs to ship, not on what's fun to refactor.
+
+Optimize for *time-to-first-external-contributor* and *time-to-first-
+user-install*, not volume of change.
 
 ---
 
@@ -13,27 +20,39 @@ improvements without violating existing conventions.
 # From repo root
 claude --model claude-opus-4-7 --effort xhigh
 # Paste the "Mission" section below as the first message.
-# Stay hands-off for the audit. Gate-review before Phase 3.
+# Stay hands-off for Phase 1 (recon). Gate-review before Phase 3.
 ```
 
-Recommended: run on a dedicated branch so you can diff the whole session:
+Recommended: dedicated branch so the whole session is diffable.
 
 ```bash
-git checkout -b opus-4.7-pass/$(date +%Y-%m-%d)
+git checkout -b ship-ready/$(date +%Y-%m-%d)
 ```
 
 ---
 
 ## Mission
 
-You are auditing and incrementally upgrading the Personas Desktop codebase
-(Tauri 2 + React 19 + TypeScript 6 + Zustand 5). Your job has four phases:
-**recon → prioritize → execute passes → summarize**. Proceed autonomously, but
-**stop after Phase 1** and wait for human approval before touching code.
+You are closing out Personas Desktop (Tauri 2 + React 19 + TypeScript 6 +
+Zustand 5) so it can be published as an open-source product. The product is
+already ~80% built; your job is the last 20% that makes it *deliverable*:
+pre-existing bugs fixed, UX rough edges smoothed, structure legible to new
+contributors, license/docs/CI present, install path working on a clean
+machine.
 
-Optimize for *real-world impact per unit of risk*, not volume of change. A
-single well-reasoned fix is worth more than ten cosmetic ones. You are being
-evaluated on judgment, not throughput.
+Four phases: **recon → plan → execute passes → release-candidate summary**.
+Proceed autonomously, but **stop after Phase 1** and wait for human approval
+before touching code.
+
+A stranger cloning this repo at the end of your session should be able to:
+1. Read `README.md` and understand what it is in < 60 seconds.
+2. Follow `CONTRIBUTING.md` and get a dev build running.
+3. Download a signed installer from a release and run the app without warnings.
+4. Open the app and not immediately hit a visible bug, missing translation, or
+   broken state.
+5. Find `LICENSE`, `CODE_OF_CONDUCT.md`, and a working issue template on GitHub.
+
+Anything that doesn't serve those five outcomes is out of scope for this pass.
 
 ---
 
@@ -45,186 +64,407 @@ evaluated on judgment, not throughput.
    - Always use `invokeWithTimeout` from `@/lib/tauriInvoke`, never raw `invoke`.
    - Use semantic tokens (`text-foreground`, `bg-secondary`, `typo-*`,
      `rounded-*`) — never `text-white/*` or `bg-white/*` directly.
-   - Do **not** attempt to fix the pre-existing issues listed in CLAUDE.md
-     (AccountSettings TS errors, ~159 pre-existing TS errors, git hook warning).
-     Touching these out of scope is a failure mode, not a feature.
-2. **Preserve public API shape.** No breaking changes to Tauri commands,
+2. **Pre-existing issues are NOW IN SCOPE.** The `AccountSettings.tsx` errors,
+   the ~159 pre-existing TS errors, the `react-hooks/rules-of-hooks`
+   violations — these are exactly what this pass exists to fix. But fix them
+   as targeted commits in the **Fix** track, not as opportunistic drive-bys
+   inside other tracks.
+3. **Preserve public API shape.** No breaking changes to Tauri commands,
    Zustand slice signatures, or exported component props unless explicitly
-   justified in the audit and approved.
-3. **Every pass must end green.** After each code-modifying commit run:
-   - `npx tsc --noEmit` — TS error count must not *increase* vs. the baseline
-     you record at session start.
+   justified and approved. If it ships 1.0, it carries the API forward.
+4. **Every pass must end green.** After each code-modifying commit run:
+   - `npx tsc --noEmit` — TS error count must *decrease or hold* vs. baseline.
    - `npm run lint` — no new errors; warning count must not increase.
-   - `npm run test` — affected tests must pass. If you can't narrow scope,
-     run the full suite.
-4. **Commit discipline.** One atomic change per commit. Message format:
+   - `npm run test` — affected tests must pass; run full suite on structure/fix
+     passes.
+   - On Rust changes: `cargo check` and `cargo test` in `src-tauri/`.
+5. **Commit discipline.** One atomic change per commit. Message format:
    ```
-   <area>: <what changed>
+   <track>(<area>): <what changed>
 
    Why: <root-cause or value prop, 1–3 lines>
    Risk: <low/med/high + rationale>
    Verified: <which checks you ran>
    ```
-5. **Ask before destructive operations.** Deleting files, renaming exports,
-   migrating data models, touching `src-tauri/src/db/migrations/*`, or editing
-   `.github/`, `package.json` dependency pins — all require confirmation.
-6. **No speculative refactors.** If you can't articulate the user-visible or
-   measurable benefit in one sentence, don't do it.
+   Where `<track>` is one of: `fix`, `polish`, `structure`, `oss`, `sec`,
+   `dist`, `docs`.
+6. **Ask before destructive or shared-state operations.** Deleting files,
+   renaming exports, migrating data models, touching
+   `src-tauri/src/db/migrations/*`, editing `.github/`, changing `package.json`
+   dependency pins, publishing releases, pushing tags — all require
+   confirmation.
+7. **No speculative refactors.** If you can't articulate the ship-readiness
+   benefit in one sentence tied to the five outcomes above, don't do it.
 
 ---
 
-## Phase 1 — Recon (READ-ONLY, ~20 minutes of work, then STOP)
+## Phase 1 — Ship-readiness recon (READ-ONLY, ~30 minutes, then STOP)
 
-Before writing any code, produce a written audit. During this phase you may
-only read files, run read-only commands, and run the test/type/lint baseline.
+Before writing code, produce a written audit. During this phase you may only
+read files, run read-only commands, and record baselines.
 
-### Deliverable: `audit-reports/4.7-audit-<YYYY-MM-DD>.md`
-
-Structure:
+### Deliverable: `audit-reports/ship-ready-<YYYY-MM-DD>.md`
 
 ```markdown
-# Personas Desktop — 4.7 Audit (<date>)
+# Personas Desktop — Ship Readiness Audit (<date>)
 
 ## Baseline
-- TS errors: <npx tsc --noEmit | wc -l>
-- Lint warnings: <count>
-- Test count / runtime: <from npm run test>
-- Bundle size (if easy to get): <npx vite build summary>
-- Rust warnings: <cargo check output>
+- TS errors: <count> (list files with > 5 errors)
+- Lint errors / warnings: <counts>
+- `react-hooks/rules-of-hooks` violations: <count + files>
+- Test count / runtime / failures: <npm run test>
+- Bundle size: <npx vite build>
+- Rust warnings: <cargo check>
+- i18n coverage: <node scripts/check-locale-parity.mjs --json summary>
+- Sentry top issues (if accessible via /sentry skill): <top 5>
+- Clean-clone build test: can you identify blockers without running it?
 
-## Codebase map
-<3–5 sentences on what this codebase actually is, where complexity concentrates,
-and where you'd bet debt has accumulated. Cite concrete paths.>
+## Ship-readiness scorecard
+Score each 0–3. 0 = missing/broken, 1 = exists but rough, 2 = acceptable,
+3 = polished.
 
-## Top opportunities (ranked)
-For each, provide:
-- **Title**
-- **Area**: Rust | React | i18n | Build | Tests | DX
-- **Category**: perf | correctness | UX polish | architectural debt | security
-- **Evidence**: file:line references, benchmark or reasoning
-- **Impact** (1–5): who benefits and how much
-- **Confidence** (1–5): how sure are you this is real
-- **Risk** (1–5): blast radius if the fix goes wrong
-- **Score**: Impact × Confidence ÷ Risk
-- **Proposed change**: 2–4 sentences, concrete
-- **Verification plan**: how you'll prove it worked
+| Dimension                                | Score | Evidence |
+|------------------------------------------|-------|----------|
+| First-run UX (fresh install → useful)    |       |          |
+| README clarity for new users             |       |          |
+| CONTRIBUTING / dev setup reproducibility |       |          |
+| LICENSE + legal hygiene                  |       |          |
+| Installer / signed binaries / updater    |       |          |
+| CI (build, test, lint on PRs)            |       |          |
+| Issue / PR templates / CODEOWNERS        |       |          |
+| Pre-existing bug burden (TS + hooks)     |       |          |
+| Error states (visible + actionable)      |       |          |
+| Loading / empty states                   |       |          |
+| i18n coverage on critical user paths     |       |          |
+| Accessibility (keyboard, aria, contrast) |       |          |
+| Telemetry / privacy (opt-out, transparent)|      |          |
+| Secrets hygiene (no leaks, .env.example) |       |          |
+| Architecture docs for contributors       |       |          |
 
-Produce at least 10. Mix Rust and React. Do not pad.
+Total: __ / 45. Interpretation: < 20 = not shippable, 20–32 = needs this pass,
+33+ = mostly ready.
 
-## Things I considered but rejected
-<Short list of candidates you looked at and chose not to rank, with 1-line reason.
-This is a test of calibration — don't skip it.>
+## Per-track findings
+For each track below, list concrete items (file:line where possible), each
+tagged Impact (1–5) × Confidence (1–5) ÷ Risk (1–5) = Score.
+
+### Fix track
+Pre-existing TS errors, hook-rule violations, Sentry top issues, crash paths,
+broken flows discovered while clicking through.
+
+### Polish track
+UI rough edges: missing empty/loading/error states, hardcoded strings on
+critical paths, inconsistent spacing/typography, broken keyboard nav, obvious
+a11y gaps, dead buttons, placeholder copy, TODO banners.
+
+### Structure track
+Dead code, the deprecated `features/home/i18n/` directories, duplicated
+patterns across feature modules, circular deps, oversized slices, files >
+800 lines that should be split, inconsistent module boundaries.
+
+### OSS-Readiness track
+Missing/weak README, LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.md,
+`.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`, CODEOWNERS, CI
+workflows, release workflow, `.env.example`, screenshots, demo GIF.
+
+### Security & Privacy track
+Hardcoded secrets/keys, telemetry endpoints without opt-out, leaked PII in
+logs or Sentry breadcrumbs, overly broad Tauri `allowlist`, permissive CSP,
+outdated crypto, dependency CVEs (`npm audit`, `cargo audit`).
+
+### Distribution track
+Installer build works on all three platforms? Code signing configured?
+Auto-updater wired? First-run onboarding present? Reasonable default window
+size/position? App icon present on all platforms? `tauri.conf.json` metadata
+(identifier, publisher, version strategy) coherent?
+
+### Docs track
+Architecture doc for contributors, module READMEs for `agents/`, `vault/`,
+`overview/`, commands doc for Tauri IPC surface, screenshots in README,
+changelog, release notes template.
+
+## Rejected candidates
+Things you looked at and chose not to include, with 1-line reason. This tests
+calibration — do not skip.
 
 ## Uncertainties
-<What do you not know? What would make you more confident? What's the single
-most useful thing a human could tell you before Phase 3?>
+What do you not know? What's the single most useful thing a human could tell
+you before Phase 3?
+
+## Recommended track order
+Suggest an ordering and rationale. Typical: Fix → Structure → Polish →
+Security → OSS-Readiness → Distribution → Docs. Justify deviations.
 ```
 
-**After writing the audit, stop and wait for review.** Do not proceed to
-Phase 2 until explicitly told to continue.
+**After writing the audit, stop.** Do not proceed to Phase 2 until told to.
 
 ---
 
 ## Phase 2 — Prioritize & plan
 
-Once the human approves Phase 1, pick the subset of opportunities to execute
-this session. Propose a plan:
+Once Phase 1 is approved, propose the execution plan:
 
-- Which items (usually 3–5), in what order, and why
-- Rough pass sizes (LOC affected, files touched)
-- Stop condition (e.g., "after 5 passes, or on any test regression, or at
-  90 minutes of wall time")
-- Rollback plan if a pass goes sideways
+- Which tracks you'll run this session and in what order.
+- For each track: 2–6 specific passes (LOC estimate, files touched,
+  verification strategy).
+- Stop condition: e.g., "stop after 8 passes, or any test regression that
+  can't be fixed in 10 minutes, or 3 hours wall time, whichever first."
+- Rollback plan: per-pass `git reset --hard HEAD~1` budget, max 2 reverts
+  before re-planning.
 
-Wait for approval of the plan before starting Phase 3.
+Wait for plan approval before Phase 3.
 
 ---
 
-## Phase 3 — Execute passes
+## Phase 3 — Specialized pass tracks
 
-For each pass:
+Each track is a discipline with its own contract. Stay in one track per pass
+— don't mix a polish fix into a structure pass. Cross-cutting changes should
+be broken into per-track commits.
 
-1. State: "Pass N — <title>. Scope: <files>. Expected outcome: <1 line>."
+### Track A — Fix (primary; do this first)
+**Goal**: zero new red, fewer old reds. Make the TS baseline drop, kill
+top-N runtime errors, close `rules-of-hooks` violations.
+
+Entry: TS error count, hook violation count, Sentry top-10 recorded.
+Exit: TS error count lower than baseline, no new ones introduced, any fixed
+hook violations have passing tests or manual reproduction notes in the commit.
+
+Allowed scope:
+- `AccountSettings.tsx` missing imports (`Sparkles`, `TIERS`, `TIER_LABELS`).
+- `DualBatchPanel`, `commandHandlers`, `Social module`, `DebtPrediction` TS errors.
+- 21 `react-hooks/rules-of-hooks` violations across 7 files.
+- Live Sentry issues (use `/sentry` skill).
+- Flaky or failing tests (fix the code, not the test, unless the test was wrong).
+
+Not in scope here:
+- Stylistic cleanup, renaming, extraction — that's Structure.
+- Adding new features or new error states — that's Polish.
+
+### Track B — Polish
+**Goal**: the app feels finished on the critical user paths (agent CRUD,
+chat, vault credential add, first-run, overview dashboard).
+
+Scope ladder (address higher rungs first):
+1. **Critical path i18n**: extract remaining hardcoded strings on the five
+   critical paths above. Follow CLAUDE.md's 5-strings-per-file cap when the
+   file isn't otherwise being edited — but critical paths *are* being
+   edited, so extract all of theirs.
+2. **Error / empty / loading states**: every async surface on critical
+   paths must have all three states with intentional copy and icons.
+3. **Keyboard & a11y**: tab order, visible focus, `aria-label` on icon-only
+   buttons, sufficient contrast in both themes.
+4. **Copy pass**: no `TODO`, `lorem`, `Text here`, `Coming soon`, `WIP`,
+   placeholder names visible to users.
+5. **Consistency**: icons from one set, spacing tokens (not raw px), radius
+   and typography tokens throughout critical paths.
+
+Verification: screenshot the before/after of critical path screens. Add them
+to the audit doc under Pass log.
+
+### Track C — Structure
+**Goal**: a new contributor can navigate the repo. Dead code gone, deprecated
+dirs removed, oversized files split, module boundaries clear.
+
+Scope:
+- Delete `src/features/home/i18n/` and `src/features/home/components/releases/i18n/`
+  after migrating live usage to `src/i18n/en.ts` (CLAUDE.md flags these as
+  deprecated).
+- Dead-code sweep: un-exported symbols with no references, orphaned components,
+  unreachable branches. Use `knip` or TS compiler data — don't guess.
+- Files > 800 lines on critical paths: split by concern, not by line count.
+- Circular dependency check: `npx madge --circular src/`.
+- Zustand slice hygiene: slices doing unrelated things get split; selectors
+  using `useShallow` where they should.
+- Rust: dead `#[allow(dead_code)]` cleanup, module visibility audit.
+
+Ask before deleting any file > 200 lines or any exported symbol used outside
+its module.
+
+### Track D — OSS-Readiness
+**Goal**: the repo looks like a real open-source project on GitHub at a glance.
+
+Deliverables (ask before adding/editing any of these — they're policy):
+- `LICENSE` — confirm the license with the user. MIT, Apache-2.0, or AGPL are
+  most common for dev-tools desktop apps. Do not pick one without approval.
+- `README.md` — rewrite as a product README: one-line pitch, screenshot,
+  install/run, features, architecture pointer, contributing pointer, license.
+  Current `README.md` (if any) is probably dev-scratch.
+- `CONTRIBUTING.md` — dev setup from a clean clone (Windows/mac/Linux), how
+  to run tests, commit message conventions, PR checklist.
+- `CODE_OF_CONDUCT.md` — Contributor Covenant 2.1 is standard.
+- `SECURITY.md` — where to report vulns, SLA, PGP key or private email.
+- `.github/ISSUE_TEMPLATE/bug.yml` + `feature.yml` — structured forms.
+- `.github/PULL_REQUEST_TEMPLATE.md` — checklist matching ground rules.
+- `.github/workflows/ci.yml` — typecheck + lint + test + `cargo check` on PR.
+- `.github/workflows/release.yml` — tag-triggered Tauri build for three
+  platforms (ask before adding; this needs secrets configured).
+- `CODEOWNERS` — if the repo has multiple maintainers.
+- `.env.example` with all env vars the app reads, commented.
+
+### Track E — Security & Privacy
+**Goal**: nothing in the repo or the built binary leaks secrets or tracks
+users without consent.
+
+Scope:
+- `git grep -E '(api[_-]?key|secret|token|password)' -n` — triage every hit.
+- Sentry DSN, GA IDs, posthog keys: must be env-injected, not committed;
+  and must have a user-visible opt-out at first run.
+- Tauri `allowlist` / capabilities: principle of least privilege.
+- CSP in `tauri.conf.json`: no `unsafe-eval`, tight `connect-src`.
+- `npm audit --omit=dev` and `cargo audit` — fix criticals, document
+  accepted risks.
+- Keyring usage: confirm no plaintext fallback path exists.
+- Log hygiene: Rust `tracing::error!` and `console.error` calls that include
+  user data or secrets.
+
+### Track F — Distribution
+**Goal**: a user downloads a release asset and runs the app.
+
+Scope:
+- `tauri.conf.json`: `identifier`, `productName`, `version`, `publisher`,
+  window defaults, icon paths — all coherent.
+- Icons present at every required size for every platform.
+- First-run UX: welcome screen, permissions explainer, opt-in telemetry
+  toggle, links to docs/Discord.
+- Auto-updater: wired, endpoint configured (or explicitly disabled for 1.0).
+- Installer: `.msi` on Windows, `.dmg` on mac, `.AppImage` + `.deb` on Linux.
+- Code signing: at minimum document what signing setup is needed; don't run
+  signing ceremonies without user approval.
+- Release workflow dry-run on a fork/tag.
+
+This track is almost entirely gated on user approval because it touches
+infrastructure and may require secrets.
+
+### Track G — Docs
+**Goal**: a contributor can understand the architecture in 30 minutes.
+
+Scope:
+- `docs/architecture.md` — high-level diagram (Tauri IPC boundary, stores,
+  engine, DB), pointer to each top-level dir's purpose.
+- `docs/adding-an-integration.md` — distill the 9-step playbook from
+  `MEMORY.md` into public docs.
+- `docs/i18n.md` — extract the CLAUDE.md i18n rules into public docs.
+- Per-module READMEs for `agents/`, `vault/`, `overview/`, `src-tauri/`.
+- `CHANGELOG.md` — initialize with `[Unreleased]` and the changes in this
+  session.
+- Screenshots / GIF embedded in main README.
+
+Docs track is usually last because it should reflect the final state.
+
+---
+
+## Per-pass execution protocol
+
+For every single pass:
+
+1. Announce: `Pass N [track]: <title>. Scope: <files>. Expected outcome: <1 line>.`
 2. Make the minimum change that achieves the outcome.
-3. Run: `npx tsc --noEmit` (affected), `npm run lint` (affected), tests.
-4. If Rust: `cargo check` and `cargo test` (if changes touched `src-tauri/`).
-5. Commit with the message format above.
-6. Append to the audit doc under a new `## Pass log` section:
-   - What changed, what the metrics now read, any surprises
-   - Self-grade: did this match the predicted impact?
-7. Brief progress update to the user (1–3 sentences).
+3. Run verification commands appropriate to the track (see Ground rule 4).
+4. Commit atomically with the message format.
+5. Append to the audit doc under `## Pass log`:
+   - Track, title, commit sha
+   - Metrics delta (TS errors, lint warnings, test counts, bundle size)
+   - Screenshots for Polish passes
+   - Self-grade: Did this match the predicted impact? (A/B/C)
+   - Surprises
+6. One-sentence user update.
 
-If a pass fails verification: revert the commit (`git reset --hard HEAD~1`),
-record the failure in the pass log, and move to the next item. Do not thrash.
+If verification fails: `git reset --hard HEAD~1`, record the attempt in the
+pass log with *why it failed*, move to the next item. No more than 2 reverts
+before pausing to re-plan with the user.
 
 ---
 
-## Phase 4 — Summarize
+## Phase 4 — Release-candidate summary
 
-When stop condition hits, produce a final report appended to the audit doc:
+When the stop condition hits, append to the audit doc:
 
 ```markdown
-## Session summary
+## Release-candidate summary
 
-### Metrics (before → after)
-- TS errors, lint warnings, test runtime, bundle size, rust warnings
-- Per-area LOC delta
+### Scorecard delta
+| Dimension | Before | After | Δ |
+|-----------|--------|-------|---|
+(from Phase 1 scorecard)
+
+### Metrics delta
+- TS errors, lint warnings/errors, hook violations, test runtime, bundle size,
+  rust warnings, i18n coverage per locale.
 
 ### Passes completed
-- <table of pass title, area, commit sha, self-grade>
+| # | Track | Title | Commit | LOC± | Self-grade |
+|---|-------|-------|--------|------|-----------|
 
-### Backlog — not completed this session
-<Items from Phase 1 ranked list that weren't touched, with current priority>
+### Still-broken / known issues
+What a user will hit. Ranked by severity. Each gets a GitHub issue draft
+(title + body + labels) so they can be filed after merge.
+
+### Shippable? (honest verdict)
+- Minimum-viable-OSS-release: yes / no + what still blocks.
+- If no: what's the smallest next session that would close the gap?
 
 ### Honest self-assessment
-- Where were you uncertain?
-- What did you change that you're least confident about?
-- What surprised you vs. your Phase 1 predictions?
-- What would a human reviewer be right to push back on?
+- Most uncertain change.
+- Scope creep incidents.
+- What a human reviewer would rightly push back on.
+- Did Phase 1 predictions match Phase 3 reality?
 ```
 
 ---
 
-## Autonomy knobs (edit these before running)
+## Autonomy knobs (edit before running)
 
 | Knob | Default | Options |
 |------|---------|---------|
-| Scope | `both` | `rust` \| `react` \| `both` |
-| Max passes per session | `5` | integer |
-| Wall-clock cap | `90 min` | any |
-| i18n migrations allowed | `yes, up to 5 strings per file` | `no` \| integer |
-| Dependency upgrades allowed | `no` | `patch-only` \| `minor-only` \| `yes` |
+| Tracks enabled | `Fix, Polish, Structure, OSS, Sec, Docs` | any subset; `Distribution` is opt-in |
+| Max passes per session | `10` | integer |
+| Wall-clock cap | `3 hours` | any |
+| i18n extraction | `full on critical paths; 5/file elsewhere` | `full` \| `critical-only` \| `none` |
+| Delete deprecated dirs | `ask first` | `no` \| `ask` \| `yes` |
+| Dependency upgrades | `patch-only, ask before each` | `no` \| `patch` \| `minor` \| `yes` |
 | Touch migrations / schema | `no, ask first` | `no` \| `ask` |
-| Touch Tauri command signatures | `ask first` | `no` \| `ask` \| `yes` |
+| Touch Tauri command signatures | `no` | `no` \| `ask` |
+| License selection | `ask first, do not assume` | `ask` \| explicit license name |
+| Push tags / publish release | `never` | `never` \| `ask` |
+| Edit `.github/` | `ask first` | `ask` \| `yes` |
 
 ---
 
 ## Explicit failure modes to avoid
 
-- Fixing pre-existing issues listed in CLAUDE.md (out of scope).
-- Bulk i18n migration across unrelated files (CLAUDE.md forbids this).
-- "Improving" code style without a measurable or user-visible benefit.
-- Adding new dependencies to solve problems that don't need them.
-- Rewriting tests to make them pass. Tests prove correctness; don't edit them
-  unless the test itself was wrong, and explain why.
-- Silent scope creep — if a pass grows beyond its stated bounds, stop and
-  re-plan.
-- Claiming confidence you don't have. If Phase 1 evidence is weak, say so.
+- **Bundling tracks in one commit.** A fix + a polish change in one commit
+  makes review impossible. Split them.
+- **Chasing the TS error count down by deleting tests or `@ts-ignore`ing.**
+  Errors get *fixed*, not muted.
+- **Bulk i18n migration on non-critical paths.** CLAUDE.md forbids it; still
+  forbidden here except on the five critical paths.
+- **Adding dependencies to solve problems that don't need them.**
+- **Inventing a license.** Pick only what the user confirms.
+- **Committing secrets** while adding `.env.example` — double-check every
+  value.
+- **"Improving" code style without a ship-readiness benefit** — if it's not
+  in one of the seven tracks, it's out of scope.
+- **Silent scope creep.** If a pass grows, stop and re-plan.
+- **Performative confidence.** If evidence is weak, say so in the pass log.
 
 ---
 
-## What "reliable" looks like (evaluator rubric)
+## What "ship-ready" looks like (evaluator rubric)
 
-You can cross-check this against the final report:
+Cross-check the final report against this:
 
-- **Detection**: Does the Phase 1 audit identify real issues a senior engineer
-  familiar with the codebase would also flag? Bonus for non-obvious finds.
-- **Calibration**: Are the Impact/Confidence/Risk scores defensible? Does the
-  "rejected" list show taste?
-- **Instruction-following**: Zero hardcoded JSX strings introduced, zero raw
-  `invoke` calls, zero semantic-token violations, zero pre-existing-issue
-  touches.
-- **Execution**: Each pass atomic, reversible, green on checks, with a commit
-  message that a future reader can understand.
-- **Honesty**: Does the self-assessment surface real uncertainty, or is it
-  performative?
+- **Detection**: Phase 1 audit identifies real blockers a senior engineer
+  shipping this product would also flag. Bonus for catching non-obvious ones
+  (dead code, subtle a11y gaps, CSP holes, opt-out flow missing).
+- **Track discipline**: Each commit stays in its track. Commit log reads as
+  a narrative a maintainer could summarize in 30 seconds.
+- **Calibration**: Rejected-candidates list shows taste. Self-grades align
+  with actual impact visible in the diff.
+- **Instruction-following**: Zero hardcoded JSX strings introduced, zero
+  raw `invoke` calls, zero semantic-token violations, no unapproved deletes
+  or `.github/` edits.
+- **Ship-readiness delta**: Scorecard moves up meaningfully. The "can a
+  stranger clone, build, run, contribute?" test is closer to yes.
+- **Honesty**: Self-assessment surfaces real uncertainty; known-issues
+  section is filed and visible, not swept under the rug.

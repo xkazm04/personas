@@ -120,7 +120,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-indigo-400
+        className="flex items-center gap-1.5 text-xs text-foreground hover:text-indigo-400
                    transition-colors cursor-pointer py-0.5"
       >
         <Terminal className="w-3 h-3" />
@@ -131,7 +131,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
   }
 
   return (
-    <div className="space-y-2 border border-indigo-500/20 rounded-lg bg-indigo-500/5 p-2.5">
+    <div className="space-y-2 border border-indigo-500/20 rounded-card bg-indigo-500/5 p-2.5">
       {/* Header */}
       <button
         type="button"
@@ -146,7 +146,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
       {/* Request body editor */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+        <label className="text-[11px] font-medium text-foreground uppercase tracking-wider">
           {dt.request_body}
         </label>
         <textarea
@@ -154,12 +154,12 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           onChange={(e) => setBody(e.target.value)}
           rows={4}
           spellCheck={false}
-          className="w-full px-2.5 py-2 text-xs font-mono rounded-lg
+          className="w-full px-2.5 py-2 text-xs font-mono rounded-card
                      bg-secondary/50 border border-primary/10
-                     text-foreground/90 placeholder:text-muted-foreground/50
+                     text-foreground/90 placeholder:text-foreground
                      focus-visible:outline-none focus-visible:border-indigo-500/40
                      resize-y transition-colors"
-          placeholder='{ "message": "Your prompt here..." }'
+          placeholder={dt.request_body_placeholder}
         />
       </div>
 
@@ -169,7 +169,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           type="button"
           onClick={handleSend}
           disabled={sending || !body.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card
                      bg-indigo-500/15 border border-indigo-500/25 text-indigo-400
                      hover:bg-indigo-500/25 hover:text-indigo-300
                      disabled:opacity-40 disabled:cursor-not-allowed
@@ -184,8 +184,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
         <button
           type="button"
           onClick={() => setShowSnippets((p) => !p)}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-muted-foreground/70
-                     hover:text-foreground/80 rounded-lg hover:bg-secondary/40
+          className="flex items-center gap-1 px-2 py-1.5 text-xs text-foreground
+                     hover:text-foreground/80 rounded-card hover:bg-secondary/40
                      transition-colors cursor-pointer"
         >
           <Code2 className="w-3 h-3" />
@@ -202,10 +202,10 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                 key={lang}
                 type="button"
                 onClick={() => setSnippetLang(lang)}
-                className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 text-[11px] font-medium rounded-input transition-colors cursor-pointer ${
                   snippetLang === lang
                     ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
-                    : 'text-muted-foreground/60 hover:text-muted-foreground/80 border border-transparent'
+                    : 'text-foreground hover:text-muted-foreground/80 border border-transparent'
                 }`}
               >
                 {lang}
@@ -214,8 +214,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
             <button
               type="button"
               onClick={copySnippet}
-              className="ml-auto flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded-md
-                         text-muted-foreground/60 hover:text-foreground/80
+              className="ml-auto flex items-center gap-1 px-1.5 py-0.5 text-[11px] rounded-input
+                         text-foreground hover:text-foreground/80
                          hover:bg-secondary/40 transition-colors cursor-pointer"
             >
               {copiedSnippet
@@ -223,8 +223,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                 : <><Copy className="w-3 h-3" /> Copy</>}
             </button>
           </div>
-          <pre className="text-[11px] font-mono bg-secondary/50 border border-primary/10 rounded-lg
-                         p-2.5 overflow-x-auto text-foreground/80 whitespace-pre-wrap break-all">
+          <pre className="text-[11px] font-mono bg-secondary/50 border border-primary/10 rounded-card
+                         p-2.5 overflow-x-auto text-foreground whitespace-pre-wrap break-all">
             {snippet}
           </pre>
         </div>
@@ -234,7 +234,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       {response && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.response_label}</span>
+            <span className="font-medium text-foreground uppercase tracking-wider">{dt.response_label}</span>
             <span className={`px-1.5 py-0.5 rounded font-medium ${
               response.status === 'success'
                 ? 'bg-emerald-500/10 text-emerald-400'
@@ -243,22 +243,22 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
               {response.status === 'success' ? '200 OK' : 'ERROR'}
             </span>
             {response.durationMs != null && (
-              <span className="text-muted-foreground/50">
+              <span className="text-foreground">
                 {response.durationMs < 1000
                   ? `${response.durationMs}ms`
                   : `${(response.durationMs / 1000).toFixed(1)}s`}
               </span>
             )}
             {response.costUsd > 0 && (
-              <span className="text-muted-foreground/50">
+              <span className="text-foreground">
                 ${response.costUsd.toFixed(4)}
               </span>
             )}
             {response.model && (
-              <span className="text-muted-foreground/40">{response.model}</span>
+              <span className="text-foreground">{response.model}</span>
             )}
           </div>
-          <pre className={`text-xs font-mono rounded-lg p-2.5 overflow-x-auto whitespace-pre-wrap break-words
+          <pre className={`typo-code font-mono rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
                           border max-h-64 overflow-y-auto ${
             response.status === 'success'
               ? 'bg-emerald-500/5 border-emerald-500/15 text-foreground/85'

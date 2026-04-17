@@ -95,21 +95,21 @@ export function PeerList() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
           <Users className="w-4 h-4" />
           {st.discovered_peers}
         </h3>
         <div className="flex flex-col items-end gap-0.5">
           <button
             onClick={() => doFetch()}
-            title="Refresh peer list"
-            className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            title={st.refresh_peer_list}
+            className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
           </button>
           {lastScannedLabel && (
-            <span className="text-[10px] text-muted-foreground/50">
+            <span className="text-[10px] text-foreground">
               scanned {lastScannedLabel}
             </span>
           )}
@@ -117,9 +117,9 @@ export function PeerList() {
       </div>
 
       {networkError && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 typo-caption text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Peer list may be stale &mdash; {networkError}</span>
+          <span>{st.peer_list_stale} {networkError}</span>
         </div>
       )}
 
@@ -229,18 +229,18 @@ function RadarEmptyState() {
 
   return (
     <div
-      className="animate-fade-slide-in flex flex-col items-center gap-3 rounded-xl border border-border/50 p-6"
+      className="animate-fade-slide-in flex flex-col items-center gap-3 rounded-modal border border-border/50 p-6"
     >
       <canvas
         ref={canvasRef}
         className="w-[120px] h-[120px] opacity-80"
         style={{ imageRendering: 'auto' }}
       />
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+      <div className="flex items-center gap-1.5 typo-caption text-foreground">
         <Wifi className="w-3.5 h-3.5 text-emerald-400/50" />
         {st.scanning_network}
       </div>
-      <span className="text-[11px] text-muted-foreground/40 text-center max-w-[260px]">
+      <span className="text-[11px] text-foreground text-center max-w-[260px]">
         {st.lan_hint}
       </span>
     </div>
@@ -258,14 +258,14 @@ function PeerScanSkeleton() {
         <Wifi className="w-6 h-6 text-emerald-400/60" />
         <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
       </div>
-      <span className="text-xs text-muted-foreground/70 mb-2">{_st.scanning_network}</span>
+      <span className="typo-caption text-foreground mb-2">{_st.scanning_network}</span>
 
       {/* Skeleton PeerCard placeholders */}
       <div className="w-full space-y-2">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="relative overflow-hidden rounded-xl border border-border bg-secondary/20 p-3 flex items-center gap-3"
+            className="relative overflow-hidden rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3"
           >
             {/* Avatar circle */}
             <div className="w-8 h-8 rounded-full bg-secondary/50 flex-shrink-0" />

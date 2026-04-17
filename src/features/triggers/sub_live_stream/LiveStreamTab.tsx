@@ -176,11 +176,11 @@ export function LiveStreamTab() {
   const columns: DataGridColumn<PersonaEvent>[] = [
     {
       key: 'type',
-      label: 'Type',
+      label: t.triggers.col_type,
       width: '1fr',
       filterComponent: (
         <ColumnDropdownFilter
-          label="Type"
+          label={t.triggers.col_type}
           value={typeFilter}
           options={typeOptions}
           onChange={setTypeFilter}
@@ -190,10 +190,10 @@ export function LiveStreamTab() {
     },
     {
       key: 'source',
-      label: 'Source',
+      label: t.triggers.col_source,
       width: '0.8fr',
       render: (event) => (
-        <span className="text-sm text-foreground truncate flex items-center gap-1">
+        <span className="typo-body text-foreground truncate flex items-center gap-1">
           {event.source_type === 'cloud_webhook' && <Cloud className="w-3 h-3 text-blue-400 flex-shrink-0" />}
           {event.source_type === 'smee_relay' && <Unplug className="w-3 h-3 text-purple-400 flex-shrink-0" />}
           {event.source_type}
@@ -202,14 +202,14 @@ export function LiveStreamTab() {
     },
     {
       key: 'target',
-      label: 'Target Agent',
+      label: t.triggers.col_target_agent,
       width: '1fr',
       filterComponent: (
         <PersonaColumnFilter
           value={targetPersonaId}
           onChange={setTargetPersonaId}
           personas={personas}
-          label="Target Agent"
+          label={t.triggers.col_target_agent}
         />
       ),
       render: (event) => {
@@ -218,20 +218,20 @@ export function LiveStreamTab() {
           return (
             <div className="flex items-center gap-2 min-w-0">
               <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="md" />
-              <span className="text-sm text-foreground truncate">{persona.name}</span>
+              <span className="typo-body text-foreground truncate">{persona.name}</span>
             </div>
           );
         }
-        return <span className="text-sm text-foreground/60 truncate">{t.triggers.broadcast_label}</span>;
+        return <span className="typo-body text-foreground truncate">{t.triggers.broadcast_label}</span>;
       },
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t.triggers.col_status,
       width: '0.7fr',
       filterComponent: (
         <ColumnDropdownFilter
-          label="Status"
+          label={t.triggers.col_status}
           value={statusFilter}
           options={STATUS_OPTIONS}
           onChange={setStatusFilter}
@@ -240,7 +240,7 @@ export function LiveStreamTab() {
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
         return (
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {event.status}
           </span>
         );
@@ -253,7 +253,7 @@ export function LiveStreamTab() {
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <span className="text-sm text-foreground/70">{formatRelativeTime(event.created_at)}</span>
+        <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
       ),
     },
   ];
@@ -269,39 +269,39 @@ export function LiveStreamTab() {
             )}
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : attached ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
           </span>
-          <span className="typo-label text-foreground/80">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
+          <span className="typo-label text-foreground">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
         </div>
 
         <div className="h-4 w-px bg-primary/15" />
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{eventsPerMin}</span>
-          <span className="text-muted-foreground/50">{t.triggers.events_per_min}</span>
+        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{eventsPerMin}</span>
+          <span className="text-foreground">{t.triggers.events_per_min}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{totalReceived}</span>
-          <span className="text-muted-foreground/50">{t.triggers.received_label}</span>
+        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{totalReceived}</span>
+          <span className="text-foreground">{t.triggers.received_label}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 tabular-nums">
-          <span className="text-foreground/80 font-semibold">{events.length}</span>
-          <span className="text-muted-foreground/50">{t.triggers.in_buffer}</span>
+        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
+          <span className="text-foreground font-semibold">{events.length}</span>
+          <span className="text-foreground">{t.triggers.in_buffer}</span>
         </div>
         {pausedQueueCount > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-300 tabular-nums">
+          <div className="flex items-center gap-1.5 typo-caption text-amber-300 tabular-nums">
             <span className="font-semibold">{pausedQueueCount}</span>
-            <span className="text-amber-300/60">queued</span>
+            <span className="text-amber-300/60">{t.triggers.queued_bare}</span>
           </div>
         )}
 
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => isPaused ? handleResume() : setIsPaused(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border transition-colors ${
               isPaused
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
-                : 'bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground'
+                : 'bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground'
             }`}
-            title={isPaused ? 'Resume live updates' : 'Pause incoming events'}
+            title={isPaused ? t.triggers.resume_tooltip : t.triggers.pause_tooltip}
           >
             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
             {isPaused ? t.triggers.resume_label : t.triggers.pause_label}
@@ -309,11 +309,11 @@ export function LiveStreamTab() {
           <button
             onClick={handleClear}
             disabled={events.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            title="Clear stream buffer"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            title={t.triggers.clear_stream_title}
           >
             <Trash2 className="w-3 h-3" />
-            Clear
+            {t.triggers.clear_stream}
           </button>
         </div>
       </div>

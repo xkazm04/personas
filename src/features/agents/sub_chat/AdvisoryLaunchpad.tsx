@@ -105,10 +105,10 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
       {/* Card grid */}
       <div className="flex-1 flex flex-col justify-center px-4 py-4">
         <div className="text-center mb-5">
-          <p className="text-xl font-semibold text-foreground/80" data-testid="chat-launchpad-title">
+          <p className="typo-heading-lg font-semibold text-foreground" data-testid="chat-launchpad-title">
             <span className="text-primary">{personaName}</span>
           </p>
-          <p className="text-sm text-muted-foreground/40 mt-1">{t.agents.advisory.how_can_improve}</p>
+          <p className="typo-body text-foreground mt-1">{t.agents.advisory.how_can_improve}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
           {ADVISORY_PRESETS.map((preset) => {
@@ -119,13 +119,13 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
                 key={preset.id}
                 data-testid={`chat-preset-${preset.id}`}
                 onClick={() => handleCardClick(preset)}
-                className={`group flex flex-col items-center gap-2.5 p-5 rounded-xl border transition-all duration-200 cursor-pointer text-center ${c.bg} ${c.border} ${c.hover} ${isSelected ? 'ring-2 ring-primary/30 scale-[1.03]' : 'hover:scale-[1.02]'}`}
+                className={`group flex flex-col items-center gap-2.5 p-5 rounded-modal border transition-all duration-200 cursor-pointer text-center ${c.bg} ${c.border} ${c.hover} ${isSelected ? 'ring-2 ring-primary/30 scale-[1.03]' : 'hover:scale-[1.02]'}`}
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.text} transition-transform duration-200 group-hover:scale-110`}>
+                <div className={`w-10 h-10 rounded-modal flex items-center justify-center ${c.text} transition-transform duration-200 group-hover:scale-110`}>
                   {preset.icon}
                 </div>
-                <span className="text-sm font-semibold text-foreground/80 leading-tight">{preset.label}</span>
-                <span className="text-xs text-muted-foreground/45 leading-snug line-clamp-2">{preset.description}</span>
+                <span className="typo-heading font-semibold text-foreground leading-tight">{preset.label}</span>
+                <span className="typo-caption text-foreground leading-snug line-clamp-2">{preset.description}</span>
               </button>
             );
           })}
@@ -139,20 +139,20 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`${COLOR_MAP[selectedPreset.color]?.text ?? 'text-primary'}`}>{selectedPreset.icon}</span>
-                <span className="text-sm font-medium text-foreground/80">{selectedPreset.label}</span>
+                <span className="typo-body font-medium text-foreground">{selectedPreset.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setSelectedPreset(null)}
                   data-testid="chat-preset-cancel"
-                  className="px-2.5 py-1 text-sm text-muted-foreground/60 hover:text-muted-foreground/80 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                  className="px-2.5 py-1 typo-body text-foreground hover:text-muted-foreground/80 rounded-card hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
                   {t.common.cancel}
                 </button>
                 <button
                   onClick={handleOptionSend}
                   data-testid="chat-preset-run"
-                  className="flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-3 py-1 typo-body font-medium rounded-card bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
                 >
                   <Send className="w-3 h-3" /> {t.agents.advisory.go}
                 </button>
@@ -160,7 +160,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
             </div>
             {(selectedPreset.options ?? []).map((opt) => (
               <div key={opt.key} className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground/60">{opt.label}</label>
+                <label className="typo-body font-medium text-foreground">{opt.label}</label>
                 <input
                   type="text"
                   data-testid={`chat-preset-option-${opt.key}`}
@@ -168,7 +168,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
                   onChange={(e) => setOptionValues((p) => ({ ...p, [opt.key]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleOptionSend(); }}
                   placeholder={opt.placeholder}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-primary/15 bg-muted/30 text-foreground placeholder:text-muted-foreground/40 focus-ring"
+                  className="w-full px-3 py-2 typo-body rounded-card border border-primary/15 bg-muted/30 text-foreground placeholder:text-foreground focus-ring"
                   autoFocus
                 />
               </div>

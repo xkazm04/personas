@@ -2,8 +2,10 @@ import { useRef, useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import { CATEGORY_COLORS } from '../runner/designRunnerConstants';
 import type { BatchProps } from './TemplateSourceTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function BatchSourceView({ templates, categoryFilter, onCategoryFilterChange, onClear, onFileUpload }: BatchProps) {
+  const { t } = useTranslation();
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = useMemo(() => {
@@ -22,8 +24,8 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
   if (templates.length === 0) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground/90">
-          Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI.
+        <p className="typo-body text-foreground">
+          {t.templates.generation.batch_upload_hint}
         </p>
         <div className="flex justify-center">
           <input
@@ -35,14 +37,14 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
           />
           <button
             onClick={() => batchFileInputRef.current?.click()}
-            className="px-4 py-3 rounded-xl border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-muted-foreground/90 hover:text-violet-300 transition-all flex items-center gap-2"
+            className="px-4 py-3 rounded-modal border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-foreground hover:text-violet-300 transition-all flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
-            Upload list.md
+            {t.templates.generation.batch_upload_btn}
           </button>
         </div>
-        <p className="text-sm text-muted-foreground/80 text-center">
-          Expected format: <code className="text-muted-foreground/80">**1. Template Name**</code> followed by description and metadata
+        <p className="typo-body text-foreground text-center">
+          {t.templates.generation.batch_format_hint} <code className="text-foreground">{t.templates.generation.batch_format_example}</code>
         </p>
       </div>
     );
@@ -55,13 +57,13 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
         <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => onCategoryFilterChange(null)}
-            className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
+            className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
               categoryFilter === null
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+                : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
             }`}
           >
-            All ({templates.length})
+            {t.templates.generation.batch_all.replace('{count}', String(templates.length))}
           </button>
           {categories.map((cat) => {
             const count = templates.filter((t) => t.category === cat).length;
@@ -69,10 +71,10 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
               <button
                 key={cat}
                 onClick={() => onCategoryFilterChange(categoryFilter === cat ? null : cat)}
-                className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
+                className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
                   categoryFilter === cat
                     ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                    : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
+                    : 'bg-secondary/30 border-primary/10 text-foreground hover:border-primary/20'
                 }`}
               >
                 {cat} ({count})
@@ -85,18 +87,18 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
       {/* Template list */}
       <div className="max-h-[220px] overflow-y-auto space-y-1 pr-1">
         {filtered.map((t) => {
-          const catStyle = CATEGORY_COLORS[t.category ?? ''] ?? 'bg-secondary/30 text-muted-foreground/90 border-primary/15';
+          const catStyle = CATEGORY_COLORS[t.category ?? ''] ?? 'bg-secondary/30 text-foreground border-primary/15';
           return (
             <div
               key={t.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-modal bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
             >
-              <span className="text-sm text-muted-foreground/80 w-6 text-right flex-shrink-0">
+              <span className="typo-body text-foreground w-6 text-right flex-shrink-0">
                 {t.id.replace('template_', '')}
               </span>
-              <span className="text-sm text-foreground/90 flex-1 truncate">{t.name}</span>
+              <span className="typo-body text-foreground/90 flex-1 truncate">{t.name}</span>
               {t.category && (
-                <span className={`px-2 py-0.5 text-sm rounded-lg border flex-shrink-0 ${catStyle}`}>
+                <span className={`px-2 py-0.5 typo-body rounded-card border flex-shrink-0 ${catStyle}`}>
                   {t.category}
                 </span>
               )}
@@ -107,12 +109,12 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground/80">
-          {filtered.length} template{filtered.length !== 1 ? 's' : ''} will be generated via Claude CLI (~45s each)
+        <p className="typo-body text-foreground">
+          {t.templates.generation.batch_count.replace('{count}', String(filtered.length)).replace('{plural}', filtered.length !== 1 ? 's' : '')}
         </p>
         <button
           onClick={onClear}
-          className="px-2 py-1 text-sm rounded-lg text-muted-foreground/80 hover:text-red-400 transition-colors"
+          className="px-2 py-1 typo-body rounded-card text-foreground hover:text-red-400 transition-colors"
         >
           Clear
         </button>

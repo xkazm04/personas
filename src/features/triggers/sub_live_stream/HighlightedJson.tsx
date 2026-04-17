@@ -16,14 +16,14 @@ export function HighlightedJson({ raw }: { raw: string }) {
 
   if (!tokens) {
     return (
-      <pre className="text-sm font-mono text-foreground/80 whitespace-pre-wrap break-all leading-relaxed">
+      <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed">
         {raw}
       </pre>
     );
   }
 
   return (
-    <pre className="text-sm font-mono leading-relaxed whitespace-pre-wrap break-all">
+    <pre className="typo-code font-mono leading-relaxed whitespace-pre-wrap break-all">
       {tokens.map((token, i) => (
         <span key={i} className={token.className}>
           {token.text}
@@ -43,7 +43,7 @@ function tokenize(json: string): Token[] {
 
   while ((match = re.exec(json)) !== null) {
     if (match.index > lastIndex) {
-      tokens.push({ text: json.slice(lastIndex, match.index), className: 'text-foreground/60' });
+      tokens.push({ text: json.slice(lastIndex, match.index), className: 'text-foreground' });
     }
     lastIndex = re.lastIndex;
 
@@ -51,7 +51,7 @@ function tokenize(json: string): Token[] {
       const keyText = match[1];
       const colonAndSpace = match[0].slice(keyText.length);
       tokens.push({ text: keyText, className: 'text-cyan-400' });
-      tokens.push({ text: colonAndSpace, className: 'text-foreground/40' });
+      tokens.push({ text: colonAndSpace, className: 'text-foreground' });
     } else if (match[2] !== undefined) {
       tokens.push({ text: match[2], className: 'text-emerald-400' });
     } else if (match[3] !== undefined) {
@@ -61,14 +61,14 @@ function tokenize(json: string): Token[] {
     } else if (match[5] !== undefined) {
       tokens.push({ text: match[5], className: 'text-red-400/70' });
     } else if (match[6] !== undefined) {
-      tokens.push({ text: match[6], className: 'text-foreground/30' });
+      tokens.push({ text: match[6], className: 'text-foreground' });
     } else if (match[7] !== undefined) {
       tokens.push({ text: match[7], className: '' });
     }
   }
 
   if (lastIndex < json.length) {
-    tokens.push({ text: json.slice(lastIndex), className: 'text-foreground/60' });
+    tokens.push({ text: json.slice(lastIndex), className: 'text-foreground' });
   }
 
   return tokens;

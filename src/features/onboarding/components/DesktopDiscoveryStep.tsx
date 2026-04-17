@@ -61,7 +61,7 @@ export function DesktopDiscoveryStep({
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <LoadingSpinner size="xl" className="text-violet-400" />
-        <span className="typo-body text-muted-foreground/80">{t.onboarding.scanning_desktop}</span>
+        <span className="typo-body text-foreground">{t.onboarding.scanning_desktop}</span>
       </div>
     );
   }
@@ -71,9 +71,9 @@ export function DesktopDiscoveryStep({
   if (installed.length === 0) {
     return (
       <div className="text-center py-16">
-        <Monitor className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="typo-body text-muted-foreground/70">{t.onboarding.desktop_empty}</p>
-        <p className="typo-body text-muted-foreground/50 mt-1">
+        <Monitor className="w-10 h-10 mx-auto text-foreground mb-3" />
+        <p className="typo-body text-foreground">{t.onboarding.desktop_empty}</p>
+        <p className="typo-body text-foreground mt-1">
           {t.onboarding.desktop_empty_hint}
         </p>
       </div>
@@ -86,7 +86,7 @@ export function DesktopDiscoveryStep({
         <h3 className="typo-heading-lg text-foreground/90 mb-1">
           {t.onboarding.desktop_title}
         </h3>
-        <p className="typo-body text-muted-foreground/70">
+        <p className="typo-body text-foreground">
           {t.onboarding.desktop_description}
         </p>
       </div>
@@ -99,14 +99,14 @@ export function DesktopDiscoveryStep({
           return (
             <div
               key={app.connector_name}
-              className={`flex items-center gap-3 rounded-xl border p-3.5 transition-all ${
+              className={`flex items-center gap-3 rounded-modal border p-3.5 transition-all ${
                 isApproved
                   ? 'bg-emerald-500/5 border-emerald-500/20'
                   : 'bg-secondary/30 border-primary/10'
               }`}
             >
-              <div className="w-9 h-9 rounded-lg bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                <Monitor className="w-4.5 h-4.5 text-foreground/60" />
+              <div className="w-9 h-9 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
+                <Monitor className="w-4.5 h-4.5 text-foreground" />
               </div>
 
               <div className="flex-1 min-w-0">
@@ -120,7 +120,7 @@ export function DesktopDiscoveryStep({
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   {app.version && (
-                    <span className="text-[11px] text-muted-foreground/50">v{app.version}</span>
+                    <span className="text-[11px] text-foreground">v{app.version}</span>
                   )}
                   {riskBadge(hasHighRisk, riskLabels)}
                 </div>
@@ -129,7 +129,7 @@ export function DesktopDiscoveryStep({
               <button
                 onClick={() => onApprove(app.connector_name)}
                 disabled={isApproved || isApproving}
-                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card transition-colors flex-shrink-0 ${
                   isApproved
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
                     : isApproving

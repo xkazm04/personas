@@ -25,7 +25,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
         <div className="ml-auto">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-red-400/80">{sh.delete_credential_confirm}</span>
+              <span className="typo-body text-red-400/80">{sh.delete_credential_confirm}</span>
               <Button
                 onClick={() => onDelete(credential.id)}
                 variant="danger"
@@ -38,7 +38,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
                 onClick={() => setShowDeleteConfirm(false)}
                 variant="secondary"
                 size="sm"
-                className="text-foreground/70"
+                className="text-foreground"
               >
                 {t.common.cancel}
               </Button>
@@ -57,30 +57,30 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
 
       {/* Collapsible sections: Services and Events */}
       {connector.services.length > 0 && (
-        <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <div className="border border-primary/10 rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
             variant="ghost"
             size="md"
             block
-            icon={<Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />}
-            iconRight={expandedSection === 'services' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+            icon={<Wrench className="w-3.5 h-3.5 text-foreground" />}
+            iconRight={expandedSection === 'services' ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="text-sm font-medium text-foreground/80 flex-1">{tx(sh.services, { count: connector.services.length })}</span>
+            <span className="typo-body font-medium text-foreground flex-1">{tx(sh.services, { count: connector.services.length })}</span>
           </Button>
           {expandedSection === 'services' && (
             <div className="px-4 pb-3 space-y-2">
               {connector.services.map((service) => (
                 <div
                   key={service.toolName}
-                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-xl border-l-2"
+                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-modal border-l-2"
                   style={{ borderLeftColor: connector.color || 'transparent' }}
                 >
-                  <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
+                  <Wrench className="w-3.5 h-3.5 text-foreground" />
                   <div>
-                    <span className="text-sm text-foreground/80">{service.label}</span>
-                    <span className="ml-2 text-sm font-mono text-muted-foreground/60">{service.toolName}</span>
+                    <span className="typo-body text-foreground">{service.label}</span>
+                    <span className="ml-2 typo-code font-mono text-foreground">{service.toolName}</span>
                   </div>
                 </div>
               ))}
@@ -90,17 +90,17 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {connector.events.length > 0 && (
-        <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <div className="border border-primary/10 rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
             variant="ghost"
             size="md"
             block
-            icon={<Zap className="w-3.5 h-3.5 text-muted-foreground/60" />}
-            iconRight={expandedSection === 'events' ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+            icon={<Zap className="w-3.5 h-3.5 text-foreground" />}
+            iconRight={expandedSection === 'events' ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="text-sm font-medium text-foreground/80 flex-1">{tx(sh.events, { count: connector.events.length })}</span>
+            <span className="typo-body font-medium text-foreground flex-1">{tx(sh.events, { count: connector.events.length })}</span>
           </Button>
           {expandedSection === 'events' && (
             <div className="px-4 pb-3">
@@ -111,7 +111,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {/* Intelligence */}
-      <div className="border border-primary/10 rounded-xl p-4">
+      <div className="border border-primary/10 rounded-modal p-4">
         <CredentialIntelligence credentialId={credential.id} />
       </div>
     </>

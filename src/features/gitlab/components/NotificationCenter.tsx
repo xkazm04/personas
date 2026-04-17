@@ -105,7 +105,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-xl border transition-colors cursor-default ${statusBg(notification.status)} ${
+      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
         !notification.read ? 'ring-1 ring-orange-500/20' : ''
       }`}
     >
@@ -115,7 +115,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
 
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
         aria-label="Dismiss"
       >
         <X className="w-3 h-3" />
@@ -127,16 +127,16 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           ? <ClipboardCheck className="w-4 h-4 text-amber-400" />
           : <StatusIcon status={notification.status} />
         }
-        <span className="text-sm font-medium text-foreground/90">
+        <span className="typo-body font-medium text-foreground/90">
           {headerTitle}
         </span>
-        <span className="text-xs text-muted-foreground/50 ml-auto mr-4">
+        <span className="typo-caption text-foreground ml-auto mr-4">
           {formatTimestamp(notification.timestamp)}
         </span>
       </div>
 
       {/* Body — show stored message or fall back to status label */}
-      <p className="text-xs text-muted-foreground/70 mb-2.5 pl-6 leading-relaxed">
+      <p className="typo-caption text-foreground mb-2.5 pl-6 leading-relaxed">
         {bodyText}
       </p>
 
@@ -145,7 +145,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         {redirectSection && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
           >
             <ArrowRight className="w-3 h-3" />
@@ -191,7 +191,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-xl border transition-colors cursor-default ${statusBg(notification.status)} ${
+      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
         !notification.read ? 'ring-1 ring-orange-500/20' : ''
       }`}
     >
@@ -203,7 +203,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Dismiss button */}
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
         aria-label="Dismiss"
       >
         <X className="w-3 h-3" />
@@ -212,17 +212,17 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Header */}
       <div className="flex items-center gap-2 mb-1.5">
         <StatusIcon status={notification.status} />
-        <span className="text-sm font-medium text-foreground/90">
-          Pipeline #{notification.pipelineId}
+        <span className="typo-body font-medium text-foreground/90">
+          {t.gitlab.pipeline_hash}{notification.pipelineId}
         </span>
-        <span className="text-xs text-muted-foreground/50 ml-auto mr-4">
+        <span className="typo-caption text-foreground ml-auto mr-4">
           {formatTimestamp(notification.timestamp)}
         </span>
       </div>
 
       {/* Body */}
-      <p className="text-xs text-muted-foreground/70 mb-2.5 pl-6">
-        <span className="font-mono text-foreground/60">{notification.ref}</span>
+      <p className="typo-caption text-foreground mb-2.5 pl-6">
+        <span className="font-mono text-foreground">{notification.ref}</span>
         {' '}&mdash;{' '}{statusLabel(notification.status)}
       </p>
 
@@ -231,7 +231,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.webUrl && (
           <button
             onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3 h-3" />
@@ -241,7 +241,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.status === 'failed' && notification.projectId && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRetry(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.common.retry}
           >
             <RefreshCw className="w-3 h-3" />
@@ -259,7 +259,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
               }
               markRead(notification.id);
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.view_logs}
           >
             <FileText className="w-3 h-3" />
@@ -302,7 +302,7 @@ export function NotificationCenter() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="text-sm font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
+                <h2 className="typo-heading font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
                 {unreadCount > 0 && (
                   <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-white">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -313,7 +313,7 @@ export function NotificationCenter() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                     title={t.gitlab.mark_all_read}
                   >
                     <CheckCheck className="w-4 h-4" />
@@ -322,7 +322,7 @@ export function NotificationCenter() {
                 {notifications.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                     title={t.gitlab.clear_all}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -330,7 +330,7 @@ export function NotificationCenter() {
                 )}
                 <button
                   onClick={() => setOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                   aria-label={t.gitlab.close_notification_center}
                 >
                   <X className="w-4 h-4" />
@@ -346,10 +346,10 @@ export function NotificationCenter() {
                     className="animate-fade-slide-in flex flex-col items-center justify-center py-16 text-center"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
-                      <BellOff className="w-7 h-7 text-muted-foreground/30" />
+                      <BellOff className="w-7 h-7 text-foreground" />
                     </div>
-                    <p className="text-lg text-muted-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
-                    <p className="text-md text-muted-foreground mt-1 max-w-[220px]">
+                    <p className="typo-heading-lg text-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
+                    <p className="text-md text-foreground mt-1 max-w-[220px]">
                       {t.gitlab.pipeline_status_hint}
                     </p>
                   </div>

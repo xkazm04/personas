@@ -41,7 +41,7 @@ export default function ObsidianBrainPage() {
                 <button
                   key={t.id}
                   onClick={() => setObsidianBrainTab(t.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg typo-caption font-medium transition-colors focus-ring ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-card typo-caption font-medium transition-colors focus-ring ${
                     obsidianBrainTab === t.id
                       ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
                       : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'

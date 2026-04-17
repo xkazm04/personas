@@ -46,7 +46,7 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
           <Button onClick={onAiSearchToggle}
             variant="ghost"
             size="icon-sm"
-            className={`border flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-primary/10 text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40'}`}
+            className={`border flex-shrink-0 ${aiSearchMode ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' : 'border-primary/10 text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'}`}
             title={aiSearchMode ? t.templates.search.switch_to_keyword : t.templates.search.switch_to_ai}>
             <Sparkles className="w-4 h-4" />
           </Button>
@@ -74,9 +74,9 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
 
       {showAiSuggestion && onAiSearchSubmit && (
         <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-indigo-500/5 border border-indigo-500/10">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400/60 flex-shrink-0" />
-            <span className="text-sm text-indigo-300/70 flex-1">{t.templates.search.few_results}</span>
+            <span className="typo-body text-indigo-300/70 flex-1">{t.templates.search.few_results}</span>
             <Button onClick={() => onAiSearchSubmit(search.trim())}
               variant="secondary"
               size="xs"

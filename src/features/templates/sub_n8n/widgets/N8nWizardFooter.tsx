@@ -84,10 +84,10 @@ export function N8nWizardFooter({
       <button
         onClick={onBack}
         disabled={!canGoBack}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-3 py-2 typo-body font-medium rounded-modal text-foreground hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back
+        {t.templates.n8n.back}
       </button>
 
       {/* Separator */}
@@ -97,15 +97,15 @@ export function N8nWizardFooter({
       <div className="flex items-center gap-3">
         {/* Connector warning -- shown on edit step when connectors are unmapped */}
         {step === 'edit' && connectorsMissing > 0 && (
-          <span className="flex items-center gap-1.5 text-sm text-orange-400/80">
+          <span className="flex items-center gap-1.5 typo-body text-orange-400/80">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-            {connectorsMissing} connector{connectorsMissing !== 1 ? 's' : ''} need credentials
+            {t.templates.n8n.connectors_need_credentials.replace('{count}', String(connectorsMissing))}
           </span>
         )}
 
         {/* Test error message */}
         {step === 'edit' && testStatus === 'failed' && testError && (
-          <span className="text-sm text-red-400/80 max-w-[400px] line-clamp-2 leading-tight" title={testError}>
+          <span className="typo-body text-red-400/80 max-w-[400px] line-clamp-2 leading-tight" title={testError}>
             {testError}
           </span>
         )}
@@ -115,7 +115,7 @@ export function N8nWizardFooter({
           <button
             onClick={onTest}
             disabled={testStatus === 'running' || !hasDraft}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               testStatus === 'passed'
                 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
                 : testStatus === 'failed'
@@ -139,10 +139,10 @@ export function N8nWizardFooter({
         {step === 'edit' && testStatus === 'failed' && onApplyAdjustment && (
           <button
             onClick={onApplyAdjustment}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20 transition-colors"
           >
             <Wand2 className="w-4 h-4" />
-            Fix & Regenerate
+            {t.templates.n8n.fix_and_regenerate}
           </button>
         )}
 
@@ -151,7 +151,7 @@ export function N8nWizardFooter({
           <button
             onClick={onProcessWithMatrix}
             disabled={analyzing}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2.5 typo-heading font-semibold rounded-modal border bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {analyzing ? (
               <><RefreshCw className="w-4 h-4 animate-spin" /> {t.templates.n8n.analyzing_btn}</>
@@ -166,7 +166,7 @@ export function N8nWizardFooter({
           <button
             onClick={onNext}
             disabled={nextAction.disabled}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex items-center gap-2 px-4 py-2.5 typo-heading font-semibold rounded-modal border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               nextAction.variant === 'emerald'
                 ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/35'
                 : 'bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35'

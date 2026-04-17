@@ -54,7 +54,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setIsCreating(false); }}
                 placeholder={db.query_title_placeholder}
-                className="flex-1 px-2.5 py-1.5 rounded-xl text-sm bg-background/50 border border-primary/15 text-foreground/80 focus-ring placeholder:text-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 rounded-modal typo-body bg-background/50 border border-primary/15 text-foreground focus-ring placeholder:text-foreground"
               />
               <Button variant="ghost" size="icon-sm" onClick={handleCreate} className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
                 <Check className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             <button
               key="create-btn"
               onClick={() => setIsCreating(true)}
-              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               {db.new_query}
@@ -79,14 +79,14 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
         {queries.map((q) => (
           <div
             key={q.id}
-            className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-all duration-150 ${
+            className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-all duration-150 ${
               selectedId === q.id
                 ? 'bg-primary/10 border border-primary/20 shadow-elevation-1 shadow-primary/5'
                 : 'hover:bg-secondary/40 border border-transparent'
             }`}
             onClick={() => onSelect(q.id)}
           >
-            <span className="flex-1 text-sm text-foreground/70 truncate">{q.title}</span>
+            <span className="flex-1 typo-body text-foreground truncate">{q.title}</span>
 
             {q.last_run_ok !== null && (
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${q.last_run_ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
@@ -94,14 +94,14 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
 
             <button
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
-              className={`p-0.5 transition-colors ${q.is_favorite ? 'text-amber-400' : 'text-muted-foreground/20 hover:text-amber-400/50'}`}
+              className={`p-0.5 transition-colors ${q.is_favorite ? 'text-amber-400' : 'text-foreground hover:text-amber-400/50'}`}
             >
               <Star className="w-3 h-3" fill={q.is_favorite ? 'currentColor' : 'none'} />
             </button>
 
             <button
               onClick={(e) => { e.stopPropagation(); deleteQuery(q.id); if (selectedId === q.id) onSelect(''); }}
-              className="p-0.5 text-muted-foreground/20 opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
+              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -110,10 +110,10 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
 
         {queries.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center">
-              <Plus className="w-4 h-4 text-muted-foreground/50" />
+            <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center">
+              <Plus className="w-4 h-4 text-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground/60">{db.no_saved_queries}</p>
+            <p className="typo-body text-foreground">{db.no_saved_queries}</p>
           </div>
         )}
       </div>

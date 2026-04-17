@@ -59,7 +59,7 @@ export function ReviewEditCell({ editState, callbacks }: ReviewEditCellProps) {
         onValueChange={handlePresetChange}
         options={REVIEW_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
         placeholder={t.templates.preset_edit.select_review}
-        className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+        className="!py-1.5 !px-2.5 !text-sm !rounded-card"
       />
     </div>
   );
@@ -99,7 +99,7 @@ export function MemoryEditCell({ editState, callbacks }: MemoryEditCellProps) {
         onValueChange={handlePresetChange}
         options={MEMORY_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
         placeholder={t.templates.preset_edit.select_memory}
-        className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+        className="!py-1.5 !px-2.5 !text-sm !rounded-card"
       />
     </div>
   );
@@ -131,7 +131,7 @@ export function MessagesEditCell({ editState, callbacks }: MessagesEditCellProps
         onValueChange={handlePresetChange}
         options={MESSAGE_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
         placeholder={t.templates.preset_edit.notification_strategy}
-        className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+        className="!py-1.5 !px-2.5 !text-sm !rounded-card"
       />
     </div>
   );
@@ -163,7 +163,7 @@ export function ErrorEditCell({ editState, callbacks }: ErrorEditCellProps) {
         onValueChange={handleChange}
         options={ERROR_STRATEGY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
         placeholder={t.templates.preset_edit.error_handling}
-        className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+        className="!py-1.5 !px-2.5 !text-sm !rounded-card"
       />
     </div>
   );
@@ -193,17 +193,17 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
       {useCases.slice(0, 3).map((uc) => (
         <div key={uc.id} className="flex items-center gap-1.5 group">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400/50 flex-shrink-0" />
-          <span className="text-sm text-foreground/70 leading-snug flex-1 truncate">{uc.title}</span>
+          <span className="typo-body text-foreground leading-snug flex-1 truncate">{uc.title}</span>
           {callbacks.onUseCaseRemove && (
             <button type="button" onClick={() => callbacks.onUseCaseRemove!(uc.id)}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-foreground/5 transition-all">
-              <X className="w-3 h-3 text-muted-foreground/40" />
+              <X className="w-3 h-3 text-foreground" />
             </button>
           )}
         </div>
       ))}
       {useCases.length > 3 && (
-        <span className="text-xs text-muted-foreground/40 pl-3">+{useCases.length - 3} more</span>
+        <span className="typo-caption text-foreground pl-3">+{useCases.length - 3} more</span>
       )}
       {callbacks.onUseCaseAdd && (
         <div className="flex items-center gap-1">
@@ -213,10 +213,10 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
             placeholder={t.templates.preset_edit.add_use_case}
-            className="flex-1 px-2 py-1 rounded-md border border-primary/10 bg-transparent text-sm text-foreground/70 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
+            className="flex-1 px-2 py-1 rounded-input border border-primary/10 bg-transparent typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25 transition-colors"
           />
           <button type="button" onClick={handleAdd} disabled={!newTitle.trim()}
-            className="p-1 rounded-md text-primary/60 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
+            className="p-1 rounded-input text-primary/60 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>

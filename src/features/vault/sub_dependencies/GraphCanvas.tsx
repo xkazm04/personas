@@ -36,8 +36,8 @@ export function GraphCanvas({
       {/* Left: node lists */}
       <div className="lg:col-span-2 3xl:col-span-3 4xl:col-span-4 space-y-2">
         {(filterKind === 'all' || filterKind === 'credential') && (
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
-            <div className="text-xs font-medium text-muted-foreground/60 mb-2">
+          <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
+            <div className="typo-caption font-medium text-foreground mb-2">
               {tx(dep.credentials_label, { count: nodes.filter((n) => n.kind === 'credential').length })}
             </div>
             <div className="space-y-1">
@@ -65,8 +65,8 @@ export function GraphCanvas({
         )}
 
         {filterKind !== 'all' && filterKind !== 'credential' && (
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
-            <div className="text-xs font-medium text-muted-foreground/60 mb-2">
+          <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
+            <div className="typo-caption font-medium text-foreground mb-2">
               {kindLabels[filterKind]} ({filteredNodes.length})
             </div>
             <div className="space-y-1">
@@ -88,8 +88,8 @@ export function GraphCanvas({
         {detailPanel}
 
         {/* Edge summary */}
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
-          <div className="text-xs font-medium text-muted-foreground/60 mb-2">
+        <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
+          <div className="typo-caption font-medium text-foreground mb-2">
             {tx(dep.relationships, { count: filteredEdges.length })}
           </div>
           <div className="space-y-1 max-h-[200px] overflow-y-auto">
@@ -98,17 +98,17 @@ export function GraphCanvas({
               const tgtNode = nodes.find((n) => n.id === edge.target);
               if (!srcNode || !tgtNode) return null;
               return (
-                <div key={edge.id} className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                <div key={edge.id} className="flex items-center gap-1.5 typo-caption text-foreground">
                   <span className="truncate max-w-[80px]" title={srcNode.label}>{srcNode.label}</span>
-                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-muted-foreground/40" />
-                  <span className="text-muted-foreground/50 flex-shrink-0">{edge.label}</span>
-                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-muted-foreground/40" />
+                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-foreground" />
+                  <span className="text-foreground flex-shrink-0">{edge.label}</span>
+                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-foreground" />
                   <span className="truncate max-w-[80px]" title={tgtNode.label}>{tgtNode.label}</span>
                 </div>
               );
             })}
             {filteredEdges.length > 30 && (
-              <div className="text-xs text-muted-foreground/60 pt-1">
+              <div className="typo-caption text-foreground pt-1">
                 {tx(dep.more_relationships, { count: filteredEdges.length - 30 })}
               </div>
             )}

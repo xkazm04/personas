@@ -95,7 +95,7 @@ export function CredentialCardDetails({
             className={`relative min-h-[38px] ${
               expandedSection === tab.key
                 ? 'text-foreground'
-                : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/25'
+                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/25'
             }`}
           >
             {tab.label}
@@ -115,7 +115,7 @@ export function CredentialCardDetails({
 
       {/* Healthcheck result */}
       {effectiveHealthcheckResult && (
-        <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-sm ${
+        <div className={`flex items-start gap-2 px-3 py-2 rounded-modal typo-body ${
           effectiveHealthcheckResult.success
             ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
             : 'bg-red-500/10 border border-red-500/20 text-red-400'
@@ -129,7 +129,7 @@ export function CredentialCardDetails({
       {connector.fields.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {connector.fields.map((f) => (
-            <span key={f.key} className="text-sm px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">
+            <span key={f.key} className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground font-mono">
               {f.key}
             </span>
           ))}

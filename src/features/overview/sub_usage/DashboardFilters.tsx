@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Calendar } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -25,6 +26,7 @@ interface DayRangePickerProps {
 }
 
 export function DayRangePicker({ value, onChange, customDateRange, onCustomDateRangeChange }: DayRangePickerProps) {
+  const { t } = useTranslation();
   const [showCustom, setShowCustom] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -64,16 +66,16 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 
   return (
     <div className="relative">
-      <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-xl border border-primary/20">
+      <div role="group" aria-label={t.overview.usage_filters.time_range_label} className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => handlePresetClick(opt.value)}
             aria-pressed={!isCustomActive && value === opt.value}
-            className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
+            className={`px-3 py-1 rounded-modal typo-body font-medium transition-all ${
               !isCustomActive && value === opt.value
                 ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                : 'text-muted-foreground/80 hover:text-muted-foreground'
+                : 'text-foreground hover:text-muted-foreground'
             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
           >
             {opt.label}
@@ -83,10 +85,10 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
           ref={buttonRef}
           onClick={handleCustomClick}
           aria-pressed={isCustomActive}
-          className={`px-3 py-1 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1 rounded-modal typo-body font-medium transition-all flex items-center gap-1.5 ${
             isCustomActive
               ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-              : 'text-muted-foreground/80 hover:text-muted-foreground'
+              : 'text-foreground hover:text-muted-foreground'
           } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
         >
           <Calendar className="w-3 h-3" />
@@ -113,7 +115,6 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 // ---------------------------------------------------------------------------
 
 import { forwardRef } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 
 interface DateRangePopoverProps {
   value: CustomDateRange | null;
@@ -142,32 +143,32 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
     return (
       <div
         ref={ref}
-        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-elevation-3 p-4 min-w-[280px]"
+        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-modal shadow-elevation-3 p-4 min-w-[280px]"
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.start_date}</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.start_date}</label>
             <input
               type="date"
               value={startDate}
               max={endDate || today}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           <div>
-            <label className="block text-sm text-muted-foreground/70 mb-1">{t.overview.filters.end_date}</label>
+            <label className="block typo-body text-foreground mb-1">{t.overview.filters.end_date}</label>
             <input
               type="date"
               value={endDate}
               min={startDate}
               max={today}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 typo-body rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           {isValid && (
-            <p className="text-sm text-muted-foreground/60">
+            <p className="typo-body text-foreground">
               {dayCount} day{dayCount !== 1 ? 's' : ''} selected
             </p>
           )}
@@ -175,14 +176,14 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             <button
               onClick={handleApply}
               disabled={!isValid}
-              className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-1.5 typo-body font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>
             {value && (
               <button
                 onClick={() => onChange(null)}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                className="px-3 py-1.5 typo-body font-medium rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               >
                 Clear
               </button>
@@ -207,10 +208,10 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
         enabled
           ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
-          : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'
+          : 'bg-secondary/40 text-foreground border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'
       }`}
       title={enabled ? 'Comparing to previous period' : 'Compare to previous period'}
     >

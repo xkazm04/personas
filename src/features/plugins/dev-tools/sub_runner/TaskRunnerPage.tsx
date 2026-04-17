@@ -78,7 +78,7 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.className}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption font-medium border ${cfg.className}`}>
       <Icon className={`w-3 h-3 ${cfg.pulse ? 'animate-spin' : ''}`} />
       {cfg.label}
     </span>
@@ -141,28 +141,28 @@ function TaskModal({
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Title</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">Title</label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title..."
-                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                placeholder={t.plugins.dev_runner.task_title_placeholder}
+                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Description</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what this task should accomplish..."
+                placeholder={t.plugins.dev_runner.task_details_placeholder}
                 rows={3}
-                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
+                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
               />
             </div>
 
             {/* Task depth selector */}
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">Task Depth</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.plugins.dev_runner.task_depth}</label>
               <div className="grid grid-cols-3 gap-2">
                 {DEPTH_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
@@ -173,10 +173,10 @@ function TaskModal({
                       key={opt.value}
                       type="button"
                       onClick={() => setDepth(opt.value)}
-                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border bg-secondary/30 transition-all ${ring}`}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
                     >
                       <Icon className={`w-4 h-4 ${selected ? `text-${opt.color}-400` : 'text-foreground'}`} />
-                      <span className={`text-xs font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
+                      <span className={`typo-caption font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
                     </button>
                   );
                 })}
@@ -187,16 +187,16 @@ function TaskModal({
             </div>
 
             <div>
-              <label className="text-xs font-medium text-foreground mb-1.5 block">
-                Goal Link <span className="text-foreground">(optional)</span>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">
+                {t.plugins.dev_runner.goal_link} <span className="text-foreground">{t.plugins.dev_runner.optional}</span>
               </label>
               <div className="relative">
                 <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
                 <input
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}
-                  placeholder="Goal ID or name..."
-                  className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                  placeholder={t.plugins.dev_runner.goal_link_placeholder}
+                  className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                 />
               </div>
             </div>
@@ -212,7 +212,7 @@ function TaskModal({
               disabled={!title.trim()}
               onClick={handleSubmit}
             >
-              Create Task
+              {t.plugins.dev_runner.create_task}
             </Button>
           </div>
         </div>
@@ -244,7 +244,7 @@ function TaskCard({
 
   return (
     <div
-      className={`animate-fade-slide-in border rounded-xl overflow-hidden transition-colors ${
+      className={`animate-fade-slide-in border rounded-modal overflow-hidden transition-colors ${
         hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
       }`}
     >
@@ -273,7 +273,7 @@ function TaskCard({
             )}
           </div>
           {task.source && (
-            <p className="text-[10px] text-foreground mt-0.5">Source: {task.source}</p>
+            <p className="text-[10px] text-foreground mt-0.5">{t.plugins.dev_runner.source_label} {task.source}</p>
           )}
         </div>
 
@@ -317,7 +317,7 @@ function TaskCard({
 
       {/* Context warnings banner */}
       {hasWarnings && expanded && (
-        <div className="mx-4 mb-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+        <div className="mx-4 mb-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
           <div className="flex items-center gap-1.5 mb-1">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span className="text-[10px] font-medium text-amber-400">{t.plugins.dev_tools.context_warnings_title}</span>
@@ -343,7 +343,7 @@ function TaskCard({
                   isRunning={task.status === 'running'}
                 />
               ) : task.output ? (
-                <pre className="text-[11px] text-foreground bg-primary/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
+                <pre className="text-[11px] text-foreground bg-primary/5 rounded-card p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
                   {task.output}
                 </pre>
               ) : null}
@@ -461,7 +461,7 @@ export default function TaskRunnerPage() {
               icon={<Plus className="w-3.5 h-3.5" />}
               onClick={() => setShowModal(true)}
             >
-              New Task
+              {t.plugins.dev_runner.new_task}
             </Button>
             <Button
               variant="secondary"
@@ -469,7 +469,7 @@ export default function TaskRunnerPage() {
               icon={<ListChecks className="w-3.5 h-3.5" />}
               onClick={() => batchFromAccepted()}
             >
-              Batch from Accepted
+              {t.plugins.dev_runner.batch_from_accepted}
             </Button>
             <Button
               variant="accent"
@@ -479,7 +479,7 @@ export default function TaskRunnerPage() {
               disabled={queuedCount === 0 && runningCount === 0}
               onClick={() => { startBatch(); useOverviewStore.getState().processStarted('task_runner', undefined, 'Task Runner Batch'); }}
             >
-              Start Batch
+              {t.plugins.dev_runner.start_batch}
             </Button>
             <Button
               variant="danger"
@@ -488,7 +488,7 @@ export default function TaskRunnerPage() {
               disabled={runningCount === 0 && queuedCount === 0}
               onClick={() => cancelAll()}
             >
-              Cancel All
+              {t.plugins.dev_runner.cancel_all}
             </Button>
           </div>
         }
@@ -498,9 +498,9 @@ export default function TaskRunnerPage() {
         <div className="space-y-5">
           {/* Batch progress header */}
           {totalCount > 0 && (
-            <div className="border border-primary/10 rounded-xl p-4 bg-primary/5">
+            <div className="border border-primary/10 rounded-modal p-4 bg-primary/5">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="typo-section-title">Batch Progress</h3>
+                <h3 className="typo-section-title">{t.plugins.dev_runner.batch_progress}</h3>
                 <div className="flex items-center gap-3 text-[10px] text-foreground">
                   {runningCount > 0 && (
                     <span className="flex items-center gap-1 text-blue-400">
@@ -530,7 +530,7 @@ export default function TaskRunnerPage() {
                 />
               </div>
               <p className="text-[10px] text-foreground mt-1.5 text-right">
-                {Math.round(overallProgress)}% overall
+                {Math.round(overallProgress)}{t.plugins.dev_runner.percent_overall}
               </p>
             </div>
           )}
@@ -548,18 +548,18 @@ export default function TaskRunnerPage() {
 
           {/* Task queue */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-primary mb-3">
-              Task Queue ({totalCount})
+            <h3 className="typo-label font-semibold uppercase tracking-wider text-primary mb-3">
+              {t.plugins.dev_runner.task_queue}({totalCount})
             </h3>
 
             {tasks.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-primary/10 rounded-xl">
+              <div className="text-center py-20 border border-dashed border-primary/10 rounded-modal">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <Play className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-md text-foreground mb-1">No tasks in queue</p>
+                <p className="text-md text-foreground mb-1">{t.plugins.dev_runner.no_tasks_queued}</p>
                 <p className="text-md text-foreground mb-4">
-                  Create tasks manually or batch from accepted ideas
+                  {t.plugins.dev_runner.no_tasks_queued_sub}
                 </p>
                 <div className="flex justify-center gap-2">
                   <Button
@@ -568,7 +568,7 @@ export default function TaskRunnerPage() {
                     icon={<Plus className="w-3.5 h-3.5" />}
                     onClick={() => setShowModal(true)}
                   >
-                    New Task
+                    {t.plugins.dev_runner.new_task}
                   </Button>
                   <Button
                     variant="accent"
@@ -577,7 +577,7 @@ export default function TaskRunnerPage() {
                     icon={<ListChecks className="w-3.5 h-3.5" />}
                     onClick={() => batchFromAccepted()}
                   >
-                    Batch from Accepted
+                    {t.plugins.dev_runner.batch_from_accepted}
                   </Button>
                 </div>
               </div>

@@ -65,45 +65,14 @@ import {
   listAllSubscriptions,
   deleteSubscription,
 } from '@/api/overview/events';
-import {
-  EVENT_SOURCE_CATEGORIES,
-  findTemplateByEventType,
-  type EventSourceTemplate,
-} from '../libs/eventCanvasConstants';
+import { findTemplateByEventType } from '../libs/eventCanvasConstants';
 import { AddPersonaModal } from './AddPersonaModal';
 import { DisconnectDialog } from './DisconnectDialog';
 import { RenameEventDialog } from './RenameEventDialog';
-import { resolveIcon, PersonaChip, parseChainTrigger, type ChainTriggerView } from './routingHelpers';
-
-// PersonaChip, resolveIcon, parseChainTrigger extracted to routingHelpers.tsx
-
-
-// ── Row / connection types ───────────────────────────────────────────────
-
-type SourceClass = 'common' | 'persona' | 'external';
-
-interface SourcePersonaEntry {
-  personaId: string;
-  persona: Persona | undefined;
-}
-
-interface Connection {
-  kind: 'subscription' | 'chain' | 'trigger-listener';
-  subscriptionId: string | null;
-  triggerId: string | null;
-  personaId: string;
-  persona: Persona | undefined;
-  chainCondition?: string;
-}
-
-interface EventRow {
-  eventType: string;
-  template: EventSourceTemplate | undefined;
-  sourceClass: SourceClass;
-  sourcePersonas: SourcePersonaEntry[];
-  externalSourceLabels: string[];
-  connections: Connection[];
-}
+import {
+  resolveIcon, PersonaChip, buildEventRows,
+  type Connection, type EventRow,
+} from './routingHelpers';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -165,179 +134,12 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
     return m;
   }, [personas]);
 
-  // ── Build rows ──
+  // ── Build rows — delegated to buildEventRows in routingHelpers ──
 
-  const rows: EventRow[] = useMemo(() => {
-    // Single map: ONE row per event_type (collapses cross-source pairs and
-    // duplicate emitters into a single visual row).
-    const rowsByEvent = new Map<string, EventRow>();
-
-    function ensureRow(eventType: string): EventRow {
-      let row = rowsByEvent.get(eventType);
-      if (!row) {
-        const tmpl = findTemplateByEventType(eventType);
-        row = {
-          eventType,
-          template: tmpl,
-          sourceClass: tmpl ? 'common' : 'persona',
-          sourcePersonas: [],
-          externalSourceLabels: [],
-          connections: [],
-        };
-        rowsByEvent.set(eventType, row);
-      }
-      return row;
-    }
-
-    function addSourcePersona(row: EventRow, personaId: string): void {
-      if (row.sourcePersonas.some(s => s.personaId === personaId)) return;
-      row.sourcePersonas.push({ personaId, persona: personaMap.get(personaId) });
-      // Promote the row to USR class once we know a persona emits it.
-      if (row.sourceClass !== 'common') row.sourceClass = 'persona';
-    }
-
-    function addExternalSource(row: EventRow, label: string): void {
-      if (!label) return;
-      if (row.externalSourceLabels.includes(label)) return;
-      row.externalSourceLabels.push(label);
-      // Promote to EXT only if we have neither persona sources nor catalog membership.
-      if (row.sourcePersonas.length === 0 && row.sourceClass !== 'common') {
-        row.sourceClass = 'external';
-      }
-    }
-
-    // Step 1 ── Catalog events (always visible as SYS rows even with no listeners)
-    for (const cat of EVENT_SOURCE_CATEGORIES) {
-      for (const tmpl of cat.templates) ensureRow(tmpl.eventType);
-    }
-
-    // Step 2 ── Chain triggers: deterministic (source persona, chained target) tuples.
-    // Source persona comes from config.source_persona_id (chain.rs:46); the chained
-    // persona is trigger.persona_id and gets a CHAIN connection with condition badge.
-    const chainTriggers = allTriggers
-      .map(parseChainTrigger)
-      .filter((c): c is ChainTriggerView => c !== null);
-
-    for (const c of chainTriggers) {
-      const row = ensureRow(c.eventType);
-      addSourcePersona(row, c.sourcePersonaId);
-      // Don't list a persona as a chained listener of its own emitted event.
-      if (c.trigger.persona_id !== c.sourcePersonaId) {
-        if (!row.connections.some(x => x.personaId === c.trigger.persona_id && x.kind === 'chain')) {
-          row.connections.push({
-            kind: 'chain',
-            subscriptionId: null,
-            triggerId: c.trigger.id,
-            personaId: c.trigger.persona_id,
-            persona: personaMap.get(c.trigger.persona_id),
-            chainCondition: c.conditionType,
-          });
-        }
-      }
-    }
-
-    // Step 3 ── Recent events: runtime ground truth for who has actually
-    // emitted what. Build the (event_type → emitter persona_ids) index used
-    // by the subscription direction inference below.
-    const emittersByEventType = new Map<string, Set<string>>();
-    for (const evt of recentEvents) {
-      const emitterId = evt.source_id ?? null;
-      const emitterIsPersona = emitterId ? personaMap.has(emitterId) : false;
-
-      const row = ensureRow(evt.event_type);
-      if (emitterIsPersona && emitterId) {
-        addSourcePersona(row, emitterId);
-        const set = emittersByEventType.get(evt.event_type) ?? new Set<string>();
-        set.add(emitterId);
-        emittersByEventType.set(evt.event_type, set);
-      } else if (!row.template) {
-        // Non-catalog event from non-persona source → external infra
-        addExternalSource(row, evt.source_type || 'external');
-      }
-    }
-
-    // Step 4 ── Subscriptions with direction inference.
-    //
-    // The persona_event_subscriptions table is direction-less (see file
-    // header for the gap explanation). Infer per row:
-    //   - catalog event_type                 → listener (infra emits)
-    //   - sub.persona is in emitter set      → emitter
-    //   - other personas are in emitter set  → listener
-    //   - no runtime evidence at all         → emitter (template default)
-    function inferSubDirection(sub: PersonaEventSubscription): 'emitter' | 'listener' {
-      if (findTemplateByEventType(sub.event_type)) return 'listener';
-      const emitters = emittersByEventType.get(sub.event_type);
-      if (emitters?.has(sub.persona_id)) return 'emitter';
-      if (emitters && emitters.size > 0) return 'listener';
-      return 'emitter';
-    }
-
-    for (const sub of subscriptions) {
-      const direction = inferSubDirection(sub);
-      const row = ensureRow(sub.event_type);
-
-      if (direction === 'emitter') {
-        addSourcePersona(row, sub.persona_id);
-      } else {
-        // Listener: skip if the persona is already listed as an emitter.
-        if (row.sourcePersonas.some(s => s.personaId === sub.persona_id)) continue;
-        if (row.connections.some(c => c.personaId === sub.persona_id)) continue;
-        row.connections.push({
-          kind: 'subscription',
-          subscriptionId: sub.id,
-          triggerId: null,
-          personaId: sub.persona_id,
-          persona: personaMap.get(sub.persona_id),
-        });
-      }
-    }
-
-    // Step 5 ── event_listener triggers — explicit listening intent.
-    // Always treated as listeners regardless of inference.
-    for (const t of allTriggers) {
-      if (t.trigger_type !== 'event_listener' || !t.config) continue;
-      try {
-        const cfg = JSON.parse(t.config) as { listen_event_type?: string };
-        const et = cfg.listen_event_type;
-        if (!et) continue;
-
-        const row = ensureRow(et);
-        if (row.sourcePersonas.some(s => s.personaId === t.persona_id)) continue;
-        if (row.connections.some(c => c.personaId === t.persona_id)) continue;
-        row.connections.push({
-          kind: 'trigger-listener',
-          subscriptionId: null,
-          triggerId: t.id,
-          personaId: t.persona_id,
-          persona: personaMap.get(t.persona_id),
-        });
-      } catch { /* skip */ }
-    }
-
-    // Final pass: any row that still has no sources AND no connections AND no
-    // catalog template is dead noise — drop it. (Catalog events stay visible
-    // even when empty so the user can add listeners.)
-    for (const [et, row] of rowsByEvent) {
-      if (
-        !row.template &&
-        row.sourcePersonas.length === 0 &&
-        row.externalSourceLabels.length === 0 &&
-        row.connections.length === 0
-      ) {
-        rowsByEvent.delete(et);
-      }
-    }
-
-    // Sort: rows with sources or connections first, then USR > EXT > SYS, then by label.
-    return Array.from(rowsByEvent.values()).sort((a, b) => {
-      const aHas = a.connections.length + a.sourcePersonas.length > 0 ? 0 : 1;
-      const bHas = b.connections.length + b.sourcePersonas.length > 0 ? 0 : 1;
-      if (aHas !== bHas) return aHas - bHas;
-      const classOrder: Record<SourceClass, number> = { persona: 0, external: 1, common: 2 };
-      if (a.sourceClass !== b.sourceClass) return classOrder[a.sourceClass] - classOrder[b.sourceClass];
-      return (a.template?.label ?? a.eventType).localeCompare(b.template?.label ?? b.eventType);
-    });
-  }, [allTriggers, recentEvents, subscriptions, personaMap]);
+  const rows: EventRow[] = useMemo(
+    () => buildEventRows(allTriggers, recentEvents, subscriptions, personaMap),
+    [allTriggers, recentEvents, subscriptions, personaMap],
+  );
 
   // ── Source filter options ──
 
@@ -483,31 +285,31 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-card/30 max-w-[1280px]">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
           <input
             type="text"
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
             placeholder={t.triggers.builder.filter_events_placeholder}
-            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
           />
         </div>
 
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-muted-foreground/50 tabular-nums">
+          <span className="text-xs text-foreground tabular-nums">
             {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''} · {totalConnections} connection{totalConnections !== 1 ? 's' : ''}
           </span>
           <button
             onClick={() => void handleInitializeHandlers()}
             disabled={isBackfilling}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={t.triggers.builder.init_handlers_title}
           >
             <Wand2 className={`w-4 h-4 ${isBackfilling ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => void reload()}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
             title={t.triggers.builder.refresh}
           >
             <RefreshCw className="w-4 h-4" />
@@ -517,7 +319,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
 
       {/* ── Table header ── */}
       <div className="flex items-center px-4 py-2.5 border-b border-primary/10 bg-card/20 max-w-[1280px]">
-        <span className="w-14 typo-label text-foreground/80">{t.triggers.builder.source}</span>
+        <span className="w-14 typo-label text-foreground">{t.triggers.builder.source}</span>
         <div className="w-[260px] min-w-[260px] pl-3">
           <ColumnDropdownFilter
             label="Source Personas"
@@ -526,8 +328,8 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             onChange={(v) => setSourceFilter(v || 'all')}
           />
         </div>
-        <span className="w-[300px] min-w-[300px] typo-label text-foreground/80 pl-3">Event</span>
-        <span className="flex-1 typo-label text-foreground/80">{t.triggers.builder.connected_personas}</span>
+        <span className="w-[300px] min-w-[300px] typo-label text-foreground pl-3">Event</span>
+        <span className="flex-1 typo-label text-foreground">{t.triggers.builder.connected_personas}</span>
         <span className="w-10" />
       </div>
 
@@ -536,8 +338,8 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
         {filteredRows.length === 0 && (
           <div className="flex items-center justify-center py-16 text-center">
             <div>
-              <Radio className="w-8 h-8 text-muted-foreground/15 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground/50">
+              <Radio className="w-8 h-8 text-foreground mx-auto mb-3" />
+              <p className="text-sm text-foreground">
                 {eventSearch ? t.triggers.builder.no_matching_events : t.triggers.builder.no_events_filter}
               </p>
             </div>
@@ -587,29 +389,29 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                     />
                   ))
                 ) : row.externalSourceLabels.length > 0 ? (
-                  <span className="text-xs text-muted-foreground/50 italic">
+                  <span className="text-xs text-foreground italic">
                     {row.externalSourceLabels.join(', ')}
                   </span>
                 ) : (
-                  <span className="text-sm text-muted-foreground/25">—</span>
+                  <span className="text-sm text-foreground">—</span>
                 )}
               </div>
 
               {/* Event info */}
               <div className="w-[300px] min-w-[300px] flex-shrink-0 flex items-center gap-2.5 pl-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${row.template ? 'bg-cyan-500/10' : 'bg-violet-500/10'}`}>
+                <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${row.template ? 'bg-cyan-500/10' : 'bg-violet-500/10'}`}>
                   <Icon className={`w-4 h-4 ${row.template?.color ?? 'text-violet-400'}`} />
                 </div>
                 <div className="min-w-0">
                   <div className="text-base font-medium text-foreground truncate">{row.template?.label ?? row.eventType}</div>
-                  <div className="text-xs text-muted-foreground/40 truncate">{row.eventType}</div>
+                  <div className="text-xs text-foreground truncate">{row.eventType}</div>
                 </div>
               </div>
 
               {/* Connected personas */}
               <div className="flex-1 flex flex-wrap items-center gap-1.5 min-h-[32px]">
                 {row.connections.length === 0 && (
-                  <span className="text-sm text-muted-foreground/30 italic">{t.triggers.builder.no_personas_connected}</span>
+                  <span className="text-sm text-foreground italic">{t.triggers.builder.no_personas_connected}</span>
                 )}
                 {row.connections.map(conn => (
                   <PersonaChip
@@ -633,7 +435,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
               <div className="w-10 flex-shrink-0 flex items-center justify-center relative">
                 <button
                   onClick={() => setActionMenuRow(isActionOpen ? null : row.eventType)}
-                  className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
@@ -641,14 +443,14 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                 {isActionOpen && (
                   <div
                     ref={actionMenuRef}
-                    className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
+                    className="absolute right-0 top-full mt-1 w-52 rounded-modal bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
                   >
                     <button
                       onClick={() => {
                         setActionMenuRow(null);
                         setAddPersonaForEvent({ eventType: row.eventType });
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-secondary/40 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5 text-emerald-400" />
                       {t.triggers.builder.add_persona_action}
@@ -673,7 +475,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                           ? 'Built-in events cannot be renamed'
                           : 'Rename this event across all stores'
                       }
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                      className="flex items-center gap-2 w-full px-3 py-2 typo-body text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <Pencil className="w-3.5 h-3.5 text-cyan-400" />
                       {t.triggers.builder.rename_event_action}

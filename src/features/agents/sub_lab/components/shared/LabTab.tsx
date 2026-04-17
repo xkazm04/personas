@@ -63,17 +63,17 @@ export function LabTab() {
               key={tab.id}
               data-testid={`lab-mode-${tab.id}`}
               onClick={() => setLabMode(tab.id)}
-              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
+              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 typo-body font-medium rounded-modal transition-colors ${
                 isActive
                   ? 'bg-primary/10 text-foreground/90 border border-primary/20'
-                  : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+                  : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
               }`}
             >
               <span className="flex items-center gap-1.5">
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
               </span>
-              <span className="text-[10px] text-muted-foreground/60 font-mono tracking-wider">
+              <span className="text-[10px] text-foreground font-mono tracking-wider">
                 {tab.desc}
               </span>
               {isActive && (
@@ -92,7 +92,7 @@ export function LabTab() {
       </div>
 
       {/* Mode content */}
-      <Suspense fallback={<div className="py-8 text-center text-xs text-muted-foreground/50">{t.agents.lab.loading}</div>}>
+      <Suspense fallback={<div className="py-8 text-center typo-caption text-foreground">{t.agents.lab.loading}</div>}>
         {labMode === 'arena' && <ArenaPanel />}
         {(labMode === 'matrix' || labMode === 'ab' || labMode === 'eval') && <MatrixPanel />}
         {labMode === 'breed' && <GenomeBreedingPanel />}
@@ -146,10 +146,10 @@ function AutoOptimizeToggle() {
       data-testid="auto-optimize-toggle"
       onClick={toggle}
       disabled={loading || !persona}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
         enabled
           ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-          : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+          : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
       }`}
       title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
     >

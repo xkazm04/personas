@@ -36,8 +36,9 @@ interface TabHeaderConfig {
 }
 
 function LazyWrap({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading...</div>}>
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-foreground typo-body">{t.triggers.tab_loading}</div>}>
       {children}
     </Suspense>
   );
@@ -60,7 +61,7 @@ export function TriggersPage() {
               useOverviewStore.getState().setOverviewTab('events')
             );
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           title={t.triggers.full_event_log}
         >
           <ExternalLink className="w-3 h-3" />

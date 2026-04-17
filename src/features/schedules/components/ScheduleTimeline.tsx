@@ -164,7 +164,7 @@ export default function ScheduleTimeline() {
             {schedulerStats && (
               <button
                 onClick={handleToggleScheduler}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
                   schedulerStats.running
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
@@ -187,19 +187,19 @@ export default function ScheduleTimeline() {
 
             {/* Mock seed (dev only) */}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.schedules.seed_mock_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.schedules.mock_schedule}
               </button>
             )}
 
             {/* Stats badges */}
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <div className="flex items-center gap-1.5 typo-caption">
+              <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Zap className="w-3 h-3" />
                 {tx(t.schedules.active_count, { count: activeCount })}
               </span>
               {pausedCount > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 text-muted-foreground/50 border border-primary/10">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-foreground border border-primary/10">
                   <Pause className="w-3 h-3" />
                   {tx(t.schedules.paused_count, { count: pausedCount })}
                 </span>
@@ -213,8 +213,8 @@ export default function ScheduleTimeline() {
             <button
               onClick={() => fetchCronAgents()}
               disabled={loading}
-              className="p-2 rounded-lg border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-muted-foreground/70 transition-all disabled:opacity-40"
-              title="Refresh schedules"
+              className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-foreground transition-all disabled:opacity-40"
+              title={t.schedules.refresh_schedules}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -228,10 +228,10 @@ export default function ScheduleTimeline() {
         {filterPersonaId && (() => {
           const agent = cronAgents.find((a) => a.persona_id === filterPersonaId);
           return agent ? (
-            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-blue-500/[0.06] border border-blue-500/15 text-xs text-blue-400/90">
+            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
               <Filter className="w-3.5 h-3.5 shrink-0" />
               <span>
-                Showing schedules for <span className="font-semibold">{agent.persona_name}</span>
+                {t.schedules.showing_for} <span className="font-semibold">{agent.persona_name}</span>
               </span>
               <button
                 onClick={() => {
@@ -247,18 +247,18 @@ export default function ScheduleTimeline() {
         })()}
 
         {loading && cronAgents.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground/70">
+          <div className="flex items-center justify-center py-20 text-foreground">
             <LoadingSpinner size="lg" className="mr-2" />
             {t.schedules.loading_schedules}
           </div>
         ) : cronAgents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground/60">
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-foreground">
             <div className="w-20 h-20 rounded-2xl bg-blue-500/[0.07] border border-blue-500/15 flex items-center justify-center">
               <CalendarClock className="w-10 h-10 text-blue-400/50" />
             </div>
             <div className="text-center space-y-1.5">
-              <p className="typo-heading text-foreground/70">{t.schedules.no_scheduled_agents}</p>
-              <p className="text-xs text-muted-foreground/50 max-w-[280px] mx-auto leading-relaxed">
+              <p className="typo-heading text-foreground">{t.schedules.no_scheduled_agents}</p>
+              <p className="typo-caption text-foreground max-w-[280px] mx-auto leading-relaxed">
                 {t.schedules.no_scheduled_hint}
               </p>
             </div>
@@ -277,7 +277,7 @@ export default function ScheduleTimeline() {
 
             {/* Main schedule view */}
             {viewMode === 'calendar' ? (
-              <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground/60"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : viewMode === 'grouped' ? (
@@ -327,8 +327,8 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
     <div
       ref={tablistRef}
       role="tablist"
-      aria-label="Schedule view"
-      className="flex rounded-lg border border-primary/15 overflow-hidden bg-secondary/20"
+      aria-label={t.schedules.schedule_view_aria}
+      className="flex rounded-card border border-primary/15 overflow-hidden bg-secondary/20"
       onKeyDown={handleKeyDown}
     >
       {VIEW_OPTIONS.map((opt) => {
@@ -340,10 +340,10 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(opt.value)}
-            className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 typo-caption flex items-center gap-1.5 transition-all ${
               selected
-                ? 'bg-primary/15 text-foreground/90 shadow-sm'
-                : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/5'
+                ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
+                : 'text-foreground hover:text-foreground/70 hover:bg-primary/5'
             }`}
           >
             {opt.icon && <Calendar className="w-3.5 h-3.5" />}
@@ -370,15 +370,15 @@ function GroupedView({
     'Next hour': 'text-blue-400 border-blue-500/20',
     'Next 6 hours': 'text-violet-400 border-violet-500/20',
     'Next 24 hours': 'text-amber-400 border-amber-500/20',
-    'Later': 'text-foreground/60 border-primary/10',
-    'Paused / Unscheduled': 'text-foreground/40 border-primary/10',
+    'Later': 'text-foreground border-primary/10',
+    'Paused / Unscheduled': 'text-foreground border-primary/10',
   };
 
   return (
     <div className="space-y-5">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground/60 border-primary/10'}`}>
+          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground border-primary/10'}`}>
             <span className="typo-caption uppercase tracking-wider">
               {group.label}
             </span>

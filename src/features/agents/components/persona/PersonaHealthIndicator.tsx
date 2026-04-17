@@ -42,7 +42,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
   return (
     <div className="relative group/health">
       <span className="sr-only">{srLabel}</span>
-      <div className={`rounded-lg ${ringClass}`}>
+      <div className={`rounded-card ${ringClass}`}>
         <PersonaAvatar icon={persona.icon} name={persona.name} color={persona.color} size="md" fallbackStyle="bot" />
       </div>
       {healthStatus !== 'dormant' && (
@@ -50,11 +50,11 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
           className="absolute -right-1 -bottom-1 w-4 h-4 rounded-full border border-background bg-background/95 flex items-center justify-center"
           aria-hidden="true"
         >
-          <HealthShape className="w-2.5 h-2.5 text-foreground/80" />
+          <HealthShape className="w-2.5 h-2.5 text-foreground" />
         </div>
       )}
       {statuses && statuses.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-elevation-3 z-20 whitespace-nowrap">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-card bg-popover border border-primary/20 shadow-elevation-3 z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
             <StatusShape
               key={si}
@@ -64,7 +64,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
               aria-label={`Run ${si + 1}: ${s}`}
             />
           ))}
-          <span className="text-sm text-muted-foreground/90 ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
+          <span className="typo-body text-foreground ml-1">{tx(t.agents.health_indicator.last, { count: statuses.length })}</span>
         </div>
       )}
     </div>

@@ -257,17 +257,57 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
     // Merge adoption answers into the build draft as parameter overrides
     const currentDraft = useAgentStore.getState().buildDraft as Record<string, unknown> | null;
-    if (currentDraft && Object.keys(adoptionAnswers).length > 0) {
-      const answerMap: Record<string, string> = {};
-      for (const q of adoptionQuestions) {
-        if (adoptionAnswers[q.id]) answerMap[q.id] = adoptionAnswers[q.id]!;
-      }
+    const answerMap: Record<string, string> = {};
+    for (const q of adoptionQuestions) {
+      if (adoptionAnswers[q.id]) answerMap[q.id] = adoptionAnswers[q.id]!;
+    }
+
+    if (currentDraft && Object.keys(answerMap).length > 0) {
       useAgentStore.getState().patchActiveSession({
         draft: { ...currentDraft, _adoption_answers: answerMap },
         phase: "draft_ready",
       });
     } else {
       useAgentStore.getState().patchActiveSession({ phase: "draft_ready" });
+    }
+
+    // Persist answers to the backend so test_build_draft and promote use them.
+    const sessionId = useAgentStore.getState().buildSessionId;
+    if (sessionId && Object.keys(answerMap).length > 0) {
+      // Derive credential bindings from vault-category questions: when the user
+      // picks a specific provider (e.g. "Google Cloud Platform" mapped to
+      // option_service_types[0] = "gcp_cloud"), record that binding so the
+      // backend can prefer the right credential during test and runtime.
+      const credentialBindings: Record<string, string> = {};
+      for (const q of adoptionQuestions) {
+        if (q.vault_category && q.option_service_types && q.options && answerMap[q.id]) {
+          const selectedIdx = q.options.indexOf(answerMap[q.id]!);
+          if (selectedIdx >= 0 && selectedIdx < q.option_service_types.length) {
+            const serviceType = q.option_service_types[selectedIdx];
+            if (serviceType) {
+              credentialBindings[q.vault_category] = serviceType;
+            }
+          }
+        }
+      }
+
+      const payload = {
+        answers: answerMap,
+        questions: adoptionQuestions.map((q) => ({
+          id: q.id,
+          question: q.question,
+          category: q.category,
+          option_service_types: q.option_service_types,
+          vault_category: q.vault_category,
+        })),
+        credential_bindings: credentialBindings,
+      };
+      void invokeWithTimeout("save_adoption_answers", {
+        sessionId,
+        adoptionAnswersJson: JSON.stringify(payload),
+      }).catch((err) => {
+        logger.warn("Failed to persist adoption answers", { err });
+      });
     }
   }, [questionsComplete, seeded, adoptionAnswers, adoptionQuestions]);
 
@@ -551,7 +591,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm text-muted-foreground/50 animate-pulse">{t.templates.adopt_modal.loading_template}</div>
+        <div className="typo-body text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
       </div>
     );
   }

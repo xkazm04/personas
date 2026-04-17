@@ -27,13 +27,13 @@ export function TriggerTypeSelector({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      <label className="block typo-body font-medium text-foreground mb-1.5">
         {t.triggers.type_selector.trigger_type}
       </label>
       <div
         className="grid grid-cols-3 gap-2"
         role="radiogroup"
-        aria-label="Trigger type"
+        aria-label={t.triggers.type_selector.trigger_type}
       >
         {typeOptions.map((option, index) => {
           const meta = TRIGGER_TYPE_META[option.type] || DEFAULT_TRIGGER_META;
@@ -64,7 +64,7 @@ export function TriggerTypeSelector({
                   triggerTypeRefs.current[nextIndex]?.focus();
                 }
               }}
-              className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all focus-ring ${
+              className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all focus-ring ${
                 isSelected
                   ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
                   : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
@@ -72,11 +72,11 @@ export function TriggerTypeSelector({
             >
               <div className="flex items-center gap-2">
                 <Icon className={`w-4 h-4 ${colorClass}`} />
-                <span className="text-sm font-medium text-foreground/90">
+                <span className="typo-body font-medium text-foreground/90">
                   {option.label}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground/70">
+              <span className="typo-caption text-foreground">
                 {option.description}
               </span>
             </button>

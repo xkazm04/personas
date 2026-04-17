@@ -151,7 +151,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="twin-wizard-title">
-      <div className="w-full max-w-xl rounded-card border border-violet-500/20 bg-card shadow-xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="w-full max-w-xl rounded-card border border-violet-500/20 bg-card shadow-elevation-3 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10">
           <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                           gender === g ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                         }`}
                       >
-                        <span className="text-base">{glyph}</span>
+                        <span className="typo-body-lg">{glyph}</span>
                         <span className="typo-caption">{labelMap[g]}</span>
                       </button>
                     );
@@ -278,7 +278,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                     placeholder={t.wizard.urlPlaceholder}
                     value={bioUrl}
                     onChange={(e) => setBioUrl(e.target.value)}
-                    className={`${INPUT_FIELD} font-mono text-xs`}
+                    className={`${INPUT_FIELD} font-mono typo-code`}
                   />
                   <div className="flex justify-end">
                     <Button onClick={handleIngestUrl} disabled={ingesting || !bioUrl.trim()} size="sm" variant="accent" accentColor="violet">

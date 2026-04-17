@@ -9,7 +9,7 @@ export function channelIcon(type: string) {
     case 'slack': return <Hash className="w-4 h-4 text-purple-400" />;
     case 'telegram': return <Send className="w-4 h-4 text-blue-400" />;
     case 'email': return <Mail className="w-4 h-4 text-amber-400" />;
-    default: return <Bell className="w-4 h-4 text-muted-foreground/90" />;
+    default: return <Bell className="w-4 h-4 text-foreground" />;
   }
 }
 
@@ -43,18 +43,18 @@ export function CredentialPicker({
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground focus-ring transition-all"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground focus-ring transition-all"
         >
           {selected ? (
             <>
               {channelIcon(selected.service_type)}
               <span className="flex-1 text-left truncate">{selected.name}</span>
-              <span className="text-sm text-muted-foreground/80">{selected.service_type}</span>
+              <span className="typo-body text-foreground">{selected.service_type}</span>
             </>
           ) : (
-            <span className="flex-1 text-left text-muted-foreground/80">{t.agents.connectors.cp_select}</span>
+            <span className="flex-1 text-left text-foreground">{t.agents.connectors.cp_select}</span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
       )}
     >
@@ -64,11 +64,11 @@ export function CredentialPicker({
             role="option"
             aria-selected={!selectedId}
             onClick={() => { onChange(''); close(); }}
-            className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors ${
+            className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
               focusIndex === 0 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-            } ${!selectedId ? 'text-foreground/80' : 'text-muted-foreground/90'}`}
+            } ${!selectedId ? 'text-foreground' : 'text-foreground'}`}
           >
-            <span className="text-muted-foreground/80">&mdash;</span>
+            <span className="text-foreground">&mdash;</span>
             <span>{t.common.none}</span>
           </button>
           {creds.map((cred, i) => (
@@ -77,18 +77,18 @@ export function CredentialPicker({
               role="option"
               aria-selected={cred.id === selectedId}
               onClick={() => { onChange(cred.id); close(); }}
-              className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors ${
+              className={`flex items-center gap-3 w-full px-3 py-2 typo-body transition-colors ${
                 focusIndex === i + 1 ? 'bg-secondary/60' : 'hover:bg-secondary/50'
-              } ${cred.id === selectedId ? 'text-foreground' : 'text-foreground/80'}`}
+              } ${cred.id === selectedId ? 'text-foreground' : 'text-foreground'}`}
             >
               {channelIcon(cred.service_type)}
               <span className="flex-1 text-left truncate">{cred.name}</span>
-              <span className="text-sm text-muted-foreground/80">{cred.service_type}</span>
+              <span className="typo-body text-foreground">{cred.service_type}</span>
               {cred.id === selectedId && <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
             </button>
           ))}
           {creds.length === 0 && (
-            <div className="px-3 py-2 text-sm text-muted-foreground/80">{t.agents.connectors.cp_no_creds}</div>
+            <div className="px-3 py-2 typo-body text-foreground">{t.agents.connectors.cp_no_creds}</div>
           )}
         </>
       )}

@@ -21,17 +21,17 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
       {isLinking && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
+          <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
+                <p className="px-3 py-1.5 typo-heading font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
                     <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate" title={cred.name}>{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="typo-body text-foreground truncate" title={cred.name}>{cred.name}</p>
+                      <p className="typo-body text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
@@ -40,15 +40,15 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
+                  <p className="px-3 py-1.5 typo-heading font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
                   <button key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground/80 truncate" title={cred.name}>{cred.name}</p>
-                      <p className="text-sm text-muted-foreground/60">{cred.service_type}</p>
+                      <p className="typo-body text-foreground truncate" title={cred.name}>{cred.name}</p>
+                      <p className="typo-body text-foreground">{cred.service_type}</p>
                     </div>
                   </button>
                 ))}
@@ -76,13 +76,13 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
       {swapOpen && alternatives.length > 0 && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-sky-500/20 rounded-lg bg-background/40">
+          <div className="mt-3 border border-sky-500/20 rounded-card bg-background/40">
             <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">{t.agents.connectors.st_swap_alt}</p>
             {alternatives.map((alt) => (
               <button key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-sky-500/10 transition-colors border-b border-sky-500/5 last:border-0">
                 <ArrowLeftRight className="w-3 h-3 text-sky-400/50 flex-shrink-0" />
-                <span className="text-sm text-foreground/80">{alt}</span>
+                <span className="typo-body text-foreground">{alt}</span>
               </button>
             ))}
           </div>
@@ -108,7 +108,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
         {status.linkError && (
           <div className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="mt-2.5 px-3 py-2 rounded-xl text-sm bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start gap-1.5">
+            <div className="mt-2.5 px-3 py-2 rounded-modal typo-body bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start gap-1.5">
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span className="flex-1">{status.linkError}</span>
               {onClearLinkError && (
@@ -122,7 +122,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
       </>
 
       {status.result && !status.testing && (
-        <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-modal typo-body ${
           status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
             : 'bg-red-500/10 border border-red-500/20 text-red-400'
         }`}>
@@ -138,7 +138,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
                 <span>{translated?.friendly ?? status.result.message}</span>
               </div>
               {translated?.suggestion && (
-                <p className="text-sm text-red-400/60 pl-4.5">{translated.suggestion}</p>
+                <p className="typo-body text-red-400/60 pl-4.5">{translated.suggestion}</p>
               )}
             </div>
           )}

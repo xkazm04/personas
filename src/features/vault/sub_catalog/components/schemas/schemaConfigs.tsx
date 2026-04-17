@@ -5,7 +5,7 @@ import { healthcheckMcpPreview } from '@/api/agents/mcpTools';
 
 export const MCP_SCHEMA: SchemaFormConfig = {
   headerIcon: (
-    <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center">
+    <div className="w-9 h-9 rounded-card bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center">
       <Server className="w-4.5 h-4.5 text-cyan-400" />
     </div>
   ),
@@ -74,7 +74,7 @@ export const MCP_SCHEMA: SchemaFormConfig = {
 
 export const CUSTOM_SCHEMA: SchemaFormConfig = {
   headerIcon: (
-    <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center">
+    <div className="w-9 h-9 rounded-card bg-amber-500/10 border border-amber-500/25 flex items-center justify-center">
       <Link className="w-4.5 h-4.5 text-amber-400" />
     </div>
   ),
@@ -159,7 +159,7 @@ export const CUSTOM_SCHEMA: SchemaFormConfig = {
 
 export const DATABASE_SCHEMA: SchemaFormConfig = {
   headerIcon: (
-    <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
+    <div className="w-9 h-9 rounded-card bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
       <Database className="w-4.5 h-4.5 text-emerald-400" />
     </div>
   ),

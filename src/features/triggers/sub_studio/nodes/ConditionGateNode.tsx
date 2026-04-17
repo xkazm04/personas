@@ -10,7 +10,7 @@ function ConditionGateNodeInner({ data, selected }: NodeProps) {
   return (
     <div
       className={`
-        relative flex flex-col gap-1.5 px-3.5 py-3 rounded-xl
+        relative flex flex-col gap-1.5 px-3.5 py-3 rounded-modal
         bg-card backdrop-blur border-2
         ${selected
           ? 'border-violet-400 ring-2 ring-violet-400/25 shadow-[0_0_16px_rgba(139,92,246,0.2)]'
@@ -26,12 +26,12 @@ function ConditionGateNodeInner({ data, selected }: NodeProps) {
       />
 
       <div className="flex items-center gap-2">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-violet-500/15">
+        <div className="flex-shrink-0 w-8 h-8 rounded-card flex items-center justify-center bg-violet-500/15">
           <GitBranch className="w-4 h-4 text-violet-400" />
         </div>
         <div className="flex flex-col min-w-0">
           <span className="text-[10px] uppercase tracking-wider text-violet-400/70 font-medium">Condition</span>
-          <span className="text-xs font-semibold text-foreground truncate">{d.conditionLabel || 'Route'}</span>
+          <span className="typo-caption font-semibold text-foreground truncate">{d.conditionLabel || 'Route'}</span>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ function ConditionGateNodeInner({ data, selected }: NodeProps) {
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: branch.color }}
             />
-            <span className="text-[10px] text-muted-foreground">{branch.label}</span>
+            <span className="text-[10px] text-foreground">{branch.label}</span>
             <Handle
               type="source"
               position={Position.Right}

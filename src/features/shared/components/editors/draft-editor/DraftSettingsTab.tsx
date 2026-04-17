@@ -103,7 +103,7 @@ export function DraftSettingsTab({
         </h4>
         <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-3 space-y-3">
           <div>
-            <label className="block typo-heading text-foreground/80 mb-2">{t.shared.draft_editor.icon_label}</label>
+            <label className="block typo-heading text-foreground mb-2">{t.shared.draft_editor.icon_label}</label>
             <IconSelector
               value={draft.icon ?? ''}
               onChange={(icon) => updateDraft((curr) => ({ ...curr, icon: icon || null }))}
@@ -112,7 +112,7 @@ export function DraftSettingsTab({
             />
           </div>
           <div>
-            <label className="block typo-heading text-foreground/80 mb-2">{t.shared.draft_editor.color_label}</label>
+            <label className="block typo-heading text-foreground mb-2">{t.shared.draft_editor.color_label}</label>
             <ColorPicker
               value={draft.color ?? '#8b5cf6'}
               onChange={(color) => updateDraft((curr) => ({ ...curr, color }))}

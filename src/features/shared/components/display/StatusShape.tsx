@@ -18,7 +18,7 @@ const SHAPE_COLOR: Record<StatusKey, string> = {
   warning: 'text-amber-400',
   error: 'text-red-400',
   info: 'text-blue-400',
-  neutral: 'text-muted-foreground/50',
+  neutral: 'text-foreground',
 };
 
 const SIZE_CLASS: Record<StatusShapeSize, string> = {

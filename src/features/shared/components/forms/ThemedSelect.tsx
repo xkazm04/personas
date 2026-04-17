@@ -147,7 +147,7 @@ function FilterableSelect({
     <div ref={containerRef} className={`relative ${wrapperClassName}`}>
       {/* Trigger */}
       <button type="button" onClick={() => setOpen((p) => !p)} className={baseClasses}>
-        <span className={`flex items-center gap-2 ${selectedOption ? '' : 'text-muted-foreground/50'}`}>
+        <span className={`flex items-center gap-2 ${selectedOption ? '' : 'text-foreground'}`}>
           {selectedOption?.iconUrl && <OptionIcon url={selectedOption.iconUrl} color={selectedOption.iconColor} label={selectedOption.label} />}
           {selectedOption?.label ?? placeholder}
         </span>
@@ -176,14 +176,14 @@ function FilterableSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.shared.forms_extra.filter_placeholder}
-              className="w-full bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none"
+              className="w-full bg-transparent typo-body text-foreground placeholder:text-foreground focus-visible:outline-none"
             />
           </div>
 
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 && (
-              <div className="px-3 py-2.5 typo-body text-foreground">No matches</div>
+              <div className="px-3 py-2.5 typo-body text-foreground">{t.shared.forms_extra.no_matches}</div>
             )}
             {filtered.map((opt, idx) => {
               const isSelected = opt.value === value;

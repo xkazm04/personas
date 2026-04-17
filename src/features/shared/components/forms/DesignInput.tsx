@@ -191,7 +191,7 @@ export function DesignInput({
             disabled={disabled}
             icon={<Paperclip className="w-3.5 h-3.5" />}
             className="text-foreground hover:text-foreground"
-            title="Attach file (API spec, schema, MCP config)"
+            title={t.shared.forms_extra.attach_file_title}
           >
             {t.common.attach}
           </Button>
@@ -213,7 +213,7 @@ export function DesignInput({
               ? 'text-indigo-400 bg-indigo-500/10'
               : 'text-foreground hover:text-foreground'
             }
-            title="Add reference URLs or connection strings"
+            title={t.shared.forms_extra.add_references_title}
           >
             {t.common.references}
           </Button>
@@ -224,7 +224,7 @@ export function DesignInput({
                 {(designContext.files.length === 1 ? t.common.files_attached_one : t.common.files_attached_other).replace('{count}', String(designContext.files.length))}
               </span>
             )}
-            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-muted-foreground/50'}`}>
+            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-foreground'}`}>
               {instruction.length.toLocaleString()}
             </span>
           </span>

@@ -56,6 +56,7 @@ function formatTimestamp(ts: string) {
 
 function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, tx } = useTranslation();
 
   const outcomeStatus = group.outcome?.status ?? 'open';
   const outcomeStyle = getOutcomeColors(outcomeStatus);
@@ -65,15 +66,15 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
   const catColor = HEALING_CATEGORY_COLORS[group.trigger?.category ?? ''];
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden transition-all">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden transition-all">
       {/* Chain Header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors text-left"
       >
         {expanded
-          ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
-          : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
+          ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
         }
         {/* Status dot */}
         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${outcomeStyle.dot} ${
@@ -81,31 +82,31 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
         }`} />
 
         {/* Title */}
-        <span className="flex-1 text-sm text-foreground/80 truncate min-w-0">
+        <span className="flex-1 typo-body text-foreground truncate min-w-0">
           {group.trigger?.title ?? group.chainId}
         </span>
 
         {/* Badges */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {group.trigger?.isCircuitBreaker && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border bg-red-500/15 text-red-400 border-red-500/25">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input border bg-red-500/15 text-red-400 border-red-500/25">
               <Zap className="w-2.5 h-2.5" /> breaker
             </span>
           )}
           {retryCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <RefreshCw className="w-2.5 h-2.5" /> {retryCount}
             </span>
           )}
-          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md ${badgeClass(sevBadge)}`}>
+          <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input ${badgeClass(sevBadge)}`}>
             {triggerSev}
           </span>
           {catColor && (
-            <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
+            <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
               {group.trigger?.category}
             </span>
           )}
-          <span className="text-[10px] text-muted-foreground/60 ml-1">
+          <span className="text-[10px] text-foreground ml-1">
             {group.trigger ? formatTimestamp(group.trigger.timestamp) : ''}
           </span>
         </div>
@@ -135,7 +136,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                   </div>
 
                   {/* Content */}
-                  <div className={`flex-1 min-w-0 rounded-lg px-3 py-2 ${colors.bg} transition-colors ${
+                  <div className={`flex-1 min-w-0 rounded-card px-3 py-2 ${colors.bg} transition-colors ${
                     event.issueId && onSelectIssue ? 'cursor-pointer hover:brightness-110' : ''
                   }`}
                     onClick={event.issueId && event.eventType === 'trigger' && onSelectIssue
@@ -145,25 +146,25 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                   >
                     <div className="flex items-center gap-2 mb-0.5">
                       <Icon className={`w-3 h-3 flex-shrink-0 ${colors.text}`} />
-                      <span className={`text-xs font-mono uppercase ${colors.text}`}>
+                      <span className={`typo-code font-mono uppercase ${colors.text}`}>
                         {event.eventType.replace('_', ' ')}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/50 ml-auto">
+                      <span className="text-[10px] text-foreground ml-auto">
                         {formatTimestamp(event.timestamp)}
                       </span>
                     </div>
-                    <p className="text-sm text-foreground/80 leading-relaxed">{event.title}</p>
+                    <p className="typo-body text-foreground leading-relaxed">{event.title}</p>
                     {event.description !== event.title && (
-                      <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-2">{event.description}</p>
+                      <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{event.description}</p>
                     )}
                     {event.suggestedFix && (
-                      <div className="mt-1.5 px-2 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/15">
-                        <p className="text-xs text-emerald-400/80">{event.suggestedFix}</p>
+                      <div className="mt-1.5 px-2 py-1.5 rounded-input bg-emerald-500/10 border border-emerald-500/15">
+                        <p className="typo-caption text-emerald-400/80">{event.suggestedFix}</p>
                       </div>
                     )}
                     {event.retryCount != null && event.retryCount > 0 && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-cyan-400/70">
-                        <RefreshCw className="w-2.5 h-2.5" /> retry #{event.retryCount}
+                        <RefreshCw className="w-2.5 h-2.5" /> {tx(t.overview.healing_timeline.retry_badge, { count: event.retryCount })}
                       </span>
                     )}
                   </div>
@@ -184,7 +185,7 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
   if (events.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-blue-500/15 bg-blue-500/5 overflow-hidden">
+    <div className="rounded-modal border border-blue-500/15 bg-blue-500/5 overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-500/5 transition-colors text-left"
@@ -198,23 +199,23 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
         <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/15 text-blue-400 ml-1">
           {events.length}
         </span>
-        <span className="text-xs text-blue-400/50 ml-auto">
+        <span className="typo-caption text-blue-400/50 ml-auto">
           {t.overview.healing_timeline.patterns_hint}
         </span>
       </button>
       {expanded && (
         <div className="px-4 pb-3 space-y-2">
           {events.map((event) => (
-            <div key={event.id} className="flex items-start gap-2.5 px-3 py-2 rounded-lg bg-blue-500/5">
+            <div key={event.id} className="flex items-start gap-2.5 px-3 py-2 rounded-card bg-blue-500/5">
               <Shield className="w-3 h-3 text-blue-400/60 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-foreground/80">{event.title}</p>
-                <p className="text-xs text-muted-foreground/60 mt-0.5">{event.description}</p>
+                <p className="typo-body text-foreground">{event.title}</p>
+                <p className="typo-caption text-foreground mt-0.5">{event.description}</p>
                 {event.suggestedFix && (
-                  <p className="text-xs text-blue-400/60 mt-0.5">{event.suggestedFix}</p>
+                  <p className="typo-caption text-blue-400/60 mt-0.5">{event.suggestedFix}</p>
                 )}
               </div>
-              <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">
+              <span className="text-[10px] text-foreground flex-shrink-0">
                 {formatTimestamp(event.timestamp)}
               </span>
             </div>
@@ -273,7 +274,7 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
     return (
       <div className="flex items-center justify-center py-10">
         <LoadingSpinner size="lg" className="text-cyan-400" />
-        <span className="ml-2 text-sm text-muted-foreground">{t.overview.healing_timeline.loading}</span>
+        <span className="ml-2 typo-body text-foreground">{t.overview.healing_timeline.loading}</span>
       </div>
     );
   }
@@ -282,11 +283,11 @@ export function HealingTimeline({ events, loading, onSelectIssue }: HealingTimel
     return (
       <div className="flex items-center justify-center py-10">
         <div className="text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+          <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
             <CheckCircle className="w-6 h-6 text-emerald-400" />
           </div>
-          <p className="typo-heading text-foreground/80">{t.overview.healing_timeline.no_events}</p>
-          <p className="text-sm text-muted-foreground mt-1">{t.overview.healing_timeline.no_events_hint}</p>
+          <p className="typo-heading text-foreground">{t.overview.healing_timeline.no_events}</p>
+          <p className="typo-body text-foreground mt-1">{t.overview.healing_timeline.no_events_hint}</p>
         </div>
       </div>
     );

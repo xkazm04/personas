@@ -35,7 +35,7 @@ export default function ArtistPage() {
                 <button
                   key={t.id}
                   onClick={() => setArtistTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg typo-heading transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-card typo-heading transition-colors ${
                     artistTab === t.id
                       ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                       : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'

@@ -198,8 +198,8 @@ export default function SidebarLevel1({
               )}
               <div className={`relative z-10 ${collapsed ? 'w-6 h-6' : 'w-9 h-9'} transition-all ${
                 isDisabled
-                  ? 'text-muted-foreground/50'
-                  : isActive ? 'text-primary' : 'text-foreground/70 group-hover:text-foreground'
+                  ? 'text-foreground'
+                  : isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'
               }`}>
                 {CustomIcon
                   ? <CustomIcon active={isActive} className="w-full h-full" />
@@ -208,7 +208,7 @@ export default function SidebarLevel1({
               </div>
               {!collapsed && (
                 <span className={`relative z-10 text-[10px] leading-tight mt-1 font-bold transition-colors ${
-                  isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-foreground'
+                  isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'
                 }`}>
                   {labelOf(section.id, section.label)}
                 </span>

@@ -111,7 +111,7 @@ export function ChatTab() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground/60 typo-body">
+      <div className="flex items-center justify-center py-12 text-foreground typo-body">
         {t.agents.chat.select_persona}
       </div>
     );
@@ -120,7 +120,7 @@ export function ChatTab() {
   const showPresets = messages.length === 0 && !chatStreaming;
 
   return (
-    <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-xl border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
+    <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-modal border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
       <OpsSidebar personaId={personaId} onNewSession={handleNewSession} badges={opsBadges} />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -147,7 +147,7 @@ export function ChatTab() {
           <div className="relative">
             <button
               onClick={scrollToBottom}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border border-primary/15 shadow-elevation-2 flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:border-primary/25 transition-all z-10"
+              className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border border-primary/15 shadow-elevation-2 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/25 transition-all z-10"
               title={t.agents.chat.scroll_to_bottom}
             >
               <ArrowDown className="w-4 h-4" />
@@ -158,7 +158,7 @@ export function ChatTab() {
         {/* Pending experiments indicator */}
         {pendingExperiments.length > 0 && (
           <div className="border-t border-violet-500/15 bg-violet-500/5 px-6 py-2" data-testid="chat-experiments-pending">
-            <div className="max-w-3xl mx-auto flex items-center gap-2 text-xs text-violet-400/70">
+            <div className="max-w-3xl mx-auto flex items-center gap-2 typo-caption text-violet-400/70">
               <FlaskConical className="w-3.5 h-3.5 animate-pulse" />
               <span>{tx(pendingExperiments.length === 1 ? t.agents.chat.experiments_running_one : t.agents.chat.experiments_running_other, { count: pendingExperiments.length })}</span>
             </div>
@@ -178,7 +178,7 @@ export function ChatTab() {
                 placeholder={chatStreaming ? t.agents.chat.waiting : t.agents.chat.ask_anything}
                 disabled={chatStreaming || isExecuting}
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
+                className="flex-1 resize-none rounded-modal border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-foreground focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                 style={{ height: 'auto', overflow: 'auto' }}
                 onInput={(e) => {
                   const el = e.currentTarget;
@@ -190,12 +190,12 @@ export function ChatTab() {
                 data-testid="chat-send-btn"
                 onClick={() => void handleSend()}
                 disabled={!inputValue.trim() || chatStreaming || isExecuting}
-                className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-shrink-0 w-10 h-10 rounded-modal bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {chatStreaming ? <LoadingSpinner /> : <Send className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-muted-foreground/30 mt-1.5 text-center select-none">
+            <p className="text-[11px] text-foreground mt-1.5 text-center select-none">
               {t.agents.chat.enter_to_send}
             </p>
           </div>

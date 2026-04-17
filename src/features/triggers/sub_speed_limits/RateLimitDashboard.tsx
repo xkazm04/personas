@@ -46,13 +46,13 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
   // Show empty state when no rate limits configured
   if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0) {
     return (
-      <div className="mx-6 mt-4 rounded-xl border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
-        <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-muted-foreground/40" />
+      <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
+        <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/10 flex items-center justify-center">
+          <Shield className="w-5 h-5 text-foreground" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground/70">{t.triggers.no_rate_limits}</p>
-          <p className="text-xs text-muted-foreground/50 mt-1 max-w-xs">
+          <p className="typo-body font-medium text-foreground">{t.triggers.no_rate_limits}</p>
+          <p className="typo-caption text-foreground mt-1 max-w-xs">
             {t.triggers.no_rate_limits_desc}
           </p>
         </div>
@@ -61,16 +61,16 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
   }
 
   return (
-    <div className="mx-6 mt-4 rounded-xl border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3">
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-1.5 text-muted-foreground/70">
+    <div className="mx-6 mt-4 rounded-modal border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3">
+      <div className="flex items-center gap-4 typo-body">
+        <div className="flex items-center gap-1.5 text-foreground">
           <Shield className="w-3.5 h-3.5" />
           <span className="font-medium">{t.triggers.rate_limits_heading}</span>
         </div>
 
         <div className="flex items-center gap-3 flex-1">
           {/* Rate-limited triggers count */}
-          <div className="flex items-center gap-1.5 text-muted-foreground/60">
+          <div className="flex items-center gap-1.5 text-foreground">
             <span className="font-mono">{stats.rateLimitedCount}</span>
             <span>{stats.rateLimitedCount === 1 ? 'trigger' : 'triggers'} configured</span>
           </div>

@@ -38,6 +38,7 @@ function ResourceExposureCard({
   resource: ExposedResource;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const AccessIcon = ACCESS_ICONS[resource.access_level] ?? Eye;
   const colorClass = ACCESS_COLORS[resource.access_level] ?? ACCESS_COLORS.read;
 
@@ -45,13 +46,13 @@ function ResourceExposureCard({
   const parsedTags: string[] = useMemo(() => parseJsonOrDefault(resource.tags, []), [resource.tags]);
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
+    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground truncate">
+          <span className="typo-body font-medium text-foreground truncate">
             {resource.display_name || resource.resource_id}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-muted-foreground">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/40 text-foreground">
             {resource.resource_type}
           </span>
         </div>
@@ -61,7 +62,7 @@ function ResourceExposureCard({
             {resource.access_level}
           </span>
           {parsedFields.length > 0 && (
-            <span className="text-[10px] text-muted-foreground/60">
+            <span className="text-[10px] text-foreground">
               {parsedFields.length} field{parsedFields.length !== 1 ? 's' : ''} exposed
             </span>
           )}
@@ -83,8 +84,8 @@ function ResourceExposureCard({
         {({ requestConfirm }) => (
           <button
             onClick={requestConfirm}
-            title="Remove exposure"
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+            title={t.sharing.remove_exposure}
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors flex-shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -128,14 +129,14 @@ function AddExposureForm({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+    <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.resource_type_label}</label>
+          <label className="typo-caption text-foreground mb-1 block">{st.resource_type_label}</label>
           <select
             value={resourceType}
             onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           >
             {RESOURCE_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -143,11 +144,11 @@ function AddExposureForm({
           </select>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1 block">{st.access_level_label}</label>
+          <label className="typo-caption text-foreground mb-1 block">{st.access_level_label}</label>
           <select
             value={accessLevel}
             onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           >
             {ACCESS_LEVELS.map((l) => (
               <option key={l} value={l}>{l}</option>
@@ -157,12 +158,12 @@ function AddExposureForm({
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">{st.resource_label}</label>
+        <label className="typo-caption text-foreground mb-1 block">{st.resource_label}</label>
         {resourceType === 'persona' ? (
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           >
             <option value="">{st.select_persona_placeholder}</option>
             {personas.map((p) => (
@@ -174,18 +175,18 @@ function AddExposureForm({
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
             placeholder={st.resource_id_placeholder}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
           />
         )}
       </div>
 
       <div>
-        <label className="text-xs text-muted-foreground mb-1 block">{st.tags_label}</label>
+        <label className="typo-caption text-foreground mb-1 block">{st.tags_label}</label>
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder={st.tags_placeholder}
-          className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+          className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
         />
       </div>
 
@@ -193,13 +194,13 @@ function AddExposureForm({
         <button
           onClick={handleSubmit}
           disabled={!resourceId}
-          className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 typo-caption rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {st.expose_resource}
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
+          className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
         >
           {st.cancel}
         </button>
@@ -268,13 +269,13 @@ export default function ExposureManager() {
           {/* Exposed Resources section */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 {st.exposed_resources}
               </h3>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 {st.expose_resource}
@@ -292,12 +293,12 @@ export default function ExposureManager() {
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+              <div className="flex items-center gap-2 typo-body text-foreground py-4 justify-center">
                 <LoadingSpinner />
                 {st.loading_exposed}
               </div>
             ) : exposedResources.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-modal border border-dashed border-border p-6 text-center typo-body text-foreground">
                 {st.no_resources_hint}
               </div>
             ) : (

@@ -23,6 +23,7 @@ interface ResponseViewerProps {
 export function ResponseViewer({ response }: ResponseViewerProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   const [subTab, setSubTab] = useState<ResponseSubTab>('body');
   const [copied, setCopied] = useState(false);
 
@@ -57,21 +58,21 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
     <div className="space-y-3">
       {/* Status bar */}
       <div className="flex items-center gap-3">
-        <span className={`px-2.5 py-1 rounded text-sm font-bold border ${statusStyle(response.status)}`}>
+        <span className={`px-2.5 py-1 rounded typo-heading font-bold border ${statusStyle(response.status)}`}>
           {response.status} {response.status_text}
         </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground/60">
+        <span className="flex items-center gap-1 typo-body text-foreground">
           <Clock className="w-3 h-3" />
           {response.duration_ms}ms
         </span>
         {response.content_type && (
-          <span className="text-sm text-muted-foreground/50">{response.content_type}</span>
+          <span className="typo-body text-foreground">{response.content_type}</span>
         )}
       </div>
 
       {/* Truncation warning */}
       {response.truncated && (
-        <div className="px-3 py-2 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-400 text-sm">
+        <div className="px-3 py-2 rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-400 typo-body">
           {vt.truncated_warning}
         </div>
       )}
@@ -82,10 +83,10 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <button
             key={tab}
             onClick={() => setSubTab(tab)}
-            className={`px-3 py-1.5 text-sm font-medium capitalize transition-colors border-b-2 ${
+            className={`px-3 py-1.5 typo-body font-medium capitalize transition-colors border-b-2 ${
               subTab === tab
-                ? 'text-foreground/80 border-primary/50'
-                : 'text-muted-foreground/60 border-transparent hover:text-muted-foreground/80'
+                ? 'text-foreground border-primary/50'
+                : 'text-foreground border-transparent hover:text-muted-foreground/80'
             }`}
           >
             {tab}
@@ -95,31 +96,31 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         <div className="flex-1" />
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded text-sm text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded typo-body text-foreground hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? sh.copied : t.common.copy}
         </button>
       </div>
 
       {/* Content */}
       {subTab === 'body' && (
         prettyBody ? (
-          <div className="rounded-lg border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
+          <div className="rounded-card border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
             <MarkdownRenderer content={isJson ? '```json\n' + prettyBody + '\n```' : prettyBody} />
           </div>
         ) : (
-          <div className="text-sm text-muted-foreground/50 p-3">(empty response)</div>
+          <div className="typo-body text-foreground p-3">{t.vault.playground.response_empty}</div>
         )
       )}
 
       {subTab === 'headers' && (
-        <div className="rounded-lg border border-primary/8 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-card border border-primary/8 overflow-hidden">
+          <table className="w-full typo-body">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
-                <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">{vt.header_col}</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground/70">{vt.value_col}</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground w-1/3">{vt.header_col}</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">{vt.value_col}</th>
               </tr>
             </thead>
             <tbody>
@@ -129,7 +130,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
                   className={`border-b border-primary/5 ${i % 2 === 0 ? '' : 'bg-secondary/10'}`}
                 >
                   <td className="px-3 py-1.5 font-mono text-violet-400/80">{key}</td>
-                  <td className="px-3 py-1.5 text-foreground/80 break-all">{val}</td>
+                  <td className="px-3 py-1.5 text-foreground break-all">{val}</td>
                 </tr>
               ))}
             </tbody>
@@ -138,8 +139,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'raw' && (
-        <pre className="text-sm font-mono text-muted-foreground/70 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
-          {response.body || '(empty response)'}
+        <pre className="typo-code font-mono text-foreground bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+          {response.body || t.vault.playground.response_empty}
         </pre>
       )}
     </div>

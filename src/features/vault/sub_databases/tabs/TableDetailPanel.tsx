@@ -53,16 +53,16 @@ export function TableDetailPanel({
         <>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
             <HeaderIcon className="w-4 h-4 text-blue-400/60" />
-            <span className={`text-sm font-medium text-foreground/80 flex-1 ${isApi ? '' : 'font-mono'}`}>
+            <span className={`typo-code font-medium text-foreground flex-1 ${isApi ? '' : 'font-mono'}`}>
               {displayName}
             </span>
             {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
-              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70">VIEW</span>
+              <span className="px-1.5 py-0.5 rounded typo-body font-medium bg-violet-500/10 text-violet-400/70">VIEW</span>
             )}
             {!isPinned && (
               <button
                 onClick={() => onPinTable(selectedTable)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-sm font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
                 title={dbt.pin_table}
               >
                 <Pin className="w-3 h-3" />
@@ -70,7 +70,7 @@ export function TableDetailPanel({
               </button>
             )}
             {isPinned && (
-              <span className="flex items-center gap-1 px-2.5 py-1 text-sm text-blue-400/50">
+              <span className="flex items-center gap-1 px-2.5 py-1 typo-body text-blue-400/50">
                 <Pin className="w-3 h-3" />
                 {dbt.pinned}
               </span>
@@ -95,23 +95,23 @@ export function TableDetailPanel({
         <>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
             <Key className="w-4 h-4 text-amber-400/60" />
-            <span className="text-sm font-mono font-medium text-foreground/80 flex-1 truncate">{selectedKey}</span>
+            <span className="typo-code font-mono font-medium text-foreground flex-1 truncate">{selectedKey}</span>
           </div>
           <div className="p-4">
             {keyTypeResult === null ? (
               <div className="flex items-center gap-2 py-4">
-                <LoadingSpinner className="text-muted-foreground/60" />
-                <span className="text-sm text-muted-foreground/60">{dbt.loading_key_info}</span>
+                <LoadingSpinner className="text-foreground" />
+                <span className="typo-body text-foreground">{dbt.loading_key_info}</span>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground/50">{dbt.type_label}</span>
-                  <span className="px-2 py-0.5 rounded text-sm font-mono font-medium bg-amber-500/10 text-amber-400/70">
+                  <span className="typo-body text-foreground">{dbt.type_label}</span>
+                  <span className="px-2 py-0.5 rounded typo-code font-mono font-medium bg-amber-500/10 text-amber-400/70">
                     {keyTypeResult}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground/60">
+                <p className="typo-body text-foreground">
                   {dbt.use_console_hint}
                 </p>
               </div>
@@ -124,11 +124,11 @@ export function TableDetailPanel({
       {!isRedis && !selectedTable && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
           {isApi ? (
-            <Database className="w-6 h-6 text-muted-foreground/15" />
+            <Database className="w-6 h-6 text-foreground" />
           ) : (
-            <Eye className="w-6 h-6 text-muted-foreground/15" />
+            <Eye className="w-6 h-6 text-foreground" />
           )}
-          <p className="text-sm text-muted-foreground/60">
+          <p className="typo-body text-foreground">
             {isApi ? dbt.select_db_hint : dbt.select_table_hint}
           </p>
         </div>
@@ -136,8 +136,8 @@ export function TableDetailPanel({
 
       {isRedis && !selectedKey && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <Key className="w-6 h-6 text-muted-foreground/15" />
-          <p className="text-sm text-muted-foreground/60">{dbt.select_key_hint}</p>
+          <Key className="w-6 h-6 text-foreground" />
+          <p className="typo-body text-foreground">{dbt.select_key_hint}</p>
         </div>
       )}
     </div>

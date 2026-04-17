@@ -21,7 +21,8 @@ const AI_STATUS = STATUS_COLORS.ai!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
 
 export function PreviewPhase() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dp = t.vault.design_phases;
   const {
     result,
     credentialName,
@@ -85,18 +86,18 @@ export function PreviewPhase() {
           {!showNegotiator ? (
             <div
               key="neg-trigger"
-              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bg} ${AI_STATUS.border}`}
+              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal border ${AI_STATUS.bg} ${AI_STATUS.border}`}
             >
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-foreground/90">
-                  <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.auto_provision}</span>{' '}
-                  -- let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
+                <p className="typo-body text-foreground/90">
+                  <span className={`${AI_STATUS.text} font-medium`}>{dp.auto_provision}</span>{' '}
+                  {tx(dp.auto_provision_hint, { label: result.connector.label })}
                 </p>
               </div>
               <button
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
+                className={`shrink-0 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >
                 Start
               </button>
@@ -120,28 +121,28 @@ export function PreviewPhase() {
 
       {/* Credential name */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Credential Name
+        <label className="block typo-body font-medium text-foreground mb-1.5">
+          {dp.credential_name_label}
         </label>
         <input
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={`${result.connector.label} Credential`}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
       {/* Security notice */}
-      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
+      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-modal border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
         <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.text}`} />
-        <p className="text-sm text-foreground/80">
-          Credentials are stored securely in the app vault and are available for agent tool execution.
+        <p className="typo-body text-foreground">
+          {dp.credentials_secure_notice}
         </p>
       </div>
 
       {oauthStatusMessage && !oauthStatusMessage.success && (
-        <div className="text-sm px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+        <div className="typo-body px-3 py-2 rounded-card bg-red-500/10 border border-red-500/20 text-red-400">
           {oauthStatusMessage.message}
         </div>
       )}
@@ -174,10 +175,10 @@ export function PreviewPhase() {
 
       {canSaveCredential && lastSuccessfulTestAt && (
         <div
-          className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}
+          className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full typo-body ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}
         >
           <CheckCircle className="w-3.5 h-3.5" />
-          Tested successfully at {lastSuccessfulTestAt}
+          {tx(dp.tested_successfully_at, { time: lastSuccessfulTestAt })}
         </div>
       )}
     </div>

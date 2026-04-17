@@ -17,7 +17,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
     return (
       <div className="flex items-center gap-2 mt-3 animate-pulse">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-6 w-20 rounded-lg bg-primary/5" />
+          <div key={i} className="h-6 w-20 rounded-card bg-primary/5" />
         ))}
       </div>
     );
@@ -94,7 +94,7 @@ const CHIP_COLORS: Record<ChipColor, string> = {
   red:     'text-red-400/80 bg-red-500/8 border-red-500/15',
   blue:    'text-blue-400/80 bg-blue-500/8 border-blue-500/15',
   violet:  'text-violet-400/80 bg-violet-500/8 border-violet-500/15',
-  slate:   'text-muted-foreground/60 bg-secondary/20 border-primary/[0.08]',
+  slate:   'text-foreground bg-secondary/20 border-primary/[0.08]',
 };
 
 function StatChip({
@@ -110,7 +110,7 @@ function StatChip({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] ${CHIP_COLORS[color]}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border text-[11px] ${CHIP_COLORS[color]}`}
       title={`${label}: ${value}`}
     >
       {icon}

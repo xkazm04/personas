@@ -23,6 +23,9 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('EditorBody');
 
 export function EditorBody() {
   const { t } = useTranslation();
@@ -98,7 +101,7 @@ export function EditorBody() {
       }
       setShowDeleteConfirm(false);
     } catch (err) {
-      console.error("[EditorBody] Failed to delete persona:", err);
+      logger.error("Failed to delete persona", { error: err instanceof Error ? err.message : String(err) });
       const msg = err instanceof Error ? err.message : String(err);
       useToastStore.getState().addToast(t.agents.editor_ui.delete_failed.replace('{message}', msg), 'error');
       // Keep the delete confirmation dialog open so the user can retry
@@ -109,9 +112,9 @@ export function EditorBody() {
     return (
       <ContentBox>
         <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-fade-slide-in">
-          <Bot className="w-12 h-12 text-muted-foreground/20" />
-          <p className="typo-heading text-muted-foreground/80">{t.agents.editor_ui.select_agent}</p>
-          <p className="typo-body text-muted-foreground/50">{t.agents.editor_ui.choose_from_sidebar}</p>
+          <Bot className="w-12 h-12 text-foreground" />
+          <p className="typo-heading text-foreground">{t.agents.editor_ui.select_agent}</p>
+          <p className="typo-body text-foreground">{t.agents.editor_ui.choose_from_sidebar}</p>
         </div>
       </ContentBox>
     );
@@ -136,7 +139,7 @@ export function EditorBody() {
       <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
       {saveError && (
-        <div className="animate-fade-slide-in mx-6 my-2 rounded-xl px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
+        <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
           <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
           <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>
         </div>

@@ -84,51 +84,51 @@ export function N8nTransformChat({
           {/* Questions available */}
           {questions && questions.length > 0 && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               {/* Header with view mode toggle */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-violet-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground/85">
-                      A few questions to customize your persona
+                    <p className="typo-body font-medium text-foreground/85">
+                      {t.templates.n8n.customize_persona}
                     </p>
-                    <p className="text-sm text-muted-foreground/80 mt-0.5">
-                      Answer below, then click Generate
+                    <p className="typo-body text-foreground mt-0.5">
+                      {t.templates.n8n.answer_then_generate}
                     </p>
                   </div>
                 </div>
-                <div role="tablist" aria-label="Question view mode" className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/8">
+                <div role="tablist" aria-label={t.templates.n8n.question_view_mode_aria} className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-primary/8">
                   <button
                     type="button"
                     role="tab"
                     aria-selected={viewMode === 'list'}
                     onClick={() => setViewMode('list')}
-                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 typo-body rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-muted-foreground/50 hover:text-foreground/70'
+                        : 'text-foreground hover:text-foreground/70'
                     }`}
                   >
                     <LayoutList className="w-3 h-3" />
-                    List
+                    {t.templates.n8n.list_view}
                   </button>
                   <button
                     type="button"
                     role="tab"
                     aria-selected={viewMode === 'stepper'}
                     onClick={() => setViewMode('stepper')}
-                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 typo-body rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-muted-foreground/50 hover:text-foreground/70'
+                        : 'text-foreground hover:text-foreground/70'
                     }`}
                   >
                     <Layers className="w-3 h-3" />
-                    Focus
+                    {t.templates.n8n.focus_view}
                   </button>
                 </div>
               </div>
@@ -156,17 +156,17 @@ export function N8nTransformChat({
           {/* No questions */}
           {(!questions || questions.length === 0) && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-card bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
                 </div>
                 <div>
-                  <p className="text-sm text-foreground/90">
-                    No configuration needed
+                  <p className="typo-body text-foreground/90">
+                    {t.templates.n8n.no_config_needed}
                   </p>
-                  <p className="text-sm text-muted-foreground/80 mt-0.5">
+                  <p className="typo-body text-foreground mt-0.5">
                     {t.templates.n8n.click_generate_defaults}
                   </p>
                 </div>
@@ -182,10 +182,10 @@ export function N8nTransformChat({
           {/* Answer summary bubble */}
           {Object.keys(userAnswers).length > 0 && questions && questions.length > 0 && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
-              <p className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
-                Your answers
+              <p className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
+                {t.templates.n8n.your_answers}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {questions.map((q) => {
@@ -194,7 +194,7 @@ export function N8nTransformChat({
                   return (
                     <span
                       key={q.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
+                      className="inline-flex items-center gap-1 px-2 py-1 typo-body rounded-card bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
                     >
                       <CheckCircle2 className="w-2.5 h-2.5" />
                       {answer.length > 30 ? `${answer.slice(0, 30)}...` : answer}

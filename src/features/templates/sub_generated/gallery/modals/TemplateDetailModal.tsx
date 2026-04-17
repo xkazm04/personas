@@ -115,7 +115,7 @@ export function TemplateDetailModal({
     passed: { Icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', label: t.templates.detail.review_passed },
     failed: { Icon: XCircle, color: 'text-red-400 bg-red-500/10 border-red-500/20', label: t.templates.detail.review_failed },
     error: { Icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', label: t.templates.detail.review_error },
-  }[review.status] || { Icon: Clock, color: 'text-muted-foreground bg-secondary/30 border-primary/10', label: review.status };
+  }[review.status] || { Icon: Clock, color: 'text-foreground bg-secondary/30 border-primary/10', label: review.status };
 
   const StatusIcon = statusBadge.Icon;
 
@@ -133,26 +133,26 @@ export function TemplateDetailModal({
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-violet-500/30 via-indigo-500/15 to-transparent" />
           <div className="relative px-8 py-5 flex items-start justify-between gap-6">
             <div className="min-w-0 flex-1">
-              <h2 id="template-detail-title" className="text-xl font-semibold text-foreground tracking-tight">
+              <h2 id="template-detail-title" className="typo-heading-lg font-semibold text-foreground tracking-tight">
                 {review.test_case_name}
               </h2>
-              <p className="text-sm text-foreground mt-1.5 line-clamp-2 max-w-3xl leading-relaxed">
+              <p className="typo-body text-foreground mt-1.5 line-clamp-2 max-w-3xl leading-relaxed">
                 {review.instruction}
               </p>
               <div className="flex items-center gap-3 mt-3">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg border ${statusBadge.color}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 typo-body font-medium rounded-card border ${statusBadge.color}`}>
                   <StatusIcon className="w-3.5 h-3.5" />
                   {statusBadge.label}
                 </span>
                 {!isSimple && review.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body font-medium rounded-card bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
                     <Download className="w-3.5 h-3.5" />
                     {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
                   </span>
                 )}
                 {difficultyMeta && difficulty && (
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg border ${difficultyMeta.bgClass}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 typo-body font-medium rounded-card border ${difficultyMeta.bgClass}`}
                     title={`${tpl.complexity[difficulty]}${setupMinutes ? ` · ${tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
                   >
                     <GraduationCap className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export function TemplateDetailModal({
                   </span>
                 )}
                 {!isSimple && review.had_references && (
-                  <span className="text-sm text-violet-400/60 flex items-center gap-1.5 font-medium">
+                  <span className="typo-body text-violet-400/60 flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-violet-400/50 ring-2 ring-violet-400/20" />
                     {t.templates.detail_modal.reference_patterns}
                   </span>
@@ -175,7 +175,7 @@ export function TemplateDetailModal({
               </div>
             </div>
             <Button onClick={onClose} variant="ghost" size="icon-sm" className="flex-shrink-0 hover:bg-white/5">
-              <X className="w-5 h-5 text-muted-foreground/50 hover:text-muted-foreground" />
+              <X className="w-5 h-5 text-foreground hover:text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -183,7 +183,7 @@ export function TemplateDetailModal({
         {/* Tabs with accent underline */}
         <div
           role="tablist"
-          aria-label="Template details"
+          aria-label={t.templates.gallery.template_details_tabs_aria}
           onKeyDown={handleTabKeyDown}
           className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20"
         >
@@ -200,10 +200,10 @@ export function TemplateDetailModal({
                 tabIndex={isActive ? 0 : -1}
                 data-tab={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors rounded-t-lg ${
+                className={`relative flex items-center gap-2 px-4 py-3 typo-body font-medium transition-colors rounded-t-lg ${
                   isActive
                     ? 'text-violet-300'
-                    : 'text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-white/3'
+                    : 'text-foreground hover:text-muted-foreground/80 hover:bg-white/3'
                 }`}
               >
                 <TabIcon className={`w-4 h-4 ${isActive ? 'text-violet-400/80' : ''}`} />
@@ -244,9 +244,9 @@ export function TemplateDetailModal({
               </div>
             )}
             {!designResult && (
-              <div className="flex flex-col items-center justify-center py-20 text-sm text-foreground gap-3">
-                <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-muted-foreground/40" />
+              <div className="flex flex-col items-center justify-center py-20 typo-body text-foreground gap-3">
+                <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-foreground" />
                 </div>
                 {t.templates.detail_modal.design_unavailable}
               </div>

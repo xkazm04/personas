@@ -20,11 +20,11 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
 
       <div className="mb-4">
         <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">
-          Files ({ctx.filePaths.length})
+          {t.plugins.dev_tools.files} ({ctx.filePaths.length})
         </h4>
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {ctx.filePaths.map((fp) => (
-            <div key={fp} className="flex items-center gap-1.5 text-xs text-foreground py-0.5">
+            <div key={fp} className="flex items-center gap-1.5 typo-caption text-foreground py-0.5">
               <File className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{fp}</span>
             </div>
@@ -50,7 +50,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
           <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">{t.plugins.dev_tools.entry_points}</h4>
           <div className="space-y-1">
             {ctx.entryPoints.map((ep) => (
-              <div key={ep} className="flex items-center gap-1.5 text-xs text-foreground py-0.5">
+              <div key={ep} className="flex items-center gap-1.5 typo-caption text-foreground py-0.5">
                 <ArrowUpRight className="w-3 h-3 flex-shrink-0 text-amber-400/60" />
                 <span className="truncate">{ep}</span>
               </div>

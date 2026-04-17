@@ -22,7 +22,7 @@ const EVENT_TYPE_CONFIG: Record<string, { icon: typeof Search; color: string; bg
   circuit_breaker: { icon: Shield, color: 'text-red-400', bg: 'bg-red-500/15' },
   healing_issue: { icon: RefreshCw, color: 'text-cyan-400', bg: 'bg-cyan-500/15' },
   alert: { icon: Bell, color: 'text-orange-400', bg: 'bg-orange-500/15' },
-  external: { icon: HelpCircle, color: 'text-muted-foreground', bg: 'bg-secondary/30' },
+  external: { icon: HelpCircle, color: 'text-foreground', bg: 'bg-secondary/30' },
 };
 
 const METRIC_LABELS: Record<string, string> = {
@@ -47,7 +47,7 @@ function confidenceBar(confidence: number) {
       <div className="flex-1 h-1.5 rounded-full bg-secondary/30 overflow-hidden">
         <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[10px] text-muted-foreground/70 tabular-nums">{pct}%</span>
+      <span className="text-[10px] text-foreground tabular-nums">{pct}%</span>
     </div>
   );
 }
@@ -57,25 +57,25 @@ const CorrelatedEventRow = memo(function CorrelatedEventRow({ event }: { event: 
   const Icon = config.icon;
 
   return (
-    <div className="flex items-start gap-3 py-2.5 px-3 rounded-lg hover:bg-secondary/20 transition-colors group">
+    <div className="flex items-start gap-3 py-2.5 px-3 rounded-card hover:bg-secondary/20 transition-colors group">
       {/* Timeline dot + icon */}
-      <div className={`flex-shrink-0 w-7 h-7 rounded-lg ${config.bg} flex items-center justify-center mt-0.5`}>
+      <div className={`flex-shrink-0 w-7 h-7 rounded-card ${config.bg} flex items-center justify-center mt-0.5`}>
         <Icon className={`w-3.5 h-3.5 ${config.color}`} />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground/90 truncate">{event.label}</span>
-          <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
+          <span className="typo-body font-medium text-foreground/90 truncate">{event.label}</span>
+          <span className="text-[10px] text-foreground flex-shrink-0">
             {formatOffset(event.offsetSeconds)}
           </span>
         </div>
         {event.detail && (
-          <p className="text-xs text-muted-foreground/70 mt-0.5 line-clamp-2">{event.detail}</p>
+          <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{event.detail}</p>
         )}
         <div className="flex items-center gap-3 mt-1">
-          <span className="text-[10px] text-muted-foreground/50">
+          <span className="text-[10px] text-foreground">
             {new Date(event.timestamp).toLocaleString()}
           </span>
           {confidenceBar(event.relevance)}
@@ -91,23 +91,23 @@ const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: 
   const pct = Math.round(suggestion.confidence * 100);
 
   return (
-    <div className="p-3 rounded-xl border border-primary/10 bg-secondary/10 space-y-2">
+    <div className="p-3 rounded-modal border border-primary/10 bg-secondary/10 space-y-2">
       <div className="flex items-center gap-2">
-        <div className={`w-5 h-5 rounded-md ${config.bg} flex items-center justify-center`}>
+        <div className={`w-5 h-5 rounded-input ${config.bg} flex items-center justify-center`}>
           <Icon className={`w-3 h-3 ${config.color}`} />
         </div>
-        <span className="text-sm font-semibold text-foreground/90">
+        <span className="typo-heading font-semibold text-foreground/90">
           #{suggestion.rank} {suggestion.title}
         </span>
-        <span className={`ml-auto text-xs font-medium ${
+        <span className={`ml-auto typo-caption font-medium ${
           pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-amber-400' : 'text-red-400'
         }`}>
           {pct}% confidence
         </span>
       </div>
-      <p className="text-xs text-muted-foreground/80 leading-relaxed">{suggestion.description}</p>
+      <p className="typo-caption text-foreground leading-relaxed">{suggestion.description}</p>
       {suggestion.relatedEventTimestamp && (
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[10px] text-foreground">
           <Clock className="w-3 h-3" />
           {new Date(suggestion.relatedEventTimestamp).toLocaleString()}
         </div>
@@ -138,33 +138,33 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
       <div className="px-5 py-4 border-b border-primary/10 bg-gradient-to-r from-red-500/5 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-red-500/15 flex items-center justify-center">
               <Search className="w-4 h-4 text-red-400" />
             </div>
             <div>
-              <h2 id="anomaly-drilldown-title" className="text-base font-semibold text-foreground/90">
+              <h2 id="anomaly-drilldown-title" className="typo-body-lg font-semibold text-foreground/90">
                 {t.overview.anomaly_drilldown_extra.title}
               </h2>
-              <p className="text-xs text-muted-foreground/70">
+              <p className="typo-caption text-foreground">
                 {metricLabel} spike on {new Date(anomaly.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
         {/* Anomaly summary bar */}
-        <div className="mt-3 flex items-center gap-4 text-xs">
+        <div className="mt-3 flex items-center gap-4 typo-caption">
           <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground/60">{t.overview.anomaly_drilldown_extra.value_label}</span>
+            <span className="text-foreground">{t.overview.anomaly_drilldown_extra.value_label}</span>
             <span className="font-medium text-red-400">{anomaly.value.toFixed(2)}</span>
           </div>
-          <ArrowRight className="w-3 h-3 text-muted-foreground/40" />
+          <ArrowRight className="w-3 h-3 text-foreground" />
           <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground/60">{t.overview.anomaly_drilldown_extra.baseline_label}</span>
-            <span className="font-medium text-muted-foreground">{anomaly.baseline.toFixed(2)}</span>
+            <span className="text-foreground">{t.overview.anomaly_drilldown_extra.baseline_label}</span>
+            <span className="font-medium text-foreground">{anomaly.baseline.toFixed(2)}</span>
           </div>
           <div className="ml-auto px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
             +{deviationPct}%
@@ -177,14 +177,14 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
         {loading && (
           <div className="flex items-center justify-center py-12">
             <LoadingSpinner size="md" />
-            <span className="ml-3 text-sm text-muted-foreground/70">{t.overview.anomaly_drilldown_extra.correlating}</span>
+            <span className="ml-3 typo-body text-foreground">{t.overview.anomaly_drilldown_extra.correlating}</span>
           </div>
         )}
 
         {error && (
-          <div className="m-4 p-3 rounded-xl border border-red-500/20 bg-red-500/10 flex items-start gap-2">
+          <div className="m-4 p-3 rounded-modal border border-red-500/20 bg-red-500/10 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-300">{error}</p>
+            <p className="typo-body text-red-300">{error}</p>
           </div>
         )}
 
@@ -193,7 +193,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             {/* Root Cause Suggestions */}
             {data.rootCauseSuggestions.length > 0 && (
               <section>
-                <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
+                <h3 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">
                   {t.overview.anomaly_drilldown_extra.likely_root_causes}
                 </h3>
                 <div className="space-y-2">
@@ -206,11 +206,11 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
 
             {/* Correlated Events Timeline */}
             <section>
-              <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
+              <h3 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-2">
                 Correlated Events ({data.correlatedEvents.length})
               </h3>
               {sortedEvents.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground/60">
+                <div className="text-center py-6 typo-body text-foreground">
                   {t.overview.anomaly_drilldown_extra.no_correlated}
                 </div>
               ) : (

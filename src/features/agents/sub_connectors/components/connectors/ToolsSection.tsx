@@ -19,23 +19,23 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
   );
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
       <button
         onClick={() => setToolsExpanded(!toolsExpanded)}
         aria-expanded={toolsExpanded}
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"
       >
         {toolsExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
-        <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
-        <span className="text-sm font-medium text-muted-foreground/80">
+        <Wrench className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-body font-medium text-foreground">
           {tx(t.agents.connectors.ts_configured, { count: tools.length })}
         </span>
         {!toolsExpanded && tools.length > 0 && (
-          <span className="text-sm text-muted-foreground/60 truncate flex-1">
+          <span className="typo-body text-foreground truncate flex-1">
             {tools.slice(0, 4).map((t) => t.name).join(', ')}{tools.length > 4 ? `, +${tools.length - 4}` : ''}
           </span>
         )}
@@ -52,13 +52,13 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                     {tools.map((tool) => (
                       <span
                         key={tool.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-primary/10 bg-secondary/20 text-foreground/80"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-primary/10 bg-secondary/20 text-foreground"
                         title={tool.description ?? undefined}
                       >
-                        <Wrench className="w-3 h-3 text-muted-foreground/60" />
+                        <Wrench className="w-3 h-3 text-foreground" />
                         {tool.name}
                         {tool.requires_credential_type && (
-                          <span className="text-sm text-muted-foreground/50">
+                          <span className="typo-body text-foreground">
                             ({tool.requires_credential_type})
                           </span>
                         )}
@@ -71,7 +71,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                       <button
                         onClick={() => setShowRunner(!showRunner)}
                         aria-expanded={showRunner}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
+                        className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
                       >
                         <Play className="w-3 h-3" />
                         {showRunner ? t.agents.connectors.ts_hide_runner : tx(t.agents.connectors.ts_try_tools, { count: invocableTools.length })}
@@ -88,7 +88,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                   )}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground/60">{t.agents.connectors.ts_no_tools}</p>
+                <p className="typo-body text-foreground">{t.agents.connectors.ts_no_tools}</p>
               )}
             </div>
           </div>

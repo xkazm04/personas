@@ -36,7 +36,7 @@ export function AutomationSetupModal({
       <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-accent" />
-          <h2 id="automation-setup-title" className="text-sm font-semibold text-foreground/90">
+          <h2 id="automation-setup-title" className="typo-heading font-semibold text-foreground/90">
             {s.phase === 'idle' && (s.editAutomation ? t.agents.connectors.auto_modal_configure : t.agents.connectors.auto_modal_add)}
             {s.phase === 'analyzing' && t.agents.connectors.auto_modal_designing}
             {s.phase === 'preview' && t.agents.connectors.auto_modal_review}
@@ -45,7 +45,7 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={handleClose} className="text-foreground hover:text-foreground transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -107,10 +107,10 @@ export function AutomationSetupModal({
         <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-border/60">
           <button
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="typo-body text-foreground hover:text-foreground transition-colors"
           >{t.agents.connectors.auto_start_over}</button>
           <div className="flex items-center gap-2">
-            <button onClick={handleClose} className="btn-md border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
+            <button onClick={handleClose} className="btn-md border border-border text-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
             <Tooltip
               content={
                 !s.name.trim()

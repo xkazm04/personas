@@ -77,7 +77,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
               data-testid={`editor-tab-${tab.id}`}
               title={label}
               className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
-                isActive ? 'text-primary' : 'text-muted-foreground/90 hover:text-foreground/95'
+                isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
               }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />

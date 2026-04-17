@@ -22,7 +22,6 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     if (pendingCategory) {
       useSystemStore.getState().setPendingCatalogCategoryFilter(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);

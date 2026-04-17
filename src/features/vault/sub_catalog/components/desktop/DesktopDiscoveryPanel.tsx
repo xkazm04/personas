@@ -25,7 +25,8 @@ interface DesktopDiscoveryPanelProps {
 type Tab = 'apps' | 'mcp-import';
 
 export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDiscoveryPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dd = t.vault.desktop_discovery;
   const [tab, setTab] = useState<Tab>('apps');
   const [apps, setApps] = useState<DiscoveredApp[]>([]);
   const [mcpServers, setMcpServers] = useState<ImportedMcpServer[]>([]);
@@ -117,50 +118,50 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           data-testid="vault-desktop-back"
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
-          <p className="text-sm text-muted-foreground/60">
-            Connect local applications or import Claude Desktop MCP servers
+          <h3 className="typo-heading font-semibold text-foreground">{dd.title}</h3>
+          <p className="typo-body text-foreground">
+            {dd.connect_description}
           </p>
         </div>
         <button
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-secondary/30 rounded-lg">
+      <div className="flex gap-1 p-1 bg-secondary/30 rounded-card">
         <button
           onClick={() => setTab('apps')}
-          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
             tab === 'apps'
               ? 'bg-secondary/80 text-foreground'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-foreground hover:text-foreground'
           }`}
         >
           <Monitor className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
-          Detected Apps ({installedApps.length})
+          {tx(dd.detected_apps_tab, { count: installedApps.length })}
         </button>
         <button
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
-          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
             tab === 'mcp-import'
               ? 'bg-secondary/80 text-foreground'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-foreground hover:text-foreground'
           }`}
         >
           <Download className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
-          Claude MCP ({mcpServers.length})
+          {tx(dd.claude_mcp_tab, { count: mcpServers.length })}
         </button>
       </div>
 

@@ -27,7 +27,7 @@ function SkillCard({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left rounded-xl border p-3 transition-all ${
+      className={`w-full text-left rounded-modal border p-3 transition-all ${
         selected
           ? 'border-primary/30 bg-primary/8 ring-1 ring-primary/20'
           : 'border-primary/10 bg-card/30 hover:border-primary/20'
@@ -178,7 +178,7 @@ export default function SkillBrowserPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.plugins.dev_tools.search_skills}
-                className="w-full pl-9 pr-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="w-full pl-9 pr-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               />
             </div>
 
@@ -191,7 +191,7 @@ export default function SkillBrowserPage() {
               ) : filtered.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="w-6 h-6 text-foreground mx-auto mb-2" />
-                  <p className="text-xs text-foreground">
+                  <p className="typo-caption text-foreground">
                     {search ? t.plugins.dev_tools.no_matching_skills : t.plugins.dev_tools.no_skills_found}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export default function SkillBrowserPage() {
                         setActiveFile(f);
                         loadFile(selectedSkill, f);
                       }}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-card text-[11px] font-medium whitespace-nowrap transition-colors ${
                         activeFile === f
                           ? 'bg-primary/10 text-foreground'
                           : 'text-foreground hover:text-foreground hover:bg-primary/5'
@@ -279,7 +279,7 @@ export default function SkillBrowserPage() {
                 {/* Content area */}
                 <div className="flex-1 overflow-y-auto p-4">
                   {loadFailed && !fileLoading && (
-                    <div className="flex items-center gap-2 p-3 mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 text-xs">
+                    <div className="flex items-center gap-2 p-3 mb-3 rounded-modal border border-amber-500/30 bg-amber-500/10 text-amber-200 typo-caption">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <div>
                         <p className="font-medium">{t.plugins.dev_tools.file_load_failed}</p>
@@ -295,7 +295,7 @@ export default function SkillBrowserPage() {
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
+                      className="w-full h-full min-h-[300px] p-3 text-md font-mono bg-secondary/20 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 resize-none"
                       spellCheck={false}
                     />
                   ) : fileContent ? (

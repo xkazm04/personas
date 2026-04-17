@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -18,6 +19,7 @@ export function ColorRow({
   derivedValue: string | undefined;
   onChange: (color: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -31,7 +33,7 @@ export function ColorRow({
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-7 h-7 rounded-lg border flex-shrink-0 transition-all cursor-pointer ${
+        className={`w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
@@ -39,27 +41,27 @@ export function ColorRow({
         style={{ backgroundColor: displayValue }}
         title={`Pick ${label}`}
       />
-      <span className="text-xs font-medium text-muted-foreground/80 w-24 flex-shrink-0">{label}</span>
-      <span className={`text-xs font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground/70' : 'text-muted-foreground/40'}`}>
+      <span className="typo-caption font-medium text-foreground w-24 flex-shrink-0">{label}</span>
+      <span className={`typo-code font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
         {displayValue}
       </span>
       {isOverridden && (
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
-          title="Reset to auto"
+          className="p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
+          title={t.settings.appearance.reset_to_auto}
         >
           <X className="w-3 h-3" />
         </button>
       )}
       {!isOverridden && (
-        <span className="text-[10px] text-muted-foreground/30 flex-shrink-0">auto</span>
+        <span className="text-[10px] text-foreground flex-shrink-0">auto</span>
       )}
 
       {open && (
           <div
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 glass-sm rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
+            className="animate-fade-slide-in absolute top-full mt-1 left-0 glass-sm rounded-modal shadow-elevation-3 z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={displayValue}

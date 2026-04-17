@@ -30,25 +30,25 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ArrowLeftRight className="w-4 h-4 text-primary/70" />
-          <h3 className="typo-heading text-foreground/80">{e.execution_comparison}</h3>
+          <h3 className="typo-heading text-foreground">{e.execution_comparison}</h3>
         </div>
         <button
           onClick={onClose}
-          className="p-1 text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+          className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* What Changed summary */}
-      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+      <div className="bg-primary/5 border border-primary/20 rounded-modal p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
-          <span className="typo-heading text-foreground/70 uppercase tracking-wider">{e.what_changed}</span>
+          <span className="typo-heading text-foreground uppercase tracking-wider">{e.what_changed}</span>
         </div>
         <ul className="space-y-1">
           {whatChanged.map((change, i) => (
-            <li key={i} className="flex items-start gap-2 typo-body text-foreground/80">
+            <li key={i} className="flex items-start gap-2 typo-body text-foreground">
               <span className="w-1 h-1 rounded-full bg-primary/40 mt-2 flex-shrink-0" />
               {change}
             </li>
@@ -58,27 +58,27 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
 
       {/* Execution headers (side by side) */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
+        <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="typo-code uppercase text-muted-foreground/50">{e.left}</span>
+            <span className="typo-code uppercase text-foreground">{e.left}</span>
             <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
             {left.retry_count > 0 && (
               <span className="typo-code text-cyan-400">{tx(e.retry_count, { count: left.retry_count })}</span>
             )}
           </div>
-          <div className="typo-code text-muted-foreground/60">#{left.id.slice(0, 8)}</div>
-          <div className="typo-body text-muted-foreground/60 mt-0.5">{formatTimestamp(left.started_at)}</div>
+          <div className="typo-code text-foreground">#{left.id.slice(0, 8)}</div>
+          <div className="typo-body text-foreground mt-0.5">{formatTimestamp(left.started_at)}</div>
         </div>
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
+        <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="typo-code uppercase text-muted-foreground/50">{e.right}</span>
+            <span className="typo-code uppercase text-foreground">{e.right}</span>
             <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>
             {right.retry_count > 0 && (
               <span className="typo-code text-cyan-400">{tx(e.retry_count, { count: right.retry_count })}</span>
             )}
           </div>
-          <div className="typo-code text-muted-foreground/60">#{right.id.slice(0, 8)}</div>
-          <div className="typo-body text-muted-foreground/60 mt-0.5">{formatTimestamp(right.started_at)}</div>
+          <div className="typo-code text-foreground">#{right.id.slice(0, 8)}</div>
+          <div className="typo-body text-foreground mt-0.5">{formatTimestamp(right.started_at)}</div>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Hash className="w-3.5 h-3.5 text-primary/50" />
-            <span className="typo-heading text-foreground/70 uppercase tracking-wider">{e.tool_call_timeline}</span>
+            <span className="typo-heading text-foreground uppercase tracking-wider">{e.tool_call_timeline}</span>
           </div>
           <ToolTimelineComparison stepsLeft={stepsLeft} stepsRight={stepsRight} />
         </div>

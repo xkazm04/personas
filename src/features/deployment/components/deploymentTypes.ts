@@ -41,7 +41,7 @@ export function statusBadge(s: DeployStatus): string {
     active: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
     paused: 'bg-amber-500/10 border-amber-500/25 text-amber-400',
     failed: 'bg-red-500/10 border-red-500/20 text-red-400',
-    unknown: 'bg-secondary/40 border-primary/15 text-muted-foreground/80',
+    unknown: 'bg-secondary/40 border-primary/15 text-foreground',
   };
   return colors[s];
 }

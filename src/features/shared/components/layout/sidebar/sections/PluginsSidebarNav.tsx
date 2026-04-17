@@ -36,7 +36,7 @@ export function PluginsSidebarNav() {
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             pluginTab === 'browse'
               ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
           }`}
         >
           <Puzzle className="w-4 h-4 flex-shrink-0" />
@@ -51,7 +51,7 @@ export function PluginsSidebarNav() {
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               pluginTab === 'artist'
                 ? 'bg-primary/10 text-foreground/90'
-                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
             <Palette className="w-4 h-4 flex-shrink-0" />
@@ -74,11 +74,11 @@ export function PluginsSidebarNav() {
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'dev-tools'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
               <Wrench className="w-4 h-4 flex-shrink-0" />
-              Dev Tools
+              {t.shared.sidebar_extra.dev_tools_label}
             </button>
             {/* Dev Tools sub-tabs */}
             {pluginTab === 'dev-tools' && (
@@ -90,8 +90,8 @@ export function PluginsSidebarNav() {
                       onClick={() => setDevToolsTab(item.id as DevToolsTab)}
                       className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                         devToolsTab === item.id
-                          ? 'bg-primary/10 text-foreground/80'
-                          : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                       }`}
                     >
                       {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
@@ -121,11 +121,11 @@ export function PluginsSidebarNav() {
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               pluginTab === 'obsidian-brain'
                 ? 'bg-primary/10 text-foreground/90'
-                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
             <Brain className="w-4 h-4 flex-shrink-0" />
-            Obsidian Brain
+            {t.shared.sidebar_extra.obsidian_brain}
           </button>
         )}
 
@@ -137,7 +137,7 @@ export function PluginsSidebarNav() {
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               pluginTab === 'drive'
                 ? 'bg-primary/10 text-foreground/90'
-                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
             <HardDrive className="w-4 h-4 flex-shrink-0" />
@@ -154,7 +154,7 @@ export function PluginsSidebarNav() {
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'twin'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
               <Sparkles className="w-4 h-4 flex-shrink-0" />
@@ -172,8 +172,8 @@ export function PluginsSidebarNav() {
                       onClick={() => setTwinTab(item.id as TwinTab)}
                       className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                         twinTab === item.id
-                          ? 'bg-primary/10 text-foreground/80'
-                          : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                       }`}
                     >
                       {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
@@ -183,10 +183,10 @@ export function PluginsSidebarNav() {
                 </div>
                 {activeTwin && (
                   <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/15">
-                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">Active Twin</p>
+                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">{t.shared.sidebar_extra.active_twin}</p>
                     <p className="typo-caption text-foreground truncate">{activeTwin.name}</p>
                     {activeTwin.role && (
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{activeTwin.role}</p>
+                      <p className="text-[10px] text-foreground truncate mt-0.5">{activeTwin.role}</p>
                     )}
                   </div>
                 )}
@@ -204,11 +204,11 @@ export function PluginsSidebarNav() {
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'research-lab'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
               <BookOpen className="w-4 h-4 flex-shrink-0" />
-              Research Lab
+              {t.shared.sidebar_extra.research_lab}
             </button>
             {pluginTab === 'research-lab' && (
               <div className="ml-4 space-y-0.5">
@@ -218,8 +218,8 @@ export function PluginsSidebarNav() {
                     onClick={() => setResearchLabTab(item.id as import('@/lib/types/types').ResearchLabTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       researchLabTab === item.id
-                        ? 'bg-primary/10 text-foreground/80'
-                        : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                        ? 'bg-primary/10 text-foreground'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}
                   >
                     {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}

@@ -87,7 +87,7 @@ export function CloudDeploymentsPanel({
 
         <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1.5">
-            <label htmlFor="deploy-persona-select" className="text-sm font-medium text-muted-foreground/80">
+            <label htmlFor="deploy-persona-select" className="typo-body font-medium text-foreground">
               Persona
             </label>
             <select
@@ -95,9 +95,9 @@ export function CloudDeploymentsPanel({
               value={selectedPersonaId}
               onChange={(e) => setSelectedPersonaId(e.target.value)}
               disabled={isDeploying || deployablePersonas.length === 0}
-              className="w-full px-3 py-2 text-sm rounded-xl
+              className="w-full px-3 py-2 typo-body rounded-modal
                          bg-secondary/40 border border-primary/15
-                         text-foreground/80 placeholder:text-muted-foreground/80
+                         text-foreground placeholder:text-foreground
                          focus-visible:outline-none focus-visible:border-indigo-500/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
@@ -112,7 +112,7 @@ export function CloudDeploymentsPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="deploy-budget-select" className="text-sm font-medium text-muted-foreground/80">
+            <label htmlFor="deploy-budget-select" className="typo-body font-medium text-foreground">
               Budget
             </label>
             <select
@@ -120,9 +120,9 @@ export function CloudDeploymentsPanel({
               value={selectedBudget ?? ''}
               onChange={(e) => setSelectedBudget(e.target.value ? Number(e.target.value) : undefined)}
               disabled={isDeploying}
-              className="w-full px-3 py-2 text-sm rounded-xl
+              className="w-full px-3 py-2 typo-body rounded-modal
                          bg-secondary/40 border border-primary/15
-                         text-foreground/80
+                         text-foreground
                          focus-visible:outline-none focus-visible:border-indigo-500/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"
@@ -149,12 +149,12 @@ export function CloudDeploymentsPanel({
 
       {/* Deployment list */}
       {deployments.length === 0 ? (
-        <p className="text-sm text-muted-foreground/90 py-8 text-center">
-          No deployments yet. Select a persona above to deploy it as a cloud API endpoint.
+        <p className="typo-body text-foreground py-8 text-center">
+          {t.deployment.deployments_panel.no_deployments_yet}
         </p>
       ) : (
         <div className="space-y-3">
-          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Active Deployments ({deployments.length})</SectionHeading>
+          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{t.deployment.deployments_panel.active_deployments} ({deployments.length})</SectionHeading>
 
           {deployments.map((d) => (
             <DeploymentCard

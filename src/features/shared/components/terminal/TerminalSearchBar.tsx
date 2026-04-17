@@ -12,7 +12,7 @@ const LINE_TYPE_CHIPS: { type: TerminalLineStyle; label: string; color: string; 
   { type: 'error', label: 'Error', color: 'text-red-400/50 border-red-500/20', activeColor: 'text-red-400 bg-red-500/15 border-red-500/30' },
   { type: 'tool', label: 'Tool', color: 'text-cyan-400/50 border-cyan-500/20', activeColor: 'text-cyan-400 bg-cyan-500/15 border-cyan-500/30' },
   { type: 'status', label: 'Status', color: 'text-emerald-400/50 border-emerald-500/20', activeColor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' },
-  { type: 'text', label: 'Text', color: 'text-foreground/80 border-border/30', activeColor: 'text-foreground/80 bg-foreground/10 border-foreground/20' },
+  { type: 'text', label: 'Text', color: 'text-foreground border-border/30', activeColor: 'text-foreground bg-foreground/10 border-foreground/20' },
 ];
 
 const ALL_TYPES = new Set<TerminalLineStyle>(['error', 'tool', 'status', 'text', 'meta', 'summary']);
@@ -62,10 +62,10 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-muted-foreground/80 hover:text-foreground/95 transition-colors border-b border-border/10"
+        className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors border-b border-border/10"
       >
         <Search className="w-3 h-3" />
-        Search & Filter
+        {t.shared.terminal_extra.search_and_filter}
         {isFiltering && (
           <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
         )}
@@ -75,14 +75,14 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
 
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/15 bg-secondary/20">
-      <Search className="w-3 h-3 text-muted-foreground/80 flex-shrink-0" />
+      <Search className="w-3 h-3 text-foreground flex-shrink-0" />
       <input
         type="text"
         value={filter.keyword}
         onChange={(e) => onChange({ ...filter, keyword: e.target.value })}
         placeholder={t.shared.terminal_extra.search_output}
         autoFocus
-        className="flex-1 min-w-0 bg-transparent text-sm text-foreground/80 placeholder-muted-foreground/30 outline-none font-mono"
+        className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder-muted-foreground/30 outline-none font-mono"
       />
 
       <div className="flex items-center gap-1 flex-shrink-0">
@@ -104,7 +104,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
           onChange({ keyword: '', activeTypes: ALL_TYPES });
           setExpanded(false);
         }}
-        className="text-muted-foreground/80 hover:text-foreground/95 transition-colors flex-shrink-0"
+        className="text-foreground hover:text-foreground/95 transition-colors flex-shrink-0"
       >
         <X className="w-3 h-3" />
       </button>

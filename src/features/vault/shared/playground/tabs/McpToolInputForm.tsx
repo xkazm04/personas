@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import type { McpTool } from '@/api/agents/mcpTools';
 
 // -- Tool input form ----------------------------------------------
@@ -13,10 +14,12 @@ export function ToolInputForm({
   values,
   onChange,
 }: ToolInputFormProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const schema = tool.input_schema as Record<string, unknown> | null;
   if (!schema) {
     return (
-      <p className="text-sm text-muted-foreground/60">This tool takes no input parameters.</p>
+      <p className="typo-body text-foreground">{sh.no_input_params}</p>
     );
   }
 
@@ -26,7 +29,7 @@ export function ToolInputForm({
 
   if (keys.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground/60">This tool takes no input parameters.</p>
+      <p className="typo-body text-foreground">{sh.no_input_params}</p>
     );
   }
 
@@ -42,12 +45,12 @@ export function ToolInputForm({
         return (
           <div key={key} className="space-y-1">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-mono text-foreground/70">{key}</label>
-              {isRequired && <span className="text-sm text-amber-400/60">required</span>}
-              <span className="text-sm text-violet-400/50">{propType}</span>
+              <label className="typo-code font-mono text-foreground">{key}</label>
+              {isRequired && <span className="typo-body text-amber-400/60">required</span>}
+              <span className="typo-body text-violet-400/50">{propType}</span>
             </div>
             {description && (
-              <p className="text-sm text-muted-foreground/60">{description}</p>
+              <p className="typo-body text-foreground">{description}</p>
             )}
             {isComplex ? (
               <textarea
@@ -55,15 +58,15 @@ export function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter JSON ${propType}...`}
                 rows={3}
-                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 resize-none focus-visible:outline-none focus-visible:border-primary/25"
+                className="w-full px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
               />
             ) : propType === 'boolean' ? (
               <select
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
-                className="px-2 py-1.5 rounded text-sm bg-secondary/20 border border-primary/10 text-foreground/70 focus-visible:outline-none focus-visible:border-primary/25"
+                className="px-2 py-1.5 rounded typo-body bg-secondary/20 border border-primary/10 text-foreground focus-visible:outline-none focus-visible:border-primary/25"
               >
-                <option value="">-- select --</option>
+                <option value="">{t.common.select}</option>
                 <option value="true">true</option>
                 <option value="false">false</option>
               </select>
@@ -73,7 +76,7 @@ export function ToolInputForm({
                 value={values[key] || ''}
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 placeholder={`Enter ${propType}...`}
-                className="w-full px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/25 focus-visible:outline-none focus-visible:border-primary/25"
+                className="w-full px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
               />
             )}
           </div>

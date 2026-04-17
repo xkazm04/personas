@@ -30,7 +30,7 @@ export default function ScanOverlay({
       <div className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-lg shadow-elevation-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
               <LoadingSpinner size="lg" className="text-amber-400" />
             </div>
             <div>
@@ -38,7 +38,7 @@ export default function ScanOverlay({
               <p className="text-md text-foreground">{t.plugins.dev_tools.analyzing_codebase}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onCancel} title="Cancel scan">
+          <Button variant="ghost" size="icon-sm" onClick={onCancel} title={t.plugins.dev_tools.cancel_scan}>
             <Square className="w-3.5 h-3.5" />
           </Button>
         </div>
@@ -46,7 +46,7 @@ export default function ScanOverlay({
         {/* Terminal output */}
         <div
           ref={scrollRef}
-          className="bg-black/40 border border-primary/10 rounded-xl p-3 h-56 overflow-y-auto font-mono text-[11px] leading-relaxed"
+          className="bg-black/40 border border-primary/10 rounded-modal p-3 h-56 overflow-y-auto font-mono text-[11px] leading-relaxed"
         >
           {lines.length === 0 ? (
             <p className="text-foreground">{t.plugins.dev_tools.waiting_for_output}</p>

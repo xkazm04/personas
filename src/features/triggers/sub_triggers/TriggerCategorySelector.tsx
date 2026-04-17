@@ -17,8 +17,8 @@ export function TriggerCategorySelector({
   const { t } = useTranslation();
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-        Trigger Category
+      <label className="block typo-body font-medium text-foreground mb-1.5">
+        {t.triggers.category_section_label}
       </label>
       <div className="grid grid-cols-2 gap-2">
         {TRIGGER_CATEGORIES.map((cat) => {
@@ -33,7 +33,7 @@ export function TriggerCategorySelector({
                 onSelectCategory(isActive ? null : cat.id);
                 if (!isActive) onSelectTriggerType(cat.types[0]!);
               }}
-              className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
                 isActive
                   ? `${cat.bgColor} ${cat.borderColor} ring-1 ring-primary/15`
                   : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
@@ -41,10 +41,10 @@ export function TriggerCategorySelector({
             >
               <div className="flex items-center gap-2">
                 <CatIcon className={`w-4 h-4 ${cat.color}`} />
-                <span className="text-sm font-semibold text-foreground/90">{cat.label}</span>
-                <span className="ml-auto text-xs text-muted-foreground/50">{cat.types.length}</span>
+                <span className="typo-heading font-semibold text-foreground/90">{cat.label}</span>
+                <span className="ml-auto typo-caption text-foreground">{cat.types.length}</span>
               </div>
-              <span className="text-xs text-muted-foreground/70">{cat.description}</span>
+              <span className="typo-caption text-foreground">{cat.description}</span>
             </button>
           );
         })}
@@ -55,7 +55,7 @@ export function TriggerCategorySelector({
             onSelectCategory('manual');
             onSelectTriggerType('manual');
           }}
-          className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+          className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
             selectedCategory === 'manual'
               ? 'bg-emerald-500/10 border-emerald-500/20 ring-1 ring-primary/15'
               : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
@@ -63,9 +63,9 @@ export function TriggerCategorySelector({
         >
           <div className="flex items-center gap-2">
             {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
-            <span className="text-sm font-semibold text-foreground/90">{t.triggers.category_manual}</span>
+            <span className="typo-heading font-semibold text-foreground/90">{t.triggers.category_manual}</span>
           </div>
-          <span className="text-xs text-muted-foreground/70">{t.triggers.category_manual_hint}</span>
+          <span className="typo-caption text-foreground">{t.triggers.category_manual_hint}</span>
         </button>
       </div>
     </div>

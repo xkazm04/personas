@@ -2,13 +2,14 @@
  * Roadmap timeline view — the unique "as-is" UI for the special `roadmap`
  * release entry. Visual is unchanged from the legacy `HomeRoadmap` component;
  * the only difference is that items are now sourced from `releases.json`
- * (structure) + `releases/i18n/{lang}.ts` (titles + descriptions + labels)
- * so one config drives both the changelog tabs and this view.
+ * (structure) + `src/i18n/en.ts` → `releases.whats_new.*` (titles +
+ * descriptions + labels) so one config drives both the changelog tabs and
+ * this view.
  *
  * Per project convention, no English strings live in this file directly —
  * status labels, priority labels, and the summary pill counts are all
- * looked up from `useReleasesTranslation`. See `.claude/CLAUDE.md` →
- * "Internationalization".
+ * looked up from `useReleasesTranslation` (backed by the main i18n system).
+ * See `.claude/CLAUDE.md` → "Internationalization".
  */
 import type { Release, ReleaseItem, ReleaseItemPriority, ReleaseItemStatus } from '@/data/releases';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
@@ -105,9 +106,9 @@ function RoadmapCard({
 
       {/* Card */}
       <div className="flex-1 pb-6">
-        <div className="rounded-xl border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
+        <div className="rounded-modal border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/8 ring-1 ring-primary/10 font-mono text-xs font-bold text-foreground shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-card bg-primary/8 ring-1 ring-primary/10 font-mono typo-code font-bold text-foreground shrink-0">
               {item.sort_order}
             </div>
             <div className="flex-1 min-w-0">
@@ -128,7 +129,7 @@ function RoadmapCard({
           </div>
         </div>
         {item.status === 'in_progress' && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 left-8 z-10 rounded-xl overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 right-0 left-8 z-10 rounded-modal overflow-hidden">
             <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
               <rect
                 x="0.5" y="0.5"

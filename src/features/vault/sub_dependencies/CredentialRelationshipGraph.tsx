@@ -138,7 +138,7 @@ export function CredentialRelationshipGraph() {
       onNodeClick={handleNodeClick}
     />
   ) : (
-    <div key="empty" className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-6">
+    <div key="empty" className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-6">
       <EmptyIllustration
         icon={Network}
         heading={dep.no_credential_selected}

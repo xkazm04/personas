@@ -10,7 +10,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
   return (
     <div className="space-y-3">
       {/* Status header */}
-      <div className={`rounded-lg border p-3 space-y-2 ${
+      <div className={`rounded-card border p-3 space-y-2 ${
         !allValid
           ? 'border-red-500/30 bg-red-500/5'
           : 'border-violet-500/20 bg-violet-500/5'
@@ -26,10 +26,10 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
             <ShieldOff className="w-5 h-5 text-red-400" />
           )}
           <div>
-            <div className="text-sm font-medium text-foreground">
+            <div className="typo-body font-medium text-foreground">
               {result.personaName}
             </div>
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-[10px] text-foreground">
               by {result.creatorDisplayName}
             </div>
           </div>
@@ -61,31 +61,31 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       </div>
 
       {/* Creator identity */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-1.5">
-        <div className="text-xs text-muted-foreground font-medium">{st.creator_identity}</div>
-        <div className="text-[10px] text-muted-foreground font-mono">
+      <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-1.5">
+        <div className="typo-caption text-foreground font-medium">{st.creator_identity}</div>
+        <div className="text-[10px] text-foreground font-mono">
           {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
         </div>
       </div>
 
       {/* Policy details */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2">
-        <div className="text-xs text-muted-foreground font-medium">{st.execution_policy}</div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2">
+        <div className="typo-caption text-foreground font-medium">{st.execution_policy}</div>
+        <div className="grid grid-cols-2 gap-2 typo-caption">
           <div>
-            <span className="text-muted-foreground">{st.max_cost_label}</span>{' '}
+            <span className="text-foreground">{st.max_cost_label}</span>{' '}
             <span className="text-foreground">${result.policy.maxCostUsd.toFixed(2)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">{st.max_turns_label}</span>{' '}
+            <span className="text-foreground">{st.max_turns_label}</span>{' '}
             <span className="text-foreground">{result.policy.maxTurns}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">{st.persistence_label}</span>{' '}
+            <span className="text-foreground">{st.persistence_label}</span>{' '}
             <span className="text-foreground">{result.policy.allowPersistence ? st.persistence_allowed : st.persistence_denied}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">{st.capabilities_label}</span>{' '}
+            <span className="text-foreground">{st.capabilities_label}</span>{' '}
             <span className="text-foreground">
               {result.policy.requiredCapabilities.length || st.capabilities_none}
             </span>
@@ -94,8 +94,8 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       </div>
 
       {/* Enclave hash */}
-      <div className="text-[10px] text-muted-foreground/60 font-mono truncate">
-        Hash: {result.enclaveHash}
+      <div className="text-[10px] text-foreground font-mono truncate">
+        {st.enclave_hash_label} {result.enclaveHash}
       </div>
     </div>
   );

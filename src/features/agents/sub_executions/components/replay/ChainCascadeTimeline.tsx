@@ -65,7 +65,7 @@ export function ChainCascadeTimeline({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground/60">
+      <div className="flex items-center gap-2 px-3 py-2 text-foreground">
         <LoadingSpinner size="sm" />
         <span className="typo-body">{e.loading_chain_cascade}</span>
       </div>
@@ -86,7 +86,7 @@ export function ChainCascadeTimeline({
   const chainDurationMs = chainEndMs - chainStartMs;
 
   return (
-    <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 overflow-hidden">
+    <div className="rounded-modal border border-orange-500/20 bg-orange-500/5 overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -101,7 +101,7 @@ export function ChainCascadeTimeline({
         <span className="typo-heading text-orange-300">
           {e.chain_cascade}
         </span>
-        <span className="ml-auto typo-code text-muted-foreground/50">
+        <span className="ml-auto typo-code text-foreground">
           {tx(e.chain_executions, { count: sortedTraces.length })}
         </span>
       </button>
@@ -136,7 +136,7 @@ export function ChainCascadeTimeline({
                         ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                         : hasError
                           ? 'bg-red-500/15 text-red-400 border border-red-500/25'
-                          : 'bg-secondary/40 text-muted-foreground/60 border border-primary/10'
+                          : 'bg-secondary/40 text-foreground border border-primary/10'
                     }`}>
                       {i + 1}
                     </div>
@@ -170,7 +170,7 @@ export function ChainCascadeTimeline({
                       ) : (
                         <LoadingSpinner size="xs" className="text-blue-400" />
                       )}
-                      <span className="text-[11px] font-mono text-muted-foreground/50 tabular-nums">
+                      <span className="text-[11px] font-mono text-foreground tabular-nums">
                         {formatDuration(traceDuration)}
                       </span>
                     </div>
@@ -180,10 +180,10 @@ export function ChainCascadeTimeline({
             </div>
 
             {/* Chain summary */}
-            <div className="px-4 pb-3 flex items-center gap-3 text-[10px] font-mono text-muted-foreground/40">
-              <span>Chain: {chainTraceId.slice(0, 8)}</span>
-              <span>Total: {formatDuration(chainDurationMs)}</span>
-              <span>Depth: {sortedTraces.length}</span>
+            <div className="px-4 pb-3 flex items-center gap-3 text-[10px] font-mono text-foreground">
+              <span>{tx(e.chain_id_prefix, { id: chainTraceId.slice(0, 8) })}</span>
+              <span>{tx(e.chain_total_duration, { duration: formatDuration(chainDurationMs) })}</span>
+              <span>{e.depth_label} {sortedTraces.length}</span>
             </div>
           </div>
         )}

@@ -35,10 +35,10 @@ export function CompositeConfig({
                 setCompositeConditions(updated);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="Event type (e.g. file_changed)"
+              placeholder={t.triggers.composite_event_type_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'composite-conditions-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring transition-all ${
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring transition-all ${
                 validationError ? 'border-red-500/30' : 'border-primary/15'
               }`}
             />
@@ -52,16 +52,16 @@ export function CompositeConfig({
                 setCompositeConditions(updated);
               }}
               placeholder={t.triggers.source_filter_optional}
-              className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring transition-all"
+              className="w-40 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring transition-all"
             />
             {compositeConditions.length > 1 && (
-              <button type="button" onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setCompositeConditions(compositeConditions.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 text-sm text-rose-400/80 hover:text-rose-400 transition-colors">
+        <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 typo-body text-rose-400/80 hover:text-rose-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> {t.triggers.composite.add_condition}
         </button>
       </TriggerFieldGroup>
@@ -76,10 +76,10 @@ export function CompositeConfig({
               key={op.value}
               type="button"
               onClick={() => setCompositeOperator(op.value)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
                 compositeOperator === op.value
                   ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
               }`}
               title={op.desc}
             >
@@ -97,8 +97,8 @@ export function CompositeConfig({
           value={windowSeconds}
           onChange={(e) => { setWindowSeconds(e.target.value); if (validationError) setValidationError(null); }}
           min="5"
-          placeholder="300"
-          className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
+          placeholder={t.triggers.composite_debounce_placeholder}
+          className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

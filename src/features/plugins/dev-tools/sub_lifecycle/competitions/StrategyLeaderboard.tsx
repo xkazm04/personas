@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, RefreshCw } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getStrategyLeaderboard } from '@/api/devTools/devTools';
 import type { DevStrategyStats } from '@/lib/bindings/DevStrategyStats';
 
 export function StrategyLeaderboard({ projectId }: { projectId: string }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<DevStrategyStats[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +33,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="w-4 h-4 text-amber-400" />
         <h4 className="typo-section-title">
-          Strategy Leaderboard
+          {t.plugins.dev_tools.strategy_leaderboard}
         </h4>
         <button
           onClick={load}
@@ -60,15 +62,15 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
               {Math.round(s.win_rate * 100)}%
             </span>
             {s.disqualified_count > 0 && (
-              <span className="typo-caption text-amber-400 shrink-0" title="Disqualified runs">
-                DQ x{s.disqualified_count}
+              <span className="typo-caption text-amber-400 shrink-0" title={t.plugins.dev_lifecycle.dq_title}>
+                {t.plugins.dev_lifecycle.dq_label}{s.disqualified_count}
               </span>
             )}
           </div>
         ))}
       </div>
       <p className="typo-caption text-foreground mt-3">
-        Aggregated across resolved competitions. Win rate and DQ count are lifetime per strategy.
+        {t.plugins.dev_lifecycle.leaderboard_subtitle}
       </p>
     </div>
   );

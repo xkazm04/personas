@@ -18,7 +18,7 @@ const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme
   return (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
       <div
-        className="w-[140px] rounded-lg overflow-hidden flex flex-col"
+        className="w-[140px] rounded-card overflow-hidden flex flex-col"
         style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
       >
         {/* Mini UI preview */}
@@ -26,7 +26,7 @@ const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
+            <div className="w-3 h-3 rounded-interactive" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
           </div>
           <div className="flex gap-1">
             <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
@@ -68,7 +68,7 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
       onClick={onSelect}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border ${
+      className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal border ${
         active
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -79,9 +79,9 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
         className="w-10 h-10 rounded-full border-2 border-black/10 flex items-center justify-center"
         style={{ backgroundColor: theme.primaryColor }}
       >
-        {active && <Check className="w-4 h-4 text-white drop-shadow-sm" />}
+        {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
       </div>
-      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
+      <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
         {theme.label}
       </span>
     </Button>
@@ -108,22 +108,22 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
 }) {
   const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <div className="flex items-center justify-between">
         <SectionHeading title={labels.theming} icon={<Palette />} />
-        <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+        <div className="flex rounded-card border border-primary/15 overflow-hidden">
           <button
             onClick={() => setThemeTab('default')}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+            className={`px-3 py-1.5 typo-body font-medium transition-colors ${
+              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
             {labels.default_tab}
           </button>
           <button
             onClick={() => setThemeTab('custom')}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-primary/15 ${
-              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+            className={`px-3 py-1.5 typo-body font-medium transition-colors border-l border-primary/15 ${
+              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
             }`}
           >
             {labels.custom_tab}
@@ -133,7 +133,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
       {themeTab === 'default' ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">{labels.dark}</span>
+            <span className="text-sm text-foreground">{labels.dark}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -141,7 +141,7 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground/60">{labels.light}</span>
+            <span className="text-sm text-foreground">{labels.light}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightThemes.map((t) => (
                 <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
@@ -204,9 +204,9 @@ export default function AppearanceSettings() {
       <ContentBody centered>
         <div className="space-y-6">
           {/* Interface mode */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-foreground">
               {s.interface_mode_hint}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -220,15 +220,15 @@ export default function AppearanceSettings() {
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors ${
                       isActive
                         ? `border-${color}-500/30 bg-${color}-500/5`
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-muted-foreground/50'}`} />
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>{meta?.label ?? mode}</span>
-                    <span className="text-[11px] text-muted-foreground/50 text-center">{meta?.desc ?? ''}</span>
+                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-foreground'}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>{meta?.label ?? mode}</span>
+                    <span className="text-[11px] text-foreground text-center">{meta?.desc ?? ''}</span>
                     {isActive && (
                       <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
                     )}
@@ -239,7 +239,7 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Text sizing */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.text_size} icon={<Type />} />
             <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
@@ -252,21 +252,21 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={scale.id}
                     onClick={() => setTextScale(scale.id as TextScale)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
                     <span
-                      className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
+                      className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}
                     >
                       Aa
                     </span>
-                    <span className={`text-xs ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>
+                    <span className={`text-xs ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                       {scale.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground/50">
+                    <span className="text-[11px] text-foreground">
                       {scale.description}
                     </span>
                     {isActive && (
@@ -281,9 +281,9 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Timezone */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.timezone} icon={<Globe />} />
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-foreground">
               {s.timezone_hint}
             </p>
             <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
@@ -294,16 +294,16 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={tz.value}
                     onClick={() => setTimezone(tz.value as TimezoneMode)}
-                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                       {tz.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground/50">
+                    <span className="text-[11px] text-foreground">
                       {tz.description}
                     </span>
                     {isActive && (
@@ -319,15 +319,15 @@ export default function AppearanceSettings() {
 
           {/* Language & Translation Contributions — dev only */}
           {import.meta.env.DEV && (
-            <div className="rounded-xl border-2 border-amber-500/50 ring-1 ring-amber-500/20">
+            <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20">
               <TranslationContributor />
             </div>
           )}
 
           {/* Brightness */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.brightness} icon={<Sun />} />
-            <p className="text-sm text-muted-foreground/60">
+            <p className="text-sm text-foreground">
               {s.brightness_hint}
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -339,17 +339,17 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={level.id}
                     onClick={() => setBrightness(level.id as BrightnessLevel)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                     }`}
                   >
-                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
-                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
+                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
+                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
                       {level.label}
                     </span>
-                    <span className="text-sm text-muted-foreground/50">
+                    <span className="typo-body text-foreground">
                       {level.description}
                     </span>
                     {isActive && (

@@ -81,9 +81,9 @@ export default function SidebarSubNav({
                 ? activeIconBox
                 : 'bg-secondary/40 border-primary/15'
             }`}>
-              <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
+              <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-foreground'}`} />
             </div>
-            <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground/80' : 'text-muted-foreground/90'}`}>
+            <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground' : 'text-foreground'}`}>
               {labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (

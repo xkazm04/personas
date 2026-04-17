@@ -44,7 +44,7 @@ export function ImportanceBar({ value }: { value: number }) {
           style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
         />
       </div>
-      <span className="text-xs text-muted-foreground/70 tabular-nums">{value}/{maxScale}</span>
+      <span className="text-xs text-foreground tabular-nums">{value}/{maxScale}</span>
     </div>
   );
 }
@@ -76,11 +76,11 @@ export function MemoryRow({
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
         <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
-          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
-          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
+          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-card bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
+          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-card bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
         </div>
       ) : (
-        <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">
+        <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       )}
@@ -91,25 +91,25 @@ export function MemoryRow({
     <div data-testid={`memory-row-${memory.id}`} className={`animate-fade-slide-in border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
       {/* Desktop row */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
-        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
-        <div className="flex-1 min-w-0"><span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span></div>
+        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
+        <div className="flex-1 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
-        <span className="text-sm text-muted-foreground/80 w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
+        <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
       </div>
 
       {/* Mobile card */}
       <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={onSelect}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
+          <div className="flex items-center gap-2 min-w-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
           <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}</div>
         </div>
-        <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>
+        <span className="typo-body text-foreground line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {categoryBadge}
           <ImportanceBar value={memory.importance} />
-          <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(memory.created_at)}</span>
+          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at)}</span>
         </div>
       </div>
     </div>

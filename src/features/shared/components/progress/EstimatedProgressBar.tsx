@@ -111,9 +111,9 @@ export function EstimatedProgressBar({
         ))}
       </div>
       <div className="flex justify-between typo-body text-foreground">
-        <span>{elapsedInt}s elapsed</span>
+        <span>{elapsedInt}{t.shared.progress_extra.s_elapsed}</span>
         {isRunning && !isOvertime && (
-          <span>~{remaining}s remaining</span>
+          <span>~{remaining}{t.shared.progress_extra.s_remaining}</span>
         )}
         {isOvertime && (
           <span className="text-amber-500/80">{t.shared.progress_extra.taking_longer}</span>

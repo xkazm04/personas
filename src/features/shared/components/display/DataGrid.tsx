@@ -223,7 +223,7 @@ export function DataGrid<T>({
                 aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
               >
                 {col.label}
-                <SortIcon className={`w-3 h-3 ${isSorted ? 'text-foreground' : 'text-foreground/40'}`} />
+                <SortIcon className={`w-3 h-3 ${isSorted ? 'text-foreground' : 'text-foreground'}`} />
               </button>
             );
           }
@@ -345,7 +345,7 @@ export function DataGrid<T>({
                   className={`w-7 h-7 rounded-lg typo-code transition-colors ${
                     p === page
                       ? 'bg-primary/10 text-foreground font-semibold border border-primary/20'
-                      : 'text-foreground/60 hover:text-foreground hover:bg-secondary/40'
+                      : 'text-foreground hover:text-foreground hover:bg-secondary/40'
                   }`}
                 >
                   {p}

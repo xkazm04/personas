@@ -3,9 +3,11 @@
 //! Splits text into overlapping chunks suitable for embedding.
 //! Uses a simple sentence-aware splitter to avoid mid-word breaks.
 
+#[cfg(feature = "ml")]
 use sha2::{Digest, Sha256};
 
 /// Result of chunking a document.
+#[cfg(feature = "ml")]
 pub struct ChunkResult {
     pub chunks: Vec<TextChunk>,
     pub content_hash: String,
@@ -13,6 +15,7 @@ pub struct ChunkResult {
 }
 
 /// A single text chunk with positional metadata.
+#[cfg(feature = "ml")]
 pub struct TextChunk {
     pub content: String,
     pub char_count: usize,
@@ -30,6 +33,7 @@ pub struct TextChunk {
 /// `max_chars` and `overlap_chars` are character counts (not tokens) for
 /// simplicity in the MVP. A typical English token is ~4 characters, so
 /// 512 tokens ≈ 2048 chars.
+#[cfg(feature = "ml")]
 pub fn chunk_text(text: &str, max_chars: usize, overlap_chars: usize) -> ChunkResult {
     let byte_size = text.len();
     let content_hash = {
@@ -108,6 +112,7 @@ pub fn chunk_text(text: &str, max_chars: usize, overlap_chars: usize) -> ChunkRe
 }
 
 /// Find the best sentence break point searching backward from `end`.
+#[cfg(feature = "ml")]
 fn find_sentence_break(chars: &[char], start: usize, end: usize) -> Option<usize> {
     // Search backward from end for sentence-ending punctuation followed by whitespace
     let search_start = if end > start + 100 { end - 100 } else { start };
@@ -125,6 +130,7 @@ fn find_sentence_break(chars: &[char], start: usize, end: usize) -> Option<usize
 
 /// Read a file from disk and chunk its content.
 /// Supports: .txt, .md, .html, .htm
+#[cfg(feature = "ml")]
 pub fn chunk_file(
     path: &std::path::Path,
     max_chars: usize,
@@ -153,6 +159,7 @@ pub fn chunk_file(
 }
 
 /// Very basic HTML tag stripper. Removes tags and decodes common entities.
+#[cfg(feature = "ml")]
 fn strip_html_tags(html: &str) -> String {
     let mut result = String::with_capacity(html.len());
     let mut in_tag = false;
@@ -175,7 +182,7 @@ fn strip_html_tags(html: &str) -> String {
         .replace("&nbsp;", " ")
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ml"))]
 mod tests {
     use super::*;
 

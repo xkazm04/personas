@@ -15,8 +15,11 @@ interface ForagingResultsProps {
 }
 
 export function ForagingResults({ forage, importableCount, onImport }: ForagingResultsProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const fg = t.vault.foraging;
   if (!forage.scanResult) return null;
+
+  const credCount = forage.scanResult.credentials.length;
 
   return (
     <div
@@ -26,13 +29,12 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
       {/* Summary bar */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-foreground/80">
-            {forage.scanResult.credentials.length} credential
-            {forage.scanResult.credentials.length !== 1 ? 's' : ''} found
+          <span className="typo-body font-medium text-foreground">
+            {tx(credCount !== 1 ? fg.credentials_found_other : fg.credentials_found_one, { count: credCount })}
           </span>
           {importableCount > 0 && (
-            <span className="text-sm text-muted-foreground/50">
-              {forage.selected.size} selected
+            <span className="typo-body text-foreground">
+              {forage.selected.size} {fg.selected}
             </span>
           )}
         </div>
@@ -44,16 +46,16 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
               onClick={forage.selectAll}
               className="text-violet-400/80 hover:text-violet-400"
             >
-              All
+              {t.vault.import.select_all}
             </Button>
-            <span className="text-muted-foreground/20">|</span>
+            <span className="text-foreground">|</span>
             <Button
               variant="link"
               size="sm"
               onClick={forage.selectNone}
-              className="text-muted-foreground/50 hover:text-foreground/70"
+              className="text-foreground hover:text-foreground/70"
             >
-              None
+              {t.vault.import.deselect_all}
             </Button>
           </div>
         )}
@@ -61,11 +63,11 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
 
       {/* Empty state */}
       {forage.scanResult.credentials.length === 0 && (
-        <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6">
+        <div className="rounded-modal border border-primary/15 bg-secondary/25 p-6">
           <EmptyIllustration
             icon={Radar}
-            heading={t.vault.foraging.no_credentials_found}
-            description={t.vault.foraging.no_credentials_hint}
+            heading={fg.no_credentials_found}
+            description={fg.no_credentials_hint}
           />
         </div>
       )}
@@ -95,7 +97,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
           accentColor="violet"
           className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
         >
-          Import {forage.selected.size} credential{forage.selected.size !== 1 ? 's' : ''} to vault
+          {tx(forage.selected.size !== 1 ? fg.import_to_vault_other : fg.import_to_vault_one, { count: forage.selected.size })}
         </Button>
       )}
     </div>

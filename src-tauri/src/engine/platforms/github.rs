@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,18 @@ use serde_json::Value;
 use ts_rs::TS;
 
 use crate::error::AppError;
+
+/// Module-scoped HTTP client shared across all `GitHubClient` instances.
+///
+/// The builder config is entirely static (30-second timeout, no default
+/// headers). The per-user bearer token is added on each request via
+/// `self.headers()`, so a process-scoped client does not leak per-user state.
+static GITHUB_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .expect("Failed to build GitHub HTTP client")
+});
 
 /// GitHub API client for repository and workflow management.
 pub struct GitHubClient {
@@ -53,10 +66,7 @@ impl GitHubClient {
             })?
             .clone();
 
-        let http = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()
-            .map_err(|e| AppError::Internal(format!("Failed to create HTTP client: {e}")))?;
+        let http = GITHUB_HTTP.clone();
 
         Ok(Self { token, http })
     }

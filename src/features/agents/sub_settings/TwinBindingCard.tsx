@@ -55,17 +55,17 @@ export function TwinBindingCard() {
 
   return (
     <div className="space-y-3">
-      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         Twin
       </h4>
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
         <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1">
+          <label className="block typo-body font-medium text-foreground mb-1">
             Speak as
           </label>
           {twinProfiles.length === 0 ? (
-            <p className="typo-caption text-muted-foreground">
+            <p className="typo-caption text-foreground">
               No twins configured. Open the Twin plugin to create one — this persona will then be able to adopt it.
             </p>
           ) : (
@@ -90,7 +90,7 @@ export function TwinBindingCard() {
                   ))}
                 </select>
               </div>
-              <p className="typo-caption text-muted-foreground mt-1.5">
+              <p className="typo-caption text-foreground mt-1.5">
                 {inheritsActive
                   ? 'When this persona invokes a twin tool, it adopts whichever twin is currently active in the Twin plugin.'
                   : 'This persona always adopts the selected twin, regardless of which twin is globally active.'}

@@ -47,7 +47,7 @@ export function DirectoryPickerInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+          className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
         />
       </div>
       <button

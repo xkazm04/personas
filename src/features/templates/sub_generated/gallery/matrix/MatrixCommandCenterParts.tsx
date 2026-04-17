@@ -35,10 +35,10 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-          <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="text-base font-semibold text-foreground/90">{section.label}</h3></div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-muted-foreground/60" /></button>
+          <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="typo-body-lg font-semibold text-foreground/90">{section.label}</h3></div>
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-foreground" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap text-sm text-foreground/80 font-sans leading-relaxed">{section.content}</pre></div>
+        <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap typo-body text-foreground font-sans leading-relaxed">{section.content}</pre></div>
       </div>
     </div>,
     document.body,
@@ -48,10 +48,10 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
 export function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon: React.ComponentType<{ className?: string }>; label: string; active: boolean; onToggle: () => void }) {
   return (
     <button type="button" onClick={onToggle} className={[
-      'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+      'inline-flex items-center gap-1.5 rounded-card border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
       active
         ? 'border-primary/30 bg-primary/15 text-primary'
-        : 'border-primary/10 bg-transparent text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/20',
+        : 'border-primary/10 bg-transparent text-foreground hover:text-muted-foreground/60 hover:border-primary/20',
     ].join(' ')}>
       <Icon className="w-3 h-3 flex-shrink-0" />
       {label}
@@ -61,6 +61,7 @@ export function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon
 
 /** Radial launch orb -- the visual centerpiece of the matrix. */
 export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhase }: { onClick?: () => void; disabled: boolean; isRunning: boolean; label: string; icon?: React.ReactNode; buildPhase?: BuildPhase }) {
+  const { t } = useTranslation();
   const orbGlow = buildPhase ? (ORB_GLOW_CLASSES[buildPhase] ?? '') : '';
   const blocked = disabled && !isRunning;
   return (
@@ -90,9 +91,9 @@ export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhas
             }`} />}
       </button>
       <span className={`text-[11px] font-medium tracking-wide uppercase ${
-        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-muted-foreground/50'
+        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-foreground'
       }`}>
-        {isRunning ? 'Generating...' : label}
+        {isRunning ? t.templates.matrix.generating : label}
       </span>
     </div>
   );
@@ -107,8 +108,8 @@ export function BuildStatusIndicator({ phaseLabel, hint }: { phaseLabel: string;
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <LoadingSpinner size="lg" className="text-primary relative z-10" />
       </div>
-      <span className="text-sm text-foreground/60 font-medium">{phaseLabel}</span>
-      {hint && <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">{hint}</p>}
+      <span className="typo-body text-foreground font-medium">{phaseLabel}</span>
+      {hint && <p className="typo-caption text-foreground text-center leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -126,7 +127,7 @@ export function ActiveBuildProgress({
   /** Submit all collected answers at once */
   onSubmitAnswers?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Map BuildPhase keys to t.templates.matrix.* keys (key names differ — see below).
   const PHASE_TO_I18N: Record<string, string> = {
     initializing: t.templates.matrix.preparing,
@@ -175,13 +176,13 @@ export function ActiveBuildProgress({
           type="button"
           onClick={onSubmitAnswers}
           data-testid="continue-build-btn"
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+          className="flex items-center gap-2 px-5 py-3 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
         >
           <Play className="w-4 h-4" />
-          <span className="text-sm font-semibold">Continue Build</span>
+          <span className="text-sm font-semibold">{t.templates.matrix.continue_build}</span>
         </button>
       ) : allResolved ? (
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-modal bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
       ) : isAwaitingInput && hasUnansweredQuestions ? (
@@ -189,13 +190,13 @@ export function ActiveBuildProgress({
           type="button"
           onClick={onOpenNextQuestion}
           data-testid={`answer-button-${highlightedCellKeys[0]}`}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-modal bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
         >
           <HelpCircle className="w-4 h-4" />
-          <span className="text-sm font-medium">Answer: {highlightedCells[0]}</span>
+          <span className="text-sm font-medium">{tx(t.templates.matrix.answer_cell, { cell: highlightedCells[0] ?? '' })}</span>
         </button>
       ) : (
-        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
           <LoadingSpinner size="lg" className="text-primary/50" />
         </div>
       )}
@@ -210,14 +211,14 @@ export function ActiveBuildProgress({
       {/* Phase label */}
       {allResolved ? (
         <span className="text-xs font-semibold text-emerald-400 tracking-wide uppercase">
-          All Dimensions Resolved
+          {t.templates.matrix.all_resolved}
         </span>
       ) : allQuestionsAnswered ? (
         <span className="text-xs font-semibold text-emerald-400/80 tracking-wide uppercase">
-          {pendingAnswerCount} answer{pendingAnswerCount > 1 ? 's' : ''} ready — click Continue
+          {tx(t.templates.matrix.answers_ready, { count: pendingAnswerCount })}
         </span>
       ) : (
-        <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
           {buildActivity || phaseLabel}
         </span>
       )}
@@ -225,18 +226,18 @@ export function ActiveBuildProgress({
       {/* Hint: which cells still need answers */}
       {isAwaitingInput && hasUnansweredQuestions && pendingAnswerCount > 0 && (
         <p className="text-[10px] text-primary/60 text-center leading-relaxed">
-          {pendingAnswerCount} answered, {highlightedCells.length} remaining
+          {tx(t.templates.matrix.answer_progress, { answered: pendingAnswerCount, remaining: highlightedCells.length })}
         </p>
       )}
       {isAwaitingInput && hasUnansweredQuestions && pendingAnswerCount === 0 && highlightedCells.length > 1 && (
         <p className="text-[10px] text-primary/60 text-center leading-relaxed">
-          {highlightedCells.length} questions — answer all, then Continue
+          {tx(t.templates.matrix.answer_progress, { answered: 0, remaining: highlightedCells.length })}
         </p>
       )}
 
       {!isAwaitingInput && activeCells.length > 0 && (
         <p className="text-[10px] text-primary/60 text-center leading-relaxed animate-pulse">
-          Working on: {activeCells.join(', ')}
+          {tx(t.templates.matrix.working_on, { cells: activeCells.join(', ') })}
         </p>
       )}
     </div>
@@ -245,6 +246,7 @@ export function ActiveBuildProgress({
 
 /** Awaiting questions state. */
 export function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: { questionCount: number; onOpenQuestions: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
@@ -252,9 +254,9 @@ export function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: {
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <HelpCircle className="w-5 h-5 text-primary relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Your input needed</span>
+      <span className="text-sm text-foreground font-medium">{t.templates.matrix.input_needed}</span>
       <button type="button" onClick={onOpenQuestions}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
         <HelpCircle className="w-3.5 h-3.5" />
         Answer {questionCount} question{questionCount !== 1 ? 's' : ''}
       </button>
@@ -264,6 +266,7 @@ export function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: {
 
 /** Build completed state (adoption). */
 export function BuildCompletedIndicator() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-2 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
@@ -271,7 +274,7 @@ export function BuildCompletedIndicator() {
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/8 to-emerald-400/10" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Build Complete</span>
+      <span className="text-sm text-foreground font-medium">{t.templates.matrix.build_complete}</span>
     </div>
   );
 }
@@ -290,7 +293,7 @@ export function CompletenessRing({ value, size = 56 }: { value: number; size?: n
           className={`${color} transition-all duration-700 ease-out`}
           strokeDasharray={circumference} strokeDashoffset={offset} />
       </svg>
-      <span className="absolute text-xs font-bold text-foreground/70">{value}%</span>
+      <span className="absolute text-xs font-bold text-foreground">{value}%</span>
     </div>
   );
 }
@@ -309,6 +312,7 @@ export function CreationPostGeneration({
   /** Save current state as a new persona version (saved variant) */
   onSaveVersion?: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [refineText, setRefineText] = useState('');
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const isTesting = buildPhase === 'testing';
@@ -322,8 +326,8 @@ export function CreationPostGeneration({
 
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
-      <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
-        {editingCellKey ? `Editing: ${CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey}` : 'Draft Ready'}
+      <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
+        {editingCellKey ? tx(t.templates.matrix.editing_cell, { cell: CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey }) : t.templates.matrix.draft_ready_label}
       </span>
 
       {/* Apply/Discard bar when edits are pending */}
@@ -332,16 +336,16 @@ export function CreationPostGeneration({
           <button
             type="button"
             onClick={onApplyEdits}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
-            Apply Changes
+            {t.templates.matrix.apply_changes}
           </button>
           {onDiscardEdits && (
             <button
               type="button"
               onClick={onDiscardEdits}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+              className="px-2.5 py-1.5 rounded-card text-[11px] text-foreground hover:text-foreground/70 transition-colors"
             >
               Discard
             </button>
@@ -355,10 +359,10 @@ export function CreationPostGeneration({
           onClick={handleTest}
           disabled={isTesting}
           data-testid="agent-test-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
         >
           {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-          {isTesting ? 'Starting Test...' : 'Test Agent'}
+          {isTesting ? t.templates.matrix.starting_test : t.templates.matrix.test_agent}
         </button>
       )}
 
@@ -367,10 +371,10 @@ export function CreationPostGeneration({
           type="button"
           onClick={onSaveVersion}
           data-testid="save-version-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
         >
           <Save className="w-3.5 h-3.5" />
-          Save Version
+          {t.templates.matrix_cmd.save_version}
         </button>
       )}
 
@@ -379,17 +383,17 @@ export function CreationPostGeneration({
           <textarea
             value={refineText}
             onChange={(e) => setRefineText(e.target.value)}
-            placeholder="Adjust anything..."
+            placeholder={t.templates.matrix_cmd.adjust_placeholder}
             data-testid="agent-refine-input"
             rows={3}
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && refineText.trim()) { e.preventDefault(); onRefine(refineText.trim()); setRefineText(''); } }}
           />
           <button
             type="button"
             onClick={() => { if (refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
             disabled={!refineText.trim()}
-            className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors self-end"
+            className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors self-end"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -409,7 +413,7 @@ export function CliOutputStream({ lines }: { lines: string[] }) {
   }, [lines.length]);
   if (lines.length === 0) return null;
   return (
-    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-card bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-foreground leading-relaxed">
       {lines.slice(-30).map((line, i) => (
         <div key={i} className="truncate">{line}</div>
       ))}
@@ -419,6 +423,7 @@ export function CliOutputStream({ lines }: { lines: string[] }) {
 
 /** Design question prompt for creation mode. */
 export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQuestion; onAnswer: (answer: string) => void }) {
+  const { t } = useTranslation();
   const [answer, setAnswer] = useState('');
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
@@ -427,23 +432,23 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
         <HelpCircle className="w-5 h-5 text-primary relative z-10" />
       </div>
-      <p className="text-sm text-foreground/80 text-center leading-snug">{question.question}</p>
+      <p className="text-sm text-foreground text-center leading-snug">{question.question}</p>
       {question.options && question.options.length > 0 ? (
         <div className="w-full space-y-1.5">
           {question.options.map((opt, i) => (
             <button key={i} type="button" onClick={() => onAnswer(opt)}
-              className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
+              className="w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
               {opt}
             </button>
           ))}
         </div>
       ) : (
         <div className="w-full flex gap-1.5">
-          <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer..."
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+          <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={t.templates.matrix_variants.your_answer_placeholder}
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }} />
           <button type="button" onClick={() => { if (answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }}
-            disabled={!answer.trim()} className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
+            disabled={!answer.trim()} className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -454,11 +459,12 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
 
 /** Test running indicator -- streaming output + cancel button. */
 export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { testOutputLines?: string[]; onCancelTest?: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <BuildStatusIndicator phaseLabel="Testing agent..." />
-      <p className="text-xs text-muted-foreground/50 text-center leading-relaxed max-w-xs">
-        This may take a few minutes. You can leave this page and come back later — testing continues in the background.
+      <p className="text-xs text-foreground text-center leading-relaxed max-w-xs">
+        {t.templates.matrix_variants.testing_background_hint}
       </p>
       {testOutputLines.length > 0 && (
         <CliOutputStream lines={testOutputLines} />
@@ -467,9 +473,9 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
         <button
           type="button"
           onClick={onCancelTest}
-          className="text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+          className="text-xs text-foreground hover:text-muted-foreground/70 transition-colors"
         >
-          Cancel Test
+          {t.templates.matrix_variants.cancel_test}
         </button>
       )}
     </div>
@@ -492,6 +498,7 @@ export function TestResultsPanel({
   toolResults?: ToolTestResult[];
   summary?: string | null;
 }) {
+  const { t } = useTranslation();
   const [showReport, setShowReport] = useState(false);
   const testConnectors = useAgentStore((s) => s.buildTestConnectors);
   const missingConnectors = testConnectors.filter((c) => !c.has_credential);
@@ -523,10 +530,10 @@ export function TestResultsPanel({
           {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
-          <span className="text-sm text-muted-foreground/40">
+          <span className="text-sm text-foreground">
             {passedCount > 0 && <span className="text-emerald-400/70">{passedCount}</span>}
             {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-red-400/70">{failedCount}</span></>}
-            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-muted-foreground/40">{skippedCount}</span></>}
+            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
           </span>
         )}
       </div>
@@ -537,7 +544,7 @@ export function TestResultsPanel({
 
       {hasConnectorGaps && (
         <p className="text-sm text-amber-400/80 leading-snug">
-          Missing keys: <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
+          {t.templates.matrix_variants.missing_keys} <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
         </p>
       )}
 
@@ -548,7 +555,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onApprove}
             data-testid="agent-approve-btn"
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve
@@ -562,17 +569,17 @@ export function TestResultsPanel({
             title={hasConnectorGaps
               ? `Promote without credentials for: ${missingConnectors.map((c) => c.name).join(', ')}`
               : 'Promote this agent despite skipped or failed tests'}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            Approve Anyway
+            {t.templates.matrix_variants.approve_anyway}
           </button>
         )}
         {(toolResults.length > 0 || error) && (
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-primary/15 text-foreground hover:bg-primary/5 hover:text-foreground/80 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             Report
@@ -583,7 +590,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onReject}
             data-testid="agent-reject-btn"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-primary/15 text-foreground hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Retry
@@ -594,11 +601,11 @@ export function TestResultsPanel({
             type="button"
             onClick={onDeleteDraft}
             data-testid="agent-delete-draft-btn"
-            title="Discard this draft persona and close"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            title={t.templates.matrix_variants.delete_draft_title}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Delete Draft
+            {t.templates.matrix_variants.delete_draft}
           </button>
         )}
       </div>
@@ -618,6 +625,7 @@ export function TestResultsPanel({
 // --- TestReportModal + helpers extracted to TestReportModal.tsx ---
 /** Promotion success indicator -- checkmark with emerald glow. */
 export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }) {
+  const { t } = useTranslation();
   return (
     <div data-testid="promotion-success" className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
@@ -625,15 +633,15 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
         <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
       </div>
-      <span className="text-sm text-foreground/70 font-medium">Agent Promoted</span>
+      <span className="typo-body text-foreground font-medium">{t.templates.matrix_variants.agent_promoted}</span>
       {onViewAgent && (
         <button
           type="button"
           onClick={onViewAgent}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary/15 text-sm text-foreground/70 hover:bg-primary/5 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 typo-body text-foreground hover:bg-primary/5 transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
-          View Agent
+          {t.templates.matrix_variants.view_agent}
         </button>
       )}
     </div>

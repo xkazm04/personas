@@ -215,8 +215,8 @@ export function SourceDefinitionInput({
                 active && !disabled
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                   : disabled
-                    ? 'bg-white/[0.02] border-white/[0.04] text-muted-foreground/30 cursor-not-allowed'
-                    : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+                    ? 'bg-white/[0.02] border-white/[0.04] text-foreground cursor-not-allowed'
+                    : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06] hover:border-white/[0.1]'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -229,7 +229,7 @@ export function SourceDefinitionInput({
       {/* Active pane */}
       {activeKind === 'local' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             {t.templates.adopt_modal.source_local_hint}
           </p>
           <input
@@ -237,14 +237,14 @@ export function SourceDefinitionInput({
             value={parsed?.kind === 'local' ? parsed.path ?? '' : ''}
             onChange={(e) => commit({ kind: 'local', path: e.target.value })}
             placeholder={localPlaceholder ?? t.templates.adopt_modal.source_local_placeholder}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
         </div>
       )}
 
       {activeKind === 'codebase' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             {t.templates.adopt_modal.source_codebase_hint}
           </p>
           {!hasCodebases ? (
@@ -296,7 +296,7 @@ export function SourceDefinitionInput({
 
       {activeKind === 'database' && (
         <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-foreground">
             {t.templates.adopt_modal.source_database_hint}
           </p>
           {!hasDatabases ? (
@@ -368,14 +368,14 @@ function SingleCodebaseCard({
       className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
-          : 'bg-white/[0.03] border-white/[0.06] text-foreground/80 hover:bg-white/[0.06]'
+          : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
       }`}
     >
       <FolderGit2 className="w-4 h-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="font-medium truncate">{project.name}</div>
         {project.root_path && (
-          <div className="text-xs text-muted-foreground/60 truncate">{project.root_path}</div>
+          <div className="text-xs text-foreground truncate">{project.root_path}</div>
         )}
       </div>
     </button>
@@ -400,13 +400,13 @@ function SingleCredentialCard({
       className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg border transition-all text-left ${
         selected
           ? 'bg-primary/15 border-primary/30 text-primary'
-          : 'bg-white/[0.03] border-white/[0.06] text-foreground/80 hover:bg-white/[0.06]'
+          : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
       }`}
     >
       <Database className="w-4 h-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="font-medium truncate">{name}</div>
-        <div className="text-xs text-muted-foreground/60 truncate">{serviceType}</div>
+        <div className="text-xs text-foreground truncate">{serviceType}</div>
       </div>
     </button>
   );

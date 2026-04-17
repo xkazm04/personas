@@ -38,13 +38,13 @@ export function LazyChart({ height, children }: LazyChartProps) {
   return (
     <div
       ref={ref}
-      className="bg-secondary/30 border border-primary/10 rounded-xl p-4"
+      className="bg-secondary/30 border border-primary/10 rounded-modal p-4"
     >
       <div className="mb-3">
         <div className="h-4 w-32 rounded bg-secondary/60" />
       </div>
       <div
-        className="w-full rounded-lg bg-secondary/60 animate-pulse"
+        className="w-full rounded-card bg-secondary/60 animate-pulse"
         style={{ height }}
       />
     </div>

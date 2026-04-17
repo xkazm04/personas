@@ -29,7 +29,7 @@ export const TeamCard = memo(function TeamCard({
   return (
     <div
       key={team.id}
-      className="animate-fade-slide-in group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+      className="animate-fade-slide-in group relative p-4 rounded-modal bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
       onClick={() => onSelect(team.id)}
     >
       {/* Color accent bar */}
@@ -41,24 +41,24 @@ export const TeamCard = memo(function TeamCard({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center border"
+            className="w-10 h-10 rounded-modal flex items-center justify-center border"
             style={{
               backgroundColor: colorWithAlpha(team.color || '#6366f1', 0.08),
               borderColor: colorWithAlpha(team.color || '#6366f1', 0.19),
             }}
           >
             {team.icon ? (
-              <span className="text-lg">{team.icon}</span>
+              <span className="typo-heading-lg">{team.icon}</span>
             ) : (
               <Users className="w-5 h-5" style={{ color: colorWithAlpha(team.color || '#6366f1', 0.8) }} />
             )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
+            <h3 className="typo-heading font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
               {team.name}
             </h3>
             {team.description && (
-              <p className="text-sm text-muted-foreground/90 mt-0.5 line-clamp-1">{team.description}</p>
+              <p className="typo-body text-foreground mt-0.5 line-clamp-1">{team.description}</p>
             )}
           </div>
         </div>
@@ -67,7 +67,7 @@ export const TeamCard = memo(function TeamCard({
           <button
             onClick={() => onClone(team.id)}
             title={t.pipeline.fork_team}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-indigo-500/15 text-foreground hover:text-indigo-400 transition-all"
           >
             <GitFork className="w-3.5 h-3.5" />
           </button>
@@ -81,13 +81,13 @@ export const TeamCard = memo(function TeamCard({
                     onDelete(team.id);
                     onConfirmDelete(null);
                   }}
-                  className="px-2 py-1 text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                  className="px-2 py-1 typo-body font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-card transition-colors"
                 >
                   {t.common.delete}
                 </button>
                 <button
                   onClick={() => onConfirmDelete(null)}
-                  className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-lg transition-colors"
+                  className="px-2 py-1 typo-body font-medium text-foreground hover:text-foreground/95 rounded-card transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -96,7 +96,7 @@ export const TeamCard = memo(function TeamCard({
               <button
                 key="trash"
                 onClick={() => onConfirmDelete(team.id)}
-                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
+                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-red-500/15 text-foreground hover:text-red-400 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -105,7 +105,7 @@ export const TeamCard = memo(function TeamCard({
       </div>
 
       {team.parent_team_id && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-violet-400/80">
+        <div className="mt-2 flex items-center gap-1.5 typo-caption text-violet-400/80">
           <GitFork className="w-3 h-3" />
           <span>{parentTeamName ? tx(t.pipeline.forked_from, { name: parentTeamName }) : t.pipeline.forked_from_deleted}</span>
         </div>
@@ -113,23 +113,23 @@ export const TeamCard = memo(function TeamCard({
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
+          <span className={`px-2 py-0.5 typo-code font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-foreground border border-zinc-500/20'}`}>
             {team.enabled ? t.pipeline.active : t.pipeline.draft}
           </span>
           {counts && (
               <>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
+                <span className="flex items-center gap-1 typo-body text-foreground">
                   <Users className="w-3 h-3" />
                   {counts.members}
                 </span>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
+                <span className="flex items-center gap-1 typo-body text-foreground">
                   <GitBranch className="w-3 h-3" />
                   {counts.connections}
                 </span>
               </>
           )}
         </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
+        <ChevronRight className="w-4 h-4 text-foreground group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
       </div>
     </div>
   );

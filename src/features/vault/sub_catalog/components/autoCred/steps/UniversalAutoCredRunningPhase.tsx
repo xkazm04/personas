@@ -33,7 +33,7 @@ export function UniversalAutoCredRunningPhase({
   onCancel,
   onComplete,
 }: UniversalAutoCredRunningPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="space-y-4">
       <AnimatePresence mode="wait">
@@ -90,7 +90,7 @@ export function UniversalAutoCredRunningPhase({
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-indigo-400" />
-            <p className="text-sm text-muted-foreground/90">{t.vault.auto_cred_extra.saving_connector}</p>
+            <p className="typo-body text-foreground">{t.vault.auto_cred_extra.saving_connector}</p>
           </motion.div>
         )}
 
@@ -104,16 +104,16 @@ export function UniversalAutoCredRunningPhase({
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">
-                {session.discoveredConnector?.label ?? 'Service'} credential has been securely stored.
+              <p className="typo-body-lg font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
+              <p className="typo-body text-foreground mt-1">
+                {tx(t.vault.auto_cred_extra.credential_stored, { label: session.discoveredConnector?.label ?? 'Service' })}
               </p>
             </div>
             <button
               onClick={onComplete}
-              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body font-medium transition-colors"
             >
-              Done
+              {t.common.done}
             </button>
           </motion.div>
         )}

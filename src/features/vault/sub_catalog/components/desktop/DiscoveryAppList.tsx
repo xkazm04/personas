@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { DiscoveredApp, DesktopConnectorManifest } from '@/api/system/desktop';
 import { DesktopAppCard } from './DesktopAppCard';
 import { CapabilityApprovalCard } from './CapabilityApprovalCard';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DiscoveryAppListProps {
   installedApps: DiscoveredApp[];
@@ -28,22 +29,24 @@ export function DiscoveryAppList({
   onApprove,
   onCancelApproval,
 }: DiscoveryAppListProps) {
+  const { t } = useTranslation();
+  const dd = t.vault.desktop_discovery;
   return (
     <div
       key="apps"
       className="animate-fade-slide-in space-y-3"
     >
       {scanning ? (
-        <div className="flex items-center justify-center py-8 text-muted-foreground/60">
+        <div className="flex items-center justify-center py-8 text-foreground">
           <LoadingSpinner className="mr-2" />
-          Scanning for desktop apps...
+          {dd.scanning}
         </div>
       ) : (
         <>
           {installedApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
-                Detected on your system
+              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
+                {dd.detected_on_system}
               </h4>
               {installedApps.map((app) => (
                 <DesktopAppCard
@@ -58,8 +61,8 @@ export function DiscoveryAppList({
 
           {notInstalledApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">
-                Not detected
+              <h4 className="typo-label font-medium text-foreground uppercase tracking-wide">
+                {dd.not_detected}
               </h4>
               {notInstalledApps.map((app) => (
                 <DesktopAppCard
@@ -74,8 +77,8 @@ export function DiscoveryAppList({
           )}
 
           {allApps.length === 0 && !scanning && (
-            <div className="text-center py-8 text-muted-foreground/60 text-sm">
-              No desktop apps detected. Try refreshing.
+            <div className="text-center py-8 text-foreground typo-body">
+              {dd.no_apps}
             </div>
           )}
         </>

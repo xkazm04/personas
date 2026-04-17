@@ -38,7 +38,7 @@ function CompactScoreRing({ score }: { score: HealthScore }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-foreground/90">{score.value}</span>
+        <span className="typo-caption font-bold text-foreground/90">{score.value}</span>
       </div>
     </div>
   );
@@ -63,11 +63,11 @@ function PersonaDigestRow({
     <button
       type="button"
       onClick={() => onNavigate(check.personaId)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 transition-colors text-left group"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group"
     >
       {/* Persona icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+        className="w-8 h-8 rounded-card flex items-center justify-center typo-caption font-bold flex-shrink-0"
         style={{
           backgroundColor: `${check.personaColor || '#6B7280'}20`,
           border: `1px solid ${check.personaColor || '#6B7280'}40`,
@@ -79,26 +79,26 @@ function PersonaDigestRow({
 
       {/* Name + issue counts */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground/80 truncate">{check.personaName}</p>
+        <p className="typo-body font-medium text-foreground truncate">{check.personaName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {totalIssues === 0 ? (
-            <span className="text-xs text-emerald-400/70 flex items-center gap-1">
+            <span className="typo-caption text-emerald-400/70 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> {t.agents.health_score.healthy}
             </span>
           ) : (
             <>
               {errors > 0 && (
-                <span className="text-xs text-red-400 flex items-center gap-0.5">
+                <span className="typo-caption text-red-400 flex items-center gap-0.5">
                   <XCircle className="w-3 h-3" /> {errors}
                 </span>
               )}
               {warnings > 0 && (
-                <span className="text-xs text-amber-400 flex items-center gap-0.5">
+                <span className="typo-caption text-amber-400 flex items-center gap-0.5">
                   <AlertTriangle className="w-3 h-3" /> {warnings}
                 </span>
               )}
               {infos > 0 && (
-                <span className="text-xs text-blue-400 flex items-center gap-0.5">
+                <span className="typo-caption text-blue-400 flex items-center gap-0.5">
                   <Info className="w-3 h-3" /> {infos}
                 </span>
               )}
@@ -113,7 +113,7 @@ function PersonaDigestRow({
         check.result.status === 'blocked' ? 'bg-red-400' : 'bg-amber-400'
       }`} />
 
-      <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors" />
+      <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground/60 transition-colors" />
     </button>
   );
 }
@@ -142,7 +142,7 @@ export function HealthDigestPanel() {
   // Loading state
   if (running) {
     return (
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-6">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <ContentLoader variant="panel" label={t.agents.health_digest.generating} hint="health-digest" />
       </div>
     );
@@ -151,18 +151,18 @@ export function HealthDigestPanel() {
   // No digest yet -- prompt to run
   if (!digest) {
     return (
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-6">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <div className="flex items-center gap-3 mb-4">
           <Activity className="w-5 h-5 text-primary/60" />
-          <h3 className="text-sm font-semibold text-foreground/80">{t.agents.health_digest.title}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
-        <p className="text-sm text-muted-foreground/60 mb-4">
+        <p className="typo-body text-foreground mb-4">
           {t.agents.health_digest.description}
         </p>
         <button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
         >
           <Activity className="w-4 h-4" />
           {t.agents.health_digest.run_digest}
@@ -184,17 +184,17 @@ export function HealthDigestPanel() {
   });
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-secondary/40 overflow-hidden">
+    <div className="rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-primary/60" />
-          <h3 className="text-sm font-semibold text-foreground/80">{t.agents.health_digest.title}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
         <button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-secondary/60 text-muted-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-secondary/60 text-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
         >
           <RefreshCw className="w-3 h-3" />
           {t.agents.health_check.rerun}
@@ -205,13 +205,13 @@ export function HealthDigestPanel() {
       {isStale && (
         <div className="px-4 py-2 flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5">
           <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-          <p className="text-xs text-amber-400/90 flex-1">
+          <p className="typo-caption text-amber-400/90 flex-1">
             {t.agents.health_digest.stale_warning}
           </p>
           <button
             type="button"
             onClick={handleRunDigest}
-            className="text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors underline underline-offset-2"
+            className="typo-caption font-medium text-amber-400 hover:text-amber-300 transition-colors underline underline-offset-2"
           >
             {t.common.refresh}
           </button>
@@ -222,19 +222,19 @@ export function HealthDigestPanel() {
       <div className="px-4 py-3 flex items-center gap-4 border-b border-primary/10 bg-primary/[0.02]">
         <CompactScoreRing score={totalScore} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground/80">
+          <p className="typo-body font-medium text-foreground">
             {totalScore.grade === 'healthy' ? t.agents.health_digest.all_healthy :
              totalScore.grade === 'degraded' ? t.agents.health_digest.some_attention :
              t.agents.health_digest.critical_issues}
           </p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-muted-foreground/60">
+            <span className="typo-caption text-foreground">
               {tx(personas.length === 1 ? t.agents.health_digest.agents_checked_one : t.agents.health_digest.agents_checked_other, { count: personas.length })}
             </span>
             {totalIssues > 0 && (
               <>
-                <span className="text-xs text-muted-foreground/30">\u00b7</span>
-                <span className="text-xs text-muted-foreground/60">
+                <span className="typo-caption text-foreground">\u00b7</span>
+                <span className="typo-caption text-foreground">
                   {tx(totalIssues === 1 ? t.agents.health_digest.issues_one : t.agents.health_digest.issues_other, { count: totalIssues })}
                 </span>
               </>
@@ -246,17 +246,17 @@ export function HealthDigestPanel() {
         {totalIssues > 0 && (
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {errorCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
                 <XCircle className="w-3 h-3" /> {errorCount}
               </span>
             )}
             {warningCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
                 <AlertTriangle className="w-3 h-3" /> {warningCount}
               </span>
             )}
             {infoCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
                 <Info className="w-3 h-3" /> {infoCount}
               </span>
             )}
@@ -273,7 +273,7 @@ export function HealthDigestPanel() {
 
       {/* Timestamp */}
       <div className="px-4 py-2 border-t border-primary/10 bg-primary/[0.02]">
-        <p className="text-xs text-muted-foreground/60">
+        <p className="typo-caption text-foreground">
           {tx(t.agents.health_digest.last_run, { time: new Date(digest.generatedAt).toLocaleString() })}
         </p>
       </div>

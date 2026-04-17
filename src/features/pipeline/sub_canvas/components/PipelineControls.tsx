@@ -76,9 +76,9 @@ export default function PipelineControls({
         <button
           onClick={onExecute}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
             isRunning || isDryRunActive
-              ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
+              ? 'bg-primary/10 text-foreground cursor-not-allowed'
               : 'bg-indigo-500 text-foreground hover:bg-indigo-600 active:scale-95'
           }`}
         >
@@ -99,9 +99,9 @@ export default function PipelineControls({
         <button
           onClick={onDryRun}
           disabled={isRunning || isDryRunActive}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
             isRunning || isDryRunActive
-              ? 'bg-primary/10 text-muted-foreground cursor-not-allowed'
+              ? 'bg-primary/10 text-foreground cursor-not-allowed'
               : 'bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 active:scale-95'
           }`}
         >
@@ -125,7 +125,7 @@ export default function PipelineControls({
                   } ${ns.status === 'running' ? 'animate-pulse' : ''}`}
                 />
                 {hoveredDot === ns.member_id && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-sm font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-elevation-3 z-50 pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 typo-code font-mono rounded bg-background border border-primary/20 text-foreground whitespace-nowrap shadow-elevation-3 z-50 pointer-events-none">
                     {agentNames[ns.member_id] || 'Agent'}
                     {' -- '}
                     <span className={ns.status === 'failed' ? 'text-red-400' : ns.status === 'completed' ? 'text-emerald-400' : ns.status === 'running' ? 'text-blue-400' : ''}>{ns.status}</span>
@@ -141,12 +141,12 @@ export default function PipelineControls({
 
         {/* Progress text */}
         <span
-          className={`text-sm font-medium ${
+          className={`typo-body font-medium ${
             hasFailed
               ? 'text-red-400'
               : allCompleted
                 ? 'text-emerald-400'
-                : 'text-muted-foreground'
+                : 'text-foreground'
           }`}
         >
           {progressText}
@@ -157,7 +157,7 @@ export default function PipelineControls({
 
         {/* Honest status: pipeline runs until completion */}
         {isRunning && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-primary/5 text-muted-foreground border border-primary/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium bg-primary/5 text-foreground border border-primary/10">
             <Info className="w-3 h-3" />
             {t.pipeline.runs_until_completion}
           </span>

@@ -127,7 +127,7 @@ export function OverviewTab({
 
           {/* Healthcheck result */}
           {effectiveHealthcheckResult && (
-            <div className={`flex items-start gap-2 px-4 py-3 rounded-xl text-sm ${
+            <div className={`flex items-start gap-2 px-4 py-3 rounded-modal typo-body ${
               effectiveHealthcheckResult.success
                 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                 : 'bg-red-500/10 border border-red-500/20 text-red-400'
@@ -143,8 +143,8 @@ export function OverviewTab({
               onClick={copyCredentialId}
               variant="ghost"
               size="xs"
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80"
-              title="Copy credential ID"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80"
+              title={t.vault.shared.copy_credential_id}
             >
               <span className="font-mono">id</span>
               {copiedId ? (

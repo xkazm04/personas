@@ -28,15 +28,16 @@ export function WizardDetectGrid({
   detectionMap,
   onToggle,
 }: WizardDetectGridProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const wz = t.vault.wizard;
   return (
     <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-1 -mr-1">
       {/* Detected services */}
       {detected.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-emerald-400/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <h3 className="typo-body font-medium text-emerald-400/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <Sparkles className="w-3 h-3" />
-            Detected ({detected.length})
+            {tx(wz.detected, { count: detected.length })}
           </h3>
           <motion.div
             variants={staggerContainer}
@@ -62,8 +63,8 @@ export function WizardDetectGrid({
       {/* Available services */}
       {available.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">
-            Available ({available.length})
+          <h3 className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
+            {tx(wz.available, { count: available.length })}
           </h3>
           <motion.div
             variants={staggerContainer}
@@ -89,8 +90,8 @@ export function WizardDetectGrid({
       {/* Already added */}
       {alreadyAdded.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
-            Already added ({alreadyAdded.length})
+          <h3 className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
+            {tx(wz.already_added, { count: alreadyAdded.length })}
           </h3>
           <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
             {alreadyAdded.map((c) => (
@@ -110,7 +111,7 @@ export function WizardDetectGrid({
       {filteredCount === 0 && (
         <EmptyIllustration
           icon={SearchX}
-          heading={`No services match "${search}"`}
+          heading={tx(t.vault.wizard_detect.no_services, { search })}
           description={t.vault.wizard_detect.no_filter_match}
           className="py-10"
         />

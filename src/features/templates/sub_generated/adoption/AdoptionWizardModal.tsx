@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X, Grid3X3 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -26,6 +27,7 @@ export default function AdoptionWizardModal({
   review,
   onPersonaCreated,
 }: AdoptionWizardModalProps) {
+  const { t } = useTranslation();
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
@@ -91,19 +93,19 @@ export default function AdoptionWizardModal({
       <div className="relative h-full overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Grid3X3 className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 id="adoption-matrix-title" className="text-sm font-semibold text-foreground/90">
-                Adopt Template
+              <h2 id="adoption-matrix-title" className="typo-heading font-semibold text-foreground/90">
+                {t.templates.adopt_modal.adopt_template}
               </h2>
               <p className="text-[11px] text-foreground">{review.test_case_name}</p>
             </div>
           </div>
           <button
             onClick={handleCloseAttempt}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
           >
             <X className="w-4 h-4" />
           </button>

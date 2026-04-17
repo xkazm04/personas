@@ -363,7 +363,7 @@ export default function CommandPalette() {
                   onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
                   onKeyDown={handleKeyDown}
                   placeholder={t.common.command_palette_placeholder}
-                  className="flex-1 bg-transparent typo-body text-foreground placeholder:text-muted-foreground/40 outline-none"
+                  className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
                   spellCheck={false}
                 />
                 <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-foreground bg-secondary/50 border border-primary/10 rounded">

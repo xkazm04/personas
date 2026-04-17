@@ -42,10 +42,11 @@ const SECTION_DEFS: Record<string, { icon: LucideIcon; color: string }> = {
   events: { icon: Zap, color: 'text-amber-400' },
   knowledge: { icon: BookOpen, color: 'text-emerald-400' },
   outcome: { icon: Target, color: 'text-primary/60' },
-  json: { icon: Code, color: 'text-muted-foreground/50' },
+  json: { icon: Code, color: 'text-foreground' },
 };
 
 export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: Props) {
+  const { t } = useTranslation();
   const executePersona = useAgentStore((s) => s.executePersona);
   const fetchExecutions = useAgentStore((s) => s.fetchExecutions);
   const [showRaw, setShowRaw] = useState(false);
@@ -90,20 +91,20 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
         </span>
         {execution.retry_count > 0 && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            <RefreshCw className="w-2.5 h-2.5" /> Retry #{execution.retry_count}
+            <RefreshCw className="w-2.5 h-2.5" /> {t.shared.execution_detail.retry_prefix}{execution.retry_count}
           </span>
         )}
         <span className="flex items-center gap-1 text-sm text-foreground"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
         <span className="flex items-center gap-1 text-sm text-foreground"><Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}</span>
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}>
+          <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-foreground hover:text-muted-foreground/70'}`}>
             <Shield className="w-3 h-3" /> {showRaw ? 'Raw' : 'Masked'}
           </button>
           {isTerminalState(execution.status) && (
             <button onClick={handleRerun} disabled={isRerunning} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-medium transition-colors ${
               rerunResult === 'success' ? 'bg-emerald-500/10 text-emerald-400' : rerunResult === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-primary/10 text-primary hover:bg-primary/15'
             } disabled:opacity-50`}>
-              {isRerunning ? <><Loader2 className="w-3 h-3 animate-spin" /> Running...</> : rerunResult === 'success' ? <><Check className="w-3 h-3" /> Started</> : rerunResult === 'error' ? <><AlertTriangle className="w-3 h-3" /> Failed</> : <><RotateCw className="w-3 h-3" /> Re-run</>}
+              {isRerunning ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.shared.execution_detail.running}</> : rerunResult === 'success' ? <><Check className="w-3 h-3" /> Started</> : rerunResult === 'error' ? <><AlertTriangle className="w-3 h-3" /> Failed</> : <><RotateCw className="w-3 h-3" /> {t.shared.execution_detail.rerun}</>}
             </button>
           )}
         </div>
@@ -121,7 +122,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
                 const Icon = def?.icon ?? Code;
                 const isActive = effectiveSection === sec.id;
                 return (
-                  <button key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-muted-foreground/60 hover:bg-secondary/30'}`}>
+                  <button key={sec.id} onClick={() => setActiveSection(sec.id)} className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${isActive ? 'bg-primary/8 border-r-2 border-primary text-foreground/90' : 'text-foreground hover:bg-secondary/30'}`}>
                     <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? def?.color ?? '' : ''}`} />
                     <span className="text-sm font-medium truncate">{sec.label}</span>
                     {sec.count != null && <span className="ml-auto text-sm text-foreground">{sec.count}</span>}

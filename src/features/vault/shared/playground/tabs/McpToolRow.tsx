@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import type { McpTool } from '@/api/agents/mcpTools';
 
@@ -18,8 +19,10 @@ export function ToolRow({
   onToggle,
   onRun,
 }: ToolRowProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
-    <div className={`border rounded-lg overflow-hidden transition-colors ${
+    <div className={`border rounded-card overflow-hidden transition-colors ${
       isSelected ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-primary/8 hover:border-primary/15'
     }`}>
       <button
@@ -27,41 +30,41 @@ export function ToolRow({
         className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/20 transition-colors"
       >
         {isExpanded ? (
-          <ChevronDown className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
         ) : (
-          <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
         )}
 
-        <span className="font-mono text-sm text-foreground/80 truncate flex-1">
+        <span className="font-mono typo-code text-foreground truncate flex-1">
           {tool.name}
         </span>
 
         {tool.description && (
-          <span className="text-sm text-muted-foreground/60 truncate max-w-[300px] hidden sm:inline">
+          <span className="typo-body text-foreground truncate max-w-[300px] hidden sm:inline">
             {tool.description}
           </span>
         )}
 
         <button
           onClick={(e) => { e.stopPropagation(); onRun(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
-          Run
+          {t.vault.playground.mcp_run}
         </button>
       </button>
 
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
           {tool.description && (
-            <p className="text-sm text-muted-foreground/60 leading-relaxed">{tool.description}</p>
+            <p className="typo-body text-foreground leading-relaxed">{tool.description}</p>
           )}
           {tool.input_schema && (
             <div className="space-y-1">
-              <span className="text-sm uppercase tracking-wider text-muted-foreground/60 font-semibold">
-                Input Schema
+              <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
+                {sh.input_schema}
               </span>
-              <pre className="text-sm text-muted-foreground/60 font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
+              <pre className="typo-code text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}
               </pre>
             </div>

@@ -18,7 +18,7 @@ export function PromptCacheControls({ value, onChange }: PromptCacheControlsProp
   ];
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+      <label className="block typo-body font-medium text-foreground mb-1.5">
         <span className="flex items-center gap-1">
           <Database className="w-3 h-3" /> {mc.prompt_caching}
           <FieldHint
@@ -36,10 +36,10 @@ export function PromptCacheControls({ value, onChange }: PromptCacheControlsProp
               key={p.value}
               type="button"
               onClick={() => onChange(p.value)}
-              className={`flex-1 py-1.5 px-2 rounded-lg border text-sm font-medium transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-card border typo-body font-medium transition-all ${
                 selected
                   ? 'border-primary/40 bg-primary/10 text-foreground/90'
-                  : 'border-primary/10 bg-secondary/30 text-muted-foreground/60 hover:border-primary/20 hover:bg-secondary/40'
+                  : 'border-primary/10 bg-secondary/30 text-foreground hover:border-primary/20 hover:bg-secondary/40'
               }`}
               title={p.desc}
             >

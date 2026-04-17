@@ -39,7 +39,7 @@ export function InstallButton({
           />
         </div>
         {installState.outputLines.length > 0 && (
-          <p className="typo-body text-muted-foreground/80 truncate">
+          <p className="typo-body text-foreground truncate">
             {installState.outputLines[installState.outputLines.length - 1]}
           </p>
         )}
@@ -64,9 +64,9 @@ export function InstallButton({
           {installState.error || t.overview.install_button.installation_failed}
         </div>
         {installState.manualCommand && (
-          <div className="bg-primary/5 rounded-lg px-2 py-1.5">
-            <p className="typo-body text-muted-foreground/80 mb-1">{t.overview.install_button.try_manually}</p>
-            <code className="typo-code text-foreground/80 select-all">
+          <div className="bg-primary/5 rounded-card px-2 py-1.5">
+            <p className="typo-body text-foreground mb-1">{t.overview.install_button.try_manually}</p>
+            <code className="typo-code text-foreground select-all">
               {installState.manualCommand}
             </code>
           </div>
@@ -85,7 +85,7 @@ export function InstallButton({
               href={CLAUDE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2 py-1 typo-heading rounded-lg border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2 py-1 typo-heading rounded-card border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
             >
               {t.overview.install_button.official_page}
               <ExternalLink className="w-3 h-3" />
@@ -111,7 +111,7 @@ export function InstallButton({
         <Button
           variant="ghost"
           size="xs"
-          className="border border-muted-foreground/20 text-muted-foreground hover:text-foreground"
+          className="border border-muted-foreground/20 text-foreground hover:text-foreground"
           icon={<ExternalLink className="w-3 h-3" />}
           onClick={() => window.open(CLAUDE_DOWNLOAD_URL, '_blank', 'noopener,noreferrer')}
         >

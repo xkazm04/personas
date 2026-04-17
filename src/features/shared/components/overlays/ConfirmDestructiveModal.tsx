@@ -136,7 +136,7 @@ function ModalContent({ config, onClose, onConfirm }: {
             value={typedValue}
             onChange={(e) => setTypedValue(e.target.value)}
             placeholder={config.requireTypedConfirmation}
-            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-red-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground placeholder:text-foreground focus:outline-none focus:border-red-500/40 transition-colors"
             autoFocus
           />
         </div>

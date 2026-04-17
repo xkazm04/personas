@@ -4,6 +4,7 @@ import {
   StickyNote, FlaskConical, Sparkles, MoreHorizontal,
 } from 'lucide-react';
 import { SystemEventsToolbar } from './palettes/EventSourcePalette';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -27,7 +28,7 @@ interface ToolbarProps {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const BTN = 'flex items-center gap-1 px-2 py-1.5 rounded-md border transition-colors text-muted-foreground';
+const BTN = 'flex items-center gap-1 px-2 py-1.5 rounded-input border transition-colors text-foreground';
 const BTN_DEFAULT = `${BTN} bg-card border-primary/10 hover:bg-secondary/60`;
 const DIVIDER = 'w-px h-5 bg-primary/10 mx-0.5 shrink-0';
 const COLLAPSE_THRESHOLD = 520; // px — below this, secondary groups collapse
@@ -41,6 +42,7 @@ export function EventCanvasToolbar({
   onTogglePalette, onRefresh, onAutoLayout, onAddNote,
   onToggleDryRun, onToggleAssistant, onStartPointerDrag,
 }: ToolbarProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -77,7 +79,7 @@ export function EventCanvasToolbar({
       key="layout"
       onClick={() => { onAutoLayout(); closeMore(); }}
       className={inDropdown ? dropdownItemCls : BTN_DEFAULT}
-      title="Auto Layout"
+      title={t.triggers.toolbar_title_auto_layout}
     >
       <LayoutGrid className="w-3.5 h-3.5" />
       <span className="text-[10px]">Layout</span>
@@ -89,10 +91,10 @@ export function EventCanvasToolbar({
       key="note"
       onClick={() => { onAddNote(); closeMore(); }}
       className={inDropdown ? dropdownItemCls : BTN_DEFAULT}
-      title="Add Sticky Note"
+      title={t.triggers.toolbar_title_add_note}
     >
       <StickyNote className={`w-3.5 h-3.5 ${inDropdown ? 'text-amber-400' : 'text-amber-400'}`} />
-      <span className="text-[10px] text-muted-foreground">Note</span>
+      <span className="text-[10px] text-foreground">Note</span>
     </button>
   );
 
@@ -103,10 +105,10 @@ export function EventCanvasToolbar({
       className={inDropdown
         ? dropdownItemCls + (dryRunActive ? ' text-amber-400' : '')
         : `${BTN} ${dryRunActive ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-      title={dryRunActive ? 'Stop Dry Run' : 'Start Dry Run'}
+      title={dryRunActive ? t.triggers.toolbar_title_stop_dry_run : t.triggers.toolbar_title_start_dry_run}
     >
       <FlaskConical className="w-3.5 h-3.5" />
-      <span className="text-[10px]">Dry Run</span>
+      <span className="text-[10px]">{t.triggers.toolbar_dry_run}</span>
     </button>
   );
 
@@ -117,7 +119,7 @@ export function EventCanvasToolbar({
       className={inDropdown
         ? dropdownItemCls + (assistantOpen ? ' text-indigo-400' : '')
         : `${BTN} ${assistantOpen ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-      title="Canvas Assistant"
+      title={t.triggers.toolbar_title_assistant}
     >
       <Sparkles className="w-3.5 h-3.5" />
       <span className="text-[10px]">Assistant</span>
@@ -131,12 +133,12 @@ export function EventCanvasToolbar({
       {/* Group 1 — Navigation (always visible) */}
       <button
         onClick={onTogglePalette}
-        className="p-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
+        className="p-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
         title={paletteCollapsed ? 'Show sidebar' : 'Hide sidebar'}
       >
         {paletteCollapsed
-          ? <PanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
-          : <PanelLeftClose className="w-3.5 h-3.5 text-muted-foreground" />}
+          ? <PanelLeft className="w-3.5 h-3.5 text-foreground" />
+          : <PanelLeftClose className="w-3.5 h-3.5 text-foreground" />}
       </button>
 
       <button
@@ -173,19 +175,19 @@ export function EventCanvasToolbar({
           <div ref={moreRef} className="relative">
             <button
               onClick={() => setMoreOpen(v => !v)}
-              className={`p-1.5 rounded-md border transition-colors ${moreOpen ? 'bg-secondary/80 border-primary/20' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-              title="More tools"
+              className={`p-1.5 rounded-input border transition-colors ${moreOpen ? 'bg-secondary/80 border-primary/20' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
+              title={t.triggers.more_tools_title}
             >
-              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+              <MoreHorizontal className="w-3.5 h-3.5 text-foreground" />
             </button>
 
             {moreOpen && (
-              <div className="absolute top-full left-0 mt-1.5 z-[60] min-w-[150px] rounded-lg bg-card border border-primary/10 shadow-elevation-3 py-1">
-                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Layout</div>
+              <div className="absolute top-full left-0 mt-1.5 z-[60] min-w-[150px] rounded-card bg-card border border-primary/10 shadow-elevation-3 py-1">
+                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-foreground font-medium">Layout</div>
                 {layoutBtn(true)}
                 {noteBtn(true)}
                 <div className="h-px bg-primary/10 my-1" />
-                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">Tools</div>
+                <div className="px-2.5 py-1 text-[9px] uppercase tracking-wider text-foreground font-medium">Tools</div>
                 {dryRunBtn(true)}
                 {assistantBtn(true)}
               </div>
@@ -209,4 +211,4 @@ export function EventCanvasToolbar({
 /*  Dropdown item style                                                */
 /* ------------------------------------------------------------------ */
 
-const dropdownItemCls = 'flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors cursor-pointer';
+const dropdownItemCls = 'flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground hover:bg-secondary/60 transition-colors cursor-pointer';

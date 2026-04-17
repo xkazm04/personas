@@ -90,7 +90,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all text-left cursor-pointer ${
+        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border transition-all text-left cursor-pointer ${
           expanded ? 'bg-amber-500/8 border-amber-500/25' : 'bg-amber-500/5 border-amber-500/15 hover:border-amber-500/25 hover:bg-amber-500/10'
         }`}
       >
@@ -100,29 +100,29 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-red-500/15 text-red-400 border border-red-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-red-500/15 text-red-400 border border-red-500/20">
               {countByKind.contradiction} contradiction{countByKind.contradiction !== 1 ? 's' : ''}
             </span>
           )}
           {countByKind.duplicate > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-amber-500/15 text-amber-400 border border-amber-500/20">
               {countByKind.duplicate} duplicate{countByKind.duplicate !== 1 ? 's' : ''}
             </span>
           )}
           {countByKind.superseded > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/20">
               {countByKind.superseded} superseded
             </span>
           )}
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       {expanded && (
           <div className="animate-fade-slide-in overflow-hidden">
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground/60">
+                <div className="text-center py-6 typo-body text-foreground">
                   <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
                   All conflicts resolved
                 </div>

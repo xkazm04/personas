@@ -21,7 +21,9 @@ interface NegotiatorPanelProps {
 }
 
 export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues, prefetchedAuthDetections }: NegotiatorPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const neg = t.vault.negotiator;
+  const negx = t.vault.negotiator_extra;
   const hasPrefetched = prefetchedAuthDetections !== undefined;
   const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>(hasPrefetched ? prefetchedAuthDetections : []);
   const [authDetectLoading, setAuthDetectLoading] = useState(!hasPrefetched);
@@ -90,27 +92,27 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
   return (
     <div className="animate-fade-slide-in overflow-hidden">
-      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
+      <div className="rounded-modal border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center">
               <Bot className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
-              <p className="text-sm text-muted-foreground">
-                {negotiator.phase === 'idle' && (authDetectLoading ? t.vault.negotiator_extra.checking_auth : t.vault.negotiator_extra.auto_provisioning)}
-                {negotiator.phase === 'planning' && t.vault.negotiator_extra.generating_plan}
-                {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
-                {negotiator.phase === 'done' && t.vault.negotiator.captured}
-                {negotiator.phase === 'error' && t.vault.negotiator.error_title}
+              <h3 className="typo-heading font-bold tracking-tight text-foreground">{negx.panel_title}</h3>
+              <p className="typo-body text-foreground">
+                {negotiator.phase === 'idle' && (authDetectLoading ? negx.checking_auth : negx.auto_provisioning)}
+                {negotiator.phase === 'planning' && negx.generating_plan}
+                {negotiator.phase === 'guiding' && tx(neg.provisioning_label, { label: designResult.connector.label })}
+                {negotiator.phase === 'done' && neg.captured}
+                {negotiator.phase === 'error' && neg.error_title}
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors duration-snap"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />
           </button>

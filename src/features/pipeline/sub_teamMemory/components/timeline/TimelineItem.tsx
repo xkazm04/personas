@@ -26,17 +26,17 @@ const CATEGORY_DOT: Record<string, string> = {
 
 export function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual?: boolean }) {
   return (
-    <div className="flex items-start gap-2 px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors">
+    <div className="flex items-start gap-2 px-2 py-1 rounded-card hover:bg-primary/5 transition-colors">
       <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${CATEGORY_DOT[memory.category] ?? 'bg-gray-400'}`} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground/80 truncate">{memory.title}</p>
+        <p className="typo-body text-foreground truncate">{memory.title}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
           {isManual ? (
-            <Brain className="w-2.5 h-2.5 text-muted-foreground/40" />
+            <Brain className="w-2.5 h-2.5 text-foreground" />
           ) : (
             <Zap className="w-2.5 h-2.5 text-amber-400/50" />
           )}
-          <span className="text-sm text-muted-foreground/60">{formatTime(memory.created_at)}</span>
+          <span className="typo-body text-foreground">{formatTime(memory.created_at)}</span>
         </div>
       </div>
     </div>

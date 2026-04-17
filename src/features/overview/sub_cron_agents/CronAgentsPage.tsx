@@ -37,11 +37,11 @@ export default function CronAgentsPage() {
         title={t.overview.cron.title}
         subtitle={t.overview.cron.subtitle}
         actions={
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-            <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          <div className="flex items-center gap-2 typo-caption text-foreground">
+            <span className="px-2 py-0.5 rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               {tx(t.overview.cron.scheduled_count, { count: cronAgents.length })}
             </span>
-            <span className="px-2 py-0.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <span className="px-2 py-0.5 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
               {tx(t.overview.cron.headless_count, { count: headless.length })}
             </span>
           </div>
@@ -50,15 +50,15 @@ export default function CronAgentsPage() {
 
       <ContentBody centered>
         {loading && cronAgents.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground/70">
+          <div className="flex items-center justify-center py-20 text-foreground">
             <LoadingSpinner size="lg" className="mr-2" />
             {t.overview.cron.loading}
           </div>
         ) : cronAgents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground/70">
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-foreground">
             <Cpu className="w-8 h-8 opacity-40" />
-            <p className="text-sm">{t.overview.cron.no_agents}</p>
-            <p className="text-xs">{t.overview.cron.no_agents_hint}</p>
+            <p className="typo-body">{t.overview.cron.no_agents}</p>
+            <p className="typo-caption">{t.overview.cron.no_agents_hint}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -81,7 +81,7 @@ export default function CronAgentsPage() {
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (
     <div>
-      <h2 className="typo-heading text-muted-foreground/80 mb-3">{title}</h2>
+      <h2 className="typo-heading text-foreground mb-3">{title}</h2>
       <div className="grid gap-2">
         {agents.map((agent) => (
           <AgentRow key={agent.trigger_id} agent={agent} />
@@ -97,8 +97,8 @@ function AgentRow({ agent }: { agent: CronAgent }) {
     : 0;
 
   const healthColor =
-    !agent.trigger_enabled || !agent.persona_enabled ? 'text-muted-foreground/50' :
-      agent.recent_executions === 0 ? 'text-muted-foreground/50' :
+    !agent.trigger_enabled || !agent.persona_enabled ? 'text-foreground' :
+      agent.recent_executions === 0 ? 'text-foreground' :
         failureRate === 0 ? 'text-emerald-400' :
           failureRate < 0.6 ? 'text-amber-400' :
             'text-red-400';
@@ -119,7 +119,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
   const disabled = !agent.trigger_enabled || !agent.persona_enabled;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${disabled
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border transition-colors ${disabled
         ? 'border-primary/5 bg-primary/[0.02] opacity-60'
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'
       }`}>
@@ -140,12 +140,12 @@ function AgentRow({ agent }: { agent: CronAgent }) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground/70 mt-0.5">
+        <div className="flex items-center gap-2 typo-caption text-foreground mt-0.5">
           <Clock className="w-3 h-3 shrink-0" />
           <span className="font-mono">{schedule}</span>
           {agent.description && (
             <>
-              <span className="text-muted-foreground/50">·</span>
+              <span className="text-foreground">·</span>
               <span className="truncate">{agent.description}</span>
             </>
           )}
@@ -155,15 +155,15 @@ function AgentRow({ agent }: { agent: CronAgent }) {
       {/* Next run */}
       <div className="text-right shrink-0">
         {agent.next_trigger_at ? (
-          <div className="text-xs text-muted-foreground/70">
-            <span className="text-muted-foreground/50">next </span>
+          <div className="typo-caption text-foreground">
+            <span className="text-foreground">next </span>
             {formatRelative(agent.next_trigger_at)}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground/60">--</div>
+          <div className="typo-caption text-foreground">--</div>
         )}
         {agent.last_triggered_at && (
-          <div className="text-[10px] text-muted-foreground/50 mt-0.5">
+          <div className="text-[10px] text-foreground mt-0.5">
             last {formatRelative(agent.last_triggered_at)}
           </div>
         )}
@@ -173,7 +173,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
       <div className="flex items-center gap-1.5 shrink-0 ml-2">
         <HealthIcon className={`w-4 h-4 ${healthColor}`} />
         {agent.recent_executions > 0 && (
-          <span className={`text-xs font-mono ${healthColor}`}>
+          <span className={`typo-code font-mono ${healthColor}`}>
             {agent.recent_executions - agent.recent_failures}/{agent.recent_executions}
           </span>
         )}

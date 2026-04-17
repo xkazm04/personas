@@ -8,11 +8,11 @@ interface StatCardProps {
 
 export function StatCard({ icon, label, value }: StatCardProps) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5 bg-secondary/20 border border-primary/10 rounded-xl">
+    <div className="flex items-center gap-2 px-2 py-1.5 bg-secondary/20 border border-primary/10 rounded-modal">
       {icon}
       <div>
-        <div className="text-xs font-semibold text-foreground/90 tabular-nums">{value}</div>
-        <div className="text-xs text-muted-foreground/80">{label}</div>
+        <div className="typo-caption font-semibold text-foreground/90 tabular-nums">{value}</div>
+        <div className="typo-caption text-foreground">{label}</div>
       </div>
     </div>
   );

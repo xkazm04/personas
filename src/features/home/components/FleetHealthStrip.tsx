@@ -76,7 +76,7 @@ function MetricPill({ icon: Icon, label, value, onClick, pulse, accentColor, ico
       </div>
       <div className="flex flex-col items-start min-w-0">
         <span className="typo-data text-foreground leading-tight">{value}</span>
-        <span className="typo-caption text-muted-foreground leading-tight truncate">{label}</span>
+        <span className="typo-caption text-foreground leading-tight truncate">{label}</span>
       </div>
     </button>
   );

@@ -23,7 +23,8 @@ interface CredentialAuditTimelineProps {
 }
 
 export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelineProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const al = t.vault.audit_log;
   const [entries, setEntries] = useState<CredentialAuditEntry[]>([]);
   const [stats, setStats] = useState<CredentialUsageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,9 +56,9 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
 
   if (loading) return (
     <div className="flex items-center justify-center py-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+      <div className="flex items-center gap-2 typo-body text-foreground">
         <div className="w-3.5 h-3.5 border-2 border-muted-foreground/30 border-t-muted-foreground/70 rounded-full animate-spin" />
-        Loading audit timeline...
+        {al.loading}
       </div>
     </div>
   );
@@ -68,29 +69,29 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       <div className="flex items-center gap-3 flex-wrap">
         {stats && (
           <>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Activity className="w-3 h-3" />
-              {stats.total_accesses} total
+              {tx(al.total_accesses, { count: stats.total_accesses })}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Users className="w-3 h-3" />
-              {stats.distinct_personas} persona{stats.distinct_personas !== 1 ? 's' : ''}
+              {tx(stats.distinct_personas === 1 ? al.personas_one : al.personas_other, { count: stats.distinct_personas })}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Clock className="w-3 h-3" />
-              {stats.accesses_last_24h} in 24h
+              {tx(al.accesses_24h, { count: stats.accesses_last_24h })}
             </span>
           </>
         )}
         {anomalyCount > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+          <span className={`inline-flex items-center gap-1.5 typo-caption font-medium px-2 py-0.5 rounded-card border ${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
             <AlertTriangle className="w-3 h-3" />
-            {anomalyCount} anomal{anomalyCount === 1 ? 'y' : 'ies'}
+            {tx(anomalyCount === 1 ? al.anomalies_one : al.anomalies_other, { count: anomalyCount })}
           </span>
         ) : entries.length > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}>
+          <span className={`inline-flex items-center gap-1.5 typo-caption font-medium px-2 py-0.5 rounded-card border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}>
             <Shield className="w-3 h-3" />
-            No anomalies
+            {al.no_anomalies}
           </span>
         ) : null}
       </div>
@@ -99,8 +100,8 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       {entries.length === 0 ? (
         <EmptyIllustration
           icon={ScrollText}
-          heading={t.vault.audit_log.empty}
-          description={t.vault.audit_log.access_events_hint}
+          heading={al.empty}
+          description={al.access_events_hint}
           className="py-6"
         />
       ) : (
@@ -111,9 +112,9 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       {!showAll && timeline.length > 30 && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full text-center text-xs text-muted-foreground/70 hover:text-foreground/80 py-1.5 rounded-lg hover:bg-secondary/20 transition-colors"
+          className="w-full text-center typo-caption text-foreground hover:text-foreground/80 py-1.5 rounded-card hover:bg-secondary/20 transition-colors"
         >
-          Show all {timeline.length} entries
+          {tx(al.show_all, { count: timeline.length })}
         </button>
       )}
     </div>

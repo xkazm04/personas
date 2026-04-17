@@ -61,9 +61,9 @@ export function triggerTypeIcon(type: string) {
 
 export function healthBadge(status: string | null) {
   if (!status || status === 'healthy') {
-    return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-2.5 h-2.5" />{t.deployment.cloud_healthy}</span>;
+    return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-2.5 h-2.5" />{t.deployment.cloud_healthy}</span>;
   }
-  return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><AlertTriangle className="w-2.5 h-2.5" />{status}</span>;
+  return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><AlertTriangle className="w-2.5 h-2.5" />{status}</span>;
 }
 
 import { formatRelativeTime } from '@/lib/utils/formatters';

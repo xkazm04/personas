@@ -142,17 +142,17 @@ export function ByomApiKeyManager() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-8 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-muted-foreground/50 animate-spin" />
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-8 flex items-center justify-center">
+        <Loader2 className="w-5 h-5 text-foreground animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.api_key_title} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-foreground">
           {s.api_key_hint}
         </p>
 
@@ -205,11 +205,11 @@ function KeyEntryRow({
   const s = t.settings.byom;
 
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{entry.def.label}</span>
+          <span className="typo-body font-medium text-foreground">{entry.def.label}</span>
           <ConnectionBadge state={entry.connectionState} />
         </div>
         <div className="flex items-center gap-1.5">
@@ -217,7 +217,7 @@ function KeyEntryRow({
             <button
               onClick={onTest}
               disabled={entry.connectionState === 'testing'}
-              className="text-xs px-2.5 py-1 rounded-md border border-primary/15 text-muted-foreground
+              className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
                 hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
             >
               {entry.connectionState === 'testing' ? (
@@ -233,7 +233,7 @@ function KeyEntryRow({
           {hasValue && !entry.editing && (
             <button
               onClick={onDelete}
-              className="text-xs p-1.5 rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
               title={s.remove_key}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -242,7 +242,7 @@ function KeyEntryRow({
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground/50">{entry.def.description}</p>
+      <p className="typo-caption text-foreground">{entry.def.description}</p>
 
       {/* Value display / editor */}
       {entry.editing ? (
@@ -252,8 +252,8 @@ function KeyEntryRow({
             value={entry.value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={entry.def.placeholder}
-            className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/40
+            className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
+              text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/40
               font-mono"
             autoFocus
             onKeyDown={(e) => {
@@ -264,14 +264,14 @@ function KeyEntryRow({
           <button
             onClick={onSave}
             disabled={!isDirty}
-            className="p-1.5 rounded-md text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
+            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
             title="Save"
           >
             <Check className="w-4 h-4" />
           </button>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
             title="Cancel"
           >
             <X className="w-4 h-4" />
@@ -282,14 +282,14 @@ function KeyEntryRow({
           onClick={onStartEdit}
           className="flex items-center gap-2 cursor-pointer group"
         >
-          <div className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-secondary/30
+          <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
             group-hover:border-primary/20 transition-all font-mono min-h-[32px] flex items-center">
             {hasValue ? (
-              <span className="text-foreground/80">
+              <span className="text-foreground">
                 {entry.revealed ? entry.value : maskValue(entry.savedValue, entry.def.isUrl)}
               </span>
             ) : (
-              <span className="text-muted-foreground/30">{entry.def.placeholder}</span>
+              <span className="text-foreground">{entry.def.placeholder}</span>
             )}
           </div>
           {hasValue && !entry.def.isUrl && (
@@ -298,7 +298,7 @@ function KeyEntryRow({
                 e.stopPropagation();
                 onToggleReveal();
               }}
-              className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground transition-all"
+              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
               title={entry.revealed ? 'Hide' : 'Reveal'}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -321,7 +321,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
 
   if (state === 'testing') {
     return (
-      <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-amber-500/10 border border-amber-500/20 text-amber-300">
         <Loader2 className="w-3 h-3 animate-spin" />
       </span>
     );
@@ -329,7 +329,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
 
   if (state === 'connected') {
     return (
-      <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
         {s.stored}
       </span>
@@ -337,7 +337,7 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
   }
 
   return (
-    <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
+    <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-red-500/10 border border-red-500/20 text-red-400">
       <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
       {s.error}
     </span>

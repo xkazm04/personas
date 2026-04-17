@@ -93,10 +93,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <span className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.pipeline.configure}</span>
+          <span className="typo-code font-mono text-foreground uppercase tracking-wider">{t.pipeline.configure}</span>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors"
+            className="p-1 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -105,17 +105,17 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Persona Info */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-primary/10">
+          <div className="flex items-center gap-3 p-3 rounded-modal bg-secondary/40 border border-primary/10">
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-foreground/90 truncate">{personaName}</div>
-              <div className="text-sm text-muted-foreground/60 font-mono truncate">{member.id?.slice(0, 8)}...</div>
+              <div className="typo-heading font-semibold text-foreground/90 truncate">{personaName}</div>
+              <div className="typo-code text-foreground font-mono truncate">{member.id?.slice(0, 8)}...</div>
             </div>
             {member.persona_id && (
               <button
                 onClick={handleViewPersona}
                 title={t.pipeline.view_persona}
-                className="p-1.5 rounded-lg hover:bg-secondary/70 text-muted-foreground/50 hover:text-foreground/80 transition-colors shrink-0"
+                className="p-1.5 rounded-card hover:bg-secondary/70 text-foreground hover:text-foreground/80 transition-colors shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -130,10 +130,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               <StatPill icon={Zap} label={t.pipeline.triggers_label} value={String(stats.triggerCount)} color="#f59e0b" />
               <StatPill icon={Link} label={t.pipeline.connectors_label} value={String(stats.connectorCount)} color="#10b981" />
               {stats.lastRun && (
-                <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
-                  <Clock className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                  <span className="text-sm text-muted-foreground/70">{t.pipeline.last_run}</span>
-                  <span className="text-sm text-foreground/80 font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
+                <div className="col-span-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal bg-secondary/30 border border-primary/8">
+                  <Clock className="w-3 h-3 text-foreground shrink-0" />
+                  <span className="typo-body text-foreground">{t.pipeline.last_run}</span>
+                  <span className="typo-body text-foreground font-medium ml-auto">{formatRelativeTime(stats.lastRun)}</span>
                 </div>
               )}
             </div>
@@ -141,7 +141,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
           {/* Role Selector */}
           <div>
-            <label className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-2 block">
+            <label className="typo-code font-mono text-foreground uppercase tracking-wider mb-2 block">
               {t.pipeline.role}
             </label>
             <div className="space-y-1.5">
@@ -149,16 +149,16 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 <button
                   key={role.value}
                   onClick={() => onRoleChange(member.id, role.value)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all ${
+                  className={`w-full text-left px-3 py-2.5 rounded-modal border transition-all ${
                     member.role === role.value
                       ? 'bg-indigo-500/10 border-indigo-500/25'
                       : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
                   }`}
                 >
-                  <div className={`text-sm font-medium ${member.role === role.value ? 'text-indigo-300' : 'text-foreground/90'}`}>
+                  <div className={`typo-body font-medium ${member.role === role.value ? 'text-indigo-300' : 'text-foreground/90'}`}>
                     {role.label}
                   </div>
-                  <div className="text-sm text-muted-foreground/80 mt-0.5">{role.description}</div>
+                  <div className="typo-body text-foreground mt-0.5">{role.description}</div>
                 </button>
               ))}
             </div>
@@ -172,7 +172,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                 key="confirm"
                 className="animate-fade-slide-in space-y-2"
               >
-                <div className="flex items-center gap-2 text-sm text-amber-400/70">
+                <div className="flex items-center gap-2 typo-body text-amber-400/70">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {tx(t.pipeline.remove_confirm, { name: personaName })}
                 </div>
@@ -182,13 +182,13 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                       onRemove(member.id);
                       onClose();
                     }}
-                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
+                    className="flex-1 px-3 py-1.5 typo-body font-medium rounded-modal bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors"
                   >
                     {t.common.confirm}
                   </button>
                   <button
                     onClick={() => setConfirmRemove(false)}
-                    className="flex-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/50 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
+                    className="flex-1 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -198,7 +198,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
               <button
                 key="remove"
                 onClick={() => setConfirmRemove(true)}
-                className="animate-fade-slide-in w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
+                className="animate-fade-slide-in w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 typo-body font-medium transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 {t.pipeline.remove_from_team}
@@ -212,10 +212,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 /** Compact stat pill for the stats grid */
 function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; value: string; color: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal bg-secondary/30 border border-primary/8">
       <Icon className="w-3 h-3 shrink-0" style={{ color: colorWithAlpha(color, 0.67) }} />
-      <span className="text-sm text-muted-foreground/70 truncate">{label}</span>
-      <span className="text-sm text-foreground/80 font-semibold ml-auto">{value}</span>
+      <span className="typo-body text-foreground truncate">{label}</span>
+      <span className="typo-heading text-foreground font-semibold ml-auto">{value}</span>
     </div>
   );
 }

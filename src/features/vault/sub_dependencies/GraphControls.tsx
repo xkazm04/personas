@@ -22,16 +22,16 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
             key={kind}
             type="button"
             onClick={() => onFilterChange(active ? 'all' : kind)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-modal border text-left transition-colors cursor-pointer ${
               active
                 ? 'bg-primary/10 border-primary/25 text-foreground/90'
-                : 'bg-secondary/25 border-primary/10 text-muted-foreground/70 hover:border-primary/20 hover:bg-secondary/40'
+                : 'bg-secondary/25 border-primary/10 text-foreground hover:border-primary/20 hover:bg-secondary/40'
             }`}
           >
             <Icon className="w-3.5 h-3.5 flex-shrink-0" />
             <div>
-              <span className="text-lg font-semibold leading-none">{stats[kind]}</span>
-              <span className="text-xs ml-1.5">{kindLabels[kind]}</span>
+              <span className="typo-heading-lg font-semibold leading-none">{stats[kind]}</span>
+              <span className="typo-caption ml-1.5">{kindLabels[kind]}</span>
             </div>
           </button>
         );

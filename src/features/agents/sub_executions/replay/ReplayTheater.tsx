@@ -136,7 +136,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground/60">
+      <div className="flex items-center justify-center h-64 text-foreground">
         <LoadingSpinner size="lg" className="mr-2" />
         <span className="typo-body">{e.loading_theater}</span>
       </div>
@@ -146,14 +146,14 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
   const activeStepIndex = replay.activeStep?.step_index ?? null;
 
   return (
-    <div className="flex flex-col rounded-xl border border-primary/15 bg-background/60 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col rounded-modal border border-primary/15 bg-background/60 overflow-hidden backdrop-blur-sm">
       {/* === HEADER: Pipeline Stage Indicator === */}
       <div className="px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center gap-2 mb-2">
           <Film className="w-4 h-4 text-violet-400" />
-          <span className="typo-heading text-foreground/80">{e.execution_theater}</span>
+          <span className="typo-heading text-foreground">{e.execution_theater}</span>
           {execution.model_used && (
-            <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">
+            <span className="ml-auto text-[10px] font-mono text-foreground">
               {execution.model_used}
             </span>
           )}
@@ -252,7 +252,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
                     );
                   })
                 ) : (
-                  <div className="flex items-center justify-center h-full typo-body text-muted-foreground/50 italic">
+                  <div className="flex items-center justify-center h-full typo-body text-foreground italic">
                     {e.no_tool_calls_recorded}
                   </div>
                 )}
@@ -333,12 +333,12 @@ function PanelTab({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-body transition-all${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body transition-all${
         active
           ? 'bg-primary/15 text-foreground/90 border border-primary/20'
           : disabled
-            ? 'text-muted-foreground/25 cursor-not-allowed border border-transparent'
-            : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent hover:border-primary/10'
+            ? 'text-foreground cursor-not-allowed border border-transparent'
+            : 'text-foreground hover:text-muted-foreground/80 border border-transparent hover:border-primary/10'
       }`}
       title={`${label} (${shortcut})`}
     >

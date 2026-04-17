@@ -30,15 +30,15 @@ export function DayTimeGrid({
       {/* Day selector */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{uc.days}</label>
+          <label className="typo-body font-medium text-foreground uppercase tracking-wider">{uc.days}</label>
           <div className="flex gap-1">
             <button
               type="button"
               onClick={() => {
                 DAYS.forEach((d) => { if (!selectedDays.has(d.key)) onToggleDay(d.key); });
               }}
-              className={`text-sm px-1.5 py-0.5 rounded transition-colors ${
-                allSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
+              className={`typo-body px-1.5 py-0.5 rounded transition-colors ${
+                allSelected ? 'text-amber-400 bg-amber-500/10' : 'text-foreground hover:text-foreground/70'
               }`}
             >
               {uc.all}
@@ -53,8 +53,8 @@ export function DayTimeGrid({
                   if (!isWeekday && has) onToggleDay(d.key);
                 });
               }}
-              className={`text-sm px-1.5 py-0.5 rounded transition-colors ${
-                weekdaysSelected ? 'text-amber-400 bg-amber-500/10' : 'text-muted-foreground/50 hover:text-foreground/70'
+              className={`typo-body px-1.5 py-0.5 rounded transition-colors ${
+                weekdaysSelected ? 'text-amber-400 bg-amber-500/10' : 'text-foreground hover:text-foreground/70'
               }`}
             >
               {uc.weekdays}
@@ -69,10 +69,10 @@ export function DayTimeGrid({
                 key={day.key}
                 type="button"
                 onClick={() => onToggleDay(day.key)}
-                className={`py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`py-1.5 rounded-card typo-body font-medium transition-all border ${
                   active
                     ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                    : 'bg-secondary/20 text-muted-foreground/50 border-primary/10 hover:border-primary/20 hover:text-foreground/70'
+                    : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20 hover:text-foreground/70'
                 }`}
                 title={day.label}
               >
@@ -85,14 +85,14 @@ export function DayTimeGrid({
 
       {/* Time selector */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">{uc.time}</label>
+        <label className="typo-body font-medium text-foreground uppercase tracking-wider block mb-1.5">{uc.time}</label>
         <div className="flex items-center gap-2">
           {/* Hour picker */}
           <div className="relative flex-1">
             <select
               value={hour}
               onChange={(e) => onHourChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-card border border-primary/20 bg-secondary/25 typo-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {HOURS.map((h) => (
                 <option key={h} value={h}>
@@ -100,17 +100,17 @@ export function DayTimeGrid({
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           </div>
 
-          <span className="text-muted-foreground/40 text-lg font-light">:</span>
+          <span className="text-foreground typo-heading-lg font-light">:</span>
 
           {/* Minute picker */}
           <div className="relative w-24">
             <select
               value={minute}
               onChange={(e) => onMinuteChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-card border border-primary/20 bg-secondary/25 typo-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
                 <option key={m} value={m}>
@@ -118,14 +118,14 @@ export function DayTimeGrid({
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           </div>
         </div>
       </div>
 
       {/* Visual hour bar */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider block mb-1.5">
+        <label className="typo-body font-medium text-foreground uppercase tracking-wider block mb-1.5">
           {uc.hour_click}
         </label>
         <div className="flex gap-px">
@@ -134,7 +134,7 @@ export function DayTimeGrid({
               key={h}
               type="button"
               onClick={() => onHourChange(h)}
-              className={`flex-1 h-5 rounded-sm transition-all ${
+              className={`flex-1 h-5 rounded-interactive transition-all ${
                 h === hour
                   ? 'bg-amber-400 shadow-elevation-1 shadow-amber-400/30'
                   : h >= 9 && h <= 17
@@ -145,7 +145,7 @@ export function DayTimeGrid({
             />
           ))}
         </div>
-        <div className="flex justify-between mt-0.5 text-sm text-muted-foreground/60 font-mono px-0.5">
+        <div className="flex justify-between mt-0.5 typo-code text-foreground font-mono px-0.5">
           <span>12a</span>
           <span>6a</span>
           <span>12p</span>

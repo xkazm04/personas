@@ -72,7 +72,7 @@ function ExportCheckbox({
       aria-checked={indeterminate ? 'mixed' : checked}
       disabled={disabled}
       onClick={onChange}
-      className={`w-[18px] h-[18px] rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+      className={`w-[18px] h-[18px] rounded-input flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
       } ${
         checked || indeterminate
@@ -127,7 +127,7 @@ function CategorySection({
   if (config.items.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden">
       {/* Category header */}
       <div className="flex items-center gap-4 px-5 py-4">
         <ExportCheckbox
@@ -140,16 +140,16 @@ function CategorySection({
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-3 flex-1 min-w-0 group"
         >
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color}`}>
+          <div className={`w-8 h-8 rounded-card flex items-center justify-center ${config.color}`}>
             {config.icon}
           </div>
           <div className="flex-1 text-left min-w-0">
-            <div className="text-sm font-semibold text-foreground/90">{config.label}</div>
-            <div className="text-xs text-muted-foreground/60">
+            <div className="typo-heading font-semibold text-foreground/90">{config.label}</div>
+            <div className="typo-caption text-foreground">
               {count} of {config.items.length} selected
             </div>
           </div>
-          <div className="text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors">
+          <div className="text-foreground group-hover:text-muted-foreground/60 transition-colors">
             <ChevronRight
               className={`w-4 h-4 transition-transform duration-250 ease-out ${
                 expanded ? 'rotate-90' : 'rotate-0'
@@ -171,7 +171,7 @@ function CategorySection({
           {config.items.map((item) => (
             <label
               key={item.id}
-              className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-secondary/15
+              className="flex items-center gap-4 px-3 py-2.5 rounded-card hover:bg-secondary/15
                 cursor-pointer transition-colors"
             >
               <ExportCheckbox
@@ -180,12 +180,12 @@ function CategorySection({
               />
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 {item.icon && (
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
+                  <span className="typo-body-lg flex-shrink-0">{item.icon}</span>
                 )}
                 <div className="min-w-0">
-                  <div className="text-sm text-foreground/85 truncate">{item.name}</div>
+                  <div className="typo-body text-foreground/85 truncate">{item.name}</div>
                   {item.description && (
-                    <div className="text-xs text-muted-foreground/50 truncate">
+                    <div className="typo-caption text-foreground truncate">
                       {item.description}
                     </div>
                   )}
@@ -357,10 +357,10 @@ export function ExportSelectionModal({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-primary/10">
         <div>
-          <h2 id="export-selection-title" className="text-lg font-semibold text-foreground/90">
+          <h2 id="export-selection-title" className="typo-heading-lg font-semibold text-foreground/90">
             {s.export_title}
           </h2>
-          <p className="text-sm text-muted-foreground/60 mt-0.5">
+          <p className="typo-body text-foreground mt-0.5">
             {s.export_subtitle}
           </p>
         </div>
@@ -374,9 +374,9 @@ export function ExportSelectionModal({
       {/* Body */}
       <div className="px-6 py-5 overflow-y-auto max-h-[60vh] space-y-5">
         {loading ? (
-          <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground/60">
+          <div className="flex items-center justify-center py-12 gap-3 text-foreground">
             <LoadingSpinner />
-            <span className="text-sm">{s.loading_data}</span>
+            <span className="typo-body">{s.loading_data}</span>
           </div>
         ) : (
           <>
@@ -387,10 +387,10 @@ export function ExportSelectionModal({
                 indeterminate={someGlobalSelected && !allGlobalSelected}
                 onChange={toggleGlobalAll}
               />
-              <span className="text-sm font-medium text-foreground/80">
+              <span className="typo-body font-medium text-foreground">
                 {allGlobalSelected ? s.deselect_all : s.select_all}
               </span>
-              <span className="text-xs text-muted-foreground/50 ml-auto">
+              <span className="typo-caption text-foreground ml-auto">
                 {tx(s.items_selected, { selected: totalSelected, total: totalItems })}
               </span>
             </div>
@@ -409,36 +409,36 @@ export function ExportSelectionModal({
             </div>
 
             {/* Passphrase for credential encryption */}
-            <div className="rounded-xl border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+            <div className="rounded-modal border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
+              <label className="flex items-center gap-2 typo-body font-medium text-foreground">
                 <KeyRound className="w-4 h-4 text-amber-400/70" />
                 {s.encrypt_passphrase}
-                <span className="text-xs font-normal text-muted-foreground/50 ml-1">{s.optional}</span>
+                <span className="typo-caption font-normal text-foreground ml-1">{s.optional}</span>
               </label>
               <input
                 type="password"
                 placeholder={s.passphrase_placeholder}
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
-                className={`px-3 py-2 rounded-lg border bg-secondary/20 text-sm
-                  text-foreground/90 placeholder:text-muted-foreground/40 outline-none w-full
+                className={`px-3 py-2 rounded-card border bg-secondary/20 typo-body
+                  text-foreground/90 placeholder:text-foreground outline-none w-full
                   ${!passphraseValid
                     ? 'border-red-500/30 focus-visible:border-red-500/50'
                     : 'border-primary/10 focus-visible:border-amber-500/30'
                   }`}
               />
               {!passphraseValid && (
-                <p className="text-xs text-red-400/80">{s.passphrase_too_short}</p>
+                <p className="typo-caption text-red-400/80">{s.passphrase_too_short}</p>
               )}
-              <p className="text-xs text-muted-foreground/50">
+              <p className="typo-caption text-foreground">
                 {s.passphrase_note}
               </p>
             </div>
 
             {/* Auto-included note */}
-            <div className="flex items-start gap-2.5 px-2 py-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+            <div className="flex items-start gap-2.5 px-2 py-3 rounded-card bg-blue-500/5 border border-blue-500/10">
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-muted-foreground/60 leading-relaxed">
+              <p className="typo-caption text-foreground leading-relaxed">
                 {s.auto_included_note}{!exportPassphrase ? s.no_passphrase_note : ''}
               </p>
             </div>
@@ -451,7 +451,7 @@ export function ExportSelectionModal({
         <button
           onClick={onClose}
           disabled={exporting}
-          className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground/70
+          className="px-4 py-2.5 rounded-modal typo-body font-medium text-foreground
             hover:text-foreground/80 transition-colors disabled:opacity-50"
         >
           {s.cancel}
@@ -459,7 +459,7 @@ export function ExportSelectionModal({
         <button
           onClick={handleExport}
           disabled={exporting || totalSelected === 0 || !passphraseValid}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-modal typo-body font-medium
             bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20
             transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >

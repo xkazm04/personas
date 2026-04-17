@@ -12,7 +12,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
   return (
     <button
       onClick={onSelect}
-      className={`w-full text-left p-3 rounded-xl border transition-colors ${
+      className={`w-full text-left p-3 rounded-modal border transition-colors ${
         isActive
           ? 'border-orange-500/30 bg-orange-500/5'
           : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
@@ -22,12 +22,12 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
         <StatusIcon status={pipeline.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground/90">#{pipeline.id}</span>
-            <span className={`text-xs font-medium capitalize ${statusColor(pipeline.status)}`}>
+            <span className="typo-body font-medium text-foreground/90">#{pipeline.id}</span>
+            <span className={`typo-caption font-medium capitalize ${statusColor(pipeline.status)}`}>
               {pipeline.status}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground/60">
+          <div className="flex items-center gap-2 mt-0.5 typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <GitBranch className="w-3 h-3" />
               {pipeline.ref}
@@ -45,7 +45,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
             )}
           </div>
         </div>
-        <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform ${isActive ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`w-4 h-4 text-foreground transition-transform ${isActive ? 'rotate-90' : ''}`} />
       </div>
     </button>
   );

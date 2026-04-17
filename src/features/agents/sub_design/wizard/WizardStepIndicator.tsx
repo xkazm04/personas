@@ -28,12 +28,12 @@ export function WizardStepIndicator({ stepIndex, onGoToStep }: WizardStepIndicat
                 if (i < stepIndex) onGoToStep(i);
               }}
               disabled={i > stepIndex}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-body transition-all ${
                 isActive
                   ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                   : isComplete
                   ? 'text-emerald-400/70 hover:bg-secondary/50 cursor-pointer'
-                  : 'text-muted-foreground/80 cursor-default'
+                  : 'text-foreground cursor-default'
               }`}
             >
               {isComplete ? (

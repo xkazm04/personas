@@ -18,7 +18,7 @@ function getExpiryStatus(expiresAt: string | null): {
   color: string;
   urgent: boolean;
 } {
-  if (!expiresAt) return { label: 'Unknown', color: 'text-muted-foreground/50', urgent: false };
+  if (!expiresAt) return { label: 'Unknown', color: 'text-foreground', urgent: false };
 
   const now = Date.now();
   const exp = new Date(expiresAt).getTime();
@@ -64,7 +64,7 @@ export function OAuthActivityBadge({
           title={`Token expires: ${oauthTokenExpiresAt}\nLast refresh: ${oauthLastRefreshAt ?? 'Never'}`}
         >
           <Clock className={`w-2.5 h-2.5 ${expiry.color}`} />
-          <span className={`text-xs font-mono ${expiry.color}`}>{expiry.label}</span>
+          <span className={`typo-code font-mono ${expiry.color}`}>{expiry.label}</span>
         </span>
       )}
       {expiry.urgent && (
@@ -79,16 +79,16 @@ export function OAuthActivityBadge({
           ) : (
             <RefreshCw className="w-2.5 h-2.5" />
           )}
-          <span className="text-xs font-medium">{t.vault.credential_card.refresh}</span>
+          <span className="typo-caption font-medium">{t.vault.credential_card.refresh}</span>
         </button>
       )}
       {oauthRefreshCount > 0 && (
         <span
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/40 border border-primary/10 text-muted-foreground/50 shrink-0"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary/40 border border-primary/10 text-foreground shrink-0"
           title={`${oauthRefreshCount} token refresh${oauthRefreshCount !== 1 ? 'es' : ''}\nLast: ${formatTimestamp(oauthLastRefreshAt, 'Never')}`}
         >
           <RefreshCw className="w-2.5 h-2.5" />
-          <span className="text-xs font-mono">{oauthRefreshCount}</span>
+          <span className="typo-code font-mono">{oauthRefreshCount}</span>
         </span>
       )}
     </div>

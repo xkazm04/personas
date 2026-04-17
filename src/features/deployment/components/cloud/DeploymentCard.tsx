@@ -59,10 +59,10 @@ export function DeploymentCard({
       {/* Header row: name + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground/90">
+          <span className="typo-body font-medium text-foreground/90">
             {d.label || personaName}
           </span>
-          <span className={`text-xs px-2 py-0.5 rounded-lg border font-medium ${statusColor(d.status)}`}>
+          <span className={`typo-caption px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
             {d.status}
           </span>
         </div>
@@ -75,7 +75,7 @@ export function DeploymentCard({
               title={dt.test_deployment}
               onClick={() => onTest(d.id, d.persona_id)}
               disabled={isBusy || testRunning}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-blue-400
+              className="p-1.5 rounded-card text-foreground hover:text-blue-400
                          hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {testRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
@@ -87,7 +87,7 @@ export function DeploymentCard({
               title={dt.pause_deployment}
               onClick={() => handleAction(d.id, () => onPause(d.id))}
               disabled={isBusy}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-amber-400
+              className="p-1.5 rounded-card text-foreground hover:text-amber-400
                          hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
@@ -99,7 +99,7 @@ export function DeploymentCard({
               title={dt.resume_deployment}
               onClick={() => handleAction(d.id, () => onResume(d.id))}
               disabled={isBusy}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-emerald-400
+              className="p-1.5 rounded-card text-foreground hover:text-emerald-400
                          hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
@@ -110,7 +110,7 @@ export function DeploymentCard({
             title={dt.remove_deployment}
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
-            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-red-400
+            className="p-1.5 rounded-card text-foreground hover:text-red-400
                        hover:bg-red-500/10 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -120,14 +120,14 @@ export function DeploymentCard({
 
       {/* Endpoint URL */}
       <div className="flex items-center gap-1.5">
-        <code className="flex-1 text-xs text-muted-foreground/80 bg-secondary/40 px-2 py-1 rounded-lg truncate border border-primary/10">
+        <code className="flex-1 typo-caption text-foreground bg-secondary/40 px-2 py-1 rounded-card truncate border border-primary/10">
           {endpointUrl}
         </code>
         <button
           type="button"
           title={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
-          className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
+          className="p-1.5 rounded-card text-foreground hover:text-foreground/90
                      hover:bg-secondary/50 transition-colors cursor-pointer"
         >
           {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -138,7 +138,7 @@ export function DeploymentCard({
             target="_blank"
             rel="noopener noreferrer"
             title={dt.open_endpoint}
-            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
+            className="p-1.5 rounded-card text-foreground hover:text-foreground/90
                        hover:bg-secondary/50 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -149,10 +149,10 @@ export function DeploymentCard({
       {/* Budget gauge */}
       {d.max_monthly_budget_usd != null && (
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground/70">
+          <div className="flex items-center justify-between typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
-              Budget: {formatCost(d.current_month_cost_usd)} / {formatCost(d.max_monthly_budget_usd)}
+              {dt.budget_label} {formatCost(d.current_month_cost_usd)} / {formatCost(d.max_monthly_budget_usd)}
             </span>
             <span>{budgetUtilization(d)?.toFixed(0) ?? 0}%</span>
           </div>
@@ -166,16 +166,16 @@ export function DeploymentCard({
       )}
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground/70">
-        <span>Invocations: <span className="text-foreground/80 font-medium">{d.invocation_count}</span></span>
-        <span>Last called: <span className="text-foreground/80">{timeAgo(d.last_invoked_at)}</span></span>
-        <span>Created: <span className="text-foreground/80">{timeAgo(d.created_at)}</span></span>
+      <div className="flex items-center gap-4 typo-caption text-foreground">
+        <span>{dt.label_invocations} <span className="text-foreground font-medium">{d.invocation_count}</span></span>
+        <span>{dt.label_last_called} <span className="text-foreground">{timeAgo(d.last_invoked_at)}</span></span>
+        <span>{dt.label_created} <span className="text-foreground">{timeAgo(d.created_at)}</span></span>
       </div>
 
       {/* Inline test result */}
       {testResult && (
         <div
-          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
+          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card border typo-caption ${
             testResult.status === 'pass'
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
               : 'bg-red-500/10 border-red-500/20 text-red-400'
@@ -186,14 +186,14 @@ export function DeploymentCard({
               {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
             </span>
             {testResult.durationMs != null && (
-              <span className="text-muted-foreground/70">
+              <span className="text-foreground">
                 {testResult.durationMs < 1000
                   ? `${testResult.durationMs}ms`
                   : `${(testResult.durationMs / 1000).toFixed(1)}s`}
               </span>
             )}
             {testResult.costUsd > 0 && (
-              <span className="text-muted-foreground/70">
+              <span className="text-foreground">
                 ${testResult.costUsd.toFixed(4)}
               </span>
             )}

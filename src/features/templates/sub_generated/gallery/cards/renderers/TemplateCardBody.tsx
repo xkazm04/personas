@@ -37,16 +37,16 @@ export function TemplateCardBody({
       {/* Compact Body (mobile) */}
       <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">{t.templates.card.use_cases_label}</span>
-          <span className="text-foreground/80">{displayFlows.length}</span>
+          <span className="text-foreground">{t.templates.card.use_cases_label}</span>
+          <span className="text-foreground">{displayFlows.length}</span>
         </div>
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">{t.templates.card.connectors_label}</span>
-          <span className="text-foreground/80">{connectors.length}</span>
+          <span className="text-foreground">{t.templates.card.connectors_label}</span>
+          <span className="text-foreground">{connectors.length}</span>
         </div>
         <div className="flex items-center justify-between typo-body">
-          <span className="text-muted-foreground/60">{t.templates.card.triggers_label}</span>
-          <span className="text-foreground/80">{suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length}</span>
+          <span className="text-foreground">{t.templates.card.triggers_label}</span>
+          <span className="text-foreground">{suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length}</span>
         </div>
       </div>
 
@@ -64,22 +64,22 @@ export function TemplateCardBody({
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-md focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 >
                   <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
-                  <span className="typo-body text-foreground/70 group-hover/flow:text-violet-300 truncate">
+                  <span className="typo-body text-foreground group-hover/flow:text-violet-300 truncate">
                     {flow.name}
                   </span>
                 </button>
               ))}
               {displayFlows.length > 4 && (
-                <span className="typo-body text-muted-foreground/50 pl-5">
+                <span className="typo-body text-foreground pl-5">
                   +{displayFlows.length - 4} more
                 </span>
               )}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.no_flows}</span>
+            <span className="typo-body text-foreground italic">{t.templates.card.no_flows}</span>
           )}
         </div>
 
@@ -96,7 +96,7 @@ export function TemplateCardBody({
                   <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
                     <div
                       key={c}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${
+                      className={`w-8 h-8 rounded-card flex items-center justify-center transition-opacity ${
                         isReady ? '' : 'opacity-30 grayscale'
                       }`}
                       style={{ backgroundColor: `${meta.color}18` }}
@@ -108,7 +108,7 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.none_label}</span>
+            <span className="typo-body text-foreground italic">{t.templates.card.none_label}</span>
           )}
         </div>
 
@@ -122,7 +122,7 @@ export function TemplateCardBody({
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60 flex-shrink-0" />
-                    <span className="typo-body text-foreground/70 truncate">
+                    <span className="typo-body text-foreground truncate">
                       {trigger.description || trigger.trigger_type}
                     </span>
                   </div>
@@ -130,7 +130,7 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="typo-body text-muted-foreground/60 italic">{t.templates.card.none_label}</span>
+            <span className="typo-body text-foreground italic">{t.templates.card.none_label}</span>
           )}
         </div>
       </div>

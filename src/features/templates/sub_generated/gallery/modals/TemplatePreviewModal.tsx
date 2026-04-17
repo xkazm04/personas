@@ -105,14 +105,14 @@ export function TemplatePreviewModal({
             <h2 id="template-preview-title" className="typo-heading-lg text-foreground/90 truncate">
               {t.templates.preview_modal.preview_title.replace('{name}', review.test_case_name)}
             </h2>
-            <p className="typo-body text-muted-foreground/60 mt-0.5">
+            <p className="typo-body text-foreground mt-0.5">
               {t.templates.preview_modal.sandboxed_hint}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <DimensionRadial designResult={designResult} size={36} />
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
-              <X className="w-5 h-5 text-muted-foreground/70" />
+            <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+              <X className="w-5 h-5 text-foreground" />
             </button>
           </div>
         </div>
@@ -122,21 +122,21 @@ export function TemplatePreviewModal({
           {phase === 'idle' && !hasStarted ? (
             /* Pre-run state */
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-12">
-              <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
                 <Play className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-center max-w-md">
                 <h3 className="typo-body-lg font-medium text-foreground/85 mb-1.5">
                   {t.templates.preview_modal.try_this_template}
                 </h3>
-                <p className="typo-body text-muted-foreground/60 leading-relaxed">
+                <p className="typo-body text-foreground leading-relaxed">
                   {t.templates.preview_modal.try_description}
                 </p>
               </div>
               <button
                 onClick={handleRun}
                 disabled={!designResult}
-                className="px-4 py-2.5 typo-body rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                className="px-4 py-2.5 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <Play className="w-4 h-4" />
                 {t.templates.preview_modal.run_preview}
@@ -165,7 +165,7 @@ export function TemplatePreviewModal({
         <div className={`px-6 py-3 border-t ${BORDER_SUBTLE} flex items-center justify-between flex-shrink-0`}>
           <div className="flex items-center gap-2">
             {phase === 'idle' && hasStarted && (
-              <span className="typo-body text-muted-foreground/50">{t.templates.preview_modal.ready}</span>
+              <span className="typo-body text-foreground">{t.templates.preview_modal.ready}</span>
             )}
             {isRunning && (
               <span className="typo-body text-blue-400/80 flex items-center gap-1.5">
@@ -186,20 +186,20 @@ export function TemplatePreviewModal({
             {isDone && (
               <button
                 onClick={handleRetry}
-                className="px-3.5 py-2 typo-body rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                className="px-3.5 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {t.templates.preview_modal.run_again}
               </button>
             )}
             {isRunning && (
-              <span className="typo-body text-muted-foreground/60">
+              <span className="typo-body text-foreground">
                 {t.templates.preview_modal.close_test_continues}
               </span>
             )}
             <button
               onClick={onClose}
-              className="px-3.5 py-2 typo-body rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+              className="px-3.5 py-2 typo-body rounded-modal text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
             >
               {t.common.close}
             </button>

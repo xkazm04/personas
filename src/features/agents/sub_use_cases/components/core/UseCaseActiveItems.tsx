@@ -41,7 +41,7 @@ function InlineDeleteButton({
         setConfirming(true);
       }}
       data-inline-delete={id}
-      className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
+      className="p-1 text-foreground hover:text-red-400 transition-colors"
     >
       {confirming ? (
           <ConfirmLabel />
@@ -57,7 +57,7 @@ function InlineDeleteButton({
 function ConfirmLabel() {
   const { t } = useTranslation();
   return (
-    <span key="confirm" className="animate-fade-slide-in text-sm font-semibold text-red-400">
+    <span key="confirm" className="animate-fade-slide-in typo-heading font-semibold text-red-400">
       {t.agents.use_cases.confirm_delete}
     </span>
   );
@@ -74,7 +74,7 @@ export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTrigg
 
   return (
     <div className="space-y-1.5">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Zap className="w-3.5 h-3.5 text-amber-400" />
         {t.agents.use_cases.active_triggers}
       </h5>
@@ -86,16 +86,16 @@ export function UseCaseActiveTriggers({ triggers, onDelete }: UseCaseActiveTrigg
         >
           <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground/80 block truncate">
+            <span className="typo-body font-medium text-foreground block truncate">
               {trigger.trigger_type}
             </span>
             {trigger.config && (
-              <span className="text-sm text-muted-foreground/70 block truncate">
+              <span className="typo-body text-foreground block truncate">
                 {trigger.config}
               </span>
             )}
           </div>
-          <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="typo-body px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {trigger.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (
@@ -118,7 +118,7 @@ export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseA
 
   return (
     <div className="space-y-1.5">
-      <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+      <h5 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Radio className="w-3.5 h-3.5 text-cyan-400" />
         {t.agents.use_cases.active_subscriptions}
       </h5>
@@ -130,16 +130,16 @@ export function UseCaseActiveSubscriptions({ subscriptions, onDelete }: UseCaseA
         >
           <Radio className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground/80 block truncate">
+            <span className="typo-body font-medium text-foreground block truncate">
               {sub.event_type}
             </span>
             {sub.source_filter && (
-              <span className="text-sm text-muted-foreground/70 block truncate">
+              <span className="typo-body text-foreground block truncate">
                 filter: {sub.source_filter}
               </span>
             )}
           </div>
-          <span className="text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="typo-body px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             {sub.enabled ? 'active' : 'disabled'}
           </span>
           {onDelete && (

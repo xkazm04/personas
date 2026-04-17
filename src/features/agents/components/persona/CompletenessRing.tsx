@@ -24,7 +24,7 @@ export function CompletenessRing({ percent }: { percent: number }) {
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <span className="absolute text-sm font-bold tabular-nums" style={{ color }}>
+      <span className="absolute typo-heading font-bold tabular-nums" style={{ color }}>
         {percent}%
       </span>
     </div>

@@ -177,7 +177,7 @@ export default function ProfilesPage() {
                     <div className={`w-10 h-10 rounded-card flex items-center justify-center flex-shrink-0 border ${
                       isActive ? 'bg-violet-500/15 border-violet-500/30' : 'bg-secondary/40 border-primary/10'
                     }`}>
-                      <span className={`text-xl leading-none ${sigil.color}`} aria-hidden>{sigil.glyph}</span>
+                      <span className={`typo-heading-lg leading-none ${sigil.color}`} aria-hidden>{sigil.glyph}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

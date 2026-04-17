@@ -42,9 +42,9 @@ interface PersonaAvatarProps {
 }
 
 const sizeClasses = {
-  sm: { container: 'w-7 h-7', img: 'w-4 h-4', text: 'text-sm' },
-  md: { container: 'w-9 h-9', img: 'w-5 h-5', text: 'text-base' },
-  lg: { container: 'w-10 h-10', img: 'w-5 h-5', text: 'text-base' },
+  sm: { container: 'w-7 h-7', img: 'w-4 h-4', text: 'typo-body' },
+  md: { container: 'w-9 h-9', img: 'w-5 h-5', text: 'typo-body-lg' },
+  lg: { container: 'w-10 h-10', img: 'w-5 h-5', text: 'typo-body-lg' },
 };
 
 export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) {
@@ -54,7 +54,7 @@ export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) 
 
   return (
     <div
-      className={`${s.container} rounded-lg flex items-center justify-center border shrink-0`}
+      className={`${s.container} rounded-card flex items-center justify-center border shrink-0`}
       style={{
         backgroundColor: colorWithAlpha(c, 0.08),
         borderColor: colorWithAlpha(c, 0.19),

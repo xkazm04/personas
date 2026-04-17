@@ -68,11 +68,11 @@ function JsonHighlight({ json }: { json: string }) {
     while (remaining.length > 0) {
       const match = remaining.match(/<([ksnb])>(.*?)<\/\1>/);
       if (!match) {
-        result.push(<span key={result.length} className="text-foreground/50">{remaining}</span>);
+        result.push(<span key={result.length} className="text-foreground">{remaining}</span>);
         break;
       }
       const before = remaining.slice(0, match.index);
-      if (before) result.push(<span key={result.length} className="text-foreground/50">{before}</span>);
+      if (before) result.push(<span key={result.length} className="text-foreground">{before}</span>);
       result.push(<span key={result.length} className={tagMap[match[1] ?? 'k']}>{match[2]}</span>);
       remaining = remaining.slice((match.index || 0) + match[0].length);
     }
@@ -80,7 +80,7 @@ function JsonHighlight({ json }: { json: string }) {
   }, [highlighted]);
 
   return (
-    <pre className="text-xs leading-relaxed pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
+    <pre className="typo-caption leading-relaxed pl-2 border-l-2 border-primary/10 my-0.5 whitespace-pre-wrap">
       {parts}
     </pre>
   );
@@ -108,8 +108,8 @@ export function ReplayTerminalPanel({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <RunningIcon size={14} className="opacity-60" />
-        <span className="typo-heading text-muted-foreground/70">{e.output_panel}</span>
-        <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
+        <span className="typo-heading text-foreground">{e.output_panel}</span>
+        <span className="ml-auto typo-body tabular-nums text-foreground">
           {visibleLines.length}/{totalLines} lines
         </span>
       </div>
@@ -156,7 +156,7 @@ export function ReplayTerminalPanel({
               <path d="M55 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.5" />
               <path d="M65 20l-8 5 8 5" stroke="#8b5cf6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.35" />
             </svg>
-            <span className="typo-body text-muted-foreground/50">{e.scrub_forward}</span>
+            <span className="typo-body text-foreground">{e.scrub_forward}</span>
           </div>
         )}
       </div>

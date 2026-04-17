@@ -454,7 +454,7 @@ pub async fn artist_export_composition(
             }
         }
 
-        MEDIA_EXPORT_JOBS.remove(&job_id_clone);
+        let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
     });
 
     Ok(json!({ "job_id": job_id }))

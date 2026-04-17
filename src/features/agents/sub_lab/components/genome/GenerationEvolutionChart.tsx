@@ -58,7 +58,7 @@ function computeGenerationStats(results: GenomeBreedingResult[]): GenerationStat
 
 function TrendIndicator({ current, previous }: { current: number; previous: number }) {
   const diff = current - previous;
-  if (Math.abs(diff) < 0.01) return <Minus className="w-3 h-3 text-muted-foreground" />;
+  if (Math.abs(diff) < 0.01) return <Minus className="w-3 h-3 text-foreground" />;
   if (diff > 0) return <TrendingUp className="w-3 h-3 text-emerald-400" />;
   return <TrendingDown className="w-3 h-3 text-red-400" />;
 }
@@ -80,8 +80,8 @@ export function GenerationEvolutionChart({
   return (
     <div className="space-y-3" role="region" aria-label="Generation evolution chart">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-muted-foreground">{t.agents.lab.evolution_progress}</h4>
-        <span className="text-xs text-muted-foreground/60">
+        <h4 className="typo-caption font-medium text-foreground">{t.agents.lab.evolution_progress}</h4>
+        <span className="typo-caption text-foreground">
           {stats.length} generation{stats.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -117,11 +117,11 @@ export function GenerationEvolutionChart({
                 />
 
                 {/* Tooltip on hover */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-md px-2 py-1 text-xs whitespace-nowrap z-10 shadow-elevation-3">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-input px-2 py-1 typo-caption whitespace-nowrap z-10 shadow-elevation-3">
                   Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground/60">G{gen.generation}</span>
+              <span className="text-[10px] text-foreground">G{gen.generation}</span>
             </button>
           );
         })}
@@ -129,14 +129,14 @@ export function GenerationEvolutionChart({
 
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center">
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
+        <span className="flex items-center gap-1 text-[10px] text-foreground">
+          <span className="w-2 h-2 rounded-interactive bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
+        <span className="flex items-center gap-1 text-[10px] text-foreground">
+          <span className="w-2 h-2 rounded-interactive bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
         </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
+        <span className="flex items-center gap-1 text-[10px] text-foreground">
+          <span className="w-2 h-2 rounded-interactive bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
         </span>
       </div>
 
@@ -145,7 +145,7 @@ export function GenerationEvolutionChart({
         const first = stats[0]!;
         const last = stats[stats.length - 1]!;
         return (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground border-t border-primary/5 pt-2">
+          <div className="flex items-center gap-3 typo-caption text-foreground border-t border-primary/5 pt-2">
             <div className="flex items-center gap-1">
               <TrendIndicator
                 current={last.bestFitness}
@@ -157,7 +157,7 @@ export function GenerationEvolutionChart({
                   : 'No baseline fitness data'}
               </span>
             </div>
-            <span className="text-muted-foreground/40">|</span>
+            <span className="text-foreground">|</span>
             <span>
               {results.length} total offspring
             </span>

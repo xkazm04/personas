@@ -119,7 +119,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground/60 text-sm" data-testid="eval-results-empty">
+      <div className="text-center py-12 text-foreground typo-body" data-testid="eval-results-empty">
         {t.agents.lab.no_results}
       </div>
     );
@@ -128,19 +128,19 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   return (
     <div className="space-y-6" data-testid="eval-results-grid">
       {/* Summary */}
-      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
               <Grid3X3 className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-foreground/90">{t.agents.lab.eval_summary}</h4>
-              <p className="text-xs text-muted-foreground/50">{versions.length} versions x {models.length} models x {scenarios.length} scenarios</p>
+              <h4 className="typo-heading font-semibold text-foreground/90">{t.agents.lab.eval_summary}</h4>
+              <p className="typo-caption text-foreground">{versions.length} versions x {models.length} models x {scenarios.length} scenarios</p>
             </div>
           </div>
           {summary && (
-            <p className="text-sm text-foreground/75 leading-relaxed"
+            <p className="typo-body text-foreground leading-relaxed"
               dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
             />
           )}
@@ -154,32 +154,32 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       {(insights.length > 0 || suggestions.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {insights.length > 0 && (
-            <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+            <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                <h4 className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider">
                   <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                 </h4>
               </div>
               <div className="px-4 py-3 space-y-2.5">
                 {insights.map((r, i) => (
-                  <div key={i} className="text-sm leading-relaxed">
-                    <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase">{r.label}</span>
-                    <p className="text-foreground/70 mt-0.5">{r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</p>
+                  <div key={i} className="typo-body leading-relaxed">
+                    <span className="text-[10px] font-semibold text-foreground uppercase">{r.label}</span>
+                    <p className="text-foreground mt-0.5">{r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
           {suggestions.length > 0 && (
-            <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
+            <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
               <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
+                <h4 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/70 uppercase tracking-wider">
                   <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                 </h4>
               </div>
               <div className="px-4 py-3 space-y-2">
                 {suggestions.map((s, i) => (
-                  <p key={i} className="text-sm text-foreground/70 leading-relaxed">
+                  <p key={i} className="typo-body text-foreground leading-relaxed">
                     {s.length > 200 ? s.slice(0, 200) + '...' : s}
                   </p>
                 ))}
@@ -192,18 +192,18 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       {/* Version x Model matrix */}
       <details className="group" open>
         <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.version_model_matrix}</h4>
+          <ChevronDown className="w-3.5 h-3.5 text-foreground transition-transform group-open:rotate-180" />
+          <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.agents.lab.version_model_matrix}</h4>
         </summary>
-        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
-          <table className="w-full text-sm" data-testid="eval-matrix-table">
+        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-modal">
+          <table className="w-full typo-body" data-testid="eval-matrix-table">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Version</th>
+                <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">Version</th>
                 {models.map((m) => (
-                  <th key={m} className="text-center px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">{m}</th>
+                  <th key={m} className="text-center px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">{m}</th>
                 ))}
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Avg</th>
+                <th className="text-center px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">Avg</th>
               </tr>
             </thead>
             <VirtualizedTableBody
@@ -214,24 +214,24 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                 return (
                   <>
                     <td className="px-3 py-2.5 font-medium">
-                      <span className="font-mono text-foreground/80">v{agg?.versionNumber}</span>
+                      <span className="font-mono text-foreground">v{agg?.versionNumber}</span>
                     </td>
                     {models.map((mId) => {
                       const cell = grid[vId]?.[mId];
                       if (!cell || cell.count === 0) {
-                        return <td key={mId} className="px-3 py-2.5 text-center text-muted-foreground/30">&mdash;</td>;
+                        return <td key={mId} className="px-3 py-2.5 text-center text-foreground">&mdash;</td>;
                       }
                       return (
                         <td key={mId} className="px-3 py-2.5 text-center">
                           <div className="inline-flex items-center gap-1.5">
                             <div className={`w-2 h-2 rounded-full ${cell.compositeScore >= 60 ? 'bg-emerald-500/60' : cell.compositeScore >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />
-                            <span className={`text-sm font-bold ${scoreColor(cell.compositeScore)}`}>{cell.compositeScore}</span>
+                            <span className={`typo-heading font-bold ${scoreColor(cell.compositeScore)}`}>{cell.compositeScore}</span>
                           </div>
                         </td>
                       );
                     })}
                     <td className="px-3 py-2.5 text-center">
-                      <span className={`text-sm font-bold ${scoreColor(agg?.compositeScore ?? 0)}`}>{agg?.compositeScore ?? 0}</span>
+                      <span className={`typo-heading font-bold ${scoreColor(agg?.compositeScore ?? 0)}`}>{agg?.compositeScore ?? 0}</span>
                     </td>
                   </>
                 );
@@ -245,21 +245,21 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       {scenarios.length > 0 && (
         <details className="group" open>
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
-            <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
-            <span className="text-[10px] text-muted-foreground/30">{t.agents.lab.click_cell_details}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-foreground transition-transform group-open:rotate-180" />
+            <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
+            <span className="text-[10px] text-foreground">{t.agents.lab.click_cell_details}</span>
           </summary>
-          <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
-            <table className="w-full text-sm" data-testid="eval-scenario-table">
+          <div className="mt-3 overflow-x-auto border border-primary/10 rounded-modal">
+            <table className="w-full typo-body" data-testid="eval-scenario-table">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/20">
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Scenario</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">Scenario</th>
                   {versions.map((vId) => {
                     const agg = versionAggs.find((a) => a.versionId === vId);
                     return models.map((mId) => (
-                      <th key={`${vId}-${mId}`} className="text-center px-3 py-2.5 font-medium text-muted-foreground/60 text-xs">
+                      <th key={`${vId}-${mId}`} className="text-center px-3 py-2.5 font-medium text-foreground typo-caption">
                         <div className="uppercase tracking-wider">v{agg?.versionNumber}</div>
-                        <div className="text-muted-foreground/40 normal-case">{mId}</div>
+                        <div className="text-foreground normal-case">{mId}</div>
                       </th>
                     ));
                   })}
@@ -270,23 +270,23 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                 rowKey={(s) => s}
                 renderRow={(scenario) => (
                   <>
-                    <td className="px-3 py-2.5 text-foreground/70 text-sm max-w-[250px] truncate">{scenario}</td>
+                    <td className="px-3 py-2.5 text-foreground typo-body max-w-[250px] truncate">{scenario}</td>
                     {versions.map((vId) =>
                       models.map((mId) => {
                         const r = scenarioMatrix[scenario]?.[vId]?.[mId];
-                        if (!r) return <td key={`${vId}-${mId}`} className="px-3 py-2.5 text-center text-muted-foreground/30">--</td>;
+                        if (!r) return <td key={`${vId}-${mId}`} className="px-3 py-2.5 text-center text-foreground">--</td>;
                         const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
                         const isSelected = selectedCell?.scenario === scenario && selectedCell?.versionId === vId && selectedCell?.modelId === mId;
                         return (
                           <td key={`${vId}-${mId}`} className="px-3 py-1.5">
                             <button
                               onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: vId, modelId: mId })}
-                              className={`w-full flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 transition-all ${
+                              className={`w-full flex items-center justify-center gap-1.5 rounded-card px-2 py-1.5 transition-all ${
                                 isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                               }`}
                             >
                               <div className={`w-2 h-2 rounded-full ${comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />
-                              <span className={`text-sm font-semibold ${scoreColor(comp)}`}>{comp}</span>
+                              <span className={`typo-heading font-semibold ${scoreColor(comp)}`}>{comp}</span>
                             </button>
                           </td>
                         );

@@ -29,7 +29,7 @@ export function ConnectorIconButton({
     >
       <div
         onClick={handleClick}
-        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+        className={`w-7 h-7 rounded-card flex items-center justify-center transition-all ${
           isReady
             ? ''
             : 'grayscale hover:grayscale-0 cursor-pointer hover:ring-2 hover:ring-amber-500/30'

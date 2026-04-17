@@ -33,7 +33,7 @@ export function AutomationOpportunitiesRail({
       <div className="flex items-center gap-2 mb-3">
         <Lightbulb className="w-4 h-4 text-amber-400/70" />
         <SectionLabel as="span" className="mb-0">{t.templates.opportunities.title}</SectionLabel>
-        <span className="text-sm text-muted-foreground/50">{t.templates.opportunities.subtitle}</span>
+        <span className="typo-body text-foreground">{t.templates.opportunities.subtitle}</span>
       </div>
 
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
@@ -68,18 +68,18 @@ function OpportunityCard({
   const connectorMeta = suggestedConnector ? getConnectorMeta(suggestedConnector) : null;
 
   return (
-    <div className="rounded-xl border border-amber-500/12 bg-amber-500/[0.03] p-4 hover:border-amber-500/25 transition-all">
+    <div className="rounded-modal border border-amber-500/12 bg-amber-500/[0.03] p-4 hover:border-amber-500/25 transition-all">
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-2">
-        <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/15">
+        <div className="p-1.5 rounded-card bg-amber-500/10 border border-amber-500/15">
           <GroupIcon className="w-4 h-4 text-amber-300/80" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-foreground/85">{group.label}</h3>
+          <h3 className="typo-heading font-semibold text-foreground/85">{group.label}</h3>
         </div>
         <button
           onClick={() => onSelectCategory(group.categories[0]!)}
-          className="text-sm text-amber-400/60 hover:text-amber-400 transition-colors"
+          className="typo-body text-amber-400/60 hover:text-amber-400 transition-colors"
           title={t.templates.opportunities.explore_templates.replace('{label}', group.label)}
         >
           <ChevronRight className="w-4 h-4" />
@@ -87,7 +87,7 @@ function OpportunityCard({
       </div>
 
       {/* Business value */}
-      <p className="text-sm text-muted-foreground/50 mb-3 leading-relaxed">
+      <p className="typo-body text-foreground mb-3 leading-relaxed">
         {businessValue}
       </p>
 
@@ -96,10 +96,10 @@ function OpportunityCard({
         <div className="mb-2">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Zap className="w-3 h-3 text-emerald-400/70" />
-            <span className="text-sm font-medium text-emerald-400/70">
+            <span className="typo-body font-medium text-emerald-400/70">
               {t.templates.opportunities.ready_now}
             </span>
-            <span className="text-sm text-muted-foreground/40">
+            <span className="typo-body text-foreground">
               ({readyNow.length})
             </span>
           </div>
@@ -116,14 +116,14 @@ function OpportunityCard({
         <div>
           <div className="flex items-center gap-1.5 mb-1.5">
             <Plus className="w-3 h-3 text-amber-400/60" />
-            <span className="text-sm font-medium text-amber-400/70">
+            <span className="typo-body font-medium text-amber-400/70">
               {t.templates.opportunities.add_connector}
             </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/15">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-amber-500/10 text-amber-300/80 border border-amber-500/15">
               <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
               {connectorMeta.label}
             </span>
-            <span className="text-sm text-muted-foreground/40">
+            <span className="typo-body text-foreground">
               {t.templates.opportunities.unlock_more.replace('{count}', String(oneConnectorAway.length))}
             </span>
           </div>
@@ -150,15 +150,15 @@ function TemplateRow({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-amber-500/5 transition-colors ${
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-amber-500/5 transition-colors ${
         dimmed ? 'opacity-60' : ''
       }`}
     >
-      <span className="text-sm text-foreground/70 flex-1 truncate">
+      <span className="typo-body text-foreground flex-1 truncate">
         {template.test_case_name}
       </span>
       {template.adoption_count > 0 && (
-        <span className="inline-flex items-center gap-0.5 text-sm text-emerald-400/50 tabular-nums flex-shrink-0">
+        <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50 tabular-nums flex-shrink-0">
           <Download className="w-2.5 h-2.5" />
           {template.adoption_count}
         </span>

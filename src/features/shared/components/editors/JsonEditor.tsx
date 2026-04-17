@@ -107,8 +107,8 @@ const TOKEN_CLASSES: Record<string, string> = {
   string: 'text-amber-400',
   number: 'text-emerald-400',
   bool: 'text-violet-400',
-  null: 'text-muted-foreground/60',
-  punct: 'text-muted-foreground/70',
+  null: 'text-foreground',
+  punct: 'text-foreground',
   text: 'text-foreground/90',
 };
 
@@ -193,7 +193,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
             type="button"
             onClick={handleFormat}
             disabled={!isValid}
-            className="flex items-center gap-1 px-2 py-0.5 typo-body text-muted-foreground/70 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 typo-body text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <AlignLeft className="w-3 h-3" />
             {t.shared.json_format}
@@ -218,7 +218,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
           className="absolute inset-0 px-4 py-3 typo-code leading-[1.625] whitespace-pre-wrap break-all overflow-hidden pointer-events-none m-0"
         >
           {highlighted || (
-            <span className="text-muted-foreground/30">{placeholder}</span>
+            <span className="text-foreground">{placeholder}</span>
           )}
         </pre>
 

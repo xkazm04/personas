@@ -60,10 +60,7 @@ pub struct GitLabClient {
 impl GitLabClient {
     /// Create a new `GitLabClient`.
     pub fn new(base_url: String, token: String) -> Result<Self, crate::error::AppError> {
-        let http = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
-            .build()
-            .map_err(|e| crate::error::AppError::Internal(format!("Failed to build HTTP client: {e}")))?;
+        let http = crate::SHARED_HTTP.clone();
 
         Ok(Self {
             http,

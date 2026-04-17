@@ -80,7 +80,7 @@ export const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
 export const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   e2e:            { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
   mock:           { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',     text: 'text-amber-400/80' },
-  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',       text: 'text-muted-foreground/70' },
+  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',       text: 'text-foreground' },
 };
 
 /** n8n session status badge styles. */

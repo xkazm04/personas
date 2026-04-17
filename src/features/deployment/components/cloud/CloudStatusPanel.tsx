@@ -26,17 +26,17 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
   const dt = t.deployment;
   if (!status && isLoading) {
     return (
-      <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
+      <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-foreground">
         <LoadingSpinner size="lg" />
-        <span className="sr-only">Loading cloud status...</span>
+        <span className="sr-only">{dt.status.loading}</span>
       </div>
     );
   }
 
   if (!status) {
     return (
-      <p className="text-sm text-muted-foreground/90 py-8 text-center">
-        No status data available.
+      <p className="typo-body text-foreground py-8 text-center">
+        {dt.status.no_status}
       </p>
     );
   }
@@ -48,7 +48,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       {/* Live indicator + Refresh button */}
       <div className="flex items-center justify-between">
         {lastPolled != null ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+          <div className="flex items-center gap-2 typo-caption text-foreground">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -59,7 +59,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -106,7 +106,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       {/* Claude token indicator */}
       <div>
         <SectionHeading className="mb-3">{dt.cloud_status.claude_token}</SectionHeading>
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30 border border-primary/10">
+        <div className="flex items-center gap-2 p-3 rounded-card bg-secondary/30 border border-primary/10">
           {status.hasClaudeToken ? (
             <>
               <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -114,7 +114,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="text-sm text-foreground/80">{dt.status.token_available}</span>
+              <span className="typo-body text-foreground">{dt.status.token_available}</span>
             </>
           ) : (
             <>
@@ -123,7 +123,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <span className="text-sm text-foreground/80">{dt.status.no_token_configured}</span>
+              <span className="typo-body text-foreground">{dt.status.no_token_configured}</span>
             </>
           )}
         </div>
@@ -140,9 +140,9 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
   };
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${colorMap[color]}`}>
-      <span className="text-lg font-semibold">{count}</span>
-      <span className="text-sm opacity-70">{label}</span>
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-modal border ${colorMap[color]}`}>
+      <span className="typo-heading-lg font-semibold">{count}</span>
+      <span className="typo-body opacity-70">{label}</span>
     </div>
   );
 }
@@ -187,9 +187,9 @@ function ActivityGauge({
         };
 
   return (
-    <div className="p-3 rounded-lg bg-secondary/30 border border-primary/10">
-      <p className="text-sm text-muted-foreground/90 mb-2">{label}</p>
-      <div className="relative h-24 rounded-lg bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
+    <div className="p-3 rounded-card bg-secondary/30 border border-primary/10">
+      <p className="typo-body text-foreground mb-2">{label}</p>
+      <div className="relative h-24 rounded-card bg-gradient-to-b from-secondary/40 to-secondary/10 border border-primary/10 overflow-hidden">
         <div className={`absolute inset-0 pointer-events-none ${toneClasses.glow}`} />
         <svg viewBox="0 0 120 70" className="w-full h-full" role="img" aria-label={`${label} gauge`}>
           <path
@@ -210,8 +210,8 @@ function ActivityGauge({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
-          <div className={`text-xl font-semibold ${toneClasses.text}`}>{displayValue}</div>
-          <div className="text-sm text-muted-foreground/60">of {safeMax}</div>
+          <div className={`typo-heading-lg font-semibold ${toneClasses.text}`}>{displayValue}</div>
+          <div className="typo-body text-foreground">of {safeMax}</div>
         </div>
       </div>
     </div>

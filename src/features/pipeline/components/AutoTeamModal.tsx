@@ -68,12 +68,12 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/25 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/25 flex items-center justify-center">
               <Zap className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h2 id="auto-team-title" className="text-sm font-semibold text-foreground">{t.pipeline.auto_team}</h2>
-              <p className="text-xs text-muted-foreground/60">{t.pipeline.auto_team_subtitle}</p>
+              <h2 id="auto-team-title" className="typo-heading font-semibold text-foreground">{t.pipeline.auto_team}</h2>
+              <p className="typo-caption text-foreground">{t.pipeline.auto_team_subtitle}</p>
             </div>
           </div>
           {!isWorking && (
@@ -99,7 +99,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
                 placeholder={t.pipeline.auto_team_placeholder}
-                className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
+                className="w-full px-4 py-3 rounded-modal bg-secondary/30 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
                 <Button
@@ -126,7 +126,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     variant="ghost"
                     size="xs"
                     onClick={() => { at.setQuery(prompt); }}
-                    className="text-xs px-2.5 py-1 bg-secondary/40 border border-primary/10 text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/60"
+                    className="typo-caption px-2.5 py-1 bg-secondary/40 border border-primary/10 text-foreground hover:text-foreground/80 hover:bg-secondary/60"
                   >
                     {prompt}
                   </Button>
@@ -142,7 +142,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 className="animate-fade-slide-in flex items-center gap-3 py-6 justify-center"
               >
                 <LoadingSpinner size="lg" className="text-indigo-400" />
-                <span className="text-sm text-muted-foreground/70">{t.pipeline.assembling_team}</span>
+                <span className="typo-body text-foreground">{t.pipeline.assembling_team}</span>
               </div>
             )}
 
@@ -188,14 +188,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   )}
-                  <span className="text-sm text-foreground/80">
+                  <span className="typo-body text-foreground">
                     {tx(t.pipeline.creating_team, { count: at.blueprint?.members.length ?? 0 })}
                   </span>
                 </div>
                 {at.phase === 'seeding' && (
                   <div className="flex items-center gap-3">
                     <LoadingSpinner className="text-violet-400 flex-shrink-0" />
-                    <span className="text-sm text-foreground/80 flex items-center gap-1.5">
+                    <span className="typo-body text-foreground flex items-center gap-1.5">
                       <Brain className="w-3.5 h-3.5 text-violet-400" />
                       {t.pipeline.seeding_memories}
                     </span>
@@ -210,12 +210,12 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="done"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+                <div className="p-4 rounded-modal border border-emerald-500/20 bg-emerald-500/5 space-y-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-sm font-medium text-emerald-400">{t.pipeline.team_created}</span>
+                    <span className="typo-body font-medium text-emerald-400">{t.pipeline.team_created}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
+                  <div className="flex items-center gap-4 typo-caption text-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" /> {at.memberCount} agents
                     </span>
@@ -224,7 +224,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     </span>
                     {at.memoriesSeeded > 0 && (
                       <span className="flex items-center gap-1">
-                        <Brain className="w-3 h-3" /> {at.memoriesSeeded} memories seeded
+                        <Brain className="w-3 h-3" /> {t.pipeline.memories_seeded.replace('{count}', String(at.memoriesSeeded))}
                       </span>
                     )}
                   </div>
@@ -248,9 +248,9 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="error"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <p className="text-sm text-red-400">{at.error}</p>
+                  <p className="typo-body text-red-400">{at.error}</p>
                 </div>
                 <Button
                   variant="secondary"

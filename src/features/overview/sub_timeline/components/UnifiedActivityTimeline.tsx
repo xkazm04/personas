@@ -44,14 +44,14 @@ function EventCard({ item }: { item: TimelineEventItem }) {
 
       {/* Content */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <span className="text-xs font-medium text-foreground/90 truncate">
+        <span className="typo-caption font-medium text-foreground/90 truncate">
           {event.event_type.replace(/_/g, ' ')}
         </span>
         <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColor.bg} ${statusColor.text} border ${statusColor.border}`}>
           {event.status}
         </span>
         {item.personaName && (
-          <span className="text-[10px] text-muted-foreground/70 truncate">
+          <span className="text-[10px] text-foreground truncate">
             <PersonaIcon icon={item.personaIcon} color={item.personaColor} display="pop" frameSize="lg" frameClass="mr-0.5" className="inline-flex" />
             {item.personaName}
           </span>
@@ -59,7 +59,7 @@ function EventCard({ item }: { item: TimelineEventItem }) {
       </div>
 
       {/* Timestamp */}
-      <span className="text-[10px] text-muted-foreground/60 shrink-0 tabular-nums">
+      <span className="text-[10px] text-foreground shrink-0 tabular-nums">
         {formatRelativeTime(event.created_at)}
       </span>
     </div>
@@ -70,7 +70,7 @@ function EventCard({ item }: { item: TimelineEventItem }) {
 
 function MessageCard({ item }: { item: TimelineMessageItem }) {
   const msg = item.data;
-  const pCfg = priorityConfig[msg.priority] ?? { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+  const pCfg = priorityConfig[msg.priority] ?? { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
   return (
     <div className="flex flex-col gap-1 min-w-0">
@@ -79,7 +79,7 @@ function MessageCard({ item }: { item: TimelineMessageItem }) {
         <MessageSquare className="w-3.5 h-3.5 text-blue-400 shrink-0" />
 
         {msg.persona_name && (
-          <span className="text-[10px] text-muted-foreground/70 shrink-0">
+          <span className="text-[10px] text-foreground shrink-0">
             <PersonaIcon icon={msg.persona_icon} color={msg.persona_color} display="pop" frameSize="xs" frameClass="mr-0.5" className="inline-flex" />
             {msg.persona_name}
           </span>
@@ -91,13 +91,13 @@ function MessageCard({ item }: { item: TimelineMessageItem }) {
           </span>
         )}
 
-        <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0 tabular-nums">
+        <span className="text-[10px] text-foreground ml-auto shrink-0 tabular-nums">
           {formatRelativeTime(msg.created_at)}
         </span>
       </div>
 
       {/* Title / content preview */}
-      <div className={`text-xs truncate ${msg.is_read ? 'text-muted-foreground/70' : 'text-foreground/90 font-medium'}`}>
+      <div className={`typo-caption truncate ${msg.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>
         {msg.title || msg.content.slice(0, 120)}
       </div>
     </div>
@@ -119,7 +119,7 @@ function TimelineItemRow({ item }: { item: TimelineItem }) {
       animate="visible"
       exit="exit"
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="rounded-lg bg-secondary/20 border border-primary/8 hover:border-primary/15 hover:bg-secondary/30 transition-colors px-3 py-2"
+      className="rounded-card bg-secondary/20 border border-primary/8 hover:border-primary/15 hover:bg-secondary/30 transition-colors px-3 py-2"
       style={{ borderLeftWidth: 2, borderLeftColor: accentColor }}
     >
       {item.kind === 'event'
@@ -161,7 +161,7 @@ export default function UnifiedActivityTimeline() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
             title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -183,9 +183,9 @@ export default function UnifiedActivityTimeline() {
         {isLoading ? (
           <ContentLoader />
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/60 gap-2">
+          <div className="flex flex-col items-center justify-center py-16 text-foreground gap-2">
             <Activity className="w-8 h-8 opacity-40" />
-            <p className="text-sm">{t.overview.activity_timeline.no_activity}</p>
+            <p className="typo-body">{t.overview.activity_timeline.no_activity}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3 p-4 md:p-6 overflow-y-auto flex-1 min-h-0">

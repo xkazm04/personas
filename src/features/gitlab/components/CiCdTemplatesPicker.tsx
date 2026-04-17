@@ -27,10 +27,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         className="flex items-center gap-2 w-full text-left"
       >
         <Cpu className="w-4 h-4 text-orange-400" />
-        <span className="text-sm font-medium text-foreground/80">{t.gitlab.cicd_agent_templates}</span>
+        <span className="typo-body font-medium text-foreground">{t.gitlab.cicd_agent_templates}</span>
         {expanded
-          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
-          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
+          ? <ChevronUp className="w-3.5 h-3.5 text-foreground ml-auto" />
+          : <ChevronDown className="w-3.5 h-3.5 text-foreground ml-auto" />
         }
       </button>
 
@@ -41,7 +41,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
             {GITLAB_TIERS.map((tier) => (
               <span
                 key={tier.id}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border ${tier.borderColor} ${tier.bgColor} ${tier.color}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-full border ${tier.borderColor} ${tier.bgColor} ${tier.color}`}
               >
                 {tier.name}
                 {tier.id === userTier && (
@@ -63,17 +63,17 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                   type="button"
                   disabled={!available}
                   onClick={() => onSelectTemplate(template)}
-                  className={`text-left p-3 rounded-xl border transition-colors ${
+                  className={`text-left p-3 rounded-modal border transition-colors ${
                     available
                       ? 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 cursor-pointer'
                       : 'border-primary/5 bg-secondary/10 opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
-                    <span className="text-lg leading-none mt-0.5">{template.icon}</span>
+                    <span className="typo-heading-lg leading-none mt-0.5">{template.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground/90">
+                        <span className="typo-body font-medium text-foreground/90">
                           {template.name}
                         </span>
                         {template.minTier !== 'free' && (
@@ -83,11 +83,11 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground/60 mt-0.5 line-clamp-2">
+                      <p className="typo-caption text-foreground mt-0.5 line-clamp-2">
                         {template.description}
                       </p>
-                      <span className="inline-block mt-1 text-[10px] text-muted-foreground/60 font-mono">
-                        on: {template.trigger}
+                      <span className="inline-block mt-1 text-[10px] text-foreground font-mono">
+                        {t.gitlab.trigger_on} {template.trigger}
                       </span>
                     </div>
                   </div>

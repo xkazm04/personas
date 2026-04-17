@@ -38,7 +38,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
 
   return (
     <div
-      className="group relative rounded-xl border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-lg hover:shadow-rose-500/5 cursor-pointer"
+      className="group relative rounded-modal border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5 cursor-pointer"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onClick={onClick}
@@ -68,7 +68,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
                 e.stopPropagation();
                 onDelete(asset.id);
               }}
-              className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+              className="p-2 rounded-card bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
               title={t.plugins.artist.delete}
             >
               <Trash2 className="w-4 h-4" />
@@ -78,7 +78,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
                 e.stopPropagation();
                 setEditingTags(true);
               }}
-              className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+              className="p-2 rounded-card bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
               title={t.plugins.artist.edit_tags}
             >
               <Tag className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
                   e.stopPropagation();
                   sendToMediaStudio();
                 }}
-                className="p-2 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
+                className="p-2 rounded-card bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
                 title={t.plugins.artist.send_to_media_studio}
               >
                 <Film className="w-4 h-4" />

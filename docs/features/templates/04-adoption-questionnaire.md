@@ -289,19 +289,37 @@ question. `summarizeAnswer` formats CSV answers compactly:
 - `"repo1,repo2"` → "repo1 and repo2"
 - `"repo1,repo2,repo3,repo4"` → "repo1, repo2 +2 more"
 
+## How answers reach the persona
+
+Answers are persisted to `build_sessions.adoption_answers` via the
+`save_adoption_answers` IPC command when the questionnaire completes.
+During `test_build_draft` and `promote_build_draft_inner`, the backend
+reads these answers and applies two transformations to the `AgentIr`:
+
+1. **Variable substitution** — `{{param.aq_config_1}}` placeholders in
+   the prompt get replaced with actual values.
+2. **Configuration injection** — a `## User Configuration` section is
+   appended to `system_prompt` listing all Q→A pairs.
+
+This means every adopted persona's prompt carries the user's configured
+values, and tests run against real config rather than template defaults.
+See [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md)
+for the full mechanics.
+
 ## Adding a new question type
 
 1. Add the type literal to the `type` union in
    `TransformQuestionResponse`.
 2. Add a render branch in `QuestionCard` (in
-   `QuestionnaireFormGrid.tsx`) before the default text input fallback.
+   `QuestionnaireFormGridParts.tsx`) before the default text input fallback.
 3. Add a default-answer handler if the type needs special
    initialization (most don't — `q.default` is a string).
 4. Update the audit script if you want the new type classified
    differently (currently `audit-adoption-questions.cjs` buckets
    unknown types as "text candidates").
-5. No Rust changes — the backend treats `design_result.adoption_questions`
-   as opaque JSON.
+5. No Rust changes needed for rendering — the backend treats
+   `design_result.adoption_questions` as opaque JSON. The answer
+   pipeline reads answers by question ID regardless of type.
 
 ## Anti-patterns
 

@@ -33,21 +33,21 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
   return (
     <div className="space-y-4" data-testid="tour-cred-root">
       {/* Connector count */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+      <div className="flex items-center gap-3 p-3 rounded-modal bg-amber-500/5 border border-amber-500/15">
+        <div className="w-10 h-10 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
           <Key className="w-5 h-5 text-amber-400" />
         </div>
         <div>
           <p className="typo-heading text-foreground/90" data-testid="tour-cred-stat-count">{t.onboarding.connector_count_stat}</p>
-          <p className="text-[11px] text-muted-foreground/60">{t.onboarding.connector_count_hint}</p>
+          <p className="text-[11px] text-foreground">{t.onboarding.connector_count_hint}</p>
         </div>
       </div>
 
       {/* Category grid */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground/80">{t.onboarding.categories_label}</span>
-          <span className="text-[11px] text-muted-foreground/50" data-testid="tour-cred-progress">
+          <span className="typo-body font-medium text-foreground">{t.onboarding.categories_label}</span>
+          <span className="text-[11px] text-foreground" data-testid="tour-cred-progress">
             {tx(t.onboarding.browsed_progress, { count: browsedCount })}
             {browsedCount >= 2 && <Check className="inline w-3 h-3 text-emerald-400 ml-1" />}
           </span>
@@ -60,19 +60,19 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
                 key={cat.id}
                 onClick={() => recordInteraction('category', cat.id)}
                 data-testid={`tour-cred-category-${cat.id}`}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
+                className={`flex flex-col items-center gap-1 p-2 rounded-modal border transition-all ${
                   isBrowsed
                     ? 'bg-emerald-500/5 border-emerald-500/20'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
                 }`}
               >
                 <div
-                  className="w-6 h-6 rounded-lg flex items-center justify-center"
+                  className="w-6 h-6 rounded-card flex items-center justify-center"
                   style={{ backgroundColor: `${cat.color}20` }}
                 >
                   <cat.icon className="w-3 h-3" style={{ color: cat.color }} />
                 </div>
-                <span className="text-[10px] text-muted-foreground/70 truncate w-full text-center">{cat.label}</span>
+                <span className="text-[10px] text-foreground truncate w-full text-center">{cat.label}</span>
                 {isBrowsed && <Check className="w-2.5 h-2.5 text-emerald-400" />}
               </button>
             );
@@ -82,24 +82,24 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Connection types */}
       <div className="space-y-2">
-        <span className="text-sm font-medium text-foreground/80">{t.onboarding.connection_types_label}</span>
+        <span className="typo-body font-medium text-foreground">{t.onboarding.connection_types_label}</span>
         <div className="space-y-1.5">
           {CONNECTION_TYPES.map((ct) => (
             <div
               key={ct.type}
               data-testid={`tour-cred-type-${ct.type}`}
-              className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all ${
+              className={`flex items-start gap-2.5 p-2.5 rounded-modal border transition-all ${
                 subStepIndex >= 2
                   ? 'border-amber-500/15 bg-amber-500/5'
                   : 'border-primary/8 bg-secondary/10'
               }`}
             >
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-card bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <ct.icon className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground/80">{t.onboarding[ct.labelKey]}</p>
-                <p className="text-[11px] text-muted-foreground/50 leading-relaxed">{t.onboarding[ct.descKey]}</p>
+                <p className="typo-body font-medium text-foreground">{t.onboarding[ct.labelKey]}</p>
+                <p className="text-[11px] text-foreground leading-relaxed">{t.onboarding[ct.descKey]}</p>
               </div>
             </div>
           ))}
@@ -107,9 +107,9 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
       </div>
 
       {/* Benefits callout */}
-      <div className="rounded-xl bg-amber-500/5 border border-amber-500/15 p-3">
-        <p className="text-sm text-amber-300/80 font-medium">{t.onboarding.connect_once}</p>
-        <p className="text-[11px] text-muted-foreground/50 mt-1">
+      <div className="rounded-modal bg-amber-500/5 border border-amber-500/15 p-3">
+        <p className="typo-body text-amber-300/80 font-medium">{t.onboarding.connect_once}</p>
+        <p className="text-[11px] text-foreground mt-1">
           {t.onboarding.connect_once_hint}
         </p>
       </div>

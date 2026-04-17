@@ -28,7 +28,7 @@ export function SetupStepCard({
 
   return (
     <div
-      className={`flex gap-2.5 px-3 py-2 rounded-xl transition-colors ${
+      className={`flex gap-2.5 px-3 py-2 rounded-modal transition-colors ${
         isCompleted ? 'bg-emerald-500/5' : 'bg-transparent hover:bg-secondary/20'
       }`}
     >
@@ -42,13 +42,13 @@ export function SetupStepCard({
         {isCompleted ? (
           <CheckCircle className="w-4 h-4 text-emerald-400" />
         ) : (
-          <Circle className="w-4 h-4 text-muted-foreground/80 hover:text-primary/50 transition-colors" />
+          <Circle className="w-4 h-4 text-foreground hover:text-primary/50 transition-colors" />
         )}
       </button>
 
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
-        <span className="text-sm font-bold text-muted-foreground/80 uppercase tracking-wider">
+        <span className="typo-heading font-bold text-foreground uppercase tracking-wider">
           Step {stepIndex + 1}
         </span>
         <div className="prose-none">

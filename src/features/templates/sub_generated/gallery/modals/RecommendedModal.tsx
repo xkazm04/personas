@@ -33,22 +33,22 @@ export function RecommendedModal({
       <div className="px-5 py-3.5 border-b border-primary/10 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400/70" />
-          <h2 id="recommended-modal-title" className="text-sm font-semibold text-foreground/90">
+          <h2 id="recommended-modal-title" className="typo-heading font-semibold text-foreground/90">
             {t.templates.recommended.title}
           </h2>
-          <span className="text-xs text-muted-foreground/60">
+          <span className="typo-caption text-foreground">
             {t.templates.recommended.subtitle}
           </span>
         </div>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/50 transition-colors">
-          <X className="w-4 h-4 text-muted-foreground/70" />
+        <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/50 transition-colors">
+          <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {recommendedTemplates.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/50">
+          <div className="flex items-center justify-center py-12 typo-body text-foreground">
             {t.templates.recommended.no_recommendations}
           </div>
         ) : (
@@ -66,10 +66,10 @@ export function RecommendedModal({
                 >
                   {/* Name + description */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-foreground/80 group-hover:text-amber-300 truncate">
+                    <div className="typo-body font-medium text-foreground group-hover:text-amber-300 truncate">
                       {t.test_case_name}
                     </div>
-                    <div className="text-xs text-muted-foreground/50 truncate mt-0.5">
+                    <div className="typo-caption text-foreground truncate mt-0.5">
                       {t.instruction.length > 70 ? t.instruction.slice(0, 70) + '...' : t.instruction}
                     </div>
                   </div>
@@ -90,13 +90,13 @@ export function RecommendedModal({
                       );
                     })}
                     {connectors.length > 3 && (
-                      <span className="text-xs text-muted-foreground/60">+{connectors.length - 3}</span>
+                      <span className="typo-caption text-foreground">+{connectors.length - 3}</span>
                     )}
                   </div>
 
                   {/* Adoption count */}
                   {t.adoption_count > 0 && (
-                    <span className="inline-flex items-center gap-1 text-xs font-mono text-emerald-400/60 flex-shrink-0">
+                    <span className="inline-flex items-center gap-1 typo-code font-mono text-emerald-400/60 flex-shrink-0">
                       <Download className="w-2.5 h-2.5" />
                       {t.adoption_count}
                     </span>

@@ -64,7 +64,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-muted-foreground/70">{t.gitlab.select_project_for_pipelines}</p>
+        <p className="typo-body text-foreground">{t.gitlab.select_project_for_pipelines}</p>
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
     <div className="space-y-4">
       {/* Header actions */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground/70">
+        <p className="typo-body text-foreground">
           {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
@@ -117,11 +117,11 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             null
           ) : pipelines.length === 0 ? (
             <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-orange-400/60" />
               </div>
-              <p className="text-sm text-muted-foreground/70">{t.gitlab.no_pipelines_yet}</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">{t.gitlab.trigger_to_start}</p>
+              <p className="typo-body text-foreground">{t.gitlab.no_pipelines_yet}</p>
+              <p className="typo-caption text-foreground mt-1">{t.gitlab.trigger_to_start}</p>
             </div>
           ) : (
             pipelines.map((p) => (
@@ -142,10 +142,10 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <StatusIcon status={activePipeline.status} />
-                  <span className="text-sm font-medium text-foreground/90">
-                    Pipeline #{activePipeline.id}
+                  <span className="typo-body font-medium text-foreground/90">
+                    {t.gitlab.pipeline_hash}{activePipeline.id}
                   </span>
-                  <span className={`text-xs capitalize ${statusColor(activePipeline.status)}`}>
+                  <span className={`typo-caption capitalize ${statusColor(activePipeline.status)}`}>
                     {activePipeline.status}
                   </span>
                 </div>
@@ -155,7 +155,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                       href={sanitizeExternalUrl(activePipeline.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                      className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                       title={t.gitlab.open_in_gitlab}
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -177,7 +177,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                 {jobs.length === 0 && loading ? (
                   null
                 ) : jobs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground/50 text-center py-4">{t.gitlab.no_jobs_found}</p>
+                  <p className="typo-body text-foreground text-center py-4">{t.gitlab.no_jobs_found}</p>
                 ) : (
                   jobs.map((job) => (
                     <JobRow
@@ -192,7 +192,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full min-h-[200px] text-sm text-muted-foreground/50">
+            <div className="flex items-center justify-center h-full min-h-[200px] typo-body text-foreground">
               {t.gitlab.select_pipeline_to_view}
             </div>
           )}

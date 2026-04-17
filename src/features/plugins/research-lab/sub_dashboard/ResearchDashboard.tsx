@@ -55,7 +55,7 @@ export default function ResearchDashboard() {
         <h2 className="typo-section-title">{t.research_lab.dashboard}</h2>
         <button
           onClick={() => setResearchLabTab('projects')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           {t.research_lab.create_project}

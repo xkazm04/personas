@@ -133,7 +133,7 @@ export default function SyncPanel() {
             <button
               onClick={pushSync}
               disabled={pushing || pulling}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
               {pushing ? 'Pushing...' : 'Push to Vault'}
@@ -141,7 +141,7 @@ export default function SyncPanel() {
             <button
               onClick={pullSync}
               disabled={pushing || pulling}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
               {pulling ? 'Pulling...' : 'Pull from Vault'}
@@ -161,7 +161,7 @@ export default function SyncPanel() {
                 <button
                   key={p.id}
                   onClick={() => togglePersona(p.id)}
-                  className={`px-3 py-1.5 rounded-lg typo-caption transition-colors border focus-ring ${
+                  className={`px-3 py-1.5 rounded-card typo-caption transition-colors border focus-ring ${
                     selectedPersonaIds.has(p.id)
                       ? 'bg-violet-500/15 text-violet-300 border-violet-500/30'
                       : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20'
@@ -200,7 +200,7 @@ export default function SyncPanel() {
         <SectionCard collapsible title={`Conflicts (${conflicts.length})`} status="warning" storageKey="obsidian-sync-conflicts">
           <div className="space-y-3">
             {conflicts.map((c) => (
-              <div key={c.id} className="px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-3">
+              <div key={c.id} className="px-4 py-3 rounded-modal bg-amber-500/5 border border-amber-500/20 space-y-3">
                 <div>
                   <p className="typo-heading typo-card-label">{c.entityType}: {c.entityId.slice(0, 8)}...</p>
                   <p className="typo-caption text-foreground">{c.filePath}</p>
@@ -208,25 +208,25 @@ export default function SyncPanel() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <p className="typo-caption text-blue-400/70">App Version</p>
-                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-lg p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
+                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.appContent.slice(0, 500)}{c.appContent.length > 500 ? '...' : ''}
                     </pre>
                   </div>
                   <div className="space-y-1">
                     <p className="typo-caption text-violet-400/70">Vault Version</p>
-                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-lg p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
+                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.vaultContent.slice(0, 500)}{c.vaultContent.length > 500 ? '...' : ''}
                     </pre>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-lg typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
+                  <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
                     Keep App
                   </button>
-                  <button onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-lg typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring">
+                  <button onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring">
                     Keep Vault
                   </button>
-                  <button onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-lg typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
+                  <button onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-card typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
                     Skip
                   </button>
                 </div>
@@ -243,7 +243,7 @@ export default function SyncPanel() {
         ) : (
           <div className="space-y-1 max-h-80 overflow-y-auto">
             {syncLog.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors">
+              <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/10 hover:bg-secondary/20 transition-colors">
                 {entry.action === 'created' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />}
                 {entry.action === 'updated' && <RefreshCw className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
                 {entry.action === 'conflict' && <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}

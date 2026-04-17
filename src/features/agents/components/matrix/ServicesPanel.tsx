@@ -58,7 +58,7 @@ export function ServicesPanel({
 
   if (connectors.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground/40 px-1 py-2">
+      <p className="typo-caption text-foreground px-1 py-2">
         {t.agents.services_panel.no_connectors}
       </p>
     );
@@ -71,10 +71,10 @@ export function ServicesPanel({
         <button
           type="button"
           onClick={() => setActiveCategory('all')}
-          className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+          className={`px-2.5 py-1 rounded-input text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
             activeCategory === 'all'
               ? 'bg-primary/15 text-primary'
-              : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+              : 'text-foreground hover:text-muted-foreground/60'
           }`}
         >
           {t.common.all}
@@ -84,10 +84,10 @@ export function ServicesPanel({
             key={cat}
             type="button"
             onClick={() => setActiveCategory(cat)}
-            className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+            className={`px-2.5 py-1 rounded-input text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
               activeCategory === cat
                 ? 'bg-primary/15 text-primary'
-                : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                : 'text-foreground hover:text-muted-foreground/60'
             }`}
           >
             {cat}
@@ -106,7 +106,7 @@ export function ServicesPanel({
               <button
                 type="button"
                 onClick={() => onToggle(c.name)}
-                className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-200 ${
+                className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-modal transition-all duration-200 ${
                   isSelected
                     ? 'bg-primary/10 border border-primary/25 shadow-elevation-1 shadow-primary/10'
                     : 'bg-secondary/10 border border-transparent hover:border-primary/15 hover:bg-secondary/20'
@@ -124,7 +124,7 @@ export function ServicesPanel({
                   <ConnectorIcon meta={c.meta} size="w-6 h-6" />
                 </div>
                 <span className={`text-[10px] font-medium truncate max-w-[88px] text-center leading-tight transition-colors ${
-                  isSelected ? 'text-foreground/80' : 'text-muted-foreground/50'
+                  isSelected ? 'text-foreground' : 'text-foreground'
                 }`}>
                   {selectedTable ? selectedTable : c.meta.label}
                 </span>

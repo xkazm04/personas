@@ -46,19 +46,19 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
         <div
           key={entry.credentialId}
           role="alert"
-          className="flex items-center gap-2.5 px-4 py-3 bg-amber-600/10 border border-amber-500/25 rounded-xl text-sm text-amber-300"
+          className="flex items-center gap-2.5 px-4 py-3 bg-amber-600/10 border border-amber-500/25 rounded-modal typo-body text-amber-300"
         >
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
           <span className="flex-1">
-            <strong>{entry.credentialName}</strong> ({entry.serviceType}) -- access was revoked. Please re-authorize to resume automations.
+            <strong>{entry.credentialName}</strong> ({entry.serviceType}{t.vault.reauth_banner.access_revoked}
           </span>
           {onNavigate && (
             <button
               onClick={() => onNavigate(entry.credentialId)}
-              className="flex items-center gap-1 text-amber-400 hover:text-amber-300 text-xs font-medium shrink-0"
+              className="flex items-center gap-1 text-amber-400 hover:text-amber-300 typo-caption font-medium shrink-0"
             >
               <ExternalLink className="w-3 h-3" />
-              Reconnect
+              {t.vault.reauth_banner.reconnect}
             </button>
           )}
           <button

@@ -56,12 +56,12 @@ function SimpleListEditor({ items, onItemsChange, placeholder, readOnly }: Simpl
       {items.map((item, i) => (
         <div key={i} className="flex items-start gap-2 group min-h-[24px]">
           <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 mt-[7px] flex-shrink-0" />
-          <span className="text-[12px] text-foreground/70 leading-snug flex-1">{item}</span>
+          <span className="text-[12px] text-foreground leading-snug flex-1">{item}</span>
           {!readOnly && (
             <button
               type="button"
               onClick={() => handleRemove(i)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted-foreground/30 hover:text-red-400 transition-all flex-shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all flex-shrink-0"
             >
               <X className="w-3 h-3" />
             </button>
@@ -76,7 +76,7 @@ function SimpleListEditor({ items, onItemsChange, placeholder, readOnly }: Simpl
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
             placeholder={placeholder}
-            className="flex-1 px-2 py-1 rounded border border-primary/10 bg-transparent text-[11px] text-foreground/70 placeholder-muted-foreground/25 focus:outline-none focus:border-primary/30"
+            className="flex-1 px-2 py-1 rounded border border-primary/10 bg-transparent text-[11px] text-foreground placeholder-muted-foreground/25 focus:outline-none focus:border-primary/30"
           />
           <button
             type="button"
@@ -121,10 +121,10 @@ function CredentialPickerCard({
     <button
       type="button"
       onClick={onSelect}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-primary/10 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset focus-visible:outline-none"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal border border-primary/10 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset focus-visible:outline-none"
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
+        className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 border"
         style={{
           backgroundColor: connector ? `${connector.color}15` : undefined,
           borderColor: connector ? `${connector.color}30` : undefined,
@@ -140,12 +140,12 @@ function CredentialPickerCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <h4 className="font-medium text-foreground text-sm truncate" title={credential.name}>
+          <h4 className="font-medium text-foreground typo-body truncate" title={credential.name}>
             {credential.name}
           </h4>
           <CompositeHealthDot healthResult={healthResult} rotationStatus={null} />
         </div>
-        <p className="text-[11px] text-muted-foreground/60 truncate mt-0.5">
+        <p className="text-[11px] text-foreground truncate mt-0.5">
           {connector?.label ?? credential.service_type}
         </p>
       </div>
@@ -193,15 +193,15 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="min-w-0">
-            <h2 id="dimension-swap-credential-title" className="text-sm font-semibold text-foreground/90 truncate">
+            <h2 id="dimension-swap-credential-title" className="typo-heading font-semibold text-foreground/90 truncate">
               {tx(t.agents.dimension_edit.replace_connector, { name: connectorName })}
             </h2>
-            <p className="text-[11px] text-muted-foreground/60 mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
+            <p className="text-[11px] text-foreground mt-0.5">{t.agents.dimension_edit.pick_credential}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95 flex-shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -211,13 +211,13 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {connectedCredentials.length === 0 ? (
             <div className="text-center py-10">
-              <Key className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
+              <Key className="w-8 h-8 text-foreground mx-auto mb-2" />
+              <p className="typo-body text-foreground">{t.agents.dimension_edit.no_connected_credentials}</p>
+              <p className="text-[11px] text-foreground mt-1">{t.agents.dimension_edit.add_credentials_hint}</p>
               <button
                 type="button"
                 onClick={() => { setSidebarSection('credentials'); onClose(); }}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 bg-primary/10 typo-caption text-primary hover:bg-primary/20 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {t.agents.dimension_edit.open_keys}
@@ -228,7 +228,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
               const connDef = getConnectorDef(serviceType);
               return (
                 <div key={serviceType}>
-                  <h3 className="text-[11px] font-semibold text-foreground/60 uppercase tracking-wider mb-2 px-1">
+                  <h3 className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-2 px-1">
                     {connDef?.label ?? serviceType}
                   </h3>
                   <div className="space-y-1.5">
@@ -271,7 +271,7 @@ function ConnectorCards({ connectors, onSwap }: {
   return (
     <div className="space-y-1.5 w-full">
       {!allHealthy && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/8 border border-amber-500/15 text-[10px] text-amber-400/80">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/8 border border-amber-500/15 text-[10px] text-amber-400/80">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
           {t.agents.dimension_edit.credential_warning}
         </div>
@@ -286,13 +286,13 @@ function ConnectorCards({ connectors, onSwap }: {
           : "bg-amber-400";
 
         return (
-          <div key={c.name} className="rounded-lg border border-primary/10 bg-primary/[0.02] p-2">
+          <div key={c.name} className="rounded-card border border-primary/10 bg-primary/[0.02] p-2">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
               <div className="flex-1 min-w-0">
-                <span className="text-[12px] font-medium text-foreground/80">{c.name}</span>
+                <span className="text-[12px] font-medium text-foreground">{c.name}</span>
                 {c.purpose && (
-                  <p className="text-[10px] text-muted-foreground/50 truncate">{c.purpose}</p>
+                  <p className="text-[10px] text-foreground truncate">{c.purpose}</p>
                 )}
               </div>
 
@@ -386,13 +386,13 @@ function TriggerCards({ triggers, onConfigChange }: {
     <div className="space-y-1.5 w-full">
       {triggers.map((tr, i) => {
         const Icon = TRIGGER_ICONS[tr.trigger_type] ?? Activity;
-        const colorClass = TRIGGER_COLORS[tr.trigger_type] ?? "text-foreground/50 bg-secondary/20 border-secondary/30";
+        const colorClass = TRIGGER_COLORS[tr.trigger_type] ?? "text-foreground bg-secondary/20 border-secondary/30";
         const isEditing = editingIdx === i;
         const hasCron = tr.config?.cron;
         const hasInterval = tr.config?.interval;
 
         return (
-          <div key={i} className={`rounded-lg border p-2 ${colorClass}`}>
+          <div key={i} className={`rounded-card border p-2 ${colorClass}`}>
             <div className="flex items-center gap-2">
               <Icon className="w-3.5 h-3.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -480,7 +480,7 @@ function ReviewToggle({ items, onItemsChange }: {
       <button
         type="button"
         onClick={toggleApproval}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors w-full ${
+        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card border text-[11px] font-medium transition-colors w-full ${
           hasApproval
             ? "border-rose-400/30 bg-rose-500/10 text-rose-400"
             : "border-emerald-400/30 bg-emerald-500/10 text-emerald-400"

@@ -34,8 +34,8 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
     <div className={`${CARD_CONTAINER} p-4 space-y-4 relative overflow-hidden [&_svg]:outline-none [&_.recharts-wrapper]:outline-none`} aria-label="Traffic and errors chart">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
       <div className="flex items-center justify-between relative z-10">
-        <h3 className="typo-label text-foreground/80 flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+        <h3 className="typo-label text-foreground flex items-center gap-2">
+          <div className="p-1.5 rounded-card bg-cyan-500/10 text-cyan-400">
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
           {t.overview.widgets.traffic_errors_chart}
@@ -43,11 +43,11 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
-            <AnimatedCounter value={totalTraffic} className="typo-body text-muted-foreground/60" formatFn={formatCounter} />
+            <AnimatedCounter value={totalTraffic} className="typo-body text-foreground" formatFn={formatCounter} />
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <AnimatedCounter value={totalErrors} className="typo-body text-muted-foreground/60" formatFn={formatCounter} />
+            <AnimatedCounter value={totalErrors} className="typo-body text-foreground" formatFn={formatCounter} />
           </div>
         </div>
       </div>
@@ -72,7 +72,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
       </div>
 
       <div className="pt-3 border-t border-primary/5 relative z-10">
-        <div className="flex justify-between typo-label text-muted-foreground/60">
+        <div className="flex justify-between typo-label text-foreground">
           <span>{rangeLabel}</span>
           <span>Today</span>
         </div>

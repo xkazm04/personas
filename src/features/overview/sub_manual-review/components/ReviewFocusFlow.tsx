@@ -38,7 +38,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 function SeverityBadge({ severity }: { severity: string }) {
   const cfg = getSevCfg(severity);
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
       {cfg.icon}
       {cfg.label}
     </span>
@@ -238,7 +238,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
           <Check className="w-8 h-8 text-emerald-400" />
         </div>
         <p className="text-lg font-medium text-foreground">{t.overview.review_focus.all_caught_up}</p>
-        <p className="text-sm text-foreground/60">{t.overview.review_focus.no_pending}</p>
+        <p className="text-sm text-foreground">{t.overview.review_focus.no_pending}</p>
       </div>
     );
   }
@@ -250,7 +250,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[220px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
@@ -284,12 +284,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
               >
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sevDot(r.severity)}`} />
-                  <span className={`text-xs truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                  <span className={`text-xs truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
                     {r.title}
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="text-xs text-foreground/50 ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <span className="text-xs text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
                 )}
               </button>
             );
@@ -301,7 +301,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Top nav bar */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
-          <span className="text-sm font-medium text-foreground/70">Review {reviewIdx + 1} of {pending.length}</span>
+          <span className="text-sm font-medium text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
@@ -325,7 +325,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className={`w-full ${hasAnyImages ? 'max-w-5xl' : 'max-w-3xl'}`}
             >
-              <div className={`rounded-xl border border-primary/10 ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
+              <div className={`rounded-modal border border-primary/10 ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
                 {/* Severity gradient top bar */}
                 <div className={`h-0.5 bg-gradient-to-r ${sevCfg.gradient}`} />
 
@@ -333,12 +333,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {/* Header */}
                   <div className="flex items-start gap-3">
                     <PersonaIcon icon={current!.persona_icon ?? null} color={current!.persona_color ?? null} display="framed" frameSize={"lg"} />
-                    <span className="text-sm font-medium text-foreground/80 mt-1">{current!.persona_name || 'Unknown'}</span>
+                    <span className="text-sm font-medium text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
                     <div className="mt-1"><SeverityBadge severity={current!.severity} /></div>
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
                           <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
@@ -363,7 +363,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           {(acceptCount > 0 || rejectCount > 0) && (
                             <button
                               onClick={() => setDecisionVerdicts({})}
-                              className="text-xs text-foreground/50 hover:text-foreground/80 transition-colors"
+                              className="text-xs text-foreground hover:text-foreground/80 transition-colors"
                               title={t.overview.review_focus.clear_all_verdicts}
                             >
                               Clear
@@ -371,7 +371,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           )}
                         </div>
                       )}
-                      <span className="flex items-center gap-1 text-xs text-foreground/60">
+                      <span className="flex items-center gap-1 text-xs text-foreground">
                         <Clock className="w-3 h-3" />
                         {formatRelativeTime(current!.created_at)}
                       </span>
@@ -390,7 +390,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {galleryImage && !hasDecisions && (
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                      <div className="rounded-lg overflow-hidden border border-primary/10 bg-black/20">
+                      <div className="rounded-card overflow-hidden border border-primary/10 bg-black/20">
                         {isVideoUrl(galleryImage) ? (
                           <video
                             src={galleryImage}
@@ -444,7 +444,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                         <div className="flex items-center gap-3 text-xs">
                           {acceptCount > 0 && <span className="text-emerald-400">{acceptCount} accepted</span>}
                           {rejectCount > 0 && <span className="text-red-400">{rejectCount} rejected</span>}
-                          {undecidedCount > 0 && <span className="text-foreground/50">{undecidedCount} undecided</span>}
+                          {undecidedCount > 0 && <span className="text-foreground">{undecidedCount} undecided</span>}
                         </div>
                       )}
                     </div>
@@ -458,7 +458,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1.5 text-sm text-foreground/40">
+                        <div className="flex items-center gap-1.5 text-sm text-foreground">
                           <Zap className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
@@ -470,7 +470,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                               setActiveAction('approve');
                               setActionNotes(action);
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card text-sm text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
                             {action}
@@ -534,22 +534,22 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                       confirmColor="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"
                     />
                   </div>
-                  <div className="text-center py-1.5 text-[11px] text-foreground/30 border-t border-primary/5">
+                  <div className="text-center py-1.5 text-[11px] text-foreground border-t border-primary/5">
                     {hasMultipleDecisions ? (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8592;</kbd> Reject this
-                        <span className="mx-2 text-foreground/15">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8595;</kbd> Retry
-                        <span className="mx-2 text-foreground/15">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8594;</kbd> Accept this
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject this
+                        <span className="mx-2 text-foreground">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <span className="mx-2 text-foreground">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Accept this
                       </>
                     ) : (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8592;</kbd> Reject
-                        <span className="mx-2 text-foreground/15">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8595;</kbd> Retry
-                        <span className="mx-2 text-foreground/15">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8594;</kbd> Approve
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject
+                        <span className="mx-2 text-foreground">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <span className="mx-2 text-foreground">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Approve
                       </>
                     )}
                   </div>

@@ -51,21 +51,21 @@ export function ExecutionRow({
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
 
   const chevron = compareMode ? null : isExpanded ? (
-    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
+    <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
   ) : (
-    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
+    <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
   );
 
   const statusEntry = getStatusEntry(execution.status);
   const statusBadge = (
-    <span className={`px-2 py-0.5 rounded-lg typo-heading ${badgeClass(statusEntry)}`}>
+    <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>
       {statusEntry.label}
     </span>
   );
 
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={tx(t.agents.executions.healing_retry, { count: execution.retry_count })}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
         <RefreshCw className="w-2.5 h-2.5" />
         #{execution.retry_count}
       </span>
@@ -79,13 +79,13 @@ export function ExecutionRow({
   );
 
   const compareLabelBadge: ReactNode = compareLabel ? (
-    <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
+    <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
       compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
     }`}>
       {compareLabel}
     </span>
   ) : (
-    <span className="w-5 h-5 rounded-lg border border-primary/20 bg-background/30" />
+    <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />
   );
 
   return (
@@ -144,7 +144,7 @@ export function ExecutionRow({
       >
         <div className="flex items-center gap-2">
           {compareMode && compareLabel && (
-            <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
+            <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
               compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
             }`}>
               {compareLabel}
@@ -154,7 +154,7 @@ export function ExecutionRow({
           {statusBadge}
           {retryBadge}
           {duration}
-          <span className="typo-body text-muted-foreground/80 ml-auto">
+          <span className="typo-body text-foreground ml-auto">
             {formatRelativeTime(execution.started_at)}
           </span>
         </div>

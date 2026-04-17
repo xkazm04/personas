@@ -53,15 +53,15 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
   }, [trace.spans, collapsedSpans, duration]);
 
   return (
-    <div className={`rounded-lg border ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} bg-secondary/30 overflow-hidden`}>
+    <div className={`rounded-card border ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} bg-secondary/30 overflow-hidden`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/50 transition-colors text-left"
       >
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground shrink-0" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground shrink-0" />
         )}
         <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.color} ${config.border} shrink-0`}>
           {config.label}
@@ -79,16 +79,16 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
           <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
         )}
 
-        <span className="typo-code text-muted-foreground/60 shrink-0 flex items-center gap-1">
+        <span className="typo-code text-foreground shrink-0 flex items-center gap-1">
           <Clock className="w-2.5 h-2.5" />
           {duration != null ? formatDuration(duration) : '...'}
         </span>
 
-        <span className="typo-code text-muted-foreground/50 shrink-0">
+        <span className="typo-code text-foreground shrink-0">
           {trace.spans.length} span{trace.spans.length !== 1 ? 's' : ''}
         </span>
 
-        <span className="typo-code text-muted-foreground/40 shrink-0">
+        <span className="typo-code text-foreground shrink-0">
           {new Date(trace.startedAt).toLocaleTimeString()}
         </span>
       </button>
@@ -99,9 +99,9 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
             <div className="border-t border-primary/10">
               {/* Time axis */}
               <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 px-2 py-1 bg-secondary/40">
-                <div className="typo-code text-muted-foreground/50 uppercase tracking-wider">{t.overview.system_trace_extra.span}</div>
-                <div className="flex justify-between typo-code text-muted-foreground/50 uppercase tracking-wider">
-                  <span>0ms</span>
+                <div className="typo-code text-foreground uppercase tracking-wider">{t.overview.system_trace_extra.span}</div>
+                <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
+                  <span>{t.overview.system_trace_extra.zero_ms}</span>
                   <span>{formatDuration(totalMs)}</span>
                 </div>
               </div>
@@ -156,7 +156,7 @@ function SpanRowCompact({
       <div className="flex items-center gap-1 min-w-0" style={{ paddingLeft: `${depth * 14}px` }}>
         {hasChildren ? (
           <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 shrink-0">
-            {expanded ? <ChevronDown className="w-2.5 h-2.5 text-muted-foreground/60" /> : <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/60" />}
+            {expanded ? <ChevronDown className="w-2.5 h-2.5 text-foreground" /> : <ChevronRight className="w-2.5 h-2.5 text-foreground" />}
           </button>
         ) : (
           <span className="w-3.5 shrink-0" />
@@ -164,7 +164,7 @@ function SpanRowCompact({
         <span className={`inline-flex px-1 py-0.5 text-[10px] uppercase rounded border ${config.bg} ${config.color} ${config.border} shrink-0`}>
           {config.label}
         </span>
-        <span className="typo-code text-foreground/80 truncate">{span.name}</span>
+        <span className="typo-code text-foreground truncate">{span.name}</span>
         {span.error && <AlertCircle className="w-2.5 h-2.5 text-red-400 shrink-0" />}
       </div>
 
@@ -175,7 +175,7 @@ function SpanRowCompact({
           style={{ left: `${leftPct}%`, width: `${widthPct}%`, minWidth: '2px' }}
         />
         {span.duration_ms != null && (
-          <span className="absolute top-0 typo-code text-muted-foreground/50 leading-4 text-[10px]" style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}>
+          <span className="absolute top-0 typo-code text-foreground leading-4 text-[10px]" style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}>
             {formatDuration(span.duration_ms)}
           </span>
         )}
@@ -202,11 +202,11 @@ export default function SystemTraceViewer() {
   if (traces.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
-          <Activity className="w-6 h-6 text-muted-foreground/60" />
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
+          <Activity className="w-6 h-6 text-foreground" />
         </div>
-        <p className="typo-body text-muted-foreground/80">{t.overview.system_trace_extra.no_traces}</p>
-        <p className="typo-body text-muted-foreground/60 mt-1">
+        <p className="typo-body text-foreground">{t.overview.system_trace_extra.no_traces}</p>
+        <p className="typo-body text-foreground mt-1">
           {t.overview.system_trace_extra.no_traces_hint}
         </p>
       </div>
@@ -218,7 +218,7 @@ export default function SystemTraceViewer() {
       {/* Summary bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="typo-code text-muted-foreground/70">
+          <span className="typo-code text-foreground">
             {traces.length} trace{traces.length !== 1 ? 's' : ''}
           </span>
           {activeCount > 0 && (
@@ -237,7 +237,7 @@ export default function SystemTraceViewer() {
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as SystemOperationType | 'all')}
-            className="typo-code bg-secondary/60 border border-primary/20 rounded px-2 py-1 text-foreground/80"
+            className="typo-code bg-secondary/60 border border-primary/20 rounded px-2 py-1 text-foreground"
           >
             <option value="all">{t.overview.system_trace_extra.all_operations}</option>
             {operationTypes.map((type) => (
@@ -249,7 +249,7 @@ export default function SystemTraceViewer() {
 
           <button
             onClick={clear}
-            className="p-1.5 rounded hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+            className="p-1.5 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
             title={t.overview.system_trace_extra.clear_completed}
           >
             <Trash2 className="w-3.5 h-3.5" />

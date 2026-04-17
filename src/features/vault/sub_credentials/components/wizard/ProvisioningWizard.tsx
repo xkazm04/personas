@@ -7,6 +7,7 @@ import { WizardBatchPhase } from './WizardBatchPhase';
 import { cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { silentCatch } from "@/lib/silentCatch";
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProvisioningWizardProps {
   onClose: () => void;
@@ -17,6 +18,8 @@ interface ProvisioningWizardProps {
  * instead of as a modal overlay, so progress is never lost on accidental close.
  */
 export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
+  const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const phase = useProvisioningWizardStore((s) => s.phase);
   const selectedConnectors = useProvisioningWizardStore((s) => s.selectedConnectors);
   const selectConnectors = useProvisioningWizardStore((s) => s.selectConnectors);
@@ -75,16 +78,17 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
 
   if (phase === 'closed') return null;
 
+  const plural = selectedConnectors.length !== 1 ? 's' : '';
   const subtitle =
     phase === 'batch'
-      ? `Setting up ${selectedConnectors.length} service${selectedConnectors.length !== 1 ? 's' : ''}`
-      : 'AI-guided credential setup';
+      ? tx(wd.wizard_subtitle_batch, { count: selectedConnectors.length, plural })
+      : wd.wizard_subtitle;
 
   return (
     <div
       key="wizard-inline"
       data-testid="vault-wizard-container"
-      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl overflow-hidden"
+      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-modal overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
@@ -92,18 +96,18 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
           <button
             onClick={phase === 'batch' ? handleBack : handleClose}
             data-testid={phase === 'batch' ? 'vault-wizard-next' : 'vault-wizard-cancel'}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="w-8 h-8 rounded-xl bg-violet-500/15 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-violet-500/15 flex items-center justify-center">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
           <div>
             <h2 className="text-sm font-bold tracking-tight text-foreground">
-              Credential Setup Wizard
+              {wd.wizard_title}
             </h2>
-            <p className="text-xs text-muted-foreground/80">{subtitle}</p>
+            <p className="text-xs text-foreground">{subtitle}</p>
           </div>
         </div>
       </div>

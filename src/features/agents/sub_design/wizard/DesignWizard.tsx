@@ -76,12 +76,12 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
       {/* Step content */}
       <div
           key={currentStep.id}
-          className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/10 p-4"
+          className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/10 p-4"
         >
           {/* Step header */}
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-foreground/85">{currentStep.title}</h3>
-            <p className="text-sm text-muted-foreground/90 mt-0.5">{currentStep.description}</p>
+            <h3 className="typo-heading font-semibold text-foreground/85">{currentStep.title}</h3>
+            <p className="typo-body text-foreground mt-0.5">{currentStep.description}</p>
           </div>
 
           {/* Questions or review */}
@@ -93,32 +93,32 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   {summary.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-start gap-3 px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10"
+                      className="flex items-start gap-3 px-3 py-2 rounded-modal bg-secondary/30 border border-primary/10"
                     >
-                      <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80 w-24 flex-shrink-0 mt-0.5">
+                      <span className="typo-heading font-semibold uppercase tracking-wider text-foreground w-24 flex-shrink-0 mt-0.5">
                         {item.label}
                       </span>
-                      <span className="text-sm text-foreground/90">{item.value}</span>
+                      <span className="typo-body text-foreground/90">{item.value}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground/80 text-center py-4">
-                  Go back and answer the questions to configure your agent.
+                <p className="typo-body text-foreground text-center py-4">
+                  {t.agents.design.go_back_hint}
                 </p>
               )}
 
               {/* Additional context textarea */}
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground/90">
-                  Additional instructions or context (optional)
+                <label className="typo-body text-foreground">
+                  {t.agents.design.additional_instructions}
                 </label>
                 <textarea
                   value={additionalContext}
                   onChange={(e) => setAdditionalContext(e.target.value)}
                   placeholder={t.agents.design.additional_instructions_placeholder}
                   rows={4}
-                  className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
+                  className="w-full bg-background/50 border border-primary/20 rounded-modal px-3 py-2 typo-body text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />
               </div>
             </div>
@@ -138,18 +138,18 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
             <button
               type="button"
               onClick={onCancel}
-              className="text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors px-2 py-1"
+              className="typo-body text-foreground hover:text-muted-foreground transition-colors px-2 py-1"
             >
-              Switch to manual
+              {t.agents.design.switch_to_manual}
             </button>
           ) : (
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body text-foreground hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              Back
+              {t.common.back}
             </button>
           )}
         </div>
@@ -158,24 +158,24 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
           type="button"
           onClick={handleNext}
           disabled={!canProceed()}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-modal font-medium typo-body transition-all ${
             isLastStep
               ? !canProceed() || summary.length === 0
-                ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                 : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
               : !canProceed()
-              ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+              ? 'bg-secondary/60 text-foreground cursor-not-allowed'
               : 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
           }`}
         >
           {isLastStep ? (
             <>
               <Sparkles className="w-4 h-4" />
-              Generate Design
+              {t.agents.design.generate_design}
             </>
           ) : (
             <>
-              Next
+              {t.common.continue}
               <ChevronRight className="w-3.5 h-3.5" />
             </>
           )}

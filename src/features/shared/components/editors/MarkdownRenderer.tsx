@@ -24,20 +24,20 @@ function InlineBarChart({ raw }: { raw: string }) {
     .filter((e) => e.label);
   const max = Math.max(...entries.map((e) => e.value), 1);
 
-  if (entries.length === 0) return <pre className="typo-code text-muted-foreground/60">{raw}</pre>;
+  if (entries.length === 0) return <pre className="typo-code text-foreground">{raw}</pre>;
 
   return (
     <div className="my-3 space-y-1.5 p-3 rounded-xl border border-primary/10 bg-secondary/20">
       {entries.map((e, i) => (
         <div key={i} className="flex items-center gap-3">
-          <span className="text-xs text-foreground/70 w-28 truncate text-right">{e.label}</span>
+          <span className="text-xs text-foreground w-28 truncate text-right">{e.label}</span>
           <div className="flex-1 h-5 rounded bg-primary/[0.06] overflow-hidden">
             <div
               className="h-full rounded bg-gradient-to-r from-primary/40 to-primary/60 transition-all"
               style={{ width: `${(e.value / max) * 100}%` }}
             />
           </div>
-          <span className="text-xs font-mono text-muted-foreground/70 w-14 text-right">{e.value}</span>
+          <span className="text-xs font-mono text-foreground w-14 text-right">{e.value}</span>
         </div>
       ))}
     </div>
@@ -130,7 +130,7 @@ const components: Components = {
     </th>
   ),
   td: ({ children }) => (
-    <td className="py-1.5 text-foreground/80 border-b border-border/20">{children}</td>
+    <td className="py-1.5 text-foreground border-b border-border/20">{children}</td>
   ),
   a: ({ href, children }) => {
     const safeHref = sanitizeExternalUrl(href);
@@ -149,7 +149,7 @@ const components: Components = {
     <img src={src} alt={alt || ''} className="max-w-full h-auto rounded-lg my-2 border border-border/20" />
   ),
   em: ({ children }) => (
-    <em className="italic text-foreground/80">{children}</em>
+    <em className="italic text-foreground">{children}</em>
   ),
 };
 

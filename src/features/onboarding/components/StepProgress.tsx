@@ -28,7 +28,7 @@ export function StepProgress({
             key={step.id}
             onClick={() => onJump(i)}
             data-testid={`tour-step-${step.id}`}
-            className={`relative flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200 ${
+            className={`relative flex items-center justify-center w-7 h-7 rounded-card transition-all duration-200 ${
               isCurrent
                 ? `${colors.bg} ${colors.border} border shadow-elevation-2 ${colors.glow}`
                 : isCompleted
@@ -40,7 +40,7 @@ export function StepProgress({
             {isCompleted ? (
               <Check className="w-3 h-3 text-emerald-400" />
             ) : (
-              <Icon className={`w-3 h-3 ${isCurrent ? colors.text : 'text-muted-foreground/40'}`} />
+              <Icon className={`w-3 h-3 ${isCurrent ? colors.text : 'text-foreground'}`} />
             )}
           </button>
         );

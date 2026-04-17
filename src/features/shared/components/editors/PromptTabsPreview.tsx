@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { AgentIR } from '@/lib/types/designTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PromptTab {
   key: string;
@@ -53,6 +54,8 @@ export function PromptTabsPreview({
   const [showFullPrompt, setShowFullPrompt] = useState(false);
   const activeSection = tabs.find((t) => t.key === activeTab);
 
+  const { t } = useTranslation();
+
   if (tabs.length === 0) return null;
 
   return (
@@ -69,7 +72,7 @@ export function PromptTabsPreview({
               className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
-                  : 'border-transparent text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40'
+                  : 'border-transparent text-foreground hover:text-muted-foreground hover:bg-secondary/40'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5" />
@@ -96,10 +99,10 @@ export function PromptTabsPreview({
         <div className="border-t border-primary/10">
           <button
             onClick={() => setShowFullPrompt(!showFullPrompt)}
-            className="flex items-center gap-2 px-4 py-2.5 typo-body text-muted-foreground/90 hover:text-muted-foreground transition-colors w-full"
+            className="flex items-center gap-2 px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
           >
             <Eye className="w-3.5 h-3.5" />
-            {showFullPrompt ? 'Hide' : 'View'} Full Prompt
+            {showFullPrompt ? t.shared.draft_editor.hide_full_prompt : t.shared.draft_editor.view_full_prompt}
             {showFullPrompt ? (
               <ChevronDown className="w-3 h-3 ml-auto" />
             ) : (

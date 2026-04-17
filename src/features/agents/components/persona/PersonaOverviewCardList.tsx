@@ -54,10 +54,10 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-          <Inbox className="w-5 h-5 text-muted-foreground/40" />
+        <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
+          <Inbox className="w-5 h-5 text-foreground" />
         </div>
-        <p className="typo-heading text-foreground/70">{t.agents.persona_list.no_personas_match}</p>
+        <p className="typo-heading text-foreground">{t.agents.persona_list.no_personas_match}</p>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
         return (
           <div
             key={p.id}
-            className={`rounded-xl border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
+            className={`rounded-modal border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
               selected ? 'ring-1 ring-primary/40 bg-primary/[0.04]' : ''
             }`}
           >
@@ -118,7 +118,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
                       void copyDescription(p.description!, t.agents.persona_list);
                     }}
                     title={t.agents.persona_list.click_to_copy}
-                    className="text-md text-muted-foreground/70 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-muted-foreground transition-colors"
+                    className="text-md text-foreground mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-muted-foreground transition-colors"
                   >
                     {p.description}
                   </button>
@@ -130,7 +130,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
                 aria-label={isFavorite(p.id) ? 'Remove from favorites' : 'Add to favorites'}
                 className="p-1 rounded hover:bg-amber-500/10 flex-shrink-0"
               >
-                <Star className={`w-3.5 h-3.5 ${isFavorite(p.id) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/40'}`} />
+                <Star className={`w-3.5 h-3.5 ${isFavorite(p.id) ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />
               </button>
               <PersonaOverviewRowMenu persona={p} onDelete={onDelete} onEdit={onEdit} />
             </div>
@@ -156,24 +156,24 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
                     <div
                       key={name}
                       title={meta.label}
-                      className="w-6 h-6 rounded-md bg-secondary/30 border border-primary/10 flex items-center justify-center"
+                      className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center"
                     >
                       <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
                     </div>
                   );
                 })}
                 {connectors.length > 6 && (
-                  <span className="text-md text-muted-foreground/50">+{connectors.length - 6}</span>
+                  <span className="text-md text-foreground">+{connectors.length - 6}</span>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-3 pb-3 text-md text-muted-foreground/40">
+              <div className="flex items-center gap-1.5 px-3 pb-3 text-md text-foreground">
                 <Plug className="w-3.5 h-3.5" /> {t.agents.persona_list.no_connectors}
               </div>
             )}
 
             {/* Footer: triggers + timestamps */}
-            <div className="flex items-center gap-3 px-3 pb-3 text-md text-muted-foreground/60 border-t border-primary/5 pt-2">
+            <div className="flex items-center gap-3 px-3 pb-3 text-md text-foreground border-t border-primary/5 pt-2">
               <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{triggerCounts[p.id] ?? 0}</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />

@@ -156,7 +156,7 @@ function ThemeFooterIcon() {
                       }`}
                       style={{ backgroundColor: t.primaryColor }}
                     >
-                      {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
+                      {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                     </span>
                     <span className={`text-[9px] leading-tight truncate w-full text-center ${
                       isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
@@ -188,7 +188,7 @@ function ThemeFooterIcon() {
                         }`}
                         style={{ backgroundColor: t.primaryColor }}
                       >
-                        {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
+                        {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                       </span>
                       <span className={`text-[9px] leading-tight truncate w-full text-center ${
                         isActive ? 'text-foreground/90 font-medium' : 'text-foreground'

@@ -102,7 +102,7 @@ export default function HypothesesPanel() {
             {activeProject && personas.length > 0 && (
               <button
                 onClick={() => setShowGenerate(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors"
                 title={t.research_lab.generate_hypotheses}
               >
                 <Sparkles className="w-3.5 h-3.5" />

@@ -28,7 +28,7 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
         const SeverityIcon = sevIcon.icon;
         return (
           <div
-            className={`${sevToken.border} rounded-lg ${sevToken.bg} p-3.5`}
+            className={`${sevToken.border} rounded-card ${sevToken.bg} p-3.5`}
             data-testid="error-explanation-card"
             data-severity={explanation.severity}
           >
@@ -36,14 +36,14 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
               <SeverityIcon className={`w-4 h-4 ${sevIcon.iconColor} mt-0.5 flex-shrink-0`} data-testid="error-severity-icon" />
               <div className="flex-1 min-w-0">
                 <p className="typo-heading text-foreground/90">{explanation.summary}</p>
-                <p className="typo-body text-muted-foreground/70 mt-1">{explanation.guidance}</p>
+                <p className="typo-body text-foreground mt-1">{explanation.guidance}</p>
                 {explanation.action && (() => {
                   const ActionIcon = explanation.action.icon;
                   return (
                     <button
                       onClick={() => onErrorAction(explanation.action!)}
                       data-testid="error-action-btn"
-                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all group"
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all group"
                     >
                       <ActionIcon className="w-3.5 h-3.5" />
                       {explanation.action.label}
@@ -56,7 +56,7 @@ export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisp
           </div>
         );
       })()}
-      <div className={`p-4 ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl`}>
+      <div className={`p-4 ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-modal`}>
         <div className="flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">

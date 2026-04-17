@@ -93,7 +93,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
 
   if (logLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground/60">
+      <div className="flex items-center justify-center h-64 text-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         <span className="typo-body">{e.loading_execution_data}</span>
       </div>
@@ -103,7 +103,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
   const activeStepIndex = state.activeStep?.step_index ?? null;
 
   return (
-    <div className="flex flex-col rounded-xl border border-primary/10 bg-background/50 overflow-hidden" style={{ height: 520 }}>
+    <div className="flex flex-col rounded-modal border border-primary/10 bg-background/50 overflow-hidden" style={{ height: 520 }}>
       {/* Transport controls */}
       <div className="px-4 py-3 border-b border-primary/10 space-y-2.5">
         <TimelineScrubber

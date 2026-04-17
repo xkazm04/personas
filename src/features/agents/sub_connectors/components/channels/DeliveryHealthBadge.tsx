@@ -12,7 +12,7 @@ interface DeliveryHealthBadgeProps {
 }
 
 function getHealthColor(stats: ChannelDeliveryStats): string {
-  if (stats.attempted === 0) return 'text-muted-foreground';
+  if (stats.attempted === 0) return 'text-foreground';
   if (stats.consecutiveFailures >= 3) return 'text-red-400';
   if (stats.consecutiveFailures >= 1 || (stats.failed > 0 && stats.failed / stats.attempted > 0.2))
     return 'text-amber-400';
@@ -55,15 +55,15 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
   if (activeStats.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-secondary/30 border border-border/40">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+    <div className="flex flex-col gap-1 px-3 py-2 rounded-card bg-secondary/30 border border-border/40">
+      <div className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
         <Activity className="w-3 h-3" />
         {t.agents.connectors.ch_delivery_health}
       </div>
       {activeStats.map(({ type: chType, stats: s }) => (
-        <div key={chType} className={`flex items-center gap-2 text-xs ${getHealthColor(s)}`}>
+        <div key={chType} className={`flex items-center gap-2 typo-caption ${getHealthColor(s)}`}>
           <span className="font-medium capitalize w-16">{chType}</span>
-          <span className="text-muted-foreground">{formatStats(s, t.agents.connectors.ch_no_deliveries)}</span>
+          <span className="text-foreground">{formatStats(s, t.agents.connectors.ch_no_deliveries)}</span>
         </div>
       ))}
     </div>

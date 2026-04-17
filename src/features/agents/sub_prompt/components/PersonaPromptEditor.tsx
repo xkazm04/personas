@@ -118,7 +118,7 @@ export function PersonaPromptEditor() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
+      <div className="flex items-center justify-center py-8 text-foreground">
         {t.agents.prompt_editor.no_persona}
       </div>
     );

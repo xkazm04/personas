@@ -37,7 +37,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
   if (runs.length === 0) {
     return (
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+        <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground uppercase tracking-wider">
           <Clock className="w-3 h-3" />
           {title}
         </h4>
@@ -48,23 +48,23 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
 
   return (
     <div className="space-y-2">
-      <h4 className="flex items-center gap-2.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+      <h4 className="flex items-center gap-2.5 typo-label font-semibold text-foreground uppercase tracking-wider">
         <Clock className="w-3 h-3" />
         {title}
-        <span className="text-muted-foreground/50 font-normal normal-case">({runs.length})</span>
+        <span className="text-foreground font-normal normal-case">({runs.length})</span>
       </h4>
 
-      <div className="border border-primary/10 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border border-primary/10 rounded-modal overflow-hidden">
+        <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
               {columns.map((col) => (
-                <th key={col.key} className={`text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider ${col.className ?? ''}`}>
+                <th key={col.key} className={`text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider ${col.className ?? ''}`}>
                   {col.label}
                 </th>
               ))}
-              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[140px]">{t.common.status}</th>
-              <th className="text-left px-3 py-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider w-[150px]">{t.agents.lab.col_time}</th>
+              <th className="text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider w-[140px]">{t.common.status}</th>
+              <th className="text-left px-3 py-2 typo-label font-medium text-foreground uppercase tracking-wider w-[150px]">{t.agents.lab.col_time}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -87,13 +87,13 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                 <td className="px-3 py-2.5">
                   <span className={statusBadge(run.status)}>{run.status}</span>
                 </td>
-                <td className="px-3 py-2.5 text-xs text-muted-foreground/60 whitespace-nowrap">
+                <td className="px-3 py-2.5 typo-caption text-foreground whitespace-nowrap">
                   {new Date(run.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td className="px-2 py-2.5">
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
-                    className="p-1 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                    className="p-1 rounded-card hover:bg-red-500/15 text-foreground hover:text-red-400 transition-colors"
                     title={t.agents.lab.delete_run}
                     aria-label={t.agents.lab.delete_run}
                   >

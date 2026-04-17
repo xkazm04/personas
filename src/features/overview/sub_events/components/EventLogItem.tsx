@@ -46,7 +46,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
   }, [raw]);
 
   return (
-    <pre className="bg-background/60 p-3 rounded-lg overflow-auto flex-1 text-sm font-mono leading-relaxed">
+    <pre className="bg-background/60 p-3 rounded-card overflow-auto flex-1 typo-code font-mono leading-relaxed">
       {colored || <span className="text-foreground">{raw}</span>}
     </pre>
   );
@@ -66,25 +66,25 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
     <div className="flex flex-col gap-4 h-full min-h-0">
       <div className="grid grid-cols-2 gap-3 flex-shrink-0">
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.event_id}</span>
-          <span className="text-sm"><UuidLabel value={event.id} /></span>
+          <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.event_log_item.event_id}</span>
+          <span className="typo-body"><UuidLabel value={event.id} /></span>
         </div>
         <div>
-          <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.project}</span>
-          <span className="text-sm"><UuidLabel value={event.project_id} /></span>
+          <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.event_log_item.project}</span>
+          <span className="typo-body"><UuidLabel value={event.project_id} /></span>
         </div>
         {event.source_id && (
           <div>
-            <span className="text-sm text-foreground/70 font-medium block mb-0.5">{t.overview.event_log_item.source}</span>
-            <span className="text-sm">
+            <span className="typo-body text-foreground font-medium block mb-0.5">{t.overview.event_log_item.source}</span>
+            <span className="typo-body">
               <UuidLabel value={event.source_id} label={event.source_type || undefined} />
             </span>
           </div>
         )}
         {event.processed_at && (
-          <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
-            <span className="text-sm font-mono text-foreground/70 font-medium">{t.overview.event_log_item.processed}</span>
-            <span className="ml-2 text-sm text-foreground">
+          <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
+            <span className="typo-code font-mono text-foreground font-medium">{t.overview.event_log_item.processed}</span>
+            <span className="ml-2 typo-body text-foreground">
               {new Date(event.processed_at).toLocaleString()}
             </span>
           </div>
@@ -94,7 +94,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.payload && (
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex items-center justify-between mb-1 flex-shrink-0">
-            <span className="text-sm text-foreground/70 font-medium">{t.overview.event_log_item.event_data}</span>
+            <span className="typo-body text-foreground font-medium">{t.overview.event_log_item.event_data}</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
@@ -104,7 +104,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                   setTimeout(() => setCopiedPayload(false), 2000);
                 }).catch(() => { /* intentional */ });
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-body text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.event_log_item.copy_event_data}
             >
               {copiedPayload ? (
@@ -114,7 +114,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
               )}
             </button>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-primary/10 bg-secondary/20 p-3">
+          <div className="flex-1 min-h-0 flex flex-col rounded-modal border border-primary/10 bg-secondary/20 p-3">
             <HighlightedJson raw={event.payload} />
           </div>
         </div>
@@ -122,8 +122,8 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
 
       {event.error_message && (
         <div>
-          <span className="text-sm text-red-400 block mb-1">{t.overview.event_log_item.error}</span>
-          <pre className="bg-red-500/5 p-2 rounded-lg text-red-400 text-sm whitespace-pre-wrap">
+          <span className="typo-body text-red-400 block mb-1">{t.overview.event_log_item.error}</span>
+          <pre className="bg-red-500/5 p-2 rounded-card text-red-400 typo-body whitespace-pre-wrap">
             {event.error_message}
           </pre>
         </div>
@@ -147,7 +147,7 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function EventRow({ event, index, start, size, getPersona, onClick }: EventRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
@@ -171,23 +171,23 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         <span className={`typo-heading ${typeColor}`}>{event.event_type}</span>
       </td>
       <td className="px-4 py-2.5">
-        <span className="text-sm text-foreground truncate block">{event.source_type}</span>
+        <span className="typo-body text-foreground truncate block">{event.source_type}</span>
       </td>
       <td className="px-4 py-2.5">
         {targetPersona ? (
           <div className="flex items-center gap-2">
             <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize={"lg"} />
-            <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
+            <span className="typo-body text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
-            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground" /></div>
+            <span className="typo-body text-foreground truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </td>
       <td className="px-4 py-2.5">
-        <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+        <span className={`inline-flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
               : event.status === 'processing' ? <LoadingSpinner size="xs" />
@@ -196,7 +196,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         </span>
       </td>
       <td className="px-4 py-2.5 text-right">
-        <span className="text-sm text-foreground">
+        <span className="typo-body text-foreground">
           {new Date(event.created_at).toLocaleString()}
         </span>
       </td>
@@ -216,7 +216,7 @@ interface EventGridRowProps {
 
 export function EventGridRow({ event, index, gridCols, getPersona, onClick }: EventGridRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
@@ -234,23 +234,23 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>
       </div>
       <div className="px-4 py-2.5 flex items-center min-w-0">
-        <span className="text-sm text-foreground truncate">{event.source_type}</span>
+        <span className="typo-body text-foreground truncate">{event.source_type}</span>
       </div>
       <div className="px-4 py-2.5 flex items-center min-w-0">
         {targetPersona ? (
           <div className="flex items-center gap-2 min-w-0">
             <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
-            <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
+            <span className="typo-body text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
-            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
-            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground" /></div>
+            <span className="typo-body text-foreground truncate">{event.source_type || 'System'}</span>
           </div>
         )}
       </div>
       <div className="px-4 py-2.5 flex items-center">
-        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+        <span className={`inline-flex items-center gap-1.5 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
               : event.status === 'processing' ? <LoadingSpinner size="xs" />
@@ -259,7 +259,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         </span>
       </div>
       <div className="px-4 py-2.5 flex items-center justify-end">
-        <span className="text-sm text-foreground">{formatRelativeTime(event.created_at)}</span>
+        <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
       </div>
     </div>
   );

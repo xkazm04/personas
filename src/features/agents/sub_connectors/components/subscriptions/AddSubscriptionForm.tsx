@@ -59,14 +59,14 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
   };
 
   return (
-    <div className="border border-primary/20 rounded-xl p-2.5 space-y-2 bg-secondary/30">
-      <FormField label="Event Type" hint="The type of system event that will trigger this persona to run.">
+    <div className="border border-primary/20 rounded-modal p-2.5 space-y-2 bg-secondary/30">
+      <FormField label={t.agents.use_cases.event_type} hint="The type of system event that will trigger this persona to run.">
         <ThemedSelect
           value={newEventType}
           onChange={(e) => setNewEventType(e.target.value)}
           className="py-1.5"
         >
-          <option value="">Select event type...</option>
+          <option value="">{t.agents.use_cases.select_event_type}</option>
           {groupedOptions.map((group) => (
             <optgroup key={group.category} label={group.label}>
               {group.options.map((opt) => (
@@ -76,7 +76,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
           ))}
         </ThemedSelect>
       </FormField>
-      <FormField label="Source Filter" error={validationError ?? undefined} helpText="Narrow events by source_id. Exact match or trailing * prefix wildcard.">
+      <FormField label={t.agents.use_cases.source_filter} error={validationError ?? undefined} helpText="Narrow events by source_id. Exact match or trailing * prefix wildcard.">
         {(inputProps) => (
           <div className="space-y-1.5">
             <input
@@ -87,15 +87,15 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
                 setNewSourceFilter(e.target.value);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="e.g. webhook-1 or watcher-*"
+              placeholder={t.agents.use_cases.source_filter_placeholder}
               className={inputFieldClass(!!validationError)}
             />
             <details className="group">
-              <summary className="flex items-center gap-1 text-xs text-muted-foreground/60 cursor-pointer hover:text-muted-foreground/80 transition-colors">
+              <summary className="flex items-center gap-1 typo-caption text-foreground cursor-pointer hover:text-muted-foreground/80 transition-colors">
                 <HelpCircle className="w-3 h-3" />
                 {sourceFilterHelp.title}
               </summary>
-              <div className="mt-1 p-2 rounded-lg bg-background/40 border border-primary/10 text-xs text-muted-foreground/70 space-y-1">
+              <div className="mt-1 p-2 rounded-card bg-background/40 border border-primary/10 typo-caption text-foreground space-y-1">
                 {sourceFilterHelp.rules.map((r) => (
                   <div key={r.pattern} className="flex gap-2">
                     <code className="text-primary/80 shrink-0">{r.pattern}</code>
@@ -116,20 +116,20 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
         <button
           onClick={() => void handleAdd()}
           disabled={!newEventType || saving}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
             newEventType && !saving
               ? 'bg-primary hover:bg-primary/90 text-foreground'
-              : 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
+              : 'bg-secondary/40 text-foreground cursor-not-allowed'
           }`}
         >
           {saving ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
-          Add
+          {t.common.add}
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors"
+          className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

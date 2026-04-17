@@ -41,10 +41,10 @@ export function ExecutionListHeader({
           <Tooltip content={showRaw ? t.agents.executions.sensitive_visible : t.agents.executions.sensitive_masked}>
             <button
               onClick={() => setShowRaw(!showRaw)}
-              className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
+              className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
                 showRaw
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground/90 border border-transparent'
+                  : 'text-foreground hover:text-muted-foreground/90 border border-transparent'
               }`}
             >
               <Shield className="w-3 h-3" />
@@ -55,10 +55,10 @@ export function ExecutionListHeader({
         {executionCount >= 2 && (
           <button
             onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
-            className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               compareMode
                 ? 'bg-primary/15 text-primary/80 border border-primary/20'
-                : 'text-muted-foreground/80 hover:text-muted-foreground/90 border border-transparent'
+                : 'text-foreground hover:text-muted-foreground/90 border border-transparent'
             }`}
           >
             {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
@@ -69,9 +69,9 @@ export function ExecutionListHeader({
 
       {/* Compare mode toolbar */}
       {compareMode && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl typo-body">
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-modal typo-body">
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
-          <span className="text-muted-foreground/70">
+          <span className="text-foreground">
             {!compareLeft
               ? t.agents.executions.select_first
               : !compareRight
@@ -83,7 +83,7 @@ export function ExecutionListHeader({
               <span className="typo-code text-indigo-400">#{compareLeft.slice(0, 8)}</span>
               {compareRight && (
                 <>
-                  <span className="text-muted-foreground/70">{t.agents.executions.vs}</span>
+                  <span className="text-foreground">{t.agents.executions.vs}</span>
                   <span className="typo-code text-pink-400">#{compareRight.slice(0, 8)}</span>
                 </>
               )}
@@ -92,7 +92,7 @@ export function ExecutionListHeader({
           {canCompare && (
             <button
               onClick={() => setShowComparison(true)}
-              className="ml-2 px-2.5 py-1 typo-heading rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+              className="ml-2 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
               {t.agents.executions.compare}
             </button>

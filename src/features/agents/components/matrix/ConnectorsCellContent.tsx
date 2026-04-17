@@ -170,13 +170,13 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
               {/* Connector name */}
-              <span className="text-[12px] font-medium text-foreground/75 truncate min-w-0">
+              <span className="text-[12px] font-medium text-foreground truncate min-w-0">
                 {connDef?.label ?? connector.name}
               </span>
 
               {/* Database table name badge */}
               {isDatabase && tableName && (
-                <span className="text-[10px] text-muted-foreground/50 font-mono bg-secondary/30 px-1.5 py-0.5 rounded flex-shrink-0 truncate max-w-[120px]" title={tableName}>
+                <span className="text-[10px] text-foreground font-mono bg-secondary/30 px-1.5 py-0.5 rounded flex-shrink-0 truncate max-w-[120px]" title={tableName}>
                   {tableName}
                 </span>
               )}
@@ -187,7 +187,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
               {connAlts.length > 0 && (
                 <button
                   type="button"
-                  className="flex-shrink-0 p-0.5 rounded text-foreground/30 hover:text-primary/70 transition-colors"
+                  className="flex-shrink-0 p-0.5 rounded text-foreground hover:text-primary/70 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSwappingConnector(isSwapping ? null : connector.name);
@@ -266,13 +266,13 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
             {/* Alternative connector picker */}
             {isSwapping && connAlts.length > 0 && (
               <div className="ml-4 mt-1 space-y-0.5">
-                <p className="text-[10px] text-foreground/40 mb-1">{t.agents.connectors_cell.swap_to}</p>
+                <p className="text-[10px] text-foreground mb-1">{t.agents.connectors_cell.swap_to}</p>
                 {connAlts.map((alt) => (
                   <button
                     key={alt}
                     type="button"
                     disabled={recalculating}
-                    className="w-full flex items-center gap-2 px-2 py-1 rounded text-[11px] text-foreground/60 hover:bg-primary/10 hover:text-primary transition-colors text-left disabled:opacity-50"
+                    className="w-full flex items-center gap-2 px-2 py-1 rounded text-[11px] text-foreground hover:bg-primary/10 hover:text-primary transition-colors text-left disabled:opacity-50"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSwapConnector(connector.name, alt);
@@ -294,7 +294,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
           type="button"
           onClick={(e) => { e.stopPropagation(); handleRecalculate(); }}
           disabled={recalculating}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+          className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`w-3 h-3 ${recalculating ? 'animate-spin' : ''}`} />
           {recalculating ? t.agents.connectors_cell.recalculating : t.agents.connectors_cell.recalculate_dimensions}

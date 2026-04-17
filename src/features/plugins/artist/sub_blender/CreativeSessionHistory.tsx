@@ -59,7 +59,7 @@ export default function CreativeSessionHistory() {
   };
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card/50 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-card/50 overflow-hidden">
       <button
         onClick={() => setExpanded((e) => !e)}
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors cursor-pointer"
@@ -85,7 +85,7 @@ export default function CreativeSessionHistory() {
               {sessions.map((sess) => (
                 <li
                   key={sess.id}
-                  className="group flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/30 transition-colors"
+                  className="group flex items-start gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/30 transition-colors"
                 >
                   <div className="mt-0.5 flex-shrink-0">
                     <StatusIcon status={sess.status} />

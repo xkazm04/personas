@@ -49,11 +49,11 @@ function Dot({ dot }: { dot: DotData }) {
       />
       {hovered && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 pointer-events-none">
-          <div className="px-2 py-1 rounded-md bg-zinc-900 border border-zinc-700 shadow-elevation-3 text-xs whitespace-nowrap">
+          <div className="px-2 py-1 rounded-input bg-zinc-900 border border-zinc-700 shadow-elevation-3 typo-caption whitespace-nowrap">
             <div className="text-foreground/90">
               {dot.timestamp ? formatTimestamp(dot.timestamp) : 'No timestamp'}
             </div>
-            <div className="text-muted-foreground/70">
+            <div className="text-foreground">
               {formatDuration(dot.durationMs)}
             </div>
           </div>
@@ -78,7 +78,7 @@ export function TriggerHealthSparkline({ executions }: TriggerHealthSparklinePro
   if (dots.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-background/30 border border-primary/5">
+    <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-card bg-background/30 border border-primary/5">
       {dots.map((dot) => (
         <Dot key={dot.id} dot={dot} />
       ))}

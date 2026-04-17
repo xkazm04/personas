@@ -20,7 +20,7 @@ export function SortableColumnHeader({ label, direction, onToggle, align = 'left
     <button
       type="button"
       onClick={onToggle}
-      className={`flex items-center gap-1.5 typo-label transition-colors ${align === 'right' ? 'justify-end ml-auto' : ''} ${isSorted ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+      className={`flex items-center gap-1.5 typo-label transition-colors ${align === 'right' ? 'justify-end ml-auto' : ''} ${isSorted ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
     >
       <span>{label}</span>
       {direction === 'asc' ? (

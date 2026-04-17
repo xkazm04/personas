@@ -33,12 +33,12 @@ export function ConnectorGroup({
   const someAssigned = assignedInGroup.length > 0 && !allAssigned;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/30 border-b border-primary/10">
         <button
           onClick={() => !missingCredential && onBulkToggle(tools, allAssigned)}
           disabled={missingCredential}
-          className={`flex-shrink-0 w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
+          className={`flex-shrink-0 w-5 h-5 rounded-card border flex items-center justify-center transition-colors ${
             missingCredential
               ? 'bg-background/30 border-primary/10 cursor-not-allowed'
               : allAssigned
@@ -49,18 +49,18 @@ export function ConnectorGroup({
           }`}
         >
           {(allAssigned || someAssigned) && (
-            <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground/80'}`} />
+            <Check className={`w-3 h-3 ${allAssigned ? 'text-foreground' : 'text-foreground'}`} />
           )}
         </button>
         {meta && (
           <div
-            className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${meta.color}15` }}
           >
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
           </div>
         )}
-        <span className="text-sm font-medium text-foreground/80 flex-1">{label}</span>
+        <span className="typo-body font-medium text-foreground flex-1">{label}</span>
         {!isGeneral && (
           hasCredential ? (
             <span title={`${label} credential connected`}>
@@ -69,7 +69,7 @@ export function ConnectorGroup({
           ) : (
             <button
               onClick={onAddCredential}
-              className="inline-flex items-center gap-1 text-sm text-amber-400/80 hover:text-amber-300 transition-colors"
+              className="inline-flex items-center gap-1 typo-body text-amber-400/80 hover:text-amber-300 transition-colors"
               title={`Needs ${label} credential`}
             >
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -77,7 +77,7 @@ export function ConnectorGroup({
             </button>
           )
         )}
-        <span className="text-sm font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-muted-foreground/90">
+        <span className="typo-code font-mono px-1.5 py-0.5 rounded-full bg-secondary/50 border border-primary/10 text-foreground">
           {assignedInGroup.length}/{tools.length}
         </span>
       </div>

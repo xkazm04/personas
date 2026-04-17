@@ -195,7 +195,7 @@ export default function IdentityPage() {
                       : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                   }`}
                 >
-                  <span className="text-lg">{GENDER_ICONS[g.id]}</span>
+                  <span className="typo-heading-lg">{GENDER_ICONS[g.id]}</span>
                   <span className="typo-caption">{g.label}</span>
                 </button>
               ))}

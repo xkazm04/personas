@@ -72,7 +72,7 @@ export function TransformStatusPanels({
             </div>
 
             <p className="typo-body text-foreground mt-2">
-              You can continue working -- we'll notify you when the draft is ready.
+              {t.shared.progress_extra.continue_working}
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export function TransformStatusPanels({
         <div>
           <p className="typo-heading text-emerald-400">{t.shared.progress_extra.draft_generated}</p>
           <p className="typo-body text-foreground mt-0.5">
-            Your persona draft is ready for review and editing.
+            {t.shared.progress_extra.draft_ready}
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export function TransformStatusPanels({
       <div>
         <p className="typo-body text-foreground">{t.shared.progress_extra.waiting_to_start}</p>
         <p className="typo-body text-foreground mt-0.5">
-          Click "Generate Persona Draft" to begin.
+          {t.shared.progress_extra.click_generate}
         </p>
       </div>
     </div>

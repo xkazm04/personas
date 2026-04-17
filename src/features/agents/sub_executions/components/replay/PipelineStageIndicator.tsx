@@ -129,7 +129,7 @@ export function PipelineStageIndicator({
           >
             {/* Stage bar */}
             <div
-              className={`h-7 rounded-md border transition-all flex items-center justify-center gap-1 px-1 overflow-hidden ${
+              className={`h-7 rounded-input border transition-all flex items-center justify-center gap-1 px-1 overflow-hidden ${
                 state === 'error'
                   ? 'bg-red-500/15 border-red-500/30'
                   : state === 'active'
@@ -150,13 +150,13 @@ export function PipelineStageIndicator({
               ) : state === 'completed' ? (
                 <CheckCircle2 className={`w-3 h-3 ${colors.text} shrink-0`} />
               ) : (
-                <Circle className="w-3 h-3 text-muted-foreground/30 shrink-0" />
+                <Circle className="w-3 h-3 text-foreground shrink-0" />
               )}
 
               {/* Stage label (hidden on narrow bars) */}
               <span className={`text-[10px] font-mono uppercase tracking-wider truncate hidden xl:inline ${
                 state === 'error' ? 'text-red-400' :
-                state === 'pending' ? 'text-muted-foreground/30' : colors.text
+                state === 'pending' ? 'text-foreground' : colors.text
               }`}>
                 {meta.label}
               </span>
@@ -171,13 +171,13 @@ export function PipelineStageIndicator({
 
             {/* Hover tooltip */}
             <div className="absolute z-30 bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap">
+              <div className="bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap">
                 <p className={`typo-heading${state === 'error' ? 'text-red-400' : colors.text}`}>
                   {meta.label}
                 </p>
-                <p className="typo-body text-muted-foreground/60">{meta.boundary}</p>
+                <p className="typo-body text-foreground">{meta.boundary}</p>
                 {isActive && boundary && (
-                  <p className="typo-code text-muted-foreground/50 mt-0.5">
+                  <p className="typo-code text-foreground mt-0.5">
                     {tx(t.agents.executions.ms_into_stage, { ms: Math.round(currentMs - boundary.startMs) })}
                   </p>
                 )}

@@ -53,8 +53,8 @@ function JsonBlock({ label, data }: { label: string; data: string | null }) {
   }
   return (
     <div className="space-y-1">
-      <div className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-lg bg-background/40 border border-primary/5 text-xs font-mono text-foreground/80 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+      <div className="typo-label font-medium text-foreground uppercase tracking-wide">{label}</div>
+      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 typo-code font-mono text-foreground overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
         {formatted}
       </pre>
     </div>
@@ -75,30 +75,31 @@ interface RequestRowProps {
 }
 
 function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isReplaying, replayResult, copiedCurl }: RequestRowProps) {
+  const { t } = useTranslation();
   return (
-    <div className="rounded-xl bg-background/30 border border-primary/5 overflow-hidden">
+    <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm hover:bg-secondary/20 transition-colors"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-secondary/20 transition-colors"
       >
         {isExpanded
-          ? <ChevronDown className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
-          : <ChevronRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />}
-        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
+          ? <ChevronDown className="w-3 h-3 text-foreground flex-shrink-0" />
+          : <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />}
+        <span className={`px-1.5 py-0.5 rounded typo-caption font-semibold border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
           {entry.statusCode}
         </span>
-        <span className="text-xs font-mono text-muted-foreground/70">{entry.method}</span>
+        <span className="typo-code font-mono text-foreground">{entry.method}</span>
         {entry.eventId && (
-          <span className="text-xs text-emerald-400/70 font-mono truncate max-w-[120px]" title={entry.eventId}>
+          <span className="typo-code text-emerald-400/70 font-mono truncate max-w-[120px]" title={entry.eventId}>
             {entry.eventId.slice(0, 8)}...
           </span>
         )}
         {entry.errorMessage && (
-          <span className="text-xs text-red-400/80 truncate max-w-[180px]" title={entry.errorMessage}>
+          <span className="typo-caption text-red-400/80 truncate max-w-[180px]" title={entry.errorMessage}>
             {entry.errorMessage}
           </span>
         )}
-        <span className="text-muted-foreground/50 ml-auto text-xs flex items-center gap-1">
+        <span className="text-foreground ml-auto typo-caption flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {formatTime(entry.receivedAt)}
         </span>
@@ -109,7 +110,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/60">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 typo-caption text-foreground">
                 <span className="font-mono">{entry.id.slice(0, 12)}</span>
                 <span>{new Date(entry.receivedAt).toLocaleString()}</span>
               </div>
@@ -119,8 +120,8 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
 
               {entry.errorMessage && (
                 <div className="space-y-1">
-                  <div className="text-xs font-medium text-red-400/70 uppercase tracking-wide">Error</div>
-                  <div className="px-2.5 py-2 rounded-lg bg-red-500/5 border border-red-500/10 text-xs text-red-400/90 font-mono whitespace-pre-wrap break-all">
+                  <div className="typo-label font-medium text-red-400/70 uppercase tracking-wide">Error</div>
+                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 font-mono whitespace-pre-wrap break-all">
                     {entry.errorMessage}
                   </div>
                 </div>
@@ -130,11 +131,11 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                 <button
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg border border-cyan-500/15 transition-colors disabled:opacity-40"
-                  title="Re-send this payload to trigger a new execution"
+                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40"
+                  title={t.triggers.replay_label}
                 >
                   {isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
-                  {isReplaying ? 'Replaying...' : 'Replay'}
+                  {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
                 </button>
                 <CopyButton
                   copied={copiedCurl}
@@ -143,10 +144,10 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   copiedLabel="Copied!"
                   iconSize="w-3 h-3"
                   icon={<Terminal className="w-3 h-3" />}
-                  className="px-2.5 py-1 text-xs rounded-lg border border-primary/10 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/20"
+                  className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 text-foreground hover:text-foreground hover:bg-secondary/20"
                 />
                 {replayResult && (
-                  <span className={`flex items-center gap-1 text-xs ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`flex items-center gap-1 typo-caption ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
                     {replayResult.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                     {replayResult.message}
                   </span>
@@ -239,16 +240,16 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
     <>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors w-full"
+        className="flex items-center gap-1.5 pt-1 border-t border-primary/5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Radio className="w-3 h-3" />
         {t.triggers.request_inspector}
         {logs.length > 0 && (
-          <span className="text-muted-foreground/50 ml-1">({logs.length})</span>
+          <span className="text-foreground ml-1">({logs.length})</span>
         )}
         {errorCount > 0 && (
-          <span className="text-red-400/70 text-xs ml-1">{errorCount} errors</span>
+          <span className="text-red-400/70 typo-caption ml-1">{errorCount} errors</span>
         )}
       </button>
 
@@ -258,23 +259,23 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
           >
             <div className="space-y-1.5 pt-1">
               {loading ? (
-                <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground/80">
+                <div className="flex items-center gap-2 py-2 typo-body text-foreground">
                   <LoadingSpinner size="xs" />
-                  Loading...
+                  {t.triggers.loading_history}
                 </div>
               ) : error ? (
-                <div className="flex items-center gap-2 py-2 text-sm text-amber-400/90">
+                <div className="flex items-center gap-2 py-2 typo-body text-amber-400/90">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_log}
                   <button
                     onClick={() => void fetch()}
-                    className="ml-auto flex items-center gap-1 text-sm text-muted-foreground/80 hover:text-foreground transition-colors"
+                    className="ml-auto flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
                   >
                     <RefreshCw className="w-3 h-3" />Retry
                   </button>
                 </div>
               ) : logs.length === 0 ? (
-                <div className="py-2 text-sm text-muted-foreground/80">
+                <div className="py-2 typo-body text-foreground">
                   {t.triggers.no_webhook_requests}
                 </div>
               ) : (
@@ -296,7 +297,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                     <button
                       onClick={() => void fetch()}
                       disabled={loading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-foreground hover:text-muted-foreground/90 transition-colors"
                     >
                       <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                       Refresh
@@ -305,10 +306,10 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                     <button
                       onClick={() => void handleClear()}
                       disabled={clearing}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-red-400/60 hover:text-red-400/90 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-red-400/60 hover:text-red-400/90 transition-colors"
                     >
                       {clearing ? <LoadingSpinner size="xs" /> : <Trash2 className="w-3 h-3" />}
-                      Clear all
+                      {t.triggers.clear_all}
                     </button>
                   </div>
                 </>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
@@ -34,6 +35,8 @@ export default function TeamMemoryPanel({
   teamId, memories, total, stats, onClose, onDelete, onImportanceChange,
   onCreate, onFilter, onLoadMore, onFilterByRun, onEdit,
 }: TeamMemoryPanelProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [statsExpanded, setStatsExpanded] = useState(false);
@@ -117,7 +120,7 @@ export default function TeamMemoryPanel({
     <div
       ref={panelRef}
       style={{ width: panelWidth }}
-      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-elevation-4 overflow-hidden"
+      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
     >
       {/* Resize handle */}
       <div
@@ -172,18 +175,18 @@ export default function TeamMemoryPanel({
       {stats && stats.total > 0 && (
         <div className="border-t border-primary/10 px-3 py-2">
           <button
-            className="flex items-center justify-between w-full text-sm text-muted-foreground/50 hover:text-muted-foreground/70"
+            className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
-            <span>Avg importance: {stats.avg_importance.toFixed(1)} | {stats.category_counts.length} categories</span>
+            <span>{pt.avg_importance.replace('{value}', stats.avg_importance.toFixed(1)).replace('{count}', String(stats.category_counts.length))}</span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
           {statsExpanded && (
             <div className="mt-1.5 space-y-0.5">
               {stats.category_counts.map(([cat, count]) => (
-                <div key={cat} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground/60 capitalize">{cat}</span>
-                  <span className="text-muted-foreground/60">{count}</span>
+                <div key={cat} className="flex items-center justify-between typo-body">
+                  <span className="text-foreground capitalize">{cat}</span>
+                  <span className="text-foreground">{count}</span>
                 </div>
               ))}
             </div>

@@ -49,20 +49,20 @@ export function MetricChart({
   title, insight, height, children, className, emptySlot, icon: Icon, iconColor = 'cyan', loading = false,
 }: MetricChartProps) {
   return (
-    <div className={`bg-secondary/20 border border-primary/10 rounded-xl p-4 ${className ?? ''}`}>
+    <div className={`bg-secondary/20 border border-primary/10 rounded-modal p-4 ${className ?? ''}`}>
       <div className="mb-3">
-        <h3 className="typo-heading uppercase tracking-widest text-foreground/80 flex items-center gap-2">
+        <h3 className="typo-heading uppercase tracking-widest text-foreground flex items-center gap-2">
           {Icon && (
-            <div className={`p-1.5 rounded-lg ${ICON_COLOR_CLASSES[iconColor]}`}>
+            <div className={`p-1.5 rounded-card ${ICON_COLOR_CLASSES[iconColor]}`}>
               <Icon className="w-3.5 h-3.5" />
             </div>
           )}
           {title}
         </h3>
-        {insight && <p className="typo-body text-muted-foreground/80 mt-1">{insight}</p>}
+        {insight && <p className="typo-body text-foreground mt-1">{insight}</p>}
       </div>
       {loading ? (
-        <div className="w-full rounded-lg bg-secondary/60 overflow-hidden" style={{ height }}>
+        <div className="w-full rounded-card bg-secondary/60 overflow-hidden" style={{ height }}>
           <div className="h-full w-full" />
         </div>
       ) : (

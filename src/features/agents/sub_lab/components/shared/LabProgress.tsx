@@ -32,7 +32,7 @@ export function LabProgress() {
 
   return (
     <div className="animate-fade-slide-in overflow-hidden">
-      <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
+      <div className="p-4 rounded-modal bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
         {/* Phase stepper */}
         <div className="flex items-center justify-between">
           {LAB_PHASES.map((phase, i) => {
@@ -50,7 +50,7 @@ export function LabProgress() {
                         ? 'bg-emerald-500/40 text-emerald-200'
                         : isActive
                           ? 'bg-primary/50 text-primary-foreground shadow-[0_0_8px_rgba(139,92,246,0.3)]'
-                          : 'bg-primary/10 text-muted-foreground/40'
+                          : 'bg-primary/10 text-foreground'
                     } ${isActive ? 'animate-pulse' : ''}`}
                   >
                     {isCompleted ? (
@@ -64,8 +64,8 @@ export function LabProgress() {
                       isCompleted
                         ? 'text-emerald-400/70'
                         : isActive
-                          ? 'text-foreground/80 font-medium'
-                          : 'text-muted-foreground/40'
+                          ? 'text-foreground font-medium'
+                          : 'text-foreground'
                     }`}
                   >
                     {(t.agents.lab as Record<string, string>)[PHASE_LABELS[phase.key] ?? ''] ?? phase.key}
@@ -87,8 +87,8 @@ export function LabProgress() {
         </div>
 
         {/* Detail row: status text + counters */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-foreground/70">
+        <div className="flex items-center justify-between typo-body">
+          <span className="text-foreground">
             {labProgress.phase === 'drafting'
               ? t.agents.lab.generating_draft
               : labProgress.phase === 'generating'
@@ -103,13 +103,13 @@ export function LabProgress() {
           {labProgress.total != null && (
             <div className="flex items-center gap-3">
               {labProgress.elapsedMs != null && (
-                <span className="text-xs text-muted-foreground/50 tabular-nums">
+                <span className="typo-caption text-foreground tabular-nums">
                   {labProgress.elapsedMs >= 60000
                     ? `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
                     : `${(labProgress.elapsedMs / 1000).toFixed(1)}s`}
                 </span>
               )}
-              <span className="text-sm text-muted-foreground/90 tabular-nums">
+              <span className="typo-data text-foreground tabular-nums">
                 {labProgress.current ?? 0} / {labProgress.total}
               </span>
             </div>
@@ -118,7 +118,7 @@ export function LabProgress() {
 
         {/* Scores */}
         {labProgress.scores && (
-          <div className="flex items-center gap-4 text-sm text-muted-foreground/90">
+          <div className="flex items-center gap-4 typo-body text-foreground">
             <span>Tool: {labProgress.scores.tool_accuracy ?? '--'}</span>
             <span>Output: {labProgress.scores.output_quality ?? '--'}</span>
             <span>Protocol: {labProgress.scores.protocol_compliance ?? '--'}</span>

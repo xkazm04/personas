@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
+  const { t } = useTranslation();
   const stats = useMemo(() => {
     const now = Date.now();
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -39,7 +41,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
   }, [issues]);
 
   const TrendIcon = stats.trend === 'improving' ? TrendingDown : stats.trend === 'worsening' ? TrendingUp : ArrowRight;
-  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-muted-foreground/90';
+  const trendColor = stats.trend === 'improving' ? 'text-emerald-400' : stats.trend === 'worsening' ? 'text-red-400' : 'text-foreground';
   const trendBg = stats.trend === 'improving' ? 'bg-emerald-500/10' : stats.trend === 'worsening' ? 'bg-red-500/10' : 'bg-secondary/40';
   const trendLabel = stats.trend === 'improving' ? 'Improving' : stats.trend === 'worsening' ? 'Worsening' : 'Stable';
 
@@ -48,19 +50,19 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
       <div className="flex items-center gap-3 flex-wrap typo-body">
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-foreground/90">{stats.openIssues}</span>
-          <span className="text-muted-foreground/90">open</span>
+          <span className="text-foreground">open</span>
         </div>
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
-          <span className="text-muted-foreground/90">auto-fixed this week</span>
+          <span className="text-foreground">{t.overview.healing_summary.auto_fixed_this_week}</span>
         </div>
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
-        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${trendBg}`}>
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-card ${trendBg}`}>
           <TrendIcon className={`w-3 h-3 ${trendColor}`} />
           <span className={`font-medium ${trendColor}`}>{trendLabel}</span>
         </div>
@@ -70,7 +72,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
             <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
             {stats.recurring.map(([category, count]) => (
               <span key={category} className="text-amber-400/80">
-                {count} {category} issues in 7d
+                {count} {category} {t.overview.healing_summary.issues_in_7d}
               </span>
             ))}
           </>

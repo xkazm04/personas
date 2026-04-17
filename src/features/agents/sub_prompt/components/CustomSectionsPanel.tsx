@@ -30,10 +30,10 @@ export function CustomSectionsPanel({
   return (
     <div className="flex flex-col h-full min-h-0 gap-2">
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-sm font-medium text-foreground/80">{t.agents.custom_sections.title}</span>
+        <span className="typo-body font-medium text-foreground">{t.agents.custom_sections.title}</span>
         <button
           onClick={onAdd}
-          className="px-2 py-1 text-sm rounded-lg border border-primary/20 text-muted-foreground/80 hover:bg-secondary/50 flex items-center gap-1 ml-auto"
+          className="px-2 py-1 typo-body rounded-card border border-primary/20 text-foreground hover:bg-secondary/50 flex items-center gap-1 ml-auto"
         >
           <Plus className="w-3 h-3" />
           {t.agents.custom_sections.add}
@@ -42,7 +42,7 @@ export function CustomSectionsPanel({
 
       {sections.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-muted-foreground/80">{t.agents.custom_sections.no_sections}</p>
+          <p className="typo-body text-foreground">{t.agents.custom_sections.no_sections}</p>
         </div>
       ) : (
         <div className="flex flex-1 min-h-0 gap-2">
@@ -51,10 +51,10 @@ export function CustomSectionsPanel({
             {sections.map((section, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-1 px-2 py-1.5 text-sm rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-card cursor-pointer transition-colors ${
                   selectedIndex === index
-                    ? 'bg-violet-500/10 text-foreground/80 border border-violet-500/20'
-                    : 'text-muted-foreground/90 hover:bg-secondary/30 border border-transparent'
+                    ? 'bg-violet-500/10 text-foreground border border-violet-500/20'
+                    : 'text-foreground hover:bg-secondary/30 border border-transparent'
                 }`}
                 onClick={() => onSelectIndex(index)}
               >
@@ -63,7 +63,7 @@ export function CustomSectionsPanel({
                 </span>
                 <button
                   onClick={(e) => { e.stopPropagation(); onRemove(index); }}
-                  className="p-0.5 text-muted-foreground/80 hover:text-red-400 flex-shrink-0"
+                  className="p-0.5 text-foreground hover:text-red-400 flex-shrink-0"
                   title={t.agents.custom_sections.remove_section}
                 >
                   <X className="w-3 h-3" />
@@ -79,7 +79,7 @@ export function CustomSectionsPanel({
                 type="text"
                 value={currentCustom.title}
                 onChange={(e) => onUpdate(selectedIndex, 'title', e.target.value)}
-                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0"
+                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0"
                 placeholder={t.agents.custom_sections.title_placeholder}
               />
               <div className="flex-1 min-h-0">

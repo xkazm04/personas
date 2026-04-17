@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function CompositePartialMatchIndicator({ triggerId }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [result, setResult] = useState<PartialMatchResult | null>(null);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
     ? 'text-emerald-400'
     : conditionsMet > 0
       ? 'text-amber-400'
-      : 'text-muted-foreground/60';
+      : 'text-foreground';
 
   const bgColor = fired
     ? 'bg-emerald-500/10 border-emerald-500/15'
@@ -43,17 +43,17 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       : 'bg-secondary/30 border-border/30';
 
   return (
-    <div className={`rounded-xl border p-2.5 space-y-2 ${bgColor}`}>
+    <div className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
-        <span className={`text-sm font-medium ${color}`}>
-          {conditionsMet}/{conditionsTotal} conditions met
+        <span className={`typo-body font-medium ${color}`}>
+          {tx(t.triggers.conditions_met, { met: conditionsMet, total: conditionsTotal })}
         </span>
-        <span className="text-xs text-muted-foreground/60 ml-auto">
+        <span className="typo-caption text-foreground ml-auto">
           {operator.toUpperCase()}
         </span>
         {suppressed && (
-          <span className="text-xs text-muted-foreground/50 italic">{t.triggers.suppressed_label}</span>
+          <span className="typo-caption text-foreground italic">{t.triggers.suppressed_label}</span>
         )}
       </div>
 
@@ -70,18 +70,18 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       {/* Per-condition breakdown */}
       <div className="space-y-0.5">
         {conditionDetails.map((c, i) => (
-          <div key={i} className="flex items-center gap-1.5 text-xs">
-            <span className={c.matched ? 'text-emerald-400' : 'text-muted-foreground/50'}>
+          <div key={i} className="flex items-center gap-1.5 typo-caption">
+            <span className={c.matched ? 'text-emerald-400' : 'text-foreground'}>
               {c.matched ? '\u2713' : '\u2717'}
             </span>
-            <span className={`font-mono ${c.matched ? 'text-foreground/80' : 'text-muted-foreground/50'}`}>
+            <span className={`font-mono ${c.matched ? 'text-foreground' : 'text-foreground'}`}>
               {c.eventType}
             </span>
             {c.sourceFilter && (
-              <span className="text-muted-foreground/40">({c.sourceFilter})</span>
+              <span className="text-foreground">({c.sourceFilter})</span>
             )}
             {c.matched && c.matchedEventCount > 1 && (
-              <span className="text-muted-foreground/50">&times;{c.matchedEventCount}</span>
+              <span className="text-foreground">&times;{c.matchedEventCount}</span>
             )}
           </div>
         ))}

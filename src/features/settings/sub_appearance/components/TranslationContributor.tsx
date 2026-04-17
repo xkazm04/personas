@@ -56,23 +56,21 @@ function flatten(obj: Record<string, unknown>, prefix = ''): Record<string, stri
   return result;
 }
 
-/** Dynamic import loaders for each language file — mirrors useTranslation loaders. */
-const langLoaders: Record<Language, () => Promise<Record<string, unknown>>> = {
-  en: () => import('@/i18n/en').then(m => m.en as unknown as Record<string, unknown>),
-  zh: () => import('@/i18n/zh').then(m => m.zh as unknown as Record<string, unknown>),
-  es: () => import('@/i18n/es').then(m => m.es as unknown as Record<string, unknown>),
-  ar: () => import('@/i18n/ar').then(m => m.ar as unknown as Record<string, unknown>),
-  hi: () => import('@/i18n/hi').then(m => m.hi as unknown as Record<string, unknown>),
-  ru: () => import('@/i18n/ru').then(m => m.ru as unknown as Record<string, unknown>),
-  id: () => import('@/i18n/id').then(m => m.id as unknown as Record<string, unknown>),
-  fr: () => import('@/i18n/fr').then(m => m.fr as unknown as Record<string, unknown>),
-  bn: () => import('@/i18n/bn').then(m => m.bn as unknown as Record<string, unknown>),
-  ja: () => import('@/i18n/ja').then(m => m.ja as unknown as Record<string, unknown>),
-  vi: () => import('@/i18n/vi').then(m => m.vi as unknown as Record<string, unknown>),
-  de: () => import('@/i18n/de').then(m => m.de as unknown as Record<string, unknown>),
-  ko: () => import('@/i18n/ko').then(m => m.ko as unknown as Record<string, unknown>),
-  cs: () => import('@/i18n/cs').then(m => m.cs as unknown as Record<string, unknown>),
-};
+/**
+ * Dynamic JSON-import loaders for each locale, discovered via Vite's
+ * import.meta.glob. Mirrors the loader in `@/i18n/useTranslation` so this
+ * component stays decoupled and self-contained.
+ */
+const localeJsonLoaders = import.meta.glob<{ default: Record<string, unknown> }>(
+  '@/i18n/locales/*.json',
+  { eager: false },
+);
+
+function loadBundle(code: Language): Promise<Record<string, unknown>> {
+  const entry = Object.entries(localeJsonLoaders).find(([path]) => path.endsWith(`/${code}.json`));
+  if (!entry) return Promise.reject(new Error(`No locale bundle for "${code}"`));
+  return entry[1]().then((m) => m.default);
+}
 
 export default function TranslationContributor() {
   const { language } = useI18nStore();
@@ -88,7 +86,7 @@ export default function TranslationContributor() {
       const results: Record<string, number> = {};
       for (const lang of ALL_LANGUAGES) {
         try {
-          const bundle = await langLoaders[lang.code]();
+          const bundle = await loadBundle(lang.code);
           const keys = countKeys(bundle);
           if (!cancelled) results[lang.code] = keys;
         } catch {
@@ -103,7 +101,7 @@ export default function TranslationContributor() {
   const handleExport = useCallback(async (code: Language) => {
     setExporting(code);
     try {
-      const bundle = await langLoaders[code]();
+      const bundle = await loadBundle(code);
       const flat = flatten(bundle);
       const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -122,15 +120,15 @@ export default function TranslationContributor() {
   const currentPct = TOTAL_KEYS > 0 ? Math.round((currentCoverage / TOTAL_KEYS) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.language_translations} icon={<Languages />} />
 
       {/* Current language display */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-primary/10">
-        <span className="text-lg">{currentLang?.flag}</span>
+      <div className="flex items-center gap-3 p-3 rounded-card bg-secondary/30 border border-primary/10">
+        <span className="typo-heading-lg">{currentLang?.flag}</span>
         <div>
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
-          <p className="typo-caption text-muted-foreground/60">
+          <p className="typo-caption text-foreground">
             {currentPct === 100
               ? interpolate(s.translation_keys, { count: TOTAL_KEYS })
               : interpolate(s.translation_coverage, { covered: currentCoverage, total: TOTAL_KEYS, pct: currentPct })
@@ -146,7 +144,7 @@ export default function TranslationContributor() {
 
       {/* Language coverage grid — click a language to export its file */}
       <div>
-        <p className="typo-caption text-muted-foreground/60 mb-2">{s.coverage_hint}</p>
+        <p className="typo-caption text-foreground mb-2">{s.coverage_hint}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {ALL_LANGUAGES.map((lang) => {
             const keys = coverage[lang.code] ?? 0;
@@ -161,15 +159,15 @@ export default function TranslationContributor() {
                 type="button"
                 onClick={() => handleExport(lang.code)}
                 disabled={isExportingThis}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-left group ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-card border transition-colors text-left group ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/8 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'
                 }`}
               >
-                <span className="text-sm">{lang.flag}</span>
+                <span className="typo-body">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-muted-foreground/70'}`}>
+                  <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-foreground'}`}>
                     {lang.label}
                   </span>
                   {/* Coverage bar */}
@@ -180,13 +178,13 @@ export default function TranslationContributor() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="typo-label text-muted-foreground/50 tabular-nums w-7 text-right">{pct}%</span>
+                    <span className="typo-label text-foreground tabular-nums w-7 text-right">{pct}%</span>
                   </div>
                 </div>
                 {isFull ? (
                   <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                 ) : (
-                  <Download className="w-3 h-3 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Download className="w-3 h-3 text-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
             );
@@ -196,8 +194,8 @@ export default function TranslationContributor() {
 
       {/* Contribution link */}
       <div className="border-t border-primary/10 pt-4 space-y-3">
-        <p className="typo-heading text-foreground/80">{s.contribute_title}</p>
-        <p className="typo-caption text-muted-foreground/60">
+        <p className="typo-heading text-foreground">{s.contribute_title}</p>
+        <p className="typo-caption text-foreground">
           {s.contribute_hint}
         </p>
         <Button

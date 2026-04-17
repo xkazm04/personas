@@ -39,13 +39,13 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
             {modeBadge.label}
           </span>
           {exec.isExecuting && exec.isThisUseCaseExecution && (
-            <div className="flex items-center gap-1.5 text-muted-foreground/60">
+            <div className="flex items-center gap-1.5 text-foreground">
               <Clock className="w-3 h-3" />
               <span className="typo-code">{formatElapsed(exec.elapsedMs)}</span>
             </div>
           )}
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-muted-foreground/60 hover:text-foreground/80">
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-foreground hover:text-foreground/80">
           <X className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -55,7 +55,7 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
         {useCase.time_filter && (
           <div className="flex items-center gap-1.5 typo-body text-cyan-400/70">
             <Timer className="w-3 h-3" />
-            <span>{useCase.time_filter.description} (window: {useCase.time_filter.default_window})</span>
+            <span>{useCase.time_filter.description} {t.shared.use_cases_extra.window_prefix} {useCase.time_filter.default_window})</span>
           </div>
         )}
         {exec.hasSchema ? (
@@ -69,11 +69,11 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           </div>
         ) : (
           <>
-            <p className="typo-label text-muted-foreground/60">{t.shared.use_cases_extra.input_data}</p>
+            <p className="typo-label text-foreground">{t.shared.use_cases_extra.input_data}</p>
             <JsonEditor
               value={exec.inputData}
               onChange={(v) => { exec.setInputData(v); if (exec.jsonError) exec.setJsonError(null); }}
-              placeholder='{"key": "value"}'
+              placeholder={t.shared.use_cases_extra.input_placeholder}
             />
           </>
         )}

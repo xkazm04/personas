@@ -13,6 +13,7 @@ import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   return (
     <EmptyIllustration
       icon={Globe}
@@ -27,7 +28,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             onClick={onUpload}
             className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
           >
-            Upload Spec File
+            {sh.upload_spec}
           </Button>
           <Button
             variant="secondary"
@@ -35,7 +36,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             icon={<FileText className="w-3.5 h-3.5" />}
             onClick={onPaste}
           >
-            Paste OpenAPI
+            {sh.paste_openapi}
           </Button>
         </div>
       }
@@ -48,8 +49,8 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
 
 export function TestRunCounters({ progress }: { progress: TestProgress }) {
   return (
-    <div className="flex items-center gap-2.5 shrink-0 text-sm font-medium">
-      <span className="text-muted-foreground/60">
+    <div className="flex items-center gap-2.5 shrink-0 typo-body font-medium">
+      <span className="text-foreground">
         {progress.current}/{progress.total}
       </span>
       {progress.passed > 0 && (
@@ -65,7 +66,7 @@ export function TestRunCounters({ progress }: { progress: TestProgress }) {
         </span>
       )}
       {progress.skipped > 0 && (
-        <span className="flex items-center gap-0.5 text-muted-foreground/50">
+        <span className="flex items-center gap-0.5 text-foreground">
           <MinusCircle className="w-3 h-3" />
           {progress.skipped}
         </span>
@@ -96,22 +97,24 @@ interface RequestResponsePanelProps {
 }
 
 export function RequestResponsePanel({ selectedEndpoint, response, sendError, isSending, onSend, onClose }: RequestResponsePanelProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="border-t border-primary/25 pt-4">
       <div className={`grid gap-0 ${response || sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
         <div className="space-y-4 min-w-0 pr-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm uppercase tracking-wider text-blue-400/70 font-semibold">
-              Request Builder
+            <span className="typo-heading uppercase tracking-wider text-blue-400/70 font-semibold">
+              {sh.request_builder}
             </span>
             <div className="flex-1" />
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-muted-foreground/60 hover:text-muted-foreground/80"
+              className="text-foreground hover:text-muted-foreground/80"
             >
-              Close
+              {t.common.close}
             </Button>
           </div>
           <RequestBuilder
@@ -127,11 +130,11 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
 
         {(response || sendError) && (
           <div className="min-w-0 pl-4">
-            <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
-              Response
+            <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
+              {sh.response}
             </span>
             {sendError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+              <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
                 {sendError}
               </div>
             )}
@@ -146,16 +149,17 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
 export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClose, onSubmit }: PasteSpecModalProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
-      <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-elevation-3 p-4 space-y-3">
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
+      <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground/80">{vt.paste_spec_title}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{vt.paste_spec_title}</h3>
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={onClose}
-            className="text-muted-foreground/60"
+            className="text-foreground"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -164,16 +168,16 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder={vt.paste_placeholder}
-          className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-card typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-muted-foreground/60"
+            className="text-foreground"
           >
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button
             variant="accent"
@@ -184,7 +188,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
             loading={isParsing}
             className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
           >
-            {isParsing ? vt.parsing : vt.parse_load}
+            {isParsing ? sh.parsing : sh.parse_and_load}
           </Button>
         </div>
       </div>

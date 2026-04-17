@@ -20,7 +20,7 @@ export function kindBadge(kind: ConflictKind) {
   const cfg = KIND_CONFIG[kind];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-lg border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 typo-caption font-medium rounded-card border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
       <Icon className="w-3 h-3" />
       {cfg.label}
     </span>
@@ -31,7 +31,7 @@ export function similarityBadge(sim: number) {
   const pct = Math.round(sim * 100);
   const color = pct >= 80 ? 'text-red-400' : pct >= 50 ? 'text-amber-400' : 'text-blue-400';
   return (
-    <span className={`text-xs font-mono ${color}`}>{pct}%</span>
+    <span className={`typo-code font-mono ${color}`}>{pct}%</span>
   );
 }
 

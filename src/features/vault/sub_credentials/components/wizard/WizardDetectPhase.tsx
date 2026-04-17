@@ -13,7 +13,8 @@ interface WizardDetectPhaseProps {
 }
 
 export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const existingCredentials = useVaultStore((s) => s.credentials);
 
@@ -111,13 +112,13 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-bold text-foreground tracking-tight">
-          Set up credentials
+        <h2 className="typo-heading-lg font-bold text-foreground tracking-tight">
+          {wd.set_up_credentials}
         </h2>
-        <p className="text-sm text-muted-foreground/80 mt-1">
+        <p className="typo-body text-foreground mt-1">
           {hasDetected && detected.length > 0
-            ? `Found ${detected.length} service${detected.length !== 1 ? 's' : ''} you're signed into. Select which to add.`
-            : t.vault.wizard_detect.select_services}
+            ? tx(t.vault.wizard.detected, { count: detected.length })
+            : wd.select_services}
         </p>
       </div>
 
@@ -133,27 +134,27 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           disabled={isDetecting}
           onClick={handleDetect}
         >
-          {isDetecting ? t.vault.wizard_detect.scanning : t.vault.wizard_detect.scan_button}
+          {isDetecting ? wd.scanning : wd.scan_button}
         </Button>
       )}
 
       {/* Detection results banner */}
       {hasDetected && detected.length === 0 && (
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
-          <Radar className="w-4 h-4 text-muted-foreground/80" />
-          <p className="text-sm text-muted-foreground/80">{t.vault.list.no_credentials}</p>
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
+          <Radar className="w-4 h-4 text-foreground" />
+          <p className="typo-body text-foreground">{t.vault.list.no_credentials}</p>
         </div>
       )}
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/90" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.vault.wizard_detect.search_services}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
+          placeholder={wd.search_services}
+          className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>
 
@@ -176,9 +177,9 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             variant="ghost"
             size="sm"
             onClick={() => setSelected(new Set())}
-            className="text-muted-foreground/80 hover:text-foreground/90"
+            className="text-foreground hover:text-foreground/90"
           >
-            Clear selection
+            {wd.clear_selection}
           </Button>
           <Button
             variant="accent"
@@ -188,7 +189,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             onClick={handleSetup}
             data-testid="vault-wizard-start"
           >
-            Set up {selected.size} service{selected.size !== 1 ? 's' : ''}
+            {tx(wd.set_up_services, { count: selected.size, plural: selected.size !== 1 ? 's' : '' })}
           </Button>
         </div>
       )}

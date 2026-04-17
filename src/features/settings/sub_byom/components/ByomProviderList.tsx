@@ -73,9 +73,9 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
   return (
     <div className="space-y-4">
       {/* Allowed providers */}
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.allowed_providers} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-foreground">
           {s.allowed_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
@@ -86,10 +86,10 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               <div key={prov.id} className="flex flex-col gap-1.5">
                 <button
                   onClick={() => toggleProvider(prov.id, 'allowed')}
-                  className={`p-3 rounded-lg border text-left text-sm transition-all ${
+                  className={`p-3 rounded-card border text-left typo-body transition-all ${
                     isAllowed
                       ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
-                      : 'border-primary/10 text-muted-foreground hover:border-primary/20'
+                      : 'border-primary/10 text-foreground hover:border-primary/20'
                   }`}
                 >
                   {prov.label}
@@ -107,9 +107,9 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       </div>
 
       {/* Blocked providers */}
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.blocked_providers} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-foreground">
           {s.blocked_providers_hint}
         </p>
         <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
@@ -119,10 +119,10 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               <button
                 key={prov.id}
                 onClick={() => toggleProvider(prov.id, 'blocked')}
-                className={`p-3 rounded-lg border text-left text-sm transition-all ${
+                className={`p-3 rounded-card border text-left typo-body transition-all ${
                   isBlocked
                     ? 'border-red-500/30 bg-red-500/10 text-foreground'
-                    : 'border-primary/10 text-muted-foreground hover:border-primary/20'
+                    : 'border-primary/10 text-foreground hover:border-primary/20'
                 }`}
               >
                 {prov.label}
@@ -135,23 +135,23 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
 
       {/* Usage stats with sparkline trends */}
       {usageStats.length > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
           <div className="flex items-baseline gap-2">
             <SectionHeading title={s.provider_usage} />
-            <span className="text-xs text-muted-foreground/40">{s.usage_trends}</span>
+            <span className="typo-caption text-foreground">{s.usage_trends}</span>
           </div>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {usageStats.map((stat) => {
               const trends = trendsByEngine.get(stat.engine_kind);
               return (
-                <div key={stat.engine_kind} className="p-3 rounded-lg border border-primary/10 bg-secondary/20">
-                  <div className="text-sm font-medium text-foreground mb-2">
+                <div key={stat.engine_kind} className="p-3 rounded-card border border-primary/10 bg-secondary/20">
+                  <div className="typo-body font-medium text-foreground mb-2">
                     {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.executions}</div>
-                      <div className="text-sm font-medium text-foreground">{stat.execution_count}</div>
+                      <div className="typo-caption text-foreground">{s.executions}</div>
+                      <div className="typo-body font-medium text-foreground">{stat.execution_count}</div>
                       <ProviderSparkline
                         data={trends?.executions ?? []}
                         color="#10b981"
@@ -159,8 +159,8 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.cost}</div>
-                      <div className="text-sm font-medium text-foreground">${stat.total_cost_usd.toFixed(4)}</div>
+                      <div className="typo-caption text-foreground">{s.cost}</div>
+                      <div className="typo-body font-medium text-foreground">${stat.total_cost_usd.toFixed(4)}</div>
                       <ProviderSparkline
                         data={trends?.cost ?? []}
                         color="#8b5cf6"
@@ -168,8 +168,8 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                       />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs text-muted-foreground/50">{s.avg_duration}</div>
-                      <div className="text-sm font-medium text-foreground">{Math.round(stat.avg_duration_ms / 1000)}s</div>
+                      <div className="typo-caption text-foreground">{s.avg_duration}</div>
+                      <div className="typo-body font-medium text-foreground">{Math.round(stat.avg_duration_ms / 1000)}s</div>
                       <ProviderSparkline
                         data={trends?.duration ?? []}
                         color="#f59e0b"
@@ -178,7 +178,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
                     </div>
                   </div>
                   {stat.failover_count > 0 && (
-                    <div className="text-xs text-amber-400 mt-2">{stat.failover_count} failovers</div>
+                    <div className="typo-caption text-amber-400 mt-2">{stat.failover_count} failovers</div>
                   )}
                 </div>
               );
@@ -203,6 +203,8 @@ function TestConnectionButton({
   testState?: ConnectionTestResult;
   onTest: (id: string) => void;
 }) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
   const state = testState?.state ?? 'idle';
   const result = testState?.result;
 
@@ -214,13 +216,13 @@ function TestConnectionButton({
           e.stopPropagation();
           onTest(providerId);
         }}
-        className="text-xs px-2.5 py-1 rounded-md border border-primary/15 text-muted-foreground
+        className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
           hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
       >
         {state === 'testing' ? (
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Testing...
+            {s.testing}
           </span>
         ) : (
           'Test Connection'
@@ -228,19 +230,19 @@ function TestConnectionButton({
       </button>
 
       {state === 'pass' && (
-        <span className="text-xs text-emerald-400 flex items-center gap-1">
+        <span className="typo-caption text-emerald-400 flex items-center gap-1">
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.78 4.97a.75.75 0 00-1.06 0L7 8.69 5.28 6.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06z" />
           </svg>
           {result?.version ?? 'Reachable'}
           {result?.latency_ms != null && (
-            <span className="text-muted-foreground/50 ml-1">{result.latency_ms}ms</span>
+            <span className="text-foreground ml-1">{result.latency_ms}ms</span>
           )}
         </span>
       )}
 
       {state === 'fail' && (
-        <span className="text-xs text-red-400 flex items-center gap-1" title={result?.error ?? undefined}>
+        <span className="typo-caption text-red-400 flex items-center gap-1" title={result?.error ?? undefined}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.03 4.97a.75.75 0 00-1.06 0L8 6.94 6.03 4.97a.75.75 0 10-1.06 1.06L6.94 8 4.97 9.97a.75.75 0 001.06 1.06L8 9.06l1.97 1.97a.75.75 0 001.06-1.06L9.06 8l1.97-1.97a.75.75 0 000-1.06z" />
           </svg>

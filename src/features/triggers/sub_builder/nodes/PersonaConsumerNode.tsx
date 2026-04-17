@@ -18,7 +18,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
   return (
     <div
       className={`
-        relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
+        relative flex items-center gap-2.5 px-3 py-2.5 rounded-modal
         bg-card backdrop-blur border-2
         ${isConnectTarget
           ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.25)]'
@@ -41,10 +41,10 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
       </div>
 
       <div className="flex flex-col min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{d.name}</span>
         <div className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-foreground">
             {d.executionStatus === 'running' ? 'Running' :
               d.lastExecutionAt ? `Last: ${new Date(d.lastExecutionAt).toLocaleTimeString()}` :
                 'No executions'}

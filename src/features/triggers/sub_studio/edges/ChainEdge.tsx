@@ -74,10 +74,10 @@ function ChainEdgeInner({
       {(hovered || selected) && label && (
         <EdgeLabelRenderer>
           <div
-            className="absolute pointer-events-none flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-primary/15 shadow-elevation-3"
+            className="absolute pointer-events-none flex items-center gap-1.5 px-2 py-1 rounded-input bg-card border border-primary/15 shadow-elevation-3"
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
           >
-            <span className="text-[10px] font-medium text-muted-foreground truncate max-w-[140px]">
+            <span className="text-[10px] font-medium text-foreground truncate max-w-[140px]">
               {label}
             </span>
           </div>

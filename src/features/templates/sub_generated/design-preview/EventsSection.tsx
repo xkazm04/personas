@@ -40,15 +40,15 @@ export function EventsSection({
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
-        Events & Triggers
-        <span className="text-sm font-normal text-muted-foreground/80 ml-1">{t.templates.design.what_activates}</span>
+        {t.templates.design.events_and_triggers}
+        <span className="typo-body font-normal text-foreground ml-1">{t.templates.design.what_activates}</span>
       </div>
 
-      <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
+      <div className="bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden divide-y divide-primary/[0.06]">
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">
-            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80">{t.templates.design.triggers_section}</span>
+            <span className="typo-code font-mono uppercase tracking-wider text-foreground">{t.templates.design.triggers_section}</span>
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
                 const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
@@ -56,7 +56,7 @@ export function EventsSection({
                 return (
                   <div key={trigger.id} className="flex items-center gap-2.5 py-1">
                     <div className="flex-shrink-0">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type as SuggestedTrigger['trigger_type']); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
-                    <span className={`text-sm capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/90' : 'text-muted-foreground/80'}`}>
+                    <span className={`typo-body capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/90' : 'text-foreground'}`}>
                       {trigger.trigger_type}
                       {intervalSec ? ` (${intervalSec}s)` : ''}
                     </span>
@@ -69,7 +69,7 @@ export function EventsSection({
                         {trigger.enabled ? (
                           <ToggleRight className="w-5 h-5 text-emerald-400" />
                         ) : (
-                          <ToggleLeft className="w-5 h-5 text-muted-foreground/80" />
+                          <ToggleLeft className="w-5 h-5 text-foreground" />
                         )}
                       </button>
                     )}
@@ -91,8 +91,8 @@ export function EventsSection({
                     )}
                     <div className="flex-shrink-0 mt-0.5">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-foreground/90 capitalize block">{trigger.trigger_type}</span>
-                      <span className="text-sm text-muted-foreground/80 leading-snug block">{trigger.description}</span>
+                      <span className="typo-body text-foreground/90 capitalize block">{trigger.trigger_type}</span>
+                      <span className="typo-body text-foreground leading-snug block">{trigger.description}</span>
                     </div>
                   </div>
                 );
@@ -104,9 +104,9 @@ export function EventsSection({
         {/* Event Subscriptions */}
         {hasSubscriptions && (
           <div className="p-3.5 space-y-2">
-            <span className="text-sm font-mono uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
+            <span className="typo-code font-mono uppercase tracking-wider text-foreground flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
-              Event Subscriptions
+              {t.templates.design.event_subscriptions}
             </span>
             {suggestedSubscriptions!.map((sub, subIdx) => {
               const isSelected = selectedSubscriptionIndices.has(subIdx);
@@ -123,8 +123,8 @@ export function EventsSection({
                   )}
                   <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground/90 block">{sub.event_type}</span>
-                    <span className="text-sm text-muted-foreground/80 leading-snug block">{sub.description}</span>
+                    <span className="typo-body text-foreground/90 block">{sub.event_type}</span>
+                    <span className="typo-body text-foreground leading-snug block">{sub.description}</span>
                   </div>
                 </div>
               );

@@ -102,7 +102,7 @@ export function DraftEditStep({
             }}
             placeholder={t.shared.draft_editor.persona_name_placeholder}
             disabled={disabled}
-            className="w-full typo-heading text-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
+            className="w-full typo-heading text-foreground bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
           />
           <input
             type="text"
@@ -110,13 +110,13 @@ export function DraftEditStep({
             onChange={(e) => updateDraft((curr) => ({ ...curr, description: e.target.value.trim() ? e.target.value : null }))}
             placeholder={t.shared.draft_editor.description_placeholder}
             disabled={disabled}
-            className="w-full typo-body text-muted-foreground/80 bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
+            className="w-full typo-body text-foreground bg-transparent border-none outline-none placeholder-muted-foreground/30 p-0"
           />
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label="Draft edit tabs">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label={t.shared.draft_editor.edit_tabs_label}>
         {allTabs.map((tab) => (
           <button
             key={tab.id}
@@ -129,7 +129,7 @@ export function DraftEditStep({
             className={`flex items-center gap-1.5 px-3.5 py-2 typo-heading rounded-xl border transition-all whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                : 'bg-secondary/20 border-primary/10 text-muted-foreground/90 hover:border-primary/20 hover:text-muted-foreground'
+                : 'bg-secondary/20 border-primary/10 text-foreground hover:border-primary/20 hover:text-muted-foreground'
             }`}
           >
             <tab.Icon className="w-3.5 h-3.5" />
@@ -189,16 +189,16 @@ export function DraftEditStep({
       {/* Adjustment request panel (hidden when a dedicated tab handles it) */}
       {!hideAdjustmentPanel && (
         <div className="border-t border-primary/10 pt-4 space-y-2 flex-shrink-0">
-          <label className="typo-heading text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
+          <label className="typo-heading text-foreground uppercase tracking-wider flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            Request AI Adjustments
+            {t.shared.draft_editor.request_ai_adjustments}
           </label>
           <div className="flex gap-2">
             <textarea
               value={adjustmentRequest}
               onChange={(e) => onAdjustmentChange(e.target.value)}
               placeholder={t.shared.draft_editor.refine_placeholder}
-              className="flex-1 h-16 p-2.5 rounded-xl border border-primary/15 bg-background/40 typo-body text-foreground/75 resize-none placeholder-muted-foreground/30"
+              className="flex-1 h-16 p-2.5 rounded-xl border border-primary/15 bg-background/40 typo-body text-foreground resize-none placeholder-muted-foreground/30"
               disabled={disabled || transforming}
             />
             <button

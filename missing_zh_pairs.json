@@ -1,0 +1,5870 @@
+[
+  {
+    "key": "common.optional",
+    "en": "optional"
+  },
+  {
+    "key": "sidebar.quality_gates",
+    "en": "Content Filters"
+  },
+  {
+    "key": "sidebar.config_resolution",
+    "en": "Agent Configuration"
+  },
+  {
+    "key": "agents.executions.depth_label",
+    "en": "Depth:"
+  },
+  {
+    "key": "agents.executions.active_count_label",
+    "en": "Active ({count})"
+  },
+  {
+    "key": "agents.executions.completed_count_label",
+    "en": "Completed ({count})"
+  },
+  {
+    "key": "agents.executions.metadata_section",
+    "en": "Metadata"
+  },
+  {
+    "key": "agents.executions.chain_id_prefix",
+    "en": "Chain: {id}"
+  },
+  {
+    "key": "agents.executions.chain_total_duration",
+    "en": "Total: {duration}"
+  },
+  {
+    "key": "agents.executions.zero_ms",
+    "en": "0ms"
+  },
+  {
+    "key": "agents.executions.tool_calls_count",
+    "en": "{count} tool call"
+  },
+  {
+    "key": "agents.executions.tool_calls_count_other",
+    "en": "{count} tool calls"
+  },
+  {
+    "key": "agents.executions.unique_tools_count",
+    "en": "({count} unique)"
+  },
+  {
+    "key": "agents.executions.prev_error_nav",
+    "en": "Previous error (Shift+E)"
+  },
+  {
+    "key": "agents.executions.next_error_nav",
+    "en": "Next error (E)"
+  },
+  {
+    "key": "agents.executions.runner_input_placeholder",
+    "en": "{\"key\": \"value\"}"
+  },
+  {
+    "key": "agents.lab.objective_warning",
+    "en": "Fitness objective issue"
+  },
+  {
+    "key": "agents.lab.objective_fallback_toast",
+    "en": "Evolution used default fitness weights — check objective settings"
+  },
+  {
+    "key": "agents.design.conv_controls_aria",
+    "en": "Design conversation controls"
+  },
+  {
+    "key": "agents.connectors.auto_input_schema_placeholder",
+    "en": "{ \"file_url\": \"string\" }"
+  },
+  {
+    "key": "agents.connectors.auto_github_token_needs",
+    "en": "Your token needs {scopes} scope(s). Update your token at github.com/settings/tokens."
+  },
+  {
+    "key": "agents.connectors.auto_fallback_title",
+    "en": "Falls back to direct connector on failure"
+  },
+  {
+    "key": "agents.model_config.model_name_placeholder_override",
+    "en": "e.g. claude-sonnet-4-20250514"
+  },
+  {
+    "key": "agents.settings_status.speak_as",
+    "en": "Speak as"
+  },
+  {
+    "key": "agents.settings_status.no_twins_configured",
+    "en": "No twins configured. Open the Twin plugin to create one — this persona will then be able to adopt it."
+  },
+  {
+    "key": "agents.settings_status.twin_profile_aria",
+    "en": "Twin profile this persona speaks as"
+  },
+  {
+    "key": "agents.tool_runner.input_json_placeholder",
+    "en": "{ \"key\": \"value\" }"
+  },
+  {
+    "key": "agents.prompt_editor.sections_aria",
+    "en": "Prompt sections"
+  },
+  {
+    "key": "vault.list.sort_label",
+    "en": "Sort:"
+  },
+  {
+    "key": "vault.import.parse_secrets",
+    "en": "Parse Secrets"
+  },
+  {
+    "key": "vault.import.selected_for_import",
+    "en": "selected for import"
+  },
+  {
+    "key": "vault.import.auto_detected",
+    "en": "Auto-detected"
+  },
+  {
+    "key": "vault.import.sync_supported",
+    "en": "Sync supported"
+  },
+  {
+    "key": "vault.import.secrets_found_one",
+    "en": "{count} secret found"
+  },
+  {
+    "key": "vault.import.secrets_found_other",
+    "en": "{count} secrets found"
+  },
+  {
+    "key": "vault.import.import_secrets_one",
+    "en": "Import {count} Secret"
+  },
+  {
+    "key": "vault.import.import_secrets_other",
+    "en": "Import {count} Secrets"
+  },
+  {
+    "key": "vault.card.reauthorize_scopes",
+    "en": "Re-authorize with additional scopes"
+  },
+  {
+    "key": "vault.forms.connection_test_heading",
+    "en": "Connection Test"
+  },
+  {
+    "key": "vault.forms.test_connection_btn",
+    "en": "Test Connection"
+  },
+  {
+    "key": "vault.forms.credential_fields_heading",
+    "en": "Credential Fields"
+  },
+  {
+    "key": "vault.forms.how_to_get_connector",
+    "en": "How to get {connectorLabel} credentials"
+  },
+  {
+    "key": "vault.forms.authorization_complete",
+    "en": "Authorization complete"
+  },
+  {
+    "key": "vault.forms.copied_to_clipboard",
+    "en": "Copied to clipboard"
+  },
+  {
+    "key": "vault.forms.credential_name",
+    "en": "Credential Name"
+  },
+  {
+    "key": "vault.forms.credential_name_placeholder",
+    "en": "Label this credential — e.g. My {label} Account, Production {label}"
+  },
+  {
+    "key": "vault.forms.authorizing_with",
+    "en": "Authorizing with {label}..."
+  },
+  {
+    "key": "vault.forms.authorize_with",
+    "en": "Authorize with {label}"
+  },
+  {
+    "key": "vault.forms.oauth_consent_hint",
+    "en": "Opens {label} in your browser. Grant access, then return here."
+  },
+  {
+    "key": "vault.forms.oauth_connected_at",
+    "en": "{label} connected at {time}"
+  },
+  {
+    "key": "vault.auto_cred.cancel_session",
+    "en": "Cancel Session"
+  },
+  {
+    "key": "vault.auto_cred.test_connection",
+    "en": "Test Connection"
+  },
+  {
+    "key": "vault.auto_cred.testing",
+    "en": "Testing..."
+  },
+  {
+    "key": "vault.auto_cred.re_run_browser",
+    "en": "Re-run Browser"
+  },
+  {
+    "key": "vault.auto_cred.discard",
+    "en": "Discard"
+  },
+  {
+    "key": "vault.auto_cred.save_credential",
+    "en": "Save Credential"
+  },
+  {
+    "key": "vault.auto_cred.save_procedure",
+    "en": "Save Procedure"
+  },
+  {
+    "key": "vault.auto_cred.procedure_saved",
+    "en": "Procedure Saved"
+  },
+  {
+    "key": "vault.databases.not_null",
+    "en": "NOT NULL"
+  },
+  {
+    "key": "vault.databases.ctrl_enter",
+    "en": "Ctrl+Enter"
+  },
+  {
+    "key": "vault.dependencies.sim_critical",
+    "en": "Revoking {credentialName} would break {workflows} workflow{workflowPlural} and halt {personas} persona{personaPlural}."
+  },
+  {
+    "key": "vault.dependencies.sim_high",
+    "en": "Revoking {credentialName} would impact {personas} persona{personaPlural} across your workspace."
+  },
+  {
+    "key": "vault.dependencies.sim_medium",
+    "en": "Revoking {credentialName} has limited blast radius."
+  },
+  {
+    "key": "vault.dependencies.per_day",
+    "en": "/day"
+  },
+  {
+    "key": "vault.shared.copied",
+    "en": "Copied"
+  },
+  {
+    "key": "vault.shared.kb_count_summary",
+    "en": "-- {docs} docs, {chunks} chunks"
+  },
+  {
+    "key": "vault.shared.default_patterns",
+    "en": "Default:"
+  },
+  {
+    "key": "vault.shared.add_pattern_placeholder",
+    "en": "*.pdf"
+  },
+  {
+    "key": "vault.shared.distance_label",
+    "en": "distance:"
+  },
+  {
+    "key": "vault.shared.chunk_label",
+    "en": "chunk:"
+  },
+  {
+    "key": "vault.shared.copy_credential_id",
+    "en": "Copy credential ID"
+  },
+  {
+    "key": "vault.shared.request_body",
+    "en": "Request Body"
+  },
+  {
+    "key": "vault.shared.add_tag_title",
+    "en": "Add tag"
+  },
+  {
+    "key": "vault.shared.local_embedding_hint",
+    "en": "Embeddings are generated locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally."
+  },
+  {
+    "key": "vault.shared.api_path_placeholder",
+    "en": "/api/v1/resource"
+  },
+  {
+    "key": "vault.shared.json_body_placeholder",
+    "en": "{\"key\": \"value\"}"
+  },
+  {
+    "key": "vault.shared.sending",
+    "en": "Sending..."
+  },
+  {
+    "key": "vault.shared.send",
+    "en": "Send"
+  },
+  {
+    "key": "vault.shared.search_results_one",
+    "en": "{count} result for \"{query}\""
+  },
+  {
+    "key": "vault.shared.search_results_other",
+    "en": "{count} results for \"{query}\""
+  },
+  {
+    "key": "vault.bulk_healthcheck.passed_count",
+    "en": "{count} passed"
+  },
+  {
+    "key": "vault.bulk_healthcheck.failed_count",
+    "en": "{count} failed"
+  },
+  {
+    "key": "vault.bulk_healthcheck.total_count",
+    "en": "{count} total"
+  },
+  {
+    "key": "vault.token_metrics.fallback_used",
+    "en": "Fallback ({fallback}s) used in {rate}% of refreshes ({count}/{total}) — provider omits"
+  },
+  {
+    "key": "vault.reauth_banner.access_revoked",
+    "en": ") -- access was revoked. Please re-authorize to resume automations."
+  },
+  {
+    "key": "vault.reauth_banner.reconnect",
+    "en": "Reconnect"
+  },
+  {
+    "key": "vault.rotation_section.last_rotated",
+    "en": "Last rotated {time}"
+  },
+  {
+    "key": "vault.event_config.loading",
+    "en": "Loading events..."
+  },
+  {
+    "key": "vault.credential_forms.open_to_generate",
+    "en": "Open {label} to generate an API key or token"
+  },
+  {
+    "key": "vault.credential_forms.already_configured",
+    "en": "Credential already configured -- update below to replace"
+  },
+  {
+    "key": "vault.credential_forms.setup_instructions_label",
+    "en": "Setup Instructions"
+  },
+  {
+    "key": "vault.credential_forms.no_fields_defined",
+    "en": "No credential fields defined for this connector."
+  },
+  {
+    "key": "vault.audit_log.loading",
+    "en": "Loading audit timeline..."
+  },
+  {
+    "key": "vault.audit_log.total_accesses",
+    "en": "{count} total"
+  },
+  {
+    "key": "vault.audit_log.personas_one",
+    "en": "{count} persona"
+  },
+  {
+    "key": "vault.audit_log.personas_other",
+    "en": "{count} personas"
+  },
+  {
+    "key": "vault.audit_log.accesses_24h",
+    "en": "{count} in 24h"
+  },
+  {
+    "key": "vault.audit_log.anomalies_one",
+    "en": "{count} anomaly"
+  },
+  {
+    "key": "vault.audit_log.anomalies_other",
+    "en": "{count} anomalies"
+  },
+  {
+    "key": "vault.audit_log.no_anomalies",
+    "en": "No anomalies"
+  },
+  {
+    "key": "vault.audit_log.show_all",
+    "en": "Show all {count} entries"
+  },
+  {
+    "key": "vault.credential_import.sync_hint",
+    "en": "Watches the external vault for changes and auto-updates credentials using polling."
+  },
+  {
+    "key": "vault.credential_import.interval_15min",
+    "en": "15 min"
+  },
+  {
+    "key": "vault.credential_import.interval_30min",
+    "en": "30 min"
+  },
+  {
+    "key": "vault.credential_import.interval_1hr",
+    "en": "1 hour"
+  },
+  {
+    "key": "vault.credential_import.interval_6hr",
+    "en": "6 hours"
+  },
+  {
+    "key": "vault.credential_import.interval_24hr",
+    "en": "24 hours"
+  },
+  {
+    "key": "vault.wizard_detect.set_up_credentials",
+    "en": "Set up credentials"
+  },
+  {
+    "key": "vault.wizard_detect.clear_selection",
+    "en": "Clear selection"
+  },
+  {
+    "key": "vault.wizard_detect.set_up_services",
+    "en": "Set up {count} service{plural}"
+  },
+  {
+    "key": "vault.wizard_detect.setting_up",
+    "en": "Setting up {current} of {total}"
+  },
+  {
+    "key": "vault.wizard_detect.wizard_title",
+    "en": "Credential Setup Wizard"
+  },
+  {
+    "key": "vault.wizard_detect.choose_service",
+    "en": "Choose a service to set up"
+  },
+  {
+    "key": "vault.wizard_detect.ai_walk_description",
+    "en": "The AI will walk you step-by-step through obtaining API credentials."
+  },
+  {
+    "key": "vault.wizard_detect.wizard_subtitle",
+    "en": "AI-guided credential setup"
+  },
+  {
+    "key": "vault.wizard_detect.wizard_subtitle_batch",
+    "en": "Setting up {count} service{plural}"
+  },
+  {
+    "key": "vault.autopilot.from_url",
+    "en": "From URL"
+  },
+  {
+    "key": "vault.autopilot.paste_content",
+    "en": "Paste Content"
+  },
+  {
+    "key": "vault.autopilot.openapi_spec_url",
+    "en": "OpenAPI Spec URL"
+  },
+  {
+    "key": "vault.autopilot.openapi_format_hint",
+    "en": "Supports OpenAPI 3.x and Swagger 2.x specs in JSON or YAML format"
+  },
+  {
+    "key": "vault.autopilot.parsing_spec",
+    "en": "Parsing Spec..."
+  },
+  {
+    "key": "vault.autopilot.parse_analyze",
+    "en": "Parse & Analyze"
+  },
+  {
+    "key": "vault.autopilot.connector_in_catalog",
+    "en": "{connectorLabel} is now available in your connector catalog with {toolCount} tool definitions."
+  },
+  {
+    "key": "vault.autopilot.generated_tools",
+    "en": "Generated Tools ({count})"
+  },
+  {
+    "key": "vault.autopilot.credential_fields",
+    "en": "Credential Fields"
+  },
+  {
+    "key": "vault.autopilot.open_playground",
+    "en": "Open Playground"
+  },
+  {
+    "key": "vault.autopilot.copy_connector_id",
+    "en": "Copy Connector ID"
+  },
+  {
+    "key": "vault.autopilot.go_to_catalog",
+    "en": "Go to Catalog"
+  },
+  {
+    "key": "vault.autopilot.response_headers",
+    "en": "Response Headers ({count})"
+  },
+  {
+    "key": "vault.autopilot.base_url_placeholder",
+    "en": "https://api.example.com"
+  },
+  {
+    "key": "vault.autopilot.openapi_url_placeholder",
+    "en": "https://api.example.com/openapi.json"
+  },
+  {
+    "key": "vault.autopilot.auth_schemes",
+    "en": "auth schemes"
+  },
+  {
+    "key": "vault.autopilot.body_placeholder",
+    "en": "{ \"key\": \"value\" }"
+  },
+  {
+    "key": "vault.foraging.start_scan",
+    "en": "Start Scan"
+  },
+  {
+    "key": "vault.foraging.checking_env",
+    "en": "Checking environment variables, config files, and dev tool credentials"
+  },
+  {
+    "key": "vault.foraging.importing",
+    "en": "Importing credentials to vault..."
+  },
+  {
+    "key": "vault.foraging.scan_again",
+    "en": "Scan again"
+  },
+  {
+    "key": "vault.foraging.back_to_vault",
+    "en": "Back to vault"
+  },
+  {
+    "key": "vault.foraging.already_in_vault",
+    "en": "Already in vault"
+  },
+  {
+    "key": "vault.foraging.imported",
+    "en": "Imported"
+  },
+  {
+    "key": "vault.foraging.to_vault",
+    "en": "to vault"
+  },
+  {
+    "key": "vault.foraging.credentials_found_one",
+    "en": "{count} credential found"
+  },
+  {
+    "key": "vault.foraging.credentials_found_other",
+    "en": "{count} credentials found"
+  },
+  {
+    "key": "vault.foraging.selected",
+    "en": "selected"
+  },
+  {
+    "key": "vault.foraging.import_to_vault_one",
+    "en": "Import {count} credential to vault"
+  },
+  {
+    "key": "vault.foraging.import_to_vault_other",
+    "en": "Import {count} credentials to vault"
+  },
+  {
+    "key": "vault.foraging.env_var_one",
+    "en": "{count} env var"
+  },
+  {
+    "key": "vault.foraging.env_var_other",
+    "en": "{count} env vars"
+  },
+  {
+    "key": "vault.foraging.import_server",
+    "en": "Import"
+  },
+  {
+    "key": "vault.foraging.sources_in",
+    "en": "sources in"
+  },
+  {
+    "key": "vault.foraging.progress_aria",
+    "en": "Foraging progress"
+  },
+  {
+    "key": "vault.foraging.scanned_sources",
+    "en": "Scanned {count} sources in {ms}ms"
+  },
+  {
+    "key": "vault.desktop_discovery.connect_description",
+    "en": "Connect local applications or import Claude Desktop MCP servers"
+  },
+  {
+    "key": "vault.desktop_discovery.detected_apps_tab",
+    "en": "Detected Apps ({count})"
+  },
+  {
+    "key": "vault.desktop_discovery.claude_mcp_tab",
+    "en": "Claude MCP ({count})"
+  },
+  {
+    "key": "vault.desktop_discovery.scanning",
+    "en": "Scanning for desktop apps..."
+  },
+  {
+    "key": "vault.desktop_discovery.detected_on_system",
+    "en": "Detected on your system"
+  },
+  {
+    "key": "vault.desktop_discovery.not_detected",
+    "en": "Not detected"
+  },
+  {
+    "key": "vault.desktop_discovery.no_apps",
+    "en": "No desktop apps detected. Try refreshing."
+  },
+  {
+    "key": "vault.desktop_discovery.reading_config",
+    "en": "Reading Claude Desktop config..."
+  },
+  {
+    "key": "vault.desktop_discovery.mcp_servers_found_one",
+    "en": "Found {count} MCP server in Claude Desktop configuration. Import them as credentials to use with your agents."
+  },
+  {
+    "key": "vault.desktop_discovery.mcp_servers_found_other",
+    "en": "Found {count} MCP servers in Claude Desktop configuration. Import them as credentials to use with your agents."
+  },
+  {
+    "key": "vault.desktop_discovery.no_mcp_config",
+    "en": "No Claude Desktop MCP configuration found."
+  },
+  {
+    "key": "vault.desktop_discovery.mcp_config_hint",
+    "en": "If you have Claude Desktop installed, ensure it has MCP servers configured in its settings."
+  },
+  {
+    "key": "vault.desktop_discovery.permission_required",
+    "en": "Permission Required"
+  },
+  {
+    "key": "vault.desktop_discovery.approve_description",
+    "en": "requests the following capabilities. Review and approve to enable this connector."
+  },
+  {
+    "key": "vault.desktop_discovery.approve_connect",
+    "en": "Approve & Connect"
+  },
+  {
+    "key": "vault.picker_section.credential_name",
+    "en": "Credential Name"
+  },
+  {
+    "key": "vault.picker_section.add_project_first",
+    "en": "Add a project in Dev Tools first to connect a codebase to your agents."
+  },
+  {
+    "key": "vault.picker_section.go_to_dev_tools",
+    "en": "Go to Dev Tools"
+  },
+  {
+    "key": "vault.picker_section.workspace_connect_description",
+    "en": "One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically"
+  },
+  {
+    "key": "vault.picker_section.foraging_description",
+    "en": "Scan your filesystem for existing API keys, AWS profiles, env vars, and more"
+  },
+  {
+    "key": "vault.picker_section.no_setup_guide",
+    "en": "No setup guide available for this connector. Visit the documentation link below for instructions."
+  },
+  {
+    "key": "vault.picker_section.open_setup_page",
+    "en": "Open {label} setup page"
+  },
+  {
+    "key": "vault.cli_capture.cta",
+    "en": "Import from local CLI"
+  },
+  {
+    "key": "vault.cli_capture.hint",
+    "en": "Use an already-logged-in local CLI instead of pasting an API key."
+  },
+  {
+    "key": "vault.cli_capture.running",
+    "en": "Running local CLI..."
+  },
+  {
+    "key": "vault.cli_capture.success",
+    "en": "Credentials captured from CLI"
+  },
+  {
+    "key": "vault.cli_capture.token_ttl_notice",
+    "en": "This token expires in {seconds}s and will be refreshed automatically."
+  },
+  {
+    "key": "vault.cli_capture.source_label",
+    "en": "CLI"
+  },
+  {
+    "key": "vault.cli_capture.missing_binary",
+    "en": "`{binary}` is not installed or is not in an allowlisted location."
+  },
+  {
+    "key": "vault.cli_capture.unauthenticated",
+    "en": "You are not signed in to {binary}. {instruction}"
+  },
+  {
+    "key": "vault.cli_capture.capture_failed",
+    "en": "CLI capture failed: {detail}"
+  },
+  {
+    "key": "vault.cli_capture.timeout",
+    "en": "CLI capture timed out. Try running the command manually first."
+  },
+  {
+    "key": "vault.design_phases.credential_saved_message",
+    "en": "{label} credential has been securely saved."
+  },
+  {
+    "key": "vault.design_phases.revision_count",
+    "en": "(revision {count})"
+  },
+  {
+    "key": "vault.design_phases.connector_added_to_catalog",
+    "en": "connector added to your catalog -- now available for other personas and template adoption."
+  },
+  {
+    "key": "vault.design_phases.view_credential",
+    "en": "View Credential"
+  },
+  {
+    "key": "vault.design_phases.refine_hint",
+    "en": "Need to adjust scopes, add fields, or tweak the configuration?"
+  },
+  {
+    "key": "vault.design_phases.refine_placeholder",
+    "en": "e.g. add write scopes, add staging environment..."
+  },
+  {
+    "key": "vault.design_phases.refine",
+    "en": "Refine"
+  },
+  {
+    "key": "vault.design_phases.linked_to_existing",
+    "en": "Your credential will be linked to the existing connector definition."
+  },
+  {
+    "key": "vault.design_phases.no_existing_connector",
+    "en": "-- no existing {name} connector was found in your catalog."
+  },
+  {
+    "key": "vault.design_phases.new_connector_will_be_registered",
+    "en": "When you save this credential, the AI-generated connector definition will be automatically registered in your connector catalog -- making it reusable for other personas and template adoption."
+  },
+  {
+    "key": "vault.design_phases.refine_request",
+    "en": "Not quite right? Refine your request"
+  },
+  {
+    "key": "vault.design_phases.auto_provision_hint",
+    "en": "-- let AI guide you through obtaining your {label} credentials step-by-step."
+  },
+  {
+    "key": "vault.design_phases.credential_name_label",
+    "en": "Credential Name"
+  },
+  {
+    "key": "vault.design_phases.credentials_secure_notice",
+    "en": "Credentials are stored securely in the app vault and are available for agent tool execution."
+  },
+  {
+    "key": "vault.design_phases.tested_successfully_at",
+    "en": "Tested successfully at {time}"
+  },
+  {
+    "key": "vault.design_phases.setup_instructions",
+    "en": "Setup instructions"
+  },
+  {
+    "key": "vault.design_phases.all_steps_complete",
+    "en": "All steps complete -- fill in the fields below and test your connection."
+  },
+  {
+    "key": "vault.design_phases.use_template",
+    "en": "Use"
+  },
+  {
+    "key": "vault.design_phases.recipe_used_one",
+    "en": "-- used {count} time"
+  },
+  {
+    "key": "vault.design_phases.recipe_used_other",
+    "en": "-- used {count} times"
+  },
+  {
+    "key": "vault.design_phases.instruction_placeholder",
+    "en": "e.g. Slack, OpenAI, GitHub, Stripe..."
+  },
+  {
+    "key": "vault.auto_cred_extra.browser_automation_warning",
+    "en": "Browser automation is running. Do not interact with the window — it will resume when complete."
+  },
+  {
+    "key": "vault.auto_cred_extra.desktop_bridge_title",
+    "en": "{{label}} requires the desktop app"
+  },
+  {
+    "key": "vault.auto_cred_extra.desktop_bridge_hint",
+    "en": "This connector drives a native browser session that only runs in the Personas desktop app."
+  },
+  {
+    "key": "vault.auto_cred_extra.review_extracted",
+    "en": "Review Extracted Credentials"
+  },
+  {
+    "key": "vault.auto_cred_extra.review_extracted_hint",
+    "en": "Values extracted from browser -- verify before saving"
+  },
+  {
+    "key": "vault.auto_cred_extra.completeness_partial",
+    "en": "{filled} of {total} required fields filled. Complete the missing fields before saving."
+  },
+  {
+    "key": "vault.auto_cred_extra.universal_auto_setup",
+    "en": "Universal Auto-Setup"
+  },
+  {
+    "key": "vault.auto_cred_extra.universal_auto_setup_hint",
+    "en": "Provide a URL and description, and AI will navigate the site to discover and create API credentials automatically."
+  },
+  {
+    "key": "vault.auto_cred_extra.service_url_label",
+    "en": "Service URL"
+  },
+  {
+    "key": "vault.auto_cred_extra.service_url_placeholder",
+    "en": "https://app.example.com or https://developer.example.com"
+  },
+  {
+    "key": "vault.auto_cred_extra.what_do_you_need",
+    "en": "What do you need?"
+  },
+  {
+    "key": "vault.auto_cred_extra.description_placeholder",
+    "en": "e.g. I need an API key for their REST API to read and write data. The developer portal has an API Keys section under Settings."
+  },
+  {
+    "key": "vault.auto_cred_extra.discover_credentials",
+    "en": "Discover Credentials"
+  },
+  {
+    "key": "vault.auto_cred_extra.discovered_label",
+    "en": "Discovered: {label}"
+  },
+  {
+    "key": "vault.auto_cred_extra.fields_discovered_one",
+    "en": "{count} field discovered"
+  },
+  {
+    "key": "vault.auto_cred_extra.fields_discovered_other",
+    "en": "{count} fields discovered"
+  },
+  {
+    "key": "vault.auto_cred_extra.extracted_values_label",
+    "en": "Extracted Values"
+  },
+  {
+    "key": "vault.auto_cred_extra.no_fields_discovered",
+    "en": "No fields were discovered. Try again with a more specific description."
+  },
+  {
+    "key": "vault.auto_cred_extra.fields_captured_partial",
+    "en": "{filled}/{total} fields captured"
+  },
+  {
+    "key": "vault.auto_cred_extra.credential_stored",
+    "en": "{label} credential has been securely stored."
+  },
+  {
+    "key": "vault.negotiator_extra.panel_title",
+    "en": "AI Credential Negotiator"
+  },
+  {
+    "key": "vault.negotiator_extra.planning_description",
+    "en": "AI is analyzing the developer portal and generating a step-by-step provisioning plan..."
+  },
+  {
+    "key": "vault.workspace_panel.selected_count",
+    "en": "{selected} of {total} selected"
+  },
+  {
+    "key": "vault.workspace_panel.select_all",
+    "en": "Select all"
+  },
+  {
+    "key": "vault.workspace_panel.connect_services_one",
+    "en": "Connect {count} service with one login"
+  },
+  {
+    "key": "vault.workspace_panel.connect_services_other",
+    "en": "Connect {count} services with one login"
+  },
+  {
+    "key": "vault.workspace_panel.granting_access_one",
+    "en": "This will grant access to {count} service"
+  },
+  {
+    "key": "vault.workspace_panel.granting_access_other",
+    "en": "This will grant access to {count} services"
+  },
+  {
+    "key": "vault.workspace_panel.credentials_created_one",
+    "en": "{count} credential created from a single login."
+  },
+  {
+    "key": "vault.workspace_panel.credentials_created_other",
+    "en": "{count} credentials created from a single login."
+  },
+  {
+    "key": "vault.workspace_panel.sign_in_browser",
+    "en": "Sign in with your Google account in the browser window."
+  },
+  {
+    "key": "deployment.api_playground.request_body_placeholder",
+    "en": "{ \"message\": \"Your prompt here...\" }"
+  },
+  {
+    "key": "deployment.connection.orchestrator_url_placeholder",
+    "en": "https://your-orchestrator.example.com"
+  },
+  {
+    "key": "deployment.deployments_panel.no_deployments_yet",
+    "en": "No deployments yet. Select a persona above to deploy it as a cloud API endpoint."
+  },
+  {
+    "key": "deployment.deployments_panel.active_deployments",
+    "en": "Active Deployments"
+  },
+  {
+    "key": "deployment.exec_detail.label_status",
+    "en": "Status:"
+  },
+  {
+    "key": "deployment.exec_detail.label_duration",
+    "en": "Duration:"
+  },
+  {
+    "key": "deployment.exec_detail.label_cost",
+    "en": "Cost:"
+  },
+  {
+    "key": "deployment.exec_detail.label_tokens",
+    "en": "Tokens:"
+  },
+  {
+    "key": "deployment.exec_detail.label_started",
+    "en": "Started:"
+  },
+  {
+    "key": "deployment.exec_detail.label_completed",
+    "en": "Completed:"
+  },
+  {
+    "key": "deployment.exec_detail.label_input",
+    "en": "Input:"
+  },
+  {
+    "key": "deployment.exec_detail.view_output",
+    "en": "View Output"
+  },
+  {
+    "key": "deployment.exec_detail.output_prefix",
+    "en": "Output ("
+  },
+  {
+    "key": "deployment.exec_detail.output_lines_suffix",
+    "en": "lines)"
+  },
+  {
+    "key": "deployment.oauth_panel.open_auth_window",
+    "en": "Open authorization window"
+  },
+  {
+    "key": "deployment.oauth_panel.complete_authorization",
+    "en": "Complete Authorization"
+  },
+  {
+    "key": "deployment.oauth_panel.refresh_token",
+    "en": "Refresh Token"
+  },
+  {
+    "key": "deployment.oauth_panel.open_authorization_window",
+    "en": "Open Authorization Window"
+  },
+  {
+    "key": "deployment.oauth_panel.token_unknown_msg",
+    "en": "Token validity could not be verified. Refresh the token to confirm it is still active."
+  },
+  {
+    "key": "deployment.oauth_panel.connect_anthropic_msg",
+    "en": "Connect your Anthropic account to enable OAuth-based authentication for cloud executions."
+  },
+  {
+    "key": "deployment.oauth_panel.token_expired_msg_prefix",
+    "en": "This OAuth token has expired"
+  },
+  {
+    "key": "deployment.trigger_form.cron_expression",
+    "en": "Cron Expression"
+  },
+  {
+    "key": "deployment.trigger_form.utc_suffix",
+    "en": "(UTC)"
+  },
+  {
+    "key": "deployment.trigger_form.webhook_info",
+    "en": "A webhook endpoint will be created for this trigger. You can configure payload filtering after creation."
+  },
+  {
+    "key": "deployment.chart.tooltip_runs",
+    "en": "Runs:"
+  },
+  {
+    "key": "deployment.chart.tooltip_cost",
+    "en": "Cost:"
+  },
+  {
+    "key": "deployment.chart.tooltip_success",
+    "en": "Success:"
+  },
+  {
+    "key": "deployment.deploy_card.budget_label",
+    "en": "Budget:"
+  },
+  {
+    "key": "deployment.deploy_card.label_invocations",
+    "en": "Invocations:"
+  },
+  {
+    "key": "deployment.deploy_card.label_last_called",
+    "en": "Last called:"
+  },
+  {
+    "key": "deployment.deploy_card.label_created",
+    "en": "Created:"
+  },
+  {
+    "key": "deployment.history.clear_filters",
+    "en": "Clear filters"
+  },
+  {
+    "key": "deployment.history.execution_history",
+    "en": "Execution History"
+  },
+  {
+    "key": "deployment.schedules.label_type",
+    "en": "Type:"
+  },
+  {
+    "key": "deployment.schedules.label_status",
+    "en": "Status:"
+  },
+  {
+    "key": "deployment.schedules.label_last_triggered",
+    "en": "Last triggered:"
+  },
+  {
+    "key": "deployment.schedules.label_next_trigger",
+    "en": "Next trigger:"
+  },
+  {
+    "key": "deployment.schedules.label_cron",
+    "en": "Cron:"
+  },
+  {
+    "key": "deployment.schedules.loading_firings",
+    "en": "Loading..."
+  },
+  {
+    "key": "sharing.enclave_hash_label",
+    "en": "Hash:"
+  },
+  {
+    "key": "sharing.refresh_peer_list",
+    "en": "Refresh peer list"
+  },
+  {
+    "key": "sharing.peer_list_stale",
+    "en": "Peer list may be stale —"
+  },
+  {
+    "key": "sharing.network_data_stale",
+    "en": "Network data may be stale —"
+  },
+  {
+    "key": "sharing.peer_id_footer",
+    "en": "Peer ID"
+  },
+  {
+    "key": "sharing.remove_exposure",
+    "en": "Remove exposure"
+  },
+  {
+    "key": "sharing.revoke_trust",
+    "en": "Revoke trust"
+  },
+  {
+    "key": "sharing.remove_peer",
+    "en": "Remove peer"
+  },
+  {
+    "key": "sharing.share_link_tooltip",
+    "en": "Generate a one-time share link (expires in 24h)"
+  },
+  {
+    "key": "sharing.copy_clipboard_tooltip",
+    "en": "Copy bundle as base64 to clipboard (max 256 KB)"
+  },
+  {
+    "key": "overview.messages.id_label",
+    "en": "ID:"
+  },
+  {
+    "key": "overview.messages.confirm_delete_title",
+    "en": "Confirm delete"
+  },
+  {
+    "key": "overview.messages.close_message",
+    "en": "Close message detail"
+  },
+  {
+    "key": "overview.memories.no_memories_hint",
+    "en": "When agents run, they can store valuable notes and learnings here."
+  },
+  {
+    "key": "overview.memories.no_memories_match",
+    "en": "No memories match current filters"
+  },
+  {
+    "key": "overview.memories.list_aria_label",
+    "en": "Memory list"
+  },
+  {
+    "key": "overview.memories.add_memory_btn",
+    "en": "Add Memory"
+  },
+  {
+    "key": "overview.memories.search_placeholder",
+    "en": "Search memories..."
+  },
+  {
+    "key": "overview.memories.no_filter_match",
+    "en": "No memories match your filters. Try adjusting your search."
+  },
+  {
+    "key": "overview.memory_review.all_conflicts_resolved",
+    "en": "All conflicts resolved"
+  },
+  {
+    "key": "overview.memory_review.keep_prefix",
+    "en": "Keep “"
+  },
+  {
+    "key": "overview.memory_review.keep_suffix",
+    "en": "”"
+  },
+  {
+    "key": "overview.leaderboard.fleet_avg",
+    "en": "Fleet avg:"
+  },
+  {
+    "key": "overview.leaderboard.refresh_label",
+    "en": "Refresh leaderboard"
+  },
+  {
+    "key": "overview.leaderboard.computing_scores",
+    "en": "Computing agent scores..."
+  },
+  {
+    "key": "overview.leaderboard.single_agent_has_data",
+    "en": "has data."
+  },
+  {
+    "key": "overview.leaderboard.add_more_agents",
+    "en": "Add more agents to see rankings. Currently only {name}"
+  },
+  {
+    "key": "overview.leaderboard.open_agent",
+    "en": "Open Agent"
+  },
+  {
+    "key": "overview.leaderboard.no_agent_data_title",
+    "en": "No agent data yet"
+  },
+  {
+    "key": "overview.leaderboard.no_agent_data_hint",
+    "en": "Run some agents to see performance rankings. The leaderboard needs execution history and health data to compute scores."
+  },
+  {
+    "key": "overview.health_extra.score_prefix",
+    "en": "Score:"
+  },
+  {
+    "key": "overview.health_extra.uptime_30d_prefix",
+    "en": "30d uptime:"
+  },
+  {
+    "key": "overview.health_extra.updated_prefix",
+    "en": "Updated"
+  },
+  {
+    "key": "overview.health_extra.consecutive_failures_one",
+    "en": "{count} consecutive failure"
+  },
+  {
+    "key": "overview.health_extra.consecutive_failures_other",
+    "en": "{count} consecutive failures"
+  },
+  {
+    "key": "overview.burn_rate_extra.active_personas_subtitle",
+    "en": "{count} active personas · local month boundary"
+  },
+  {
+    "key": "overview.predictive_alerts_extra.per_month",
+    "en": "/mo"
+  },
+  {
+    "key": "overview.predictive_alerts_extra.confidence_pct",
+    "en": "% conf"
+  },
+  {
+    "key": "overview.annotate_modal.annotation_placeholder",
+    "en": "e.g. Stripe webhook verification requires the raw request body, not the parsed JSON"
+  },
+  {
+    "key": "overview.knowledge_row.execution_trend_label",
+    "en": "Execution trend"
+  },
+  {
+    "key": "overview.knowledge_graph.mock_pattern",
+    "en": "Mock Pattern"
+  },
+  {
+    "key": "overview.knowledge_graph.seed_tooltip",
+    "en": "Seed a mock pattern (dev only)"
+  },
+  {
+    "key": "overview.knowledge_graph.all_types",
+    "en": "All Types"
+  },
+  {
+    "key": "overview.knowledge_graph.all_scopes",
+    "en": "All Scopes"
+  },
+  {
+    "key": "overview.knowledge_graph.failure_drilldown_prefix",
+    "en": "Failure drill-down:"
+  },
+  {
+    "key": "overview.knowledge_graph.failure_date_filter",
+    "en": "Showing failure patterns active on or after {date}"
+  },
+  {
+    "key": "overview.knowledge_graph.data_unavailable",
+    "en": "Knowledge data unavailable"
+  },
+  {
+    "key": "overview.knowledge_graph.loading_patterns",
+    "en": "Loading knowledge patterns..."
+  },
+  {
+    "key": "overview.knowledge_graph.drilldown_toggle_title",
+    "en": "Show/hide failure drill-down"
+  },
+  {
+    "key": "overview.knowledge_graph.no_patterns_yet",
+    "en": "No knowledge patterns yet"
+  },
+  {
+    "key": "overview.knowledge_graph.no_patterns_yet_hint",
+    "en": "Run agent executions to build up knowledge patterns. Agents get smarter over time."
+  },
+  {
+    "key": "overview.knowledge_graph.no_patterns_match",
+    "en": "No patterns match current filters"
+  },
+  {
+    "key": "overview.knowledge_graph.recent_learnings",
+    "en": "Recent Learnings"
+  },
+  {
+    "key": "overview.knowledge_graph.curating_manually",
+    "en": "Curating documents manually?"
+  },
+  {
+    "key": "overview.knowledge_graph.obsidian_tip",
+    "en": "For fewer than ~1000 notes, an Obsidian connector can sync your vault directly."
+  },
+  {
+    "key": "overview.focused_decision.video_not_supported",
+    "en": "Your browser does not support video playback."
+  },
+  {
+    "key": "overview.focused_decision.reject_this",
+    "en": "Reject this"
+  },
+  {
+    "key": "overview.focused_decision.accept_this",
+    "en": "Accept this"
+  },
+  {
+    "key": "overview.review_focus.video_not_supported",
+    "en": "Your browser does not support video playback."
+  },
+  {
+    "key": "overview.bulk_action_bar.pending_reviews_selected_one",
+    "en": "{count} pending review selected"
+  },
+  {
+    "key": "overview.bulk_action_bar.pending_reviews_selected_other",
+    "en": "{count} pending reviews selected"
+  },
+  {
+    "key": "overview.review_inbox.drag_to_resize",
+    "en": "Drag to resize"
+  },
+  {
+    "key": "overview.healing_issues_panel.ai_healing_title",
+    "en": "AI Healing"
+  },
+  {
+    "key": "overview.healing_issues_panel.diagnosis_label",
+    "en": "Diagnosis:"
+  },
+  {
+    "key": "overview.healing_issues_panel.fixes_applied",
+    "en": "Fixes Applied"
+  },
+  {
+    "key": "overview.healing_issues_panel.alert_history_title",
+    "en": "Alert History"
+  },
+  {
+    "key": "overview.healing_issues_panel.all_agents_global",
+    "en": "All agents (global)"
+  },
+  {
+    "key": "overview.healing_issues_panel.add_rule",
+    "en": "Add Rule"
+  },
+  {
+    "key": "overview.healing_issues_panel.no_rules_configured",
+    "en": "No alert rules configured. Add a rule to start monitoring."
+  },
+  {
+    "key": "overview.healing_issues_panel.confidence_pct_suffix",
+    "en": "% confidence"
+  },
+  {
+    "key": "overview.healing_issues_panel.spike_on",
+    "en": "spike on"
+  },
+  {
+    "key": "overview.healing_issues_panel.correlated_events_prefix",
+    "en": "Correlated Events ("
+  },
+  {
+    "key": "overview.healing_issues_panel.circuit_breaker_label",
+    "en": "circuit breaker"
+  },
+  {
+    "key": "overview.healing_issues_panel.auto_disabled_message",
+    "en": "This persona was automatically disabled as a circuit-breaker response to repeated failures."
+  },
+  {
+    "key": "overview.healing_issues_panel.execution_label",
+    "en": "Execution:"
+  },
+  {
+    "key": "overview.healing_issues_panel.issue_marked_as",
+    "en": "This issue is marked as"
+  },
+  {
+    "key": "overview.healing_issues_panel.retry_in_progress",
+    "en": "Retry in progress — status will update when complete."
+  },
+  {
+    "key": "overview.healing_issues_panel.resolve_issue_title",
+    "en": "Mark issue resolved"
+  },
+  {
+    "key": "templates.gallery.template_details_tabs_aria",
+    "en": "Template details"
+  },
+  {
+    "key": "templates.matrix.answer_cell",
+    "en": "Answer: {cell}"
+  },
+  {
+    "key": "templates.matrix.working_on",
+    "en": "Working on: {cells}"
+  },
+  {
+    "key": "templates.matrix.draft_ready_label",
+    "en": "Draft Ready"
+  },
+  {
+    "key": "templates.matrix.editing_cell",
+    "en": "Editing: {cell}"
+  },
+  {
+    "key": "templates.matrix.protocol_active",
+    "en": "Protocol Active"
+  },
+  {
+    "key": "templates.matrix.matrix_unavailable",
+    "en": "Matrix data unavailable."
+  },
+  {
+    "key": "templates.matrix.persona_matrix_title",
+    "en": "Persona Matrix"
+  },
+  {
+    "key": "templates.matrix.cell_status_analyzing",
+    "en": "Analyzing"
+  },
+  {
+    "key": "templates.matrix.cell_status_answered",
+    "en": "Answered"
+  },
+  {
+    "key": "templates.matrix.cell_status_resolved",
+    "en": "Resolved"
+  },
+  {
+    "key": "templates.matrix.cell_status_input_needed",
+    "en": "Input needed"
+  },
+  {
+    "key": "templates.matrix.cell_status_missing_credential",
+    "en": "Missing credential"
+  },
+  {
+    "key": "templates.matrix.cell_status_error",
+    "en": "Error"
+  },
+  {
+    "key": "templates.search.coverage_filter_aria",
+    "en": "Coverage filter"
+  },
+  {
+    "key": "templates.search.search_suggestions_aria",
+    "en": "Search suggestions"
+  },
+  {
+    "key": "templates.search.clear_search_aria",
+    "en": "Clear search"
+  },
+  {
+    "key": "templates.search.search_with_ai_aria",
+    "en": "Search with AI"
+  },
+  {
+    "key": "templates.questionnaire.previous_question",
+    "en": "Previous question"
+  },
+  {
+    "key": "templates.questionnaire.next_question",
+    "en": "Next question"
+  },
+  {
+    "key": "templates.questionnaire.go_to_question",
+    "en": "Go to question {number}"
+  },
+  {
+    "key": "templates.questionnaire.question_answered_suffix",
+    "en": " (answered)"
+  },
+  {
+    "key": "templates.questionnaire.question_unanswered_suffix",
+    "en": " (unanswered)"
+  },
+  {
+    "key": "templates.n8n.dropzone_aria",
+    "en": "Drop workflow file or click to browse"
+  },
+  {
+    "key": "templates.n8n.paste_aria",
+    "en": "Workflow JSON content"
+  },
+  {
+    "key": "templates.n8n.url_aria",
+    "en": "Workflow URL"
+  },
+  {
+    "key": "templates.n8n.url_placeholder",
+    "en": "https://raw.githubusercontent.com/.../workflow.json"
+  },
+  {
+    "key": "templates.n8n.url_format_github",
+    "en": "github.com/*/blob/*"
+  },
+  {
+    "key": "templates.n8n.url_format_gist",
+    "en": "gist.github.com/*"
+  },
+  {
+    "key": "templates.n8n.url_format_raw",
+    "en": "raw JSON endpoint"
+  },
+  {
+    "key": "templates.n8n.question_view_mode_aria",
+    "en": "Question view mode"
+  },
+  {
+    "key": "templates.n8n.wizard_progress_aria",
+    "en": "Import wizard progress"
+  },
+  {
+    "key": "templates.n8n.wizard_steps_aria",
+    "en": "Wizard steps"
+  },
+  {
+    "key": "templates.n8n.transform_progress_aria",
+    "en": "Transform progress"
+  },
+  {
+    "key": "templates.adopt_modal.credentials_required_title",
+    "en": "Credentials required"
+  },
+  {
+    "key": "templates.adopt_modal.credentials_required_body",
+    "en": "This template needs at least one credential from each category below before adoption can continue. Click \"Add credential\" — you'll return here automatically once setup is complete."
+  },
+  {
+    "key": "templates.adopt_modal.answered_of_total",
+    "en": "{answered} / {total} answered"
+  },
+  {
+    "key": "templates.adopt_modal.blocked_count",
+    "en": "{count} blocked"
+  },
+  {
+    "key": "templates.adopt_modal.question_number_of",
+    "en": "Question {current} of {total}"
+  },
+  {
+    "key": "templates.adopt_modal.question_number_aria",
+    "en": "Question {number}"
+  },
+  {
+    "key": "templates.adopt_modal.navigate_hint",
+    "en": "to navigate"
+  },
+  {
+    "key": "templates.adopt_modal.enter_to_advance",
+    "en": "to advance"
+  },
+  {
+    "key": "templates.adopt_modal.previous",
+    "en": "Previous"
+  },
+  {
+    "key": "templates.adopt_modal.next",
+    "en": "Next"
+  },
+  {
+    "key": "templates.adopt_modal.live_preview",
+    "en": "Live preview"
+  },
+  {
+    "key": "templates.adopt_modal.persona_label",
+    "en": "Persona"
+  },
+  {
+    "key": "templates.adopt_modal.untitled_agent",
+    "en": "Untitled agent"
+  },
+  {
+    "key": "templates.adopt_modal.not_yet_set",
+    "en": "Not yet set"
+  },
+  {
+    "key": "templates.adopt_modal.auto_badge",
+    "en": "auto"
+  },
+  {
+    "key": "templates.adopt_modal.jump_to_question_hint",
+    "en": "Click any row above to jump to that question. Auto-detected values are inferred from your connected credentials."
+  },
+  {
+    "key": "templates.adopt_modal.hide_explanation",
+    "en": "Hide explanation"
+  },
+  {
+    "key": "templates.adopt_modal.show_explanation",
+    "en": "Show explanation"
+  },
+  {
+    "key": "templates.adopt_modal.all_option",
+    "en": "All"
+  },
+  {
+    "key": "templates.adopt_modal.add_custom",
+    "en": "Add"
+  },
+  {
+    "key": "templates.adopt_modal.custom_prefix",
+    "en": "+ Custom…"
+  },
+  {
+    "key": "templates.adopt_modal.custom_plain",
+    "en": "Custom…"
+  },
+  {
+    "key": "templates.adopt_modal.type_your_answer",
+    "en": "Type your answer..."
+  },
+  {
+    "key": "templates.adopt_modal.describe_in_detail",
+    "en": "Describe in detail..."
+  },
+  {
+    "key": "templates.adopt_modal.select_directory",
+    "en": "Select a directory..."
+  },
+  {
+    "key": "templates.adopt_modal.type_a_value",
+    "en": "Type a value…"
+  },
+  {
+    "key": "templates.adopt_modal.preparing",
+    "en": "Preparing…"
+  },
+  {
+    "key": "templates.adopt_modal.waiting_for_parent",
+    "en": "Waiting for earlier answer…"
+  },
+  {
+    "key": "templates.adopt_modal.loading_from_service",
+    "en": "Loading options from {service}…"
+  },
+  {
+    "key": "templates.adopt_modal.loaded_live_from",
+    "en": "Loaded live from {service}"
+  },
+  {
+    "key": "templates.adopt_modal.no_items_found",
+    "en": "No {item} found. Create one in {service} first."
+  },
+  {
+    "key": "templates.adopt_modal.retry",
+    "en": "Retry"
+  },
+  {
+    "key": "templates.adopt_modal.source_local",
+    "en": "Local file or folder"
+  },
+  {
+    "key": "templates.adopt_modal.source_codebase",
+    "en": "Codebase"
+  },
+  {
+    "key": "templates.adopt_modal.source_database",
+    "en": "Database"
+  },
+  {
+    "key": "templates.adopt_modal.source_local_hint",
+    "en": "Paste a full local path to a file or folder."
+  },
+  {
+    "key": "templates.adopt_modal.source_codebase_hint",
+    "en": "Pick a project registered in Dev Tools."
+  },
+  {
+    "key": "templates.adopt_modal.source_database_hint",
+    "en": "Pick a database credential from your vault."
+  },
+  {
+    "key": "templates.adopt_modal.source_local_placeholder",
+    "en": "/Users/me/project/design.md"
+  },
+  {
+    "key": "templates.adopt_modal.source_no_codebases",
+    "en": "No Dev Tools projects found. Register one in Dev Tools first."
+  },
+  {
+    "key": "templates.adopt_modal.source_no_databases",
+    "en": "No database credentials found. Add one in the Vault first."
+  },
+  {
+    "key": "templates.adopt_modal.source_pick_codebase",
+    "en": "Select a codebase…"
+  },
+  {
+    "key": "templates.adopt_modal.source_pick_database",
+    "en": "Select a database…"
+  },
+  {
+    "key": "templates.matrix_variants.command_center_header",
+    "en": "COMMAND CENTER // BUILD v1.0"
+  },
+  {
+    "key": "templates.matrix_variants.phase_label",
+    "en": "[PHASE: {phase}]"
+  },
+  {
+    "key": "templates.matrix_variants.your_answer_placeholder",
+    "en": "Your answer..."
+  },
+  {
+    "key": "templates.matrix_variants.testing_background_hint",
+    "en": "This may take a few minutes. You can leave this page and come back later — testing continues in the background."
+  },
+  {
+    "key": "templates.matrix_variants.cancel_test",
+    "en": "Cancel Test"
+  },
+  {
+    "key": "templates.matrix_variants.missing_keys",
+    "en": "Missing keys:"
+  },
+  {
+    "key": "templates.matrix_variants.approve_anyway",
+    "en": "Approve Anyway"
+  },
+  {
+    "key": "templates.matrix_variants.delete_draft_title",
+    "en": "Discard this draft persona and close"
+  },
+  {
+    "key": "templates.matrix_variants.delete_draft",
+    "en": "Delete Draft"
+  },
+  {
+    "key": "templates.matrix_variants.agent_promoted",
+    "en": "Agent Promoted"
+  },
+  {
+    "key": "templates.matrix_variants.view_agent",
+    "en": "View Agent"
+  },
+  {
+    "key": "templates.diagrams.close_dialog",
+    "en": "Close dialog"
+  },
+  {
+    "key": "templates.generation.back",
+    "en": "Back"
+  },
+  {
+    "key": "templates.generation.generate_template",
+    "en": "Generate Template"
+  },
+  {
+    "key": "templates.generation.view_draft",
+    "en": "View Draft"
+  },
+  {
+    "key": "templates.generation.saving",
+    "en": "Saving..."
+  },
+  {
+    "key": "templates.generation.save_template",
+    "en": "Save Template"
+  },
+  {
+    "key": "templates.generation.template_saved",
+    "en": "Template Saved"
+  },
+  {
+    "key": "templates.generation.template_name_label_step",
+    "en": "Template Name"
+  },
+  {
+    "key": "templates.generation.template_name_placeholder",
+    "en": "Template name..."
+  },
+  {
+    "key": "templates.generation.description_label",
+    "en": "Description"
+  },
+  {
+    "key": "templates.generation.description_placeholder",
+    "en": "Describe what this persona should do, what services it connects to, and how it should behave. Be specific about tools, triggers, and integrations needed.\n\nExample: A persona that monitors a Gmail inbox for important emails, classifies them by priority, sends Slack notifications for urgent ones, and creates a daily digest summary."
+  },
+  {
+    "key": "templates.generation.description_hint",
+    "en": "The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables."
+  },
+  {
+    "key": "templates.generation.terminal_aria_label",
+    "en": "Design review output"
+  },
+  {
+    "key": "templates.generation.terminal_placeholder",
+    "en": "Output will appear here when the review starts"
+  },
+  {
+    "key": "templates.generation.terminal_running",
+    "en": "Running..."
+  },
+  {
+    "key": "templates.generation.result_passed",
+    "en": "{count} passed"
+  },
+  {
+    "key": "templates.generation.result_failed",
+    "en": "{count} failed"
+  },
+  {
+    "key": "templates.generation.result_errored",
+    "en": "{count} errors"
+  },
+  {
+    "key": "templates.generation.result_total",
+    "en": "{count} total tests"
+  },
+  {
+    "key": "templates.generation.mode_predefined",
+    "en": "Predefined (5)"
+  },
+  {
+    "key": "templates.generation.mode_custom",
+    "en": "Custom"
+  },
+  {
+    "key": "templates.generation.mode_batch",
+    "en": "Batch"
+  },
+  {
+    "key": "templates.generation.mode_batch_count",
+    "en": "Batch ({count})"
+  },
+  {
+    "key": "templates.generation.batch_upload_hint",
+    "en": "Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI."
+  },
+  {
+    "key": "templates.generation.batch_upload_btn",
+    "en": "Upload list.md"
+  },
+  {
+    "key": "templates.generation.batch_format_hint",
+    "en": "Expected format:"
+  },
+  {
+    "key": "templates.generation.batch_all",
+    "en": "All ({count})"
+  },
+  {
+    "key": "templates.generation.batch_count",
+    "en": "{count} template{plural} will be generated via Claude CLI (~45s each)"
+  },
+  {
+    "key": "templates.generation.batch_clear",
+    "en": "Clear"
+  },
+  {
+    "key": "templates.generation.batch_format_example",
+    "en": "**1. Template Name**"
+  },
+  {
+    "key": "templates.generation.custom_count",
+    "en": "Define template use cases ({count} ready)"
+  },
+  {
+    "key": "templates.generation.custom_load_file_title",
+    "en": "Load from .txt or .md file"
+  },
+  {
+    "key": "templates.generation.custom_load_file",
+    "en": "Load file"
+  },
+  {
+    "key": "templates.generation.custom_add",
+    "en": "Add"
+  },
+  {
+    "key": "templates.generation.custom_case_name_placeholder",
+    "en": "Template name (e.g. Gmail Smart Filter)"
+  },
+  {
+    "key": "templates.generation.custom_instruction_placeholder",
+    "en": "Describe what this persona should do, which services to integrate, and what triggers should activate it..."
+  },
+  {
+    "key": "templates.generation.custom_short_instruction",
+    "en": "{current}/{min} characters minimum"
+  },
+  {
+    "key": "templates.generation.custom_category_default",
+    "en": "Category..."
+  },
+  {
+    "key": "templates.generation.custom_trigger_default",
+    "en": "Trigger..."
+  },
+  {
+    "key": "templates.generation.custom_connectors_placeholder",
+    "en": "Connectors (e.g. gmail, slack)"
+  },
+  {
+    "key": "templates.generation.custom_detail_hint",
+    "en": "More detail = better results. Include services, triggers, and expected behavior."
+  },
+  {
+    "key": "templates.generation.custom_show_example",
+    "en": "Show example"
+  },
+  {
+    "key": "templates.generation.custom_hide_example",
+    "en": "Hide example"
+  },
+  {
+    "key": "templates.generation.custom_example_title",
+    "en": "Example: Gmail Smart Filter"
+  },
+  {
+    "key": "templates.generation.custom_example_body",
+    "en": "\"Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.\""
+  },
+  {
+    "key": "templates.generation.predefined_intro",
+    "en": "Runs {count} predefined use cases through the design engine:"
+  },
+  {
+    "key": "templates.connector_edit.table_name_placeholder",
+    "en": "e.g. persona_data"
+  },
+  {
+    "key": "templates.trigger_edit.webhook_url_placeholder",
+    "en": "https://..."
+  },
+  {
+    "key": "triggers.cron_colon",
+    "en": "Cron:"
+  },
+  {
+    "key": "triggers.interval_colon",
+    "en": "Interval:"
+  },
+  {
+    "key": "triggers.event_colon",
+    "en": "Event:"
+  },
+  {
+    "key": "triggers.endpoint_colon",
+    "en": "Endpoint:"
+  },
+  {
+    "key": "triggers.listens_for_colon",
+    "en": "Listens for:"
+  },
+  {
+    "key": "triggers.source_filter_colon",
+    "en": "Source filter:"
+  },
+  {
+    "key": "triggers.hmac_colon",
+    "en": "HMAC:"
+  },
+  {
+    "key": "triggers.paths_colon",
+    "en": "Paths:"
+  },
+  {
+    "key": "triggers.events_colon",
+    "en": "Events:"
+  },
+  {
+    "key": "triggers.recursive_yes",
+    "en": "Recursive: yes"
+  },
+  {
+    "key": "triggers.filter_colon",
+    "en": "Filter:"
+  },
+  {
+    "key": "triggers.watches_colon",
+    "en": "Watches:"
+  },
+  {
+    "key": "triggers.pattern_colon",
+    "en": "Pattern:"
+  },
+  {
+    "key": "triggers.poll_every",
+    "en": "Poll: every"
+  },
+  {
+    "key": "triggers.apps_colon",
+    "en": "Apps:"
+  },
+  {
+    "key": "triggers.title_colon",
+    "en": "Title:"
+  },
+  {
+    "key": "triggers.operator_colon",
+    "en": "Operator:"
+  },
+  {
+    "key": "triggers.window_colon",
+    "en": "Window:"
+  },
+  {
+    "key": "triggers.id_colon",
+    "en": "ID:"
+  },
+  {
+    "key": "triggers.type_colon",
+    "en": "Type:"
+  },
+  {
+    "key": "triggers.status_colon",
+    "en": "Status:"
+  },
+  {
+    "key": "triggers.target_colon",
+    "en": "Target:"
+  },
+  {
+    "key": "triggers.retry_hash",
+    "en": "retry #"
+  },
+  {
+    "key": "triggers.model_colon",
+    "en": "model:"
+  },
+  {
+    "key": "triggers.next_run_colon",
+    "en": "next run:"
+  },
+  {
+    "key": "triggers.local_label",
+    "en": "(local)"
+  },
+  {
+    "key": "triggers.then_every",
+    "en": ", then every"
+  },
+  {
+    "key": "triggers.source_colon",
+    "en": "source:"
+  },
+  {
+    "key": "triggers.dry_run_target_colon",
+    "en": "target:"
+  },
+  {
+    "key": "triggers.matched_subscriptions_count",
+    "en": "Matched Subscriptions ({count})"
+  },
+  {
+    "key": "triggers.last_label",
+    "en": "Last:"
+  },
+  {
+    "key": "triggers.loading_history",
+    "en": "Loading..."
+  },
+  {
+    "key": "triggers.zero_unlimited",
+    "en": "0 = unlimited"
+  },
+  {
+    "key": "triggers.category_section_label",
+    "en": "Trigger Category"
+  },
+  {
+    "key": "triggers.no_persona_selected",
+    "en": "No persona selected"
+  },
+  {
+    "key": "triggers.quick_templates_label",
+    "en": "Quick Templates"
+  },
+  {
+    "key": "triggers.quick_presets_label",
+    "en": "Quick Presets"
+  },
+  {
+    "key": "triggers.cron_expression_label",
+    "en": "Cron Expression"
+  },
+  {
+    "key": "triggers.this_persona_will",
+    "en": "This persona will"
+  },
+  {
+    "key": "triggers.starting_from",
+    "en": ", starting from when you enable it."
+  },
+  {
+    "key": "triggers.per_day",
+    "en": "per day."
+  },
+  {
+    "key": "triggers.last_poll_label",
+    "en": "Last poll:"
+  },
+  {
+    "key": "triggers.deployed_persona_label",
+    "en": "Deployed Persona"
+  },
+  {
+    "key": "triggers.fired_at_label",
+    "en": "Fired At"
+  },
+  {
+    "key": "triggers.webhook_last_label",
+    "en": "Last:"
+  },
+  {
+    "key": "triggers.relay_last_label",
+    "en": "Last:"
+  },
+  {
+    "key": "triggers.optional_label",
+    "en": "(optional)"
+  },
+  {
+    "key": "triggers.optional_comma_separated",
+    "en": "(optional, comma-separated)"
+  },
+  {
+    "key": "triggers.get_channel_url_from",
+    "en": "Get a channel URL from"
+  },
+  {
+    "key": "triggers.setup_step1",
+    "en": "Visit smee.io/new to create a free relay channel"
+  },
+  {
+    "key": "triggers.setup_step2",
+    "en": "Add the relay here with a label and the channel URL"
+  },
+  {
+    "key": "triggers.setup_step3",
+    "en": "Paste the channel URL as a webhook in GitHub / Stripe / any service"
+  },
+  {
+    "key": "triggers.setup_step4",
+    "en": "Events appear in Live Stream and route to your agents automatically"
+  },
+  {
+    "key": "triggers.studio_empty_desc",
+    "en": "Compose reactive event flows across your personas. Use trigger types as building blocks, add conditional branching and parallel fan-out to create intelligent automation chains."
+  },
+  {
+    "key": "triggers.studio_step1",
+    "en": "1. Add trigger sources from the sidebar (Schedule, Webhook, ...)"
+  },
+  {
+    "key": "triggers.studio_step2",
+    "en": "2. Add persona steps to process events"
+  },
+  {
+    "key": "triggers.studio_step3",
+    "en": "3. Connect them to build reactive chains"
+  },
+  {
+    "key": "triggers.studio_step4",
+    "en": "4. Use condition gates for routing logic"
+  },
+  {
+    "key": "triggers.gate_if_else",
+    "en": "If / Else"
+  },
+  {
+    "key": "triggers.gate_if_else_desc",
+    "en": "Binary conditional branch"
+  },
+  {
+    "key": "triggers.gate_classifier_desc",
+    "en": "Multi-way routing (support, sales, ...)"
+  },
+  {
+    "key": "triggers.gate_fan_out",
+    "en": "Fan-Out (Parallel)"
+  },
+  {
+    "key": "triggers.gate_fan_out_desc",
+    "en": "Run multiple branches in parallel"
+  },
+  {
+    "key": "triggers.palette_help",
+    "en": "Connect trigger sources to persona steps to build reactive chains. Add condition gates for branching logic and parallel fan-out."
+  },
+  {
+    "key": "triggers.toolbar_title_auto_layout",
+    "en": "Auto Layout"
+  },
+  {
+    "key": "triggers.toolbar_title_add_note",
+    "en": "Add Sticky Note"
+  },
+  {
+    "key": "triggers.toolbar_title_start_dry_run",
+    "en": "Start Dry Run"
+  },
+  {
+    "key": "triggers.toolbar_title_stop_dry_run",
+    "en": "Stop Dry Run"
+  },
+  {
+    "key": "triggers.toolbar_title_assistant",
+    "en": "Canvas Assistant"
+  },
+  {
+    "key": "triggers.toolbar_dry_run",
+    "en": "Dry Run"
+  },
+  {
+    "key": "triggers.canvas_assistant_title",
+    "en": "Canvas Assistant"
+  },
+  {
+    "key": "triggers.try_asking_hint",
+    "en": "Try asking"
+  },
+  {
+    "key": "triggers.assistant_placeholder",
+    "en": "Describe your event topology..."
+  },
+  {
+    "key": "triggers.disconnect_persona_title",
+    "en": "Disconnect persona?"
+  },
+  {
+    "key": "triggers.disconnect_will_no_longer",
+    "en": "will no longer react to"
+  },
+  {
+    "key": "triggers.disconnect_events_reconnect",
+    "en": "events. You can reconnect later."
+  },
+  {
+    "key": "triggers.rename_also_updates",
+    "en": "Also updates historical events, persona event handlers, and trigger audit metadata."
+  },
+  {
+    "key": "triggers.delete_connection_label",
+    "en": "Delete connection"
+  },
+  {
+    "key": "triggers.search_personas_placeholder",
+    "en": "Search personas..."
+  },
+  {
+    "key": "triggers.no_matching_personas_found",
+    "en": "No matching personas found"
+  },
+  {
+    "key": "triggers.clear_search_label",
+    "en": "Clear search"
+  },
+  {
+    "key": "triggers.dead_letter_source",
+    "en": "Source:"
+  },
+  {
+    "key": "triggers.dead_letter_id",
+    "en": "ID:"
+  },
+  {
+    "key": "triggers.event_data_label",
+    "en": "Event Data"
+  },
+  {
+    "key": "triggers.shared_prefix",
+    "en": "shared:"
+  },
+  {
+    "key": "triggers.nl_type_colon",
+    "en": "Type:"
+  },
+  {
+    "key": "triggers.nl_cron_colon",
+    "en": "· Cron:"
+  },
+  {
+    "key": "triggers.nl_interval_colon",
+    "en": "· Interval:"
+  },
+  {
+    "key": "triggers.nl_filter_colon",
+    "en": "· Filter:"
+  },
+  {
+    "key": "triggers.nl_could_not_parse",
+    "en": "Could not parse a trigger from that description. Try something like"
+  },
+  {
+    "key": "triggers.active_hours_every_day",
+    "en": "Every day"
+  },
+  {
+    "key": "triggers.event_type_to_listen",
+    "en": "Event Type to Listen For"
+  },
+  {
+    "key": "triggers.event_type_input_placeholder",
+    "en": "e.g. file_changed, execution_completed"
+  },
+  {
+    "key": "triggers.event_type_helper",
+    "en": "Type to search registered event types, or enter a custom type."
+  },
+  {
+    "key": "triggers.source_filter_optional_label",
+    "en": "(optional)"
+  },
+  {
+    "key": "triggers.wildcard_hint",
+    "en": "— trailing * prefix wildcard supported"
+  },
+  {
+    "key": "triggers.window_title_pattern_label",
+    "en": "Window Title Pattern"
+  },
+  {
+    "key": "triggers.optional_regex_label",
+    "en": "(optional regex)"
+  },
+  {
+    "key": "triggers.text_pattern_label",
+    "en": "Text Pattern"
+  },
+  {
+    "key": "triggers.credential_event_label",
+    "en": "Credential Event"
+  },
+  {
+    "key": "triggers.refresh_label",
+    "en": "Refresh"
+  },
+  {
+    "key": "triggers.copy_webhook_url_title",
+    "en": "Copy webhook URL"
+  },
+  {
+    "key": "triggers.copy_webhook_secret_title",
+    "en": "Copy webhook secret"
+  },
+  {
+    "key": "triggers.delete_webhook_title",
+    "en": "Delete webhook trigger"
+  },
+  {
+    "key": "triggers.status_col_label",
+    "en": "Status"
+  },
+  {
+    "key": "triggers.duration_col_label",
+    "en": "Duration"
+  },
+  {
+    "key": "triggers.cost_col_label",
+    "en": "Cost"
+  },
+  {
+    "key": "triggers.dead_letter_refresh",
+    "en": "Refresh"
+  },
+  {
+    "key": "triggers.dead_letter_loading",
+    "en": "Loading..."
+  },
+  {
+    "key": "triggers.dead_letter_retry",
+    "en": "Retry"
+  },
+  {
+    "key": "triggers.dead_letter_discard",
+    "en": "Discard"
+  },
+  {
+    "key": "triggers.dead_letter_payload",
+    "en": "Payload"
+  },
+  {
+    "key": "triggers.event_data_section_label",
+    "en": "Event Data"
+  },
+  {
+    "key": "triggers.copy_event_data_title",
+    "en": "Copy event data"
+  },
+  {
+    "key": "triggers.copied_label",
+    "en": "Copied"
+  },
+  {
+    "key": "triggers.error_section_label",
+    "en": "Error"
+  },
+  {
+    "key": "triggers.meta_event_id",
+    "en": "Event ID"
+  },
+  {
+    "key": "triggers.meta_project",
+    "en": "Project"
+  },
+  {
+    "key": "triggers.meta_processed",
+    "en": "Processed"
+  },
+  {
+    "key": "triggers.clear_stream",
+    "en": "Clear"
+  },
+  {
+    "key": "triggers.clear_stream_title",
+    "en": "Clear stream buffer"
+  },
+  {
+    "key": "triggers.col_type",
+    "en": "Type"
+  },
+  {
+    "key": "triggers.col_source",
+    "en": "Source"
+  },
+  {
+    "key": "triggers.col_target_agent",
+    "en": "Target Agent"
+  },
+  {
+    "key": "triggers.col_status",
+    "en": "Status"
+  },
+  {
+    "key": "triggers.col_time",
+    "en": "Time"
+  },
+  {
+    "key": "triggers.queued_bare",
+    "en": "queued"
+  },
+  {
+    "key": "triggers.pause_tooltip",
+    "en": "Pause incoming events"
+  },
+  {
+    "key": "triggers.resume_tooltip",
+    "en": "Resume live updates"
+  },
+  {
+    "key": "triggers.relay_label_field",
+    "en": "Label"
+  },
+  {
+    "key": "triggers.relay_channel_url_field",
+    "en": "Channel URL"
+  },
+  {
+    "key": "triggers.relay_route_to_agent",
+    "en": "Route to Agent"
+  },
+  {
+    "key": "triggers.optional_suffix",
+    "en": "(optional)"
+  },
+  {
+    "key": "triggers.relay_event_filter_field",
+    "en": "Event Filter"
+  },
+  {
+    "key": "triggers.relay_event_filter_note",
+    "en": "(optional, comma-separated)"
+  },
+  {
+    "key": "triggers.relay_confirm_delete",
+    "en": "Confirm"
+  },
+  {
+    "key": "triggers.setup_guide_step2",
+    "en": "Add the relay here with a label and the channel URL"
+  },
+  {
+    "key": "triggers.setup_guide_step3",
+    "en": "Paste the channel URL as a webhook in GitHub / Stripe / any service"
+  },
+  {
+    "key": "triggers.setup_guide_step4",
+    "en": "Events appear in Live Stream and route to your agents automatically"
+  },
+  {
+    "key": "triggers.get_channel_url_prompt",
+    "en": "Get a channel URL from"
+  },
+  {
+    "key": "triggers.gate_if_else_label",
+    "en": "If / Else"
+  },
+  {
+    "key": "triggers.gate_if_else_description",
+    "en": "Binary conditional branch"
+  },
+  {
+    "key": "triggers.gate_classifier_label",
+    "en": "Classifier"
+  },
+  {
+    "key": "triggers.gate_classifier_description",
+    "en": "Multi-way routing (support, sales, ...)"
+  },
+  {
+    "key": "triggers.gate_fan_out_label",
+    "en": "Fan-Out (Parallel)"
+  },
+  {
+    "key": "triggers.gate_fan_out_description",
+    "en": "Run multiple branches in parallel"
+  },
+  {
+    "key": "triggers.palette_help_text",
+    "en": "Connect trigger sources to persona steps to build reactive chains. Add condition gates for branching logic and parallel fan-out."
+  },
+  {
+    "key": "triggers.test_event_type_placeholder",
+    "en": "e.g. build_complete, deploy, file_changed"
+  },
+  {
+    "key": "triggers.result_id_prefix",
+    "en": "ID:"
+  },
+  {
+    "key": "triggers.result_type_prefix",
+    "en": "Type:"
+  },
+  {
+    "key": "triggers.result_status_prefix",
+    "en": "Status:"
+  },
+  {
+    "key": "triggers.result_target_prefix",
+    "en": "Target:"
+  },
+  {
+    "key": "triggers.tab_loading",
+    "en": "Loading..."
+  },
+  {
+    "key": "triggers.smee_open_new_title",
+    "en": "Open smee.io/new to create a channel"
+  },
+  {
+    "key": "triggers.relay_label_placeholder",
+    "en": "e.g. GitHub — my-repo"
+  },
+  {
+    "key": "triggers.relay_channel_url_placeholder",
+    "en": "https://smee.io/your-channel-id"
+  },
+  {
+    "key": "triggers.relay_filter_placeholder",
+    "en": "github_push, github_pull_request"
+  },
+  {
+    "key": "triggers.dead_letter_retry_exhausted_title",
+    "en": "Retry limit exhausted — discard or investigate the root cause"
+  },
+  {
+    "key": "triggers.dead_letter_discard_title",
+    "en": "Discard this event permanently"
+  },
+  {
+    "key": "triggers.dead_letter_retry_title",
+    "en": "Retry this event"
+  },
+  {
+    "key": "triggers.replay_button_title",
+    "en": "Re-fire with the same input payload"
+  },
+  {
+    "key": "triggers.interval_seconds_placeholder",
+    "en": "Seconds (min 60)"
+  },
+  {
+    "key": "triggers.cron_expression_placeholder",
+    "en": "* * * * *  (min hour dom mon dow)"
+  },
+  {
+    "key": "triggers.app_focus_window_placeholder",
+    "en": "e.g. .*.rs$ or Project - Visual Studio"
+  },
+  {
+    "key": "triggers.app_focus_process_placeholder",
+    "en": "e.g. Code.exe or firefox"
+  },
+  {
+    "key": "triggers.field_optional",
+    "en": "(optional)"
+  },
+  {
+    "key": "triggers.source_filter_input_placeholder",
+    "en": "e.g. watcher-* or exact-source-id"
+  },
+  {
+    "key": "triggers.meta_source",
+    "en": "Source"
+  },
+  {
+    "key": "triggers.relay_last_event",
+    "en": "Last:"
+  },
+  {
+    "key": "triggers.relay_delete_title",
+    "en": "Delete relay"
+  },
+  {
+    "key": "triggers.setup_guide_step1",
+    "en": "Create a channel at smee.io/new"
+  },
+  {
+    "key": "triggers.clipboard_pattern_placeholder",
+    "en": "e.g. https?://.* or error|exception"
+  },
+  {
+    "key": "triggers.composite_event_type_placeholder",
+    "en": "Event type (e.g. file_changed)"
+  },
+  {
+    "key": "triggers.composite_debounce_placeholder",
+    "en": "300"
+  },
+  {
+    "key": "triggers.file_watcher_path_placeholder",
+    "en": "C:/Users/me/projects or /home/me/src"
+  },
+  {
+    "key": "triggers.file_watcher_pattern_placeholder",
+    "en": "e.g. *.py, *.{ts,tsx}, Dockerfile"
+  },
+  {
+    "key": "triggers.polling_endpoint_placeholder",
+    "en": "https://api.example.com/poll"
+  },
+  {
+    "key": "triggers.more_tools_title",
+    "en": "More tools"
+  },
+  {
+    "key": "triggers.validate_and_fire_title",
+    "en": "Validate trigger config, then fire"
+  },
+  {
+    "key": "triggers.simulate_trigger_title",
+    "en": "Simulate trigger without executing"
+  },
+  {
+    "key": "settings.settings_saved",
+    "en": "Saved"
+  },
+  {
+    "key": "settings.account.telemetry_toggle_aria",
+    "en": "Toggle telemetry"
+  },
+  {
+    "key": "settings.appearance.reset_to_auto",
+    "en": "Reset to auto"
+  },
+  {
+    "key": "settings.engine.engine_not_capable",
+    "en": "{provider} has not passed integration tests for this operation. Results may be unparseable."
+  },
+  {
+    "key": "settings.byom.model_placeholder",
+    "en": "e.g. claude-haiku-4-5-20251001"
+  },
+  {
+    "key": "settings.portability.import_personas",
+    "en": "{count} persona(s)"
+  },
+  {
+    "key": "settings.portability.import_teams",
+    "en": "{count} team(s)"
+  },
+  {
+    "key": "settings.portability.import_tools",
+    "en": "{count} tool(s)"
+  },
+  {
+    "key": "settings.portability.import_groups",
+    "en": "{count} group(s)"
+  },
+  {
+    "key": "settings.portability.import_credentials_count",
+    "en": "{count} credential(s)"
+  },
+  {
+    "key": "design.conversation_truncated",
+    "en": "This conversation reached the message limit. Older messages have been removed — consider starting a new conversation to preserve context."
+  },
+  {
+    "key": "schedules.missed_since",
+    "en": "{count} missed since {time}"
+  },
+  {
+    "key": "schedules.every_interval",
+    "en": "every {interval}"
+  },
+  {
+    "key": "schedules.mark_for_recovery",
+    "en": "Mark for recovery"
+  },
+  {
+    "key": "schedules.run_once_now",
+    "en": "Run once now"
+  },
+  {
+    "key": "schedules.skip_dont_recover",
+    "en": "Skip -- don't recover"
+  },
+  {
+    "key": "schedules.overlaps_with",
+    "en": "Overlaps with"
+  },
+  {
+    "key": "schedules.refresh_schedules",
+    "en": "Refresh schedules"
+  },
+  {
+    "key": "schedules.seed_mock_tooltip",
+    "en": "Seed a mock schedule (dev only)"
+  },
+  {
+    "key": "schedules.schedule_view_aria",
+    "en": "Schedule view"
+  },
+  {
+    "key": "recipes.recipe_label",
+    "en": "Recipe:"
+  },
+  {
+    "key": "recipes.executed_label",
+    "en": "Executed:"
+  },
+  {
+    "key": "plugins.drive_label",
+    "en": "Drive"
+  },
+  {
+    "key": "plugins.drive_desc",
+    "en": "Managed local filesystem where agents save exports. Browse files in a Finder-style UI; survives app upgrades."
+  },
+  {
+    "key": "plugins.drive.title",
+    "en": "Drive"
+  },
+  {
+    "key": "plugins.drive.subtitle",
+    "en": "Managed local filesystem for agent exports"
+  },
+  {
+    "key": "plugins.drive.root_label",
+    "en": "Drive root"
+  },
+  {
+    "key": "plugins.drive.dev_badge",
+    "en": "Dev"
+  },
+  {
+    "key": "plugins.drive.back",
+    "en": "Back"
+  },
+  {
+    "key": "plugins.drive.forward",
+    "en": "Forward"
+  },
+  {
+    "key": "plugins.drive.up",
+    "en": "Up"
+  },
+  {
+    "key": "plugins.drive.refresh",
+    "en": "Refresh"
+  },
+  {
+    "key": "plugins.drive.search_placeholder",
+    "en": "Search this folder..."
+  },
+  {
+    "key": "plugins.drive.view_list",
+    "en": "List"
+  },
+  {
+    "key": "plugins.drive.view_icons",
+    "en": "Icons"
+  },
+  {
+    "key": "plugins.drive.view_columns",
+    "en": "Columns"
+  },
+  {
+    "key": "plugins.drive.new_folder",
+    "en": "New Folder"
+  },
+  {
+    "key": "plugins.drive.new_file",
+    "en": "New File"
+  },
+  {
+    "key": "plugins.drive.reveal_in_os",
+    "en": "Show in file manager"
+  },
+  {
+    "key": "plugins.drive.open_in_os",
+    "en": "Open"
+  },
+  {
+    "key": "plugins.drive.sidebar_root",
+    "en": "Drive"
+  },
+  {
+    "key": "plugins.drive.sidebar_recent",
+    "en": "Recent"
+  },
+  {
+    "key": "plugins.drive.sidebar_storage",
+    "en": "Storage"
+  },
+  {
+    "key": "plugins.drive.storage_used",
+    "en": "{used} used • {count} items"
+  },
+  {
+    "key": "plugins.drive.empty_folder",
+    "en": "This folder is empty"
+  },
+  {
+    "key": "plugins.drive.empty_hint",
+    "en": "Agents that export to Local Drive will save files here."
+  },
+  {
+    "key": "plugins.drive.empty_cta",
+    "en": "Create folder"
+  },
+  {
+    "key": "plugins.drive.col_name",
+    "en": "Name"
+  },
+  {
+    "key": "plugins.drive.col_size",
+    "en": "Size"
+  },
+  {
+    "key": "plugins.drive.col_kind",
+    "en": "Kind"
+  },
+  {
+    "key": "plugins.drive.col_modified",
+    "en": "Modified"
+  },
+  {
+    "key": "plugins.drive.folder_kind",
+    "en": "Folder"
+  },
+  {
+    "key": "plugins.drive.ctx_open",
+    "en": "Open"
+  },
+  {
+    "key": "plugins.drive.ctx_rename",
+    "en": "Rename"
+  },
+  {
+    "key": "plugins.drive.ctx_duplicate",
+    "en": "Duplicate"
+  },
+  {
+    "key": "plugins.drive.ctx_delete",
+    "en": "Delete"
+  },
+  {
+    "key": "plugins.drive.ctx_copy",
+    "en": "Copy"
+  },
+  {
+    "key": "plugins.drive.ctx_cut",
+    "en": "Cut"
+  },
+  {
+    "key": "plugins.drive.ctx_paste",
+    "en": "Paste"
+  },
+  {
+    "key": "plugins.drive.ctx_new_folder",
+    "en": "New folder"
+  },
+  {
+    "key": "plugins.drive.ctx_new_file",
+    "en": "New file"
+  },
+  {
+    "key": "plugins.drive.ctx_reveal",
+    "en": "Show in file manager"
+  },
+  {
+    "key": "plugins.drive.ctx_copy_path",
+    "en": "Copy path"
+  },
+  {
+    "key": "plugins.drive.rename_title",
+    "en": "Rename"
+  },
+  {
+    "key": "plugins.drive.rename_placeholder",
+    "en": "New name"
+  },
+  {
+    "key": "plugins.drive.new_folder_title",
+    "en": "New folder"
+  },
+  {
+    "key": "plugins.drive.new_folder_placeholder",
+    "en": "Folder name"
+  },
+  {
+    "key": "plugins.drive.new_file_title",
+    "en": "New file"
+  },
+  {
+    "key": "plugins.drive.new_file_placeholder",
+    "en": "filename.txt"
+  },
+  {
+    "key": "plugins.drive.delete_confirm_title",
+    "en": "Delete {count} item(s)?"
+  },
+  {
+    "key": "plugins.drive.delete_confirm_body",
+    "en": "This action cannot be undone. Deleted files are gone permanently."
+  },
+  {
+    "key": "plugins.drive.confirm",
+    "en": "Confirm"
+  },
+  {
+    "key": "plugins.drive.cancel",
+    "en": "Cancel"
+  },
+  {
+    "key": "plugins.drive.details_title",
+    "en": "Details"
+  },
+  {
+    "key": "plugins.drive.details_path",
+    "en": "Path"
+  },
+  {
+    "key": "plugins.drive.details_size",
+    "en": "Size"
+  },
+  {
+    "key": "plugins.drive.details_kind",
+    "en": "Kind"
+  },
+  {
+    "key": "plugins.drive.details_modified",
+    "en": "Modified"
+  },
+  {
+    "key": "plugins.drive.details_items",
+    "en": "Items"
+  },
+  {
+    "key": "plugins.drive.details_preview",
+    "en": "Preview"
+  },
+  {
+    "key": "plugins.drive.preview_unavailable",
+    "en": "Preview unavailable"
+  },
+  {
+    "key": "plugins.drive.preview_binary",
+    "en": "Binary file — open in the OS file manager to inspect."
+  },
+  {
+    "key": "plugins.drive.preview_too_large",
+    "en": "File is too large to preview inline."
+  },
+  {
+    "key": "plugins.drive.loading",
+    "en": "Loading..."
+  },
+  {
+    "key": "plugins.drive.error_prefix",
+    "en": "Error:"
+  },
+  {
+    "key": "plugins.drive.items_selected",
+    "en": "{count} selected"
+  },
+  {
+    "key": "plugins.drive.items_total",
+    "en": "{count} items"
+  },
+  {
+    "key": "plugins.drive.signatures_button",
+    "en": "Signatures"
+  },
+  {
+    "key": "plugins.drive.ctx_sign_file",
+    "en": "Sign file…"
+  },
+  {
+    "key": "plugins.drive.ctx_verify_file",
+    "en": "Verify signature…"
+  },
+  {
+    "key": "plugins.drive.ctx_extract_text",
+    "en": "Extract text (OCR)…"
+  },
+  {
+    "key": "plugins.drive.ctx_extract_text_no_gemini",
+    "en": "Extract text — connect Gemini to enable"
+  },
+  {
+    "key": "plugins.drive.ocr_title",
+    "en": "Extract text with Gemini"
+  },
+  {
+    "key": "plugins.drive.ocr_subtitle",
+    "en": "Vision OCR via Google Gemini 3 Flash Preview"
+  },
+  {
+    "key": "plugins.drive.ocr_model_label",
+    "en": "Model"
+  },
+  {
+    "key": "plugins.drive.ocr_connector_ready",
+    "en": "Gemini connector ready"
+  },
+  {
+    "key": "plugins.drive.ocr_connector_missing",
+    "en": "No Gemini credential found in the vault. Connect Google Gemini to enable OCR."
+  },
+  {
+    "key": "plugins.drive.ocr_prompt_label",
+    "en": "Optional prompt"
+  },
+  {
+    "key": "plugins.drive.ocr_prompt_placeholder",
+    "en": "e.g. Only extract the invoice total and line items"
+  },
+  {
+    "key": "plugins.drive.ocr_extract",
+    "en": "Extract text"
+  },
+  {
+    "key": "plugins.drive.ocr_running",
+    "en": "Extracting…"
+  },
+  {
+    "key": "plugins.drive.ocr_done",
+    "en": "Extraction complete"
+  },
+  {
+    "key": "plugins.drive.ocr_save",
+    "en": "Save as .ocr.txt"
+  },
+  {
+    "key": "plugins.drive.ocr_saved",
+    "en": "Saved"
+  },
+  {
+    "key": "plugins.drive.ocr_saved_to",
+    "en": "Saved to"
+  },
+  {
+    "key": "plugins.drive.ocr_copied",
+    "en": "Copied to clipboard"
+  },
+  {
+    "key": "plugins.drive.select_file_or_folder",
+    "en": "Select a file or folder to see its details."
+  },
+  {
+    "key": "plugins.drive.download_aria",
+    "en": "Download"
+  },
+  {
+    "key": "plugins.drive.download_title",
+    "en": "Download"
+  },
+  {
+    "key": "plugins.drive.sign_reason_placeholder",
+    "en": "Reason for signing…"
+  },
+  {
+    "key": "plugins.artist.status_partial",
+    "en": "Partial"
+  },
+  {
+    "key": "plugins.artist.status_not_checked",
+    "en": "Not checked"
+  },
+  {
+    "key": "plugins.artist.blender_label",
+    "en": "Blender"
+  },
+  {
+    "key": "plugins.artist.blender_mcp_label",
+    "en": "Blender MCP"
+  },
+  {
+    "key": "plugins.artist.session_cancelled",
+    "en": "Session cancelled."
+  },
+  {
+    "key": "plugins.artist.imported_assets_one",
+    "en": "Imported 1 new asset to gallery."
+  },
+  {
+    "key": "plugins.artist.imported_assets_other",
+    "en": "Imported {count} new assets to gallery."
+  },
+  {
+    "key": "plugins.artist.scan_result_one",
+    "en": "Found {scanned} assets, imported 1 new."
+  },
+  {
+    "key": "plugins.artist.scan_result_other",
+    "en": "Found {scanned} assets, imported {imported} new."
+  },
+  {
+    "key": "plugins.artist.tool_blender",
+    "en": "Blender"
+  },
+  {
+    "key": "plugins.artist.tool_leonardo",
+    "en": "Leonardo"
+  },
+  {
+    "key": "plugins.artist.tool_gemini",
+    "en": "Gemini"
+  },
+  {
+    "key": "plugins.artist.tag_editor_hint",
+    "en": "Enter or comma to add, Backspace to remove the last tag."
+  },
+  {
+    "key": "plugins.artist.tag_editor_placeholder",
+    "en": "tag, another-tag"
+  },
+  {
+    "key": "plugins.artist.send_to_media_studio",
+    "en": "Send to Media Studio"
+  },
+  {
+    "key": "plugins.artist.sent_to_media_studio",
+    "en": "Queued for Media Studio"
+  },
+  {
+    "key": "plugins.artist.session_history",
+    "en": "History"
+  },
+  {
+    "key": "plugins.artist.session_history_empty",
+    "en": "Sessions you run will appear here."
+  },
+  {
+    "key": "plugins.artist.session_tools_label",
+    "en": "Tools:"
+  },
+  {
+    "key": "plugins.artist.session_status_running",
+    "en": "Running"
+  },
+  {
+    "key": "plugins.artist.session_status_completed",
+    "en": "Completed"
+  },
+  {
+    "key": "plugins.artist.session_status_failed",
+    "en": "Failed"
+  },
+  {
+    "key": "plugins.artist.session_status_cancelled",
+    "en": "Cancelled"
+  },
+  {
+    "key": "plugins.artist.replay_session",
+    "en": "Replay"
+  },
+  {
+    "key": "plugins.artist.delete_session",
+    "en": "Delete session"
+  },
+  {
+    "key": "plugins.dev_tools.disqualified_label",
+    "en": "Disqualified"
+  },
+  {
+    "key": "plugins.dev_tools.elapsed_label",
+    "en": "elapsed"
+  },
+  {
+    "key": "plugins.dev_tools.partial_context",
+    "en": "Partial context"
+  },
+  {
+    "key": "plugins.dev_tools.context_warnings_title",
+    "en": "Context warnings — task ran with missing information"
+  },
+  {
+    "key": "plugins.dev_tools.file_load_failed",
+    "en": "File could not be loaded. Editing is disabled to prevent data loss."
+  },
+  {
+    "key": "plugins.dev_tools.file_load_failed_hint",
+    "en": "Try refreshing or re-selecting the skill."
+  },
+  {
+    "key": "plugins.dev_tools.triage_title",
+    "en": "Idea Triage"
+  },
+  {
+    "key": "plugins.dev_tools.triage_subtitle",
+    "en": "Evaluate and prioritize generated ideas"
+  },
+  {
+    "key": "plugins.dev_tools.accepted_badge",
+    "en": "{count} accepted"
+  },
+  {
+    "key": "plugins.dev_tools.rejected_badge",
+    "en": "{count} rejected"
+  },
+  {
+    "key": "plugins.dev_tools.pending_badge",
+    "en": "{count} pending"
+  },
+  {
+    "key": "plugins.dev_tools.sidebar_category",
+    "en": "Category"
+  },
+  {
+    "key": "plugins.dev_tools.sidebar_scan_type",
+    "en": "Scan Type"
+  },
+  {
+    "key": "plugins.dev_tools.sidebar_all",
+    "en": "All ({count})"
+  },
+  {
+    "key": "plugins.dev_tools.remaining_count",
+    "en": "{count} remaining"
+  },
+  {
+    "key": "plugins.dev_tools.reviewed_count",
+    "en": "{done} / {total} reviewed"
+  },
+  {
+    "key": "plugins.dev_tools.empty_no_ideas",
+    "en": "No ideas to triage"
+  },
+  {
+    "key": "plugins.dev_tools.empty_no_ideas_hint",
+    "en": "Run the Idea Scanner first to generate ideas."
+  },
+  {
+    "key": "plugins.dev_tools.empty_all_reviewed",
+    "en": "All ideas reviewed!"
+  },
+  {
+    "key": "plugins.dev_tools.empty_all_reviewed_summary",
+    "en": "{accepted} accepted, {rejected} rejected"
+  },
+  {
+    "key": "plugins.dev_tools.swipe_reject",
+    "en": "Reject"
+  },
+  {
+    "key": "plugins.dev_tools.swipe_accept",
+    "en": "Accept"
+  },
+  {
+    "key": "plugins.dev_tools.reasoning_label",
+    "en": "Reasoning"
+  },
+  {
+    "key": "plugins.dev_tools.hint_reject",
+    "en": "Reject"
+  },
+  {
+    "key": "plugins.dev_tools.hint_accept",
+    "en": "Accept"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_title",
+    "en": "Keyboard Shortcuts"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_reject",
+    "en": "Reject idea"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_accept",
+    "en": "Accept idea"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_toggle",
+    "en": "Toggle this overlay"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_close",
+    "en": "Close overlay"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_dismiss_hint",
+    "en": "Press ? or Esc to close"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_open_title",
+    "en": "Keyboard shortcuts (?)"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_btn_reject_title",
+    "en": "Reject (Left Arrow / A)"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_btn_accept_title",
+    "en": "Accept (Right Arrow / Z)"
+  },
+  {
+    "key": "plugins.dev_tools.shortcuts_btn_delete_title",
+    "en": "Delete"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_title",
+    "en": "Ship as Draft PR"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_subtitle",
+    "en": "Branch, commit, and pre-filled PR — agent reasoning carried into the description."
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_branch",
+    "en": "Branch"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_commit_msg",
+    "en": "Commit message"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_pr_title",
+    "en": "PR title"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_pr_body",
+    "en": "PR body"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_agent_citation",
+    "en": "Proposed by {label} {emoji}"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_no_github",
+    "en": "Link a GitHub repo on this project to enable PR workflows."
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_link_project",
+    "en": "Open project settings"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_unsupported_host",
+    "en": "Auto-fill only works with GitHub right now. Copy the PR body and open manually."
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_copy_body",
+    "en": "Copy PR body"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_copy_all",
+    "en": "Copy all"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_prepare",
+    "en": "Prepare branch & commit"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_open_github",
+    "en": "Open draft PR on GitHub"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_expand",
+    "en": "Show PR preview"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_collapse",
+    "en": "Hide PR preview"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_copied",
+    "en": "PR body copied to clipboard"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_copy_failed",
+    "en": "Couldn't copy to clipboard"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_branch_prepared",
+    "en": "Branch prepared: {branch}"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_branch_failed",
+    "en": "Branch preparation failed: {message}"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_opening",
+    "en": "Opening GitHub..."
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_open_failed",
+    "en": "Couldn't open external URL"
+  },
+  {
+    "key": "plugins.dev_tools.pr_bridge_draft_hint",
+    "en": "Tip: on the GitHub page, use the dropdown next to \"Create pull request\" to mark it as a draft."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_title",
+    "en": "Agent Performance"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_subtitle",
+    "en": "Acceptance & implementation rates per scan agent for this project."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_toggle_show",
+    "en": "Show scoreboard"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_toggle_hide",
+    "en": "Hide scoreboard"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_empty",
+    "en": "No data yet — run a scan and triage some ideas to populate the board."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_agent",
+    "en": "Agent"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_ideas",
+    "en": "Ideas"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_accept_rate",
+    "en": "Accept %"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_impl_rate",
+    "en": "Impl %"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_avg_impact",
+    "en": "Avg impact"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_col_avg_effort",
+    "en": "Avg effort"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_tip_ideas",
+    "en": "Total ideas this agent has generated across all scans."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_tip_accept_rate",
+    "en": "Accepted / (Accepted + Rejected). Pending ideas are excluded from the denominator."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_tip_impl_rate",
+    "en": "Completed tasks / tasks created from this agent's ideas."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_tip_avg_impact",
+    "en": "Mean impact score (1-10) of all ideas this agent generated."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_tip_avg_effort",
+    "en": "Mean effort score (1-10) of all ideas this agent generated."
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_no_signal",
+    "en": "—"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_n_pending",
+    "en": "{n} pending"
+  },
+  {
+    "key": "plugins.dev_tools.scoreboard_top_performer",
+    "en": "Top performer"
+  },
+  {
+    "key": "plugins.dev_tools.zoom_in",
+    "en": "Zoom in"
+  },
+  {
+    "key": "plugins.dev_tools.zoom_out",
+    "en": "Zoom out"
+  },
+  {
+    "key": "plugins.dev_tools.reset_view",
+    "en": "Reset view"
+  },
+  {
+    "key": "plugins.dev_tools.goals_label",
+    "en": "goals,"
+  },
+  {
+    "key": "plugins.dev_tools.connections_label",
+    "en": "connections"
+  },
+  {
+    "key": "plugins.dev_tools.legend_parent",
+    "en": "━━ parent"
+  },
+  {
+    "key": "plugins.dev_tools.legend_dependency",
+    "en": "┄┄ dependency"
+  },
+  {
+    "key": "plugins.dev_tools.competitors_dot",
+    "en": "competitors ·"
+  },
+  {
+    "key": "plugins.dev_tools.of_4_selected",
+    "en": "/4 selected"
+  },
+  {
+    "key": "plugins.dev_tools.status_label",
+    "en": "Status:"
+  },
+  {
+    "key": "plugins.dev_tools.wt_label",
+    "en": "wt:"
+  },
+  {
+    "key": "plugins.dev_tools.winning_insight",
+    "en": "Winning insight"
+  },
+  {
+    "key": "plugins.dev_tools.completed_in",
+    "en": "Completed in"
+  },
+  {
+    "key": "plugins.dev_tools.achievements_label",
+    "en": "Achievements:"
+  },
+  {
+    "key": "plugins.dev_tools.output_lines",
+    "en": "output lines"
+  },
+  {
+    "key": "plugins.dev_tools.loading_diff",
+    "en": "Loading diff..."
+  },
+  {
+    "key": "plugins.dev_tools.first_slot_bias",
+    "en": "First slot biased toward previous winner's approach."
+  },
+  {
+    "key": "plugins.dev_tools.start_competition_prefix",
+    "en": "Start Competition ("
+  },
+  {
+    "key": "plugins.dev_tools.slots_suffix",
+    "en": "slots)"
+  },
+  {
+    "key": "plugins.dev_tools.strategy_leaderboard",
+    "en": "Strategy Leaderboard"
+  },
+  {
+    "key": "plugins.dev_tools.dq_label",
+    "en": "DQ x"
+  },
+  {
+    "key": "plugins.dev_tools.leaderboard_subtitle",
+    "en": "Aggregated across resolved competitions. Higher wins."
+  },
+  {
+    "key": "plugins.dev_tools.capture_winning_insight",
+    "en": "Capture the winning insight"
+  },
+  {
+    "key": "plugins.dev_tools.capture_insight_desc",
+    "en": "What made this approach win? This note is stored with the winner and used to seed future competitions."
+  },
+  {
+    "key": "plugins.dev_tools.insight_placeholder",
+    "en": "Describe what made this approach succeed…"
+  },
+  {
+    "key": "plugins.dev_tools.confirm_winner",
+    "en": "Confirm winner"
+  },
+  {
+    "key": "plugins.dev_tools.github_required_title",
+    "en": "GitHub repository required"
+  },
+  {
+    "key": "plugins.dev_tools.folder_required_title",
+    "en": "Project folder required"
+  },
+  {
+    "key": "plugins.dev_tools.requirements_met_title",
+    "en": "All requirements met"
+  },
+  {
+    "key": "plugins.dev_tools.can_still_adopt",
+    "en": "You can still adopt now — add GitHub URL and project folder later in project settings."
+  },
+  {
+    "key": "plugins.dev_tools.active_triggers_prefix",
+    "en": "Active Triggers ("
+  },
+  {
+    "key": "plugins.dev_tools.lifecycle_readiness",
+    "en": "Lifecycle Readiness —"
+  },
+  {
+    "key": "plugins.dev_tools.goals_tab_no_goals",
+    "en": "No goals yet. Create goals in the Project Manager."
+  },
+  {
+    "key": "plugins.dev_tools.goal_constellation_prefix",
+    "en": "Goal Constellation ("
+  },
+  {
+    "key": "plugins.dev_tools.sync_to_obsidian",
+    "en": "Sync to Obsidian"
+  },
+  {
+    "key": "plugins.dev_tools.select_or_create",
+    "en": "Select a project below or create a new one."
+  },
+  {
+    "key": "plugins.dev_tools.all_projects_prefix",
+    "en": "All Projects ("
+  },
+  {
+    "key": "plugins.dev_tools.percent_overall",
+    "en": "% overall"
+  },
+  {
+    "key": "plugins.dev_tools.task_queue_prefix",
+    "en": "Task Queue ("
+  },
+  {
+    "key": "plugins.dev_tools.project_created_title",
+    "en": "Project Created"
+  },
+  {
+    "key": "plugins.dev_tools.generate_context_map_desc",
+    "en": "Scans your codebase to identify business logic, entry points, and data structures."
+  },
+  {
+    "key": "plugins.dev_tools.source_label",
+    "en": "Source:"
+  },
+  {
+    "key": "plugins.dev_tools.auto_filled_hint",
+    "en": "(auto-filled from folder)"
+  },
+  {
+    "key": "plugins.dev_tools.project_type_optional",
+    "en": "(optional, visual only)"
+  },
+  {
+    "key": "plugins.dev_tools.optional_label",
+    "en": "(optional)"
+  },
+  {
+    "key": "plugins.dev_tools.implementation_log_label",
+    "en": "Implementation Log"
+  },
+  {
+    "key": "plugins.dev_tools.cross_project_desc_btn",
+    "en": "Aggregated from existing context maps. Click any project to expand."
+  },
+  {
+    "key": "plugins.dev_tools.generate_metadata_prompt",
+    "en": "to analyze all projects' context maps and extract shared patterns."
+  },
+  {
+    "key": "plugins.dev_tools.projects_count_prefix",
+    "en": "Projects ("
+  },
+  {
+    "key": "plugins.dev_tools.entry_points_header",
+    "en": "Entry Points"
+  },
+  {
+    "key": "plugins.dev_tools.db_tables_header",
+    "en": "Database Tables"
+  },
+  {
+    "key": "plugins.dev_tools.entry_points_count",
+    "en": "entry points"
+  },
+  {
+    "key": "plugins.dev_tools.db_tables_count",
+    "en": "db tables"
+  },
+  {
+    "key": "plugins.dev_tools.run_context_map_scan",
+    "en": "Run Context Map scan for this project to populate metadata."
+  },
+  {
+    "key": "plugins.dev_tools.active_goals_label",
+    "en": "active goals"
+  },
+  {
+    "key": "plugins.dev_tools.no_goals_add_below",
+    "en": "No goals yet. Add one below."
+  },
+  {
+    "key": "plugins.dev_tools.goal_title_placeholder",
+    "en": "Goal title…"
+  },
+  {
+    "key": "plugins.dev_tools.loading_repos",
+    "en": "Loading repositories..."
+  },
+  {
+    "key": "plugins.dev_tools.github_url_label",
+    "en": "GitHub URL"
+  },
+  {
+    "key": "plugins.dev_tools.github_repo_label",
+    "en": "GitHub Repository"
+  },
+  {
+    "key": "plugins.dev_tools.idea_evolution_title",
+    "en": "Idea Evolution"
+  },
+  {
+    "key": "plugins.dev_tools.fitness_ranking_label",
+    "en": "Fitness Ranking"
+  },
+  {
+    "key": "plugins.dev_tools.similar_to_rejected",
+    "en": "Similar to rejected:"
+  },
+  {
+    "key": "plugins.dev_tools.percent_similar",
+    "en": "% similar"
+  },
+  {
+    "key": "plugins.dev_tools.scanning_with",
+    "en": "Scanning with"
+  },
+  {
+    "key": "plugins.dev_tools.scanning_subtitle",
+    "en": "Analyzing codebase patterns and generating context groups…"
+  },
+  {
+    "key": "plugins.dev_tools.no_previous_scans",
+    "en": "No previous scans."
+  },
+  {
+    "key": "plugins.dev_tools.run_scan_prefix",
+    "en": "Run Scan ("
+  },
+  {
+    "key": "plugins.dev_tools.automated_context_scan",
+    "en": "Automated Context Scan"
+  },
+  {
+    "key": "plugins.dev_tools.results_prefix",
+    "en": "Results ("
+  },
+  {
+    "key": "plugins.dev_tools.scan_history_prefix",
+    "en": "Scan History ("
+  },
+  {
+    "key": "plugins.dev_tools.action_label",
+    "en": "Action:"
+  },
+  {
+    "key": "plugins.dev_tools.self_healing_title",
+    "en": "Self-Healing"
+  },
+  {
+    "key": "plugins.dev_tools.heal_all_prefix",
+    "en": "Heal All ("
+  },
+  {
+    "key": "plugins.dev_tools.task_title_placeholder",
+    "en": "Task title…"
+  },
+  {
+    "key": "plugins.dev_tools.task_details_placeholder",
+    "en": "Task details or paste a spec…"
+  },
+  {
+    "key": "plugins.dev_tools.goal_link_placeholder",
+    "en": "Select a goal…"
+  },
+  {
+    "key": "plugins.dev_tools.no_tasks_queued_sub",
+    "en": "Create tasks manually or batch from accepted ideas."
+  },
+  {
+    "key": "plugins.obsidian_brain.tab_graph",
+    "en": "Graph"
+  },
+  {
+    "key": "plugins.artist_gallery.loading_viewer",
+    "en": "Loading viewer…"
+  },
+  {
+    "key": "plugins.artist_gallery.loading_model",
+    "en": "Loading model..."
+  },
+  {
+    "key": "plugins.artist_gallery.could_not_load_model",
+    "en": "Could not load model"
+  },
+  {
+    "key": "plugins.artist_media_studio.drag_drop_hint",
+    "en": "— drag & drop files anywhere"
+  },
+  {
+    "key": "plugins.artist_media_studio.keyboard_shortcuts",
+    "en": "Space / Del / Arrows"
+  },
+  {
+    "key": "plugins.artist_media_studio.px_per_second",
+    "en": "px/s"
+  },
+  {
+    "key": "plugins.artist_media_studio.running_loudnorm",
+    "en": "Running ffmpeg loudnorm dry-run…"
+  },
+  {
+    "key": "plugins.dev_context.files_header",
+    "en": "Files ("
+  },
+  {
+    "key": "plugins.dev_context.filter_groups_placeholder",
+    "en": "Filter groups…"
+  },
+  {
+    "key": "plugins.dev_context.rescan_title",
+    "en": "Re-scan"
+  },
+  {
+    "key": "plugins.dev_context.scanning_with",
+    "en": "Scanning with"
+  },
+  {
+    "key": "plugins.dev_context.scanning_subtitle",
+    "en": "Analyzing codebase patterns and generating context groups…"
+  },
+  {
+    "key": "plugins.dev_context.no_previous_scans",
+    "en": "No previous scans."
+  },
+  {
+    "key": "plugins.dev_context.run_scan",
+    "en": "Run Scan ("
+  },
+  {
+    "key": "plugins.dev_context.auto_scan",
+    "en": "Auto-Scan"
+  },
+  {
+    "key": "plugins.dev_context.automated_context_scan",
+    "en": "Automated Context Scan"
+  },
+  {
+    "key": "plugins.dev_context.results",
+    "en": "Results ("
+  },
+  {
+    "key": "plugins.dev_context.scan_history",
+    "en": "Scan History ("
+  },
+  {
+    "key": "plugins.dev_lifecycle.start_a_competition",
+    "en": "Start a Competition"
+  },
+  {
+    "key": "plugins.dev_lifecycle.start_a_competition_desc",
+    "en": "Spawn 2–4 competitors with different strategies to tackle the same task. The winner's approach gets promoted."
+  },
+  {
+    "key": "plugins.dev_lifecycle.task_title",
+    "en": "Task title"
+  },
+  {
+    "key": "plugins.dev_lifecycle.task_title_placeholder",
+    "en": "E.g. Refactor auth module"
+  },
+  {
+    "key": "plugins.dev_lifecycle.task_description",
+    "en": "Task description (optional)"
+  },
+  {
+    "key": "plugins.dev_lifecycle.task_description_placeholder",
+    "en": "Describe what success looks like…"
+  },
+  {
+    "key": "plugins.dev_lifecycle.strategy_slots",
+    "en": "Strategy slots (pick 2–4)"
+  },
+  {
+    "key": "plugins.dev_lifecycle.of_4_selected",
+    "en": "/4 selected"
+  },
+  {
+    "key": "plugins.dev_lifecycle.cost_warning",
+    "en": "Cost warning:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.cost_warning_desc",
+    "en": "each competitor runs the full task independently — this uses {count}× more tokens."
+  },
+  {
+    "key": "plugins.dev_lifecycle.start_competition",
+    "en": "Start Competition"
+  },
+  {
+    "key": "plugins.dev_lifecycle.competitors_dot",
+    "en": "competitors ·"
+  },
+  {
+    "key": "plugins.dev_lifecycle.loading_competitors",
+    "en": "Loading competitors..."
+  },
+  {
+    "key": "plugins.dev_lifecycle.failed_to_load_detail",
+    "en": "Failed to load detail."
+  },
+  {
+    "key": "plugins.dev_lifecycle.status_label",
+    "en": "Status:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.weight_label",
+    "en": "wt:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.pick_winner",
+    "en": "Pick winner"
+  },
+  {
+    "key": "plugins.dev_lifecycle.cancel_competition",
+    "en": "Cancel competition"
+  },
+  {
+    "key": "plugins.dev_lifecycle.select_project_for_competitions",
+    "en": "Select a project to see competitions."
+  },
+  {
+    "key": "plugins.dev_lifecycle.new_competition",
+    "en": "New Competition"
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_competitions_yet",
+    "en": "No competitions yet. Start one to have 2–4 strategies race to solve a task."
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_goals_yet_project",
+    "en": "No goals yet. Create goals in the Project Manager to track progress."
+  },
+  {
+    "key": "plugins.dev_lifecycle.zoom_in_title",
+    "en": "Zoom in"
+  },
+  {
+    "key": "plugins.dev_lifecycle.zoom_out_title",
+    "en": "Zoom out"
+  },
+  {
+    "key": "plugins.dev_lifecycle.reset_view_title",
+    "en": "Reset view"
+  },
+  {
+    "key": "plugins.dev_lifecycle.goals_label",
+    "en": "goals,"
+  },
+  {
+    "key": "plugins.dev_lifecycle.legend_parent",
+    "en": "━━ parent"
+  },
+  {
+    "key": "plugins.dev_lifecycle.legend_dependency",
+    "en": "┄┄ dependency"
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_goals_kanban",
+    "en": "No goals yet. Create goals to see them here."
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_goals_here",
+    "en": "No goals here"
+  },
+  {
+    "key": "plugins.dev_lifecycle.auto_setup_title",
+    "en": "Run automated lifecycle setup"
+  },
+  {
+    "key": "plugins.dev_lifecycle.auto_setup",
+    "en": "Auto-Setup"
+  },
+  {
+    "key": "plugins.dev_lifecycle.loading_lifecycle",
+    "en": "Loading lifecycle status..."
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_project_click_to_create",
+    "en": "No project — click to create"
+  },
+  {
+    "key": "plugins.dev_lifecycle.no_repo",
+    "en": "no repo"
+  },
+  {
+    "key": "plugins.dev_lifecycle.baseline_label",
+    "en": "Baseline:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.ts_errors_label",
+    "en": "TS errors:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.cargo_errors_label",
+    "en": "Cargo errors:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.tests_label",
+    "en": "Tests:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.git_label",
+    "en": "Git:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.winning_insight",
+    "en": "Winning insight"
+  },
+  {
+    "key": "plugins.dev_lifecycle.completed_in",
+    "en": "Completed in"
+  },
+  {
+    "key": "plugins.dev_lifecycle.achievements_label",
+    "en": "Achievements:"
+  },
+  {
+    "key": "plugins.dev_lifecycle.output_lines",
+    "en": "output lines"
+  },
+  {
+    "key": "plugins.dev_lifecycle.expand_slot_title",
+    "en": "Expand slot"
+  },
+  {
+    "key": "plugins.dev_lifecycle.collapse_slot_title",
+    "en": "Collapse slot"
+  },
+  {
+    "key": "plugins.dev_lifecycle.copy_diff_title",
+    "en": "Copy diff"
+  },
+  {
+    "key": "plugins.dev_lifecycle.loading_diff",
+    "en": "Loading diff..."
+  },
+  {
+    "key": "plugins.dev_lifecycle.new_competition_modal_title",
+    "en": "Start a Competition"
+  },
+  {
+    "key": "plugins.dev_lifecycle.first_slot_bias",
+    "en": "First slot biased toward previous winner's approach."
+  },
+  {
+    "key": "plugins.dev_lifecycle.start_competition_slots",
+    "en": "Start Competition ("
+  },
+  {
+    "key": "plugins.dev_lifecycle.slots_suffix",
+    "en": "slots)"
+  },
+  {
+    "key": "plugins.dev_lifecycle.strategy_leaderboard",
+    "en": "Strategy Leaderboard"
+  },
+  {
+    "key": "plugins.dev_lifecycle.dq_title",
+    "en": "Disqualified"
+  },
+  {
+    "key": "plugins.dev_lifecycle.dq_label",
+    "en": "DQ x"
+  },
+  {
+    "key": "plugins.dev_lifecycle.leaderboard_subtitle",
+    "en": "Aggregated across resolved competitions. Higher wins."
+  },
+  {
+    "key": "plugins.dev_lifecycle.capture_winning_insight",
+    "en": "Capture the winning insight"
+  },
+  {
+    "key": "plugins.dev_lifecycle.capture_insight_desc",
+    "en": "What made this approach win? This note is stored with the winner and used to seed future competitions."
+  },
+  {
+    "key": "plugins.dev_lifecycle.insight_placeholder",
+    "en": "Describe what made this approach succeed…"
+  },
+  {
+    "key": "plugins.dev_lifecycle.confirm_winner",
+    "en": "Confirm winner"
+  },
+  {
+    "key": "plugins.dev_lifecycle.competition_title_placeholder",
+    "en": "e.g. Add rate limiting to /api/auth/login"
+  },
+  {
+    "key": "plugins.dev_lifecycle.competition_desc_placeholder",
+    "en": "Acceptance criteria, target files, constraints..."
+  },
+  {
+    "key": "plugins.dev_lifecycle.regenerate_strategies_title",
+    "en": "Regenerate strategies"
+  },
+  {
+    "key": "plugins.dev_lifecycle.start_dev_server_title",
+    "en": "Start dev server in this worktree"
+  },
+  {
+    "key": "plugins.dev_lifecycle.stop_dev_server_title",
+    "en": "Stop dev server"
+  },
+  {
+    "key": "plugins.dev_lifecycle.open_worktree_title",
+    "en": "Open worktree directory"
+  },
+  {
+    "key": "plugins.dev_lifecycle.adopt_dev_clone",
+    "en": "Adopt Dev Clone"
+  },
+  {
+    "key": "plugins.dev_lifecycle.dev_clone_desc",
+    "en": "Dev Clone is an autonomous developer persona that manages your project lifecycle — competing strategies, healing errors, and shipping code."
+  },
+  {
+    "key": "plugins.dev_lifecycle.github_required_title",
+    "en": "GitHub repository required"
+  },
+  {
+    "key": "plugins.dev_lifecycle.folder_required_title",
+    "en": "Project folder required"
+  },
+  {
+    "key": "plugins.dev_lifecycle.requirements_met_title",
+    "en": "All requirements met"
+  },
+  {
+    "key": "plugins.dev_lifecycle.can_still_adopt",
+    "en": "You can still adopt now — add GitHub URL and project folder later in project settings."
+  },
+  {
+    "key": "plugins.dev_lifecycle.active_triggers",
+    "en": "Active Triggers ("
+  },
+  {
+    "key": "plugins.dev_lifecycle.lifecycle_readiness",
+    "en": "Lifecycle Readiness —"
+  },
+  {
+    "key": "plugins.dev_lifecycle.goals_tab_no_goals",
+    "en": "No goals yet. Create goals in the Project Manager."
+  },
+  {
+    "key": "plugins.dev_lifecycle.goal_constellation",
+    "en": "Goal Constellation ("
+  },
+  {
+    "key": "plugins.dev_lifecycle.sync_to_obsidian",
+    "en": "Sync to Obsidian"
+  },
+  {
+    "key": "plugins.dev_projects.active_goals",
+    "en": "active goals"
+  },
+  {
+    "key": "plugins.dev_projects.run_context_map_scan",
+    "en": "Run Context Map scan for this project to populate metadata."
+  },
+  {
+    "key": "plugins.dev_projects.entry_points",
+    "en": "entry points"
+  },
+  {
+    "key": "plugins.dev_projects.db_tables",
+    "en": "db tables"
+  },
+  {
+    "key": "plugins.dev_projects.top_keywords",
+    "en": "Top Keywords"
+  },
+  {
+    "key": "plugins.dev_projects.entry_points_header",
+    "en": "Entry Points"
+  },
+  {
+    "key": "plugins.dev_projects.db_tables_header",
+    "en": "Database Tables"
+  },
+  {
+    "key": "plugins.dev_projects.api_surface",
+    "en": "API Surface"
+  },
+  {
+    "key": "plugins.dev_projects.hot_directories",
+    "en": "Hot Directories"
+  },
+  {
+    "key": "plugins.dev_projects.cross_project_map_title",
+    "en": "Cross-Project Metadata Map"
+  },
+  {
+    "key": "plugins.dev_projects.cross_project_map_subtitle",
+    "en": "Aggregated from existing context maps. Click any project to expand."
+  },
+  {
+    "key": "plugins.dev_projects.tech_distribution",
+    "en": "Tech Distribution"
+  },
+  {
+    "key": "plugins.dev_projects.shared_keywords",
+    "en": "Shared Keywords ("
+  },
+  {
+    "key": "plugins.dev_projects.shared_keywords_subtitle",
+    "en": "Concepts present in multiple projects — may indicate shared architecture."
+  },
+  {
+    "key": "plugins.dev_projects.project_similarity",
+    "en": "Project Similarity"
+  },
+  {
+    "key": "plugins.dev_projects.projects_header",
+    "en": "Projects ("
+  },
+  {
+    "key": "plugins.dev_projects.cross_project_map_btn",
+    "en": "Cross-Project Map"
+  },
+  {
+    "key": "plugins.dev_projects.new_project",
+    "en": "New Project"
+  },
+  {
+    "key": "plugins.dev_projects.select_or_create",
+    "en": "Select a project below or create a new one."
+  },
+  {
+    "key": "plugins.dev_projects.all_projects",
+    "en": "All Projects ("
+  },
+  {
+    "key": "plugins.dev_projects.no_projects_yet",
+    "en": "No projects yet"
+  },
+  {
+    "key": "plugins.dev_projects.create_first_project",
+    "en": "Create First Project"
+  },
+  {
+    "key": "plugins.dev_projects.tech_stack",
+    "en": "Tech Stack"
+  },
+  {
+    "key": "plugins.dev_projects.edit_project",
+    "en": "Edit Project"
+  },
+  {
+    "key": "plugins.dev_projects.no_goals_add_below",
+    "en": "No goals yet. Add one below."
+  },
+  {
+    "key": "plugins.dev_projects.goal_title_placeholder",
+    "en": "Goal title…"
+  },
+  {
+    "key": "plugins.dev_projects.project_folder",
+    "en": "Project Folder"
+  },
+  {
+    "key": "plugins.dev_projects.select_folder",
+    "en": "Select a folder..."
+  },
+  {
+    "key": "plugins.dev_projects.project_name",
+    "en": "Project Name"
+  },
+  {
+    "key": "plugins.dev_projects.auto_filled_from_folder",
+    "en": "(auto-filled from folder)"
+  },
+  {
+    "key": "plugins.dev_projects.project_name_placeholder",
+    "en": "My Project"
+  },
+  {
+    "key": "plugins.dev_projects.project_type",
+    "en": "Project Type"
+  },
+  {
+    "key": "plugins.dev_projects.project_type_optional",
+    "en": "(optional, visual only)"
+  },
+  {
+    "key": "plugins.dev_projects.project_created",
+    "en": "Project Created"
+  },
+  {
+    "key": "plugins.dev_projects.project_ready_desc",
+    "en": "is ready. Would you like to generate a context map now?"
+  },
+  {
+    "key": "plugins.dev_projects.generate_context_map",
+    "en": "Generate Context Map"
+  },
+  {
+    "key": "plugins.dev_projects.generate_context_map_desc",
+    "en": "Scans your codebase to identify business logic, entry points, and data structures."
+  },
+  {
+    "key": "plugins.dev_projects.skip_for_now",
+    "en": "Skip for now"
+  },
+  {
+    "key": "plugins.dev_projects.scan_codebase",
+    "en": "Scan Codebase"
+  },
+  {
+    "key": "plugins.dev_projects.loading_repositories",
+    "en": "Loading repositories..."
+  },
+  {
+    "key": "plugins.dev_projects.github_url_label",
+    "en": "GitHub URL"
+  },
+  {
+    "key": "plugins.dev_projects.optional",
+    "en": "(optional)"
+  },
+  {
+    "key": "plugins.dev_projects.github_url_placeholder",
+    "en": "https://github.com/owner/repo"
+  },
+  {
+    "key": "plugins.dev_projects.github_repository",
+    "en": "GitHub Repository"
+  },
+  {
+    "key": "plugins.dev_projects.select_repository",
+    "en": "Select a repository..."
+  },
+  {
+    "key": "plugins.dev_projects.no_repositories_found",
+    "en": "No repositories found"
+  },
+  {
+    "key": "plugins.dev_projects.implementation_log",
+    "en": "Implementation Log"
+  },
+  {
+    "key": "plugins.dev_projects.loading_metadata",
+    "en": "Loading..."
+  },
+  {
+    "key": "plugins.dev_projects.no_metadata_yet",
+    "en": "No metadata map generated yet"
+  },
+  {
+    "key": "plugins.dev_projects.generate_metadata_prompt",
+    "en": "to analyze all projects' context maps and extract shared patterns."
+  },
+  {
+    "key": "plugins.dev_runner.self_healing",
+    "en": "Self-Healing"
+  },
+  {
+    "key": "plugins.dev_runner.auto_heal",
+    "en": "Auto-heal"
+  },
+  {
+    "key": "plugins.dev_runner.heal_all",
+    "en": "Heal All ("
+  },
+  {
+    "key": "plugins.dev_runner.task_title_placeholder",
+    "en": "Task title…"
+  },
+  {
+    "key": "plugins.dev_runner.task_details_placeholder",
+    "en": "Task details or paste a spec…"
+  },
+  {
+    "key": "plugins.dev_runner.task_depth",
+    "en": "Task Depth"
+  },
+  {
+    "key": "plugins.dev_runner.goal_link",
+    "en": "Goal Link"
+  },
+  {
+    "key": "plugins.dev_runner.optional",
+    "en": "(optional)"
+  },
+  {
+    "key": "plugins.dev_runner.goal_link_placeholder",
+    "en": "Select a goal…"
+  },
+  {
+    "key": "plugins.dev_runner.create_task",
+    "en": "Create Task"
+  },
+  {
+    "key": "plugins.dev_runner.source_label",
+    "en": "Source:"
+  },
+  {
+    "key": "plugins.dev_runner.new_task",
+    "en": "New Task"
+  },
+  {
+    "key": "plugins.dev_runner.batch_from_accepted",
+    "en": "Batch from Accepted"
+  },
+  {
+    "key": "plugins.dev_runner.start_batch",
+    "en": "Start Batch"
+  },
+  {
+    "key": "plugins.dev_runner.cancel_all",
+    "en": "Cancel All"
+  },
+  {
+    "key": "plugins.dev_runner.batch_progress",
+    "en": "Batch Progress"
+  },
+  {
+    "key": "plugins.dev_runner.percent_overall",
+    "en": "% overall"
+  },
+  {
+    "key": "plugins.dev_runner.task_queue",
+    "en": "Task Queue ("
+  },
+  {
+    "key": "plugins.dev_runner.no_tasks_queued",
+    "en": "No tasks in queue"
+  },
+  {
+    "key": "plugins.dev_runner.no_tasks_queued_sub",
+    "en": "Create tasks manually or batch from accepted ideas."
+  },
+  {
+    "key": "plugins.dev_scanner.idea_evolution",
+    "en": "Idea Evolution"
+  },
+  {
+    "key": "plugins.dev_scanner.fitness_ranking",
+    "en": "Fitness Ranking"
+  },
+  {
+    "key": "plugins.dev_scanner.similar_to_rejected",
+    "en": "Similar to rejected:"
+  },
+  {
+    "key": "plugins.dev_scanner.synthesis_suggestions",
+    "en": "Synthesis Suggestions"
+  },
+  {
+    "key": "plugins.dev_scanner.percent_similar",
+    "en": "% similar"
+  },
+  {
+    "key": "plugins.dev_scanner.potential_duplicates",
+    "en": "Potential Duplicates"
+  },
+  {
+    "key": "plugins.dev_scanner.scanning_with",
+    "en": "Scanning with"
+  },
+  {
+    "key": "plugins.dev_scanner.analyzing_codebase",
+    "en": "Analyzing codebase..."
+  },
+  {
+    "key": "plugins.dev_scanner.no_previous_scans",
+    "en": "No previous scans yet."
+  },
+  {
+    "key": "plugins.dev_scanner.auto_scan",
+    "en": "Auto-Scan"
+  },
+  {
+    "key": "plugins.dev_scanner.automated_context_scan",
+    "en": "Automated Context Scan"
+  },
+  {
+    "key": "plugins.dev_scanner.run_scan_prefix",
+    "en": "Run:"
+  },
+  {
+    "key": "plugins.dev_scanner.results_prefix",
+    "en": "Results:"
+  },
+  {
+    "key": "plugins.dev_scanner.scan_history_prefix",
+    "en": "Scan History"
+  },
+  {
+    "key": "plugins.dev_scanner.idea_scanner_title",
+    "en": "Idea Scanner"
+  },
+  {
+    "key": "plugins.dev_scanner.idea_scanner_subtitle",
+    "en": "Run specialized agents to generate improvement ideas"
+  },
+  {
+    "key": "plugins.dev_scanner.run_scan_btn",
+    "en": "Run Scan ("
+  },
+  {
+    "key": "plugins.dev_scanner.results_header",
+    "en": "Results ("
+  },
+  {
+    "key": "plugins.dev_scanner.scan_history_header",
+    "en": "Scan History ("
+  },
+  {
+    "key": "plugins.dev_triage.auto_triage_rules",
+    "en": "Auto-Triage Rules"
+  },
+  {
+    "key": "plugins.dev_triage.add_condition",
+    "en": "+ Add condition"
+  },
+  {
+    "key": "plugins.dev_triage.action_label",
+    "en": "Action:"
+  },
+  {
+    "key": "plugins.dev_triage.new_rule",
+    "en": "New Rule"
+  },
+  {
+    "key": "plugins.dev_triage.run_rules",
+    "en": "Run Rules"
+  },
+  {
+    "key": "plugins.obsidian.saved_vaults",
+    "en": "Saved Vaults"
+  },
+  {
+    "key": "plugins.obsidian.remove_vault_title",
+    "en": "Remove saved vault"
+  },
+  {
+    "key": "plugins.obsidian.vault_is_empty",
+    "en": "Vault is empty"
+  },
+  {
+    "key": "plugins.obsidian.failed_to_load",
+    "en": "Failed to load"
+  },
+  {
+    "key": "plugins.obsidian.open_in_obsidian",
+    "en": "Open in Obsidian"
+  },
+  {
+    "key": "plugins.obsidian.copy_path_title",
+    "en": "Copy path"
+  },
+  {
+    "key": "plugins.obsidian.disconnect_title",
+    "en": "Disconnect Google Drive"
+  },
+  {
+    "key": "plugins.obsidian.sign_in_to_enable",
+    "en": "Sign in to enable cloud sync"
+  },
+  {
+    "key": "plugins.obsidian.sign_in_subtitle",
+    "en": "Sign in with your Google account to back up your vault to Google Drive."
+  },
+  {
+    "key": "plugins.obsidian.refresh_title",
+    "en": "Refresh sync status"
+  },
+  {
+    "key": "plugins.obsidian.drive_connected",
+    "en": "Drive Connected"
+  },
+  {
+    "key": "plugins.obsidian.files_synced",
+    "en": "files synced to Drive"
+  },
+  {
+    "key": "plugins.obsidian.connect_drive_desc",
+    "en": "Connect Google Drive to back up your vault to the cloud."
+  },
+  {
+    "key": "plugins.obsidian.step_connect_drive",
+    "en": "Connect Google Drive"
+  },
+  {
+    "key": "plugins.obsidian.step_connect_drive_desc",
+    "en": "Grant Personas access to create files in your Google Drive."
+  },
+  {
+    "key": "plugins.obsidian.step_push_vault",
+    "en": "Push your vault"
+  },
+  {
+    "key": "plugins.obsidian.step_push_vault_desc",
+    "en": "Vault notes are uploaded as markdown files to Google Drive."
+  },
+  {
+    "key": "plugins.obsidian.step_sync_devices",
+    "en": "Sync across devices"
+  },
+  {
+    "key": "plugins.obsidian.step_sync_devices_desc",
+    "en": "Pull on another device to download. Your vault is your data."
+  },
+  {
+    "key": "plugins.obsidian.push_title",
+    "en": "Push vault to Google Drive"
+  },
+  {
+    "key": "plugins.obsidian.push_desc",
+    "en": "Push uploads local vault changes to Google Drive."
+  },
+  {
+    "key": "plugins.obsidian.last_sync_result",
+    "en": "Last Sync Result"
+  },
+  {
+    "key": "plugins.obsidian.pull_title",
+    "en": "Pull vault from Google Drive"
+  },
+  {
+    "key": "plugins.obsidian.connect_google_drive",
+    "en": "Connect Google Drive"
+  },
+  {
+    "key": "plugins.obsidian.connect_drive_btn_desc",
+    "en": "Grant Personas access to create files in your Google Drive."
+  },
+  {
+    "key": "plugins.obsidian.no_stats_yet",
+    "en": "No stats yet."
+  },
+  {
+    "key": "plugins.obsidian.search_title",
+    "en": "Search notes"
+  },
+  {
+    "key": "plugins.obsidian.search_placeholder",
+    "en": "Search notes…"
+  },
+  {
+    "key": "plugins.obsidian.no_matches",
+    "en": "No matches."
+  },
+  {
+    "key": "plugins.obsidian.no_orphan_notes",
+    "en": "No orphan notes — every note is linked from at least one other note."
+  },
+  {
+    "key": "plugins.obsidian.no_mocs",
+    "en": "No MOCs detected — try lowering the link threshold."
+  },
+  {
+    "key": "plugins.obsidian.quick_capture_title",
+    "en": "AI quick-capture"
+  },
+  {
+    "key": "plugins.obsidian.note_search_placeholder",
+    "en": "Search notes or ask a question…"
+  },
+  {
+    "key": "plugins.obsidian.append_to_today",
+    "en": "Append to Today"
+  },
+  {
+    "key": "plugins.obsidian.append_content_placeholder",
+    "en": "Content to append…"
+  },
+  {
+    "key": "plugins.obsidian.save_meeting_title",
+    "en": "Save meeting note"
+  },
+  {
+    "key": "plugins.obsidian.meeting_attendees_placeholder",
+    "en": "Attendees…"
+  },
+  {
+    "key": "plugins.obsidian.meeting_summary_placeholder",
+    "en": "Meeting summary…"
+  },
+  {
+    "key": "plugins.obsidian.meeting_action_items_placeholder",
+    "en": "Action items…"
+  },
+  {
+    "key": "plugins.obsidian.meeting_decisions_placeholder",
+    "en": "Decisions…"
+  },
+  {
+    "key": "plugins.obsidian.save_meeting_note",
+    "en": "Save Meeting Note"
+  },
+  {
+    "key": "plugins.obsidian.remove_vault_setup_title",
+    "en": "Remove"
+  },
+  {
+    "key": "plugins.obsidian.detected_vaults",
+    "en": "Detected vaults:"
+  },
+  {
+    "key": "plugins.obsidian.connected_to",
+    "en": "Connected to \""
+  },
+  {
+    "key": "plugins.obsidian.notes_found",
+    "en": "notes found"
+  },
+  {
+    "key": "plugins.obsidian.scan_for_vaults_title",
+    "en": "Scan for vaults"
+  },
+  {
+    "key": "plugins.obsidian.manual_path_title",
+    "en": "Enter path manually"
+  },
+  {
+    "key": "plugins.obsidian.preview_label",
+    "en": "Preview:"
+  },
+  {
+    "key": "plugins.obsidian.vault_path_agent_placeholder",
+    "en": "/AgentName/"
+  },
+  {
+    "key": "plugins.obsidian.vault_path_note_example",
+    "en": "/fact/memory-title.md"
+  },
+  {
+    "key": "plugins.obsidian.disconnect_sync_title",
+    "en": "Disconnect"
+  },
+  {
+    "key": "plugins.obsidian.active_vault",
+    "en": "Active vault:"
+  },
+  {
+    "key": "plugins.obsidian.refresh_stats_title",
+    "en": "Refresh stats"
+  },
+  {
+    "key": "plugins.obsidian.select_personas",
+    "en": "Select personas to push"
+  },
+  {
+    "key": "plugins.obsidian.select_all",
+    "en": "Select all"
+  },
+  {
+    "key": "plugins.obsidian.no_personas_found",
+    "en": "No personas found"
+  },
+  {
+    "key": "plugins.obsidian.last_push_result",
+    "en": "Last Push Result"
+  },
+  {
+    "key": "plugins.obsidian.app_version",
+    "en": "App Version"
+  },
+  {
+    "key": "plugins.obsidian.vault_version",
+    "en": "Vault Version"
+  },
+  {
+    "key": "plugins.obsidian.keep_app",
+    "en": "Keep App"
+  },
+  {
+    "key": "plugins.obsidian.keep_vault",
+    "en": "Keep Vault"
+  },
+  {
+    "key": "plugins.obsidian.clear_history_title",
+    "en": "Clear history"
+  },
+  {
+    "key": "plugins.obsidian.no_sync_activity",
+    "en": "No sync activity yet. Push or pull to start."
+  },
+  {
+    "key": "plugins.research_lab.review_before_saving",
+    "en": "Review before saving. Uncheck any you don't want to add."
+  },
+  {
+    "key": "plugins.research_lab.re_run",
+    "en": "Re-run"
+  },
+  {
+    "key": "plugins.research_lab.search_placeholder",
+    "en": "Search…"
+  },
+  {
+    "key": "plugins.research_lab.filter_title",
+    "en": "Filter"
+  },
+  {
+    "key": "plugins.research_lab.query_placeholder",
+    "en": "Type a query and press Enter to search across all panels…"
+  },
+  {
+    "key": "plugins.research_lab.close_panel_title",
+    "en": "Close panel"
+  },
+  {
+    "key": "plugins.research_lab.md_extension",
+    "en": ".md"
+  },
+  {
+    "key": "plugins.research_lab.edit_note_aria",
+    "en": "Edit note"
+  },
+  {
+    "key": "media_studio.undo",
+    "en": "Undo"
+  },
+  {
+    "key": "media_studio.redo",
+    "en": "Redo"
+  },
+  {
+    "key": "media_studio.clip_actions",
+    "en": "Clip actions"
+  },
+  {
+    "key": "media_studio.action_split",
+    "en": "Split at playhead"
+  },
+  {
+    "key": "media_studio.action_extract_audio",
+    "en": "Extract audio"
+  },
+  {
+    "key": "media_studio.action_strip_audio",
+    "en": "Strip audio"
+  },
+  {
+    "key": "media_studio.action_keep_audio",
+    "en": "Keep audio"
+  },
+  {
+    "key": "media_studio.action_save_thumbnail",
+    "en": "Save frame as image"
+  },
+  {
+    "key": "media_studio.action_trim_to_file",
+    "en": "Trim to new file"
+  },
+  {
+    "key": "media_studio.extracting_audio",
+    "en": "Extracting audio track..."
+  },
+  {
+    "key": "media_studio.extract_audio_done",
+    "en": "Audio track extracted"
+  },
+  {
+    "key": "media_studio.saving_thumbnail",
+    "en": "Saving frame..."
+  },
+  {
+    "key": "media_studio.thumbnail_saved",
+    "en": "Frame saved"
+  },
+  {
+    "key": "media_studio.trimming_file",
+    "en": "Trimming file..."
+  },
+  {
+    "key": "media_studio.trim_done",
+    "en": "Trim saved"
+  },
+  {
+    "key": "media_studio.effects",
+    "en": "Effects"
+  },
+  {
+    "key": "media_studio.speed",
+    "en": "Speed"
+  },
+  {
+    "key": "media_studio.fade_in",
+    "en": "Fade in"
+  },
+  {
+    "key": "media_studio.fade_out",
+    "en": "Fade out"
+  },
+  {
+    "key": "media_studio.normalize",
+    "en": "Normalize loudness"
+  },
+  {
+    "key": "media_studio.normalize_hint",
+    "en": "EBU R128 applied on export; preview is an approximation"
+  },
+  {
+    "key": "media_studio.strip_audio_hint",
+    "en": "Mutes this clip's audio on export"
+  },
+  {
+    "key": "research_lab.graph",
+    "en": "Graph"
+  },
+  {
+    "key": "research_lab.recent_projects",
+    "en": "Recent projects"
+  },
+  {
+    "key": "research_lab.view_all",
+    "en": "View all"
+  },
+  {
+    "key": "research_lab.edit_project",
+    "en": "Edit project"
+  },
+  {
+    "key": "research_lab.save_changes",
+    "en": "Save changes"
+  },
+  {
+    "key": "research_lab.project_name_placeholder",
+    "en": "e.g. LLM reasoning chain-of-thought faithfulness"
+  },
+  {
+    "key": "research_lab.project_description_placeholder",
+    "en": "Short summary of what this project investigates"
+  },
+  {
+    "key": "research_lab.project_thesis_placeholder",
+    "en": "The central claim or question you're testing"
+  },
+  {
+    "key": "research_lab.clear_vault",
+    "en": "Clear"
+  },
+  {
+    "key": "research_lab.domain_cs",
+    "en": "Computer Science"
+  },
+  {
+    "key": "research_lab.domain_biology",
+    "en": "Biology"
+  },
+  {
+    "key": "research_lab.domain_chemistry",
+    "en": "Chemistry"
+  },
+  {
+    "key": "research_lab.domain_physics",
+    "en": "Physics"
+  },
+  {
+    "key": "research_lab.domain_mathematics",
+    "en": "Mathematics"
+  },
+  {
+    "key": "research_lab.domain_business",
+    "en": "Business"
+  },
+  {
+    "key": "research_lab.domain_medicine",
+    "en": "Medicine"
+  },
+  {
+    "key": "research_lab.domain_general",
+    "en": "General"
+  },
+  {
+    "key": "research_lab.no_matching_sources",
+    "en": "No sources match your filter"
+  },
+  {
+    "key": "research_lab.filter_sources_placeholder",
+    "en": "Filter by title or author…"
+  },
+  {
+    "key": "research_lab.source_title",
+    "en": "Title"
+  },
+  {
+    "key": "research_lab.source_title_placeholder",
+    "en": "Paper title"
+  },
+  {
+    "key": "research_lab.source_type",
+    "en": "Source type"
+  },
+  {
+    "key": "research_lab.source_year",
+    "en": "Year"
+  },
+  {
+    "key": "research_lab.source_year_placeholder",
+    "en": "e.g. 2024"
+  },
+  {
+    "key": "research_lab.source_authors",
+    "en": "Authors"
+  },
+  {
+    "key": "research_lab.source_authors_placeholder",
+    "en": "Author 1, Author 2, …"
+  },
+  {
+    "key": "research_lab.source_url",
+    "en": "URL"
+  },
+  {
+    "key": "research_lab.source_url_placeholder",
+    "en": "https://arxiv.org/abs/…"
+  },
+  {
+    "key": "research_lab.source_doi",
+    "en": "DOI"
+  },
+  {
+    "key": "research_lab.source_doi_placeholder",
+    "en": "10.xxxx/…"
+  },
+  {
+    "key": "research_lab.source_abstract",
+    "en": "Abstract"
+  },
+  {
+    "key": "research_lab.source_abstract_placeholder",
+    "en": "Paper abstract…"
+  },
+  {
+    "key": "research_lab.source_type_arxiv",
+    "en": "arXiv"
+  },
+  {
+    "key": "research_lab.source_type_scholar",
+    "en": "Semantic Scholar"
+  },
+  {
+    "key": "research_lab.source_type_pubmed",
+    "en": "PubMed"
+  },
+  {
+    "key": "research_lab.source_type_web",
+    "en": "Web page"
+  },
+  {
+    "key": "research_lab.source_type_pdf",
+    "en": "PDF"
+  },
+  {
+    "key": "research_lab.source_type_manual",
+    "en": "Manual entry"
+  },
+  {
+    "key": "research_lab.hypothesis_statement",
+    "en": "Statement"
+  },
+  {
+    "key": "research_lab.hypothesis_statement_placeholder",
+    "en": "A testable claim — e.g. Prompt X improves accuracy over baseline by >5%"
+  },
+  {
+    "key": "research_lab.hypothesis_rationale",
+    "en": "Rationale"
+  },
+  {
+    "key": "research_lab.hypothesis_rationale_placeholder",
+    "en": "Why this hypothesis is worth testing"
+  },
+  {
+    "key": "research_lab.experiment_name",
+    "en": "Experiment name"
+  },
+  {
+    "key": "research_lab.experiment_name_placeholder",
+    "en": "e.g. Compare baseline vs. fine-tuned on GSM8K"
+  },
+  {
+    "key": "research_lab.methodology_placeholder",
+    "en": "How will this experiment be run?"
+  },
+  {
+    "key": "research_lab.success_criteria_placeholder",
+    "en": "What result would confirm the hypothesis?"
+  },
+  {
+    "key": "research_lab.linked_hypothesis",
+    "en": "Linked hypothesis"
+  },
+  {
+    "key": "research_lab.no_linked_hypothesis",
+    "en": "No hypothesis linked"
+  },
+  {
+    "key": "research_lab.linked_persona",
+    "en": "Linked persona"
+  },
+  {
+    "key": "research_lab.no_linked_persona",
+    "en": "No persona linked"
+  },
+  {
+    "key": "research_lab.run_input",
+    "en": "Run input (optional)"
+  },
+  {
+    "key": "research_lab.run_input_placeholder",
+    "en": "Input text that will be passed to the persona on each run."
+  },
+  {
+    "key": "research_lab.pass_pattern",
+    "en": "Pass pattern (regex)"
+  },
+  {
+    "key": "research_lab.pass_pattern_placeholder",
+    "en": "e.g. PASSED|success|score\\s*>\\s*0\\.8"
+  },
+  {
+    "key": "research_lab.running_experiment",
+    "en": "Running…"
+  },
+  {
+    "key": "research_lab.view_runs",
+    "en": "View runs"
+  },
+  {
+    "key": "research_lab.no_runs_yet",
+    "en": "No runs yet"
+  },
+  {
+    "key": "research_lab.run_passed",
+    "en": "Passed"
+  },
+  {
+    "key": "research_lab.run_failed",
+    "en": "Failed"
+  },
+  {
+    "key": "research_lab.run_duration",
+    "en": "Duration"
+  },
+  {
+    "key": "research_lab.run_cost",
+    "en": "Cost"
+  },
+  {
+    "key": "research_lab.run_number",
+    "en": "Run #"
+  },
+  {
+    "key": "research_lab.runs_history",
+    "en": "Run history"
+  },
+  {
+    "key": "research_lab.create_finding",
+    "en": "New finding"
+  },
+  {
+    "key": "research_lab.finding_title",
+    "en": "Title"
+  },
+  {
+    "key": "research_lab.finding_title_placeholder",
+    "en": "Short headline for the finding"
+  },
+  {
+    "key": "research_lab.finding_description",
+    "en": "Description"
+  },
+  {
+    "key": "research_lab.finding_description_placeholder",
+    "en": "What did you observe and why does it matter?"
+  },
+  {
+    "key": "research_lab.finding_category",
+    "en": "Category"
+  },
+  {
+    "key": "research_lab.finding_category_placeholder",
+    "en": "e.g. performance, limitation, surprise"
+  },
+  {
+    "key": "research_lab.report_title",
+    "en": "Title"
+  },
+  {
+    "key": "research_lab.report_title_placeholder",
+    "en": "e.g. Q2 Research Summary"
+  },
+  {
+    "key": "research_lab.report_format",
+    "en": "Format"
+  },
+  {
+    "key": "process_labels.feedback_chat",
+    "en": "Feedback Chat"
+  },
+  {
+    "key": "execution.needs_credential",
+    "en": "needs credential"
+  },
+  {
+    "key": "execution.run_preview",
+    "en": "Run Preview"
+  },
+  {
+    "key": "execution.close_preview",
+    "en": "Close preview"
+  },
+  {
+    "key": "execution.budget_limit",
+    "en": "Budget limit"
+  },
+  {
+    "key": "execution.run_agent",
+    "en": "Run Agent"
+  },
+  {
+    "key": "gitlab.trigger_on",
+    "en": "on:"
+  },
+  {
+    "key": "gitlab.connecting_to_gitlab",
+    "en": "Connecting to GitLab..."
+  },
+  {
+    "key": "gitlab.deploying_to_gitlab",
+    "en": "Deploying persona to GitLab..."
+  },
+  {
+    "key": "gitlab.pipeline_hash",
+    "en": "Pipeline #"
+  },
+  {
+    "key": "pipeline.no_timeline_data",
+    "en": "No timeline data"
+  },
+  {
+    "key": "pipeline.clear_filter",
+    "en": "Clear filter"
+  },
+  {
+    "key": "pipeline.filter_to_run",
+    "en": "Filter to this run"
+  },
+  {
+    "key": "pipeline.new_memories_one",
+    "en": "{count} new memory"
+  },
+  {
+    "key": "pipeline.new_memories_other",
+    "en": "{count} new memories"
+  },
+  {
+    "key": "shared.draft_editor.edit_tabs_label",
+    "en": "Draft edit tabs"
+  },
+  {
+    "key": "shared.draft_editor.request_ai_adjustments",
+    "en": "Request AI Adjustments"
+  },
+  {
+    "key": "shared.draft_editor.edit_raw_json_hint",
+    "en": "Edit raw JSON. Changes override form fields."
+  },
+  {
+    "key": "shared.draft_editor.no_custom_sections",
+    "en": "No custom sections yet"
+  },
+  {
+    "key": "shared.draft_editor.no_content_to_preview",
+    "en": "No content to preview"
+  },
+  {
+    "key": "shared.draft_editor.edit_raw",
+    "en": "Edit Raw"
+  },
+  {
+    "key": "shared.draft_editor.credential_links",
+    "en": "Credential Links"
+  },
+  {
+    "key": "shared.draft_editor.view_full_prompt",
+    "en": "View Full Prompt"
+  },
+  {
+    "key": "shared.draft_editor.hide_full_prompt",
+    "en": "Hide Full Prompt"
+  },
+  {
+    "key": "shared.forms_extra.color_hex_placeholder",
+    "en": "#8b5cf6"
+  },
+  {
+    "key": "shared.forms_extra.attach_file_title",
+    "en": "Attach file (API spec, schema, MCP config)"
+  },
+  {
+    "key": "shared.forms_extra.add_references_title",
+    "en": "Add reference URLs or connection strings"
+  },
+  {
+    "key": "shared.forms_extra.no_matches",
+    "en": "No matches"
+  },
+  {
+    "key": "shared.forms_extra.all_prefix",
+    "en": "All ("
+  },
+  {
+    "key": "shared.reasoning_trace.heartbeat_silent",
+    "en": "s (silent"
+  },
+  {
+    "key": "shared.reasoning_trace.waiting",
+    "en": "Waiting for execution events..."
+  },
+  {
+    "key": "shared.reasoning_trace.tool_call_label",
+    "en": "Tool Call:"
+  },
+  {
+    "key": "shared.sidebar_extra.clear_completed_title",
+    "en": "Clear completed and queued items"
+  },
+  {
+    "key": "shared.sidebar_extra.no_credentials",
+    "en": "No credentials yet"
+  },
+  {
+    "key": "shared.sidebar_extra.ai_setup_wizard",
+    "en": "AI Setup Wizard"
+  },
+  {
+    "key": "shared.sidebar_extra.all_personas",
+    "en": "All personas"
+  },
+  {
+    "key": "shared.sidebar_extra.no_scheduled_agents",
+    "en": "No agents with schedules"
+  },
+  {
+    "key": "shared.sidebar_extra.all_agents_label",
+    "en": "All Agents"
+  },
+  {
+    "key": "shared.sidebar_extra.draft_builds",
+    "en": "Draft builds"
+  },
+  {
+    "key": "shared.sidebar_extra.dev_tools_label",
+    "en": "Dev Tools"
+  },
+  {
+    "key": "shared.sidebar_extra.obsidian_brain",
+    "en": "Obsidian Brain"
+  },
+  {
+    "key": "shared.sidebar_extra.active_twin",
+    "en": "Active Twin"
+  },
+  {
+    "key": "shared.sidebar_extra.research_lab",
+    "en": "Research Lab"
+  },
+  {
+    "key": "shared.execution_detail.running",
+    "en": "Running..."
+  },
+  {
+    "key": "shared.execution_detail.rerun",
+    "en": "Re-run"
+  },
+  {
+    "key": "shared.execution_detail.retry_prefix",
+    "en": "Retry #"
+  },
+  {
+    "key": "shared.execution_detail.importance_prefix",
+    "en": "importance:"
+  },
+  {
+    "key": "shared.execution_detail.confidence_suffix",
+    "en": "% confidence"
+  },
+  {
+    "key": "shared.progress_extra.continue_working",
+    "en": "You can continue working -- we'll notify you when the draft is ready."
+  },
+  {
+    "key": "shared.progress_extra.draft_ready",
+    "en": "Your persona draft is ready for review and editing."
+  },
+  {
+    "key": "shared.progress_extra.click_generate",
+    "en": "Click “Generate Persona Draft” to begin."
+  },
+  {
+    "key": "shared.progress_extra.skip_configuration",
+    "en": "Skip configuration"
+  },
+  {
+    "key": "shared.progress_extra.no_config_questions",
+    "en": "No configuration questions needed."
+  },
+  {
+    "key": "shared.progress_extra.answer_questions",
+    "en": "Answer these questions to customize the persona generation."
+  },
+  {
+    "key": "shared.progress_extra.no_output",
+    "en": "No output yet..."
+  },
+  {
+    "key": "shared.progress_extra.s_elapsed",
+    "en": "s elapsed"
+  },
+  {
+    "key": "shared.progress_extra.s_remaining",
+    "en": "s remaining"
+  },
+  {
+    "key": "shared.progress_extra.show_cli_output",
+    "en": "Show CLI output"
+  },
+  {
+    "key": "shared.progress_extra.hide_cli_output",
+    "en": "Hide CLI output"
+  },
+  {
+    "key": "shared.terminal_extra.connecting",
+    "en": "Connecting to provider"
+  },
+  {
+    "key": "shared.terminal_extra.queued_at",
+    "en": "Queued at position"
+  },
+  {
+    "key": "shared.terminal_extra.new_line",
+    "en": "new line"
+  },
+  {
+    "key": "shared.terminal_extra.new_lines",
+    "en": "new lines"
+  },
+  {
+    "key": "shared.terminal_extra.below",
+    "en": "below"
+  },
+  {
+    "key": "shared.terminal_extra.lines_suffix",
+    "en": "lines)"
+  },
+  {
+    "key": "shared.terminal_extra.search_and_filter",
+    "en": "Search & Filter"
+  },
+  {
+    "key": "shared.use_cases_extra.input_placeholder",
+    "en": "Type input to run this use case…"
+  },
+  {
+    "key": "shared.use_cases_extra.model_placeholder",
+    "en": "e.g. claude-3-5-sonnet-latest"
+  },
+  {
+    "key": "shared.use_cases_extra.use_case_singular",
+    "en": "use case"
+  },
+  {
+    "key": "shared.use_cases_extra.window_prefix",
+    "en": "(window:"
+  },
+  {
+    "key": "shared.use_cases_extra.loading_history",
+    "en": "Loading history..."
+  },
+  {
+    "key": "shared.use_cases_extra.no_executions",
+    "en": "No executions yet"
+  },
+  {
+    "key": "shared.use_cases_extra.run_to_see_history",
+    "en": "Run this use case to see execution history, timings, and costs here."
+  },
+  {
+    "key": "shared.use_cases_extra.run_use_case",
+    "en": "Run this use case"
+  },
+  {
+    "key": "shared.use_cases_extra.custom_model",
+    "en": "Custom model"
+  },
+  {
+    "key": "shared.use_cases_extra.no_results",
+    "en": "No results found"
+  },
+  {
+    "key": "shared.use_cases_extra.ctrl_enter",
+    "en": "Ctrl+Enter"
+  },
+  {
+    "key": "releases.whats_new.title",
+    "en": "What's New"
+  },
+  {
+    "key": "releases.whats_new.subtitle_roadmap",
+    "en": "What we're building now and what comes next."
+  },
+  {
+    "key": "releases.whats_new.subtitle_changelog",
+    "en": "What's new in your version of Personas."
+  },
+  {
+    "key": "releases.whats_new.nav_bar_roadmap_label",
+    "en": "Roadmap"
+  },
+  {
+    "key": "releases.whats_new.empty",
+    "en": "Nothing to share for this release yet — check back soon."
+  },
+  {
+    "key": "releases.whats_new.status_released",
+    "en": "Released"
+  },
+  {
+    "key": "releases.whats_new.status_active",
+    "en": "Current"
+  },
+  {
+    "key": "releases.whats_new.status_planned",
+    "en": "Planned"
+  },
+  {
+    "key": "releases.whats_new.status_roadmap",
+    "en": "Roadmap"
+  },
+  {
+    "key": "releases.whats_new.type_feature",
+    "en": "New"
+  },
+  {
+    "key": "releases.whats_new.type_fix",
+    "en": "Fixed"
+  },
+  {
+    "key": "releases.whats_new.type_security",
+    "en": "Security"
+  },
+  {
+    "key": "releases.whats_new.type_docs",
+    "en": "Docs"
+  },
+  {
+    "key": "releases.whats_new.type_chore",
+    "en": "Chore"
+  },
+  {
+    "key": "releases.whats_new.type_breaking",
+    "en": "Breaking"
+  },
+  {
+    "key": "releases.whats_new.item_status_in_progress",
+    "en": "In Progress"
+  },
+  {
+    "key": "releases.whats_new.item_status_planned",
+    "en": "Planned"
+  },
+  {
+    "key": "releases.whats_new.item_status_completed",
+    "en": "Done"
+  },
+  {
+    "key": "releases.whats_new.priority_now",
+    "en": "Now"
+  },
+  {
+    "key": "releases.whats_new.priority_next",
+    "en": "Next"
+  },
+  {
+    "key": "releases.whats_new.priority_later",
+    "en": "Later"
+  },
+  {
+    "key": "releases.whats_new.summary_in_progress",
+    "en": "{count} In Progress"
+  },
+  {
+    "key": "releases.whats_new.summary_next",
+    "en": "{count} Next"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_1_label",
+    "en": "Alpha 1"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_1_summary",
+    "en": "The first preview of Personas."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_1_item_1_title",
+    "en": "First public preview"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_1_item_1_description",
+    "en": "Design AI agents, run them on a schedule or trigger, and watch their work live on your desktop."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_label",
+    "en": "Alpha 2"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_summary",
+    "en": "Connect Personas to other AI tools and read what's new without leaving the app."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_1_title",
+    "en": "Open your agents to other AI tools"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_1_description",
+    "en": "Personas can now talk to other AI tools through a shared protocol. Pick exactly which agents you want to share, and protect them with access keys you control — your private agents stay private by default."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_2_title",
+    "en": "Safer access for the desktop app"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_2_description",
+    "en": "The desktop app creates its own short-lived access key on every launch, so it can talk to its background services without exposing anything you didn't approve."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_3_title",
+    "en": "Release notes inside the app"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_3_description",
+    "en": "See what's new in every Personas release without leaving the app. Switch between past versions, the current release, and the long-term roadmap from one place."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_4_title",
+    "en": "Your agents learn from every session"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_4_description",
+    "en": "Personas now captures the lessons from each agent session, distills them into reusable knowledge, and brings them forward to the next run. Your agents get smarter the longer you use them — no manual training needed."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_5_title",
+    "en": "Turn any document into a listenable briefing"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_5_description",
+    "en": "A new template that turns research reports, meeting transcripts, or long articles into a 5- to 15-minute two-host audio conversation you can listen to on the go. You pick the style — casual, formal, news, or executive — and review the script before the voices are generated."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_6_title",
+    "en": "A Stanford-trained editor for your writing"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_6_description",
+    "en": "A new template that reviews your drafts using the Stanford \"Writing in the Sciences\" method. It flags passive voice, dead-weight phrases, and jargon — and explains exactly why every suggested change makes the sentence clearer. It learns your voice from the edits you accept or reject."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_7_title",
+    "en": "Turn 20 hours of YouTube production into 3"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_7_description",
+    "en": "A new template compresses a full YouTube video cycle down to about three hours by handling everything except filming. It checks your niche is worth pursuing, drafts a hook-first script in your voice, and auto-removes retakes from raw footage using the approved script as ground truth — so you can film naturally, stumble freely, and keep going."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_8_title",
+    "en": "Run Apify scrapers from your agents"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_8_description",
+    "en": "Connect any actor from the Apify platform — YouTube scrapers, Twitter scrapers, browser automation, and hundreds of others — directly to your agents. Unlocks research workflows that need data the official APIs cannot reach."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_9_title",
+    "en": "X (Twitter) is now a connector"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_9_description",
+    "en": "Search recent tweets, track trending topics, and post directly from your agents. Useful for content research, social listening, and marketing automation without leaving Personas."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_10_title",
+    "en": "Watch YouTube from your agents"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_10_description",
+    "en": "The first video platform connector in Personas. Search videos, fetch channel statistics, pull trending content, and analyze competitors directly from any agent that needs to understand what is happening on YouTube."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_11_title",
+    "en": "Turn audio into text with Deepgram"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_11_description",
+    "en": "A new speech-to-text connector that transcribes audio files or URLs with word-level timing. Powers the YouTube creator assistant for auto-editing, and gives any agent the ability to process voice notes, meeting recordings, or podcast content."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_12_title",
+    "en": "Other AI tools can check on and stop your agents"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_12_description",
+    "en": "When another AI tool calls one of your shared agents, it can now ask 'is this still running?' and 'please stop now' in mid-flight. Long research jobs no longer have to keep the connection open the whole time, and stuck runs can be cancelled cleanly from the calling side. Each agent only ever sees its own runs, so nothing leaks across agents."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_13_title",
+    "en": "New connector: Humbalytics analytics"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_13_description",
+    "en": "Track traffic, run A/B experiments, and swap landing-page copy without touching your code. Personas can now pull heat maps and conversion data from Humbalytics and use them to guide your experiments."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_14_title",
+    "en": "New connector: Firecrawl web scraping"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_14_description",
+    "en": "Agents can now read any website — even modern JavaScript-heavy ones — as clean, structured content. Useful for research, market intelligence, and content-monitoring agents."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_15_title",
+    "en": "A marketing agent that actually runs your A/B tests"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_15_description",
+    "en": "A new template that proposes headline variants, deploys them with your approval, waits for statistical significance, and promotes winners automatically. Every change is human-gated before going live, and each experiment runs long enough for the results to actually mean something."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_16_title",
+    "en": "Read your team's BI dashboards from any agent"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_16_description",
+    "en": "Personas can now pull results from saved Redash queries and dashboards. If your team already maintains shared dashboards, your agents read the same numbers humans see — no SQL rewriting, no CSV exports, no copy-paste."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_17_title",
+    "en": "Metabase is now a connector"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_17_description",
+    "en": "Your agents can run saved Metabase questions and read dashboards straight from your workspace. Works with Metabase Pro, Enterprise, and any self-hosted instance."
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_18_title",
+    "en": "Daily BI digest delivered to you"
+  },
+  {
+    "key": "releases.whats_new.release_0_0_2_item_18_description",
+    "en": "A new template picks up the saved queries you already maintain in Redash or Metabase, summarizes the latest numbers each morning, and posts a plain-English digest with week-over-week anomaly flags. Your dashboards stay useful even when no one opens them."
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_label",
+    "en": "Roadmap"
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_summary",
+    "en": "What we're building now and what comes next."
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_2_title",
+    "en": "Cloud Integration"
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_2_description",
+    "en": "Run your agents 24/7 in the cloud and stream their work back to your desktop in real time."
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_3_title",
+    "en": "Web App"
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_3_description",
+    "en": "A web companion for accounts, billing, and managing agents from any browser."
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_4_title",
+    "en": "Use Personas in your language"
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_4_description",
+    "en": "Full multi-language support, including right-to-left layouts and language-specific fonts."
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_6_title",
+    "en": "Team Workspaces"
+  },
+  {
+    "key": "releases.whats_new.release_roadmap_item_6_description",
+    "en": "Build agents together with your team — shared spaces, role permissions, and live dashboards."
+  }
+]

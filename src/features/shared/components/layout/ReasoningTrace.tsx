@@ -67,7 +67,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-start gap-2 py-1">
           <span className="text-green-400 shrink-0">{"\u25B6"}</span>
           <div className="min-w-0 flex-1 typo-caption">
-            <span className="font-medium">Tool Call: {entry.toolName}</span>
+            <span className="font-medium">{t.shared.reasoning_trace.tool_call_label} {entry.toolName}</span>
             <div className="mt-0.5">
               <ExpandableText text={entry.inputPreview} maxLen={80} />
             </div>
@@ -96,9 +96,9 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <span className={`shrink-0 ${entry.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}`}>{entry.changeType === 'read' ? '\u25CB' : '\u25CF'}</span>
           <div className="min-w-0 flex-1 typo-caption">
             <span className="font-medium capitalize">{entry.changeType}</span>
-            <span className="text-muted-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
+            <span className="text-foreground ml-1.5 truncate">{entry.path.split('/').pop()}</span>
           </div>
-          <span className="typo-caption text-muted-foreground/50 shrink-0">{ts}</span>
+          <span className="typo-caption text-foreground shrink-0">{ts}</span>
         </div>
       );
 
@@ -108,7 +108,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
         <div className="flex items-center gap-2 py-0.5 opacity-50">
           <span className="text-foreground shrink-0">{"\u2022"}</span>
           <span className="typo-caption text-foreground">
-            Elapsed {Math.round(entry.elapsed / 1000)}s (silent {Math.round(entry.silence / 1000)}s)
+            {Math.round(entry.elapsed / 1000)}{t.shared.reasoning_trace.heartbeat_silent} {Math.round(entry.silence / 1000)}s)
           </span>
           <span className="typo-caption text-foreground ml-auto shrink-0">{ts}</span>
         </div>
@@ -145,6 +145,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
 }
 
 export default function ReasoningTrace({ entries, isLive, startTime }: ReasoningTraceProps) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
 
@@ -167,7 +168,7 @@ export default function ReasoningTrace({ entries, isLive, startTime }: Reasoning
   if (entries.length === 0) {
     return (
       <div className="px-3 py-4 typo-caption text-foreground text-center">
-        Waiting for execution events...
+        {t.shared.reasoning_trace.waiting}
       </div>
     );
   }

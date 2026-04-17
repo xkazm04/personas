@@ -45,11 +45,11 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
   }, []);
 
   return (
-    <div className="relative rounded-lg border border-primary/10 bg-secondary/20 overflow-hidden" style={{ minHeight }}>
+    <div className="relative rounded-card border border-primary/10 bg-secondary/20 overflow-hidden" style={{ minHeight }}>
       {/* Syntax-highlighted layer */}
       <pre
         ref={preRef}
-        className="absolute inset-0 p-3 text-sm font-mono whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
+        className="absolute inset-0 p-3 typo-code font-mono whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
         aria-hidden
       >
         {tokens.map((token, i) => (
@@ -69,7 +69,7 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
         onScroll={handleScroll}
         placeholder={placeholder}
         spellCheck={false}
-        className="relative w-full h-full p-3 text-sm font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus-visible:outline-none placeholder:text-muted-foreground/60"
+        className="relative w-full h-full p-3 typo-code font-mono bg-transparent text-transparent caret-foreground/80 resize-none focus-visible:outline-none placeholder:text-foreground"
         style={{ minHeight }}
       />
     </div>

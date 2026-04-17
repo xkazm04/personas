@@ -83,30 +83,30 @@ export default function ScheduleCalendar({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={goToday}
-            className="px-2.5 py-1 text-xs rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="px-2.5 py-1 typo-caption rounded-card border border-primary/10 hover:bg-secondary/50 text-foreground transition-colors"
           >
             Today
           </button>
-          <span className="typo-heading text-foreground/80 ml-1">
+          <span className="typo-heading text-foreground ml-1">
             {headerLabel}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
           {/* Legend */}
-          <div className="flex items-center gap-3 mr-4 text-[10px] text-muted-foreground/60">
+          <div className="flex items-center gap-3 mr-4 text-[10px] text-foreground">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-400/60" /> Projected
             </span>
@@ -124,23 +124,23 @@ export default function ScheduleCalendar({
           </div>
 
           {/* View toggle */}
-          <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+          <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => setView('week')}
-              className={`px-2.5 py-1 text-xs transition-colors ${
+              className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'week'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/60 hover:text-foreground/70'
+                  : 'text-foreground hover:text-foreground/70'
               }`}
             >
               Week
             </button>
             <button
               onClick={() => setView('month')}
-              className={`px-2.5 py-1 text-xs transition-colors ${
+              className={`px-2.5 py-1 typo-caption transition-colors ${
                 view === 'month'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/60 hover:text-foreground/70'
+                  : 'text-foreground hover:text-foreground/70'
               }`}
             >
               Month

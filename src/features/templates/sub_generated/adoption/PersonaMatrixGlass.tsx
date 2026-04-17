@@ -8,6 +8,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, HelpCircle, Play, Eye, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import {
@@ -71,8 +72,8 @@ function StatusPill({ status }: { status?: CellBuildStatus }) {
   if (status === 'error')
     return <span className={`${base} bg-red-500/15 border border-red-500/25 text-red-400`}><AlertCircle className="w-3 h-3" /> Error</span>;
   if (status === 'pending' || status === 'filling')
-    return <span className={`${base} bg-primary/10 border border-primary/15 animate-pulse text-muted-foreground`}><Loader2 className="w-3 h-3 animate-spin" /> {status === 'filling' ? 'Filling' : 'Pending'}</span>;
-  return <span className={`${base} bg-primary/10 border border-primary/15 text-muted-foreground`}><HelpCircle className="w-3 h-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}</span>;
+    return <span className={`${base} bg-primary/10 border border-primary/15 animate-pulse text-foreground`}><Loader2 className="w-3 h-3 animate-spin" /> {status === 'filling' ? 'Filling' : 'Pending'}</span>;
+  return <span className={`${base} bg-primary/10 border border-primary/15 text-foreground`}><HelpCircle className="w-3 h-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}</span>;
 }
 
 /* ─── Phase label ───────────────────────────────────────────────────── */
@@ -95,6 +96,7 @@ function GlassCell({ dim, items, status }: {
   items?: string[];
   status?: CellBuildStatus;
 }) {
+  const { t } = useTranslation();
   const DimIcon = dim.icon;
 
   return (
@@ -112,7 +114,7 @@ function GlassCell({ dim, items, status }: {
           {/* Label with accent dot + status */}
           <div className="flex items-center gap-2.5 mb-3">
             <span className={`w-2 h-2 rounded-full ${dim.dotCls}`} />
-            <span className="text-sm font-semibold uppercase tracking-[0.2em] text-foreground/70">
+            <span className="typo-heading font-semibold uppercase tracking-[0.2em] text-foreground">
               {CELL_LABELS[dim.key] ?? dim.key}
             </span>
             <div className="ml-auto"><StatusPill status={status} /></div>
@@ -128,14 +130,14 @@ function GlassCell({ dim, items, status }: {
           {items && items.length > 0 ? (
             <ul className="space-y-1.5">
               {items.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-md text-foreground/80 leading-relaxed">
+                <li key={i} className="flex items-start gap-2 text-md text-foreground leading-relaxed">
                   <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground/25 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-md text-muted-foreground italic">No data yet</p>
+            <p className="text-md text-foreground italic">{t.templates.matrix_variants.no_data_yet}</p>
           )}
           </div>
 
@@ -151,6 +153,7 @@ function CenterHub({
   buildPhase, completeness = 0, isRunning, buildActivity,
   onStartTest, onApproveTest, onViewAgent,
 }: Omit<PersonaMatrixGlassProps, 'cellBuildStates'>) {
+  const { t } = useTranslation();
   const pct = Math.round(Math.min(100, Math.max(0, completeness)));
 
   return (
@@ -167,8 +170,8 @@ function CenterHub({
       <div className="relative z-10 flex flex-col items-center gap-5 w-full max-w-[280px]">
         {/* Phase pill */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full backdrop-blur-md bg-primary/10 border border-primary/15">
-          {isRunning && <Loader2 className="w-3.5 h-3.5 text-muted-foreground animate-spin" />}
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/70">
+          {isRunning && <Loader2 className="w-3.5 h-3.5 text-foreground animate-spin" />}
+          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground">
             {phaseLabel(buildPhase)}
           </span>
         </div>
@@ -178,7 +181,7 @@ function CenterHub({
         {/* Progress bar */}
         <div className="w-full">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Completeness</span>
+            <span className="text-[11px] font-medium text-foreground uppercase tracking-wider">Completeness</span>
             <span className="text-[13px] font-semibold text-foreground">{pct}%</span>
           </div>
           <div className="w-full h-2 rounded-full bg-primary/10 overflow-hidden">
@@ -194,41 +197,41 @@ function CenterHub({
 
         {/* Activity text */}
         {buildActivity && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/10 w-full">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-primary/5 border border-primary/10 w-full">
             <span className="flex gap-0.5">
               <span className="w-1 h-1 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-1 h-1 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1 h-1 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: '300ms' }} />
             </span>
-            <span className="text-[12px] text-foreground/70 truncate">{buildActivity}</span>
+            <span className="text-[12px] text-foreground truncate">{buildActivity}</span>
           </div>
         )}
 
         {/* Action buttons */}
         <div className="flex flex-col gap-2 w-full mt-2">
           {onStartTest && buildPhase === 'draft_ready' && (
-            <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
-              <Play className="w-4 h-4" /> Start Test
+            <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
+              <Play className="w-4 h-4" /> {t.templates.matrix_variants.start_test}
             </button>
           )}
           {buildPhase === 'testing' && (
-            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md bg-primary/5 border border-primary/10 text-[13px] font-medium text-foreground/70">
+            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md bg-primary/5 border border-primary/10 text-[13px] font-medium text-foreground">
               <span className="flex gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
               </span>
-              Testing agent...
+              {t.templates.matrix_variants.testing_agent}
             </div>
           )}
           {onApproveTest && buildPhase === 'test_complete' && (
-            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
-              <CheckCircle2 className="w-4 h-4" /> Approve &amp; Promote
+            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
+              <CheckCircle2 className="w-4 h-4" /> {t.templates.matrix_variants.approve_and_promote}
             </button>
           )}
           {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
-            <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
-              <Eye className="w-4 h-4" /> View Agent
+            <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
+              <Eye className="w-4 h-4" /> {t.templates.matrix_variants.view_agent_btn}
             </button>
           )}
         </div>

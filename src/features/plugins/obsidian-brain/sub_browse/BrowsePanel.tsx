@@ -41,7 +41,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
     return (
       <button
         onClick={() => onSelect(node.path)}
-        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors group focus-ring ${
+        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card transition-colors group focus-ring ${
           isSelected ? 'bg-violet-500/10 border border-violet-500/20' : 'hover:bg-secondary/30 border border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -58,7 +58,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/30 transition-colors focus-ring"
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/30 transition-colors focus-ring"
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {expanded ? (
@@ -170,7 +170,7 @@ export default function BrowsePanel() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground focus-ring transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground focus-ring transition-all"
           />
         </div>
 
@@ -203,7 +203,7 @@ export default function BrowsePanel() {
               <p className="typo-heading typo-card-label truncate">{selectedFileName}</p>
               <button
                 onClick={openInObsidian}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open in Obsidian
@@ -214,7 +214,7 @@ export default function BrowsePanel() {
                 <LoadingSpinner size="md" label="Loading note..." />
               </div>
             ) : noteContent ? (
-              <div className="prose prose-invert prose-sm max-w-none rounded-xl bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
+              <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>
               </div>
             ) : null}

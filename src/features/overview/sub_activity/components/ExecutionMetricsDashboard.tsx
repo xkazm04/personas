@@ -30,8 +30,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <AlertTriangle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-red-400">{m.error}</p>
-          <button onClick={m.load} className="mt-2 text-sm text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
+          <p className="typo-body text-red-400">{m.error}</p>
+          <button onClick={m.load} className="mt-2 typo-body text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
         </div>
       </div>
     );
@@ -41,8 +41,8 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <TrendingUp className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground/70">{t.overview.activity.no_data}</p>
+          <TrendingUp className="w-6 h-6 text-foreground mx-auto mb-2" />
+          <p className="typo-body text-foreground">{t.overview.activity.no_data}</p>
         </div>
       </div>
     );
@@ -57,13 +57,13 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           <h3 className="typo-heading text-foreground/90">{t.overview.activity.execution_metrics}</h3>
           <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
           <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
-          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
             <Timer className="w-3 h-3" />
             {m.activeRangeLabel}
           </span>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4" />
           </button>
         )}

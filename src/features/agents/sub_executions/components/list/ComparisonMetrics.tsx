@@ -2,7 +2,7 @@ import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { pctChange, fmtPct, deltaColor } from '../../libs/comparisonHelpers';
 
 function deltaIcon(pct: number) {
-  if (Math.abs(pct) < 5) return <Minus className="w-3 h-3 text-muted-foreground/60" />;
+  if (Math.abs(pct) < 5) return <Minus className="w-3 h-3 text-foreground" />;
   if (pct < 0) return <TrendingDown className="w-3 h-3 text-emerald-400" />;
   return <TrendingUp className="w-3 h-3 text-amber-400" />;
 }
@@ -22,12 +22,12 @@ export function MetricDeltaCard({
 }) {
   const pct = pctChange(leftVal, rightVal);
   return (
-    <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2.5 space-y-1">
-      <div className="typo-code uppercase tracking-wider text-muted-foreground/60">{label}</div>
+    <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2.5 space-y-1">
+      <div className="typo-code uppercase tracking-wider text-foreground">{label}</div>
       <div className="flex items-center gap-3">
-        <span className="typo-code text-foreground/80">{format(leftVal)}</span>
-        <span className="text-muted-foreground/40">{'→'}</span>
-        <span className="typo-code text-foreground/80">{format(rightVal)}</span>
+        <span className="typo-code text-foreground">{format(leftVal)}</span>
+        <span className="text-foreground">{'→'}</span>
+        <span className="typo-code text-foreground">{format(rightVal)}</span>
       </div>
       <div className={`flex items-center gap-1 typo-code ${deltaColor(pct, lowerIsBetter)}`}>
         {deltaIcon(pct)}

@@ -105,7 +105,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
       saving={adding}
     >
       <div className="flex items-stretch gap-2">
-        <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 focus-within:border-primary/40">
+        <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-card bg-secondary/50 border border-border/30 focus-within:border-primary/40">
           <Search className="w-4 h-4 text-foreground" />
           <input
             type="text"
@@ -126,7 +126,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
           type="button"
           onClick={runSearch}
           disabled={loading || !query.trim()}
-          className="px-4 py-2 rounded-lg typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          className="px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
           {t.common.search_ellipsis.replace('…', '') || 'Search'}

@@ -7,13 +7,13 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ kb }: SettingsTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Info card */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
+        <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
           <Brain className="w-4 h-4 text-violet-400" />
           {sh.kb_info}
         </h3>
@@ -31,8 +31,8 @@ export function SettingsTab({ kb }: SettingsTabProps) {
       </div>
 
       {/* Stats */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground/90">{sh.statistics}</h3>
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
+        <h3 className="typo-heading font-semibold text-foreground/90">{sh.statistics}</h3>
         <div className="grid grid-cols-2 gap-4">
           <StatCard label={sh.label_documents} value={kb.documentCount} />
           <StatCard label={sh.label_chunks} value={kb.chunkCount} />
@@ -40,14 +40,13 @@ export function SettingsTab({ kb }: SettingsTabProps) {
       </div>
 
       {/* Model info */}
-      <div className="rounded-xl border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
-        <h3 className="text-sm font-semibold text-violet-300/90 flex items-center gap-2">
+      <div className="rounded-modal border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
+        <h3 className="typo-heading font-semibold text-violet-300/90 flex items-center gap-2">
           <Cpu className="w-4 h-4" />
           {sh.local_embedding}
         </h3>
-        <p className="text-xs text-muted-foreground/60 leading-relaxed">
-          Embeddings are generated locally using {kb.embeddingModel} ({kb.embeddingDims}-dim).
-          No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.
+        <p className="typo-caption text-foreground leading-relaxed">
+          {tx(sh.local_embedding_hint, { model: kb.embeddingModel, dims: kb.embeddingDims })}
         </p>
       </div>
     </div>
@@ -57,11 +56,11 @@ export function SettingsTab({ kb }: SettingsTabProps) {
 function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label: string; value: string; mono?: boolean }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs text-muted-foreground/50 flex items-center gap-1">
+      <p className="typo-caption text-foreground flex items-center gap-1">
         <Icon className="w-3 h-3" />
         {label}
       </p>
-      <p className={`text-sm text-foreground/80 truncate ${mono ? 'font-mono text-xs' : ''}`}>
+      <p className={`typo-code text-foreground truncate ${mono ? 'font-mono typo-code' : ''}`}>
         {value}
       </p>
     </div>
@@ -70,9 +69,9 @@ function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-secondary/30 border border-primary/10 p-3 text-center">
-      <p className="text-2xl font-semibold text-foreground/90">{value.toLocaleString()}</p>
-      <p className="text-xs text-muted-foreground/50 mt-1">{label}</p>
+    <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 text-center">
+      <p className="typo-heading-lg font-semibold text-foreground/90">{value.toLocaleString()}</p>
+      <p className="typo-caption text-foreground mt-1">{label}</p>
     </div>
   );
 }

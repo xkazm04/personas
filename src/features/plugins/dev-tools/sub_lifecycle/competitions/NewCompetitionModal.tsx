@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { startCompetition, startBatchExecution } from '@/api/devTools/devTools';
 import { generateStrategies, type StrategyPreset, type StrategyGenes } from './strategyPresets';
 import type { CompetitionSlotInput } from '@/lib/bindings/CompetitionSlotInput';
@@ -19,6 +20,7 @@ interface NewCompetitionModalProps {
 export function NewCompetitionModal({
   open, onClose, projectId, onCreated, previousWinnerGenes,
 }: NewCompetitionModalProps) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -75,26 +77,26 @@ export function NewCompetitionModal({
             <Swords className="w-4 h-4 text-violet-400" />
           </div>
           <h2 id="new-competition-title" className="typo-section-title">
-            Start a Competition
+            {t.plugins.dev_lifecycle.new_competition_modal_title}
           </h2>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div>
-            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">Task title</label>
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">{t.plugins.dev_tools.task_title}</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus
-              placeholder="e.g. Add rate limiting to /api/auth/login"
+              placeholder={t.plugins.dev_lifecycle.competition_title_placeholder}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring" />
           </div>
           <div>
-            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">Task description (optional)</label>
+            <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">{t.plugins.dev_tools.task_description}</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-              placeholder="Acceptance criteria, target files, constraints..."
+              placeholder={t.plugins.dev_lifecycle.competition_desc_placeholder}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring resize-none" />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="typo-caption text-primary uppercase tracking-wider">Competitors</label>
+            <label className="typo-caption text-primary uppercase tracking-wider">{t.plugins.dev_tools.competitors_dot}</label>
             <div className="flex items-center gap-2">
               {[2, 3, 4].map((n) => (
                 <button key={n} onClick={() => setSlotCount(n)}
@@ -103,7 +105,7 @@ export function NewCompetitionModal({
                     : 'text-foreground hover:bg-secondary/40 border border-transparent'
                   }`}>{n}</button>
               ))}
-              <button onClick={regenerate} title="Regenerate strategies"
+              <button onClick={regenerate} title={t.plugins.dev_lifecycle.regenerate_strategies_title}
                 className="p-1.5 rounded-interactive hover:bg-secondary/40 text-foreground ml-2">
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -136,16 +138,16 @@ export function NewCompetitionModal({
           {previousWinnerGenes && (
             <div className="flex items-center gap-2 text-foreground typo-caption">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              First slot biased toward previous winner. Others explore new combinations.
+              {t.plugins.dev_tools.first_slot_bias}
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-primary/5">
-          <Button variant="ghost" size="sm" onClick={onClose} disabled={creating}>Cancel</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={creating}>{t.common.cancel}</Button>
           <Button variant="accent" accentColor="violet" size="sm" icon={<Swords className="w-3.5 h-3.5" />}
             onClick={handleCreate} loading={creating} disabled={!title.trim()}>
-            Start Competition ({slotCount} slots)
+            {t.plugins.dev_lifecycle.start_competition_slots} ({slotCount} {t.plugins.dev_lifecycle.slots_suffix})
           </Button>
         </div>
       </div>

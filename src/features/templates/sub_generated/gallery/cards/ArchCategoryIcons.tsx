@@ -20,7 +20,7 @@ export function ArchCategoryIcons({ connectors, credentialServiceTypes }: ArchCa
             title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
           >
             <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-7 h-7 rounded-card flex items-center justify-center transition-all ${
                 hasIt ? '' : 'grayscale opacity-60'
               }`}
               style={{ backgroundColor: `${cat.color}18` }}

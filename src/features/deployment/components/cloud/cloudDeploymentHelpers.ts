@@ -31,7 +31,7 @@ export function statusColor(status: string) {
     case 'failed':
       return 'bg-red-500/10 border-red-500/20 text-red-400';
     default:
-      return 'bg-secondary/40 border-primary/15 text-muted-foreground/80';
+      return 'bg-secondary/40 border-primary/15 text-foreground';
   }
 }
 

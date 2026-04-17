@@ -35,21 +35,21 @@ export function FileWatcherConfig({
                 setWatchPaths(updated);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="C:\Users\me\projects or /home/me/src"
+              placeholder={t.triggers.file_watcher_path_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'watch-paths-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all ${
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
                 validationError ? 'border-red-500/30' : 'border-primary/15'
               }`}
             />
             {watchPaths.length > 1 && (
-              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-muted-foreground/60 hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-foreground hover:text-red-400 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 text-sm text-orange-400/80 hover:text-orange-400 transition-colors">
+        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 typo-body text-orange-400/80 hover:text-orange-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> {t.triggers.file_watcher.add_path}
         </button>
       </TriggerFieldGroup>
@@ -60,10 +60,10 @@ export function FileWatcherConfig({
               key={evt}
               type="button"
               onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
-              className={`px-2.5 py-1 rounded-xl text-sm font-medium transition-all border ${
+              className={`px-2.5 py-1 rounded-modal typo-body font-medium transition-all border ${
                 watchEvents.includes(evt)
                   ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
-                  : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
+                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
               }`}
             >
               {evt}
@@ -74,7 +74,7 @@ export function FileWatcherConfig({
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
-          <span className="text-sm text-foreground/80">{t.triggers.watch_subdirs}</span>
+          <span className="typo-body text-foreground">{t.triggers.watch_subdirs}</span>
         </label>
       </div>
       <TriggerFieldGroup label={t.triggers.file_watcher.glob_filter} optional>
@@ -82,8 +82,8 @@ export function FileWatcherConfig({
           type="text"
           value={globFilter}
           onChange={(e) => setGlobFilter(e.target.value)}
-          placeholder="e.g. *.py, *.{ts,tsx}, Dockerfile"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
+          placeholder={t.triggers.file_watcher_pattern_placeholder}
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

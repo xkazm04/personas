@@ -33,8 +33,8 @@ export function TriggerConfig() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/80">
-        No persona selected
+      <div className="flex items-center justify-center py-8 text-foreground">
+        {t.triggers.no_persona_selected}
       </div>
     );
   }
@@ -59,14 +59,14 @@ export function TriggerConfig() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{t.triggers.config.title}</h3>
+        <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.config.title}</h3>
         <Button
           variant="primary"
           size="sm"
           icon={<Plus className="w-4 h-4" />}
           onClick={() => setShowAddForm(!showAddForm)}
         >
-          Add Trigger
+          {t.triggers.config.add_trigger}
         </Button>
       </div>
 
@@ -81,7 +81,7 @@ export function TriggerConfig() {
 
       {/* Trigger Error */}
       {triggerError?.kind === 'crud' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
           <span className="flex-1">{triggerError.message}</span>
           <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
             <X className="w-3.5 h-3.5" />
@@ -102,7 +102,7 @@ export function TriggerConfig() {
         ))}
 
         {triggers.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground/80 text-sm">
+          <div className="text-center py-10 text-foreground typo-body">
             {t.triggers.config.empty}
           </div>
         )}

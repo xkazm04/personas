@@ -15,7 +15,7 @@ const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
 const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   e2e:            { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
   mock:           { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',   text: 'text-amber-400/80' },
-  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',     text: 'text-muted-foreground/70' },
+  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',     text: 'text-foreground' },
 };
 
 interface UseCaseRowProps {
@@ -60,7 +60,7 @@ export function UseCaseRow({
       <div className="p-3.5">
         <div className="flex items-start gap-3">
           {/* Index number */}
-          <span className="typo-heading text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
+          <span className="typo-heading text-foreground mt-0.5 w-5 text-right flex-shrink-0">
             {index + 1}.
           </span>
 
@@ -77,7 +77,7 @@ export function UseCaseRow({
                 {modeBadge.label}
               </span>
             </div>
-            <p className="typo-body text-foreground/60 mt-1 leading-relaxed">
+            <p className="typo-body text-foreground mt-1 leading-relaxed">
               {useCase.description}
             </p>
             {/* Override indicators */}
@@ -85,7 +85,7 @@ export function UseCaseRow({
               <div className="flex items-center gap-2 mt-1.5">
                 {hasModelOverride && (
                   <span className="flex items-center gap-1 typo-caption text-primary/60">
-                    <Cpu className="w-2.5 h-2.5" /> Custom model
+                    <Cpu className="w-2.5 h-2.5" /> {t.shared.use_cases_extra.custom_model}
                   </span>
                 )}
                 {hasNotifications && (
@@ -107,8 +107,8 @@ export function UseCaseRow({
                 isActive
                   ? 'bg-primary/20 border-primary/30 text-primary'
                   : playDisabled
-                    ? 'bg-secondary/30 border-primary/10 text-muted-foreground/30 cursor-not-allowed'
-                    : 'bg-secondary/40 border-primary/15 text-foreground/70 hover:bg-primary/10 hover:text-primary hover:border-primary/25'
+                    ? 'bg-secondary/30 border-primary/10 text-foreground cursor-not-allowed'
+                    : 'bg-secondary/40 border-primary/15 text-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/25'
               }`}
               title={
                 mode === 'non_executable'
@@ -136,7 +136,7 @@ export function UseCaseRow({
               className={`p-1.5 rounded-lg border transition-colors ${
                 historyExpanded
                   ? 'bg-primary/10 border-primary/20 text-primary/80'
-                  : 'bg-secondary/40 border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:border-primary/25'
+                  : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/70 hover:border-primary/25'
               }`}
               title={t.shared.use_cases_extra.toggle_history}
             >
@@ -152,7 +152,7 @@ export function UseCaseRow({
                     ? 'bg-violet-500/15 border-violet-500/25 text-violet-400'
                     : hasAnyConfig
                       ? 'bg-secondary/40 border-primary/15 text-violet-400/60 hover:text-violet-400 hover:border-violet-500/25'
-                      : 'bg-secondary/40 border-primary/15 text-muted-foreground/50 hover:text-foreground/70 hover:border-primary/25'
+                      : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/70 hover:border-primary/25'
                 }`}
                 title={t.shared.use_cases_extra.configure_model}
               >

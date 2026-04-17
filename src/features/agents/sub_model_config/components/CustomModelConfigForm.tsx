@@ -23,7 +23,7 @@ export function CustomModelConfigForm({
         >
           <div className="space-y-3 pt-1">
             <div>
-              <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.provider}</label>
+              <label className="block typo-body font-medium text-foreground mb-1">{mc.provider}</label>
               <ThemedSelect
                 value={customConfig.selectedProvider}
                 onChange={(e) => customConfig.onProviderChange(e.target.value as ModelProvider)}
@@ -39,7 +39,7 @@ export function CustomModelConfigForm({
             {customConfig.selectedProvider !== 'anthropic' && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.model_name}</label>
+                  <label className="block typo-body font-medium text-foreground mb-1">{mc.model_name}</label>
                   <input
                     type="text"
                     value={customConfig.customModelName}
@@ -55,7 +55,7 @@ export function CustomModelConfigForm({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-1">
+                  <label className="block typo-body font-medium text-foreground mb-1">
                     {mc.base_url}
                     <FieldHint
                       text={mc.base_url_hint}
@@ -75,7 +75,7 @@ export function CustomModelConfigForm({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-1">
+                  <label className="block typo-body font-medium text-foreground mb-1">
                     {mc.auth_token}
                     <FieldHint
                       text={mc.auth_token_hint}

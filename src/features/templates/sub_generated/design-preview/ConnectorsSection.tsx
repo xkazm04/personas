@@ -65,7 +65,7 @@ export function ConnectorsSection({
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Plug className="w-4 h-4 text-emerald-400" />
-        Connectors & Tools
+        {t.templates.design.connectors_and_tools}
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         {connectorToolMap.map((item, idx) => {
@@ -74,21 +74,21 @@ export function ConnectorsSection({
           const hasCredential = !isGeneral && credentialTypes.has(item.connector.name);
 
           return (
-            <div key={idx} className="bg-secondary/30 border border-primary/10 rounded-xl p-3.5 space-y-3">
+            <div key={idx} className="bg-secondary/30 border border-primary/10 rounded-modal p-3.5 space-y-3">
               {/* Connector header */}
               <div className="flex items-center gap-2.5">
                 {item.connDef?.icon_url ? (
                   <ThemedConnectorIcon url={item.connDef.icon_url} label={item.connDef.label} color={item.connDef.color} size="w-6 h-6 flex-shrink-0 rounded" />
                 ) : isGeneral ? (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Wrench className="w-3.5 h-3.5 text-muted-foreground/90" />
+                    <Wrench className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                    <Plug className="w-3.5 h-3.5 text-muted-foreground/90" />
+                    <Plug className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
-                <span className="text-sm font-medium text-foreground/80 flex-1 truncate">
+                <span className="typo-body font-medium text-foreground flex-1 truncate">
                   {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
                 </span>
                 {!isGeneral && (
@@ -105,7 +105,7 @@ export function ConnectorsSection({
                 <button
                   type="button"
                   onClick={() => onConnectorClick(item.connector)}
-                  className="flex items-center gap-1.5 text-sm text-primary/60 hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
                 >
                   {installed && hasCredential ? (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -135,7 +135,7 @@ export function ConnectorsSection({
                           />
                         )}
                         <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
-                        <span className="text-sm text-foreground/90 truncate">
+                        <span className="typo-body text-foreground/90 truncate">
                           {toolDef?.name || toolName}
                         </span>
                       </div>

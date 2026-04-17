@@ -49,15 +49,15 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
   }, [sortedFilteredIssues]);
   const { t, tx } = useTranslation();
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">{t.overview.analytics_dashboard.health_issues}</h3>
+          <h3 className="typo-heading font-bold text-foreground/90 uppercase tracking-widest">{t.overview.analytics_dashboard.health_issues}</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
+            <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
             </span>
           )}
@@ -65,7 +65,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
         <button
           onClick={handleRunAnalysis}
           disabled={healingRunning}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1"
+          className="flex items-center gap-2 px-4 py-2 typo-heading font-bold rounded-modal bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1"
         >
           {healingRunning ? (
             <><div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />{t.overview.analytics_dashboard.analyzing}</>
@@ -80,7 +80,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
         <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-sm text-cyan-300">
+            <span className="typo-body text-cyan-300">
               {t.overview.analytics_dashboard.analysis_complete}: {analysisResult.issues_created !== 1 ? tx(t.overview.analytics_dashboard.issues_found, { count: analysisResult.issues_created }) : tx(t.overview.analytics_dashboard.issues_found_one, { count: analysisResult.issues_created })}
               {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} ${t.overview.analytics_dashboard.auto_fixed})`}
               , {analysisResult.failures_analyzed !== 1 ? tx(t.overview.analytics_dashboard.executions_scanned, { count: analysisResult.failures_analyzed }) : tx(t.overview.analytics_dashboard.executions_scanned_one, { count: analysisResult.failures_analyzed })}
@@ -96,7 +96,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
         <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-sm text-red-300">{analysisError}</span>
+            <span className="typo-body text-red-300">{analysisError}</span>
           </div>
           <button onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/60 hover:text-red-300 transition-colors">
             <X className="w-3 h-3" />
@@ -115,15 +115,15 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
             <button
               key={chip.key}
               onClick={() => setIssueFilter(chip.key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-body font-medium transition-all ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                  : 'text-muted-foreground/80 hover:text-muted-foreground'
+                  : 'text-foreground hover:text-muted-foreground'
               }`}
             >
               {chip.label}
-              <span className={`px-1.5 py-0.5 text-sm font-bold rounded-full ${
-                issueFilter === chip.key ? 'bg-primary/15 text-foreground/90' : 'bg-secondary/60 text-muted-foreground/80'
+              <span className={`px-1.5 py-0.5 typo-heading font-bold rounded-full ${
+                issueFilter === chip.key ? 'bg-primary/15 text-foreground/90' : 'bg-secondary/60 text-foreground'
               }`}>{chip.count}</span>
             </button>
           ))}
@@ -134,11 +134,11 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
       {healingIssues.length === 0 ? (
         <div className="flex items-center justify-center py-10">
           <div className="text-center flex flex-col items-center">
-            <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+            <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
-            <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_open_issues}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t.overview.analytics_dashboard.run_analysis_hint}</p>
+            <p className="typo-body font-medium text-foreground">{t.overview.analytics_dashboard.no_open_issues}</p>
+            <p className="typo-body text-foreground mt-1">{t.overview.analytics_dashboard.run_analysis_hint}</p>
           </div>
         </div>
       ) : (
@@ -153,33 +153,33 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
             return (
               <div key={issue.id} className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}>
                 {isCircuitBreaker ? (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-red-500/15 text-red-400 border-red-500/25">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code font-mono uppercase rounded-card border bg-red-500/15 text-red-400 border-red-500/25">
                     <Zap className="w-3 h-3" />breaker
                   </span>
                 ) : isAutoFixed ? (
-                  <span className="inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">fixed</span>
+                  <span className="inline-flex px-1.5 py-0.5 typo-code font-mono uppercase rounded-card border bg-emerald-500/15 text-emerald-400 border-emerald-500/20">fixed</span>
                 ) : (
-                  <span className={`inline-flex px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg ${badgeClass(sevBadge)}`}>{issue.severity}</span>
+                  <span className={`inline-flex px-1.5 py-0.5 typo-code font-mono uppercase rounded-card ${badgeClass(sevBadge)}`}>{issue.severity}</span>
                 )}
                 {isAutoFixed && issue.execution_id && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code font-mono rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title="Auto-healed via retry">
                     <RefreshCw className="w-2.5 h-2.5" />retry
                   </span>
                 )}
                 <button
                   onClick={() => onSelectIssue(issue)}
-                  className={`flex-1 text-left text-sm transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground/80 hover:text-foreground'}`}
+                  className={`flex-1 text-left typo-body transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground hover:text-foreground'}`}
                 >
                   {issue.title}
                 </button>
-                <span className={`text-sm font-mono min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-muted-foreground/80'}`}>
+                <span className={`typo-code font-mono min-w-[90px] text-right ${HEALING_CATEGORY_COLORS[issue.category]?.text || 'text-foreground'}`}>
                   {issue.category}
                 </span>
-                <span className="text-sm text-muted-foreground/80 w-16 text-right">{ageLabel}</span>
+                <span className="typo-body text-foreground w-16 text-right">{ageLabel}</span>
                 {!isAutoFixed && (
                   <button
                     onClick={() => resolveHealingIssue(issue.id)}
-                    className="px-2 py-1 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                    className="px-2 py-1 typo-body font-medium text-emerald-400 hover:bg-emerald-500/10 rounded-card transition-colors"
                   >
                     {t.overview.analytics_dashboard.resolve}
                   </button>

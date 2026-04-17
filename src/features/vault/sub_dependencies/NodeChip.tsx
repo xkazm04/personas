@@ -18,7 +18,7 @@ export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card text-left transition-colors cursor-pointer ${
         isSelected
           ? 'bg-primary/10 border border-primary/25'
           : 'hover:bg-secondary/40 border border-transparent'
@@ -30,12 +30,12 @@ export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
       >
         <Icon className="w-3 h-3" style={{ color: node.color }} />
       </div>
-      <span className="text-xs text-foreground/80 truncate flex-1">{node.label}</span>
+      <span className="typo-caption text-foreground truncate flex-1">{node.label}</span>
       {node.meta.serviceType && (
-        <span className="text-xs text-muted-foreground/60 font-mono truncate max-w-[80px]">{node.meta.serviceType}</span>
+        <span className="typo-code text-foreground font-mono truncate max-w-[80px]">{node.meta.serviceType}</span>
       )}
       {node.meta.dependentCount != null && node.meta.dependentCount > 0 && (
-        <span className="text-xs text-blue-400/60">{tx(node.meta.dependentCount !== 1 ? dep.dep_count_other : dep.dep_count_one, { count: node.meta.dependentCount })}</span>
+        <span className="typo-caption text-blue-400/60">{tx(node.meta.dependentCount !== 1 ? dep.dep_count_other : dep.dep_count_one, { count: node.meta.dependentCount })}</span>
       )}
       {extra}
     </button>

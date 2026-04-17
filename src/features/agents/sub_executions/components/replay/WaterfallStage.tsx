@@ -47,9 +47,9 @@ export function StageBar({
           {hasSubSpans ? (
             <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
               {isExpanded ? (
-                <ChevronDown className="w-3 h-3 text-muted-foreground/70" />
+                <ChevronDown className="w-3 h-3 text-foreground" />
               ) : (
-                <ChevronRight className="w-3 h-3 text-muted-foreground/70" />
+                <ChevronRight className="w-3 h-3 text-foreground" />
               )}
             </button>
           ) : (
@@ -76,20 +76,20 @@ export function StageBar({
           {/* Hover tooltip */}
           {hovered && (
             <div
-              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
+              className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
               style={{ left: `${Math.min(leftPct, 70)}%` }}
             >
               <p className="typo-heading text-foreground/90 mb-1">{meta.label}</p>
-              <p className="typo-body text-muted-foreground/60 mb-1">{meta.boundary}</p>
+              <p className="typo-body text-foreground mb-1">{meta.boundary}</p>
               <div className="flex items-center gap-3 typo-body">
-                <span className="font-mono text-foreground/70">{formatDuration(durationMs)}</span>
-                <span className="text-muted-foreground/50">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
+                <span className="font-mono text-foreground">{formatDuration(durationMs)}</span>
+                <span className="text-foreground">{t.agents.executions.offset_prefix} {formatDuration(offsetMs)}</span>
               </div>
               {entry.metadata && Object.keys(entry.metadata).length > 0 && (
                 <div className="mt-1 space-y-0.5">
                   {Object.entries(entry.metadata).map(([k, v]) => (
-                    <div key={k} className="typo-body text-muted-foreground/60">
-                      <span className="text-muted-foreground/60">{k}:</span>{' '}
+                    <div key={k} className="typo-body text-foreground">
+                      <span className="text-foreground">{k}:</span>{' '}
                       <span className="font-mono">{String(v)}</span>
                     </div>
                   ))}
@@ -100,7 +100,7 @@ export function StageBar({
         </div>
 
         {/* Right: duration */}
-        <span className="typo-code text-muted-foreground/70 text-right">
+        <span className="typo-code text-foreground text-right">
           {formatDuration(durationMs)}
         </span>
       </div>
@@ -141,7 +141,7 @@ export function SubSpanBar({
         <span className="inline-flex px-1.5 py-0.5 typo-code uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
           {t.agents.executions.tool_type_badge}
         </span>
-        <span className="typo-code text-foreground/70 truncate">{step.tool_name}</span>
+        <span className="typo-code text-foreground truncate">{step.tool_name}</span>
       </div>
 
       <div className="relative h-4 w-full">
@@ -156,16 +156,16 @@ export function SubSpanBar({
         />
         {hovered && (
           <div
-            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
+            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
             style={{ left: `${Math.min(leftPct, 70)}%` }}
           >
             <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>
             <div className="flex items-center gap-3 typo-body">
-              <span className="font-mono text-foreground/70">{formatDuration(stepDuration)}</span>
-              <span className="text-muted-foreground/50">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
+              <span className="font-mono text-foreground">{formatDuration(stepDuration)}</span>
+              <span className="text-foreground">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
             </div>
             {step.input_preview && (
-              <p className="typo-body text-muted-foreground/50 mt-1 max-w-[200px] truncate">
+              <p className="typo-body text-foreground mt-1 max-w-[200px] truncate">
                 {t.agents.executions.input_preview_prefix} {step.input_preview}
               </p>
             )}
@@ -173,7 +173,7 @@ export function SubSpanBar({
         )}
       </div>
 
-      <span className="typo-code text-muted-foreground/50 text-right">
+      <span className="typo-code text-foreground text-right">
         {formatDuration(stepDuration)}
       </span>
     </div>

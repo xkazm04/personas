@@ -75,9 +75,9 @@ export function ArenaPanel() {
         runTestId="arena-run-btn"
       >
         {(!hasPrompt || !hasTools) && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-modal bg-amber-500/10 border border-amber-500/20">
             <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-amber-400/90">
+            <div className="typo-body text-amber-400/90">
               {!hasPrompt && <p>{t.agents.lab.no_prompt_warning}</p>}
               {!hasTools && <p>{t.agents.lab.no_tools_warning}</p>}
             </div>
@@ -89,7 +89,7 @@ export function ArenaPanel() {
       </LabPanelShell>
 
       {/* Right: Health Check */}
-      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40 p-4">
+      <div className="border border-primary/20 rounded-modal overflow-hidden backdrop-blur-sm bg-secondary/40 p-4">
         <HealthCheckPanel healthCheck={healthCheck} />
       </div>
       </div>

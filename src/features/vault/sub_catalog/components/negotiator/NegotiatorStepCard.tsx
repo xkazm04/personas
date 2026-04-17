@@ -38,7 +38,7 @@ export function NegotiatorStepCard({
       aria-current={isActive ? 'step' : undefined}
       aria-roledescription="step"
       aria-label={`Step ${stepIndex + 1} of ${totalSteps}: ${step.title}`}
-      className={`rounded-xl border transition-all ${
+      className={`rounded-modal border transition-all ${
         isActive
           ? 'border-violet-500/30 bg-violet-500/5 shadow-elevation-3 shadow-violet-500/5'
           : isCompleted

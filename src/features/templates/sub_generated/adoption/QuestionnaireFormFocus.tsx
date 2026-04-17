@@ -186,8 +186,8 @@ export function QuestionnaireFormFocus({
                 {t.templates.adopt_modal.configure_your_persona}
               </h2>
             </div>
-            <span className="text-muted-foreground/30">·</span>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground/70 tabular-nums">
+            <span className="text-foreground">·</span>
+            <div className="flex items-center gap-3 text-sm text-foreground tabular-nums">
               <span>
                 {tx(t.templates.adopt_modal.answered_of_total, {
                   answered: answeredCount,
@@ -252,8 +252,8 @@ export function QuestionnaireFormFocus({
                   <span className={`font-semibold ${currentMeta.color}`}>
                     {currentMeta.label}
                   </span>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span className="text-muted-foreground/60">
+                  <span className="text-foreground">·</span>
+                  <span className="text-foreground">
                     {tx(t.templates.adopt_modal.question_number_of, {
                       current: activeIdx + 1,
                       total: questions.length,
@@ -275,7 +275,7 @@ export function QuestionnaireFormFocus({
                 />
 
                 {/* Hint + arrow-key legend */}
-                <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground/60">
+                <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-foreground">
                   <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
                     ←
                   </kbd>
@@ -283,7 +283,7 @@ export function QuestionnaireFormFocus({
                     →
                   </kbd>
                   <span>{t.templates.adopt_modal.navigate_hint}</span>
-                  <span className="text-muted-foreground/30">·</span>
+                  <span className="text-foreground">·</span>
                   <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
                     Enter
                   </kbd>
@@ -304,7 +304,7 @@ export function QuestionnaireFormFocus({
               layout
               className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] to-transparent p-5"
             >
-              <div className="text-xs uppercase tracking-wider text-muted-foreground/60 mb-1">
+              <div className="text-xs uppercase tracking-wider text-foreground mb-1">
                 {t.templates.adopt_modal.persona_label}
               </div>
               <div className="text-md font-semibold text-foreground leading-snug mb-4">
@@ -338,7 +338,7 @@ export function QuestionnaireFormFocus({
                             onClick={() =>
                               setActiveIdx(questions.findIndex((qq) => qq.id === q.id))
                             }
-                            className={`flex items-start gap-2 w-full text-left rounded-md px-1.5 py-1 -mx-1.5 transition-colors ${
+                            className={`flex items-start gap-2 w-full text-left rounded-input px-1.5 py-1 -mx-1.5 transition-colors ${
                               isCurrent ? 'bg-primary/10' : 'hover:bg-white/[0.03]'
                             }`}
                           >
@@ -350,14 +350,14 @@ export function QuestionnaireFormFocus({
                               <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="text-xs text-muted-foreground/70 truncate">
+                              <div className="text-xs text-foreground truncate">
                                 {q.question}
                               </div>
                               <div
                                 className={`text-sm leading-tight truncate ${
                                   hasAnswer
                                     ? 'text-foreground/90 font-medium'
-                                    : 'text-muted-foreground/40 italic'
+                                    : 'text-foreground italic'
                                 }`}
                               >
                                 {hasAnswer
@@ -379,7 +379,7 @@ export function QuestionnaireFormFocus({
               })}
             </motion.div>
             {/* Helpful tip below the preview */}
-            <p className="mt-4 text-sm text-muted-foreground/60 leading-relaxed">
+            <p className="mt-4 typo-body text-foreground leading-relaxed">
               {t.templates.adopt_modal.jump_to_question_hint}
             </p>
           </div>
@@ -394,7 +394,7 @@ export function QuestionnaireFormFocus({
             type="button"
             onClick={prev}
             disabled={activeIdx === 0}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground/60 hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             {t.templates.adopt_modal.previous}
@@ -404,7 +404,7 @@ export function QuestionnaireFormFocus({
               <button
                 type="button"
                 onClick={onSubmit}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-6 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 {t.templates.adopt_modal.submit_all}
@@ -414,7 +414,7 @@ export function QuestionnaireFormFocus({
                 type="button"
                 onClick={next}
                 disabled={isAtEnd}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-5 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 {t.templates.adopt_modal.next}
                 <ChevronRight className="w-4 h-4" />

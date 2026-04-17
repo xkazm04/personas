@@ -5,6 +5,7 @@ import {
   CheckCircle2, Zap,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import {
   generateCrossProjectMetadata,
@@ -41,18 +42,19 @@ function techColor(layer: string): string {
 // ---------------------------------------------------------------------------
 
 function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const hasContexts = project.context_count > 0;
 
   return (
-    <div className={`rounded-xl border p-4 transition-colors ${
+    <div className={`rounded-modal border p-4 transition-colors ${
       hasContexts
         ? 'border-primary/15 bg-primary/5 hover:bg-primary/8'
         : 'border-amber-500/20 bg-amber-500/5'
     }`}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
           <FolderTree className="w-5 h-5 text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
@@ -67,7 +69,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
             </span>
             {project.active_goal_count > 0 && (
               <span className="rounded-full px-2 py-0.5 text-md font-medium bg-violet-500/15 text-violet-400 border border-violet-500/25 flex items-center gap-1">
-                <Target className="w-3 h-3" /> {project.active_goal_count} active goals
+                <Target className="w-3 h-3" /> {project.active_goal_count} {t.plugins.dev_projects.active_goals}
               </span>
             )}
           </div>
@@ -76,9 +78,9 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
         {hasContexts && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="text-md text-primary/70 hover:text-primary px-2 py-1 rounded-lg hover:bg-primary/10 flex-shrink-0"
+            className="text-md text-primary/70 hover:text-primary px-2 py-1 rounded-card hover:bg-primary/10 flex-shrink-0"
           >
-            {expanded ? 'Collapse' : 'Details'}
+            {expanded ? t.plugins.dev_tools.collapse : t.plugins.dev_tools.details}
           </button>
         )}
       </div>
@@ -87,9 +89,9 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
       <p className="text-md text-foreground leading-relaxed mb-3">{project.summary}</p>
 
       {!hasContexts && (
-        <div className="flex items-center gap-2 text-md text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-md text-amber-400 bg-amber-500/10 px-3 py-2 rounded-card">
           <AlertCircle className="w-4 h-4" />
-          Run Context Map scan for this project to enable rich metadata extraction.
+          {t.plugins.dev_projects.run_context_map_scan}
         </div>
       )}
 
@@ -112,13 +114,13 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
             <div className="mb-3">
               <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                Capabilities
+                {t.plugins.dev_tools.capabilities}
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {project.capabilities.map((cap) => (
                   <span
                     key={cap.name}
-                    className="rounded-lg px-2.5 py-1 text-md font-medium bg-primary/10 border border-primary/15 text-foreground"
+                    className="rounded-card px-2.5 py-1 text-md font-medium bg-primary/10 border border-primary/15 text-foreground"
                   >
                     {cap.name} <span className="text-foreground">· {cap.context_count}</span>
                   </span>
@@ -129,21 +131,21 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
 
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-2 mb-3">
-            <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
+            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
               <div className="text-md font-semibold text-foreground">{project.context_count}</div>
               <div className="text-md text-foreground">contexts</div>
             </div>
-            <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
+            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
               <div className="text-md font-semibold text-foreground">{project.keywords.length}</div>
               <div className="text-md text-foreground">keywords</div>
             </div>
-            <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
+            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
               <div className="text-md font-semibold text-foreground">{project.entry_points.length}</div>
-              <div className="text-md text-foreground">entry points</div>
+              <div className="text-md text-foreground">{t.plugins.dev_projects.entry_points}</div>
             </div>
-            <div className="rounded-lg bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
+            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
               <div className="text-md font-semibold text-foreground">{project.db_tables.length}</div>
-              <div className="text-md text-foreground">db tables</div>
+              <div className="text-md text-foreground">{t.plugins.dev_projects.db_tables}</div>
             </div>
           </div>
 
@@ -154,7 +156,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Tag className="w-3.5 h-3.5" />
-                    Top Keywords
+                    {t.plugins.dev_projects.top_keywords}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.keywords.map((kw) => (
@@ -169,7 +171,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Zap className="w-3.5 h-3.5" />
-                    Entry Points
+                    {t.plugins.dev_projects.entry_points_header}
                   </div>
                   <div className="space-y-0.5">
                     {project.entry_points.slice(0, 8).map((ep) => (
@@ -182,12 +184,12 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Database className="w-3.5 h-3.5" />
-                    Database Tables
+                    {t.plugins.dev_projects.db_tables_header}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
-                    {project.db_tables.map((t) => (
-                      <span key={t} className="rounded px-1.5 py-0.5 text-md font-mono bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                        {t}
+                    {project.db_tables.map((tbl) => (
+                      <span key={tbl} className="rounded px-1.5 py-0.5 text-md font-mono bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                        {tbl}
                       </span>
                     ))}
                   </div>
@@ -197,7 +199,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <Globe className="w-3.5 h-3.5" />
-                    API Surface
+                    {t.plugins.dev_projects.api_surface}
                   </div>
                   <div className="space-y-0.5">
                     {project.api_surface.slice(0, 8).map((api) => (
@@ -210,7 +212,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
                     <FolderTree className="w-3.5 h-3.5" />
-                    Hot Directories
+                    {t.plugins.dev_projects.hot_directories}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.hot_directories.map((d) => (
@@ -223,7 +225,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.description && (
                 <div>
-                  <div className="text-md text-foreground mb-1.5">Purpose</div>
+                  <div className="text-md text-foreground mb-1.5">{t.plugins.dev_tools.purpose}</div>
                   <p className="text-md text-foreground leading-relaxed">{project.description}</p>
                 </div>
               )}
@@ -240,6 +242,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
 // ---------------------------------------------------------------------------
 
 export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadataModalProps) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [map, setMap] = useState<CrossProjectMetadataMap | null>(null);
   const [loading, setLoading] = useState(false);
@@ -301,13 +304,13 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Network className="w-5 h-5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-md font-semibold text-primary">Cross-Project Metadata Map</h2>
+              <h2 className="text-md font-semibold text-primary">{t.plugins.dev_projects.cross_project_map_title}</h2>
               <p className="text-md text-foreground">
-                Aggregated from existing context maps. Consumed by Codebases connector.
+                {t.plugins.dev_projects.cross_project_map_subtitle}
               </p>
             </div>
           </div>
@@ -320,11 +323,11 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               onClick={handleGenerate}
               loading={generating}
             >
-              {map ? 'Regenerate' : 'Generate'}
+              {map ? t.plugins.dev_tools.regenerate : t.plugins.dev_tools.generate}
             </Button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
+              className="w-8 h-8 rounded-card hover:bg-primary/10 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -335,16 +338,16 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-foreground">
-              <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading...
+              <RefreshCw className="w-5 h-5 animate-spin mr-2" /> {t.plugins.dev_projects.loading_metadata}
             </div>
           ) : !map ? (
             <div className="text-center py-20 space-y-3">
               <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto">
                 <Network className="w-8 h-8 text-violet-400/60" />
               </div>
-              <p className="text-md text-foreground">No metadata map generated yet</p>
+              <p className="text-md text-foreground">{t.plugins.dev_projects.no_metadata_yet}</p>
               <p className="text-md text-foreground max-w-md mx-auto">
-                Click <strong>Generate</strong> to analyze all projects' context maps and build a rich cross-project metadata layer for the Codebases connector.
+                Click <strong>Generate</strong> {t.plugins.dev_projects.generate_metadata_prompt}
               </p>
             </div>
           ) : (
@@ -368,15 +371,15 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Tech distribution */}
               {map.cross_project.tech_distribution.length > 0 && (
-                <div className="rounded-xl border border-primary/10 p-4">
+                <div className="rounded-modal border border-primary/10 p-4">
                   <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-400" />
-                    Tech Distribution
+                    {t.plugins.dev_projects.tech_distribution}
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {map.cross_project.tech_distribution.map((t) => (
-                      <span key={t.layer} className={`rounded-full px-3 py-1 text-md font-medium border ${techColor(t.layer)}`}>
-                        {t.layer} <span className="opacity-60">· {t.project_count} project{t.project_count !== 1 ? 's' : ''}</span>
+                    {map.cross_project.tech_distribution.map((td) => (
+                      <span key={td.layer} className={`rounded-full px-3 py-1 text-md font-medium border ${techColor(td.layer)}`}>
+                        {td.layer} <span className="opacity-60">· {td.project_count} project{td.project_count !== 1 ? 's' : ''}</span>
                       </span>
                     ))}
                   </div>
@@ -385,19 +388,19 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Shared keywords */}
               {map.cross_project.shared_keywords.length > 0 && (
-                <div className="rounded-xl border border-primary/10 p-4">
+                <div className="rounded-modal border border-primary/10 p-4">
                   <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-violet-400" />
-                    Shared Keywords ({map.cross_project.shared_keywords.length})
+                    {t.plugins.dev_projects.shared_keywords}({map.cross_project.shared_keywords.length})
                   </h3>
                   <p className="text-md text-foreground mb-2">
-                    Concepts present in multiple projects — signals where business tasks overlap.
+                    {t.plugins.dev_projects.shared_keywords_subtitle}
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {map.cross_project.shared_keywords.slice(0, 30).map((sk) => (
                       <span
                         key={sk.keyword}
-                        className="rounded-lg px-2.5 py-1 text-md font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                        className="rounded-card px-2.5 py-1 text-md font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20"
                         title={`In: ${sk.projects.join(', ')}`}
                       >
                         {sk.keyword} <span className="opacity-60">× {sk.count}</span>
@@ -409,10 +412,10 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Similarity matrix */}
               {map.cross_project.similarity_matrix.length > 0 && (
-                <div className="rounded-xl border border-primary/10 p-4">
+                <div className="rounded-modal border border-primary/10 p-4">
                   <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
                     <Link2 className="w-4 h-4 text-pink-400" />
-                    Project Similarity
+                    {t.plugins.dev_projects.project_similarity}
                   </h3>
                   <div className="space-y-1.5">
                     {map.cross_project.similarity_matrix
@@ -442,7 +445,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               <div className="space-y-3">
                 <h3 className="text-md font-semibold text-primary flex items-center gap-2">
                   <FolderTree className="w-4 h-4 text-amber-400" />
-                  Projects ({map.projects.length})
+                  {t.plugins.dev_projects.projects_header}({map.projects.length})
                 </h3>
                 {map.projects.map((p) => (
                   <ProjectCard key={p.project_id} project={p} />
@@ -467,7 +470,7 @@ function StatCard({ label, value, icon: Icon, color }: {
   color: string;
 }) {
   return (
-    <div className={`rounded-xl border border-${color}-500/20 bg-${color}-500/5 p-3`}>
+    <div className={`rounded-modal border border-${color}-500/20 bg-${color}-500/5 p-3`}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className={`w-3.5 h-3.5 text-${color}-400`} />
         <span className="text-md text-foreground">{label}</span>

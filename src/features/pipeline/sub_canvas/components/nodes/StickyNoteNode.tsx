@@ -82,14 +82,14 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative rounded-xl backdrop-blur-sm border transition-all min-w-[180px] max-w-[320px] ${style.bg} ${style.border} ${
+      className={`group relative rounded-modal backdrop-blur-sm border transition-all min-w-[180px] max-w-[320px] ${style.bg} ${style.border} ${
         selected ? 'ring-1 ring-primary/30 shadow-elevation-3' : ''
       }`}
       onDoubleClick={() => { if (!editing) setEditing(true); }}
     >
       {/* Header bar */}
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-inherit">
-        <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab" />
+        <GripVertical className="w-3 h-3 text-foreground cursor-grab" />
         {/* Category pills */}
         <div className="flex items-center gap-1 flex-1">
           {CATEGORIES.map((cat) => {
@@ -101,7 +101,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
                 className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
                   category === cat
                     ? `${s.badge} ring-1 ring-current/20`
-                    : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                    : 'text-foreground hover:text-muted-foreground/60'
                 }`}
               >
                 {s.label}
@@ -112,7 +112,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
         {/* Delete */}
         <button
           onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }}
-          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted-foreground/40 hover:text-red-400 transition-all"
+          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all"
         >
           <Trash2 className="w-3 h-3" />
         </button>
@@ -129,12 +129,12 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
               onKeyDown={handleKeyDown}
               placeholder={pt.note_placeholder}
               rows={3}
-              className="w-full bg-transparent text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-y outline-none min-h-[48px] font-mono"
+              className="w-full bg-transparent typo-code text-foreground/90 placeholder:text-foreground resize-y outline-none min-h-[48px] font-mono"
             />
             <div className="flex justify-end">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-card bg-primary/15 border border-primary/25 typo-caption font-medium text-primary hover:bg-primary/25 transition-colors"
               >
                 <Check className="w-3 h-3" />
                 {pt.done}
@@ -142,11 +142,11 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             </div>
           </div>
         ) : (
-          <div className="text-sm text-foreground/80 prose prose-invert prose-sm max-w-none [&_p]:my-0.5 [&_ul]:my-0.5 [&_ol]:my-0.5 [&_li]:my-0 [&_code]:text-xs [&_code]:bg-primary/10 [&_code]:px-1 [&_code]:rounded">
+          <div className="typo-body text-foreground prose prose-invert prose-sm max-w-none [&_p]:my-0.5 [&_ul]:my-0.5 [&_ol]:my-0.5 [&_li]:my-0 [&_code]:typo-caption [&_code]:bg-primary/10 [&_code]:px-1 [&_code]:rounded">
             {d.text ? (
               <Markdown remarkPlugins={[remarkGfm]}>{d.text}</Markdown>
             ) : (
-              <span className="text-muted-foreground/40 italic">{pt.double_click_to_edit}</span>
+              <span className="text-foreground italic">{pt.double_click_to_edit}</span>
             )}
           </div>
         )}

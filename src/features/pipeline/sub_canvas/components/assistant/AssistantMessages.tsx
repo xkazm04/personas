@@ -50,7 +50,7 @@ export default function AssistantMessages({
     <>
       {/* Loading message */}
       {loading && (
-        <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
+        <div className="mx-3 mb-3 px-3 py-2 rounded-modal bg-indigo-500/8 border border-indigo-500/15 typo-body text-indigo-300/80 flex items-center gap-2">
           <LoadingSpinner size="xs" className="flex-shrink-0" />
           {t.pipeline.building_team}
         </div>
@@ -58,7 +58,7 @@ export default function AssistantMessages({
 
       {/* Error */}
       {error && (
-        <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+        <div className="mx-3 mb-3 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20 typo-body text-red-400">
           {error}
         </div>
       )}
@@ -73,24 +73,24 @@ export default function AssistantMessages({
               onClick={onTogglePreview}
               className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
             >
-              <span className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
+              <span className="typo-heading font-semibold text-foreground flex items-center gap-2">
                 {tx(t.pipeline.blueprint_agents, { count: blueprint.members.length })}
                 {suggestedPattern && (
-                  <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
+                  <span className="px-1.5 py-0.5 rounded typo-body font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
                     {suggestedPattern}
                   </span>
                 )}
               </span>
               {previewExpanded ? (
-                <ChevronUp className="w-3 h-3 text-muted-foreground/90" />
+                <ChevronUp className="w-3 h-3 text-foreground" />
               ) : (
-                <ChevronDown className="w-3 h-3 text-muted-foreground/90" />
+                <ChevronDown className="w-3 h-3 text-foreground" />
               )}
             </button>
 
             {previewExpanded && (
               <div className="px-3 pb-3 space-y-2">
-                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                <p className="typo-body text-foreground leading-relaxed">
                   {blueprint.description}
                 </p>
 
@@ -100,16 +100,16 @@ export default function AssistantMessages({
                     return (
                       <div
                         key={`${m.persona_id}-${i}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-primary/10"
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/40 border border-primary/10"
                       >
                         <PersonaAvatar size="sm" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground/80 truncate">
+                          <div className="typo-body font-medium text-foreground truncate">
                             {m.persona_name}
                           </div>
                         </div>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-sm font-semibold uppercase tracking-wider ${rc.bg} ${rc.text} ${rc.border} border`}
+                          className={`px-1.5 py-0.5 rounded typo-heading font-semibold uppercase tracking-wider ${rc.bg} ${rc.text} ${rc.border} border`}
                         >
                           {m.role}
                         </span>
@@ -119,7 +119,7 @@ export default function AssistantMessages({
                 </div>
 
                 {blueprint.connections.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground/90">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground">
                     <ArrowRight className="w-3 h-3" />
                     {connectionSummary} connection{blueprint.connections.length !== 1 ? 's' : ''}
                   </div>
@@ -128,7 +128,7 @@ export default function AssistantMessages({
                 <button
                   onClick={onApply}
                   disabled={isApplying}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-sm font-medium transition-all disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 typo-body font-medium transition-all disabled:opacity-50"
                 >
                   {isApplying ? (
                     <>

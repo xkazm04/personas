@@ -100,19 +100,19 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
   return (
     <div className="w-[340px] border-l border-primary/10 flex flex-col bg-background/50 backdrop-blur-sm">
       <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-2">
-        <span className="text-sm font-mono font-medium text-muted-foreground/80">{t.overview.event_log_sidebar.title}</span>
-        <span className="text-xs font-mono text-muted-foreground/40 ml-auto">{filteredLog.length} entries</span>
+        <span className="typo-code font-mono font-medium text-foreground">{t.overview.event_log_sidebar.title}</span>
+        <span className="typo-code font-mono text-foreground ml-auto">{filteredLog.length} entries</span>
       </div>
 
       <div className="px-3 py-1.5 border-b border-primary/5">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground" />
           <input
             type="text"
             value={logSearch}
             onChange={e => setLogSearch(e.target.value)}
-            placeholder="Filter events\u2026"
-            className="w-full pl-6 pr-2 py-1 text-xs font-mono bg-secondary/30 border border-primary/10 rounded-md text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/25"
+            placeholder={t.overview.event_log_sidebar.filter_placeholder}
+            className="w-full pl-6 pr-2 py-1 typo-code font-mono bg-secondary/30 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
         </div>
       </div>
@@ -120,7 +120,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
       <div ref={logRef} onScroll={handleLogScroll} className="flex-1 overflow-y-auto">
         {filteredLog.length === 0 && (
           <div className="px-3 py-8 text-center">
-            <span className="text-xs text-muted-foreground/40 font-mono">{t.overview.event_log_sidebar.no_events}</span>
+            <span className="typo-code text-foreground font-mono">{t.overview.event_log_sidebar.no_events}</span>
           </div>
         )}
         {filteredLog.map(entry => {
@@ -142,21 +142,21 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-medium" style={{ color: entry.color }}>
+                      <span className="typo-code font-mono font-medium" style={{ color: entry.color }}>
                         {EVENT_TYPE_LABELS[entry.eventType] ?? entry.eventType}
                       </span>
-                      <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/30 flex-shrink-0" />
-                      <span className="text-xs font-mono text-muted-foreground/60 truncate">{entry.target}</span>
+                      <ArrowRight className="w-2.5 h-2.5 text-foreground flex-shrink-0" />
+                      <span className="typo-code font-mono text-foreground truncate">{entry.target}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] font-mono text-muted-foreground/35">{new Date(entry.timestamp).toLocaleTimeString()}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground/25">from {clampLabel(entry.source, 15)}</span>
+                      <span className="text-[10px] font-mono text-foreground">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-[10px] font-mono text-foreground">from {clampLabel(entry.source, 15)}</span>
                     </div>
                     {payloadPreview && !isExpanded && (
-                      <p className="text-[10px] font-mono text-muted-foreground/30 truncate mt-0.5">{payloadPreview}</p>
+                      <p className="text-[10px] font-mono text-foreground truncate mt-0.5">{payloadPreview}</p>
                     )}
                   </div>
-                  <ChevronRight className={`w-3 h-3 text-muted-foreground/20 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-3 h-3 text-foreground flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
 
                 {isExpanded && (
@@ -166,25 +166,25 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                       <div className="px-3 pb-2 pt-0.5 ml-5 space-y-1.5">
                         <div className="grid grid-cols-2 gap-1">
                           <div>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Event</span>
-                            <p className="text-[10px] font-mono text-foreground/70">{entry.eventType}</p>
+                            <span className="text-[9px] font-mono uppercase text-foreground">Event</span>
+                            <p className="text-[10px] font-mono text-foreground">{entry.eventType}</p>
                           </div>
                           <div>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Status</span>
+                            <span className="text-[9px] font-mono uppercase text-foreground">Status</span>
                             <p className={`text-[10px] font-mono ${statusMeta.color}`}>{entry.status}</p>
                           </div>
                           <div>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Source</span>
-                            <p className="text-[10px] font-mono text-foreground/70">{entry.source}</p>
+                            <span className="text-[9px] font-mono uppercase text-foreground">Source</span>
+                            <p className="text-[10px] font-mono text-foreground">{entry.source}</p>
                           </div>
                           <div>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Target</span>
-                            <p className="text-[10px] font-mono text-foreground/70">{entry.target}</p>
+                            <span className="text-[9px] font-mono uppercase text-foreground">Target</span>
+                            <p className="text-[10px] font-mono text-foreground">{entry.target}</p>
                           </div>
                         </div>
                         <div>
-                          <span className="text-[9px] font-mono uppercase text-muted-foreground/30">ID</span>
-                          <p className="text-[10px] font-mono text-foreground/50 break-all">{entry.id}</p>
+                          <span className="text-[9px] font-mono uppercase text-foreground">ID</span>
+                          <p className="text-[10px] font-mono text-foreground break-all">{entry.id}</p>
                         </div>
                         {entry.error && (
                           <div className="p-1.5 rounded bg-red-500/5 border border-red-500/10">
@@ -194,8 +194,8 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                         )}
                         {entry.payload && (
                           <div>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground/30">Payload</span>
-                            <pre className="text-[10px] font-mono text-foreground/50 bg-secondary/30 rounded p-1.5 mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap break-all">
+                            <span className="text-[9px] font-mono uppercase text-foreground">Payload</span>
+                            <pre className="text-[10px] font-mono text-foreground bg-secondary/30 rounded p-1.5 mt-0.5 max-h-24 overflow-auto whitespace-pre-wrap break-all">
                               {(() => {
                                 try { return JSON.stringify(JSON.parse(entry.payload!), null, 2); }
                                 catch { return entry.payload; }

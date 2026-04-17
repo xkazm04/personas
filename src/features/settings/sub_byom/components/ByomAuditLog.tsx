@@ -12,27 +12,27 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
   const s = t.settings.byom;
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.audit_title} />
-        <p className="text-sm text-muted-foreground/60">
+        <p className="typo-body text-foreground">
           {s.audit_hint}
         </p>
 
         {auditLog.length === 0 ? (
-          <p className="text-sm text-muted-foreground/50 text-center py-6">
+          <p className="typo-body text-foreground text-center py-6">
             {s.audit_empty}
           </p>
         ) : (
-          <div className="border border-primary/10 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="border border-primary/10 rounded-card overflow-hidden">
+            <table className="w-full typo-body">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_provider}</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_model}</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_persona}</th>
-                  <th className="text-left p-2.5 text-muted-foreground/70 font-medium">{s.audit_status}</th>
-                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">{s.audit_cost}</th>
-                  <th className="text-right p-2.5 text-muted-foreground/70 font-medium">{s.audit_time}</th>
+                  <th className="text-left p-2.5 text-foreground font-medium">{s.audit_provider}</th>
+                  <th className="text-left p-2.5 text-foreground font-medium">{s.audit_model}</th>
+                  <th className="text-left p-2.5 text-foreground font-medium">{s.audit_persona}</th>
+                  <th className="text-left p-2.5 text-foreground font-medium">{s.audit_status}</th>
+                  <th className="text-right p-2.5 text-foreground font-medium">{s.audit_cost}</th>
+                  <th className="text-right p-2.5 text-foreground font-medium">{s.audit_time}</th>
                 </tr>
               </thead>
               <tbody>
@@ -44,33 +44,33 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
                           {ENGINE_LABELS[entry.engine_kind] || entry.engine_kind}
                         </span>
                         {entry.was_failover && (
-                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                          <span className="typo-caption px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25">
                             {s.failover}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="p-2.5 text-muted-foreground/70">
+                    <td className="p-2.5 text-foreground">
                       {entry.model_used || '-'}
                     </td>
-                    <td className="p-2.5 text-muted-foreground/70">
+                    <td className="p-2.5 text-foreground">
                       {entry.persona_name}
                     </td>
                     <td className="p-2.5">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                      <span className={`typo-caption px-1.5 py-0.5 rounded-full ${
                         entry.status === 'completed'
                           ? 'bg-emerald-500/15 text-emerald-400'
                           : entry.status === 'failed'
                             ? 'bg-red-500/15 text-red-400'
-                            : 'bg-secondary/50 text-muted-foreground/70'
+                            : 'bg-secondary/50 text-foreground'
                       }`}>
                         {entry.status}
                       </span>
                     </td>
-                    <td className="p-2.5 text-right text-muted-foreground/70">
+                    <td className="p-2.5 text-right text-foreground">
                       {entry.cost_usd != null ? `$${entry.cost_usd.toFixed(4)}` : '-'}
                     </td>
-                    <td className="p-2.5 text-right text-muted-foreground/70">
+                    <td className="p-2.5 text-right text-foreground">
                       {entry.duration_ms != null ? `${Math.round(entry.duration_ms / 1000)}s` : '-'}
                     </td>
                   </tr>

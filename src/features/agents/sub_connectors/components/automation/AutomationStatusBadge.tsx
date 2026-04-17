@@ -93,7 +93,7 @@ export function AutomationStatusBadge({ automationId, status }: AutomationStatus
   return (
     <motion.span
       layoutId={`automation-status-${automationId}`}
-      className={`relative inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}
+      className={`relative inline-flex items-center gap-1 px-2 py-0.5 typo-body font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}
       transition={springTransition}
       animate={shouldPulse ? pulseKeyframes : { scale: 1 }}
       // @ts-expect-error framer-motion animate duration

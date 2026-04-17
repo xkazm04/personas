@@ -84,14 +84,14 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <aside className="w-full max-w-3xl bg-background border-l border-border/40 shadow-2xl flex flex-col animate-fade-slide-in">
+      <aside className="w-full max-w-3xl bg-background border-l border-border/40 shadow-elevation-4 flex flex-col animate-fade-slide-in">
         <header className="flex items-center justify-between px-6 py-4 border-b border-border/20">
           <div className="min-w-0">
             <h2 className="typo-section-title truncate">{report.title}</h2>
             {project && <p className="typo-caption text-foreground truncate">{project.name}</p>}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center rounded-lg border border-border/30 overflow-hidden">
+            <div className="flex items-center rounded-card border border-border/30 overflow-hidden">
               <button
                 onClick={() => setView('preview')}
                 className={`px-3 py-1.5 typo-caption transition-colors ${view === 'preview' ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-secondary/50'}`}
@@ -107,14 +107,14 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
             </div>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
             >
               {justCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               {t.common.copy}
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               .md

@@ -316,7 +316,7 @@ function TimelinePanelImpl({
         </button>
         <button
           onClick={onAdd}
-          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${c.addButton}`}
+          className={`w-5 h-5 rounded-input border flex items-center justify-center transition-colors ${c.addButton}`}
           aria-label={`add-${lane}`}
         >
           <Plus className="w-3 h-3" />
@@ -347,7 +347,7 @@ function TimelinePanelImpl({
         </Button>
 
         <span className="text-md text-foreground w-14 text-center tabular-nums font-mono">
-          {Math.round(zoom)}px/s
+          {Math.round(zoom)}{t.plugins.artist_media_studio.px_per_second}
         </span>
 
         <div className="w-px h-4 bg-primary/10 mx-1" />

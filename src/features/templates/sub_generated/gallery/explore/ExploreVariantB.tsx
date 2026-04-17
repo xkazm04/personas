@@ -67,14 +67,14 @@ function TemplateMiniCard({ template, onClick }: { template: PersonaDesignReview
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-64 p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left group/card"
+      className="flex-shrink-0 w-64 p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left group/card"
     >
-      <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
+      <div className="typo-body font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
         {template.test_case_name}
       </div>
-      <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{template.instruction}</p>
+      <p className="typo-body text-foreground line-clamp-2 mt-1.5 leading-relaxed">{template.instruction}</p>
       {template.adoption_count > 0 && (
-        <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/60">
+        <div className="flex items-center gap-1 mt-2.5 typo-body text-emerald-400/60">
           <Download className="w-3 h-3" /> {template.adoption_count}
         </div>
       )}
@@ -115,16 +115,16 @@ export function ExploreVariantB({
     <div className="flex-1 overflow-y-auto">
       {/* Hero prompt */}
       <div className="px-6 pt-8 pb-6 text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">{t.templates.explore.hero_title}</h2>
-        <p className="text-sm text-muted-foreground/60 mb-5 max-w-md mx-auto">
+        <h2 className="typo-heading-lg font-bold text-foreground mb-2">{t.templates.explore.hero_title}</h2>
+        <p className="typo-body text-foreground mb-5 max-w-md mx-auto">
           {t.templates.explore.hero_subtitle}
         </p>
         <button
           onClick={onSearchFocus}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-primary/15 bg-secondary/20 text-muted-foreground/50 hover:bg-secondary/30 hover:border-primary/25 transition-all max-w-md w-full justify-center"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30 hover:border-primary/25 transition-all max-w-md w-full justify-center"
         >
           <Search className="w-4 h-4" />
-          <span className="text-sm">{t.templates.explore.hero_search_placeholder}</span>
+          <span className="typo-body">{t.templates.explore.hero_search_placeholder}</span>
         </button>
       </div>
 
@@ -140,9 +140,9 @@ export function ExploreVariantB({
           return (
             <div key={lane.title}>
               {/* Lane header with illustration accent */}
-              <div className="relative overflow-hidden rounded-xl mb-3">
+              <div className="relative overflow-hidden rounded-modal mb-3">
                 {imgSrc && (
-                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                  <div className="absolute inset-0 overflow-hidden rounded-modal">
                     <img
                       src={imgSrc}
                       alt=""
@@ -153,14 +153,14 @@ export function ExploreVariantB({
                 )}
                 <div className="relative flex items-center gap-2.5 px-4 py-3">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center border"
+                    className="w-8 h-8 rounded-card flex items-center justify-center border"
                     style={{ backgroundColor: `${lane.color}15`, borderColor: `${lane.color}25` }}
                   >
                     <Icon className="w-4.5 h-4.5" style={{ color: lane.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground/90">{lane.title}</h3>
-                    <span className="text-xs text-muted-foreground/40">
+                    <h3 className="typo-heading font-semibold text-foreground/90">{lane.title}</h3>
+                    <span className="typo-caption text-foreground">
                       {(lane.templates.length === 1
                         ? t.templates.explore.templates_count_one
                         : t.templates.explore.templates_count_other
@@ -170,7 +170,7 @@ export function ExploreVariantB({
                   {lane.categories[0] && (
                     <button
                       onClick={() => onSelectCategory(lane.categories[0]!)}
-                      className="text-sm text-primary/60 hover:text-primary transition-colors font-medium"
+                      className="typo-body text-primary/60 hover:text-primary transition-colors font-medium"
                     >
                       {t.templates.explore.view_all}
                     </button>
@@ -193,7 +193,7 @@ export function ExploreVariantB({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-              <h3 className="text-sm font-semibold text-foreground/80">{t.templates.explore.most_adopted}</h3>
+              <h3 className="typo-heading font-semibold text-foreground">{t.templates.explore.most_adopted}</h3>
               <Zap className="w-3 h-3 text-amber-400/50" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -201,13 +201,13 @@ export function ExploreVariantB({
                 <button
                   key={tmpl.id}
                   onClick={() => onSelectTemplate(tmpl)}
-                  className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
+                  className="text-left p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
                 >
-                  <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
+                  <div className="typo-body font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
                     {tmpl.test_case_name}
                   </div>
-                  <p className="text-sm text-muted-foreground/60 line-clamp-2 mt-1.5 leading-relaxed">{tmpl.instruction}</p>
-                  <div className="flex items-center gap-1 mt-2.5 text-sm text-emerald-400/70 font-medium">
+                  <p className="typo-body text-foreground line-clamp-2 mt-1.5 leading-relaxed">{tmpl.instruction}</p>
+                  <div className="flex items-center gap-1 mt-2.5 typo-body text-emerald-400/70 font-medium">
                     <Download className="w-3 h-3" />
                     {(tmpl.adoption_count === 1
                       ? t.templates.explore.adoption_count_one

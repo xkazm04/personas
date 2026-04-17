@@ -21,7 +21,7 @@ function EventSourceNodeInner({ data, selected, id: _id }: NodeProps) {
   return (
     <div
       className={`
-        relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
+        relative flex items-center gap-2.5 px-3 py-2.5 rounded-modal
         bg-card backdrop-blur border-2
         ${isConnectSource
           ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.25)]'
@@ -32,13 +32,13 @@ function EventSourceNodeInner({ data, selected, id: _id }: NodeProps) {
         shadow-elevation-2 min-w-[160px] transition-all
       `}
     >
-      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/15 ${d.color}`}>
+      <div className={`flex-shrink-0 w-8 h-8 rounded-card flex items-center justify-center bg-cyan-500/15 ${d.color}`}>
         <Icon className="w-4 h-4" />
       </div>
 
       <div className="flex flex-col min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate">{d.label}</span>
-        <span className="text-[10px] text-muted-foreground truncate">{d.eventType}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{d.label}</span>
+        <span className="text-[10px] text-foreground truncate">{d.eventType}</span>
       </div>
 
       {count > 0 && (

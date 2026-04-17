@@ -104,6 +104,7 @@ pub fn from_str_as<T: serde::de::DeserializeOwned>(input: &str) -> Result<T, App
 /// 3. Trim suffix chatter after the last matching `}` or `]`
 /// 4. Remove trailing commas before `}` or `]`
 /// 5. Complete truncated keywords (`tru` → `true`, `fal` → `false`, `nul` → `null`)
+#[allow(dead_code)] // planned API — no Tauri command wires into lenient parsing yet
 pub fn lenient_from_str(input: &str) -> Result<serde_json::Value, AppError> {
     validate_limits(input)?;
 
@@ -119,6 +120,7 @@ pub fn lenient_from_str(input: &str) -> Result<serde_json::Value, AppError> {
 
 /// Deserialize LLM output into an arbitrary type, applying recovery heuristics
 /// when strict parsing fails.
+#[allow(dead_code)] // planned API — no Tauri command wires into lenient parsing yet
 pub fn lenient_from_str_as<T: serde::de::DeserializeOwned>(input: &str) -> Result<T, AppError> {
     validate_limits(input)?;
 
@@ -133,6 +135,7 @@ pub fn lenient_from_str_as<T: serde::de::DeserializeOwned>(input: &str) -> Resul
 }
 
 /// Apply recovery heuristics to malformed LLM JSON output.
+#[allow(dead_code)] // called by lenient_from_str* which are not yet wired to any command
 fn recover_json(input: &str) -> String {
     let mut text = input.to_string();
 
@@ -153,6 +156,7 @@ fn recover_json(input: &str) -> String {
 
 /// Strip markdown code fences from LLM output.
 /// Handles: ```json\n...\n```, ```\n...\n```, and prefix chatter before the fence.
+#[allow(dead_code)] // used by recover_json → lenient_from_str* (not yet wired to a command)
 fn strip_code_fences(input: &str) -> String {
     // Find the opening fence
     let Some(fence_start) = input.find("```") else {
@@ -174,6 +178,7 @@ fn strip_code_fences(input: &str) -> String {
 }
 
 /// Extract the JSON body by finding the first `{`/`[` and the last matching `}`/`]`.
+#[allow(dead_code)] // used by recover_json → lenient_from_str* (not yet wired to a command)
 fn extract_json_body(input: &str) -> String {
     let trimmed = input.trim();
 
@@ -197,6 +202,7 @@ fn extract_json_body(input: &str) -> String {
 
 /// Remove trailing commas before `}` or `]`.
 /// Handles: `{"a": 1, "b": 2,}` → `{"a": 1, "b": 2}`
+#[allow(dead_code)] // used by recover_json → lenient_from_str* (not yet wired to a command)
 fn remove_trailing_commas(input: &str) -> String {
     let bytes = input.as_bytes();
     let mut result = Vec::with_capacity(bytes.len());
@@ -251,6 +257,7 @@ fn remove_trailing_commas(input: &str) -> String {
 ///
 /// Scans for patterns like `: tru}`, `: fal,`, `: nul]` outside of string
 /// literals and replaces them with the full keyword.
+#[allow(dead_code)] // used by recover_json → lenient_from_str* (not yet wired to a command)
 fn fix_truncated_keywords(input: &str) -> String {
     let replacements: &[(&str, &str)] = &[
         ("tru", "true"),

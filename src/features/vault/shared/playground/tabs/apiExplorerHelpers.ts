@@ -19,6 +19,6 @@ export function apiTestLineClassName(line: string): string {
   if (line.includes('\u2713')) return 'text-emerald-400/70';
   if (line.includes('\u2717')) return 'text-red-400/70';
   if (line.includes('\u2192')) return 'text-blue-400/50';
-  if (line.includes('Done:') || line.includes('Starting')) return 'text-foreground/70';
-  return 'text-muted-foreground/60';
+  if (line.includes('Done:') || line.includes('Starting')) return 'text-foreground';
+  return 'text-foreground';
 }

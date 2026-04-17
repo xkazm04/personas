@@ -13,7 +13,7 @@ const MEDAL_STYLES: Record<NonNullable<Medal>, { bg: string; border: string; tex
 
 const TREND_ICON = {
   improving: { Icon: TrendingUp, color: 'text-emerald-400' },
-  stable:    { Icon: Minus, color: 'text-muted-foreground/40' },
+  stable:    { Icon: Minus, color: 'text-foreground' },
   degrading: { Icon: TrendingDown, color: 'text-red-400' },
 };
 
@@ -30,11 +30,11 @@ export function TopPerformersWidget() {
   if (topEntries.length < 2) return null;
 
   return (
-    <div className="rounded-xl border border-primary/[0.08] bg-secondary/[0.03] p-4" data-testid="top-performers-widget">
+    <div className="rounded-modal border border-primary/[0.08] bg-secondary/[0.03] p-4" data-testid="top-performers-widget">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-foreground/70">{t.overview.widgets.top_performers}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{t.overview.widgets.top_performers}</h3>
         </div>
         <button
           onClick={() => setOverviewTab('leaderboard')}
@@ -62,27 +62,27 @@ function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
                      entry.compositeScore >= 40 ? 'text-amber-400' : 'text-red-400';
 
   return (
-    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-primary/[0.03] transition-colors">
+    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-card hover:bg-primary/[0.03] transition-colors">
       {/* Medal / rank */}
       <div className="w-7 flex-shrink-0 text-center">
         {medal ? (
-          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border ${medal.bg} ${medal.border} ${medal.text}`}>
+          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-input text-[10px] font-bold border ${medal.bg} ${medal.border} ${medal.text}`}>
             {medal.label}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground/40">#{entry.rank}</span>
+          <span className="typo-caption text-foreground">#{entry.rank}</span>
         )}
       </div>
 
       {/* Avatar + name */}
       <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
-      <span className="text-sm text-foreground/70 truncate flex-1 min-w-0">{entry.personaName}</span>
+      <span className="typo-body text-foreground truncate flex-1 min-w-0">{entry.personaName}</span>
 
       {/* Trend */}
       <TrendIcon className={`w-3 h-3 flex-shrink-0 ${trend.color}`} />
 
       {/* Score */}
-      <span className={`text-sm font-bold flex-shrink-0 ${scoreColor}`}>{entry.compositeScore}</span>
+      <span className={`typo-heading font-bold flex-shrink-0 ${scoreColor}`}>{entry.compositeScore}</span>
     </div>
   );
 }

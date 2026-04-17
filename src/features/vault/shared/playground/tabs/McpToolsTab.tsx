@@ -78,7 +78,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-        <span className="text-sm font-medium text-foreground/70">
+        <span className="typo-body font-medium text-foreground">
           {hasLoaded ? `${tools.length} tool${tools.length !== 1 ? 's' : ''}` : 'MCP Tools'}
         </span>
         <div className="flex-1" />
@@ -93,7 +93,7 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {loadError && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
+          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-start gap-2">
             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{loadError}</span>
           </div>

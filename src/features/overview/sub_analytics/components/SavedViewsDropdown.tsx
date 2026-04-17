@@ -134,21 +134,21 @@ export function SavedViewsDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border bg-secondary/40 text-foreground hover:bg-secondary/60 transition-all"
       >
         <Bookmark className="w-4 h-4" />
         <span className="hidden sm:inline">{t.overview.analytics_dashboard.saved_views}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-modal shadow-elevation-3 z-50 overflow-hidden flex flex-col">
           {isSaving ? (
             <div className="p-2 flex items-center gap-2 border-b border-primary/10">
               <input
                 autoFocus
                 type="text"
                 placeholder={t.overview.analytics_dashboard.view_name_placeholder}
-                className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
+                className="flex-1 bg-transparent border border-primary/20 rounded px-2 py-1.5 typo-body focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
                 value={newViewName}
                 onChange={(e) => setNewViewName(e.target.value)}
                 onKeyDown={(e) => {
@@ -166,7 +166,7 @@ export function SavedViewsDropdown({
           ) : (
             <button
               onClick={() => setIsSaving(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
+              className="w-full flex items-center gap-2 px-3 py-2 typo-body text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
             >
               <Plus className="w-4 h-4" />
               {t.overview.analytics_dashboard.save_current_view}
@@ -174,14 +174,14 @@ export function SavedViewsDropdown({
           )}
 
           <div className="max-h-64 overflow-y-auto py-1">
-            <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
+            <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-foreground font-semibold">
               {t.overview.analytics_dashboard.smart_presets}
             </div>
             {SMART_PRESETS.map((preset) => (
               <button
                 key={preset.id}
                 onClick={() => applyView(preset)}
-                className="w-full px-3 py-1.5 text-sm text-foreground hover:bg-secondary text-left transition-colors"
+                className="w-full px-3 py-1.5 typo-body text-foreground hover:bg-secondary text-left transition-colors"
               >
                 {preset.name}
               </button>
@@ -189,12 +189,12 @@ export function SavedViewsDropdown({
 
             {views.length > 0 && (
               <>
-                <div className="px-3 py-1 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold border-t border-primary/10 pt-2">
+                <div className="px-3 py-1 mt-2 text-[10px] uppercase tracking-wider text-foreground font-semibold border-t border-primary/10 pt-2">
                   {t.overview.analytics_dashboard.your_saved_views}
                 </div>
                 {views.map((view) => (
                   <div key={view.id} className="group flex items-center justify-between px-3 py-1.5 hover:bg-secondary transition-colors cursor-pointer" onClick={() => applyView(view)}>
-                    <span className="text-sm text-foreground truncate flex-1 pr-2">{view.name}</span>
+                    <span className="typo-body text-foreground truncate flex-1 pr-2">{view.name}</span>
                     <Button
                       variant="ghost" size="icon-sm"
                       onClick={(e) => handleDelete(view.id, e)}

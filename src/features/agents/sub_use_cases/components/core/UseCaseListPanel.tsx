@@ -39,21 +39,21 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
             key={uc.id || i}
             data-testid={`use-case-row-${uc.id}`}
             onClick={() => onSelect(uc.id)}
-            className={`w-full text-left p-2.5 rounded-xl border transition-all ${
+            className={`w-full text-left p-2.5 rounded-modal border transition-all ${
               isSelected
                 ? 'border-primary/30 bg-primary/8 ring-1 ring-primary/20'
                 : 'border-primary/10 bg-secondary/20 hover:border-primary/20 hover:bg-secondary/30'
             }`}
           >
             <div className="flex items-start gap-2">
-              <span className="text-sm font-semibold text-muted-foreground/50 mt-0.5 w-4 text-right flex-shrink-0">
+              <span className="typo-heading font-semibold text-foreground mt-0.5 w-4 text-right flex-shrink-0">
                 {i + 1}.
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-foreground/90 truncate">{uc.title}</p>
+                  <p className="typo-body font-medium text-foreground/90 truncate">{uc.title}</p>
                   {uc.category && catStyle && (
-                    <span className={`px-1 py-0.5 text-sm font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider flex-shrink-0`}>
+                    <span className={`px-1 py-0.5 typo-body font-medium rounded border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider flex-shrink-0`}>
                       {uc.category.replace('-', ' ')}
                     </span>
                   )}
@@ -62,12 +62,12 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
                 {(hasModelOverride || hasNotifications) && (
                   <div className="flex items-center gap-2 mt-1">
                     {hasModelOverride && (
-                      <span className="flex items-center gap-0.5 text-sm text-primary/60" title={t.agents.use_cases.custom_model}>
+                      <span className="flex items-center gap-0.5 typo-body text-primary/60" title={t.agents.use_cases.custom_model}>
                         <Cpu className="w-2.5 h-2.5" />
                       </span>
                     )}
                     {hasNotifications && (
-                      <span className="flex items-center gap-0.5 text-sm text-amber-400/60" title={t.agents.use_cases.notifications_configured}>
+                      <span className="flex items-center gap-0.5 typo-body text-amber-400/60" title={t.agents.use_cases.notifications_configured}>
                         <Bell className="w-2.5 h-2.5" />
                       </span>
                     )}

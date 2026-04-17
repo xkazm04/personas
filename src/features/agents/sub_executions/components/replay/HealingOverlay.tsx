@@ -76,7 +76,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
     <>
       {showDiagnosis && (
         <div
-          className="animate-fade-slide-in rounded-xl border border-red-500/25 bg-red-500/5 overflow-hidden"
+          className="animate-fade-slide-in rounded-modal border border-red-500/25 bg-red-500/5 overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-red-500/15">
@@ -93,7 +93,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-6 text-muted-foreground/60">
+            <div className="flex items-center justify-center py-6 text-foreground">
               <LoadingSpinner className="mr-2" />
               <span className="typo-body">{e.loading_healing_data}</span>
             </div>
@@ -101,7 +101,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
             <div className="p-4 space-y-3">
               {/* Error message */}
               {execution.error_message && (
-                <div className="rounded-lg border border-red-500/20 bg-red-500/8 p-3">
+                <div className="rounded-card border border-red-500/20 bg-red-500/8 p-3">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <AlertTriangle className="w-3 h-3 text-red-400" />
                     <span className="text-[10px] font-mono text-red-400/70 uppercase tracking-wider">
@@ -117,7 +117,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {/* Healing issues */}
               {issues.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                     {tx(e.healing_issues_count, { count: issues.length })}
                   </div>
                   {issues.map((issue) => {
@@ -125,7 +125,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                     return (
                       <div
                         key={issue.id}
-                        className={`rounded-lg border transition-all ${
+                        className={`rounded-card border transition-all ${
                           issue.auto_fixed
                             ? 'border-emerald-500/20 bg-emerald-500/5'
                             : issue.is_circuit_breaker
@@ -138,12 +138,12 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           className="w-full flex items-center gap-2 px-3 py-2 text-left"
                         >
                           {isExpanded ? (
-                            <ChevronDown className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            <ChevronDown className="w-3 h-3 text-foreground shrink-0" />
                           ) : (
-                            <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
                           )}
                           <SeverityBadge severity={issue.severity} />
-                          <span className="typo-body text-foreground/80 truncate">
+                          <span className="typo-body text-foreground truncate">
                             {issue.title}
                           </span>
                           {issue.auto_fixed && (
@@ -166,25 +166,25 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                               className="animate-fade-slide-in overflow-hidden"
                             >
                               <div className="px-3 pb-3 space-y-2 border-t border-primary/10 pt-2 mx-2">
-                                <p className="typo-body text-muted-foreground/70">
+                                <p className="typo-body text-foreground">
                                   {issue.description}
                                 </p>
                                 {issue.suggested_fix && (
-                                  <div className="rounded-lg bg-secondary/40 p-2.5">
+                                  <div className="rounded-card bg-secondary/40 p-2.5">
                                     <div className="flex items-center gap-1 mb-1">
-                                      <Wrench className="w-2.5 h-2.5 text-muted-foreground/50" />
-                                      <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                                      <Wrench className="w-2.5 h-2.5 text-foreground" />
+                                      <span className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                                         {e.suggested_fix}
                                       </span>
                                     </div>
-                                    <p className="typo-code text-foreground/70">
+                                    <p className="typo-code text-foreground">
                                       {issue.suggested_fix}
                                     </p>
                                   </div>
                                 )}
-                                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground/40">
-                                  <span>Category: {issue.category}</span>
-                                  <span>Status: {issue.status}</span>
+                                <div className="flex items-center gap-3 text-[10px] font-mono text-foreground">
+                                  <span>{tx(e.category_label, { category: issue.category })}</span>
+                                  <span>{tx(e.status_label, { status: issue.status })}</span>
                                 </div>
                               </div>
                             </div>
@@ -199,13 +199,13 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               {/* Retry chain */}
               {retryChain.length > 1 && (
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+                  <div className="text-[10px] font-mono text-foreground uppercase tracking-wider">
                     {e.retry_chain}
                   </div>
                   <div className="flex items-center gap-1">
                     {retryChain.map((exec, i) => (
                       <div key={exec.id} className="flex items-center gap-1">
-                        <div className={`px-2 py-0.5 rounded-lg text-[11px] font-mono border ${
+                        <div className={`px-2 py-0.5 rounded-card text-[11px] font-mono border ${
                           exec.id === execution.id
                             ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
                             : exec.status === 'completed'
@@ -218,7 +218,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           )}
                         </div>
                         {i < retryChain.length - 1 && (
-                          <span className="text-muted-foreground/30">→</span>
+                          <span className="text-foreground">→</span>
                         )}
                       </div>
                     ))}
@@ -228,7 +228,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
 
               {/* No issues found */}
               {issues.length === 0 && !loading && (
-                <p className="typo-body text-muted-foreground/50 italic">
+                <p className="typo-body text-foreground italic">
                   {e.no_healing_issues}
                 </p>
               )}
@@ -247,7 +247,7 @@ function SeverityBadge({ severity }: { severity: string }) {
       ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
       : severity === 'medium'
         ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-        : 'bg-primary/10 text-muted-foreground/60 border-primary/15';
+        : 'bg-primary/10 text-foreground border-primary/15';
 
   return (
     <span className={`px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border shrink-0 ${cls}`}>

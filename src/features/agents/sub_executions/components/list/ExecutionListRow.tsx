@@ -35,13 +35,13 @@ export function ExecutionListRow({
   const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
   const chevron = compareMode ? null : isExpanded
-    ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />
-    : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/80 flex-shrink-0" />;
+    ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+    : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />;
   const statusEntry = getStatusEntry(execution.status);
-  const statusBadge = <span className={`px-2 py-0.5 rounded-lg typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
+  const statusBadge = <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={tx(e.healing_retry, { count: execution.retry_count })}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
         <RefreshCw className="w-2.5 h-2.5" />#{execution.retry_count}
       </span>
     </Tooltip>
@@ -60,10 +60,10 @@ export function ExecutionListRow({
         {compareMode && (
           <div className="col-span-1 flex items-center">
             {compareLabel ? (
-              <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
+              <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
                 compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
               }`}>{compareLabel}</span>
-            ) : <span className="w-5 h-5 rounded-lg border border-primary/20 bg-background/30" />}
+            ) : <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />}
           </div>
         )}
         <div className={`${compareMode ? 'col-span-2' : 'col-span-2'} flex items-center gap-2`}>{chevron}{statusBadge}{retryBadge}</div>
@@ -88,12 +88,12 @@ export function ExecutionListRow({
       >
         <div className="flex items-center gap-2">
           {compareMode && compareLabel && (
-            <span className={`w-5 h-5 rounded-lg flex items-center justify-center typo-heading ${
+            <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
               compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
             }`}>{compareLabel}</span>
           )}
           {chevron}{statusBadge}{retryBadge}{duration}
-          <span className="typo-body text-muted-foreground/80 ml-auto">{formatRelativeTime(execution.started_at)}</span>
+          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(execution.started_at)}</span>
         </div>
         {execution.error_message && (
           <p className="typo-body text-red-400/70 truncate pl-5.5">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-list')}</p>
@@ -106,7 +106,7 @@ export function ExecutionListRow({
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 2xl:grid-cols-3 gap-4 3xl:gap-5 typo-body">
                 <div>
-                  <span className="text-muted-foreground/90 typo-code uppercase">{e.execution_id}</span>
+                  <span className="text-foreground typo-code uppercase">{e.execution_id}</span>
                   <Tooltip content={execution.id} placement="bottom">
                     <button onClick={(e) => { e.stopPropagation(); onCopyId(execution.id); }} className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group">
                       <span className="typo-code">#{execution.id.slice(0, 8)}</span>
@@ -114,16 +114,16 @@ export function ExecutionListRow({
                     </button>
                   </Tooltip>
                 </div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">${execution.cost_usd.toFixed(4)}</p></div>
-                <div><span className="text-muted-foreground/90 typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">${execution.cost_usd.toFixed(4)}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
               </div>
               {execution.input_data && (
                 <div>
-                  <span className="text-muted-foreground/90 typo-code uppercase">{e.input_data}</span>
-                  <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-lg typo-code text-foreground/80 overflow-x-auto">
+                  <span className="text-foreground typo-code uppercase">{e.input_data}</span>
+                  <pre className="mt-1 p-2 bg-background/50 border border-primary/10 rounded-card typo-code text-foreground overflow-x-auto">
                     {showRaw ? execution.input_data : maskSensitiveJson(execution.input_data)}
                   </pre>
                 </div>
@@ -135,11 +135,11 @@ export function ExecutionListRow({
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1">
-                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
                   <RotateCw className="w-3 h-3" />{e.rerun_with_same_input}
                 </button>
                 {execution.retry_count > 0 && (
-                  <button onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors">
+                  <button onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors">
                     <ArrowLeftRight className="w-3 h-3" />{e.compare_with_original}
                   </button>
                 )}

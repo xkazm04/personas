@@ -103,7 +103,7 @@ function EnvironmentStatus({
     connectors.some((c) => c.connected);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card/50 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-card/50 overflow-hidden">
       {/* Header — always visible */}
       <div
         role="button"
@@ -282,7 +282,7 @@ function CreativeSessionChat({
   }, [prompt, running, sendPrompt, availableTools]);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card/50 overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-primary/10 bg-card/50 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-primary/5">
         <div className="flex items-center gap-2">
@@ -349,7 +349,7 @@ function CreativeSessionChat({
                 <button
                   key={example}
                   onClick={() => setPrompt(example)}
-                  className="px-3 py-1.5 rounded-lg text-md bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  className="px-3 py-1.5 rounded-card text-md bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                 >
                   {example}
                 </button>
@@ -376,12 +376,12 @@ function CreativeSessionChat({
               : t.plugins.artist.connect_tools_first
           }
           disabled={running}
-          className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
+          className="flex-1 px-3 py-2 rounded-card bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
         />
         {running ? (
           <button
             onClick={cancel}
-            className="px-3 py-2 rounded-lg bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+            className="px-3 py-2 rounded-card bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
             title={t.plugins.artist.cancel}
           >
             <Square className="w-4 h-4" />
@@ -390,7 +390,7 @@ function CreativeSessionChat({
           <button
             onClick={handleSend}
             disabled={!prompt.trim()}
-            className="px-3 py-2 rounded-lg bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 transition-colors disabled:opacity-30"
+            className="px-3 py-2 rounded-card bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 transition-colors disabled:opacity-30"
           >
             <Send className="w-4 h-4" />
           </button>

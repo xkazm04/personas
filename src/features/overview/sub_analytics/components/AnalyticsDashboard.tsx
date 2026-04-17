@@ -48,15 +48,15 @@ export default function AnalyticsDashboard() {
             />
             <button
               onClick={() => { void metrics.refreshAllSafe(); }}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => metrics.setAutoRefresh(!metrics.autoRefresh)}
-              className={`p-1.5 rounded-lg border transition-colors ${
-                metrics.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
+              className={`p-1.5 rounded-card border transition-colors ${
+                metrics.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-foreground'
               }`}
               title={metrics.autoRefresh ? t.overview.analytics_dashboard.auto_refresh_on : t.overview.analytics_dashboard.auto_refresh_off}
             >
@@ -92,19 +92,19 @@ export default function AnalyticsDashboard() {
 
           {/* Cost anomaly alerts */}
           {metrics.costAnomalies.length > 0 && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+            <div className="rounded-modal border border-amber-500/20 bg-amber-500/10 px-4 py-3">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-300">
+                  <p className="typo-body font-medium text-amber-300">
                     {metrics.costAnomalies.length === 1 ? tx(t.overview.analytics_dashboard.cost_anomaly_detected, { count: 1 }) : tx(t.overview.analytics_dashboard.cost_anomalies_detected, { count: metrics.costAnomalies.length })}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {metrics.costAnomalies.map((a, i) => (
-                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm border bg-amber-500/15 text-amber-300 border-amber-500/25">
+                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-body border bg-amber-500/15 text-amber-300 border-amber-500/25">
                         {new Date(a.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        <span className="font-mono text-sm opacity-80">${a.cost.toFixed(2)}</span>
-                        <span className="font-mono text-sm font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
+                        <span className="font-mono typo-code opacity-80">${a.cost.toFixed(2)}</span>
+                        <span className="font-mono typo-code font-bold text-amber-400">{a.deviation_sigma.toFixed(1)}&sigma;</span>
                       </span>
                     ))}
                   </div>

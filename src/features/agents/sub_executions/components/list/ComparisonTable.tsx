@@ -14,7 +14,7 @@ export function ToolTimelineComparison({
   const e = t.agents.executions;
   const maxSteps = Math.max(stepsLeft.length, stepsRight.length);
   if (maxSteps === 0) {
-    return <p className="typo-body text-muted-foreground/50 text-center py-4">{e.no_tool_calls_short}</p>;
+    return <p className="typo-body text-foreground text-center py-4">{e.no_tool_calls_short}</p>;
   }
 
   return (
@@ -29,17 +29,17 @@ export function ToolTimelineComparison({
         return (
           <div key={i} className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
             {/* Left step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl typo-body ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {l ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
-                  <span className="font-mono text-foreground/80 truncate">{l.tool_name}</span>
+                  <span className="font-mono text-foreground truncate">{l.tool_name}</span>
                   {l.duration_ms != null && (
-                    <span className="ml-auto typo-code text-muted-foreground/60">{formatDuration(l.duration_ms)}</span>
+                    <span className="ml-auto typo-code text-foreground">{formatDuration(l.duration_ms)}</span>
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/60 typo-body">--</span>
+                <span className="text-foreground typo-body">--</span>
               )}
             </div>
 
@@ -47,29 +47,29 @@ export function ToolTimelineComparison({
             <div className="w-16 text-center">
               {durDelta != null ? (
                 <span className={`typo-code px-1.5 py-0.5 rounded ${
-                  Math.abs(durDelta) < 500 ? 'text-muted-foreground/50'
+                  Math.abs(durDelta) < 500 ? 'text-foreground'
                     : durDelta < 0 ? 'text-emerald-400 bg-emerald-500/10'
                       : 'text-amber-400 bg-amber-500/10'
                 }`}>
                   {durDelta > 0 ? '+' : ''}{formatDuration(durDelta)}
                 </span>
               ) : l && r ? (
-                <span className="text-muted-foreground/60 typo-body">--</span>
+                <span className="text-foreground typo-body">--</span>
               ) : null}
             </div>
 
             {/* Right step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl typo-body ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {r ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
-                  <span className="font-mono text-foreground/80 truncate">{r.tool_name}</span>
+                  <span className="font-mono text-foreground truncate">{r.tool_name}</span>
                   {r.duration_ms != null && (
-                    <span className="ml-auto typo-code text-muted-foreground/60">{formatDuration(r.duration_ms)}</span>
+                    <span className="ml-auto typo-code text-foreground">{formatDuration(r.duration_ms)}</span>
                   )}
                 </>
               ) : (
-                <span className="text-muted-foreground/60 typo-body">--</span>
+                <span className="text-foreground typo-body">--</span>
               )}
             </div>
           </div>

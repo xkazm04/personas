@@ -18,7 +18,7 @@ export function HighlightedJsonBlock({ raw }: { raw: string | null }) {
 
   if (!html) {
     return (
-      <pre className="p-4 bg-background/50 border border-border/30 rounded-xl typo-code text-foreground/90 overflow-x-auto">
+      <pre className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code text-foreground/90 overflow-x-auto">
         {raw ?? ''}
       </pre>
     );
@@ -26,7 +26,7 @@ export function HighlightedJsonBlock({ raw }: { raw: string | null }) {
 
   return (
     <pre
-      className="json-highlight p-4 bg-background/50 border border-border/30 rounded-xl typo-code overflow-x-auto"
+      className="json-highlight p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

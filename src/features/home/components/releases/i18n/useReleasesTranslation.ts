@@ -1,74 +1,131 @@
 /**
- * Translation hook for the "What's New" feature (lazy-loading).
+ * Thin compatibility shim for the "What's New" feature translations.
  *
- * @deprecated This feature-scoped hook will be consolidated into the main
- * `useTranslation()` hook in a future i18n migration. The release-specific
- * locale files in this directory should be merged into the main locale files.
- * See: i18n Phase 2 consolidation plan.
+ * Previously this file owned 14 per-locale bundles with a custom lazy-loader
+ * and 9 `as unknown as` casts papering over key drift. All strings now live
+ * in the main i18n system under `src/i18n/en.ts` → `releases.whats_new.*`.
+ * Non-English locales fall back to English via the main deep-merge loader.
  *
- * Adding a new release item via `/research` Phase 12? You MUST add the
- * `title` + `description` keys to ALL 14 locale files in this folder. The
- * non-English files start as English placeholders with `// TODO(i18n-XX)`
- * markers — keep that pattern when extending.
+ * The exported `useReleasesTranslation()` and `ReleasesTranslation` type are
+ * kept for one cycle to avoid touching every consuming component in one go —
+ * they delegate fully to `useTranslation()` with no extra caching or casting.
  */
-import { useSyncExternalStore } from 'react';
-import { useI18nStore, type Language } from '@/stores/i18nStore';
-import { en } from './en';
+import { useTranslation } from '@/i18n/useTranslation';
 
-type WhatsNewTranslations = typeof en.whatsNew;
+// ---------------------------------------------------------------------------
+// Shape helpers
+//
+// Components consume `t` as a nested object (e.g. `t.status.released`,
+// `t.releases['0.0.2'].items['3'].title`). We re-assemble that shape here
+// from the flat keys stored in en.ts so component call-sites need no changes.
+// ---------------------------------------------------------------------------
 
-const loaders: Record<Language, () => Promise<{ whatsNew: WhatsNewTranslations }>> = {
-  en: () => import('./en').then(m => m.en as { whatsNew: WhatsNewTranslations }),
-  zh: () => import('./zh').then(m => m.zh as unknown as { whatsNew: WhatsNewTranslations }),
-  ar: () => import('./ar').then(m => m.ar as unknown as { whatsNew: WhatsNewTranslations }),
-  hi: () => import('./hi').then(m => m.hi as unknown as { whatsNew: WhatsNewTranslations }),
-  ru: () => import('./ru').then(m => m.ru as unknown as { whatsNew: WhatsNewTranslations }),
-  id: () => import('./id').then(m => m.id as unknown as { whatsNew: WhatsNewTranslations }),
-  es: () => import('./es').then(m => m.es as unknown as { whatsNew: WhatsNewTranslations }),
-  fr: () => import('./fr').then(m => m.fr as unknown as { whatsNew: WhatsNewTranslations }),
-  bn: () => import('./bn').then(m => m.bn as unknown as { whatsNew: WhatsNewTranslations }),
-  ja: () => import('./ja').then(m => m.ja as unknown as { whatsNew: WhatsNewTranslations }),
-  vi: () => import('./vi').then(m => m.vi as unknown as { whatsNew: WhatsNewTranslations }),
-  de: () => import('./de').then(m => m.de as unknown as { whatsNew: WhatsNewTranslations }),
-  ko: () => import('./ko').then(m => m.ko as unknown as { whatsNew: WhatsNewTranslations }),
-  cs: () => import('./cs').then(m => m.cs as unknown as { whatsNew: WhatsNewTranslations }),
+type ReleaseItemI18n = { title: string; description: string };
+type ReleaseI18n = {
+  label: string;
+  summary: string;
+  items: Record<string, ReleaseItemI18n>;
 };
 
-const cache = new Map<Language, WhatsNewTranslations>();
-cache.set('en', en.whatsNew);
-
-const listeners = new Set<() => void>();
-let bundleVersion = 0;
-
-function subscribe(callback: () => void): () => void {
-  listeners.add(callback);
-  return () => { listeners.delete(callback); };
+export interface ReleasesTranslation {
+  title: string;
+  subtitle: { roadmap: string; changelog: string };
+  navBar: { roadmapLabel: string };
+  status: { released: string; active: string; planned: string; roadmap: string };
+  type: { feature: string; fix: string; security: string; docs: string; chore: string; breaking: string };
+  itemStatus: { in_progress: string; planned: string; completed: string };
+  priority: { now: string; next: string; later: string };
+  summary: { inProgress: string; next: string };
+  empty: string;
+  releases: Record<string, ReleaseI18n>;
 }
 
-function getSnapshot(): number {
-  return bundleVersion;
-}
+export function useReleasesTranslation(): { t: ReleasesTranslation; language: string } {
+  const { t: raw, language } = useTranslation();
+  const r = raw.releases.whats_new;
 
-function preload(lang: Language) {
-  if (cache.has(lang)) return;
-  loaders[lang]().then(bundle => {
-    cache.set(lang, { ...en.whatsNew, ...bundle.whatsNew });
-    bundleVersion++;
-    listeners.forEach(fn => fn());
-  });
-}
+  const t: ReleasesTranslation = {
+    title: r.title,
+    subtitle: {
+      roadmap: r.subtitle_roadmap,
+      changelog: r.subtitle_changelog,
+    },
+    navBar: {
+      roadmapLabel: r.nav_bar_roadmap_label,
+    },
+    status: {
+      released: r.status_released,
+      active: r.status_active,
+      planned: r.status_planned,
+      roadmap: r.status_roadmap,
+    },
+    type: {
+      feature: r.type_feature,
+      fix: r.type_fix,
+      security: r.type_security,
+      docs: r.type_docs,
+      chore: r.type_chore,
+      breaking: r.type_breaking,
+    },
+    itemStatus: {
+      in_progress: r.item_status_in_progress,
+      planned: r.item_status_planned,
+      completed: r.item_status_completed,
+    },
+    priority: {
+      now: r.priority_now,
+      next: r.priority_next,
+      later: r.priority_later,
+    },
+    summary: {
+      inProgress: r.summary_in_progress,
+      next: r.summary_next,
+    },
+    empty: r.empty,
+    releases: {
+      '0.0.1': {
+        label: r.release_0_0_1_label,
+        summary: r.release_0_0_1_summary,
+        items: {
+          '1': { title: r.release_0_0_1_item_1_title, description: r.release_0_0_1_item_1_description },
+        },
+      },
+      '0.0.2': {
+        label: r.release_0_0_2_label,
+        summary: r.release_0_0_2_summary,
+        items: {
+          '1':  { title: r.release_0_0_2_item_1_title,  description: r.release_0_0_2_item_1_description },
+          '2':  { title: r.release_0_0_2_item_2_title,  description: r.release_0_0_2_item_2_description },
+          '3':  { title: r.release_0_0_2_item_3_title,  description: r.release_0_0_2_item_3_description },
+          '4':  { title: r.release_0_0_2_item_4_title,  description: r.release_0_0_2_item_4_description },
+          '5':  { title: r.release_0_0_2_item_5_title,  description: r.release_0_0_2_item_5_description },
+          '6':  { title: r.release_0_0_2_item_6_title,  description: r.release_0_0_2_item_6_description },
+          '7':  { title: r.release_0_0_2_item_7_title,  description: r.release_0_0_2_item_7_description },
+          '8':  { title: r.release_0_0_2_item_8_title,  description: r.release_0_0_2_item_8_description },
+          '9':  { title: r.release_0_0_2_item_9_title,  description: r.release_0_0_2_item_9_description },
+          '10': { title: r.release_0_0_2_item_10_title, description: r.release_0_0_2_item_10_description },
+          '11': { title: r.release_0_0_2_item_11_title, description: r.release_0_0_2_item_11_description },
+          '12': { title: r.release_0_0_2_item_12_title, description: r.release_0_0_2_item_12_description },
+          '13': { title: r.release_0_0_2_item_13_title, description: r.release_0_0_2_item_13_description },
+          '14': { title: r.release_0_0_2_item_14_title, description: r.release_0_0_2_item_14_description },
+          '15': { title: r.release_0_0_2_item_15_title, description: r.release_0_0_2_item_15_description },
+          '16': { title: r.release_0_0_2_item_16_title, description: r.release_0_0_2_item_16_description },
+          '17': { title: r.release_0_0_2_item_17_title, description: r.release_0_0_2_item_17_description },
+          '18': { title: r.release_0_0_2_item_18_title, description: r.release_0_0_2_item_18_description },
+        },
+      },
+      roadmap: {
+        label: r.release_roadmap_label,
+        summary: r.release_roadmap_summary,
+        items: {
+          '2': { title: r.release_roadmap_item_2_title, description: r.release_roadmap_item_2_description },
+          '3': { title: r.release_roadmap_item_3_title, description: r.release_roadmap_item_3_description },
+          '4': { title: r.release_roadmap_item_4_title, description: r.release_roadmap_item_4_description },
+          '6': { title: r.release_roadmap_item_6_title, description: r.release_roadmap_item_6_description },
+        },
+      },
+    },
+  };
 
-export function useReleasesTranslation() {
-  const { language } = useI18nStore();
-  useSyncExternalStore(subscribe, getSnapshot);
-
-  if (!cache.has(language)) {
-    preload(language);
-  }
-
-  const t = cache.get(language) ?? en.whatsNew;
   return { t, language };
 }
-
-/** Type of the namespaced translation object — useful for prop typing. */
-export type ReleasesTranslation = typeof en.whatsNew;

@@ -15,9 +15,9 @@ export function ToolRunnerPanel({ tools, personaId }: ToolRunnerPanelProps) {
 
   if (tools.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/50">
+      <div className="flex flex-col items-center justify-center py-8 text-foreground">
         <Wrench className="w-6 h-6 mb-2" />
-        <p className="text-sm">{t.agents.tool_runner.no_tools}</p>
+        <p className="typo-body">{t.agents.tool_runner.no_tools}</p>
       </div>
     );
   }

@@ -44,14 +44,14 @@ export default function MemoryRowDetail({
   }, [id, editTitle, editContent, editCategory, editImportance, onSave]);
 
   return (
-    <div className="px-2.5 py-2 rounded-xl border border-violet-500/25 bg-violet-500/5 space-y-1.5">
+    <div className="px-2.5 py-2 rounded-modal border border-violet-500/25 bg-violet-500/5 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-violet-400">{pt.edit_memory_title}</span>
+        <span className="typo-body font-medium text-violet-400">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
-          <button onClick={handleSave} className="p-1 rounded-lg hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
+          <button onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
             <Check className="w-3 h-3" />
           </button>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60" title={t.common.cancel}>
+          <button onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" title={t.common.cancel}>
             <X className="w-3 h-3" />
           </button>
         </div>
@@ -59,7 +59,7 @@ export default function MemoryRowDetail({
 
       <input
         ref={titleRef}
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30"
+        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30"
         value={editTitle}
         onChange={(e) => setEditTitle(e.target.value)}
         placeholder={pt.title_placeholder}
@@ -67,7 +67,7 @@ export default function MemoryRowDetail({
       />
 
       <textarea
-        className="w-full text-sm bg-secondary/60 border border-primary/10 rounded-lg px-2 py-1 text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/30 resize-none"
+        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 resize-none"
         value={editContent}
         onChange={(e) => setEditContent(e.target.value)}
         placeholder={pt.content_placeholder}
@@ -76,7 +76,7 @@ export default function MemoryRowDetail({
 
       <div className="flex items-center gap-2">
         <select
-          className="text-sm bg-secondary/60 border border-primary/10 rounded-lg px-1.5 py-0.5 text-foreground/80 focus-visible:outline-none"
+          className="typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-0.5 text-foreground focus-visible:outline-none"
           value={editCategory}
           onChange={(e) => setEditCategory(e.target.value)}
         >
@@ -86,7 +86,7 @@ export default function MemoryRowDetail({
         </select>
 
         <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground/50">Imp:</span>
+          <span className="typo-body text-foreground">{pt.importance_label}</span>
           <input
             type="range"
             min={IMPORTANCE_MIN}
@@ -95,7 +95,7 @@ export default function MemoryRowDetail({
             onChange={(e) => setEditImportance(Number(e.target.value))}
             className="w-14 h-1 accent-amber-500"
           />
-          <span className="text-sm text-muted-foreground/60 w-3 text-right">{editImportance}</span>
+          <span className="typo-body text-foreground w-3 text-right">{editImportance}</span>
         </div>
       </div>
     </div>

@@ -55,18 +55,18 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Users className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 id="team-synthesis-title" className="text-sm font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
-              <p className="text-sm text-muted-foreground/60">
-                AI selects templates and assembles a connected team
+              <h2 id="team-synthesis-title" className="typo-heading font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
+              <p className="typo-body text-foreground">
+                {t.templates.team_synthesis.subtitle}
               </p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground/70" />
+          <button onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -75,53 +75,53 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
           {!result ? (
             <>
               <div>
-                <label className="text-sm font-medium text-foreground/70 block mb-1.5">
-                  Team Name
+                <label className="typo-body font-medium text-foreground block mb-1.5">
+                  {t.templates.team_synthesis.team_name_label}
                 </label>
                 <input
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g., Content Pipeline Team"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
+                  placeholder={t.templates.team_synthesis.team_name_placeholder}
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground/70 block mb-1.5">
-                  Describe what this team should do
+                <label className="typo-body font-medium text-foreground block mb-1.5">
+                  {t.templates.team_synthesis.describe_team}
                 </label>
                 <textarea
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="e.g., Monitor social media mentions, analyze sentiment, generate reports, and send alerts to Slack when negative trends are detected"
+                  placeholder={t.templates.team_synthesis.describe_placeholder}
                   rows={4}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/40 text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
+                  className="w-full px-3.5 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-violet-500/30"
                   disabled={loading}
                 />
               </div>
 
               {error && (
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                <div className="flex items-start gap-2.5 p-3 rounded-modal bg-red-500/10 border border-red-500/20">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-400/80">{error}</p>
+                  <p className="typo-body text-red-400/80">{error}</p>
                 </div>
               )}
             </>
           ) : (
             <div className="flex flex-col items-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <CheckCircle2 className="w-7 h-7 text-emerald-400" />
               </div>
               <div className="text-center">
-                <h3 className="text-base font-semibold text-foreground/90">
+                <h3 className="typo-body-lg font-semibold text-foreground/90">
                   {result.team_name}
                 </h3>
-                <p className="text-sm text-muted-foreground/60 mt-1">
-                  {result.member_count} personas created and connected
+                <p className="typo-body text-foreground mt-1">
+                  {t.templates.team_synthesis.personas_created.replace('{count}', String(result.member_count))}
                 </p>
-                <p className="text-sm text-muted-foreground/50 mt-2 max-w-sm leading-relaxed">
+                <p className="typo-body text-foreground mt-2 max-w-sm leading-relaxed">
                   {result.description}
                 </p>
               </div>
@@ -135,26 +135,26 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             <button
               onClick={handleSynthesize}
               disabled={loading || !query.trim() || !teamName.trim()}
-              className="px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 typo-body font-medium rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
                   <Sparkles className="w-4 h-4 animate-pulse" />
-                  Synthesizing...
+                  {t.templates.team_synthesis.synthesizing}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Synthesize Team
+                  {t.templates.team_synthesis.synthesize_team}
                 </>
               )}
             </button>
           ) : (
             <button
               onClick={handleClose}
-              className="px-4 py-2.5 text-sm font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 typo-body font-medium rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
             >
-              Done
+              {t.templates.team_synthesis.done}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}

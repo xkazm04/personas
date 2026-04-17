@@ -3,6 +3,7 @@ import { formatElapsed } from '@/lib/utils/formatters';
 import { Square, X, Minus, Plus } from 'lucide-react';
 import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TerminalHeaderProps {
   isRunning: boolean;
@@ -24,6 +25,7 @@ interface TerminalHeaderProps {
 
 
 export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label, onToggleFullscreen, isFullscreen, onClose, onMinimize }: TerminalHeaderProps) {
+  const { t } = useTranslation();
   const elapsed = useElapsedTimer(isRunning, 1000);
 
   return (
@@ -67,18 +69,18 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
             <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
           )}
         </div>
-        <span className="typo-code text-muted-foreground/90 ml-1">
+        <span className="typo-code text-foreground ml-1">
           {isRunning ? (
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               Running
-              <span className="text-muted-foreground/80">{formatElapsed(elapsed, 'clock')}</span>
-              <span className="text-muted-foreground/80">({lineCount} lines)</span>
+              <span className="text-foreground">{formatElapsed(elapsed, 'clock')}</span>
+              <span className="text-foreground">({lineCount} {t.shared.terminal_extra.lines_suffix}</span>
             </span>
           ) : (
             <>
               {`Completed (${lineCount} lines)`}
-              {label && <span className="text-muted-foreground/80 ml-2">{label}</span>}
+              {label && <span className="text-foreground ml-2">{label}</span>}
             </>
           )}
         </span>
@@ -92,7 +94,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
             label="Copy Log"
             copiedLabel="Copied"
             iconSize="w-3 h-3"
-            className="px-2.5 py-1 typo-body text-muted-foreground/90 hover:text-foreground/95"
+            className="px-2.5 py-1 typo-body text-foreground hover:text-foreground/95"
           />
         )}
 

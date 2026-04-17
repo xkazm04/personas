@@ -79,18 +79,18 @@ export function ModelABCompare() {
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left cursor-pointer ${
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-modal border transition-all text-left cursor-pointer ${
           expanded
             ? 'bg-indigo-500/8 border-indigo-500/25'
             : 'bg-secondary/40 border-primary/20 hover:border-primary/30 hover:bg-secondary/50'
         }`}
       >
         <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/70 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/85 flex-1">
+        <span className="typo-body font-medium text-foreground/85 flex-1">
           {mc.compare_models}
-          <span className="text-muted-foreground/50 font-normal ml-1.5">{mc.side_by_side}</span>
+          <span className="text-foreground font-normal ml-1.5">{mc.side_by_side}</span>
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       {expanded && (
@@ -108,7 +108,7 @@ export function ModelABCompare() {
                   accentColor="text-blue-400"
                 />
                 <div className="pb-2">
-                  <ArrowLeftRight className="w-4 h-4 text-muted-foreground/40" />
+                  <ArrowLeftRight className="w-4 h-4 text-foreground" />
                 </div>
                 <ModelDropdown
                   label={mc.model_b}
@@ -121,15 +121,15 @@ export function ModelABCompare() {
 
               {/* Warnings */}
               {!hasPrompt && (
-                <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-amber-400/90">{mc.add_prompt_first}</span>
+                  <span className="typo-body text-amber-400/90">{mc.add_prompt_first}</span>
                 </div>
               )}
               {modelA === modelB && (
-                <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-amber-400/90">{mc.select_different_models}</span>
+                  <span className="typo-body text-amber-400/90">{mc.select_different_models}</span>
                 </div>
               )}
 
@@ -137,7 +137,7 @@ export function ModelABCompare() {
               {isLabRunning ? (
                 <button
                   onClick={() => void handleCancel()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body
                              bg-red-500/80 hover:bg-red-500 text-foreground transition-all cursor-pointer"
                 >
                   <Square className="w-3.5 h-3.5" />
@@ -147,7 +147,7 @@ export function ModelABCompare() {
                 <button
                   onClick={() => void handleStart()}
                   disabled={!canRun}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body
                              bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-500/90 hover:to-violet-500/90
                              text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
@@ -158,8 +158,8 @@ export function ModelABCompare() {
 
               {/* Progress */}
               {progress && (
-                <div className="px-3 py-2.5 rounded-xl bg-secondary/40 border border-primary/20 space-y-1.5">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+                <div className="px-3 py-2.5 rounded-modal bg-secondary/40 border border-primary/20 space-y-1.5">
+                  <div className="flex items-center gap-2 typo-body text-foreground">
                     <LoadingSpinner size="sm" className="text-indigo-400" />
                     <span>
                       {progress.phase === 'generating' ? mc.generating_scenarios :

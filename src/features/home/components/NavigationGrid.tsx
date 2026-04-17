@@ -44,7 +44,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       className="group relative text-left cursor-pointer focus-ring h-[224px] flex flex-col"
     >
       {/* Illustration area -- fixed height */}
-      <div className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 group-hover:shadow-elevation-3 transition-all duration-400`}>
+      <div className={`relative w-full h-[140px] flex-shrink-0 rounded-modal border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 group-hover:shadow-elevation-3 transition-all duration-400`}>
         {/* Glow blob */}
         <div className={`absolute inset-0 ${card.glowColor} blur-3xl rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none scale-75`} />
 
@@ -64,7 +64,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Module name overlaid at bottom of illustration */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-8 bg-gradient-to-t dark:from-black/40 from-transparent to-transparent pointer-events-none z-10">
-          <h3 className="text-lg font-semibold tracking-wide uppercase dark:text-white text-foreground/85 drop-shadow-sm">{cardT.label}</h3>
+          <h3 className="typo-heading-lg font-semibold tracking-wide uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">{cardT.label}</h3>
         </div>
 
         {/* Arrow overlay */}
@@ -78,7 +78,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
       {/* Description below */}
       <div className="mt-2 px-1 h-[64px] flex items-start">
-        <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
+        <p className="typo-body leading-relaxed dark:text-foreground text-foreground line-clamp-3">{cardT.description}</p>
       </div>
     </motion.button>
   );

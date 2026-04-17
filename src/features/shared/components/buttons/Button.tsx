@@ -21,7 +21,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary:
     'border border-border bg-secondary/40 text-foreground/90 hover:bg-secondary/70 hover:border-border/80 active:scale-[0.98]',
   ghost:
-    'text-muted-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
+    'text-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
   danger:
     'brightness-lock bg-red-600/90 text-white hover:bg-red-600 border border-red-500/30 shadow-elevation-1 active:scale-[0.98]',
   accent:

@@ -53,7 +53,7 @@ export const STATUS_PALETTE = {
     icon: 'bg-blue-400',
   },
   neutral: {
-    text: 'text-muted-foreground/60',
+    text: 'text-foreground',
     bg: 'bg-muted/10',
     border: 'border-muted-foreground/15',
     ring: 'focus-visible:ring-muted-foreground/30',

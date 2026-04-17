@@ -61,43 +61,43 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
           <button
             key={f}
             onClick={() => handleFilterChange(f)}
-            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+            className={`px-2 py-0.5 rounded typo-caption font-medium transition-colors ${
               auditFilter === f
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
-                : 'text-muted-foreground/80 hover:text-muted-foreground/90 hover:bg-secondary/30'
+                : 'text-foreground hover:text-muted-foreground/90 hover:bg-secondary/30'
             }`}
           >
             {f === 'all' ? 'All' : (OP_LABELS[f]?.label ?? f)}
           </button>
         ))}
-        <span className="ml-auto text-xs text-muted-foreground/80">{filtered.length} entries</span>
+        <span className="ml-auto typo-caption text-foreground">{filtered.length} entries</span>
       </div>
 
       {/* Table */}
-      <div className="border border-primary/10 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border border-primary/10 rounded-modal overflow-hidden">
+        <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.operation}</th>
-              <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.detail}</th>
-              <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider">{t.vault.features.intelligence.time}</th>
+              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 typo-label font-medium text-foreground uppercase tracking-wider">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>
             {pageEntries.map((entry) => {
-              const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-muted-foreground', dot: 'bg-muted-foreground' };
+              const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-foreground', dot: 'bg-muted-foreground' };
               return (
                 <tr key={entry.id} className="border-b border-primary/5 last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
                   <td className="px-3 py-1.5">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${op.color}`}>
+                    <span className={`inline-flex items-center gap-1.5 typo-caption font-medium ${op.color}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />
                       {op.label}
                     </span>
                   </td>
-                  <td className="px-3 py-1.5 text-xs text-foreground/80 truncate max-w-[300px]">
+                  <td className="px-3 py-1.5 typo-caption text-foreground truncate max-w-[300px]">
                     {entry.persona_name ? `by ${entry.persona_name}` : entry.detail ?? ''}
                   </td>
-                  <td className="px-3 py-1.5 text-xs text-muted-foreground/80 tabular-nums text-right whitespace-nowrap">
+                  <td className="px-3 py-1.5 typo-caption text-foreground tabular-nums text-right whitespace-nowrap">
                     {formatRelativeTime(entry.created_at, '')}
                   </td>
                 </tr>
@@ -115,9 +115,9 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
             disabled={auditPage === 0}
             className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
           >
-            <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/70" />
+            <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
           </button>
-          <span className="text-xs text-muted-foreground/80 tabular-nums">
+          <span className="typo-caption text-foreground tabular-nums">
             Page {auditPage + 1}/{totalPages}
           </span>
           <button
@@ -125,7 +125,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
             disabled={auditPage >= totalPages - 1}
             className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
           >
-            <ChevronRightIcon className="w-3.5 h-3.5 text-muted-foreground/70" />
+            <ChevronRightIcon className="w-3.5 h-3.5 text-foreground" />
           </button>
         </div>
       )}

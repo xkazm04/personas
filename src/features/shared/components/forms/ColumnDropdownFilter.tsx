@@ -51,7 +51,7 @@ export function ColumnDropdownFilter({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{isFiltered ? selected?.label ?? label : label}</span>
         {isFiltered ? (
@@ -68,7 +68,7 @@ export function ColumnDropdownFilter({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-xl">
+        <div className="absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-elevation-3">
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -76,7 +76,7 @@ export function ColumnDropdownFilter({
               className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
                 value === opt.value
                   ? 'bg-primary/10 text-foreground'
-                  : 'text-muted-foreground/70 hover:bg-secondary/30'
+                  : 'text-foreground hover:bg-secondary/30'
               }`}
             >
               {opt.label}

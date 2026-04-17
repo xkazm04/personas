@@ -239,7 +239,7 @@ export function PrBridge({ task }: { task: DevTask }) {
         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors text-left"
         aria-expanded={expanded}
       >
-        <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+        <div className="w-7 h-7 rounded-card bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
           <GitPullRequest className="w-3.5 h-3.5 text-emerald-400" />
         </div>
         <div className="flex-1 min-w-0">
@@ -266,9 +266,9 @@ export function PrBridge({ task }: { task: DevTask }) {
         <div className="px-4 pb-4 space-y-3">
           {/* No GitHub URL — direct the user to fix the root cause rather than dead-end. */}
           {!hasGithubUrl && (
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+            <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground flex-1">{dt.pr_bridge_no_github}</p>
+              <p className="typo-caption text-foreground flex-1">{dt.pr_bridge_no_github}</p>
               <Button
                 variant="secondary"
                 size="xs"
@@ -282,19 +282,19 @@ export function PrBridge({ task }: { task: DevTask }) {
 
           {/* GitHub URL but host not recognized (GitLab etc). Let the user copy the body. */}
           {hasGithubUrl && !hasRecognizedRepo && (
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+            <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
               <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <p className="text-xs text-foreground">{dt.pr_bridge_unsupported_host}</p>
+              <p className="typo-caption text-foreground">{dt.pr_bridge_unsupported_host}</p>
             </div>
           )}
 
           {/* PR preview fields */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <PreviewField label={dt.pr_bridge_branch} mono>
-              <code className="text-xs text-foreground">{content.branchName}</code>
+              <code className="typo-caption text-foreground">{content.branchName}</code>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_pr_title}>
-              <span className="text-xs text-foreground">{content.prTitle}</span>
+              <span className="typo-caption text-foreground">{content.prTitle}</span>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_commit_msg} mono fullRow>
               <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-24 overflow-y-auto">
@@ -374,7 +374,7 @@ function PreviewField({
   fullRow?: boolean;
 }) {
   return (
-    <div className={`rounded-lg border border-primary/10 bg-primary/3 px-3 py-2 ${fullRow ? 'lg:col-span-2' : ''}`}>
+    <div className={`rounded-card border border-primary/10 bg-primary/3 px-3 py-2 ${fullRow ? 'lg:col-span-2' : ''}`}>
       <span className="block text-[9px] uppercase tracking-wider font-medium text-primary mb-1">
         {label}
       </span>

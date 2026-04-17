@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
 import {
   GuidingProgressBar,
@@ -45,6 +46,7 @@ export function NegotiatorGuidingPhase({
   onCancel,
   onFinish,
 }: NegotiatorGuidingPhaseProps) {
+  const { t } = useTranslation();
   const totalSteps = visibleSteps.length;
   const completedCount = completedSteps.size;
   const allDone = totalSteps > 0 && completedCount >= totalSteps;
@@ -113,16 +115,16 @@ export function NegotiatorGuidingPhase({
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
         {allDone && (
           <button
             onClick={onFinish}
-            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors"
+            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors"
           >
-            Apply credentials
+            {t.vault.negotiator.apply_credentials}
           </button>
         )}
       </div>

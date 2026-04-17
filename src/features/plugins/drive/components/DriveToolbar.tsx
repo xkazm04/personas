@@ -41,7 +41,7 @@ export function DriveToolbar({
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-gradient-to-b from-background/70 to-background/40 backdrop-blur-sm">
       {/* Nav cluster */}
-      <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/40 border border-primary/10">
+      <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10">
         <IconButton
           icon={ArrowLeft}
           label={t.plugins.drive.back}
@@ -71,7 +71,7 @@ export function DriveToolbar({
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
-        className="flex items-center gap-0.5 min-w-0 flex-1 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/10"
+        className="flex items-center gap-0.5 min-w-0 flex-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/10"
       >
         <BreadcrumbPill
           label={t.plugins.drive.sidebar_root}
@@ -103,7 +103,7 @@ export function DriveToolbar({
           value={drive.searchQuery}
           onChange={(e) => drive.setSearchQuery(e.target.value)}
           placeholder={t.plugins.drive.search_placeholder}
-          className="pl-8 pr-7 py-1.5 w-56 rounded-lg bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/90 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+          className="pl-8 pr-7 py-1.5 w-56 rounded-card bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/90 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 transition-all"
         />
         {drive.searchQuery && (
           <button
@@ -118,7 +118,7 @@ export function DriveToolbar({
       </div>
 
       {/* View toggle (segmented) */}
-      <div className="flex items-center gap-0 p-0.5 rounded-lg bg-secondary/40 border border-primary/10">
+      <div className="flex items-center gap-0 p-0.5 rounded-card bg-secondary/40 border border-primary/10">
         <ViewSegment
           mode="list"
           label={t.plugins.drive.view_list}
@@ -187,7 +187,7 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-md text-foreground hover:text-foreground hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+      className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
     >
       <Icon className="w-4 h-4" />
     </button>
@@ -209,7 +209,7 @@ function BreadcrumbPill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-md typo-body truncate max-w-[160px] transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body truncate max-w-[160px] transition-colors ${
         isLast
           ? "typo-section-title"
           : "text-foreground/90 hover:text-foreground hover:bg-primary/10"
@@ -240,9 +240,9 @@ function ViewSegment({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-md typo-body font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-input typo-body font-medium transition-all ${
         active
-          ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-sm border border-cyan-500/40"
+          ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-elevation-1 border border-cyan-500/40"
           : "text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent"
       }`}
     >
@@ -274,7 +274,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-body font-semibold transition-all ${styles[variant]}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-body font-semibold transition-all ${styles[variant]}`}
     >
       <Icon className="w-3.5 h-3.5" />
       {label}

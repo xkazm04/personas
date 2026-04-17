@@ -30,14 +30,14 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       {/* Header */}
       <div className="relative flex items-start justify-between px-6 py-4 border-b border-primary/[0.08] flex-shrink-0 bg-secondary/10">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 id="detail-modal-title" className="text-base font-semibold text-foreground/95 tracking-tight">{title}</h3>
+          <h3 id="detail-modal-title" className="typo-body-lg font-semibold text-foreground/95 tracking-tight">{title}</h3>
           {subtitle && (
-            <p className="text-sm text-muted-foreground/70 mt-1 leading-relaxed">{subtitle}</p>
+            <p className="typo-body text-foreground mt-1 leading-relaxed">{subtitle}</p>
           )}
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/90 transition-colors focus-ring"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/90 transition-colors focus-ring"
           aria-label={t.overview.detail_modal.close}
         >
           <X className="w-4 h-4" />

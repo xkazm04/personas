@@ -2,9 +2,9 @@
  * Standard changelog view for a single release.
  *
  * Item titles, descriptions, release labels, summaries, status badges, type
- * badges, and section group headers are all looked up from the per-feature
- * i18n folder via `useReleasesTranslation`. The structural metadata (status,
- * type, dates, item ids) lives in `releases.json`.
+ * badges, and section group headers are all looked up via `useReleasesTranslation`
+ * (backed by `src/i18n/en.ts` → `releases.whats_new.*`). The structural
+ * metadata (status, type, dates, item ids) lives in `releases.json`.
  *
  * Items are grouped by `type` (feature / fix / security / ...). Within each
  * group they keep their `releases.json` ordering — newest entries should be
@@ -57,7 +57,7 @@ function ItemRow({
   const inProgressLabel = t.itemStatus.in_progress;
 
   return (
-    <div className="animate-fade-slide-in group relative rounded-xl border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
+    <div className="animate-fade-slide-in group relative rounded-modal border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
       <div className="flex items-start gap-3">
         <span
           className={[
@@ -150,7 +150,7 @@ export default function ReleaseDetailView({ release }: ReleaseDetailViewProps) {
         </div>
 
         {totalItems === 0 ? (
-          <div className="rounded-xl border border-dashed border-primary/10 bg-primary/[0.02] p-8 text-center">
+          <div className="rounded-modal border border-dashed border-primary/10 bg-primary/[0.02] p-8 text-center">
             <p className="typo-body text-[12px] text-foreground">{t.empty}</p>
           </div>
         ) : (

@@ -149,7 +149,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           </Button>
           {/* Active toggle row */}
           <div className="flex items-center gap-2">
-            <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-muted-foreground/80'}`}>
+            <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-foreground'}`}>
               {effective.enabled ? t.common.active : t.common.off}
             </span>
             <AccessibleToggle
@@ -179,7 +179,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.15 }}
-                className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-elevation-3 p-2.5 z-50"
+                className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-card shadow-elevation-3 p-2.5 z-50"
               >
                 <div className="flex items-start justify-between gap-1">
                   <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
@@ -195,7 +195,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
                     <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-muted-foreground/80 pl-5">{r}</p>)}
+                {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-foreground pl-5">{r}</p>)}
               </motion.div>
             )}
           </AnimatePresence>

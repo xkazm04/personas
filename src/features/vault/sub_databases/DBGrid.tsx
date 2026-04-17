@@ -29,7 +29,7 @@ export function useDbGridColumns(
       render: (row) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/15 shrink-0"
+            className="w-6 h-6 rounded-input flex items-center justify-center border border-primary/15 shrink-0"
             style={{ backgroundColor: `${row.connector?.color || '#6B7280'}15` }}
           >
             {row.connector?.icon_url ? (
@@ -38,7 +38,7 @@ export function useDbGridColumns(
               <Database className="w-3.5 h-3.5 text-blue-400/60" />
             )}
           </div>
-          <span className="text-sm font-medium text-foreground truncate">{row.credential.name}</span>
+          <span className="typo-body font-medium text-foreground truncate">{row.credential.name}</span>
         </div>
       ),
     },
@@ -50,7 +50,7 @@ export function useDbGridColumns(
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
       render: (row) => (
-        <span className="text-sm text-foreground/70 truncate">{row.connector?.label || row.credential.service_type}</span>
+        <span className="typo-body text-foreground truncate">{row.connector?.label || row.credential.service_type}</span>
       ),
     },
     {
@@ -59,12 +59,12 @@ export function useDbGridColumns(
       width: '0.5fr',
       sortable: true,
       render: (row) => row.tableCount > 0 ? (
-        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-blue-500/10 text-blue-400/80">
+        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card bg-blue-500/10 text-blue-400/80">
           <Table2 className="w-3 h-3" />
           {row.tableCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">--</span>
+        <span className="typo-caption text-foreground">--</span>
       ),
     },
     {
@@ -73,12 +73,12 @@ export function useDbGridColumns(
       width: '0.5fr',
       sortable: true,
       render: (row) => row.queryCount > 0 ? (
-        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-400/80">
+        <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-card bg-violet-500/10 text-violet-400/80">
           <Code2 className="w-3 h-3" />
           {row.queryCount}
         </span>
       ) : (
-        <span className="text-xs text-muted-foreground/40">--</span>
+        <span className="typo-caption text-foreground">--</span>
       ),
     },
     {
@@ -88,7 +88,7 @@ export function useDbGridColumns(
       sortable: true,
       align: 'right' as const,
       render: (row) => (
-        <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
+        <span className="typo-body text-foreground">{formatRelativeTime(row.credential.created_at)}</span>
       ),
     },
   ], [typeOptions, typeFilter, setTypeFilter, db]);

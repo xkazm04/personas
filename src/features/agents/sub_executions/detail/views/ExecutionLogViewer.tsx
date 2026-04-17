@@ -72,18 +72,18 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
       {showLog && (
           <div>
             {logLoading && (
-              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
+              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {t.agents.executions.loading_log}
               </div>
             )}
             {logError && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl typo-code text-red-300/80">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
                 {logError}
               </div>
             )}
             {logContent !== null && !logLoading && (
-              <div className="p-4 bg-background/50 border border-border/30 rounded-xl typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+              <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
                 {logContent.split('\n').map((line, i) => {
                   const style = classifyLine(line);
                   const cls = TERMINAL_STYLE_MAP[style];

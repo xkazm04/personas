@@ -4,6 +4,7 @@ import {
   Lightbulb, ArrowRight, Shield,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -59,6 +60,7 @@ interface SelfHealingPanelProps {
 }
 
 export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
+  const { t } = useTranslation();
   const tasks = useSystemStore((s) => s.tasks);
   const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const addToast = useToastStore((s) => s.addToast);
@@ -67,11 +69,11 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
   const [autoHealEnabled, setAutoHealEnabled] = useState(false);
 
   const failedTasks = useMemo(() =>
-    tasks.filter((t) => t.status === 'failed'),
+    tasks.filter((tk) => tk.status === 'failed'),
   [tasks]);
 
   const analyzedFailures = useMemo(() =>
-    failedTasks.map((t) => ({ task: t, pattern: analyzeFailure(t) })),
+    failedTasks.map((tk) => ({ task: tk, pattern: analyzeFailure(tk) })),
   [failedTasks]);
 
   const autoFixable = analyzedFailures.filter((f) => f.pattern.autoFixable);
@@ -84,8 +86,8 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
     }
 
     setAttempts((prev) => {
-      const existing = prev.find((a) => a.taskId === task.id);
-      if (existing) {
+      const existingAttempt = prev.find((a) => a.taskId === task.id);
+      if (existingAttempt) {
         return prev.map((a) => a.taskId === task.id
           ? { ...a, status: 'healing' as const, retryCount: a.retryCount + 1 }
           : a);
@@ -118,12 +120,12 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
   if (failedTasks.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-red-500/15 bg-red-500/5 overflow-hidden">
+    <div className="rounded-modal border border-red-500/15 bg-red-500/5 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/10">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-red-400" />
-          <h3 className="text-md font-medium text-primary">Self-Healing</h3>
+          <h3 className="text-md font-medium text-primary">{t.plugins.dev_runner.self_healing}</h3>
           <span className="rounded-full px-2 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
             {failedTasks.length} failed
           </span>
@@ -141,7 +143,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
               onChange={(e) => setAutoHealEnabled(e.target.checked)}
               className="rounded"
             />
-            Auto-heal
+            {t.plugins.dev_runner.auto_heal}
           </label>
           {autoFixable.length > 0 && (
             <Button
@@ -151,7 +153,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={handleHealAll}
             >
-              Heal All ({autoFixable.length})
+              {t.plugins.dev_runner.heal_all}({autoFixable.length})
             </Button>
           )}
         </div>

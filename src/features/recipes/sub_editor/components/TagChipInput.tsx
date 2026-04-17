@@ -32,13 +32,13 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1.5 min-h-[38px] w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 cursor-text"
+      className="flex flex-wrap items-center gap-1.5 min-h-[38px] w-full rounded-modal border border-border/60 bg-background/50 px-3 py-1.5 cursor-text"
       onClick={() => inputRef.current?.focus()}
     >
       {tags.map((tag, i) => (
           <span
             key={tag}
-            className="animate-fade-slide-in inline-flex items-center gap-1 rounded-lg bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium"
+            className="animate-fade-slide-in inline-flex items-center gap-1 rounded-card bg-primary/10 text-primary px-2 py-0.5 typo-caption font-medium"
           >
             {tag}
             <button
@@ -58,7 +58,7 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
         onKeyDown={handleKeyDown}
         onBlur={() => { if (input.trim()) addTag(input); }}
         placeholder={tags.length === 0 ? 'Type tag and press Enter...' : ''}
-        className="flex-1 min-w-[80px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none py-0.5"
+        className="flex-1 min-w-[80px] bg-transparent typo-body text-foreground placeholder:text-foreground focus-visible:outline-none py-0.5"
       />
     </div>
   );

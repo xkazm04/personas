@@ -2,8 +2,8 @@ import { CheckCircle2, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 export const priorityConfig: Record<string, { color: string; bgColor: string; borderColor: string; label: string }> = {
   high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
-  normal: { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
-  low: { color: 'text-muted-foreground/90', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
+  normal: { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' },
+  low: { color: 'text-foreground', bgColor: 'bg-muted/20', borderColor: 'border-muted-foreground/20', label: 'Low' },
 };
 
 export type FilterType = 'all' | 'unread' | 'high';

@@ -55,17 +55,17 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-modal border transition-all text-left ${
           expanded
             ? 'bg-primary/8 border-primary/30'
             : 'bg-secondary/40 border-primary/20 hover:border-primary/30 hover:bg-secondary/50'
         }`}
       >
-        <Cpu className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
-        <span className="text-sm font-medium text-foreground/85 flex-1">
+        <Cpu className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+        <span className="typo-body font-medium text-foreground/85 flex-1">
           {label}
           {provider && (
-            <span className="text-muted-foreground/50 font-normal ml-1.5">{provider}</span>
+            <span className="text-foreground font-normal ml-1.5">{provider}</span>
           )}
         </span>
 
@@ -73,17 +73,17 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
         {(budgetLabel || turnsLabel || cacheLabel) && (
           <span className="flex items-center gap-1.5">
             {budgetLabel && (
-              <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 typo-code font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
                 <DollarSign className="w-2.5 h-2.5" />{budgetLabel.replace('$', '')}
               </span>
             )}
             {turnsLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="typo-code font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-foreground">
                 {turnsLabel}
               </span>
             )}
             {cacheLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
+              <span className="typo-code font-mono px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
                 {cacheLabel}
               </span>
             )}
@@ -94,7 +94,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
         )}
 
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Expandable full selector */}
@@ -103,7 +103,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="pt-1">
-              <p className="text-sm text-muted-foreground/70 mb-2 ml-[34px]">
+              <p className="typo-body text-foreground mb-2 ml-[34px]">
                 {uc.inherit_hint}
               </p>
               <ModelSelector

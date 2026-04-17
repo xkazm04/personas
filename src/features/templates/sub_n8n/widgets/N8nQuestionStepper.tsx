@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
 import { N8nQuestionListbox } from './N8nQuestionListbox';
 import type { TransformQuestion } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DIMENSION_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
   credentials:       { label: 'Credentials',       Icon: KeyRound },
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: Props) {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -77,10 +79,10 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
           disabled={!canPrev}
           className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
             canPrev
-              ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
+              : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Previous question"
+          aria-label={t.templates.questionnaire.previous_question}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -97,30 +99,30 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
               exit="exit"
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               style={{ minHeight: 250 }}
-              className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+              className={`p-4 rounded-modal border ${tone.border} ${tone.bg}`}
             >
               {/* Category + counter */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   {dim && <dim.Icon className={`w-4 h-4 ${tone.accent}`} />}
                   {dim && (
-                    <span className={`text-sm font-semibold uppercase tracking-wider ${tone.accent}`}>
+                    <span className={`typo-heading font-semibold uppercase tracking-wider ${tone.accent}`}>
                       {dim.label}
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-muted-foreground/60 tabular-nums">
+                <span className="typo-data text-foreground tabular-nums">
                   {activeIndex + 1} / {questions.length}
                 </span>
               </div>
 
               {/* Question text */}
-              <p className="text-base font-medium text-foreground/90 leading-relaxed mb-1">
+              <p className="typo-body-lg font-medium text-foreground/90 leading-relaxed mb-1">
                 {q.question}
               </p>
 
               {q.context && (
-                <p className="text-sm text-foreground/50 mb-4 leading-relaxed">
+                <p className="typo-body text-foreground mb-4 leading-relaxed">
                   {q.context}
                 </p>
               )}
@@ -142,7 +144,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                     value={userAnswers[q.id] ?? q.default ?? ''}
                     onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                     placeholder={q.default ?? 'Type your answer\u2026'}
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
+                    className="w-full px-4 py-2.5 typo-body rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
                   />
                 )}
 
@@ -155,10 +157,10 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                           key={opt}
                           type="button"
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`px-4 py-2 text-sm rounded-xl border transition-all ${
+                          className={`px-4 py-2 typo-body rounded-modal border transition-all ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
-                              : 'text-muted-foreground border-primary/10 hover:bg-secondary/40'
+                              : 'text-foreground border-primary/10 hover:bg-secondary/40'
                           }`}
                         >
                           {opt}
@@ -178,10 +180,10 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
           disabled={!canNext}
           className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
             canNext
-              ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
+              : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Next question"
+          aria-label={t.templates.questionnaire.next_question}
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -205,19 +207,19 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                     ? `w-2 h-2 ${dotTone.dot} opacity-50`
                     : 'w-2 h-2 bg-foreground/15'
               }`}
-              aria-label={`Go to question ${i + 1}`}
+              aria-label={t.templates.questionnaire.go_to_question.replace('{number}', String(i + 1))}
             />
           );
         })}
       </div>
 
       {/* Keyboard hint */}
-      <p className="text-sm text-muted-foreground/60 mt-2">
+      <p className="typo-body text-foreground mt-2">
         Use{' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&larr;</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&larr;</kbd>
         {' '}
-        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-sm font-mono">&rarr;</kbd>
-        {' '}to navigate
+        <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&rarr;</kbd>
+        {' '}{t.templates.n8n.navigate_hint}
       </p>
     </div>
   );

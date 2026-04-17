@@ -75,13 +75,13 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
   return (
     <SectionCard size="lg" blur>
       <SectionHeader className="mb-6" icon={<Radio className="w-3.5 h-3.5" />} label={t.agents.connectors.sub_title}
-        trailing={<span className="text-sm text-muted-foreground/80">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>} />
+        trailing={<span className="typo-body text-foreground">{tx(t.agents.connectors.sub_active, { count: activeCount })}</span>} />
       <div className="space-y-3">
-        {error && <div role="alert" className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">{error}</div>}
+        {error && <div role="alert" className="px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/10 typo-body text-red-400/80">{error}</div>}
         {loadError && (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
-            <p className="flex-1 text-sm text-red-400/80">{loadError}</p>
-            <button onClick={retryLoad} className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-modal border border-red-500/20 bg-red-500/5">
+            <p className="flex-1 typo-body text-red-400/80">{loadError}</p>
+            <button onClick={retryLoad} className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-card border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
               <RotateCw className="w-3 h-3" /> {t.common.retry}
             </button>
           </div>
@@ -101,7 +101,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
               <AddSubscriptionForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} />
             ) : (
               <button onClick={() => setShowAddForm(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/20 hover:border-primary/40 text-sm text-muted-foreground/80 hover:text-primary/80 transition-all w-full focus-ring">
+                className="flex items-center gap-2 px-3 py-2 rounded-modal border border-dashed border-primary/20 hover:border-primary/40 typo-body text-foreground hover:text-primary/80 transition-all w-full focus-ring">
                 <Plus className="w-4 h-4" /> {t.agents.connectors.sub_add}
               </button>
             )}

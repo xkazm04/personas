@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TestRunResult {
   testRunId: string;
@@ -22,6 +23,7 @@ interface TerminalOutputProps {
 }
 
 export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }: TerminalOutputProps) {
+  const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
 
@@ -57,12 +59,12 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
         onScroll={handleScroll}
         role="log"
         aria-live="polite"
-        aria-label="Design review output"
-        className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono text-sm bg-background transition-all`}
+        aria-label={t.templates.generation.terminal_aria_label}
+        className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono typo-code bg-background transition-all`}
       >
         {!hasStarted ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground/80 text-sm">
-            Output will appear here when the review starts
+          <div className="flex items-center justify-center h-full text-foreground typo-body">
+            {t.templates.generation.terminal_placeholder}
           </div>
         ) : (
           <div className="p-3">
@@ -71,7 +73,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 
               return (
                 <div key={index} className={`flex gap-2 py-px${shouldAnimate ? ' animate-fade-in' : ''}`}>
-                  <span className="text-muted-foreground/20 select-none flex-shrink-0 w-8 text-right">
+                  <span className="text-foreground select-none flex-shrink-0 w-8 text-right">
                     {(index + 1).toString().padStart(3, ' ')}
                   </span>
                   <span className={`break-all ${
@@ -89,7 +91,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
             {isRunning && (
               <div className="flex items-center gap-2 py-1 text-blue-400/60">
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                <span>Running...</span>
+                <span>{t.templates.generation.terminal_running}</span>
               </div>
             )}
           </div>
@@ -102,9 +104,10 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 // -- Result Summary --------------------------------------------------
 
 export function ResultSummary({ result }: { result: TestRunResult }) {
+  const { t } = useTranslation();
   return (
     <div className="px-4 py-3 border-t border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-4 typo-body">
         <span className="flex items-center gap-1.5 text-emerald-400">
           <CheckCircle2 className="w-4 h-4" />
           {result.passed} passed
@@ -117,8 +120,8 @@ export function ResultSummary({ result }: { result: TestRunResult }) {
           <AlertTriangle className="w-4 h-4" />
           {result.errored} errors
         </span>
-        <span className="ml-auto text-muted-foreground/90 text-sm">
-          {result.totalTests} total tests
+        <span className="ml-auto text-foreground typo-body">
+          {t.templates.generation.result_total.replace('{count}', String(result.totalTests))}
         </span>
       </div>
     </div>

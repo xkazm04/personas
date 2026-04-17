@@ -56,13 +56,13 @@ export default function SkippedRecoveryPanel({
   const totalMissed = visibleSkipped.reduce((sum, s) => sum + s.missedCount, 0);
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] overflow-hidden">
+    <div className="rounded-modal border border-amber-500/20 bg-amber-500/[0.04] overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-500/[0.06] transition-colors"
       >
-        <div className="relative w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
+        <div className="relative w-8 h-8 rounded-card bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
           {visibleSkipped.length > 1 && (
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
@@ -73,10 +73,10 @@ export default function SkippedRecoveryPanel({
         </div>
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-amber-400/90">
-            {visibleSkipped.length} agent{visibleSkipped.length !== 1 ? 's' : ''} missed executions
+            {t.schedules.agents_missed.replace('{count}', String(visibleSkipped.length))}
           </p>
-          <p className="text-xs text-muted-foreground/60">
-            ~{totalMissed} total runs skipped while app was offline
+          <p className="typo-caption text-foreground">
+            {t.schedules.total_skipped.replace('{count}', String(totalMissed))}
           </p>
         </div>
         <ChevronDown className={`w-4 h-4 text-amber-400/60 transition-transform ${expanded ? 'rotate-0' : '-rotate-90'}`} />
@@ -100,16 +100,16 @@ export default function SkippedRecoveryPanel({
                     }} />
 
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-foreground/80 truncate block">
+                    <span className="typo-body text-foreground truncate block">
                       {agent.persona_name}
                     </span>
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 mt-0.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-foreground mt-0.5">
                       <Clock className="w-3 h-3" />
-                      <span>{missedCount} missed since {formatRelative(missedAt.toISOString())}</span>
+                      <span>{t.schedules.missed_since.replace('{count}', String(missedCount)).replace('{time}', formatRelative(missedAt.toISOString()))}</span>
                       {agent.interval_seconds && (
                         <>
-                          <span className="text-muted-foreground/30">·</span>
-                          <span className="font-mono">every {formatInterval(agent.interval_seconds)}</span>
+                          <span className="text-foreground">·</span>
+                          <span className="font-mono">{t.schedules.every_interval.replace('{interval}', formatInterval(agent.interval_seconds))}</span>
                         </>
                       )}
                     </div>
@@ -126,11 +126,11 @@ export default function SkippedRecoveryPanel({
                         }
                       }}
                       disabled={isRecovering}
-                      className={`flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border transition-colors ${policy === 'recover'
+                      className={`flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border transition-colors ${policy === 'recover'
                           ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
-                          : 'bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-emerald-400 hover:bg-emerald-500/10'
+                          : 'bg-secondary/30 border-primary/10 text-foreground hover:text-emerald-400 hover:bg-emerald-500/10'
                         }`}
-                      title="Mark for recovery"
+                      title={t.schedules.mark_for_recovery}
                     >
                       {isRecovering ? (
                         <LoadingSpinner size="xs" />
@@ -139,26 +139,26 @@ export default function SkippedRecoveryPanel({
                       ) : (
                         <Play className="w-3 h-3" />
                       )}
-                      Recover
+                      {t.schedules.recover}
                     </button>
 
                     <button
                       onClick={() => onManualExecute(agent)}
                       disabled={isRecovering}
-                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
-                      title="Run once now"
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                      title={t.schedules.run_once_now}
                     >
                       <Play className="w-3 h-3" />
-                      Run 1x
+                      {t.schedules.run_1x}
                     </button>
 
                     <button
                       onClick={() => handleDismiss(agent.trigger_id)}
-                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors"
-                      title="Skip -- don't recover"
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/90 transition-colors"
+                      title={t.schedules.skip_dont_recover}
                     >
                       <SkipForward className="w-3 h-3" />
-                      Skip
+                      {t.schedules.skip}
                     </button>
                   </div>
                 </div>
@@ -170,7 +170,7 @@ export default function SkippedRecoveryPanel({
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-amber-500/15 bg-amber-500/[0.03]">
             <button
               onClick={handleDismissAll}
-              className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+              className="text-[11px] text-foreground hover:text-muted-foreground/80 transition-colors"
             >
               {t.schedules.dismiss_all}
             </button>
@@ -180,14 +180,14 @@ export default function SkippedRecoveryPanel({
                 <button
                   onClick={() => onBatchRecover(recoverableAgents)}
                   disabled={!!recoveringId}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
                 >
                   {recoveringId ? (
                     <LoadingSpinner size="xs" />
                   ) : (
                     <Play className="w-3 h-3" />
                   )}
-                  Recover {recoverableAgents.length} selected
+                  {t.schedules.recover_selected.replace('{count}', String(recoverableAgents.length))}
                 </button>
               )}
             </div>

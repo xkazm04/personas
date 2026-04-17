@@ -18,7 +18,7 @@ import { BrowserStatusBanner } from './BrowserDetail';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
-  connecting: { text: 'text-muted-foreground/30', line: 'bg-primary/8' },
+  connecting: { text: 'text-foreground', line: 'bg-primary/8' },
   working: { text: 'text-cyan-400/30', line: 'bg-cyan-500/10' },
   action_required: { text: 'text-amber-400/30', line: 'bg-amber-500/10' },
   opening_url: { text: 'text-blue-400/30', line: 'bg-blue-500/10' },
@@ -101,7 +101,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
       {/* Full scrollable log */}
       <div
         ref={scrollRef}
-        className="max-h-[40rem] overflow-y-auto rounded-xl border border-primary/10 bg-black/20 p-3 space-y-2"
+        className="max-h-[40rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/20 p-3 space-y-2"
       >
         {annotatedItems.map((item) => {
           if (item.kind === 'divider') {
@@ -140,9 +140,9 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         })}
 
         {visibleLogs.length === 0 && (
-          <div className="text-muted-foreground/60 text-center py-10 space-y-2">
-            <LoadingSpinner size="xl" className="mx-auto text-muted-foreground/50" />
-            <p className="text-sm">
+          <div className="text-foreground text-center py-10 space-y-2">
+            <LoadingSpinner size="xl" className="mx-auto text-foreground" />
+            <p className="typo-body">
               {isGuided ? t.vault.auto_cred_extra.preparing_guided : t.vault.auto_cred_extra.starting_browser}
             </p>
           </div>
@@ -154,9 +154,9 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-xl border border-red-500/15 hover:bg-red-500/10 transition-colors"
+          className="px-4 py-2 typo-body text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
         >
-          Cancel Session
+          {t.vault.auto_cred.cancel_session}
         </button>
       </div>
     </div>

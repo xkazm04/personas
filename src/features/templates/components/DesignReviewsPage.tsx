@@ -46,7 +46,7 @@ export default function DesignReviewsPage() {
 
       {/* Error */}
       {error && (
-        <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 text-sm text-red-400">
+        <div className="px-6 py-3 bg-red-500/10 border-b border-red-500/20 typo-body text-red-400">
           {error}
         </div>
       )}

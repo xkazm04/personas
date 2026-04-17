@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Upload, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   CATEGORY_OPTIONS,
   TRIGGER_OPTIONS,
@@ -8,14 +9,15 @@ import {
 import type { CustomProps } from './TemplateSourceTypes';
 
 export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateCase, onFileUpload }: CustomProps) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showExample, setShowExample] = useState(false);
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground/90">
-          Define template use cases ({validCount} ready)
+        <p className="typo-body text-foreground">
+          {t.templates.generation.custom_count.replace('{count}', String(validCount))}
         </p>
         <div className="flex items-center gap-2">
           <input
@@ -27,15 +29,15 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
-            title="Load from .txt or .md file"
+            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
+            title={t.templates.generation.custom_load_file_title}
           >
             <Upload className="w-3 h-3" />
-            Load file
+            {t.templates.generation.custom_load_file}
           </button>
           <button
             onClick={onAdd}
-            className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/90 transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3 h-3" />
             Add
@@ -52,26 +54,26 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           return (
             <div
               key={index}
-              className="rounded-xl border border-primary/10 bg-secondary/10 p-3 space-y-2"
+              className="rounded-modal border border-primary/10 bg-secondary/10 p-3 space-y-2"
             >
               {/* Row 1: number + name + delete */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground/60 w-5 text-right flex-shrink-0 font-mono">
+                <span className="typo-code text-foreground w-5 text-right flex-shrink-0 font-mono">
                   {index + 1}.
                 </span>
                 <input
                   type="text"
                   value={c.name}
                   onChange={(e) => onUpdateCase(index, 'name', e.target.value)}
-                  placeholder="Template name (e.g. Gmail Smart Filter)"
-                  className={`flex-1 px-3 py-1.5 text-sm bg-secondary/30 border rounded-xl text-foreground/80 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
+                  placeholder={t.templates.generation.custom_case_name_placeholder}
+                  className={`flex-1 px-3 py-1.5 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
                     nameMissing ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
                 {cases.length > 1 && (
                   <button
                     onClick={() => onRemove(index)}
-                    className="p-1 rounded hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors flex-shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -83,15 +85,15 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <textarea
                   value={c.instruction}
                   onChange={(e) => onUpdateCase(index, 'instruction', e.target.value)}
-                  placeholder="Describe what this persona should do, which services to integrate, and what triggers should activate it..."
+                  placeholder={t.templates.generation.custom_instruction_placeholder}
                   rows={3}
-                  className={`w-full px-3 py-2 text-sm bg-secondary/30 border rounded-xl text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
+                  className={`w-full px-3 py-2 typo-body bg-secondary/30 border rounded-modal text-foreground placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors ${
                     instrShort ? 'border-amber-500/30' : 'border-primary/10'
                   }`}
                 />
                 {instrShort && (
-                  <p className="text-sm text-amber-400/80 mt-0.5">
-                    {instrLen}/{MIN_INSTRUCTION_LENGTH} characters minimum
+                  <p className="typo-body text-amber-400/80 mt-0.5">
+                    {t.templates.generation.custom_short_instruction.replace('{current}', String(instrLen)).replace('{min}', String(MIN_INSTRUCTION_LENGTH))}
                   </p>
                 )}
               </div>
@@ -101,9 +103,9 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.category ?? ''}
                   onChange={(e) => onUpdateCase(index, 'category', e.target.value)}
-                  className="px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-muted-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 >
-                  <option value="">Category...</option>
+                  <option value="">{t.templates.generation.custom_category_default}</option>
                   {CATEGORY_OPTIONS.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -111,9 +113,9 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 <select
                   value={c.trigger ?? ''}
                   onChange={(e) => onUpdateCase(index, 'trigger', e.target.value)}
-                  className="px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-muted-foreground/80 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  className="px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 >
-                  <option value="">Trigger...</option>
+                  <option value="">{t.templates.generation.custom_trigger_default}</option>
                   {TRIGGER_OPTIONS.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -122,8 +124,8 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                   type="text"
                   value={c.tools ?? ''}
                   onChange={(e) => onUpdateCase(index, 'tools', e.target.value)}
-                  placeholder="Connectors (e.g. gmail, slack)"
-                  className="flex-1 min-w-[160px] px-2 py-1 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground/80 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+                  placeholder={t.templates.generation.custom_connectors_placeholder}
+                  className="flex-1 min-w-[160px] px-2 py-1 typo-body bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
                 />
               </div>
             </div>
@@ -133,23 +135,21 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
 
       {/* Guidance + example */}
       <div className="space-y-1">
-        <p className="text-sm text-muted-foreground/70">
-          More detail = better results. Include services, triggers, and expected behavior.
+        <p className="typo-body text-foreground">
+          {t.templates.generation.custom_detail_hint}
         </p>
         <button
           onClick={() => setShowExample((v) => !v)}
-          className="text-sm text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
+          className="typo-body text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
         >
           {showExample ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           {showExample ? 'Hide example' : 'Show example'}
         </button>
         {showExample && (
-          <div className="text-sm text-muted-foreground/60 bg-secondary/20 border border-primary/5 rounded-lg p-3 mt-1">
-            <p className="font-medium text-muted-foreground/80 mb-1">Example: Gmail Smart Filter</p>
+          <div className="typo-body text-foreground bg-secondary/20 border border-primary/5 rounded-card p-3 mt-1">
+            <p className="font-medium text-foreground mb-1">{t.templates.generation.custom_example_title}</p>
             <p className="italic">
-              &quot;Create an agent that monitors Gmail for important emails, categorizes them by
-              sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling
-              trigger with gmail and slack connectors.&quot;
+              {t.templates.generation.custom_example_body}
             </p>
           </div>
         )}

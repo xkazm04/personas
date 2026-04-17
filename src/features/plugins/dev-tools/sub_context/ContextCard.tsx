@@ -13,7 +13,7 @@ export default function ContextCard({
   return (
     <div
       onClick={onSelect}
-      className={`animate-fade-in border rounded-xl p-4 cursor-pointer transition-colors ${
+      className={`animate-fade-in border rounded-modal p-4 cursor-pointer transition-colors ${
         selected
           ? 'bg-primary/10 border-primary/20'
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'

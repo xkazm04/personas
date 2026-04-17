@@ -33,6 +33,7 @@ type IntelTab = 'overview' | 'dependents' | 'audit';
 
 export function CredentialIntelligence({ credentialId }: CredentialIntelligenceProps) {
   const { t, tx } = useTranslation();
+  const it = t.vault.intelligence_tab;
   const [tab, setTab] = useState<IntelTab>('overview');
   const [stats, setStats] = useState<CredentialUsageStats | null>(null);
   const [dependents, setDependents] = useState<CredentialDependent[]>([]);
@@ -64,8 +65,8 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-        <LoadingSpinner size="lg" label={t.vault.intelligence_tab.loading} />
+      <div className="flex items-center justify-center py-8 text-foreground">
+        <LoadingSpinner size="lg" label={it.loading} />
       </div>
     );
   }
@@ -79,20 +80,20 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
     <div className="space-y-3">
       {/* Sub-tabs */}
       <div className="flex gap-1">
-        {(['overview', 'dependents', 'audit'] as IntelTab[]).map((t) => (
+        {(['overview', 'dependents', 'audit'] as IntelTab[]).map((tabId) => (
           <Button
-            key={t}
+            key={tabId}
             variant="ghost"
             size="sm"
-            onClick={() => setTab(t)}
-            className={tab === t
+            onClick={() => setTab(tabId)}
+            className={tab === tabId
               ? `${AI_STATUS.bg} ${AI_STATUS.text} border ${AI_STATUS.border}`
-              : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
+              : 'text-foreground hover:text-foreground/95 hover:bg-secondary/40'
             }
           >
-            -- placeholder
-            {t === 'dependents' && `Dependents (${dependents.length})`}
-            {t === 'audit' && `Audit Log (${auditLog.length})`}
+            {tabId === 'overview' && it.tab_overview}
+            {tabId === 'dependents' && tx(it.tab_dependents, { count: dependents.length })}
+            {tabId === 'audit' && tx(it.tab_audit_log, { count: auditLog.length })}
           </Button>
         ))}
       </div>
@@ -103,43 +104,43 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.text}`} />}
-              label={t.vault.intelligence_tab.total_accesses}
+              label={it.total_accesses}
               value={stats.total_accesses.toString()}
             />
             <StatCard
               icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.text}`} />}
-              label={t.vault.intelligence_tab.distinct_personas}
+              label={it.distinct_personas}
               value={stats.distinct_personas.toString()}
             />
             <StatCard
               icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.text}`} />}
-              label={t.vault.intelligence_tab.last_24h}
+              label={it.last_24h}
               value={stats.accesses_last_24h.toString()}
             />
             <StatCard
               icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.text}`} />}
-              label={t.vault.intelligence_tab.last_7d}
+              label={it.last_7d}
               value={stats.accesses_last_7d.toString()}
             />
           </div>
 
           {!hasActivity && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-modal typo-body ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              {t.vault.intelligence_tab.no_usage}
+              {it.no_usage}
             </div>
           )}
           {unusedDays !== null && unusedDays > 30 && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-modal typo-body ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              {tx(t.vault.intelligence_tab.last_accessed_days, { days: unusedDays })}
+              {tx(it.last_accessed_days, { days: unusedDays })}
             </div>
           )}
 
           {stats.first_accessed_at && (
-            <div className="text-sm text-muted-foreground/80 space-y-0.5">
-              <div>First accessed: {formatTimestamp(stats.first_accessed_at, 'Never')}</div>
-              <div>Last accessed: {formatTimestamp(stats.last_accessed_at, 'Never')}</div>
+            <div className="typo-body text-foreground space-y-0.5">
+              <div>{tx(it.first_accessed, { timestamp: formatTimestamp(stats.first_accessed_at, 'Never') })}</div>
+              <div>{tx(it.last_accessed, { timestamp: formatTimestamp(stats.last_accessed_at, 'Never') })}</div>
             </div>
           )}
         </div>
@@ -151,33 +152,33 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           {dependents.length === 0 ? (
             <EmptyIllustration
               icon={Link2}
-              heading={t.vault.intelligence_tab.no_dependents}
-              description={t.vault.intelligence_tab.no_dependents_hint}
+              heading={it.no_dependents}
+              description={it.no_dependents_hint}
               className="py-6"
             />
           ) : (
             <>
-              <div className="text-sm text-muted-foreground/80 pb-1">
-                Changing or deleting this credential will affect {dependents.length} persona{dependents.length !== 1 ? 's' : ''}:
+              <div className="typo-body text-foreground pb-1">
+                {tx(dependents.length === 1 ? it.dependents_warning_one : it.dependents_warning_other, { count: dependents.length })}
               </div>
               {dependents.map((dep) => (
                 <div
                   key={dep.persona_id}
-                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl"
+                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-modal"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                    <span className="text-sm text-foreground/80 truncate">{dep.persona_name}</span>
-                    <span className={`text-sm px-1.5 py-0.5 rounded-lg border ${
+                    <span className="typo-body text-foreground truncate">{dep.persona_name}</span>
+                    <span className={`typo-body px-1.5 py-0.5 rounded-card border ${
                       dep.link_type === 'tool_connector'
                         ? `${INFO_STATUS.bg} ${INFO_STATUS.border} ${INFO_STATUS.text}`
                         : `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`
                     }`}>
-                      {dep.link_type === 'tool_connector' ? 'structural' : 'observed'}
+                      {dep.link_type === 'tool_connector' ? it.link_structural : it.link_observed}
                     </span>
                   </div>
-                  <div className="text-sm text-muted-foreground/80 shrink-0">
-                    {dep.via_connector && <span>via {dep.via_connector}</span>}
+                  <div className="typo-body text-foreground shrink-0">
+                    {dep.via_connector && <span>{tx(it.via_connector, { connector: dep.via_connector })}</span>}
                     {dep.last_used_at && <span> · {formatTimestamp(dep.last_used_at, '')}</span>}
                   </div>
                 </div>

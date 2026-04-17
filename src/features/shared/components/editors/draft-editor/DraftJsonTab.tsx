@@ -5,6 +5,7 @@ import json from 'highlight.js/lib/languages/json';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/hooks/n8nTypes';
 import { sanitizeHljsHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { useTranslation } from '@/i18n/useTranslation';
 
 hljs.registerLanguage('json', json);
 
@@ -16,6 +17,7 @@ interface DraftJsonTabProps {
 }
 
 export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange }: DraftJsonTabProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -65,14 +67,14 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <Code className="w-3.5 h-3.5 text-muted-foreground/80" />
-          <p className="typo-body text-muted-foreground/80">
-            Edit raw JSON. Changes override form fields.
+          <Code className="w-3.5 h-3.5 text-foreground" />
+          <p className="typo-body text-foreground">
+            {t.shared.draft_editor.edit_raw_json_hint}
           </p>
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-xl border border-primary/10 text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-xl border border-primary/10 text-foreground hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}

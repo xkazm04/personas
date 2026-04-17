@@ -38,7 +38,7 @@ export function LanguageCardGrid() {
               key={lang.code}
               type="button"
               onClick={() => setLanguage(lang.code)}
-              className={`group relative overflow-hidden rounded-xl border transition-all ${
+              className={`group relative overflow-hidden rounded-modal border transition-all ${
                 isActive ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
               }`}
             >
@@ -54,7 +54,7 @@ export function LanguageCardGrid() {
               </div>
               <div className="px-2 py-1.5 bg-card/80">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{lang.flag}</span>
+                  <span className="typo-body">{lang.flag}</span>
                   <span className={`truncate ${isActive ? 'text-primary typo-card-label' : 'typo-card-label group-hover:text-foreground'}`}>{lang.label}</span>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export default function LanguageSwitcher() {
               onClick={() => setIsOpen(false)}
             />
             <div
-              className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-elevation-3 z-50 overflow-hidden p-2"
+              className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-modal bg-card border border-border shadow-elevation-3 z-50 overflow-hidden p-2"
             >
               {/* Card grid with illustration backgrounds */}
               <div className="grid grid-cols-4 gap-2 max-w-[420px] w-[calc(100vw-2rem)]">
@@ -137,7 +137,7 @@ export default function LanguageSwitcher() {
                       <div className="px-2 py-1.5 bg-card/80">
                         <div className="flex items-center gap-1.5">
                           <span className="typo-caption">{lang.flag}</span>
-                          <span className={`typo-caption truncate ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                          <span className={`typo-caption truncate ${isActive ? 'text-primary' : 'text-foreground group-hover:text-foreground'}`}>
                             {lang.label}
                           </span>
                         </div>

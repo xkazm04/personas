@@ -8,7 +8,7 @@ function ResearchNodeImpl({ data, selected }: Props) {
   const isProject = data.kind === 'project';
   return (
     <div
-      className={`rounded-card border px-3 py-2 min-w-[180px] max-w-[220px] shadow-sm transition-all ${
+      className={`rounded-card border px-3 py-2 min-w-[180px] max-w-[220px] shadow-elevation-1 transition-all ${
         selected ? 'ring-2 ring-primary/60' : ''
       } ${isProject ? 'bg-background' : 'bg-secondary/60'}`}
       style={{ borderColor: `${data.color}66` }}

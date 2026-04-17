@@ -39,7 +39,7 @@ export const NODE_TYPE_META: Record<string, NodeTypeMeta> = {
   action: {
     label: 'Action', color: '#64748b', Icon: Wrench,
     cardStyle: 'bg-secondary/60 border-primary/20',
-    textColor: 'text-foreground/90', iconColor: 'text-muted-foreground',
+    textColor: 'text-foreground/90', iconColor: 'text-foreground',
   },
   decision: {
     label: 'Decision', color: '#f59e0b', Icon: GitBranch,
@@ -66,5 +66,5 @@ export const NODE_TYPE_META: Record<string, NodeTypeMeta> = {
 export const DEFAULT_NODE_META: NodeTypeMeta = {
   label: 'Action', color: '#64748b', Icon: Wrench,
   cardStyle: 'bg-secondary/60 border-primary/20',
-  textColor: 'text-foreground/90', iconColor: 'text-muted-foreground',
+  textColor: 'text-foreground/90', iconColor: 'text-foreground',
 };

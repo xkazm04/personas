@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const enforceBaseModal = require("./eslint-rules/enforce-base-modal.cjs");
@@ -22,6 +23,7 @@ export default tseslint.config(
       globals: globals.browser,
     },
     plugins: {
+      "react-hooks": reactHooks,
       "custom": {
         rules: {
           "enforce-base-modal": enforceBaseModal,
@@ -36,6 +38,8 @@ export default tseslint.config(
       },
     },
     rules: {
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },

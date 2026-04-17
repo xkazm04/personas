@@ -63,6 +63,7 @@ export function CredentialTypePicker({
   onBack,
 }: CredentialTypePickerProps) {
   const { t } = useTranslation();
+  const ps = t.vault.picker_section;
   const handlers: Record<string, () => void> = {
     'ai-guide': onSelectAiGuide,
     'mcp': onSelectMcp,
@@ -80,13 +81,13 @@ export function CredentialTypePicker({
         <button
           onClick={onBack}
           data-testid="vault-back-btn"
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.type_picker.title}</h3>
-          <p className="text-sm text-muted-foreground/60">{t.vault.type_picker.subtitle}</p>
+          <h3 className="typo-heading font-semibold text-foreground">{t.vault.type_picker.title}</h3>
+          <p className="typo-body text-foreground">{t.vault.type_picker.subtitle}</p>
         </div>
       </div>
 
@@ -98,7 +99,7 @@ export function CredentialTypePicker({
               key={type.id}
               data-testid={type.testId}
               onClick={handlers[type.id]}
-              className={`group relative text-left border rounded-xl hover:border-primary/25 transition-all overflow-hidden ${isDev ? 'border-amber-400/50 ring-1 ring-amber-400/20' : 'border-primary/15'}`}
+              className={`group relative text-left border rounded-modal hover:border-primary/25 transition-all overflow-hidden ${isDev ? 'border-amber-400/50 ring-1 ring-amber-400/20' : 'border-primary/15'}`}
               style={{ borderTopColor: type.color, borderTopWidth: 3 }}
             >
               <div className="flex flex-col items-center py-4 px-3 gap-2">
@@ -109,7 +110,7 @@ export function CredentialTypePicker({
                   draggable={false}
                 />
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-medium text-foreground">{type.label}</h4>
+                  <h4 className="typo-body font-medium text-foreground">{type.label}</h4>
                   {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">DEV</span>}
                 </div>
               </div>
@@ -122,16 +123,16 @@ export function CredentialTypePicker({
       <button
         onClick={onWorkspaceConnect}
         data-testid="vault-pick-workspace"
-        className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-xl hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
+        className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-modal hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center border bg-blue-500/10 border-blue-500/20">
+          <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-blue-500/10 border-blue-500/20">
             <Globe className="w-4.5 h-4.5 text-blue-400" />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
-            <p className="text-sm text-muted-foreground/60">
-              One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
+            <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
+            <p className="typo-body text-foreground">
+              {ps.workspace_connect_description}
             </p>
           </div>
         </div>
@@ -142,16 +143,16 @@ export function CredentialTypePicker({
         <button
           onClick={onForage}
           data-testid="vault-pick-foraging"
-          className="w-full text-left p-4 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 border border-violet-500/15 rounded-xl hover:from-violet-500/10 hover:to-cyan-500/10 hover:border-violet-500/25 transition-all"
+          className="w-full text-left p-4 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 border border-violet-500/15 rounded-modal hover:from-violet-500/10 hover:to-cyan-500/10 hover:border-violet-500/25 transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center border bg-violet-500/10 border-violet-500/20">
+            <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-violet-500/10 border-violet-500/20">
               <Radar className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h4 className="text-sm font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
-              <p className="text-sm text-muted-foreground/60">
-                Scan your filesystem for existing API keys, AWS profiles, env vars, and more
+              <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
+              <p className="typo-body text-foreground">
+                {ps.foraging_description}
               </p>
             </div>
           </div>

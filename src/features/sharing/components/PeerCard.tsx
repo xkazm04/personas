@@ -54,7 +54,7 @@ export const PeerCard = memo(function PeerCard({
   }, [peer.last_seen_at]);
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center gap-3">
+    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3">
       {/* Status dot */}
       <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
@@ -64,7 +64,7 @@ export const PeerCard = memo(function PeerCard({
         className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground truncate">
+          <span className="typo-body font-medium text-foreground truncate">
             {peer.display_name}
           </span>
           {isTrusted ? (
@@ -74,9 +74,9 @@ export const PeerCard = memo(function PeerCard({
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs font-mono text-muted-foreground">{truncatedId}</span>
+          <span className="typo-code font-mono text-foreground">{truncatedId}</span>
           {lastSeen && (
-            <span className="text-[10px] text-muted-foreground/60">{lastSeen}</span>
+            <span className="text-[10px] text-foreground">{lastSeen}</span>
           )}
         </div>
       </button>
@@ -85,13 +85,13 @@ export const PeerCard = memo(function PeerCard({
       <div className="flex items-center gap-1 flex-shrink-0">
         {connecting ? (
           <span className="p-1.5">
-            <LoadingSpinner size="sm" className="text-muted-foreground" />
+            <LoadingSpinner size="sm" className="text-foreground" />
           </span>
         ) : isConnected ? (
           <button
             onClick={() => onDisconnect(peer.peer_id)}
             title={st.disconnect}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
           >
             <NodeDisconnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -99,7 +99,7 @@ export const PeerCard = memo(function PeerCard({
           <button
             onClick={() => onConnect(peer.peer_id)}
             title={st.connect}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-emerald-500 transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-emerald-500 transition-colors"
           >
             <NodeConnectedIcon className="w-3.5 h-3.5" />
           </button>
@@ -107,7 +107,7 @@ export const PeerCard = memo(function PeerCard({
         <button
           onClick={() => onSelect(peer.peer_id)}
           title={st.view_details}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
         >
           <ChevronRight className="w-3.5 h-3.5" />
         </button>

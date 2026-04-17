@@ -23,20 +23,20 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
       <button
         type="button"
         onClick={onToggleExpand}
-        className="flex items-center gap-2.5 w-full p-3 text-left focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+        className="flex items-center gap-2.5 w-full p-3 text-left focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-modal"
       >
         <TriggerStatusSummary trigger={trigger} />
 
         <span className="ml-auto flex items-center gap-2">
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground/80" title={t.triggers.list.budget_unavailable}>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>
               <ShieldAlert className="w-3 h-3" />
               {t.triggers.unknown_budget_label}
             </span>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 text-sm rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-red-500/20 bg-red-500/10 text-red-400/80" title={t.triggers.list.budget_exceeded}>
               <ShieldAlert className="w-3 h-3" />
               Budget
             </span>
@@ -47,17 +47,17 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             tabIndex={0}
             onClick={(e) => { e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); } }}
-            className="p-0.5 hover:bg-secondary/60 rounded-lg transition-colors"
+            className="p-0.5 hover:bg-secondary/60 rounded-card transition-colors"
             title={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}
           >
             {trigger.enabled ? (
               <ToggleRight className="w-5 h-5 text-emerald-400" />
             ) : (
-              <ToggleLeft className="w-5 h-5 text-muted-foreground/80" />
+              <ToggleLeft className="w-5 h-5 text-foreground" />
             )}
           </span>
 
-          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
       </button>
     </div>

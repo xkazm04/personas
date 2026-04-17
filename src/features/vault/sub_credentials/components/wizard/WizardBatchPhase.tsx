@@ -14,7 +14,8 @@ interface WizardBatchPhaseProps {
 }
 
 export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const wd = t.vault.wizard_detect;
   const [items, setItems] = useState<BatchItem[]>(() =>
     connectors.map((c) => ({ connector: c, status: 'pending' as ItemStatus })),
   );
@@ -94,10 +95,10 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
       {/* Progress header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold text-foreground">
-            Setting up {activeIndex + 1} of {items.length}
+          <h3 className="typo-heading font-bold text-foreground">
+            {tx(wd.setting_up, { current: activeIndex + 1, total: items.length })}
           </h3>
-          <p className="text-sm text-muted-foreground/70">
+          <p className="typo-body text-foreground">
             {activeItem?.connector.label}
           </p>
         </div>
@@ -106,10 +107,10 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
           size="sm"
           icon={<SkipForward className="w-3.5 h-3.5" />}
           onClick={handleSkip}
-          className="text-muted-foreground/80 hover:text-foreground/90"
-          title={t.vault.wizard_detect.skip_service}
+          className="text-foreground hover:text-foreground/90"
+          title={wd.skip_service}
         >
-          Skip
+          {t.common.skip}
         </Button>
       </div>
 
@@ -118,7 +119,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
         {items.map((item, i) => (
           <div
             key={item.connector.id}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-sm shrink-0 ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-card border typo-body shrink-0 ${
               i === activeIndex
                 ? 'border-violet-500/30 bg-violet-500/10 text-violet-300'
                 : item.status === 'done'
@@ -126,8 +127,8 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
                   : item.status === 'failed'
                     ? 'border-red-500/20 bg-red-500/5 text-red-400/70'
                     : item.status === 'skipped'
-                      ? 'border-primary/10 bg-secondary/10 text-muted-foreground/70'
-                      : 'border-primary/10 bg-secondary/20 text-muted-foreground/80'
+                      ? 'border-primary/10 bg-secondary/10 text-foreground'
+                      : 'border-primary/10 bg-secondary/20 text-foreground'
             }`}
           >
             <StatusIcon status={item.status} size="w-3 h-3" />

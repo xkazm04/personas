@@ -2,6 +2,7 @@ import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../matrix/architecturalCategories';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function FilterChips({
   selectedCategory,
@@ -24,6 +25,7 @@ export function FilterChips({
   componentFilter?: string[];
   onComponentFilterChange?: (components: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
 
@@ -31,7 +33,7 @@ export function FilterChips({
     <>
       {/* Active category chip */}
       {selectedCategory && activeCategoryMeta && ActiveCategoryIcon && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryMeta.label}
           <button
@@ -52,7 +54,7 @@ export function FilterChips({
             return (
               <span
                 key={name}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
@@ -79,7 +81,7 @@ export function FilterChips({
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-full border border-violet-500/20 text-violet-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-full border border-violet-500/20 text-violet-300"
                 style={{ backgroundColor: `${cat.color}15` }}
               >
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
@@ -102,7 +104,7 @@ export function FilterChips({
           {(selectedCategory || connectorFilter.length > 0) && <div className="w-px h-5 bg-primary/10 mx-0.5" />}
           <div
             role="radiogroup"
-            aria-label="Coverage filter"
+            aria-label={t.templates.search.coverage_filter_aria}
             onKeyDown={(e) => {
               const values = ['all', 'full', 'partial'];
               const idx = values.indexOf(coverageFilter ?? 'all');
@@ -133,7 +135,7 @@ export function FilterChips({
               const target = e.currentTarget.querySelector<HTMLElement>(`[data-value="${nextValue}"]`);
               target?.focus();
             }}
-            className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0"
+            className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
           >
             {([
               { value: 'all', label: 'All', color: 'violet', countKey: 'all' as const },
@@ -151,20 +153,20 @@ export function FilterChips({
                   tabIndex={isActive ? 0 : -1}
                   data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 text-sm font-medium transition-colors flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 typo-body font-medium transition-colors flex items-center gap-1 ${
                     isActive
                       ? opt.color === 'violet'
                         ? 'bg-violet-500/20 text-violet-300'
                         : opt.color === 'emerald'
                           ? 'bg-emerald-500/20 text-emerald-300'
                           : 'bg-amber-500/20 text-amber-300'
-                      : 'text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/40'
+                      : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
                   }`}
                 >
                   {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
                   {count !== undefined && count > 0 && (
-                    <span className={`ml-0.5 text-sm tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
+                    <span className={`ml-0.5 typo-data tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
                       {count}
                     </span>
                   )}

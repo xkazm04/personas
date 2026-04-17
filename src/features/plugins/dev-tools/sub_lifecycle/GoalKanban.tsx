@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { User, Bot, CheckCircle2, Clock, AlertCircle, Target } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +56,7 @@ function GoalCard({ goal }: { goal: DevGoal }) {
   const progressPct = goal.progress ?? 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-background/60 p-3 hover:border-primary/20 transition-colors">
+    <div className="rounded-modal border border-primary/10 bg-background/60 p-3 hover:border-primary/20 transition-colors">
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
@@ -117,6 +118,7 @@ function StatusChip({ status }: { status: string }) {
 // ---------------------------------------------------------------------------
 
 export default function GoalKanban() {
+  const { t } = useTranslation();
   const goals = useSystemStore((s) => s.goals);
 
   const laneGoals = useMemo(() => {
@@ -140,7 +142,7 @@ export default function GoalKanban() {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <AlertCircle className="w-8 h-8 text-foreground mb-3" />
-        <p className="typo-body text-foreground">No goals yet. Create goals to see them here.</p>
+        {t.plugins.dev_tools.no_goals_kanban}
       </div>
     );
   }
@@ -167,7 +169,7 @@ export default function GoalKanban() {
             <div className="space-y-2 min-h-[80px]">
               {items.length === 0 ? (
                 <p className="text-[11px] text-foreground text-center py-6">
-                  No goals here
+                  {t.plugins.dev_tools.no_goals_here}
                 </p>
               ) : (
                 items.map((goal) => <GoalCard key={goal.id} goal={goal} />)

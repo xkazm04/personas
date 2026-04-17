@@ -3,6 +3,7 @@ import { Swords, RefreshCw, Ban, Lightbulb, Trash2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
@@ -21,6 +22,7 @@ function statusBadge(status: string) {
 }
 
 function BaselineHealth({ json }: { json: string }) {
+  const { t } = useTranslation();
   try {
     const bl = JSON.parse(json) as {
       tsc_errors?: number | null; cargo_errors?: number | null;
@@ -28,18 +30,18 @@ function BaselineHealth({ json }: { json: string }) {
     };
     return (
       <div className="flex items-center gap-3 flex-wrap typo-caption text-foreground">
-        <span className="uppercase tracking-wider text-primary">Baseline:</span>
+        <span className="uppercase tracking-wider text-primary">{t.plugins.dev_lifecycle.baseline_label}</span>
         {bl.tsc_errors != null && (
-          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>TS errors: {bl.tsc_errors}</span>
+          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_lifecycle.ts_errors_label} {bl.tsc_errors}</span>
         )}
         {bl.cargo_errors != null && (
-          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>Cargo errors: {bl.cargo_errors}</span>
+          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_lifecycle.cargo_errors_label} {bl.cargo_errors}</span>
         )}
         <span className={bl.has_test_runner ? 'text-emerald-400' : 'text-amber-400'}>
-          Tests: {bl.has_test_runner ? 'runner found' : 'no runner'}
+          {t.plugins.dev_lifecycle.tests_label} {bl.has_test_runner ? 'runner found' : 'no runner'}
         </span>
         <span className={bl.git_clean ? 'text-emerald-400' : 'text-amber-400'}>
-          Git: {bl.git_clean ? 'clean' : 'dirty'}
+          {t.plugins.dev_lifecycle.git_label} {bl.git_clean ? 'clean' : 'dirty'}
         </span>
       </div>
     );
@@ -47,6 +49,7 @@ function BaselineHealth({ json }: { json: string }) {
 }
 
 export function CompetitionCard({ competition, onRefresh }: { competition: DevCompetition; onRefresh: () => void }) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [detail, setDetail] = useState<CompetitionDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -141,7 +144,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
-            {competition.slot_count} competitors · {new Date(competition.created_at).toLocaleString()}
+            {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {new Date(competition.created_at).toLocaleString()}
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium border shrink-0 ${badge.color}`}>
@@ -154,15 +157,15 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
           {loading ? (
             <div className="flex items-center justify-center py-6 text-foreground">
               <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              <span className="typo-body">Loading competitors...</span>
+              <span className="typo-body">{t.plugins.dev_tools.loading_competitors}</span>
             </div>
           ) : !detail ? (
-            <p className="typo-body text-foreground">Failed to load detail.</p>
+            <p className="typo-body text-foreground">{t.plugins.dev_tools.failed_to_load_detail}</p>
           ) : (
             <>
               {detail.competition.task_description && (
                 <div className="rounded-interactive bg-background/40 border border-primary/10 p-3">
-                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">Task</p>
+                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">{t.plugins.dev_tools.task}</p>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.task_description}</p>
                 </div>
               )}
@@ -203,7 +206,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                 <div className="rounded-interactive border border-emerald-500/20 bg-emerald-500/5 p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="typo-caption text-primary uppercase tracking-wider">Winning insight</span>
+                    <span className="typo-caption text-primary uppercase tracking-wider">{t.plugins.dev_tools.winning_insight}</span>
                   </div>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.winner_insight}</p>
                 </div>

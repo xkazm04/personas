@@ -1,4 +1,5 @@
 import { AlertTriangle, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { PROVIDERS } from '../libs/engineCapabilities';
@@ -17,6 +18,7 @@ interface EngineCapabilityBadgeProps {
  * Drop this into any TerminalStrip consumer or CLI dispatch UI.
  */
 export function EngineCapabilityBadge({ operation, compact = false }: EngineCapabilityBadgeProps) {
+  const { t, tx } = useTranslation();
   const { isEnabled, loaded } = useEngineCapabilities();
   const engineSetting = useAppSetting('cli_engine', 'claude_code');
 
@@ -56,8 +58,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-400">
       <AlertTriangle className="w-3 h-3 flex-shrink-0" />
       <span>
-        <strong>{provider?.shortLabel ?? activeEngine}</strong> has not passed integration tests for this
-        operation. Results may be unparseable.
+        {tx(t.settings.engine.engine_not_capable, { provider: provider?.shortLabel ?? activeEngine })}
       </span>
     </div>
   );

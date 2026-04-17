@@ -28,9 +28,9 @@ export function ReplayToolPanel({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-        <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-        <span className="typo-heading text-muted-foreground/70">{e.tool_steps}</span>
-        <span className="ml-auto typo-body tabular-nums text-muted-foreground/60">
+        <Wrench className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-heading text-foreground">{e.tool_steps}</span>
+        <span className="ml-auto typo-body tabular-nums text-foreground">
           {completedSteps.length}/{toolSteps.length}
         </span>
       </div>
@@ -44,7 +44,7 @@ export function ReplayToolPanel({
           return (
             <div
               key={step.step_index}
-              className={`relative rounded-xl border px-3 py-2 transition-all ${
+              className={`relative rounded-modal border px-3 py-2 transition-all ${
                 isFork
                   ? 'border-amber-400/50 bg-amber-500/10 ring-1 ring-amber-400/30'
                   : isActive
@@ -56,7 +56,7 @@ export function ReplayToolPanel({
             >
               <div className="flex items-center gap-2">
                 <span className={`typo-code tabular-nums ${
-                  isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-muted-foreground/40'
+                  isActive ? 'text-blue-400' : isCompleted ? 'text-emerald-400' : 'text-foreground'
                 }`}>
                   {step.step_index + 1}
                 </span>
@@ -68,12 +68,12 @@ export function ReplayToolPanel({
                       : 'bg-muted-foreground/20'
                 }`} />
                 <span className={`typo-code truncate ${
-                  isPending ? 'text-muted-foreground/40' : 'text-foreground/80'
+                  isPending ? 'text-foreground' : 'text-foreground'
                 }`}>
                   {step.tool_name}
                 </span>
                 {step.duration_ms != null && isCompleted && (
-                  <span className="ml-auto typo-code text-muted-foreground/60 tabular-nums">
+                  <span className="ml-auto typo-code text-foreground tabular-nums">
                     {formatDuration(step.duration_ms)}
                   </span>
                 )}
@@ -84,7 +84,7 @@ export function ReplayToolPanel({
               {(isCompleted || isActive) && (
                 <button
                   onClick={() => onFork(isFork ? null : step.step_index)}
-                  className="absolute inset-0 rounded-lg"
+                  className="absolute inset-0 rounded-card"
                   title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index + 1 })}
                 />
               )}
@@ -92,7 +92,7 @@ export function ReplayToolPanel({
           );
         })}
         {toolSteps.length === 0 && (
-          <div className="text-center py-6 typo-body text-muted-foreground/60">{e.no_tool_calls_recorded}</div>
+          <div className="text-center py-6 typo-body text-foreground">{e.no_tool_calls_recorded}</div>
         )}
       </div>
     </div>

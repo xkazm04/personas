@@ -1,4 +1,5 @@
 pub mod background_job;
+pub mod bench;
 mod cloud;
 mod commands;
 pub mod daemon;
@@ -1155,6 +1156,7 @@ pub fn run() {
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
             commands::design::build_sessions::create_adoption_session,
+            commands::design::build_sessions::save_adoption_answers,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,

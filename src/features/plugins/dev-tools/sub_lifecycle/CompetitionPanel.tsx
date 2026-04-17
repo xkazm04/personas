@@ -16,6 +16,7 @@ import {
 } from '@/api/devTools/devTools';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 import type { CompetitionSlotInput } from '@/lib/bindings/CompetitionSlotInput';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Predefined strategy slots — concrete enough to force different diffs
@@ -85,6 +86,7 @@ interface NewCompetitionModalProps {
 }
 
 function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompetitionModalProps) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -151,10 +153,10 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
             </div>
             <div>
               <h2 className="typo-section-title">
-                Start a Competition
+                {t.plugins.dev_tools.start_competition}
               </h2>
               <p className="typo-body text-foreground">
-                Spawn 2–4 competitors with different strategies, each in a Claude Code worktree.
+                {t.plugins.dev_tools.competition_desc}
               </p>
             </div>
           </div>
@@ -163,13 +165,13 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div>
             <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">
-              Task title
+              {t.plugins.dev_tools.task_title}
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Add rate limiting to /api/auth/login"
+              placeholder={t.plugins.dev_lifecycle.competition_title_placeholder}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring"
               autoFocus
             />
@@ -177,12 +179,12 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
 
           <div>
             <label className="typo-caption text-primary uppercase tracking-wider block mb-1.5">
-              Task description (optional)
+              {t.plugins.dev_tools.task_description}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What should the competitors accomplish? Constraints, target files, acceptance criteria..."
+              placeholder={t.plugins.dev_lifecycle.competition_desc_placeholder}
               rows={4}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring resize-none"
             />
@@ -191,10 +193,10 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="typo-caption text-primary uppercase tracking-wider">
-                Strategy slots (pick 2–4)
+                {t.plugins.dev_tools.strategy_slots}
               </label>
               <span className="typo-caption text-foreground">
-                {selectedSlots.size}/4 selected
+                {selectedSlots.size}{t.plugins.dev_tools.of_4_selected}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -230,8 +232,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
 
           <div className="rounded-interactive border border-amber-500/20 bg-amber-500/5 p-3">
             <p className="typo-body text-foreground">
-              <strong>Cost warning:</strong> each competitor runs the full task independently
-              (~$0.80 per Claude run). A 4-slot competition ≈ $3.20 in API costs.
+              <strong>{t.plugins.dev_tools.cost_warning}</strong> {t.plugins.dev_tools.cost_warning_detail}
             </p>
           </div>
         </div>
@@ -249,7 +250,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
             loading={creating}
             disabled={!title.trim() || selectedSlots.size < 2}
           >
-            Start Competition
+            {t.plugins.dev_tools.start_competition}
           </Button>
         </div>
       </div>
@@ -268,6 +269,7 @@ function CompetitionCard({
   competition: DevCompetition;
   onRefresh: () => void;
 }) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [detail, setDetail] = useState<CompetitionDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -332,7 +334,7 @@ function CompetitionCard({
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
-            {competition.slot_count} competitors · {new Date(competition.created_at).toLocaleString()}
+            {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {new Date(competition.created_at).toLocaleString()}
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium border shrink-0 ${badge.color}`}>
@@ -346,10 +348,10 @@ function CompetitionCard({
           {loading ? (
             <div className="flex items-center justify-center py-6 text-foreground">
               <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              <span className="typo-body">Loading competitors...</span>
+              <span className="typo-body">{t.plugins.dev_tools.loading_competitors}</span>
             </div>
           ) : !detail ? (
-            <p className="typo-body text-foreground">Failed to load detail.</p>
+            <p className="typo-body text-foreground">{t.plugins.dev_tools.failed_to_load_detail}</p>
           ) : (
             <>
               {detail.competition.task_description && (
@@ -394,8 +396,8 @@ function CompetitionCard({
                           )}
                         </div>
                         <div className="flex items-center gap-3 mt-0.5">
-                          <span className="typo-caption text-foreground">Status: {taskStatus}</span>
-                          <span className="typo-code text-foreground">wt: {slot.worktree_name}</span>
+                          <span className="typo-caption text-foreground">{t.plugins.dev_tools.status_label} {taskStatus}</span>
+                          <span className="typo-code text-foreground">{t.plugins.dev_tools.wt_label} {slot.worktree_name}</span>
                           {task?.progress_pct != null && task.progress_pct > 0 && (
                             <span className="typo-caption text-foreground">{task.progress_pct}%</span>
                           )}
@@ -410,7 +412,7 @@ function CompetitionCard({
                           onClick={() => handlePickWinner(slot.task_id)}
                           loading={picking === slot.task_id}
                         >
-                          Pick winner
+                          {t.plugins.dev_tools.pick_winner}
                         </Button>
                       )}
                     </div>
@@ -434,7 +436,7 @@ function CompetitionCard({
                     icon={<Ban className="w-3.5 h-3.5" />}
                     onClick={handleCancel}
                   >
-                    Cancel competition
+                    {t.plugins.dev_tools.cancel_competition}
                   </Button>
                 )}
               </div>
@@ -451,6 +453,7 @@ function CompetitionCard({
 // ---------------------------------------------------------------------------
 
 export function CompetitionPanel() {
+  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const [competitions, setCompetitions] = useState<DevCompetition[]>([]);
   const [loading, setLoading] = useState(false);
@@ -483,7 +486,7 @@ export function CompetitionPanel() {
   if (!activeProjectId) {
     return (
       <div className="rounded-card border border-primary/15 bg-card/30 p-4">
-        <p className="typo-body text-foreground">Select a project to see competitions.</p>
+        <p className="typo-body text-foreground">{t.plugins.dev_tools.select_project_for_competitions}</p>
       </div>
     );
   }
@@ -510,7 +513,7 @@ export function CompetitionPanel() {
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setShowNewModal(true)}
           >
-            New Competition
+            {t.plugins.dev_tools.new_competition}
           </Button>
         </div>
       </div>
@@ -519,7 +522,7 @@ export function CompetitionPanel() {
         <div className="rounded-card border border-primary/10 bg-card/20 p-6 text-center">
           <Swords className="w-8 h-8 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">
-            No competitions yet. Start one to have 2–4 Dev Clone variants race on the same task in parallel worktrees.
+            {t.plugins.dev_tools.no_competitions}
           </p>
         </div>
       )}

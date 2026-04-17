@@ -70,7 +70,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
         <select
           value={method}
           onChange={(e) => setMethod(e.target.value)}
-          className="px-2 py-2 rounded-lg text-sm font-bold bg-secondary/30 border border-primary/10 text-foreground/80 focus-visible:outline-none focus-visible:border-primary/30"
+          className="px-2 py-2 rounded-card typo-heading font-bold bg-secondary/30 border border-primary/10 text-foreground focus-visible:outline-none focus-visible:border-primary/30"
         >
           {METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
@@ -78,16 +78,16 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           type="text"
           value={path}
           onChange={(e) => setPath(e.target.value)}
-          placeholder="/api/v1/resource"
-          className="flex-1 px-3 py-2 rounded-xl text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30"
+          placeholder={t.vault.shared.api_path_placeholder}
+          className="flex-1 px-3 py-2 rounded-modal typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
         />
         <button
           onClick={handleSend}
           disabled={isSending || !path.trim()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {isSending ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-          {isSending ? 'Sending...' : 'Send'}
+          {isSending ? t.vault.shared.sending : t.vault.shared.send}
         </button>
       </div>
 
@@ -97,13 +97,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           <div className="space-y-1.5">
             {pathParams.map((param) => (
               <div key={param} className="flex items-center gap-2">
-                <span className="text-sm font-mono text-violet-400/70 min-w-[100px]">{`{${param}}`}</span>
+                <span className="typo-code font-mono text-violet-400/70 min-w-[100px]">{`{${param}}`}</span>
                 <input
                   type="text"
                   value={pathParamValues[param] || ''}
                   onChange={(e) => setPathParamValues((prev) => ({ ...prev, [param]: e.target.value }))}
                   placeholder={param}
-                  className="flex-1 px-2 py-1.5 rounded text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/70 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:border-primary/25"
+                  className="flex-1 px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
                 />
               </div>
             ))}
@@ -125,13 +125,13 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
             value={body}
             onChange={setBody}
             language="json"
-            placeholder='{"key": "value"}'
+            placeholder={t.vault.shared.json_body_placeholder}
             minHeight="80px"
           />
         </Section>
       )}
 
-      <div className="text-sm font-mono text-muted-foreground/50 truncate">
+      <div className="typo-code font-mono text-foreground truncate">
         {'→'} {method} {resolvedPath}
       </div>
     </div>

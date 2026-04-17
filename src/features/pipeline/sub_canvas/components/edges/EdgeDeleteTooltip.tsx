@@ -48,7 +48,7 @@ export default function EdgeDeleteTooltip({
   return (
     <div
       ref={ref}
-      className="animate-fade-slide-in fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-elevation-3 shadow-black/20 min-w-[180px]"
+      className="animate-fade-slide-in fixed z-50 flex flex-col gap-2 p-3 rounded-modal bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-elevation-3 shadow-black/20 min-w-[180px]"
       style={{ left: clampedPos.x, top: clampedPos.y, transform: 'translate(-50%, -120%)' }}
     >
       {/* Header */}
@@ -58,13 +58,13 @@ export default function EdgeDeleteTooltip({
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: style.stroke }}
           />
-          <span className="text-sm font-medium text-foreground/80">
+          <span className="typo-body font-medium text-foreground">
             {label || style.label}
           </span>
         </div>
         <button
           onClick={onClose}
-          className="p-0.5 rounded-lg text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
+          className="p-0.5 rounded-card text-foreground hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
         >
           <X className="w-3 h-3" />
         </button>
@@ -72,7 +72,7 @@ export default function EdgeDeleteTooltip({
 
       {/* Connection type picker */}
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm uppercase font-mono text-muted-foreground/90 tracking-wider px-1 mb-0.5">
+        <span className="typo-code uppercase font-mono text-foreground tracking-wider px-1 mb-0.5">
           {t.pipeline.connection_type}
         </span>
         {CONNECTION_TYPES.map((ct) => {
@@ -83,10 +83,10 @@ export default function EdgeDeleteTooltip({
               onClick={() => {
                 if (!isActive) onChangeType(ct.value);
               }}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all ${
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-card typo-body transition-all ${
                 isActive
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground/80 hover:bg-primary/5 hover:text-foreground/95'
+                  : 'text-foreground hover:bg-primary/5 hover:text-foreground/95'
               }`}
             >
               {/* Visual line sample */}
@@ -120,7 +120,7 @@ export default function EdgeDeleteTooltip({
       {/* Delete button */}
       <button
         onClick={onDelete}
-        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
+        className="flex items-center justify-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >
         <Trash2 className="w-3 h-3" />
         {t.pipeline.delete_connection}

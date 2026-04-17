@@ -119,7 +119,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
         )}
 
         {multi && (
-          <div className="rounded-lg border border-primary/10 bg-secondary/30 p-3">
+          <div className="rounded-card border border-primary/10 bg-secondary/30 p-3">
             <div className="typo-label text-foreground/90">
               {t.plugins.drive.details_items}
             </div>
@@ -152,7 +152,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
 function DetailGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/25 divide-y divide-primary/10 overflow-hidden">
+    <div className="rounded-card border border-primary/10 bg-secondary/25 divide-y divide-primary/10 overflow-hidden">
       {children}
     </div>
   );
@@ -228,21 +228,21 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
 
   if (state === "loading") {
     return (
-      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-4 text-center typo-body text-foreground/90">
+      <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-4 text-center typo-body text-foreground/90">
         {t.plugins.drive.loading}
       </div>
     );
   }
   if (state === "too_large") {
     return (
-      <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-3 typo-body text-amber-200">
+      <div className="rounded-card border border-amber-500/25 bg-amber-500/10 px-3 py-3 typo-body text-amber-200">
         {t.plugins.drive.preview_too_large}
       </div>
     );
   }
   if (state === "unsupported") {
     return (
-      <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
+      <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
         {t.plugins.drive.preview_binary}
       </div>
     );
@@ -252,13 +252,13 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
   }
   if (text !== null) {
     return (
-      <pre className="max-h-72 overflow-auto rounded-lg border border-primary/10 bg-background/60 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
+      <pre className="max-h-72 overflow-auto rounded-card border border-primary/10 bg-background/60 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
         {text.slice(0, 4000)}
       </pre>
     );
   }
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
+    <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
       {t.plugins.drive.preview_unavailable}
     </div>
   );
@@ -288,11 +288,11 @@ function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
 
   if (!url) return null;
   return (
-    <div className="rounded-lg border border-primary/10 bg-background/60 p-1 overflow-hidden">
+    <div className="rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden">
       <img
         src={url}
         alt={entry.name}
-        className="rounded-md max-w-full max-h-56 object-contain mx-auto"
+        className="rounded-input max-w-full max-h-56 object-contain mx-auto"
       />
     </div>
   );

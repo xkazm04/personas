@@ -60,20 +60,20 @@ export function RebuildModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            <div className="p-2 rounded-modal bg-blue-500/10 border border-blue-500/20">
               <RefreshCw className={`w-4 h-4 text-blue-400 ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
             </div>
             <div className="min-w-0">
-              <h2 id="rebuild-modal-title" className="text-sm font-semibold text-foreground/90 truncate">
+              <h2 id="rebuild-modal-title" className="typo-heading font-semibold text-foreground/90 truncate">
                 {t.templates.rebuild_modal.title}
               </h2>
-              <p className="text-sm text-muted-foreground/60 truncate">
+              <p className="typo-body text-foreground truncate">
                 {review.test_case_name}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4 text-muted-foreground/70" />
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+            <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
 
@@ -82,27 +82,27 @@ export function RebuildModal({
           {displayPhase === 'input' && (
             <div className="space-y-4">
               {/* Instruction context */}
-              <div className="bg-secondary/30 rounded-xl border border-primary/10 p-4">
-                <div className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wide mb-1.5">
+              <div className="bg-secondary/30 rounded-modal border border-primary/10 p-4">
+                <div className="typo-body font-medium text-foreground uppercase tracking-wide mb-1.5">
                   {t.templates.rebuild_modal.template_instruction}
                 </div>
-                <p className="text-sm text-foreground/80 leading-relaxed">
+                <p className="typo-body text-foreground leading-relaxed">
                   {review.instruction}
                 </p>
               </div>
 
               {/* User direction */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground/70 mb-1.5">
+                <label className="block typo-body font-medium text-foreground mb-1.5">
                   {t.templates.rebuild_modal.custom_direction}
                 </label>
                 <textarea
                   value={userDirection}
                   onChange={(e) => setUserDirection(e.target.value)}
                   placeholder={t.templates.rebuild_modal.custom_direction_placeholder}
-                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-modal typo-body text-foreground/90 placeholder:text-foreground resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
                 />
-                <p className="text-sm text-muted-foreground/60 mt-1">
+                <p className="typo-body text-foreground mt-1">
                   {t.templates.rebuild_modal.custom_direction_hint}
                 </p>
               </div>
@@ -111,15 +111,15 @@ export function RebuildModal({
 
           {displayPhase === 'processing' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-blue-400/80">
+              <div className="flex items-center gap-2 typo-body text-blue-400/80">
                 <LoadingSpinner size="sm" />
                 <span>{t.templates.rebuild_modal.rebuilding_with_cli}</span>
               </div>
 
               {/* Streaming output */}
-              <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
+              <div className="bg-[#0d1117] rounded-modal border border-primary/10 p-4 h-64 overflow-y-auto font-mono typo-code leading-relaxed">
                 {lines.length === 0 && (
-                  <span className="text-muted-foreground/60">{t.templates.rebuild_modal.waiting_for_output}</span>
+                  <span className="text-foreground">{t.templates.rebuild_modal.waiting_for_output}</span>
                 )}
                 {lines.map((line, i) => {
                   const isMilestone = line.startsWith('[Milestone]');
@@ -129,7 +129,7 @@ export function RebuildModal({
                       className={
                         isMilestone
                           ? 'text-blue-400/80 font-semibold mt-2 first:mt-0'
-                          : 'text-muted-foreground/70'
+                          : 'text-foreground'
                       }
                     >
                       {line}
@@ -139,7 +139,7 @@ export function RebuildModal({
                 <div ref={linesEndRef} />
               </div>
 
-              <p className="text-sm text-muted-foreground/60 text-center">
+              <p className="typo-body text-foreground text-center">
                 {t.templates.rebuild_modal.close_continues_bg}
               </p>
             </div>
@@ -147,13 +147,13 @@ export function RebuildModal({
 
           {displayPhase === 'completed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+              <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20 mb-4">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground/90 mb-1">
+              <h3 className="typo-heading font-semibold text-foreground/90 mb-1">
                 {t.templates.rebuild_modal.rebuild_complete}
               </h3>
-              <p className="text-sm text-muted-foreground/60 max-w-sm">
+              <p className="typo-body text-foreground max-w-sm">
                 {t.templates.rebuild_modal.rebuild_complete_hint}
               </p>
             </div>
@@ -161,13 +161,13 @@ export function RebuildModal({
 
           {displayPhase === 'failed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
+              <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20 mb-4">
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground/90 mb-1">
+              <h3 className="typo-heading font-semibold text-foreground/90 mb-1">
                 {t.templates.rebuild_modal.rebuild_failed}
               </h3>
-              <p className="text-sm text-muted-foreground/60 max-w-sm">
+              <p className="typo-body text-foreground max-w-sm">
                 {error || t.templates.rebuild_modal.unknown_error}
               </p>
             </div>
@@ -180,13 +180,13 @@ export function RebuildModal({
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm rounded-xl text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal text-foreground hover:bg-secondary/50 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={() => onStartRebuild(userDirection)}
-                className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                className="px-4 py-2 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {t.templates.rebuild_modal.start_rebuild}
@@ -198,14 +198,14 @@ export function RebuildModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-sm rounded-xl text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                className="px-4 py-2 typo-body rounded-modal text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
                 <Square className="w-3 h-3" />
                 {t.templates.rebuild_modal.cancel_rebuild}
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
               >
                 {t.templates.rebuild_modal.run_in_background}
               </button>
@@ -215,7 +215,7 @@ export function RebuildModal({
           {(displayPhase === 'completed' || displayPhase === 'failed') && (
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
+              className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
             >
               {t.common.close}
             </button>

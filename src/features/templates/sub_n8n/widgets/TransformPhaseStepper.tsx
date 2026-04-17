@@ -36,7 +36,7 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
     <nav
       className="flex items-center justify-center gap-1 py-2 px-3"
       role="navigation"
-      aria-label="Transform progress"
+      aria-label={t.templates.n8n.transform_progress_aria}
     >
       {TRANSFORM_STEPS.map((step, i) => {
         const isCompleted = i < activeIdx;
@@ -70,7 +70,7 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
                   ) : (
                     <Icon
                       className={`w-2.5 h-2.5 ${
-                        isActive ? 'text-violet-300' : 'text-muted-foreground/40'
+                        isActive ? 'text-violet-300' : 'text-foreground'
                       }`}
                     />
                   )}
@@ -79,12 +79,12 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
 
               {/* Label */}
               <span
-                className={`text-xs font-medium truncate transition-colors duration-300 ${
+                className={`typo-caption font-medium truncate transition-colors duration-300 ${
                   isCompleted
                     ? 'text-emerald-400/70'
                     : isActive
                       ? 'text-violet-300'
-                      : 'text-muted-foreground/40'
+                      : 'text-foreground'
                 }`}
               >
                 {step.label}

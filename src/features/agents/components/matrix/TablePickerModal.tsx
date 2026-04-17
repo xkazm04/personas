@@ -40,18 +40,18 @@ export function TablePickerModal({
       <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10">
         <div className="flex items-center gap-3">
           {conn && (
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-500/10">
+            <div className="w-7 h-7 rounded-card flex items-center justify-center bg-blue-500/10">
               <ConnectorIcon meta={conn.meta} size="w-4 h-4" />
             </div>
           )}
           <div>
-            <h2 id="table-picker-title" className="text-sm font-semibold text-foreground/90">
+            <h2 id="table-picker-title" className="typo-heading font-semibold text-foreground/90">
               {t.agents.table_picker.title}
             </h2>
-            <p className="text-xs text-muted-foreground/50">{conn?.meta.label ?? connectorName}</p>
+            <p className="typo-caption text-foreground">{conn?.meta.label ?? connectorName}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors">
+        <button onClick={onClose} className="p-1 text-foreground hover:text-muted-foreground/70 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -59,14 +59,14 @@ export function TablePickerModal({
       {/* Search */}
       {tables.length > 5 && (
         <div className="px-5 pt-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20">
-            <Search className="w-3.5 h-3.5 text-muted-foreground/40" />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20">
+            <Search className="w-3.5 h-3.5 text-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.agents.table_picker.search}
-              className="flex-1 bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
+              className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
               autoFocus
             />
           </div>
@@ -76,16 +76,16 @@ export function TablePickerModal({
       {/* Table list */}
       <div className="px-5 py-3 max-h-[50vh] overflow-y-auto">
         {loading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground/40">{t.agents.table_picker.loading}</div>
+          <div className="py-8 text-center typo-caption text-foreground">{t.agents.table_picker.loading}</div>
         ) : tables.length === 0 ? (
-          <div className="py-8 text-center text-xs text-muted-foreground/40">{t.agents.table_picker.no_tables}</div>
+          <div className="py-8 text-center typo-caption text-foreground">{t.agents.table_picker.no_tables}</div>
         ) : (
           <div className="space-y-0.5">
             {selectedTable && (
               <button
                 type="button"
                 onClick={() => onSelect(null)}
-                className="w-full text-left px-3 py-2 rounded-lg text-xs text-muted-foreground/50 hover:bg-secondary/30 transition-colors italic"
+                className="w-full text-left px-3 py-2 rounded-card typo-caption text-foreground hover:bg-secondary/30 transition-colors italic"
               >
                 {t.agents.table_picker.clear_selection}
               </button>
@@ -95,10 +95,10 @@ export function TablePickerModal({
                 key={t.id}
                 type="button"
                 onClick={() => onSelect(t.table_name)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 ${
+                className={`w-full text-left px-3 py-2.5 rounded-card typo-body transition-colors flex items-center gap-2.5 ${
                   selectedTable === t.table_name
                     ? 'bg-primary/8 text-primary font-medium'
-                    : 'text-foreground/70 hover:bg-secondary/30'
+                    : 'text-foreground hover:bg-secondary/30'
                 }`}
               >
                 <Table2 className="w-3.5 h-3.5 flex-shrink-0 text-blue-400/60" />
@@ -109,7 +109,7 @@ export function TablePickerModal({
               </button>
             ))}
             {filtered.length === 0 && search && (
-              <div className="py-4 text-center text-xs text-muted-foreground/40">{tx(t.agents.table_picker.no_match, { search })}</div>
+              <div className="py-4 text-center typo-caption text-foreground">{tx(t.agents.table_picker.no_match, { search })}</div>
             )}
           </div>
         )}

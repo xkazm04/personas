@@ -128,7 +128,7 @@ export default function DashboardHome() {
               >
                 {greeting}, {displayName}
               </h2>
-              <p className="text-muted-foreground/80 mt-1">
+              <p className="text-foreground mt-1">
                 {isEmptyDashboard
                   ? t.overview.dashboard.empty_cta
                   : <>You have <span className="text-primary font-medium"><AnimatedCounter value={pendingReviewCount} /> {t.overview.dashboard.pending_reviews_prompt}</span> {t.overview.dashboard.requiring_attention}</>

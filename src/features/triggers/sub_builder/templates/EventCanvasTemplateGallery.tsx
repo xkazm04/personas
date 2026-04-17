@@ -23,9 +23,9 @@ export function EventCanvasTemplateGallery({ open, onClose, onAdopt }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-primary/5">
           <div className="flex items-center gap-2">
             <LayoutTemplate className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">{t.triggers.builder.canvas_templates}</h2>
+            <h2 className="typo-heading font-semibold text-foreground">{t.triggers.builder.canvas_templates}</h2>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={onClose} className="p-1 rounded-input hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -37,20 +37,20 @@ export function EventCanvasTemplateGallery({ open, onClose, onAdopt }: Props) {
               <button
                 key={tpl.id}
                 onClick={() => setSelected(tpl.id === selected ? null : tpl.id)}
-                className={`text-left p-4 rounded-xl border transition-all ${
+                className={`text-left p-4 rounded-modal border transition-all ${
                   selected === tpl.id
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
                     : 'border-primary/10 hover:border-primary/20 bg-card/60'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-primary/5 ${tpl.color}`}>
+                  <div className={`w-9 h-9 rounded-card flex items-center justify-center bg-primary/5 ${tpl.color}`}>
                     <tpl.icon className="w-4.5 h-4.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-semibold text-foreground">{tpl.name}</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{tpl.description}</p>
-                    <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground/50">
+                    <h3 className="typo-caption font-semibold text-foreground">{tpl.name}</h3>
+                    <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{tpl.description}</p>
+                    <div className="flex items-center gap-2 mt-2 text-[10px] text-foreground">
                       <span>{tpl.nodes.filter(n => n.nodeType === 'event_source').length} sources</span>
                       <span>&middot;</span>
                       <span>{tpl.nodes.filter(n => n.nodeType === 'persona_consumer').length} personas</span>
@@ -63,7 +63,7 @@ export function EventCanvasTemplateGallery({ open, onClose, onAdopt }: Props) {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mt-2.5">
                   {tpl.tags.map(tag => (
-                    <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] bg-secondary/60 text-muted-foreground/60">
+                    <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] bg-secondary/60 text-foreground">
                       {tag}
                     </span>
                   ))}
@@ -77,7 +77,7 @@ export function EventCanvasTemplateGallery({ open, onClose, onAdopt }: Props) {
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/5">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+            className="px-3 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             {t.triggers.builder.cancel}
           </button>
@@ -90,7 +90,7 @@ export function EventCanvasTemplateGallery({ open, onClose, onAdopt }: Props) {
                 onClose();
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {t.triggers.builder.use_template}
             <ArrowRight className="w-3 h-3" />

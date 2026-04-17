@@ -21,12 +21,12 @@ export function AutomationActionStep({
     <div key="analyzing" className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between px-1">
         {elapsed >= 3 ? (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5 typo-body text-foreground">
             <Clock className="w-3 h-3" />
             <span>{t.agents.connectors.auto_elapsed.replace('{elapsed}', String(elapsed))}</span>
           </div>
         ) : <div />}
-        <span className="text-sm text-muted-foreground">{t.agents.connectors.auto_typically}</span>
+        <span className="typo-body text-foreground">{t.agents.connectors.auto_typically}</span>
       </div>
 
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
@@ -48,14 +48,14 @@ export function AutomationActionStep({
                 ) : status === 'active' ? (
                   <LoadingSpinner className="text-primary" />
                 ) : (
-                  <Circle className="w-3.5 h-3.5 text-muted-foreground/20" />
+                  <Circle className="w-3.5 h-3.5 text-foreground" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`text-sm font-medium ${status === 'completed' ? 'text-muted-foreground' : status === 'active' ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                <span className={`typo-body font-medium ${status === 'completed' ? 'text-foreground' : status === 'active' ? 'text-foreground' : 'text-foreground'}`}>
                   {def.label}
                 </span>
-                {status === 'active' && <span className="ml-2 text-sm text-muted-foreground">{def.description}</span>}
+                {status === 'active' && <span className="ml-2 typo-body text-foreground">{def.description}</span>}
               </div>
             </div>
           );
@@ -63,7 +63,7 @@ export function AutomationActionStep({
       </div>
 
       {tailLines.length > 0 && (
-        <div ref={tailRef} className="px-3 py-2 rounded-xl bg-secondary/30 border border-border/60 text-sm text-muted-foreground font-mono max-h-[4.5rem] overflow-y-auto">
+        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-secondary/30 border border-border/60 typo-code text-foreground font-mono max-h-[4.5rem] overflow-y-auto">
           {tailLines.map((line, i) => (
             <div key={outputLinesLength - tailLines.length + i}>{line}</div>
           ))}
@@ -71,7 +71,7 @@ export function AutomationActionStep({
       )}
 
       <div className="flex justify-end">
-        <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">
+        <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">
           {t.common.cancel}
         </button>
       </div>

@@ -19,7 +19,7 @@ export function StatusIcon({ status, size = 'w-4 h-4' }: { status: ItemStatus; s
     case 'failed':
       return <XCircle className={`${size} text-red-400`} />;
     case 'skipped':
-      return <SkipForward className={`${size} text-muted-foreground/70`} />;
+      return <SkipForward className={`${size} text-foreground`} />;
     case 'running':
       return <Loader2 className={`${size} text-violet-400 animate-spin`} />;
     default:
@@ -43,7 +43,7 @@ export function ConnectorLabel({ connector }: { connector: ConnectorDefinition }
           <Plug className="w-2.5 h-2.5" style={{ color: connector.color }} />
         )}
       </div>
-      <span className="text-sm text-foreground/80 truncate">{connector.label}</span>
+      <span className="typo-body text-foreground truncate">{connector.label}</span>
     </div>
   );
 }
@@ -64,8 +64,8 @@ export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDo
         <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center mb-3">
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
-        <h3 className="text-sm font-bold text-foreground">{t.vault.wizard_detect.batch_complete}</h3>
-        <p className="text-sm text-muted-foreground/80 mt-1">
+        <h3 className="typo-heading font-bold text-foreground">{t.vault.wizard_detect.batch_complete}</h3>
+        <p className="typo-body text-foreground mt-1">
           {doneCount} added
           {failedCount > 0 ? `, ${failedCount} failed` : ''}
           {skippedCount > 0 ? `, ${skippedCount} skipped` : ''}
@@ -77,16 +77,16 @@ export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDo
         {items.map((item) => (
           <div
             key={item.connector.id}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/20"
+            className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20"
           >
             <StatusIcon status={item.status} />
             <ConnectorLabel connector={item.connector} />
-            <span className={`text-sm ml-auto ${
+            <span className={`typo-body ml-auto ${
               item.status === 'done'
                 ? 'text-emerald-400/70'
                 : item.status === 'failed'
                   ? 'text-red-400/70'
-                  : 'text-muted-foreground/80'
+                  : 'text-foreground'
             }`}>
               {item.status === 'done' ? 'Added' : item.status === 'failed' ? 'Failed' : 'Skipped'}
             </span>

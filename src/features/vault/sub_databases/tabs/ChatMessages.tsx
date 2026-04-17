@@ -57,20 +57,20 @@ export function ChatMessages({
             className={`max-w-[85%] rounded-2xl px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-violet-500/10 border border-violet-500/15 text-foreground/85'
-                : 'bg-secondary/30 border border-primary/10 text-foreground/80'
+                : 'bg-secondary/30 border border-primary/10 text-foreground'
             }`}
           >
             {msg.role === 'user' && (
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              <p className="typo-body whitespace-pre-wrap">{msg.content}</p>
             )}
 
             {msg.role === 'assistant' && msg.status === 'generating' && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+              <div className="flex items-center gap-2 typo-body text-foreground">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <button
                   onClick={onCancel}
-                  className="ml-2 p-1 rounded-lg hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                  className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
                   title="Cancel"
                 >
                   <X className="w-3 h-3" />
@@ -79,7 +79,7 @@ export function ChatMessages({
             )}
 
             {msg.role === 'assistant' && msg.status === 'failed' && (
-              <p className="text-sm text-red-400">{msg.content}</p>
+              <p className="typo-body text-red-400">{msg.content}</p>
             )}
 
             {msg.role === 'assistant' && msg.sql && msg.status !== 'generating' && msg.status !== 'failed' && (
@@ -116,8 +116,8 @@ function EmptyState({
         <Sparkles className="w-6 h-6 text-violet-400" />
       </div>
       <div>
-        <p className="text-sm font-medium text-foreground/80">{db.ask_plain_english}</p>
-        <p className="text-sm text-muted-foreground/50 mt-1 max-w-md">
+        <p className="typo-body font-medium text-foreground">{db.ask_plain_english}</p>
+        <p className="typo-body text-foreground mt-1 max-w-md">
           {tx(db.describe_query, { language: language === 'sql' ? 'SQL' : language })}
         </p>
       </div>
@@ -127,7 +127,7 @@ function EmptyState({
             <button
               key={i}
               onClick={() => onSuggestionClick(s)}
-              className="px-3 py-1.5 rounded-xl text-sm text-muted-foreground/60 bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
+              className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"
             >
               {s}
             </button>

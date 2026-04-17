@@ -26,21 +26,21 @@ export default function MemoryPanelHeader({
     <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
       <div className="flex items-center gap-2">
         <Brain className="w-4 h-4 text-violet-400" />
-        <span className="text-sm font-semibold text-foreground/90">{t.pipeline.team_memory}</span>
-        <span className="text-sm px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
+        <span className="typo-heading font-semibold text-foreground/90">{t.pipeline.team_memory}</span>
+        <span className="typo-body px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400 font-medium">
           {total}
         </span>
       </div>
       <div className="flex items-center gap-1">
         {/* View mode toggle */}
         {hasRunData && (
-          <div className="flex items-center rounded-lg border border-primary/10 overflow-hidden mr-1">
+          <div className="flex items-center rounded-card border border-primary/10 overflow-hidden mr-1">
             <button
               onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
               className={`p-1 transition-colors ${
                 viewMode === 'list'
                   ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                  : 'text-foreground hover:text-muted-foreground/60'
               }`}
               title={t.pipeline.list_view}
             >
@@ -51,7 +51,7 @@ export default function MemoryPanelHeader({
               className={`p-1 transition-colors ${
                 viewMode === 'timeline'
                   ? 'bg-violet-500/20 text-violet-400'
-                  : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                  : 'text-foreground hover:text-muted-foreground/60'
               }`}
               title={t.pipeline.timeline_view}
             >
@@ -63,7 +63,7 @@ export default function MemoryPanelHeader({
                 className={`p-1 transition-colors ${
                   viewMode === 'diff'
                     ? 'bg-violet-500/20 text-violet-400'
-                    : 'text-muted-foreground/40 hover:text-muted-foreground/60'
+                    : 'text-foreground hover:text-muted-foreground/60'
                 }`}
                 title={t.pipeline.compare_runs}
               >
@@ -73,7 +73,7 @@ export default function MemoryPanelHeader({
           </div>
         )}
         <button
-          className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60"
+          className="p-1 rounded-card hover:bg-primary/10 text-foreground"
           onClick={onClose}
         >
           <ChevronDown className="w-4 h-4" />

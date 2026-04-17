@@ -45,13 +45,13 @@ export function AgentCredentialDemands() {
   return (
     <div className="space-y-3">
       {/* Summary banner */}
-      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-violet-500/5 border border-violet-500/15">
+      <div className="flex items-start gap-2.5 p-3 rounded-modal bg-violet-500/5 border border-violet-500/15">
         <Key className="w-4 h-4 text-violet-400/70 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-violet-400/80">
+          <p className="typo-body font-medium text-violet-400/80">
             {tx(t.agents.connectors.dm_needed, { count: unfulfilledCount })}
           </p>
-          <p className="text-xs text-violet-400/50 mt-0.5">
+          <p className="typo-caption text-violet-400/50 mt-0.5">
             {tx(t.agents.connectors.dm_fulfilled, { fulfilled: fulfilledCount, total: totalDemands })}
             {reusableCount > 0 && (
               <span> &middot; {tx(t.agents.connectors.dm_reuse_hint, { count: reusableCount })}</span>
@@ -76,7 +76,7 @@ export function AgentCredentialDemands() {
 
       {/* Design modal */}
       {designOpen && (
-        <div className="mt-3 border border-violet-500/20 rounded-xl overflow-hidden">
+        <div className="mt-3 border border-violet-500/20 rounded-modal overflow-hidden">
           <CredentialDesignModal
             open={designOpen}
             embedded
@@ -111,11 +111,11 @@ function DemandCard({
   const hasReusable = demand.matchingCredentials.length > 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         {/* Connector icon */}
         <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          className="w-7 h-7 rounded-card flex items-center justify-center flex-shrink-0"
           style={{ background: `${demand.connectorColor}15`, border: `1px solid ${demand.connectorColor}30` }}
         >
           <Plug className="w-3.5 h-3.5" style={{ color: demand.connectorColor }} />
@@ -124,10 +124,10 @@ function DemandCard({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-foreground/85">{demand.connectorLabel}</span>
+            <span className="typo-body font-medium text-foreground/85">{demand.connectorLabel}</span>
             <AlertTriangle className="w-3 h-3 text-amber-400/60" />
           </div>
-          <p className="text-xs text-muted-foreground/50 truncate">
+          <p className="typo-caption text-foreground truncate">
             {t.agents.connectors.dm_required_by}
           </p>
         </div>
@@ -138,10 +138,10 @@ function DemandCard({
             <button
               type="button"
               onClick={onToggleLinking}
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-colors cursor-pointer ${
                 isLinking
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
-                  : 'border-primary/20 text-muted-foreground/70 hover:bg-secondary/50 hover:text-foreground/80'
+                  : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'
               }`}
             >
               <ArrowRight className="w-3 h-3" />
@@ -151,7 +151,7 @@ function DemandCard({
           <button
             type="button"
             onClick={onProvision}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
             {t.agents.connectors.dm_create}
@@ -165,7 +165,7 @@ function DemandCard({
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
-              <p className="text-xs text-muted-foreground/50 mb-1.5">
+              <p className="typo-caption text-foreground mb-1.5">
                 {t.agents.connectors.dm_link_existing}
               </p>
               {demand.matchingCredentials.map((cred) => (
@@ -173,10 +173,10 @@ function DemandCard({
                   key={cred.id}
                   type="button"
                   onClick={() => onReuse(cred.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
                 >
                   <Key className="w-3 h-3 text-emerald-400/60" />
-                  <span className="text-xs text-foreground/80 flex-1 truncate">{cred.name}</span>
+                  <span className="typo-caption text-foreground flex-1 truncate">{cred.name}</span>
                   {cred.healthcheck_last_success === true && (
                     <CheckCircle2 className="w-3 h-3 text-emerald-400/60" />
                   )}

@@ -58,7 +58,7 @@ export function compositeScore(
 
 /** Return Tailwind color class for a score value. */
 export function scoreColor(score: number | null): string {
-  if (score === null) return 'text-muted-foreground/80';
+  if (score === null) return 'text-foreground';
   if (score >= 80) return 'text-status-success';
   if (score >= 50) return 'text-status-warning';
   return 'text-status-error';

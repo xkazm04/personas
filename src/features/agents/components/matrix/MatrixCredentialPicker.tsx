@@ -30,16 +30,16 @@ export function MatrixCredentialPicker({
     <div
         className="animate-fade-slide-in overflow-hidden"
       >
-        <div className="mt-1 max-h-32 overflow-y-auto rounded-lg border border-primary/10 bg-background/40 backdrop-blur-sm">
+        <div className="mt-1 max-h-32 overflow-y-auto rounded-card border border-primary/10 bg-background/40 backdrop-blur-sm">
           {allEmpty && (
-            <div className="px-2.5 py-2 text-[11px] text-muted-foreground/60 text-center">
+            <div className="px-2.5 py-2 text-[11px] text-foreground text-center">
               {t.agents.matrix_cred_picker.no_stored}
             </div>
           )}
 
           {matchingCreds.length > 0 && (
             <div>
-              <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
+              <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground">
                 {t.agents.matrix_cred_picker.best_match}
               </div>
               {matchingCreds.map((cred) => (
@@ -50,8 +50,8 @@ export function MatrixCredentialPicker({
                   onClick={() => onSelect(cred.id)}
                 >
                   <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
-                  <span className="text-[11px] text-foreground/80 truncate">{cred.name}</span>
-                  <span className="text-[10px] text-muted-foreground/50 ml-auto flex-shrink-0">
+                  <span className="text-[11px] text-foreground truncate">{cred.name}</span>
+                  <span className="text-[10px] text-foreground ml-auto flex-shrink-0">
                     {cred.service_type}
                   </span>
                 </button>
@@ -62,7 +62,7 @@ export function MatrixCredentialPicker({
           {otherCreds.length > 0 && (
             <div>
               {matchingCreds.length > 0 && (
-                <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
+                <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-foreground">
                   Other
                 </div>
               )}
@@ -74,8 +74,8 @@ export function MatrixCredentialPicker({
                   onClick={() => onSelect(cred.id)}
                 >
                   <div className="w-3 h-3 flex-shrink-0" />
-                  <span className="text-[11px] text-foreground/80 truncate">{cred.name}</span>
-                  <span className="text-[10px] text-muted-foreground/50 ml-auto flex-shrink-0">
+                  <span className="text-[11px] text-foreground truncate">{cred.name}</span>
+                  <span className="text-[10px] text-foreground ml-auto flex-shrink-0">
                     {cred.service_type}
                   </span>
                 </button>

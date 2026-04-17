@@ -79,7 +79,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           {stats.map((s) => (
             <span
               key={s.label}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-mono bg-secondary/50 border border-primary/10 text-muted-foreground/80"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-code font-mono bg-secondary/50 border border-primary/10 text-foreground"
             >
               <span className="text-foreground/90 font-semibold">{s.count}</span>
               {s.label}
@@ -92,7 +92,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
       <div
         className="animate-fade-slide-in w-full max-w-sm"
       >
-        <p className="text-sm font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
+        <p className="typo-code font-mono text-foreground uppercase tracking-widest mb-2 text-center">
           {t.agents.design.next_steps}
         </p>
         <div className="space-y-1.5">
@@ -102,10 +102,10 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
               <button
                 key={step.id}
                 onClick={step.action}
-                className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
+                className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
+                  className="w-8 h-8 rounded-card flex items-center justify-center shrink-0 border"
                   style={{
                     backgroundColor: colorWithAlpha(step.color, 0.07),
                     borderColor: colorWithAlpha(step.color, 0.15),
@@ -114,14 +114,14 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                   <Icon className="w-4 h-4" style={{ color: colorWithAlpha(step.color, 0.8) }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
+                  <div className="typo-body font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">
                     {step.title}
                   </div>
-                  <div className="text-sm text-muted-foreground/60">
+                  <div className="typo-body text-foreground">
                     {step.description}
                   </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 text-foreground group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
             );
           })}

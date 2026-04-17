@@ -21,8 +21,8 @@ export function DesignTab() {
 
   if (!selectedPersona) {
     return (
-      <div className="flex items-center justify-center py-8 text-muted-foreground/60">
-        <p className="text-sm">{t.agents.design.select_agent}</p>
+      <div className="flex items-center justify-center py-8 text-foreground">
+        <p className="typo-body">{t.agents.design.select_agent}</p>
       </div>
     );
   }

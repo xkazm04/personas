@@ -22,9 +22,9 @@ export function ActionBlock({
   onUrlClick: (url: string) => void;
 }) {
   return (
-    <div className="rounded-lg bg-secondary/10 border border-primary/5 px-3 py-2 space-y-1">
+    <div className="rounded-card bg-secondary/10 border border-primary/5 px-3 py-2 space-y-1">
       {entries.map((entry, i) => (
-        <div key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+        <div key={i} className="flex items-start gap-2 typo-body text-foreground">
           <MousePointerClick className="w-3 h-3 mt-1 shrink-0 text-cyan-400/60" />
           <span className="leading-relaxed">
             <RichMessage message={entry.message} onUrlClick={onUrlClick} />
@@ -49,16 +49,16 @@ export function UrlCard({
   try { hostname = new URL(url).hostname; } catch { /* ignore */ }
 
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5">
+    <div className="flex items-center gap-3 p-2.5 rounded-card border border-blue-500/20 bg-blue-500/5">
       <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground/80">{entry.message.replace(/^Opening:\s*/, '')}</p>
-        {hostname && <p className="text-sm text-muted-foreground/50 truncate">{hostname}</p>}
+        <p className="typo-body text-foreground">{entry.message.replace(/^Opening:\s*/, '')}</p>
+        {hostname && <p className="typo-body text-foreground truncate">{hostname}</p>}
       </div>
       {url && (
         <button
           onClick={() => onUrlClick(url)}
-          className="px-3 py-1 text-sm text-blue-400 hover:text-blue-300 rounded-lg border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
+          className="px-3 py-1 typo-body text-blue-400 hover:text-blue-300 rounded-card border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
         >
           Open
         </button>
@@ -71,7 +71,7 @@ export function UrlCard({
 
 export function ErrorLine({ entry }: { entry: BrowserLogEntry }) {
   return (
-    <div className="flex items-start gap-2 text-sm text-red-400 px-1">
+    <div className="flex items-start gap-2 typo-body text-red-400 px-1">
       <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
       <span>{entry.message}</span>
     </div>
@@ -130,7 +130,7 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground/60 hover:text-muted-foreground rounded-lg hover:bg-secondary/30 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-muted-foreground rounded-card hover:bg-secondary/30 transition-colors"
     >
       {copied ? (
         <>

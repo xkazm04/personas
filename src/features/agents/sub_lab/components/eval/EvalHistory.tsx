@@ -29,13 +29,13 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
     {
       key: 'versions',
       label: t.agents.lab.versions_column,
-      render: (run) => <span className="text-sm font-mono text-foreground/80">{parseVersionNums(run)}</span>,
+      render: (run) => <span className="typo-code font-mono text-foreground">{parseVersionNums(run)}</span>,
     },
     {
       key: 'scenarios',
       label: t.agents.lab.scenarios_column,
       className: 'w-[90px]',
-      render: (run) => <span className="text-sm text-muted-foreground/80">{run.scenariosCount || '--'}</span>,
+      render: (run) => <span className="typo-body text-foreground">{run.scenariosCount || '--'}</span>,
     },
   ], [t]);
 
@@ -61,8 +61,8 @@ export function EvalHistory({ runs, resultsMap, expandedRunId, onToggleExpand, o
           modeLabel={t.agents.lab.eval_mode_label}
           headerChips={
             <>
-              <span className="text-xs font-mono text-muted-foreground/60">{parseVersionNums(activeRun)}</span>
-              {activeRun.scenariosCount > 0 && <span className="text-xs text-muted-foreground/50">{activeRun.scenariosCount} scenarios</span>}
+              <span className="typo-code font-mono text-foreground">{parseVersionNums(activeRun)}</span>
+              {activeRun.scenariosCount > 0 && <span className="typo-caption text-foreground">{activeRun.scenariosCount} scenarios</span>}
             </>
           }
           footerActions={

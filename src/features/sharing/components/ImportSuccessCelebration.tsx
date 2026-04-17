@@ -122,7 +122,7 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
 
   return (
     <div
-      className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
+      className="rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
       style={{
         transform: entered ? 'scale(1)' : 'scale(0.85)',
         opacity: entered ? 1 : 0,
@@ -131,13 +131,13 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
     >
       <PackageUnwrapSvg />
       <div className="text-center space-y-1">
-        <div className="text-sm font-medium text-emerald-400">
+        <div className="typo-body font-medium text-emerald-400">
           {st.import_complete}
         </div>
-        <div className="text-xs text-muted-foreground space-y-0.5">
+        <div className="typo-caption text-foreground space-y-0.5">
           <p>{importResult.imported} {importResult.imported !== 1 ? 'resources' : 'resource'} imported</p>
           {importResult.skipped > 0 && (
-            <p>{importResult.skipped} skipped (conflicts)</p>
+            <p>{t.sharing.skipped_conflicts.replace('{count}', String(importResult.skipped))}</p>
           )}
           {importResult.errors.length > 0 && (
             <div className="mt-2 text-left">

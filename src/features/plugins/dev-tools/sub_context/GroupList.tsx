@@ -49,9 +49,9 @@ export default function GroupList({
     <div className="flex-1 min-w-0 space-y-3">
       {showNewGroup && (
           <div className="animate-fade-slide-in overflow-hidden">
-            <div className="border border-primary/10 rounded-xl p-4 bg-primary/5 space-y-3">
+            <div className="border border-primary/10 rounded-modal p-4 bg-primary/5 space-y-3">
               <div className="flex items-center gap-2">
-                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder="Group name..." className="flex-1 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring" autoFocus />
+                <input value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} placeholder={t.plugins.dev_tools.group_name_placeholder} className="flex-1 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring" autoFocus />
                 <Button variant="accent" accentColor="amber" size="sm" disabled={!newGroupName.trim()} disabledReason="Enter a group name to create" onClick={handleCreate}>{t.plugins.dev_tools.create}</Button>
                 <Button variant="ghost" size="icon-sm" onClick={() => onShowNewGroup(false)}><X className="w-3.5 h-3.5" /></Button>
               </div>
@@ -78,7 +78,7 @@ export default function GroupList({
             const isExpanded = expandedGroups.has(group.id);
             const dot = colorDot(group.color);
             return (
-              <div key={group.id} className="animate-fade-slide-in border border-primary/10 rounded-xl overflow-hidden">
+              <div key={group.id} className="animate-fade-slide-in border border-primary/10 rounded-modal overflow-hidden">
                 <button onClick={() => toggleGroup(group.id)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-colors">
                   {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
                   <span className={`w-2.5 h-2.5 rounded-full ${dot.bg} flex-shrink-0`} />
@@ -107,7 +107,7 @@ export default function GroupList({
       )}
 
       {groups.length > 0 && (
-        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 text-xs text-foreground">
+        <div className="flex items-center gap-4 pt-3 border-t border-primary/5 typo-caption text-foreground">
           <span>{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
           <span>{totalContexts} context{totalContexts !== 1 ? 's' : ''}</span>
         </div>

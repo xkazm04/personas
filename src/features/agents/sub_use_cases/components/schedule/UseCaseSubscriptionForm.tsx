@@ -36,9 +36,9 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
   };
 
   return (
-    <div className="border border-primary/20 rounded-lg p-2.5 space-y-2 bg-secondary/30">
+    <div className="border border-primary/20 rounded-card p-2.5 space-y-2 bg-secondary/30">
       <div>
-        <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
+        <label className="block typo-code font-mono text-foreground uppercase mb-1">
           {uc.event_type}
         </label>
         <ThemedSelect
@@ -53,7 +53,7 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
         </ThemedSelect>
       </div>
       <div>
-        <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
+        <label className="block typo-code font-mono text-foreground uppercase mb-1">
           {uc.source_filter} <span className="normal-case">{uc.source_filter_optional}</span>
         </label>
         <input
@@ -61,24 +61,24 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
           value={newSourceFilter}
           onChange={(e) => setNewSourceFilter(e.target.value)}
           placeholder={uc.source_filter_placeholder}
-          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus-ring"
+          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground placeholder:text-foreground focus-ring"
         />
       </div>
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleAdd}
           disabled={!newEventType}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
             newEventType
               ? 'bg-primary hover:bg-primary/90 text-foreground'
-              : 'bg-secondary/40 text-muted-foreground/70 cursor-not-allowed'
+              : 'bg-secondary/40 text-foreground cursor-not-allowed'
           }`}
         >
           <Plus className="w-3 h-3" /> {uc.add}
         </button>
         <button
           onClick={() => { onCancel(); setNewEventType(''); setNewSourceFilter(''); }}
-          className="px-3 py-1.5 text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors"
+          className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/90 transition-colors"
         >
           {t.common.cancel}
         </button>

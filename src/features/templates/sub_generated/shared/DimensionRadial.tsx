@@ -182,7 +182,7 @@ export function DimensionRadial({ designResult, size = 32, className = '' }: Dim
           fontSize={size * 0.28}
           fontWeight="600"
           fill="currentColor"
-          className="text-foreground/70"
+          className="text-foreground"
         >
           {filled.length}
         </text>

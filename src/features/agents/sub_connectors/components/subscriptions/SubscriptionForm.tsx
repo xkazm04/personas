@@ -24,9 +24,9 @@ export function SubscriptionRow({
     >
       <Radio className="w-4 h-4 text-cyan-400 flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-medium text-foreground/80 block truncate">{sub.event_type}</span>
+        <span className="typo-body font-medium text-foreground block truncate">{sub.event_type}</span>
         {sub.source_filter && (
-          <span className="text-sm text-muted-foreground/80 block truncate">{tx(t.agents.connectors.sub_filter, { filter: sub.source_filter })}</span>
+          <span className="typo-body text-foreground block truncate">{tx(t.agents.connectors.sub_filter, { filter: sub.source_filter })}</span>
         )}
       </div>
       <AccessibleToggle
@@ -45,12 +45,12 @@ export function SubscriptionRow({
           onConfirmDelete(sub.id);
         }}
         data-sub-delete={sub.id}
-        className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors focus-ring"
+        className="p-1 text-foreground hover:text-red-400 transition-colors focus-ring"
       >
         {confirmingDeleteId === sub.id ? (
             <span
               key="confirm"
-              className="animate-fade-slide-in text-sm font-semibold text-red-400"
+              className="animate-fade-slide-in typo-heading font-semibold text-red-400"
             >
               {t.agents.connectors.sub_confirm}
             </span>

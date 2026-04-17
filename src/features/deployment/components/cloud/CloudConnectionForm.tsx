@@ -59,8 +59,8 @@ export function CloudConnectionForm({
         <div className={`flex items-center gap-3 p-4 ${DEPLOYMENT_TOKENS.cardRadius} ${DEPLOYMENT_TOKENS.connectedBg} border ${DEPLOYMENT_TOKENS.connectedBorder}`}>
           <Wifi className="w-5 h-5 text-emerald-400" />
           <div>
-            <p className="text-sm font-medium text-emerald-400">{dt.connected}</p>
-            <p className="text-sm text-muted-foreground/80 mt-0.5">
+            <p className="typo-body font-medium text-emerald-400">{dt.connected}</p>
+            <p className="typo-body text-foreground mt-0.5">
               {dt.orchestrator_prefix} {config?.url}
             </p>
           </div>
@@ -68,7 +68,7 @@ export function CloudConnectionForm({
 
         <button
           onClick={onDisconnect}
-          className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+          className="px-4 py-2 typo-body font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
         >
           {dt.disconnect}
         </button>
@@ -92,7 +92,7 @@ export function CloudConnectionForm({
               setUrl(e.target.value);
               urlValidation.onChange(e.target.value);
             }}
-            placeholder="https://your-orchestrator.example.com"
+            placeholder={dt.orchestrator_url_placeholder}
             className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
           />
         )}
@@ -115,7 +115,7 @@ export function CloudConnectionForm({
         <button
           onClick={onConnect}
           disabled={isConnecting || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {isConnecting ? (
             <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
@@ -131,7 +131,7 @@ export function CloudConnectionForm({
         <button
           onClick={onDiagnose}
           disabled={isDiagnosing || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {isDiagnosing ? (
             <span className="inline-flex items-center gap-2">
@@ -159,17 +159,17 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
 
   return (
     <div
-      className={`p-4 rounded-xl border ${
+      className={`p-4 rounded-modal border ${
         allPassed
           ? 'bg-emerald-500/5 border-emerald-500/20'
           : 'bg-red-500/5 border-red-500/20'
       }`}
     >
       <div className="flex items-center justify-between mb-3">
-        <p className={`text-sm font-medium ${allPassed ? 'text-emerald-400' : 'text-red-400'}`}>
+        <p className={`typo-body font-medium ${allPassed ? 'text-emerald-400' : 'text-red-400'}`}>
           {dt.diagnostics_title}
         </p>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
+        <div className="flex items-center gap-1 typo-caption text-foreground">
           <Clock className="w-3 h-3" />
           {diagnostics.totalDurationMs}ms
         </div>
@@ -185,10 +185,10 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground/90">{step.label}</span>
-                <span className="text-xs text-muted-foreground/50">{step.durationMs}ms</span>
+                <span className="typo-body font-medium text-foreground/90">{step.label}</span>
+                <span className="typo-caption text-foreground">{step.durationMs}ms</span>
               </div>
-              <p className={`text-xs mt-0.5 ${step.passed ? 'text-muted-foreground/60' : 'text-red-400/80'}`}>
+              <p className={`typo-caption mt-0.5 ${step.passed ? 'text-foreground' : 'text-red-400/80'}`}>
                 {step.detail}
               </p>
             </div>

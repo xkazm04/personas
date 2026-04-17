@@ -11,6 +11,9 @@ import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from "@/lib/log";
+
+const appLogger = createLogger("App");
 
 /**
  * Silent error boundary for invisible components (renders null on error).
@@ -30,7 +33,7 @@ class SilentErrorBoundary extends Component<
   static getDerivedStateFromError() { return { hasError: true }; }
 
   componentDidCatch(error: Error) {
-    console.error(`[${this.props.name}] silently failed (attempt ${this.state.retryCount + 1}):`, error);
+    appLogger.error(`silently failed (attempt ${this.state.retryCount + 1})`, { name: this.props.name, error: error instanceof Error ? error.message : String(error) });
 
     if (this.state.retryCount < SilentErrorBoundary.MAX_RETRIES) {
       const delay = SilentErrorBoundary.BACKOFF_MS[this.state.retryCount] ?? 45_000;
@@ -78,7 +81,7 @@ export default function App() {
       import("@/lib/eventBridge").then(m => m.initAllListeners()),
       import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
     ]).catch((err) => {
-      console.error("[App] Critical startup module failed to initialize:", err);
+      appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
@@ -126,7 +129,7 @@ export default function App() {
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:typo-body focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {t.chrome.skip_to_content}
           </a>
@@ -158,7 +161,7 @@ export default function App() {
           <ChartGradientDefs />
           <ToastContainer />
           {import.meta.env.DEV && isMobilePreview && (
-            <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-lg bg-cyan-500/90 text-white text-xs font-bold shadow-elevation-3 pointer-events-none select-none">
+            <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white typo-caption font-bold shadow-elevation-3 pointer-events-none select-none">
               MOBILE PREVIEW
             </div>
           )}

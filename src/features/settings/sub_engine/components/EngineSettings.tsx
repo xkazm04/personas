@@ -28,7 +28,7 @@ export default function EngineSettings() {
           subtitle={s.loading_capabilities}
         />
         <ContentBody centered>
-          <div className="h-40 flex items-center justify-center text-muted-foreground/60 text-sm">
+          <div className="h-40 flex items-center justify-center text-foreground typo-body">
             {s.detecting_providers}
           </div>
         </ContentBody>
@@ -48,13 +48,13 @@ export default function EngineSettings() {
       <ContentBody centered>
         <div className="space-y-4">
           {/* Capability matrix */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading
               title={s.capability_map}
               action={
                 <button
                   onClick={resetToDefaults}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   {s.reset_defaults}
@@ -64,10 +64,10 @@ export default function EngineSettings() {
 
             {/* Matrix grid */}
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full typo-body">
                 <thead>
                   <tr className="border-b border-primary/10">
-                    <th className="text-left py-2 pr-4 text-muted-foreground/70 font-medium w-[45%]">
+                    <th className="text-left py-2 pr-4 text-foreground font-medium w-[45%]">
                       {s.operation}
                     </th>
                     {PROVIDERS.map((p) => {
@@ -75,7 +75,7 @@ export default function EngineSettings() {
                       return (
                         <th key={p.id} className="py-2 px-2 text-center font-medium min-w-[90px]">
                           <div className="flex flex-col items-center gap-0.5">
-                            <span className={installed ? 'text-muted-foreground/90' : 'text-muted-foreground/60'}>
+                            <span className={installed ? 'text-foreground' : 'text-foreground'}>
                               {p.shortLabel}
                             </span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
@@ -109,9 +109,9 @@ export default function EngineSettings() {
           </div>
 
           {/* Legend */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-2">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-2">
             <SectionHeading title={s.legend} />
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground/70">
+            <div className="flex flex-wrap gap-4 typo-body text-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                   <Check className="w-2.5 h-2.5 text-emerald-400" />
@@ -126,7 +126,7 @@ export default function EngineSettings() {
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-secondary/30 border border-primary/10 flex items-center justify-center">
-                  <Minus className="w-2.5 h-2.5 text-muted-foreground/30" />
+                  <Minus className="w-2.5 h-2.5 text-foreground" />
                 </span>
                 {s.legend_not_installed}
               </span>
@@ -134,14 +134,14 @@ export default function EngineSettings() {
           </div>
 
           {/* Ambient Context Fusion */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6">
             <AmbientContextPanel />
           </div>
 
           {/* Protocol warning */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
+          <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-muted-foreground/80">
+            <div className="typo-body text-foreground">
               <p className="font-medium text-amber-400/90 mb-1">{s.defaults_heading}</p>
               <p>
                 {s.defaults_description}

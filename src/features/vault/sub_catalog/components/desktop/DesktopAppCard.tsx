@@ -16,7 +16,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
     <button
       onClick={onSelect}
       disabled={disabled}
-      className={`w-full text-left p-3 rounded-xl border transition-all ${
+      className={`w-full text-left p-3 rounded-modal border transition-all ${
         disabled
           ? 'opacity-40 cursor-not-allowed border-primary/5 bg-secondary/10'
           : selected
@@ -26,7 +26,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
     >
       <div className="flex items-center gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center border"
+          className="w-8 h-8 rounded-card flex items-center justify-center border"
           style={{
             backgroundColor: `${meta.color}15`,
             borderColor: `${meta.color}30`,
@@ -36,25 +36,25 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">{app.label}</span>
+            <span className="typo-body font-medium text-foreground">{app.label}</span>
             {app.installed && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400">
+              <span className="flex items-center gap-1 typo-caption text-emerald-400">
                 <CheckCircle2 className="w-3 h-3" />
                 Installed
               </span>
             )}
             {app.running && (
-              <span className="flex items-center gap-1 text-xs text-cyan-400">
+              <span className="flex items-center gap-1 typo-caption text-cyan-400">
                 <CircleDot className="w-3 h-3" />
                 Running
               </span>
             )}
           </div>
           {app.binary_path && (
-            <p className="text-xs text-muted-foreground/60 truncate">{app.binary_path}</p>
+            <p className="typo-caption text-foreground truncate">{app.binary_path}</p>
           )}
         </div>
-        {!disabled && <ChevronRight className="w-4 h-4 text-muted-foreground/50" />}
+        {!disabled && <ChevronRight className="w-4 h-4 text-foreground" />}
       </div>
     </button>
   );

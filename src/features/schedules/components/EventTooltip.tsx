@@ -21,7 +21,7 @@ export function EventTooltip({
 
   return (
     <div
-      className="fixed z-50 pointer-events-none px-3 py-2 rounded-lg bg-popover border border-primary/15 shadow-elevation-3 text-xs max-w-[240px]"
+      className="fixed z-50 pointer-events-none px-3 py-2 rounded-card bg-popover border border-primary/15 shadow-elevation-3 typo-caption max-w-[240px]"
       style={{
         left: pos.x,
         top: pos.y,
@@ -32,7 +32,7 @@ export function EventTooltip({
         <PersonaIcon icon={event.agentIcon} color={event.agentColor ?? null} display="pop" frameSize="lg" />
         <span className="font-medium text-foreground/90 truncate">{event.agentName}</span>
       </div>
-      <div className="text-muted-foreground/60 space-y-0.5">
+      <div className="text-foreground space-y-0.5">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {event.time.toLocaleString(undefined, {
@@ -52,7 +52,7 @@ export function EventTooltip({
           <div className="flex items-start gap-1 mt-1 pt-1 border-t border-primary/10 text-amber-400/90">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
             <span>
-              Overlaps with {otherConflicts.slice(0, 3).join(', ')}
+              {st.overlaps_with} {otherConflicts.slice(0, 3).join(', ')}
               {otherConflicts.length > 3 && ` +${otherConflicts.length - 3} more`}
             </span>
           </div>

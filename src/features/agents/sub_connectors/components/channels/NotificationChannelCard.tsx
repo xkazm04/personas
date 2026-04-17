@@ -62,14 +62,14 @@ export function NotificationChannelCard({
 
   return (
     <div
-      className={`border rounded-xl p-2.5 ${TOOLS_INNER_SPACE} transition-colors ${
+      className={`border rounded-modal p-2.5 ${TOOLS_INNER_SPACE} transition-colors ${
         enabled ? `bg-secondary/30 ${TOOLS_BORDER}` : `bg-secondary/10 ${TOOLS_BORDER} opacity-60`
       }`}
     >
       {/* Header row */}
       <div className="flex items-center gap-3">
         {channelIcon(type)}
-        <span className="text-sm font-medium text-foreground/80 flex-1 capitalize">{type}</span>
+        <span className="typo-body font-medium text-foreground flex-1 capitalize">{type}</span>
         <AccessibleToggle
           checked={enabled}
           onChange={onToggleEnabled}
@@ -78,7 +78,7 @@ export function NotificationChannelCard({
         />
         <button
           onClick={onRemove}
-          className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors"
+          className="p-1 text-foreground hover:text-red-400 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -89,13 +89,13 @@ export function NotificationChannelCard({
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
         return (
           <div key={field.key}>
-            <label className="block text-sm font-medium text-foreground/80 mb-1">{field.label}</label>
+            <label className="block typo-body font-medium text-foreground mb-1">{field.label}</label>
             <input
               type="text"
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-modal typo-body text-foreground placeholder:text-foreground focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
             />
           </div>
         );
@@ -103,16 +103,16 @@ export function NotificationChannelCard({
 
       {/* Credential picker */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.connectors.ch_credential}</label>
+        <label className="block typo-body font-medium text-foreground mb-1">{t.agents.connectors.ch_credential}</label>
         <CredentialPicker
           credentials={matchingCredentials}
           selectedId={credentialId}
           onChange={onCredentialChange}
         />
         {credentialId ? (
-          <span className="text-sm text-emerald-400/70 mt-0.5 block">{t.agents.connectors.ch_connected}</span>
+          <span className="typo-body text-emerald-400/70 mt-0.5 block">{t.agents.connectors.ch_connected}</span>
         ) : (
-          <span className="text-sm text-amber-400/70 mt-0.5 block">{t.agents.connectors.ch_cred_needed}</span>
+          <span className="typo-body text-amber-400/70 mt-0.5 block">{t.agents.connectors.ch_cred_needed}</span>
         )}
       </div>
 
@@ -121,12 +121,12 @@ export function NotificationChannelCard({
         <button
           onClick={handleTestNotification}
           disabled={!enabled || testStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-modal typo-body font-medium transition-all ${
             testStatus === 'success'
               ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
               : testStatus === 'error'
                 ? 'bg-red-500/15 border border-red-500/25 text-red-300'
-                : `bg-secondary/60 border ${TOOLS_BORDER} text-muted-foreground/90 hover:text-foreground/95 hover:bg-secondary/80`
+                : `bg-secondary/60 border ${TOOLS_BORDER} text-foreground hover:text-foreground/95 hover:bg-secondary/80`
           } disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {testStatus === 'sending' ? (
@@ -140,7 +140,7 @@ export function NotificationChannelCard({
           )}
         </button>
         {testStatus === 'error' && testError && (
-          <p className="text-xs text-red-400/80 mt-1 truncate" title={testError}>{testError}</p>
+          <p className="typo-caption text-red-400/80 mt-1 truncate" title={testError}>{testError}</p>
         )}
       </div>
     </div>

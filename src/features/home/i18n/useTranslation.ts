@@ -47,7 +47,7 @@ function getSnapshot(): number {
 
 function preload(lang: Language) {
   if (cache.has(lang)) return;
-  loaders[lang]().then(bundle => {
+  loaders[lang]!().then(bundle => {
     cache.set(lang, { ...en.home, ...bundle.home });
     bundleVersion++;
     listeners.forEach(fn => fn());

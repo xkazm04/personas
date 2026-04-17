@@ -23,13 +23,13 @@ export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
         <button
           data-testid="vault-autopilot-back"
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">{t.vault.autopilot.title}</h3>
-          <p className="text-sm text-muted-foreground/60">{t.vault.autopilot[STEP_KEYS[step]]}</p>
+          <h3 className="typo-heading font-semibold text-foreground">{t.vault.autopilot.title}</h3>
+          <p className="typo-body text-foreground">{t.vault.autopilot[STEP_KEYS[step]]}</p>
         </div>
         <div className="flex items-center gap-1.5">
           {(['input', 'preview', 'generated'] as const).map((s, i) => (
@@ -44,7 +44,7 @@ export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
         </div>
       </div>
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>

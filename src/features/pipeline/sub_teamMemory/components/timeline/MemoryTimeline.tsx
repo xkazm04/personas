@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { GitCommitVertical } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { RunMarker, type RunGroup } from './TimelineControls';
@@ -71,6 +72,8 @@ interface MemoryTimelineProps {
 }
 
 export default function MemoryTimeline({ memories, stats, onFilterRun, activeRunFilter }: MemoryTimelineProps) {
+  const { t } = useTranslation();
+  const pt = t.pipeline;
   const [expandedRuns, setExpandedRuns] = useState<Set<string>>(new Set());
   const timeline = useMemo(() => buildTimeline(memories), [memories]);
   const runCounts = useMemo(() => {
@@ -85,8 +88,8 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
   if (timeline.length === 0) {
     return (
       <div className="text-center py-4">
-        <GitCommitVertical className="w-6 h-6 mx-auto mb-1.5 text-muted-foreground/20" />
-        <p className="text-sm text-muted-foreground/50">No timeline data</p>
+        <GitCommitVertical className="w-6 h-6 mx-auto mb-1.5 text-foreground" />
+        <p className="typo-body text-foreground">{pt.no_timeline_data}</p>
       </div>
     );
   }
@@ -98,12 +101,12 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
       {totalRuns > 0 && (
         <div className="flex items-center gap-2 px-2 py-1">
           <GitCommitVertical className="w-3 h-3 text-violet-400/60" />
-          <span className="text-sm text-muted-foreground/50">
+          <span className="typo-body text-foreground">
             {totalRuns} run{totalRuns !== 1 ? 's' : ''}
           </span>
           {activeRunFilter && (
-            <button onClick={() => onFilterRun(null)} className="text-sm text-violet-400 hover:text-violet-300 transition-colors ml-auto">
-              Clear filter
+            <button onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
+              {pt.clear_filter}
             </button>
           )}
         </div>

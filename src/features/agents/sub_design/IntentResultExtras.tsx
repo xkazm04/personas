@@ -32,30 +32,30 @@ function UseCaseCard({ uc }: { uc: IntentUseCase }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-border/20 rounded-lg bg-secondary/20 overflow-hidden">
+    <div className="border border-border/20 rounded-card bg-secondary/20 overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
       >
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />}
-        <span className="text-sm font-medium text-foreground/90 flex-1 truncate">{uc.name}</span>
-        <span className={`text-sm px-1.5 py-0.5 rounded font-mono ${uc.execution_mode === 'e2e' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-violet-500/12 text-violet-400'}`}>
+        {open ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
+        <span className="typo-body font-medium text-foreground/90 flex-1 truncate">{uc.name}</span>
+        <span className={`typo-code px-1.5 py-0.5 rounded font-mono ${uc.execution_mode === 'e2e' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-violet-500/12 text-violet-400'}`}>
           {uc.execution_mode}
         </span>
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-2 border-t border-border/10">
-          <p className="text-sm text-muted-foreground/80 pt-2">{uc.description}</p>
+          <p className="typo-body text-foreground pt-2">{uc.description}</p>
           {uc.expected_behavior && (
             <div>
-              <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{t.agents.design.label_expected}</span>
-              <p className="text-sm text-foreground/80 mt-0.5">{uc.expected_behavior}</p>
+              <span className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.design.label_expected}</span>
+              <p className="typo-body text-foreground mt-0.5">{uc.expected_behavior}</p>
             </div>
           )}
           {uc.sample_input && Object.keys(uc.sample_input).length > 0 && (
             <div>
-              <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wider">{t.agents.design.label_sample_input}</span>
-              <pre className="text-sm text-foreground/70 bg-background/40 rounded p-2 mt-0.5 overflow-x-auto font-mono">
+              <span className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.design.label_sample_input}</span>
+              <pre className="typo-code text-foreground bg-background/40 rounded p-2 mt-0.5 overflow-x-auto font-mono">
                 {JSON.stringify(uc.sample_input, null, 2)}
               </pre>
             </div>
@@ -71,25 +71,25 @@ function TestScenarioRow({ ts }: { ts: IntentTestScenario }) {
   const meta = CATEGORY_META[ts.category] ?? CATEGORY_META.happy_path!;
   const { Icon } = meta;
   return (
-    <div className="border border-border/10 rounded-lg overflow-hidden">
+    <div className="border border-border/10 rounded-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-secondary/20 transition-colors"
       >
-        {open ? <ChevronDown className="w-3 h-3 text-muted-foreground/50" /> : <ChevronRight className="w-3 h-3 text-muted-foreground/50" />}
+        {open ? <ChevronDown className="w-3 h-3 text-foreground" /> : <ChevronRight className="w-3 h-3 text-foreground" />}
         <Icon className={`w-3 h-3 ${meta.text}`} />
-        <span className="text-sm text-foreground/85 flex-1 truncate">{ts.name}</span>
-        <span className={`text-sm px-1.5 py-0.5 rounded ${meta.bg} ${meta.text} font-mono`}>
+        <span className="typo-body text-foreground/85 flex-1 truncate">{ts.name}</span>
+        <span className={`typo-code px-1.5 py-0.5 rounded ${meta.bg} ${meta.text} font-mono`}>
           {ts.category.replace('_', ' ')}
         </span>
       </button>
       {open && (
         <div className="px-3 pb-2.5 space-y-1.5 border-t border-border/10">
-          <p className="text-sm text-muted-foreground/80 pt-1.5">{ts.expected_outcome}</p>
+          <p className="typo-body text-foreground pt-1.5">{ts.expected_outcome}</p>
           {ts.assertions.length > 0 && (
             <ul className="space-y-0.5">
               {ts.assertions.map((a, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-sm text-foreground/70">
+                <li key={i} className="flex items-start gap-1.5 typo-body text-foreground">
                   <CheckCircle2 className="w-3 h-3 text-emerald-400/60 mt-0.5 shrink-0" />
                   {a}
                 </li>
@@ -121,7 +121,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
     <div className="space-y-4">
       {/* Intent statement */}
       {intent_statement && (
-        <div className="px-3 py-2.5 rounded-xl bg-violet-500/5 border border-violet-500/15">
+        <div className="px-3 py-2.5 rounded-modal bg-violet-500/5 border border-violet-500/15">
           <div className="flex items-start gap-2">
             <Target className="w-3.5 h-3.5 text-violet-400/70 mt-0.5 shrink-0" />
             <div>
@@ -143,7 +143,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
             <Layers className="w-3.5 h-3.5" />
             {t.agents.design.use_cases_title}
-            <span className="text-sm font-mono text-muted-foreground/60">({use_cases.length})</span>
+            <span className="text-sm font-mono text-foreground">({use_cases.length})</span>
           </h4>
           <div className="space-y-1.5">
             {use_cases.map((uc) => (
@@ -159,7 +159,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
           <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90 tracking-wide">
             <FlaskConical className="w-3.5 h-3.5" />
             {t.agents.design.test_scenarios_title}
-            <span className="text-sm font-mono text-muted-foreground/60">({test_scenarios.length})</span>
+            <span className="text-sm font-mono text-foreground">({test_scenarios.length})</span>
           </h4>
           <div className="space-y-1">
             {test_scenarios.map((ts) => (
@@ -174,31 +174,31 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
 
 function ModelRecommendationCard({ rec }: { rec: IntentModelRecommendation }) {
   const { t } = useTranslation();
-  const complexityColor = COMPLEXITY_COLOR[rec.complexity_level] ?? 'text-muted-foreground';
+  const complexityColor = COMPLEXITY_COLOR[rec.complexity_level] ?? 'text-foreground';
   return (
-    <div className="rounded-xl bg-secondary/30 border border-primary/10 p-3 space-y-2">
-      <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
+    <div className="rounded-modal bg-secondary/30 border border-primary/10 p-3 space-y-2">
+      <h4 className="flex items-center gap-2 typo-heading font-semibold text-foreground/90">
         <Cpu className="w-3.5 h-3.5" />
         {t.agents.design.label_model_recommendation}
       </h4>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">{t.agents.design.label_model}</span>
-          <p className="text-sm font-medium text-foreground/90 capitalize mt-0.5">{rec.recommended_model}</p>
+          <span className="typo-body text-foreground uppercase tracking-wider">{t.agents.design.label_model}</span>
+          <p className="typo-body font-medium text-foreground/90 capitalize mt-0.5">{rec.recommended_model}</p>
         </div>
         <div>
-          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">{t.agents.design.label_est_cost_run}</span>
-          <p className="text-sm font-mono text-foreground/90 mt-0.5 flex items-center gap-1">
+          <span className="typo-body text-foreground uppercase tracking-wider">{t.agents.design.label_est_cost_run}</span>
+          <p className="typo-code font-mono text-foreground/90 mt-0.5 flex items-center gap-1">
             <DollarSign className="w-3 h-3 text-emerald-400/70" />
             {rec.estimated_cost_per_run_usd.toFixed(3)}
           </p>
         </div>
         <div>
-          <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">{t.agents.design.label_complexity}</span>
-          <p className={`text-sm font-medium capitalize mt-0.5 ${complexityColor}`}>{rec.complexity_level}</p>
+          <span className="typo-body text-foreground uppercase tracking-wider">{t.agents.design.label_complexity}</span>
+          <p className={`typo-body font-medium capitalize mt-0.5 ${complexityColor}`}>{rec.complexity_level}</p>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground/80">{rec.reasoning}</p>
+      <p className="typo-body text-foreground">{rec.reasoning}</p>
     </div>
   );
 }

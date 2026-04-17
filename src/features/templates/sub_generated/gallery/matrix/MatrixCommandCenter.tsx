@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Sparkles, Upload, Play, Save, Send } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -36,7 +37,7 @@ export function TypewriterBullets({ items, speed = 150 }: { items: string[]; spe
       {items.slice(0, visibleCount).map((item, i) => (
         <motion.li key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex items-start gap-2 leading-tight">
           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className="text-sm text-foreground/70 leading-snug">{item}</span>
+          <span className="typo-body text-foreground leading-snug">{item}</span>
         </motion.li>
       ))}
     </ul>
@@ -72,6 +73,7 @@ const WRAP = "flex flex-col gap-3 w-full h-full items-center justify-center";
 
 /** Compact refine input for saved/production agents. */
 function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   return (
     <div className="flex gap-1.5">
@@ -79,15 +81,15 @@ function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Adjust anything..."
-        className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+        placeholder={t.templates.matrix_cmd.adjust_placeholder}
+        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onRefine(text.trim()); setText(''); } }}
       />
       <button
         type="button"
         onClick={() => { if (text.trim()) { onRefine(text.trim()); setText(''); } }}
         disabled={!text.trim()}
-        className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors"
+        className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors"
       >
         <Send className="w-3.5 h-3.5" />
       </button>
@@ -106,6 +108,7 @@ export function MatrixCommandCenter({
   testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
   buildActivity, onApplyEdits, onDiscardEdits, onSaveVersion, isPreBuild = false,
 }: MatrixCommandCenterProps) {
+  const { t } = useTranslation();
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
@@ -173,8 +176,8 @@ export function MatrixCommandCenter({
             <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
             <LoadingSpinner size="lg" className="text-primary relative z-10" />
           </div>
-          <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">Initializing...</span>
-          <span className="text-[10px] text-muted-foreground/40">Creating draft agent and starting CLI</span>
+          <span className="typo-label font-semibold text-foreground tracking-wide uppercase">{t.templates.matrix_cmd.initializing}</span>
+          <span className="text-[10px] text-foreground">{t.templates.matrix_cmd.initializing_hint}</span>
         </div>
       );
     }
@@ -223,15 +226,15 @@ export function MatrixCommandCenter({
         )}
         <div className="flex gap-1.5">
           {onStartTest && (
-            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
+            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
               <Play className="w-3.5 h-3.5" />
-              Test Agent
+              {t.templates.matrix_cmd.test_agent}
             </button>
           )}
           {onSaveVersion && (
-            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
+            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
               <Save className="w-3.5 h-3.5" />
-              Save Version
+              {t.templates.matrix_cmd.save_version}
             </button>
           )}
         </div>
@@ -242,14 +245,14 @@ export function MatrixCommandCenter({
       <div className="flex flex-col gap-3 w-full h-full items-center">
         {/* Describe / Import toggle (creation mode only) */}
         {isCreation && (
-          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/20 self-stretch">
+          <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/20 self-stretch">
             <button
               type="button"
               onClick={() => setInputMode('describe')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'describe'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+                  : 'text-foreground hover:text-muted-foreground/70'
               }`}
             >
               <Sparkles className="w-3 h-3" />
@@ -258,10 +261,10 @@ export function MatrixCommandCenter({
             <button
               type="button"
               onClick={() => setInputMode('import')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'import'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
-                  : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+                  : 'text-foreground hover:text-muted-foreground/70'
               }`}
             >
               <Upload className="w-3 h-3" />
@@ -273,9 +276,9 @@ export function MatrixCommandCenter({
         {(inputMode === 'describe' || !isCreation) && (
           <textarea value={textValue} onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
-            placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
+            placeholder={isCreation ? t.templates.matrix_cmd.describe_placeholder : t.templates.matrix_cmd.additional_instructions}
             rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
-            className={`w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
+            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}
         {/* Import mode: workflow upload zone */}
         {inputMode === 'import' && isCreation && (
@@ -305,13 +308,13 @@ export function MatrixCommandCenter({
       <div className="flex flex-wrap gap-1.5">
         {sections.map((section) => { const Icon = section.icon; return (
           <button key={section.key} type="button" onClick={() => setOpenSection(section)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
+            className="inline-flex items-center gap-1.5 rounded-card border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
             <Icon className={`w-3 h-3 ${section.color} flex-shrink-0`} />
-            <span className="text-[13px] text-foreground/70 truncate">{section.label}</span>
+            <span className="text-[13px] text-foreground truncate">{section.label}</span>
           </button>
         ); })}
       </div>
-      {sections.length > 0 && <p className="text-sm text-muted-foreground/50 leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
+      {sections.length > 0 && <p className="typo-body text-foreground leading-relaxed line-clamp-3">{sections[0]!.content.slice(0, 120)}...</p>}
       {openSection && <PromptModal section={openSection} onClose={() => setOpenSection(null)} />}
     </div>
   );

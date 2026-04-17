@@ -76,13 +76,13 @@ export function ReviewInboxPanel({
       {/* View mode toggle */}
       {!IS_MOBILE && (
         <div className="flex items-center justify-end px-3 py-1.5 border-b border-primary/[0.06] bg-secondary/10">
-          <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+          <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => { setViewMode('default'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
                 viewMode === 'default'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/60 hover:text-foreground/70'
+                  : 'text-foreground hover:text-foreground/70'
               }`}
               title={t.overview.review.split_tooltip}
             >
@@ -91,10 +91,10 @@ export function ReviewInboxPanel({
             </button>
             <button
               onClick={() => { setViewMode('table'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
                 viewMode === 'table'
                   ? 'bg-primary/10 text-foreground/90'
-                  : 'text-muted-foreground/60 hover:text-foreground/70'
+                  : 'text-foreground hover:text-foreground/70'
               }`}
               title={t.overview.review.table_tooltip}
             >
@@ -125,7 +125,7 @@ export function ReviewInboxPanel({
                       e.stopPropagation();
                       onToggleSelect(review.id);
                     }}
-                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-muted-foreground transition-colors"
                   >
                     {selectedIds.has(review.id) ? (
                       <CheckSquare className="w-3.5 h-3.5 text-primary" />
@@ -174,8 +174,8 @@ export function ReviewInboxPanel({
               ) : (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
-                    <MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground/50">{t.overview.review.select_review}</p>
+                    <MessageSquare className="w-8 h-8 text-foreground mx-auto mb-2" />
+                    <p className="typo-body text-foreground">{t.overview.review.select_review}</p>
                   </div>
                 </div>
               )}
@@ -189,10 +189,10 @@ export function ReviewInboxPanel({
               className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-elevation-4 shadow-black/20 flex flex-col z-20"
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
-                <span className="typo-caption text-foreground/70">{t.overview.review.review_detail}</span>
+                <span className="typo-caption text-foreground">{t.overview.review.review_detail}</span>
                 <button
                   onClick={handleCloseSlideOver}
-                  className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-muted-foreground transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -214,11 +214,11 @@ export function ReviewInboxPanel({
             <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 flex-shrink-0">
               <button
                 onClick={() => onSelectReview(null)}
-                className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground"
+                className="p-2 rounded-card hover:bg-secondary/50 text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
-              <span className="typo-heading text-foreground/80 truncate">{t.overview.review.review_detail}</span>
+              <span className="typo-heading text-foreground truncate">{t.overview.review.review_detail}</span>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ConversationThread

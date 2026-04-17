@@ -26,7 +26,7 @@ export function TemplatePickerStep({
     return (
       <div className="flex items-center justify-center py-16">
         <LoadingSpinner size="xl" className="text-violet-400" />
-        <span className="ml-3 typo-body text-muted-foreground/80">{t.onboarding.loading_templates}</span>
+        <span className="ml-3 typo-body text-foreground">{t.onboarding.loading_templates}</span>
       </div>
     );
   }
@@ -34,9 +34,9 @@ export function TemplatePickerStep({
   if (templates.length === 0) {
     return (
       <div className="text-center py-16">
-        <FlaskConical className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-        <p className="typo-body text-muted-foreground/70">{t.onboarding.no_templates}</p>
-        <p className="typo-body text-muted-foreground/50 mt-1">{t.onboarding.no_templates_hint}</p>
+        <FlaskConical className="w-10 h-10 mx-auto text-foreground mb-3" />
+        <p className="typo-body text-foreground">{t.onboarding.no_templates}</p>
+        <p className="typo-body text-foreground mt-1">{t.onboarding.no_templates_hint}</p>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export function TemplatePickerStep({
     <div className="space-y-4">
       <div>
         <h3 className="typo-heading-lg text-foreground/90 mb-1">{t.onboarding.pick_template_heading}</h3>
-        <p className="typo-body text-muted-foreground/70">{t.onboarding.pick_template_description}</p>
+        <p className="typo-body text-foreground">{t.onboarding.pick_template_description}</p>
       </div>
       <div className="grid grid-cols-1 gap-3">
         {templates.map((review) => {
@@ -57,7 +57,7 @@ export function TemplatePickerStep({
             <button
               key={review.id}
               onClick={() => onSelect(review.id)}
-              className={`text-left rounded-xl border p-4 transition-all group ${
+              className={`text-left rounded-modal border p-4 transition-all group ${
                 isSelected
                   ? 'bg-violet-500/10 border-violet-500/30 shadow-elevation-2 shadow-violet-500/10'
                   : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50 hover:border-primary/20'
@@ -71,13 +71,13 @@ export function TemplatePickerStep({
                     </h4>
                     {isSelected && <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />}
                   </div>
-                  <p className="typo-body text-muted-foreground/70 line-clamp-2">
+                  <p className="typo-body text-foreground line-clamp-2">
                     {review.instruction.length > 150
                       ? review.instruction.slice(0, 150) + '...'
                       : review.instruction}
                   </p>
                   {connectors.length > 0 && (
-                    <p className="typo-body text-muted-foreground/50 mt-1.5">
+                    <p className="typo-body text-foreground mt-1.5">
                       {connectors.slice(0, 4).join(', ')}
                       {connectors.length > 4 && ` ${tx(t.onboarding.more_connectors, { count: connectors.length - 4 })}`}
                     </p>

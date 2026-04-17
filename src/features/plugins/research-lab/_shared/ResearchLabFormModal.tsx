@@ -53,14 +53,14 @@ export function ResearchLabFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg typo-body text-foreground hover:bg-secondary/50 transition-colors"
+            className="px-4 py-2 rounded-card typo-body text-foreground hover:bg-secondary/50 transition-colors"
           >
             {t.common.cancel}
           </button>
           <button
             type="submit"
             disabled={submitDisabled || saving}
-            className="px-4 py-2 rounded-lg typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50"
           >
             {saving ? t.common.loading : submitLabel}
           </button>

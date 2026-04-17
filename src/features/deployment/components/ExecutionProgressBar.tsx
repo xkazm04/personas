@@ -71,7 +71,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
   const isAnimated = !['completed', 'failed'].includes(progress.stage);
 
   return (
-    <div className="space-y-2 p-3 rounded-xl bg-secondary/30 border border-primary/10">
+    <div className="space-y-2 p-3 rounded-modal bg-secondary/30 border border-primary/10">
       {/* Stage pipeline */}
       <div className="flex items-center gap-1">
         {STAGES_ORDER.map((stage, idx) => {
@@ -95,15 +95,15 @@ export function ExecutionProgressBar({ executionId }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${stageColor} ${isAnimated ? 'animate-pulse' : ''}`} />
-          <span className={`text-sm font-medium ${stageColor}`}>
+          <span className={`typo-body font-medium ${stageColor}`}>
             {stageLabel}
             {progress.activeTool && (
-              <span className="text-muted-foreground/70 font-normal">: {progress.activeTool}</span>
+              <span className="text-foreground font-normal">: {progress.activeTool}</span>
             )}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/70">
+        <div className="flex items-center gap-3 typo-caption text-foreground">
           {progress.toolCallsCompleted > 0 && (
             <span>{tx(dt.tool_calls, { count: progress.toolCallsCompleted })}</span>
           )}
@@ -114,7 +114,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
       </div>
 
       {progress.message && (
-        <p className="text-xs text-muted-foreground/60 truncate">{progress.message}</p>
+        <p className="typo-caption text-foreground truncate">{progress.message}</p>
       )}
     </div>
   );

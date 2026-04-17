@@ -35,12 +35,12 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       {/* Header */}
       <div data-testid="vault-design-container" className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-card bg-primary/10 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 id="credential-design-title" className="text-base font-semibold text-foreground">{t.vault.design_modal.title}</h2>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <h2 id="credential-design-title" className="typo-body-lg font-semibold text-foreground">{t.vault.design_modal.title}</h2>
+            <p className="typo-body text-foreground">{subtitle}</p>
           </div>
         </div>
         <Button
@@ -49,7 +49,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           icon={<X className="w-4 h-4" />}
           onClick={modal.handleClose}
           data-testid="vault-design-cancel"
-          className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
+          className="text-foreground hover:text-foreground hover:bg-secondary/60"
         />
       </div>
 

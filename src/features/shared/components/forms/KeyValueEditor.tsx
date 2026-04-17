@@ -155,7 +155,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                     value={row.key}
                     onChange={(e) => updateRow(i, 'key', e.target.value)}
                     placeholder={t.common.label_placeholder}
-                    className={`flex-1 px-3 py-2 typo-body rounded-lg border bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-1 transition-all ${
+                    className={`flex-1 px-3 py-2 typo-body rounded-lg border bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 transition-all ${
                       isDupe
                         ? 'border-amber-500/40 focus-visible:border-amber-500/60 focus-visible:ring-amber-500/30'
                         : 'border-primary/15 focus-visible:border-primary/40 focus-visible:ring-primary/30'
@@ -166,7 +166,7 @@ export function KeyValueEditor({ value, onChange, placeholder }: KeyValueEditorP
                     value={row.value}
                     onChange={(e) => updateRow(i, 'value', e.target.value)}
                     placeholder={t.common.value_placeholder}
-                    className="flex-1 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
+                    className="flex-1 px-3 py-2 typo-body rounded-lg border border-primary/15 bg-background/50 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all"
                   />
                   <button
                     type="button"

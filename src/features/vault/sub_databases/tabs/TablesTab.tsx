@@ -85,7 +85,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   if (family === 'unsupported') {
     return (
       <div className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
-        <p className="text-sm text-muted-foreground/50">
+        <p className="typo-body text-foreground">
           {t.vault.databases.introspection_unavailable}
         </p>
         <TestConnectionButton credentialId={credentialId} />

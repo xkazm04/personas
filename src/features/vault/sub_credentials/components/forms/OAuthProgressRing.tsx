@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Shield, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type OAuthRingPhase = 'waiting' | 'polling' | 'success';
 
@@ -27,6 +28,7 @@ export function OAuthProgressRing({
   message,
   size = 64,
 }: OAuthProgressRingProps) {
+  const { t } = useTranslation();
   const r = (size - RING_STROKE * 2) / 2;
   const circumference = 2 * Math.PI * r;
 
@@ -144,7 +146,7 @@ export function OAuthProgressRing({
         {phase === 'success' && (
           <span className="sr-only">
             <Check aria-hidden />
-            Authorization complete
+            {t.vault.forms.authorization_complete}
           </span>
         )}
       </div>
@@ -152,10 +154,10 @@ export function OAuthProgressRing({
       {/* Status message */}
       {message && (
         <p
-          className={`text-sm text-center max-w-[220px] leading-snug ${
+          className={`typo-body text-center max-w-[220px] leading-snug ${
             phase === 'success'
               ? 'text-emerald-300'
-              : 'text-muted-foreground/70'
+              : 'text-foreground'
           }`}
         >
           {message}

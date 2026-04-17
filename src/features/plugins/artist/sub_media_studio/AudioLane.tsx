@@ -81,7 +81,7 @@ function AudioLaneImpl({
       <div className="relative h-14 bg-blue-500/[0.02] border-b border-primary/10">
         {/* Empty lane hint */}
         {items.length === 0 && (
-          <div className="absolute inset-1 rounded-lg border border-dashed border-blue-500/15 flex items-center justify-center">
+          <div className="absolute inset-1 rounded-card border border-dashed border-blue-500/15 flex items-center justify-center">
             <span className="text-md text-blue-400/30">{t.media_studio.empty_lane}</span>
           </div>
         )}
@@ -94,8 +94,8 @@ function AudioLaneImpl({
             zoom={zoom}
             scrollX={scrollX}
             isSelected={clip.id === selectedId}
-            className="top-1 h-12 rounded-lg bg-blue-500/15 border border-blue-500/20 hover:bg-blue-500/25"
-            selectedClassName="top-1 h-12 rounded-lg bg-blue-500/30 border-2 border-blue-400 ring-1 ring-blue-400/40"
+            className="top-1 h-12 rounded-card bg-blue-500/15 border border-blue-500/20 hover:bg-blue-500/25"
+            selectedClassName="top-1 h-12 rounded-card bg-blue-500/30 border-2 border-blue-400 ring-1 ring-blue-400/40"
             onClick={() => onSelect(clip.id)}
             onMove={(newStart) => handleMove(clip.id, newStart)}
             onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}

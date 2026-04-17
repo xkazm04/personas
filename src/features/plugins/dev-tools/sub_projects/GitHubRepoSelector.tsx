@@ -91,7 +91,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
     return (
       <div className="flex items-center gap-2 py-2 text-foreground typo-body">
         <LoadingSpinner size="sm" label="Loading repositories" />
-        <span className="text-md">Loading repositories...</span>
+        <span className="text-md">{t.plugins.dev_projects.loading_repositories}</span>
       </div>
     );
   }
@@ -100,17 +100,17 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
   if (!hasSelector) {
     return (
       <div>
-        <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
           <Github className="w-3 h-3" />
-          GitHub URL
-          <span className="text-[10px] text-foreground font-normal">(optional)</span>
+          {t.plugins.dev_projects.github_url_label}
+          <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
         </label>
         <div className="relative">
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="https://github.com/owner/repo"
-            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
+            placeholder={t.plugins.dev_projects.github_url_placeholder}
+            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
           />
           {value && (
             <a
@@ -137,21 +137,21 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
 
   return (
     <div className="relative">
-      <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+      <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
         <Github className="w-3 h-3" />
-        GitHub Repository
-        <span className="text-[10px] text-foreground font-normal">(optional)</span>
+        {t.plugins.dev_projects.github_repository}
+        <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
       </label>
       <button
         type="button"
         onClick={() => { setOpen(!open); setTimeout(() => searchRef.current?.focus(), 50); }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl hover:bg-secondary/60 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal hover:bg-secondary/60 transition-colors text-left"
       >
         <Github className="w-4 h-4 text-foreground flex-shrink-0" />
         {selectedRepoName ? (
           <span className="flex-1 text-foreground truncate">{selectedRepoName}</span>
         ) : (
-          <span className="flex-1 text-foreground">Select a repository...</span>
+          <span className="flex-1 text-foreground">{t.plugins.dev_projects.select_repository}</span>
         )}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -159,7 +159,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
-          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden max-h-64 flex flex-col">
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
             {/* Search input */}
             <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
               <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
@@ -168,14 +168,14 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.plugins.dev_tools.filter_repositories}
-                className="flex-1 text-xs bg-transparent text-foreground placeholder:text-foreground outline-none"
+                className="flex-1 typo-caption bg-transparent text-foreground placeholder:text-foreground outline-none"
               />
             </div>
             {/* Repo list */}
             <div className="overflow-y-auto flex-1">
               {filtered.length === 0 ? (
-                <div className="px-3 py-4 text-xs text-foreground text-center">
-                  No repositories found
+                <div className="px-3 py-4 typo-caption text-foreground text-center">
+                  {t.plugins.dev_projects.no_repositories_found}
                 </div>
               ) : (
                 filtered.map((repo) => (
@@ -189,7 +189,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-foreground truncate">{repo.full_name}</span>
+                        <span className="typo-caption font-medium text-foreground truncate">{repo.full_name}</span>
                         {repo.private && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">private</span>
                         )}

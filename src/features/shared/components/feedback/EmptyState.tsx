@@ -102,7 +102,7 @@ export default function EmptyState({
   const Icon = icon ?? scenario?.icon;
   const resolvedTitle = title ?? scenario?.title ?? '';
   const detailText = subtitle ?? description ?? scenario?.subtitle;
-  const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-muted-foreground/80';
+  const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-foreground';
   const resolvedContainerClass = iconContainerClassName ?? scenario?.iconContainerClassName ?? 'bg-secondary/35 border-primary/15';
   const steps = scenario?.steps;
 

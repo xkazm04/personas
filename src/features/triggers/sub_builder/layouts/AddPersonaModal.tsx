@@ -7,6 +7,7 @@ import { Search, X, Plus, Users } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   open: boolean;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, eventLabel, onAdd, onClose }: Props) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
@@ -83,12 +85,12 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
           <Users className="w-4 h-4 text-emerald-400" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="typo-heading font-semibold text-foreground">
               {eventLabel ? `Connect persona to "${eventLabel}"` : 'Add Persona'}
             </h3>
-            <p className="text-[10px] text-muted-foreground/60">{availableCount} available</p>
+            <p className="text-[10px] text-foreground">{availableCount} available</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground">
+          <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/60 text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -96,13 +98,13 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         {/* Search + filters */}
         <div className="px-4 py-2.5 border-b border-primary/5 space-y-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search personas..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-secondary/30 border border-primary/10 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
+              placeholder={t.triggers.search_personas_placeholder}
+              className="w-full pl-8 pr-3 py-1.5 typo-caption bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
               autoFocus
             />
           </div>
@@ -111,7 +113,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             <div className="flex flex-wrap gap-1">
               <button
                 onClick={() => setSelectedGroupId(null)}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
+                className={`px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
               >
                 All
               </button>
@@ -119,7 +121,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                 <button
                   key={g.id}
                   onClick={() => setSelectedGroupId(selectedGroupId === g.id ? null : g.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                   {g.name}
@@ -132,16 +134,16 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
         {/* Persona list */}
         <div className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {grouped.length === 0 && (
-            <div className="text-center py-8 text-xs text-muted-foreground/50">
+            <div className="text-center py-8 typo-caption text-foreground">
               {search ? (
                 <div className="flex flex-col items-center gap-2">
-                  <span>No matching personas found</span>
+                  <span>{t.triggers.no_matching_personas_found}</span>
                   <button
                     type="button"
                     onClick={() => setSearch('')}
                     className="text-primary hover:text-primary/80 transition-colors"
                   >
-                    Clear search
+                    {t.triggers.clear_search_label}
                   </button>
                 </div>
               ) : 'All personas are already connected'}
@@ -156,12 +158,12 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                   {group ? (
                     <>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: group.color }} />
-                      <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">{group.name}</span>
+                      <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">{group.name}</span>
                     </>
                   ) : (
-                    <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Ungrouped</span>
+                    <span className="text-[10px] font-semibold text-foreground uppercase tracking-wider">Ungrouped</span>
                   )}
-                  <span className="text-[9px] text-muted-foreground/30 ml-auto">{ps.length}</span>
+                  <span className="text-[9px] text-foreground ml-auto">{ps.length}</span>
                 </div>
               )}
 
@@ -170,7 +172,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                   <button
                     key={p.id}
                     onClick={() => onAdd(p.id)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
                     <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
@@ -178,7 +180,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-medium text-foreground truncate">{p.name}</div>
                       {p.description && (
-                        <div className="text-[9px] text-muted-foreground/50 truncate">{p.description}</div>
+                        <div className="text-[9px] text-foreground truncate">{p.description}</div>
                       )}
                     </div>
                     <Plus className="w-3 h-3 text-emerald-400/40 group-hover:text-emerald-400 transition-colors flex-shrink-0" />

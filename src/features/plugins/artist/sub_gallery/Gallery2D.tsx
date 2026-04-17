@@ -74,19 +74,19 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
           {/* Controls */}
           <button
             onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
-            className="absolute top-4 right-4 p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goPrev(); }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goNext(); }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-card bg-white/10 text-white hover:bg-white/20 transition-colors"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
@@ -95,7 +95,7 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
           <LightboxImage filePath={currentAsset.filePath} alt={currentAsset.fileName} />
 
           {/* Caption */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-lg px-4 py-2 text-white text-md">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-card px-4 py-2 text-white text-md">
             {currentAsset.fileName}
             <span className="ml-3 text-white/70 text-md">
               {lightboxIndex! + 1} / {assets.length}
@@ -119,7 +119,7 @@ function LightboxImage({ filePath, alt }: { filePath: string; alt: string }) {
     <img
       src={dataUrl}
       alt={alt}
-      className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+      className="max-w-[90vw] max-h-[85vh] object-contain rounded-card shadow-elevation-4"
       onClick={(e) => e.stopPropagation()}
     />
   );

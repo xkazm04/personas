@@ -1,6 +1,7 @@
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { Button } from '@/features/shared/components/buttons';
 import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface AuthVariant {
   id: string;
@@ -58,23 +59,27 @@ export function TemplateFormBody({
   isHealthchecking,
   healthcheckResult,
 }: TemplateFormBodyProps) {
+  const { t, tx } = useTranslation();
+  const cf = t.vault.forms;
+  const label = selectedConnector.label;
+
   return (
     <>
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Credential Name
+        <label className="block typo-body font-medium text-foreground mb-1.5">
+          {cf.credential_name}
         </label>
         <input
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          placeholder={`Label this credential — e.g. My ${selectedConnector.label} Account, Production ${selectedConnector.label}`}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          placeholder={tx(cf.credential_name_placeholder, { label })}
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
       {variants && variants.length > 1 && (
-        <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
+        <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-card">
           {variants.map((v) => (
             <Button
               key={v.id}
@@ -83,7 +88,7 @@ export function TemplateFormBody({
               onClick={() => onVariantChange(v.id)}
               className={activeVariantId === v.id
                 ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'}
+                : 'text-foreground hover:bg-secondary/40 border border-transparent'}
             >
               {v.label}
             </Button>
@@ -97,15 +102,15 @@ export function TemplateFormBody({
         onSave={onCreateCredential}
         onOAuthConsent={isAnyOAuth ? onOAuthConsent : undefined}
         oauthConsentLabel={isAuthorizingOAuth
-          ? `Authorizing with ${selectedConnector.label}...`
-          : (oauthConsentLabel ?? `Authorize with ${selectedConnector.label}`)}
+          ? tx(cf.authorizing_with, { label })
+          : (oauthConsentLabel ?? tx(cf.authorize_with, { label }))}
         oauthConsentDisabled={isAuthorizingOAuth}
         isAuthorizingOAuth={isAuthorizingOAuth}
         oauthPollingMessage={oauthPollingMessage}
         oauthConsentHint={isAnyOAuth
-          ? `Opens ${selectedConnector.label} in your browser. Grant access, then return here.`
+          ? tx(cf.oauth_consent_hint, { label })
           : undefined}
-        oauthConsentSuccessBadge={oauthCompletedAt ? `${selectedConnector.label} connected at ${oauthCompletedAt}` : undefined}
+        oauthConsentSuccessBadge={oauthCompletedAt ? tx(cf.oauth_connected_at, { label, time: oauthCompletedAt }) : undefined}
         saveDisabled={saveDisabled}
         saveDisabledReason={saveDisabledReason}
         onHealthcheck={onHealthcheck}

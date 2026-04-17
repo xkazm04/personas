@@ -73,12 +73,12 @@ export default function EventBusFilterBar({
     <div ref={dropdownRef} className="flex flex-wrap items-center gap-2 px-3 sm:px-4 md:px-6 py-2.5 bg-secondary/20 border-b border-primary/8">
       {/* Search input */}
       <div className="relative flex-1 min-w-[160px] max-w-[280px]">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         <input
           type="text" value={filter.searchText}
           onChange={(e) => onFilterChange({ ...filter, searchText: e.target.value })}
           placeholder={t.overview.realtime_page.search_events}
-          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
+          className="w-full pl-8 pr-3 py-1.5 typo-body rounded-card border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
         />
       </div>
 
@@ -122,9 +122,9 @@ export default function EventBusFilterBar({
 
       {hasActiveFilter && (
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground/60 font-mono">{filteredCount}/{totalCount}</span>
+          <span className="typo-code text-foreground font-mono">{filteredCount}/{totalCount}</span>
           <button onClick={() => onFilterChange(EMPTY_FILTER)}
-            className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg border border-red-500/15 text-red-400/80 hover:bg-red-500/10 transition-colors">
+            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-card border border-red-500/15 text-red-400/80 hover:bg-red-500/10 transition-colors">
             <X className="w-3 h-3" />{t.overview.realtime_page.clear}
           </button>
         </div>

@@ -23,6 +23,7 @@ The system has five layers worth documenting separately:
 | [04-adoption-questionnaire.md](04-adoption-questionnaire.md) | Question types, vault matching, blocking, Focus variant UI | Adding question types or changing the questionnaire UX |
 | [05-dynamic-discovery.md](05-dynamic-discovery.md) | Rust registry, auth strategies, per-connector ops | Adding a new connector op or debugging 401s during adoption |
 | [06-integrity-and-security.md](06-integrity-and-security.md) | Two-layer checksum verification, trust model | Touching template loading or checksum generation |
+| [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md) | How questionnaire answers reach the persona's prompt at runtime | Debugging "my adoption answers aren't being used" or adding `{{param}}` support to a template |
 
 ## TL;DR architecture
 
@@ -48,17 +49,26 @@ MatrixAdoptionView
   │     ├── useDynamicQuestionOptions            (Sentry/Notion/Linear/...)
   │     ├── matchVaultToQuestions                (auto-detect + block)
   │     └── QuestionCard ── SelectPills / DynamicSelectBody / ...
+  ├── save_adoption_answers (Tauri IPC)         (persists answers to SQLite)
   └── useMatrixBuild + useMatrixLifecycle       (test → promote)
         │
         ▼ create_adoption_session (Tauri command)
-build_sessions row + cells hydrated → test → promote → production persona
+build_sessions row + cells + adoption_answers hydrated
+        │
+        ▼ test_build_draft
+substitute_variables() + inject_configuration_section() → run_tool_tests()
+        │
+        ▼ promote_build_draft
+substitute_variables() + inject_configuration_section() → persona with real config
 ```
 
 Rust surface:
 
 ```
+src-tauri/src/commands/design/build_sessions.rs   (test, promote, save_adoption_answers)
 src-tauri/src/commands/design/template_adopt.rs   (adoption commands)
 src-tauri/src/commands/credentials/discovery.rs   (discover_connector_resources)
+src-tauri/src/engine/adoption_answers.rs          (variable substitution + config injection)
 src-tauri/src/engine/discovery.rs                 (discovery registry + ops)
 src-tauri/src/engine/connector_strategy.rs        (auth strategies per connector)
 src-tauri/src/engine/api_proxy.rs                 (HTTP proxy w/ auth + SSRF + rate limit)
@@ -146,7 +156,23 @@ mechanics including body + headers support (Notion, GraphQL, etc.).
    This is why `dynamic_source` / `vault_category` / `allow_custom`
    survive unchanged.
 
-## Related docs
+## Related pillars
+
+The three pillars of the persona platform:
+
+```
+1. Templates (this pillar)  →  2. Persona  →  3. Execution
+```
+
+- [../personas/README.md](../personas/README.md) — What a persona is
+  once adopted: data model, capabilities (tools, triggers, events,
+  memory, notifications), trust and governance.
+- [../execution/README.md](../execution/README.md) — How a persona
+  runs: entry points (manual, schedule, webhook, …), lifecycle
+  (validate → spawn → stream → finalize), chaining + human approval,
+  observability.
+
+## Historical handoffs
 
 - `docs/HANDOFF-templates-adoption.md` — multi-session handoff for the
   April 12–13 UX overhaul (close button, blocking callout, adoption

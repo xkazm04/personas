@@ -40,23 +40,23 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       aria-disabled={isBusy}
       onClick={() => { if (!isBusy) void onLoad(session); }}
       onKeyDown={(e) => { if (!isBusy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); void onLoad(session); } }}
-      className={`animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 transition-colors text-left group ${isBusy ? 'opacity-50 pointer-events-none' : 'hover:bg-secondary/40 cursor-pointer'}`}
+      className={`animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 transition-colors text-left group ${isBusy ? 'opacity-50 pointer-events-none' : 'hover:bg-secondary/40 cursor-pointer'}`}
       data-testid={`n8n-session-card-${session.id}`}
     >
-      <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
-        <span className="text-sm font-mono font-medium text-violet-400">
+      <div className="w-10 h-10 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
+        <span className="typo-code font-mono font-medium text-violet-400">
           {(STEP_META[session.step as N8nWizardStep]?.index ?? 0) + 1}/{WIZARD_STEPS.length}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground/90 truncate">
+        <p className="typo-body font-medium text-foreground/90 truncate">
           {session.workflow_name}
         </p>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg ${style.bg} ${style.text}`}>
+          <span className={`px-1.5 py-0.5 typo-body font-medium rounded-card ${style.bg} ${style.text}`}>
             {style.label}
           </span>
-          <span className="text-sm text-muted-foreground/80 flex items-center gap-1">
+          <span className="typo-body text-foreground flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(session.updated_at)}
           </span>
@@ -67,19 +67,19 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
         <button
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
-          className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
+          className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
           title={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
         {interrupted ? (
-          <span className="flex items-center gap-1 text-sm text-amber-400 font-medium">
+          <span className="flex items-center gap-1 typo-body text-amber-400 font-medium">
             <RotateCcw className="w-3 h-3" />
             Retry
           </span>
         ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-muted-foreground" />
+          <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground" />
         )}
       </div>
     </div>
@@ -245,7 +245,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <RefreshCw className="w-4 h-4 text-muted-foreground/80 animate-spin" />
+        <RefreshCw className="w-4 h-4 text-foreground animate-spin" />
       </div>
     );
   }
@@ -259,25 +259,25 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-foreground/90 uppercase tracking-wider">
-          Previous Imports
+        <h3 className="typo-body font-medium text-foreground/90 uppercase tracking-wider">
+          {t.templates.n8n.previous_imports}
         </h3>
-        <span className="text-sm text-muted-foreground/80">
-          {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''}
+        <span className="typo-body text-foreground">
+          {t.templates.n8n.sessions_count.replace('{count}', String(activeSessions.length))}
         </span>
       </div>
 
       <div className="space-y-1.5">
         {error && (
           <div
-            className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-modal border border-red-500/20 bg-red-500/10 px-3 py-2"
             aria-live="polite"
           >
-            <p className="text-sm text-red-400/80">{error}</p>
+            <p className="typo-body text-red-400/80">{error}</p>
             <button
               type="button"
               onClick={() => void fetchSessions()}
-              className="px-3 py-1.5 text-sm rounded-xl border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors"
             >
               Retry
             </button>

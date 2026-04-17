@@ -12,7 +12,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     case 'select':
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <ThemedSelect
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
@@ -28,7 +28,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     case 'number':
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <input
             type="number"
             value={String(value ?? field.default ?? '')}
@@ -40,13 +40,13 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     case 'boolean':
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <button
             onClick={() => onChange(!value)}
             className={`px-2.5 py-1 rounded-xl typo-heading border transition-all ${
               value
                 ? 'bg-primary/10 border-primary/25 text-primary'
-                : 'bg-secondary/40 border-primary/10 text-muted-foreground/80'
+                : 'bg-secondary/40 border-primary/10 text-foreground'
             }`}
           >
             {value ? 'Yes' : 'No'}
@@ -56,12 +56,12 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
     default: // text
       return (
         <div className="flex items-center gap-2">
-          <label className="typo-heading text-muted-foreground/70 w-24 flex-shrink-0">{field.label}</label>
+          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <input
             type="text"
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring"
+            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg typo-body text-foreground placeholder:text-foreground focus-ring"
           />
         </div>
       );

@@ -41,9 +41,9 @@ export function RotationActivePolicy({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.text : 'text-muted-foreground/80'}`} />
-          <div className="text-sm">
-            <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.text} font-medium` : 'text-muted-foreground/90'}>
+          <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.text : 'text-foreground'}`} />
+          <div className="typo-body">
+            <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.text} font-medium` : 'text-foreground'}>
               {rotationStatus.policy_enabled
                 ? (isOAuth
                   ? (rotationStatus.policy_type === 'oauth_keepalive' ? t.vault.rotation_section.oauth_refresh_active_auto : t.vault.rotation_section.oauth_refresh_active)
@@ -81,7 +81,7 @@ export function RotationActivePolicy({
             data-testid="rotation-rotate-now-btn"
             className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
           >
-            Rotate Now
+            {t.vault.rotation_section.rotate_now}
           </Button>
           <Button
             variant="ghost"
@@ -111,7 +111,7 @@ export function RotationActivePolicy({
       </div>
       {/* Rotation period editor */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.rotate_every}</span>
+        <span className="typo-body text-foreground">{t.vault.rotation_section.rotate_every}</span>
         {isEditingPeriod ? (
           <div className="flex items-center gap-1.5">
             <PillGroup
@@ -129,12 +129,12 @@ export function RotationActivePolicy({
                   onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
                   min={1}
                   data-testid="rotation-days-input"
-                  className="w-16 px-2 py-1 bg-transparent text-sm text-foreground text-center focus-visible:outline-none font-mono"
+                  className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none font-mono"
                 />
               }
               data-testid="rotation-edit-presets"
             />
-            <span className="text-sm text-muted-foreground/80">{t.vault.rotation_section.days}</span>
+            <span className="typo-body text-foreground">{t.vault.rotation_section.days}</span>
             <Button
               variant="accent"
               size="xs"
@@ -164,7 +164,7 @@ export function RotationActivePolicy({
                 setIsEditingPeriod(false);
               }}
               data-testid="rotation-cancel-period-btn"
-              className="text-muted-foreground/80 hover:text-foreground/90"
+              className="text-foreground hover:text-foreground/90"
             >
               Cancel
             </Button>
@@ -173,10 +173,10 @@ export function RotationActivePolicy({
           <Button
             variant="secondary"
             size="xs"
-            iconRight={<Pencil className="w-2.5 h-2.5 text-muted-foreground/60 ml-0.5" />}
+            iconRight={<Pencil className="w-2.5 h-2.5 text-foreground ml-0.5" />}
             onClick={() => setIsEditingPeriod(true)}
             data-testid="rotation-edit-period-btn"
-            className="bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground/80"
+            className="bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground"
           >
             <span className="font-mono">{rotationStatus.rotation_interval_days ?? 90}</span>
             <span>days</span>

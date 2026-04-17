@@ -9,7 +9,7 @@ interface WorkspaceConnectPanelProps {
 export function WorkspaceConnectPanel({ onBack, onComplete }: WorkspaceConnectPanelProps) {
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
+      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-modal p-4"
       data-testid="vault-workspace-container"
     >
       <ProviderSection

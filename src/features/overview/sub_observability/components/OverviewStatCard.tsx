@@ -94,15 +94,15 @@ export const OverviewStatCard = memo(function OverviewStatCard({
   }, [trend]);
 
   return (
-    <div className={`relative rounded-xl border bg-gradient-to-br ${bgGrad} bg-secondary/20 p-4 shadow-elevation-1 overflow-hidden`}>
+    <div className={`relative rounded-modal border bg-gradient-to-br ${bgGrad} bg-secondary/20 p-4 shadow-elevation-1 overflow-hidden`}>
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
       <div className="relative z-10 flex flex-col h-full">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`w-8 h-8 rounded-lg border shadow-inner flex items-center justify-center ${iconCls}`}>
+            <div className={`w-8 h-8 rounded-card border shadow-inner flex items-center justify-center ${iconCls}`}>
               <Icon className="w-4 h-4" />
             </div>
-            <span className="typo-heading text-foreground/75 truncate">{label}</span>
+            <span className="typo-heading text-foreground truncate">{label}</span>
           </div>
           {sparklineData && sparklineData.length >= 2 && (
             <Sparkline data={sparklineData} color={SPARKLINE_HEX[color] || '#3b82f6'} />
@@ -117,10 +117,10 @@ export const OverviewStatCard = memo(function OverviewStatCard({
                 <trendDisplay.TIcon className="w-3 h-3" />
                 <span>{trendDisplay.value}</span>
               </div>
-            ) : <span className="text-sm text-muted-foreground/50">--</span>}
+            ) : <span className="typo-body text-foreground">--</span>}
 
             {subtitle && (
-              <p className={`text-sm truncate ${subtitleColor || 'text-muted-foreground/70'}`}>
+              <p className={`typo-body truncate ${subtitleColor || 'text-foreground'}`}>
                 {subtitle}
               </p>
             )}

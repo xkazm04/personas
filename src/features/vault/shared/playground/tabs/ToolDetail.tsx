@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Server } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -26,21 +27,23 @@ export function ToolDetail({
   onExecute,
   onClose,
 }: ToolDetailProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="border-t border-primary/8 pt-4 space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm uppercase tracking-wider text-muted-foreground/60 font-semibold">
-          Test Tool
+        <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
+          {sh.test_tool}
         </span>
-        <span className="font-mono text-sm text-foreground/70">{currentTool.name}</span>
+        <span className="font-mono typo-code text-foreground">{currentTool.name}</span>
         <div className="flex-1" />
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="text-muted-foreground/40 hover:text-muted-foreground/60"
+          className="text-foreground hover:text-muted-foreground/60"
         >
-          Close
+          {t.common.close}
         </Button>
       </div>
 
@@ -60,12 +63,12 @@ export function ToolDetail({
         loading={executing}
         className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
       >
-        {executing ? 'Running...' : 'Execute Tool'}
+        {executing ? sh.running_tool : sh.execute_tool}
       </Button>
 
       {/* Error */}
       {execError && (
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
           {execError}
         </div>
       )}
@@ -83,14 +86,16 @@ interface ToolEmptyListProps {
 }
 
 export function ToolEmptyList({ hasLoaded, toolCount, loading }: ToolEmptyListProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   if (!hasLoaded || loading || toolCount > 0) return null;
 
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-2">
-      <Server className="w-8 h-8 text-muted-foreground/15" />
-      <p className="text-sm text-muted-foreground/50">No tools found on this MCP server</p>
-      <p className="text-sm text-muted-foreground/60">
-        The server responded but reported no available tools.
+      <Server className="w-8 h-8 text-foreground" />
+      <p className="typo-body text-foreground">{sh.no_tools_found}</p>
+      <p className="typo-body text-foreground">
+        {sh.no_tools_hint}
       </p>
     </div>
   );

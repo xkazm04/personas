@@ -3,14 +3,14 @@
  *
  * The JSON is the structural source of truth (versions, item ids, types,
  * statuses, dates). All user-facing strings — labels, titles, descriptions,
- * summaries — live in the per-feature i18n folder at
- * `src/features/home/components/releases/i18n/{lang}.ts` and are looked up
- * by `version` + `item.id`.
+ * summaries — live in the main i18n system under `src/i18n/en.ts` at
+ * `releases.whats_new.*` and are assembled by `useReleasesTranslation` into
+ * the nested shape components expect, looked up by `version` + `item.id`.
  *
  * Why split: release item content is user-facing news. It must follow the
- * project i18n convention (every string in all 14 locale files, never
- * hardcoded English). The structural metadata (status, type, dates) is
- * code, not content, and stays in JSON for diff-friendliness.
+ * project i18n convention (strings in the main en.ts, non-English locales
+ * fall back via deep-merge loader). The structural metadata (status, type,
+ * dates) is code, not content, and stays in JSON for diff-friendliness.
  *
  * Schema invariants:
  * - `active` MUST reference an existing release.version
@@ -147,7 +147,7 @@ export function getNavReleases(limit = 10): Release[] {
 // Item type / status visual metadata
 //
 // Only color tokens live here — labels are i18n strings, looked up via
-// `useReleasesTranslation` in the components.
+// `useReleasesTranslation` (backed by main src/i18n/en.ts) in the components.
 // =============================================================================
 
 export const RELEASE_TYPE_META: Record<

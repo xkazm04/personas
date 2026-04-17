@@ -44,9 +44,9 @@ export default function DebuggerControls({
   return (
     <>
       {/* Debug badge */}
-      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/25">
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/15 border border-amber-500/25">
         <Bug className="w-3.5 h-3.5 text-amber-400" />
-        <span className="text-sm font-semibold text-amber-300 uppercase tracking-wider">{t.pipeline.dry_run_label}</span>
+        <span className="typo-heading font-semibold text-amber-300 uppercase tracking-wider">{t.pipeline.dry_run_label}</span>
       </div>
 
       {/* Transport controls */}
@@ -54,7 +54,7 @@ export default function DebuggerControls({
         {!isFinished && !paused ? (
           <button
             onClick={onPause}
-            className="p-1.5 rounded-lg bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors"
+            className="p-1.5 rounded-card bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors"
             title={t.pipeline.pause}
           >
             <Pause className="w-4 h-4" />
@@ -63,7 +63,7 @@ export default function DebuggerControls({
           <button
             onClick={onPlay}
             disabled={isFinished}
-            className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-card bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title={isStarted ? t.pipeline.continue_label : t.pipeline.start}
           >
             <Play className="w-4 h-4" />
@@ -73,7 +73,7 @@ export default function DebuggerControls({
         <button
           onClick={onStepForward}
           disabled={isFinished}
-          className="p-1.5 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 rounded-card bg-blue-500/15 border border-blue-500/25 text-blue-300 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title={t.pipeline.step_forward}
         >
           <SkipForward className="w-4 h-4" />
@@ -81,7 +81,7 @@ export default function DebuggerControls({
 
         <button
           onClick={onStop}
-          className="p-1.5 rounded-lg bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
+          className="p-1.5 rounded-card bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
           title={t.pipeline.stop_dry_run}
         >
           <Square className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function DebuggerControls({
       </div>
 
       {/* Step progress */}
-      <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground/80">
+      <div className="flex items-center gap-2 typo-code font-mono text-foreground">
         <span>Step {Math.max(0, stepIndex + 1)} / {totalSteps}</span>
         {isFinished && <span className="text-emerald-400">{t.pipeline.complete_label}</span>}
         {paused && isStarted && !isFinished && <span className="text-amber-400">{t.pipeline.paused}</span>}
@@ -101,7 +101,7 @@ export default function DebuggerControls({
       {inspectedNode && panelCollapsed && (
         <button
           onClick={onExpandInspector}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors text-sm"
+          className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 transition-colors typo-body"
         >
           <ChevronUp className="w-3 h-3" />
           {t.pipeline.inspector}
@@ -110,7 +110,7 @@ export default function DebuggerControls({
 
       {/* Breakpoint count */}
       {breakpointCount > 0 && (
-        <span className="flex items-center gap-1 text-sm font-mono text-red-400/80">
+        <span className="flex items-center gap-1 typo-code font-mono text-red-400/80">
           <CircleDot className="w-3 h-3" />
           {breakpointCount} breakpoint{breakpointCount !== 1 ? 's' : ''}
         </span>

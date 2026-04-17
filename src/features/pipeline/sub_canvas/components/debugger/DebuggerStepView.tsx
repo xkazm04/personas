@@ -53,7 +53,7 @@ export default function DebuggerStepView({
             <CircleDot className="absolute -top-1 -right-1 w-2.5 h-2.5 text-red-400" />
           )}
           {/* Tooltip */}
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-sm font-mono rounded bg-background border border-primary/20 text-foreground/80 whitespace-nowrap shadow-elevation-3 opacity-0 group-hover/dot:opacity-100 pointer-events-none transition-opacity z-50">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 typo-code font-mono rounded bg-background border border-primary/20 text-foreground whitespace-nowrap shadow-elevation-3 opacity-0 group-hover/dot:opacity-100 pointer-events-none transition-opacity z-50">
             {item.name}
           </div>
         </button>

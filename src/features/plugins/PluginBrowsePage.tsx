@@ -46,14 +46,14 @@ export default function PluginBrowsePage() {
             return (
               <div
                 key={plugin.id}
-                className={`rounded-xl border transition-all ${
+                className={`rounded-modal border transition-all ${
                   enabled
                     ? `${plugin.activeBorder} ${plugin.activeBg}`
                     : 'border-primary/10 bg-card/40 opacity-60'
                 }`}
               >
                 <div className="flex items-start gap-4 p-5">
-                  <div className={`w-10 h-10 rounded-xl ${plugin.activeBg} ${plugin.activeBorder} border flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-10 h-10 rounded-modal ${plugin.activeBg} ${plugin.activeBorder} border flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`w-5 h-5 ${plugin.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">

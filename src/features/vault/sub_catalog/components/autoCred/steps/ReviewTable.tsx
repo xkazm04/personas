@@ -14,15 +14,15 @@ export function UniversalFieldRow({ field, value, onChange }: UniversalFieldRowP
   const isFilled = value.trim().length > 0;
 
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-lg border border-primary/8 bg-secondary/15">
+    <div className="flex items-start gap-3 p-2.5 rounded-card border border-primary/8 bg-secondary/15">
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground/90">{field.label}</span>
+          <span className="typo-body font-medium text-foreground/90">{field.label}</span>
           {field.required && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary/60 font-medium">REQ</span>
           )}
           {field.help_text && (
-            <span className="text-xs text-muted-foreground/40">{field.help_text}</span>
+            <span className="typo-caption text-foreground">{field.help_text}</span>
           )}
         </div>
         <div className="relative">
@@ -31,13 +31,13 @@ export function UniversalFieldRow({ field, value, onChange }: UniversalFieldRowP
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={`Enter ${field.label.toLowerCase()}`}
-            className="w-full px-2.5 py-1.5 bg-black/15 border border-primary/8 rounded-md text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/30 font-mono transition-colors"
+            className="w-full px-2.5 py-1.5 bg-black/15 border border-primary/8 rounded-input typo-code text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/30 font-mono transition-colors"
           />
           {isSecret && value && (
             <button
               type="button"
               onClick={() => setVisible(!visible)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground/70"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground hover:text-muted-foreground/70"
             >
               {visible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -48,7 +48,7 @@ export function UniversalFieldRow({ field, value, onChange }: UniversalFieldRowP
         {isFilled ? (
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
         ) : (
-          <XCircle className="w-4 h-4 text-muted-foreground/20" />
+          <XCircle className="w-4 h-4 text-foreground" />
         )}
       </div>
     </div>

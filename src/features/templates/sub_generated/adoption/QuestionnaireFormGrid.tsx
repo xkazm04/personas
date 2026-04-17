@@ -1,17 +1,25 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Send, Check, X, Sparkles,
-  KeyRound, Settings2, ShieldCheck, Brain, Bell, Globe, Gauge,
-  Info, CircleDot, AlertCircle, Plus, Loader2, RefreshCw, Zap,
+  Send, X, Sparkles,
+  AlertCircle, Plus,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
-import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
-import { SourceDefinitionInput } from '@/features/shared/components/forms/SourceDefinitionInput';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  CATEGORY_META, FALLBACK_CATEGORY,
+  containerVariants, sectionVariants,
+  groupByCategory,
+} from './QuestionnaireFormGridConfig';
+import { ProgressBar, QuestionCard } from './QuestionnaireFormGridParts';
+
+// Re-export so existing importers resolve without changes
+export { CATEGORY_META, FALLBACK_CATEGORY, groupByCategory } from './QuestionnaireFormGridConfig';
+export { SelectPills } from './QuestionnaireFormGridParts';
+export type { PillOption } from './QuestionnaireFormGridParts';
+export { QuestionCard } from './QuestionnaireFormGridParts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,617 +56,6 @@ interface QuestionnaireFormGridProps {
    * on top of the wizard.
    */
   inline?: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Category meta
-// ---------------------------------------------------------------------------
-
-export const CATEGORY_META: Record<
-  string,
-  { label: string; Icon: React.ComponentType<{ className?: string }>; color: string; bg: string; border: string }
-> = {
-  credentials:       { label: 'Credentials',       Icon: KeyRound,    color: 'text-violet-400',  bg: 'bg-violet-500/[0.04]',  border: 'border-violet-500/15' },
-  configuration:     { label: 'Configuration',     Icon: Settings2,   color: 'text-blue-400',    bg: 'bg-blue-500/[0.04]',    border: 'border-blue-500/15' },
-  human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck, color: 'text-rose-400',    bg: 'bg-rose-500/[0.04]',    border: 'border-rose-500/15' },
-  memory:            { label: 'Memory & Learning',  Icon: Brain,       color: 'text-purple-400',  bg: 'bg-purple-500/[0.04]',  border: 'border-purple-500/15' },
-  notifications:     { label: 'Notifications',     Icon: Bell,        color: 'text-amber-400',   bg: 'bg-amber-500/[0.04]',   border: 'border-amber-500/15' },
-  domain:            { label: 'Domain',            Icon: Globe,       color: 'text-cyan-400',    bg: 'bg-cyan-500/[0.04]',    border: 'border-cyan-500/15' },
-  quality:           { label: 'Quality',           Icon: Gauge,       color: 'text-emerald-400', bg: 'bg-emerald-500/[0.04]', border: 'border-emerald-500/15' },
-};
-
-export const FALLBACK_CATEGORY = {
-  label: 'Other',
-  Icon: Settings2,
-  color: 'text-zinc-400',
-  bg: 'bg-white/[0.02]',
-  border: 'border-white/[0.06]',
-};
-
-// ---------------------------------------------------------------------------
-// Animation variants
-// ---------------------------------------------------------------------------
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const sectionVariants = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
-};
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-export function groupByCategory(questions: TransformQuestionResponse[]) {
-  const groups: Record<string, TransformQuestionResponse[]> = {};
-  for (const q of questions) {
-    const key = q.category ?? '__other__';
-    (groups[key] ??= []).push(q);
-  }
-  return groups;
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function ProgressBar({ answered, total }: { answered: number; total: number }) {
-  const pct = total === 0 ? 0 : (answered / total) * 100;
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary"
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        />
-      </div>
-      <span className="text-xs text-muted-foreground/60 tabular-nums whitespace-nowrap">
-        {answered}/{total} answered
-      </span>
-    </div>
-  );
-}
-
-export interface PillOption {
-  value: string;
-  label: string;
-  sublabel?: string | null;
-}
-
-// Multi-select values are stored CSV-encoded so the existing answer map
-// (`Record<string,string>`) keeps working. The literal string "all" is the
-// sentinel for "include_all_option" selections — easier to match than the
-// empty string and survives round-tripping to templates unchanged.
-const ALL_SENTINEL = 'all';
-function parseCsv(v: string): string[] {
-  return v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [];
-}
-function toCsv(values: string[]): string {
-  return values.join(',');
-}
-
-export function SelectPills({
-  options,
-  value,
-  onChange,
-  allowCustom,
-  multi,
-  includeAllOption,
-}: {
-  options: PillOption[];
-  value: string;
-  onChange: (v: string) => void;
-  allowCustom?: boolean;
-  multi?: boolean;
-  includeAllOption?: boolean;
-}) {
-  const { t } = useTranslation();
-  const optionValueSet = useMemo(() => new Set(options.map((o) => o.value)), [options]);
-
-  const selectedValues = useMemo(
-    () => (multi ? new Set(parseCsv(value)) : new Set([value])),
-    [value, multi],
-  );
-  const isAllSelected = multi && (value === ALL_SENTINEL || selectedValues.has(ALL_SENTINEL));
-
-  // In multi-select mode, any selected value that isn't in the options set
-  // counts as a user-typed custom entry (and persists across re-renders).
-  const customValuesFromAnswer = useMemo(() => {
-    if (!allowCustom) return [] as string[];
-    if (!multi) {
-      return value && !optionValueSet.has(value) && value !== ALL_SENTINEL ? [value] : [];
-    }
-    return [...selectedValues].filter((v) => v && v !== ALL_SENTINEL && !optionValueSet.has(v));
-  }, [allowCustom, multi, value, selectedValues, optionValueSet]);
-
-  const hasCustomValue = customValuesFromAnswer.length > 0;
-  const [showCustomInput, setShowCustomInput] = useState(hasCustomValue);
-  const [customDraft, setCustomDraft] = useState(
-    multi ? '' : customValuesFromAnswer[0] ?? '',
-  );
-  const customInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (showCustomInput) {
-      setTimeout(() => customInputRef.current?.focus(), 50);
-    }
-  }, [showCustomInput]);
-
-  const togglePill = (optValue: string) => {
-    if (!multi) {
-      setShowCustomInput(false);
-      onChange(optValue);
-      return;
-    }
-    // Multi-select: toggle membership. Picking a real option clears "all".
-    const next = new Set(selectedValues);
-    next.delete(ALL_SENTINEL);
-    if (next.has(optValue)) next.delete(optValue);
-    else next.add(optValue);
-    onChange(toCsv([...next]));
-  };
-
-  const pickAll = () => {
-    setShowCustomInput(false);
-    onChange(ALL_SENTINEL);
-  };
-
-  // Commit the draft custom value into the answer set.
-  const commitCustom = () => {
-    const trimmed = customDraft.trim();
-    if (!trimmed) return;
-    if (!multi) {
-      onChange(trimmed);
-      return;
-    }
-    const next = new Set(selectedValues);
-    next.delete(ALL_SENTINEL);
-    next.add(trimmed);
-    onChange(toCsv([...next]));
-    setCustomDraft('');
-  };
-
-  const removeCustomValue = (v: string) => {
-    if (!multi) {
-      onChange('');
-      return;
-    }
-    const next = new Set(selectedValues);
-    next.delete(v);
-    onChange(toCsv([...next]));
-  };
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap gap-1.5">
-        {multi && includeAllOption && (
-          <button
-            type="button"
-            onClick={pickAll}
-            className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
-              isAllSelected
-                ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
-            }`}
-          >
-            {t.templates.adopt_modal.all_option}
-          </button>
-        )}
-        {options.map((opt) => {
-          const selected =
-            !showCustomInput &&
-            !isAllSelected &&
-            (multi ? selectedValues.has(opt.value) : value === opt.value);
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => togglePill(opt.value)}
-              className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
-                selected
-                  ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                  : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
-              }`}
-              title={opt.sublabel ?? undefined}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-        {/* Custom values that were previously entered appear as dismissable
-            pills so the user can keep accumulating more in multi-select mode. */}
-        {customValuesFromAnswer.map((v) => (
-          <span
-            key={`custom-${v}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-base rounded-lg border border-primary/30 bg-primary/15 text-primary font-medium"
-          >
-            {v}
-            <button
-              type="button"
-              onClick={() => removeCustomValue(v)}
-              className="opacity-60 hover:opacity-100 transition-opacity"
-              aria-label={`Remove ${v}`}
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        ))}
-        {allowCustom && (
-          <button
-            type="button"
-            onClick={() => setShowCustomInput((v) => !v)}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
-              showCustomInput
-                ? 'bg-primary/20 border-primary/30 text-primary font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
-            }`}
-          >
-            {multi ? t.templates.adopt_modal.custom_prefix : t.templates.adopt_modal.custom_plain}
-          </button>
-        )}
-      </div>
-      {allowCustom && showCustomInput && (
-        <div className="flex items-center gap-2">
-          <input
-            ref={customInputRef}
-            type="text"
-            value={customDraft}
-            onChange={(e) => setCustomDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commitCustom();
-              } else if (e.key === 'Escape') {
-                setShowCustomInput(false);
-                setCustomDraft('');
-              }
-            }}
-            onBlur={() => {
-              // Single-select commits on blur for the existing one-shot UX.
-              if (!multi) commitCustom();
-            }}
-            placeholder={t.templates.adopt_modal.type_custom_value}
-            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-lg border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
-          />
-          {multi && (
-            <button
-              type="button"
-              onClick={commitCustom}
-              disabled={!customDraft.trim()}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
-            >
-              {t.templates.adopt_modal.add_custom}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DynamicSelectBody({
-  question,
-  answer,
-  onAnswer,
-  dynamicState,
-  onRetry,
-  onAddCredential,
-}: {
-  question: TransformQuestionResponse;
-  answer: string;
-  onAnswer: (v: string) => void;
-  dynamicState?: DynamicOptionState;
-  onRetry: () => void;
-  onAddCredential?: (vaultCategory: string) => void;
-}) {
-  const { t, tx } = useTranslation();
-  const src = question.dynamic_source!;
-  const state = dynamicState;
-
-  // First render, before the hook's effect has run: show a neutral spinner.
-  if (!state) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        {t.templates.adopt_modal.preparing}
-      </div>
-    );
-  }
-
-  if (state.waitingOnParent) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
-        <CircleDot className="w-3.5 h-3.5" />
-        {t.templates.adopt_modal.waiting_for_parent}
-      </div>
-    );
-  }
-
-  if (state.loading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        {tx(t.templates.adopt_modal.loading_from_service, { service: src.service_type })}
-      </div>
-    );
-  }
-
-  if (state.error) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-rose-300/80">
-          <AlertCircle className="w-3.5 h-3.5" />
-          {state.error}
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/[0.03] border border-white/[0.1] text-foreground/80 hover:bg-white/[0.06] transition-colors"
-          >
-            <RefreshCw className="w-3 h-3" />
-            {t.templates.adopt_modal.retry}
-          </button>
-          {question.vault_category && onAddCredential && (
-            <button
-              type="button"
-              onClick={() => onAddCredential(question.vault_category!)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              {t.templates.adopt_modal.add_credential}
-            </button>
-          )}
-        </div>
-        {/* Fallback: let the user type a value so adoption isn't fully blocked */}
-        <input
-          type="text"
-          value={answer}
-          onChange={(e) => onAnswer(e.target.value)}
-          placeholder={question.default ?? t.templates.adopt_modal.type_a_value}
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
-        />
-      </div>
-    );
-  }
-
-  if (state.ready && state.items.length === 0) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
-        <Info className="w-3.5 h-3.5" />
-        {tx(t.templates.adopt_modal.no_items_found, {
-          item: src.operation.replace('list_', ''),
-          service: src.service_type,
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
-        <Zap className="w-3 h-3" />
-        {tx(t.templates.adopt_modal.loaded_live_from, { service: src.service_type })}
-      </div>
-      <SelectPills
-        options={state.items.map((i) => ({ value: i.value, label: i.label, sublabel: i.sublabel }))}
-        value={answer}
-        onChange={onAnswer}
-        multi={src.multi}
-        includeAllOption={src.include_all_option}
-      />
-    </div>
-  );
-}
-
-function BooleanToggle({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex gap-2">
-      {['Yes', 'No'].map((opt) => {
-        const selected = value.toLowerCase() === opt.toLowerCase();
-        return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(opt.toLowerCase())}
-            className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-all ${
-              selected
-                ? opt === 'Yes'
-                  ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400 font-medium'
-                  : 'bg-rose-500/15 border-rose-500/25 text-rose-400 font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06]'
-            }`}
-          >
-            {opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function QuestionCard({
-  question,
-  answer,
-  onAnswer,
-  inputRef,
-  isAutoDetected,
-  isBlocked,
-  onAddCredential,
-  filteredOptions,
-  dynamicState,
-  onRetryDynamic,
-}: {
-  question: TransformQuestionResponse;
-  answer: string;
-  onAnswer: (v: string) => void;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
-  isAutoDetected?: boolean;
-  isBlocked?: boolean;
-  onAddCredential?: (vaultCategory: string) => void;
-  /** Vault-narrowed options for this question (overrides question.options). */
-  filteredOptions?: string[];
-  /** Live state for questions with a dynamic_source (loading/error/items). */
-  dynamicState?: DynamicOptionState;
-  /** Retry a failed dynamic fetch for this question. */
-  onRetryDynamic?: (questionId: string) => void;
-}) {
-  const { t } = useTranslation();
-  const [flash, setFlash] = useState(false);
-  const [tipOpen, setTipOpen] = useState(false);
-  const prevAnswer = useRef(answer);
-
-  useEffect(() => {
-    if (answer && answer !== prevAnswer.current) {
-      setFlash(true);
-      const t2 = setTimeout(() => setFlash(false), 500);
-      prevAnswer.current = answer;
-      return () => clearTimeout(t2);
-    }
-    prevAnswer.current = answer;
-  }, [answer]);
-
-  const isAnswered = !!answer;
-  const hasTip = !!question.context && !isBlocked;
-
-  return (
-    <div
-      className={`relative rounded-lg px-3 py-2.5 transition-colors ${
-        flash ? 'bg-emerald-500/[0.06]' : isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
-      }`}
-    >
-      {/* Question label + status indicator + collapsible tip toggle */}
-      <div className="flex items-start gap-2 mb-1.5">
-        {isBlocked ? (
-          <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
-        ) : isAnswered ? (
-          <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
-        ) : (
-          <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
-        )}
-        <span className="flex-1 text-base font-medium text-foreground/90 leading-snug">
-          {question.question}
-        </span>
-        {isAutoDetected && !isBlocked && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-violet-500/10 border border-violet-500/20 text-violet-400 flex-shrink-0 mt-0.5">
-            <KeyRound className="w-3 h-3" />
-            {t.templates.adopt_modal.auto_detected}
-          </span>
-        )}
-        {hasTip && (
-          <button
-            type="button"
-            onClick={() => setTipOpen((v) => !v)}
-            aria-expanded={tipOpen}
-            aria-label={tipOpen ? t.templates.adopt_modal.hide_explanation : t.templates.adopt_modal.show_explanation}
-            className={`flex-shrink-0 mt-0.5 p-0.5 rounded transition-colors ${
-              tipOpen
-                ? 'text-primary/80 hover:text-primary'
-                : 'text-muted-foreground/40 hover:text-muted-foreground/70'
-            }`}
-          >
-            <Info className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* Context — collapsed by default, expands on Info icon click */}
-      {hasTip && tipOpen && (
-        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.05]">
-          <span className="text-sm text-muted-foreground/80 leading-relaxed">
-            {question.context}
-          </span>
-        </div>
-      )}
-
-      {/* Blocked state: show the "Add credential" call-to-action */}
-      {isBlocked && question.vault_category ? (
-        <div className="ml-5.5 space-y-2">
-          <p className="text-xs text-rose-300/80 leading-relaxed">
-            {t.templates.adopt_modal.credential_required.replace('{category}', question.vault_category)}
-          </p>
-          <button
-            type="button"
-            onClick={() => onAddCredential?.(question.vault_category!)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-            {t.templates.adopt_modal.add_credential}
-          </button>
-        </div>
-      ) : (
-      /* Input control */
-      <div className="ml-5.5">
-        {question.dynamic_source ? (
-          <DynamicSelectBody
-            question={question}
-            answer={answer}
-            onAnswer={onAnswer}
-            dynamicState={dynamicState}
-            onRetry={() => onRetryDynamic?.(question.id)}
-            onAddCredential={onAddCredential}
-          />
-        ) : question.type === 'select' && question.options ? (
-          <SelectPills
-            options={(filteredOptions ?? question.options).map((o) => ({ value: o, label: o }))}
-            value={answer}
-            onChange={onAnswer}
-            allowCustom={question.allow_custom}
-          />
-        ) : question.type === 'boolean' ? (
-          <BooleanToggle value={answer} onChange={onAnswer} />
-        ) : question.type === 'devtools_project' ? (
-          <DevToolsProjectDropdown
-            value={answer || null}
-            onSelect={(project) => onAnswer(project.id)}
-            className="max-w-sm"
-          />
-        ) : question.type === 'directory_picker' ? (
-          <DirectoryPickerInput
-            value={answer}
-            onChange={onAnswer}
-            placeholder={question.default ?? t.templates.adopt_modal.select_directory}
-          />
-        ) : question.type === 'source_definition' ? (
-          <SourceDefinitionInput
-            value={answer}
-            onChange={onAnswer}
-            localPlaceholder={question.default || undefined}
-          />
-        ) : question.type === 'textarea' ? (
-          <textarea
-            value={answer}
-            onChange={(e) => onAnswer(e.target.value)}
-            placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
-            rows={3}
-            className="w-full max-w-lg px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
-          />
-        ) : (
-          <input
-            ref={inputRef}
-            type="text"
-            value={answer}
-            onChange={(e) => onAnswer(e.target.value)}
-            placeholder={question.default ?? t.templates.adopt_modal.type_your_answer}
-            className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
-          />
-        )}
-      </div>
-      )}
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -730,14 +127,14 @@ export function QuestionnaireFormGrid({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-5 h-5 text-primary/80" />
-              <h2 id="questionnaire-form-grid" className="text-lg font-semibold text-foreground">
+              <h2 id="questionnaire-form-grid" className="typo-heading-lg font-semibold text-foreground">
                 {t.templates.adopt_modal.configure_your_persona}
               </h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/80 hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-white/[0.06] transition-colors"
             >
               <X className="w-4.5 h-4.5" />
             </button>
@@ -750,7 +147,7 @@ export function QuestionnaireFormGrid({
           {/* Prominent blocked-state callout — shown when any required vault
               category has no matching credentials in the user's vault */}
           {blockedCategories.length > 0 && onAddCredential && (
-            <div className="mb-5 rounded-xl border border-rose-500/30 bg-rose-500/[0.06] p-4">
+            <div className="mb-5 rounded-modal border border-rose-500/30 bg-rose-500/[0.06] p-4">
               <div className="flex items-start gap-3 mb-3">
                 <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -764,17 +161,17 @@ export function QuestionnaireFormGrid({
               </div>
               <div className="space-y-2 ml-8">
                 {blockedCategories.map(({ category, questionLabels }) => (
-                  <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-rose-500/[0.04] border border-rose-500/15">
+                  <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-rose-500/[0.04] border border-rose-500/15">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground/90 capitalize">{category}</div>
-                      <div className="text-xs text-muted-foreground/60 truncate">
+                      <div className="text-xs text-foreground truncate">
                         {questionLabels.join(' · ')}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => onAddCredential(category)}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 transition-colors flex-shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-card bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 transition-colors flex-shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {t.templates.adopt_modal.add_credential}
@@ -799,7 +196,7 @@ export function QuestionnaireFormGrid({
                 <motion.div
                   key={catKey}
                   variants={sectionVariants}
-                  className={`rounded-xl border ${meta.border} ${meta.bg} overflow-hidden`}
+                  className={`rounded-modal border ${meta.border} ${meta.bg} overflow-hidden`}
                   style={{ borderLeftWidth: 3 }}
                 >
                   {/* Category header */}
@@ -808,7 +205,7 @@ export function QuestionnaireFormGrid({
                     <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
                       {meta.label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/40 ml-auto">
+                    <span className="text-[10px] text-foreground ml-auto">
                       {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
                     </span>
                   </div>
@@ -842,7 +239,7 @@ export function QuestionnaireFormGrid({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            className="text-sm text-foreground hover:text-foreground/70 transition-colors"
           >
             {t.templates.adopt_modal.cancel}
           </button>
@@ -858,10 +255,10 @@ export function QuestionnaireFormGrid({
               type="button"
               onClick={onSubmit}
               disabled={!canSubmit}
-              className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl transition-all ${
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal transition-all ${
                 canSubmit
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
-                  : 'bg-white/[0.06] text-muted-foreground/40 cursor-not-allowed'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
+                  : 'bg-white/[0.06] text-foreground cursor-not-allowed'
               }`}
             >
               <Send className="w-3.5 h-3.5" />

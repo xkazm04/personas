@@ -30,7 +30,7 @@ export function WizardDetectConnectorRow({
         onToggle(connector.name);
       }}
       disabled={isAdded}
-      className={`group flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all text-left ${
+      className={`group flex items-center gap-3 px-3.5 py-3 rounded-modal border transition-all text-left ${
         isAdded
           ? 'border-primary/5 bg-secondary/10 opacity-40 cursor-not-allowed'
           : isSelected
@@ -57,7 +57,7 @@ export function WizardDetectConnectorRow({
 
       {/* Icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold"
+        className="w-8 h-8 rounded-card flex items-center justify-center shrink-0 typo-heading font-bold"
         style={{
           backgroundColor: `${connector.color}15`,
           color: connector.color,
@@ -73,10 +73,10 @@ export function WizardDetectConnectorRow({
 
       {/* Label + detection badge */}
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-medium text-foreground/90 block truncate">
+        <span className="typo-body font-medium text-foreground/90 block truncate">
           {connector.label}
         </span>
-        <span className="text-sm text-muted-foreground/60 block truncate">
+        <span className="typo-body text-foreground block truncate">
           {isAdded
             ? 'Already added'
             : detection
@@ -87,7 +87,7 @@ export function WizardDetectConnectorRow({
 
       {/* Desktop bridge badge */}
       {isDesktopBridge(connector) && !isAdded && (
-        <span className="flex items-center gap-1 text-sm px-1.5 py-0.5 rounded-full shrink-0 bg-orange-500/10 text-orange-400 border border-orange-500/20">
+        <span className="flex items-center gap-1 typo-body px-1.5 py-0.5 rounded-full shrink-0 bg-orange-500/10 text-orange-400 border border-orange-500/20">
           <Monitor className="w-2.5 h-2.5" />
           Local
         </span>
@@ -95,7 +95,7 @@ export function WizardDetectConnectorRow({
 
       {/* Detection badge */}
       {detection && !isAdded && (
-        <span className={`text-sm px-1.5 py-0.5 rounded-full shrink-0 ${
+        <span className={`typo-body px-1.5 py-0.5 rounded-full shrink-0 ${
           detection.confidence === 'high'
             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
             : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'

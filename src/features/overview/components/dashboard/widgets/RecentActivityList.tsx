@@ -22,7 +22,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
   return (
     <div className={`${DASHBOARD_GRID_SPAN_MAJOR} space-y-4`}>
       <div className="flex items-center justify-between px-1">
-        <h3 className="typo-label text-muted-foreground/80 flex items-center gap-2">
+        <h3 className="typo-label text-foreground flex items-center gap-2">
           <Clock className="w-4 h-4" />
           {t.overview.widgets.recent_activity}
         </h3>
@@ -42,7 +42,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
           >
             {recentExecs.map((exec) => (
               <div key={exec.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewAll(); } }} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-primary/[0.05] transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={onViewAll}>
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-6 h-6 rounded-card flex items-center justify-center flex-shrink-0 ${
                   exec.status === 'completed' ? 'text-emerald-400' :
                   exec.status === 'failed' ? 'text-rose-400' :
                   'text-blue-400'
@@ -52,7 +52,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
                    <Activity className="w-3.5 h-3.5 animate-pulse motion-reduce:animate-none" />}
                 </div>
                 <span className="typo-heading text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
-                <span className={`typo-heading px-1.5 py-0.5 rounded-lg flex-shrink-0 ${
+                <span className={`typo-heading px-1.5 py-0.5 rounded-card flex-shrink-0 ${
                   exec.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
                   exec.status === 'failed' ? 'bg-rose-500/10 text-rose-400' :
                   'bg-blue-500/10 text-blue-400'
@@ -60,7 +60,7 @@ export const RecentActivityList = memo(function RecentActivityList({ recentExecs
                   {exec.status}
                 </span>
                 <span className="flex-1" />
-                <span className="typo-body text-muted-foreground/60 flex-shrink-0 hidden sm:inline">
+                <span className="typo-body text-foreground flex-shrink-0 hidden sm:inline">
                   {new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

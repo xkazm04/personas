@@ -1,30 +1,34 @@
 import { Activity, TrendingDown } from 'lucide-react';
 import type { AnomalyScore } from '@/api/vault/rotation';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const REMEDIATION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  healthy: { label: 'Healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  backoff_retry: { label: 'Transient Issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  preemptive_rotation: { label: 'Degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  rotate_then_alert: { label: 'Permanent Errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-  disable: { label: 'Critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
+const REMEDIATION_LABELS: Record<string, { labelKey: string; color: string; bg: string }> = {
+  healthy: { labelKey: 'healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  backoff_retry: { labelKey: 'transient_issues', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  preemptive_rotation: { labelKey: 'degrading', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  rotate_then_alert: { labelKey: 'permanent_errors', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+  disable: { labelKey: 'critical', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/25' },
 };
 
 export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; tolerance: number }) {
+  const { t, tx } = useTranslation();
+  const an = t.vault.features.anomaly;
   const rem = REMEDIATION_LABELS[score.remediation] ?? REMEDIATION_LABELS.healthy!;
+  const label = an[rem.labelKey as keyof typeof an] as string;
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
   return (
-    <div className={`rounded-xl border px-3 py-2.5 space-y-2 ${rem.bg}`}>
+    <div className={`rounded-modal border px-3 py-2.5 space-y-2 ${rem.bg}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className={`w-3.5 h-3.5 ${rem.color}`} />
-          <span className={`text-sm font-medium ${rem.color}`}>{rem.label}</span>
+          <span className={`typo-body font-medium ${rem.color}`}>{label}</span>
         </div>
         <div className="flex items-center gap-2">
           {score.data_stale && (
-            <span className="text-sm text-muted-foreground/60 bg-secondary/40 px-1.5 py-0.5 rounded">stale</span>
+            <span className="typo-body text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">{an.stale}</span>
           )}
-          <span className="text-sm text-muted-foreground/60 tabular-nums">{score.sample_count} samples</span>
+          <span className="typo-data text-foreground tabular-nums">{tx(an.samples, { count: score.sample_count })}</span>
         </div>
       </div>
 
@@ -37,22 +41,22 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
 
       {/* Error classification breakdown */}
       {(score.permanent_failure_rate_1h > 0 || score.transient_failure_rate_1h > 0) && (
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/80">
+        <div className="flex items-center gap-3 typo-body text-foreground">
           {score.permanent_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-              Permanent: {pct(score.permanent_failure_rate_1h)}
+              {tx(an.permanent, { rate: pct(score.permanent_failure_rate_1h) })}
             </span>
           )}
           {score.transient_failure_rate_1h > 0 && (
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              Transient: {pct(score.transient_failure_rate_1h)}
+              {tx(an.transient, { rate: pct(score.transient_failure_rate_1h) })}
             </span>
           )}
           <span className="flex items-center gap-1 ml-auto">
             <TrendingDown className="w-3 h-3" />
-            Tolerance: {pct(tolerance)}
+            {tx(an.tolerance, { rate: pct(tolerance) })}
           </span>
         </div>
       )}
@@ -68,8 +72,8 @@ function RateBar({ label, rate, threshold }: { label: string; rate: number; thre
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground/70 font-mono">{label}</span>
-        <span className={`text-sm font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-muted-foreground/80'}`}>
+        <span className="typo-code text-foreground font-mono">{label}</span>
+        <span className={`typo-code font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
           {pct.toFixed(0)}%
         </span>
       </div>

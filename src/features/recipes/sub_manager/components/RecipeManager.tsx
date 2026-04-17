@@ -80,26 +80,26 @@ export function RecipeManager() {
               className="btn-md flex items-center gap-1.5 bg-primary font-medium text-white hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              New Recipe
+              {t.recipes.new_recipe}
             </button>
           ) : undefined
         }
       >
         {viewState.view === 'list' && (
           <div className="relative mt-2">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
             <input
               ref={searchRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.recipes.search_placeholder}
-              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
+              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

@@ -12,7 +12,7 @@ export const TAG_COLORS: Record<string, { bg: string; text: string; border: stri
   testing:     { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
 };
 
-const DEFAULT_TAG_STYLE = { bg: 'bg-secondary/40', text: 'text-muted-foreground/80', border: 'border-primary/15' };
+const DEFAULT_TAG_STYLE = { bg: 'bg-secondary/40', text: 'text-foreground', border: 'border-primary/15' };
 
 export function getTagStyle(tag: string) {
   return TAG_COLORS[tag.toLowerCase()] ?? DEFAULT_TAG_STYLE;

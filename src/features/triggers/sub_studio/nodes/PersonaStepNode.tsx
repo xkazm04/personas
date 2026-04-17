@@ -9,7 +9,7 @@ function PersonaStepNodeInner({ data, selected }: NodeProps) {
   return (
     <div
       className={`
-        relative flex items-center gap-2.5 px-3.5 py-3 rounded-xl
+        relative flex items-center gap-2.5 px-3.5 py-3 rounded-modal
         bg-card backdrop-blur border-2
         ${selected
           ? 'border-emerald-400 ring-2 ring-emerald-400/25 shadow-[0_0_16px_rgba(52,211,153,0.2)]'
@@ -29,7 +29,7 @@ function PersonaStepNodeInner({ data, selected }: NodeProps) {
 
       <div className="flex flex-col min-w-0">
         <span className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-medium">Persona</span>
-        <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{d.name}</span>
       </div>
 
       <Handle

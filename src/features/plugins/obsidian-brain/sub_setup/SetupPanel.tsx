@@ -142,14 +142,14 @@ export default function SetupPanel() {
             <button
               onClick={detectVaults}
               disabled={detecting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 focus-ring"
+              className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {detecting ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
               {detecting ? 'Detecting...' : 'Auto-Detect Vaults'}
             </button>
             <button
               onClick={browseFolder}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+              className="flex items-center gap-2 px-4 py-2 rounded-card bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             >
               <FolderOpen className="w-4 h-4" />
               Browse
@@ -164,7 +164,7 @@ export default function SetupPanel() {
                 <button
                   key={v.path}
                   onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors focus-ring ${
+                  className={`w-full text-left px-3 py-2.5 rounded-modal border transition-colors focus-ring ${
                     vaultPath === v.path
                       ? 'border-violet-500/30 bg-violet-500/5'
                       : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
@@ -184,12 +184,12 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
-              className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
             />
             <button
               onClick={testConnection}
               disabled={!vaultPath || testing}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
+              className="flex items-center gap-2 px-4 py-2 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
               Test
@@ -198,7 +198,7 @@ export default function SetupPanel() {
 
           {/* Connection result */}
           {connectionResult && (
-            <div className={`flex items-start gap-3 px-4 py-3 rounded-xl border ${
+            <div className={`flex items-start gap-3 px-4 py-3 rounded-modal border ${
               connectionResult.valid
                 ? 'bg-emerald-500/5 border-emerald-500/20'
                 : 'bg-red-500/5 border-red-500/20'
@@ -232,7 +232,7 @@ export default function SetupPanel() {
             { label: 'Connectors', desc: 'Connector definitions and service documentation', checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
             { label: 'Auto-Sync', desc: 'Automatically push changes when memories are created', checked: autoSync, onChange: () => setAutoSync(!autoSync) },
           ].map((opt) => (
-            <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-xl hover:bg-secondary/20 transition-colors">
+            <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors">
               <div className="min-w-0">
                 <p className="typo-heading typo-card-label">{opt.label}</p>
                 <p className="typo-caption text-foreground">{opt.desc}</p>
@@ -258,7 +258,7 @@ export default function SetupPanel() {
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body focus-ring transition-all"
+                  className="w-full px-3 py-1.5 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body focus-ring transition-all"
                 />
               </div>
             ))}
@@ -273,7 +273,7 @@ export default function SetupPanel() {
       <button
         onClick={saveConfig}
         disabled={saving || !connectionResult?.valid}
-        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40 focus-ring"
+        className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40 focus-ring"
       >
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
         {saving ? 'Saving...' : 'Save Configuration'}

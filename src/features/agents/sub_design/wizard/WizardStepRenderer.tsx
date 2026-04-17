@@ -16,10 +16,10 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
         return (
           <div key={question.id} className="space-y-3">
             <div>
-              <span className="text-sm font-semibold uppercase tracking-wider text-violet-400/70">
+              <span className="typo-heading font-semibold uppercase tracking-wider text-violet-400/70">
                 {question.header}
               </span>
-              <p className="text-sm font-medium text-foreground/80 mt-0.5">
+              <p className="typo-body font-medium text-foreground mt-0.5">
                 {question.question}
               </p>
             </div>
@@ -53,7 +53,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                     onClick={handleClick}
                     role={question.multiSelect ? 'checkbox' : 'radio'}
                     aria-checked={isSelected}
-                    className={`group relative flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                    className={`group relative flex items-start gap-3 px-4 py-3 rounded-modal border text-left transition-all ${
                       isSelected
                         ? 'border-violet-500/40 bg-violet-500/10 shadow-elevation-1 shadow-violet-500/5'
                         : 'border-primary/10 bg-secondary/20 hover:border-primary/20 hover:bg-secondary/40'
@@ -73,13 +73,13 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <span
-                        className={`text-sm font-medium block ${
+                        className={`typo-body font-medium block ${
                           isSelected ? 'text-foreground/90' : 'text-foreground/90'
                         }`}
                       >
                         {option.label}
                       </span>
-                      <span className="text-sm text-muted-foreground/90 block mt-0.5 leading-relaxed">
+                      <span className="typo-body text-foreground block mt-0.5 leading-relaxed">
                         {option.description}
                       </span>
                     </div>

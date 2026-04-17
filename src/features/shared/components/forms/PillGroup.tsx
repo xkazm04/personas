@@ -62,7 +62,7 @@ export function PillGroup<T extends string | number>({
               aria-checked={isActive}
               onClick={() => onChange(opt.value)}
               className={`relative z-10 px-2.5 py-1 text-xs font-mono font-medium transition-colors cursor-pointer ${
-                isActive ? activeText : 'text-muted-foreground/70 hover:text-foreground/80'
+                isActive ? activeText : 'text-foreground hover:text-foreground/80'
               }`}
               data-testid={testId ? `${testId}-${opt.value}` : undefined}
             >

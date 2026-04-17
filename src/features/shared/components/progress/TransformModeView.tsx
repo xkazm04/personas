@@ -4,6 +4,7 @@ import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformPhaseInfo } from './transformProgressTypes';
 import { TerminalBody, useTerminalScroll } from './TerminalBody';
 import { TransformStatusPanels } from './TransformStatusPanels';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TransformModeViewProps {
   lines: string[];
@@ -26,6 +27,7 @@ export function TransformModeView({
   errorMessage,
   transformPhase,
 }: TransformModeViewProps) {
+  const { t } = useTranslation();
   const [showTerminal, setShowTerminal] = useState(true);
   const { terminalRef, handleTerminalScroll } = useTerminalScroll(lines);
 
@@ -63,7 +65,7 @@ export function TransformModeView({
                   <ChevronRight className="w-3.5 h-3.5 text-foreground" />
                 )}
                 <span className="typo-code text-foreground">
-                  {showTerminal ? 'Hide' : 'Show'} CLI output
+                  {showTerminal ? t.shared.progress_extra.hide_cli_output : t.shared.progress_extra.show_cli_output}
                 </span>
               </div>
               <div className="flex items-center gap-2">

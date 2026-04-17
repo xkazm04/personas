@@ -49,10 +49,10 @@ export function SectionCard({
 
   return (
     <div
-      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
+      className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
     >
       <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
+        <div className={`w-8 h-8 rounded-modal flex items-center justify-center ${sectionStyle.badge}`}>
           <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
         </div>
         <span className="typo-label text-foreground/90">
@@ -68,16 +68,16 @@ export function SectionCard({
           /* Loading indicator — shown while this section's health check is in-flight */
           <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-6 px-4">
             <Loader2 className={`w-5 h-5 animate-spin ${sectionStyle.icon} opacity-60`} />
-            <span className="text-xs text-muted-foreground/60">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
+            <span className="text-xs text-foreground">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
           </div>
         ) : (
           section.items.map((check) => (
             <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-primary/[0.04] transition-colors">
               {getStatusIcon(check.status)}
               <div className="flex-1 min-w-0">
-                <p className="typo-body text-foreground/80">{check.label}</p>
+                <p className="typo-body text-foreground">{check.label}</p>
                 {check.detail && (
-                  <p className="typo-body text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
+                  <p className="typo-body text-foreground break-words line-clamp-2">{check.detail}</p>
                 )}
 
                 {check.id === 'node' && check.installable && !ipcError && (
@@ -195,7 +195,7 @@ function ClaudeDesktopMcpButton({
         {busy ? t.overview.section_card.working : isConnected ? t.overview.section_card.disconnect : t.overview.section_card.connect_claude}
       </Button>
       {result && (
-        <p className="text-[11px] text-muted-foreground/70">{result}</p>
+        <p className="text-[11px] text-foreground">{result}</p>
       )}
     </div>
   );

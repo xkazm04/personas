@@ -78,7 +78,7 @@ export default function RealtimeVisualizerPage() {
             : t.overview.realtime_page.live_subtitle
         }
         actions={
-          <div className="flex items-center gap-1 bg-secondary/30 border border-primary/10 rounded-xl p-0.5">
+          <div className="flex items-center gap-1 bg-secondary/30 border border-primary/10 rounded-modal p-0.5">
             {(Object.entries(VARIANT_META) as [VisualizationVariant, (typeof VARIANT_META)[VisualizationVariant]][]).map(([key, m]) => {
               const Icon = m.icon;
               const isActive = variant === key;
@@ -87,10 +87,10 @@ export default function RealtimeVisualizerPage() {
                   key={key}
                   onClick={() => setVariant(key)}
                   title={m.description}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-code font-mono transition-all ${
                     isActive
                       ? 'bg-primary/10 text-foreground/90 shadow-elevation-1'
-                      : 'text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/50'
+                      : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/50'
                   }`}
                 >
                   <Icon className="w-3 h-3" />

@@ -8,7 +8,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ConfigurationPopup } from '@/features/agents/components/onboarding/ConfigurationPopup';
 
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
-import { OLLAMA_FIELDS, OLLAMA_FOOTER, LITELLM_FIELDS } from './popupFieldConfigs';
+import { OLLAMA_FIELDS, OllamaFooter, LITELLM_FIELDS } from './popupFieldConfigs';
 import { CrashLogsSection } from './CrashLogsSection';
 import { SectionCard } from './SectionCard';
 import { FooterActions } from './FooterActions';
@@ -71,7 +71,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               size="icon-sm"
               onClick={runChecks}
               icon={<RefreshCw className="w-3.5 h-3.5" />}
-              className="text-muted-foreground/80 hover:text-muted-foreground"
+              className="text-foreground hover:text-muted-foreground"
               title={t.overview.system_health.re_run_checks}
             />
           ) : undefined
@@ -110,7 +110,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
           </div>
 
           {import.meta.env.DEV && (
-            <div className="rounded-xl border-2 border-amber-500/30 p-0.5">
+            <div className="rounded-modal border-2 border-amber-500/30 p-0.5">
               <CrashLogsSection />
             </div>
           )}
@@ -140,7 +140,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 accent="emerald"
                 fields={OLLAMA_FIELDS}
                 saveLabel={t.overview.system_health.save_key}
-                footerText={OLLAMA_FOOTER}
+                footerText={<OllamaFooter />}
                 onClose={() => setShowOllamaPopup(false)}
                 onSaved={() => { setShowOllamaPopup(false); runChecks(); }}
               />

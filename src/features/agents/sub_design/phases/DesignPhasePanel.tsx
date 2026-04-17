@@ -79,10 +79,10 @@ export function DesignPhasePanel({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onInputModeChange('design')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
                   inputMode === 'design'
                     ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -90,10 +90,10 @@ export function DesignPhasePanel({
               </button>
               <button
                 onClick={() => onInputModeChange('intent')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
                   inputMode === 'intent'
                     ? 'bg-violet-500/10 text-violet-400 border-violet-500/25'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <Wand2 className="w-3.5 h-3.5" />
@@ -101,10 +101,10 @@ export function DesignPhasePanel({
               </button>
               <button
                 onClick={() => onInputModeChange('example')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
                   inputMode === 'example'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                    : 'bg-transparent text-muted-foreground/70 border-transparent hover:text-foreground/80'
+                    : 'bg-transparent text-foreground border-transparent hover:text-foreground/80'
                 }`}
               >
                 <FlaskConical className="w-3.5 h-3.5" />
@@ -126,16 +126,16 @@ export function DesignPhasePanel({
                 value={instruction}
                 onChange={(e) => onInstructionChange(e.target.value)}
                 placeholder={t.agents.design.example_context_placeholder}
-                className="w-full min-h-[60px] max-h-[120px] bg-background/50 border border-emerald-500/10 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                className="w-full min-h-[60px] max-h-[120px] bg-background/50 border border-emerald-500/10 rounded-modal px-3 py-2 typo-body text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                 disabled={phase !== 'idle'}
               />
 
               <button
                 onClick={onStartAnalysis}
                 disabled={!hasExamples}
-                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-sm transition-all w-full ${
+                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium typo-body transition-all w-full ${
                   !hasExamples
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
@@ -151,7 +151,7 @@ export function DesignPhasePanel({
                   value={instruction}
                   onChange={(e) => onInstructionChange(e.target.value)}
                   placeholder={t.agents.design.intent_placeholder}
-                  className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-xl px-3 py-2.5 text-sm text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/40 transition-all placeholder-muted-foreground/30"
+                  className="w-full min-h-[100px] max-h-[200px] bg-background/50 border border-violet-500/15 rounded-modal px-3 py-2.5 typo-body text-foreground font-sans resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/40 transition-all placeholder-muted-foreground/30"
                   disabled={phase !== 'idle'}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -160,17 +160,17 @@ export function DesignPhasePanel({
                     }
                   }}
                 />
-                <p className="text-sm text-muted-foreground/60 px-1">{t.agents.design.intent_submit_hint}</p>
-                <p className="text-sm text-muted-foreground/50 px-1">
+                <p className="typo-body text-foreground px-1">{t.agents.design.intent_submit_hint}</p>
+                <p className="typo-body text-foreground px-1">
                   {t.agents.design.intent_detail}
                 </p>
               </div>
               <button
                 onClick={onStartAnalysis}
                 disabled={!instruction.trim()}
-                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-sm transition-all w-full ${
+                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium typo-body transition-all w-full ${
                   !instruction.trim()
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-500/90 hover:to-fuchsia-500/90 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >
@@ -192,9 +192,9 @@ export function DesignPhasePanel({
               <button
                 onClick={onStartAnalysis}
                 disabled={!instruction.trim()}
-                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-sm transition-all w-full ${
+                className={`flex items-center justify-center gap-2.5 px-4 py-2 rounded-modal font-medium typo-body transition-all w-full ${
                   !instruction.trim()
-                    ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
+                    ? 'bg-secondary/60 text-foreground cursor-not-allowed'
                     : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
                 }`}
               >

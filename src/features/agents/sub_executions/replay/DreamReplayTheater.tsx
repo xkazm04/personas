@@ -126,7 +126,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
 
   if (state.isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground/60">
+      <div className="flex items-center justify-center h-64 text-foreground">
         <LoadingSpinner size="lg" className="mr-2" />
         <span className="typo-body">{e.loading_dream_replay}</span>
       </div>
@@ -135,7 +135,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
 
   if (state.error || !state.session) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground/60">
+      <div className="flex items-center justify-center h-64 text-foreground">
         <AlertTriangle className="w-4 h-4 mr-2 text-amber-400" />
         <span className="typo-body">{state.error ?? 'No trace data available for dream replay'}</span>
       </div>
@@ -145,22 +145,22 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
   const { currentFrame, totalFrames, currentFrameIndex } = state;
 
   return (
-    <div className="flex flex-col rounded-xl border border-violet-500/20 bg-background/60 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col rounded-modal border border-violet-500/20 bg-background/60 overflow-hidden backdrop-blur-sm">
       {/* === HEADER === */}
       <div className="px-4 py-2.5 border-b border-violet-500/15 bg-violet-500/5">
         <div className="flex items-center gap-2">
           <Moon className="w-4 h-4 text-violet-400" />
-          <span className="typo-heading text-foreground/80">{e.dream_replay}</span>
+          <span className="typo-heading text-foreground">{e.dream_replay}</span>
           <span className="text-[10px] font-mono text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded">
-            0 tokens
+            {e.zero_tokens}
           </span>
           {state.session.isIncomplete && (
             <span className="text-[10px] font-mono text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded">
-              incomplete trace
+              {e.incomplete_trace}
             </span>
           )}
-          <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">
-            {state.session.totalSpanCount} spans / {totalFrames} frames
+          <span className="ml-auto text-[10px] font-mono text-foreground">
+            {e.spans_frames.replace('{spans}', String(state.session.totalSpanCount)).replace('{frames}', String(totalFrames))}
           </span>
         </div>
       </div>
@@ -221,7 +221,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
                   state.speed === s
                     ? 'bg-violet-500/20 text-violet-300'
-                    : 'text-muted-foreground/40 hover:text-muted-foreground/70'
+                    : 'text-foreground hover:text-muted-foreground/70'
                 }`}
               >
                 {s}x
@@ -243,7 +243,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
           )}
 
           {/* Frame counter + time */}
-          <div className="ml-auto flex items-center gap-3 text-[10px] font-mono text-muted-foreground/50 tabular-nums">
+          <div className="ml-auto flex items-center gap-3 text-[10px] font-mono text-foreground tabular-nums">
             <span>Frame {currentFrameIndex + 1}/{totalFrames}</span>
             <span>{formatDuration(state.currentMs)} / {formatDuration(state.totalMs)}</span>
           </div>
@@ -292,10 +292,10 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
       </div>
 
       {/* === FOOTER: Depth + Cost bar === */}
-      <div className="px-4 py-2 border-t border-violet-500/10 bg-secondary/10 flex items-center gap-4 text-[10px] font-mono text-muted-foreground/50">
+      <div className="px-4 py-2 border-t border-violet-500/10 bg-secondary/10 flex items-center gap-4 text-[10px] font-mono text-foreground">
         <span className="flex items-center gap-1">
           <Layers className="w-3 h-3" />
-          Depth: {state.currentDepth}
+          {e.depth_label} {state.currentDepth}
         </span>
         <span className="flex items-center gap-1">
           <Coins className="w-3 h-3" />
@@ -305,7 +305,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
         <span>{(currentFrame?.cumulativeOutputTokens ?? 0).toLocaleString()} out</span>
         <span className="ml-auto flex items-center gap-1">
           <Zap className="w-3 h-3 text-violet-400" />
-          <span className="text-violet-400/60">Deterministic replay — no LLM calls</span>
+          <span className="text-violet-400/60">{e.deterministic_replay}</span>
         </span>
       </div>
     </div>
@@ -316,7 +316,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
 function FrameDescription({ frame }: { frame: DreamFrame }) {
   const config = SPAN_CONFIG[frame.triggerSpanType];
   const Icon = config?.icon ?? Activity;
-  const color = config?.color ?? 'text-muted-foreground/60';
+  const color = config?.color ?? 'text-foreground';
 
   const eventBadge = frame.eventType === 'span_start'
     ? { text: 'START', cls: 'bg-blue-500/15 text-blue-400' }
@@ -330,8 +330,8 @@ function FrameDescription({ frame }: { frame: DreamFrame }) {
       <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${eventBadge.cls}`}>
         {eventBadge.text}
       </span>
-      <span className="typo-body text-foreground/80 truncate">{frame.description}</span>
-      <span className="ml-auto text-[10px] font-mono text-muted-foreground/40 shrink-0">
+      <span className="typo-body text-foreground truncate">{frame.description}</span>
+      <span className="ml-auto text-[10px] font-mono text-foreground shrink-0">
         {formatDuration(frame.timestampMs)}
       </span>
     </div>
@@ -348,6 +348,8 @@ function SpanTreePanel({
   currentFrameIndex: number;
   onJumpToFrame: (index: number) => void;
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   // Show a window of frames around the current one
   const windowSize = 50;
   const start = Math.max(0, currentFrameIndex - Math.floor(windowSize / 2));
@@ -357,14 +359,14 @@ function SpanTreePanel({
   return (
     <div className="px-2 py-2">
       <div className="text-[10px] font-mono text-violet-400/60 uppercase tracking-wider px-1 mb-2">
-        Span Boundaries
+        {e.span_boundaries}
       </div>
       <div className="space-y-0.5">
         {visibleFrames.map((frame) => {
           const isCurrent = frame.index === currentFrameIndex;
           const config = SPAN_CONFIG[frame.triggerSpanType];
           const Icon = config?.icon ?? Activity;
-          const color = config?.color ?? 'text-muted-foreground/40';
+          const color = config?.color ?? 'text-foreground';
 
           const eventColor = frame.eventType === 'span_start'
             ? 'text-blue-400/70'
@@ -378,10 +380,10 @@ function SpanTreePanel({
             <button
               key={frame.index}
               onClick={() => onJumpToFrame(frame.index)}
-              className={`w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-lg transition-all text-[11px] font-mono ${
+              className={`w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-card transition-all text-[11px] font-mono ${
                 isCurrent
                   ? 'bg-violet-500/15 border border-violet-500/25 text-foreground/90'
-                  : 'hover:bg-secondary/30 text-muted-foreground/60 border border-transparent'
+                  : 'hover:bg-secondary/30 text-foreground border border-transparent'
               }`}
             >
               {/* Depth indentation */}
@@ -389,11 +391,11 @@ function SpanTreePanel({
               {/* Event indicator */}
               <span className={`shrink-0 ${eventColor}`}>{eventChar}</span>
               {/* Span icon */}
-              <Icon className={`w-3 h-3 shrink-0 ${isCurrent ? color : 'text-muted-foreground/30'}`} />
+              <Icon className={`w-3 h-3 shrink-0 ${isCurrent ? color : 'text-foreground'}`} />
               {/* Description */}
               <span className="truncate">{frame.description}</span>
               {/* Timestamp */}
-              <span className="ml-auto shrink-0 text-[9px] text-muted-foreground/35 tabular-nums">
+              <span className="ml-auto shrink-0 text-[9px] text-foreground tabular-nums">
                 {formatDuration(frame.timestampMs)}
               </span>
             </button>
@@ -414,15 +416,17 @@ function FrameStatePanel({
   activeSpans: TraceSpan[];
   completedSpans: TraceSpan[];
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   return (
     <div className="px-3 py-2 space-y-3">
       {/* Active span count */}
       <div>
         <div className="text-[10px] font-mono text-blue-400/60 uppercase tracking-wider mb-1">
-          Active ({activeSpans.length})
+          {e.active_count_label.replace('{count}', String(activeSpans.length))}
         </div>
         {activeSpans.length === 0 ? (
-          <div className="text-[11px] text-muted-foreground/40 italic">No active spans</div>
+          <div className="text-[11px] text-foreground italic">{e.no_active_spans}</div>
         ) : (
           <div className="space-y-1">
             {activeSpans.map((span) => (
@@ -435,18 +439,18 @@ function FrameStatePanel({
       {/* Completed spans (recent) */}
       <div>
         <div className="text-[10px] font-mono text-emerald-400/60 uppercase tracking-wider mb-1">
-          Completed ({frame.completedSpanIds.length})
+          {e.completed_count_label.replace('{count}', String(frame.completedSpanIds.length))}
         </div>
         {completedSpans.length === 0 ? (
-          <div className="text-[11px] text-muted-foreground/40 italic">None yet</div>
+          <div className="text-[11px] text-foreground italic">{e.none_yet}</div>
         ) : (
           <div className="space-y-1">
             {completedSpans.slice(0, 10).map((span) => (
               <MiniSpanCard key={span.span_id} span={span} variant="completed" />
             ))}
             {completedSpans.length > 10 && (
-              <div className="text-[10px] text-muted-foreground/40 italic px-1">
-                +{completedSpans.length - 10} more
+              <div className="text-[10px] text-foreground italic px-1">
+                {e.plus_more.replace('{count}', String(completedSpans.length - 10))}
               </div>
             )}
           </div>
@@ -456,10 +460,10 @@ function FrameStatePanel({
       {/* Metadata */}
       {frame.metadata != null && (
         <div>
-          <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider mb-1">
-            Metadata
+          <div className="text-[10px] font-mono text-foreground uppercase tracking-wider mb-1">
+            {e.metadata_label}
           </div>
-          <pre className="text-[10px] font-mono text-muted-foreground/60 bg-secondary/20 rounded-lg p-2 overflow-x-auto max-h-32 overflow-y-auto">
+          <pre className="text-[10px] font-mono text-foreground bg-secondary/20 rounded-card p-2 overflow-x-auto max-h-32 overflow-y-auto">
             {String(JSON.stringify(frame.metadata, null, 2))}
           </pre>
         </div>
@@ -470,32 +474,34 @@ function FrameStatePanel({
 
 /** Active spans panel. */
 function ActiveSpansPanel({ activeSpans, currentMs }: { activeSpans: TraceSpan[]; currentMs: number }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   return (
     <div className="px-3 py-2">
       <div className="text-[10px] font-mono text-blue-400/60 uppercase tracking-wider mb-2">
-        Active Spans
+        {e.active_spans}
       </div>
       {activeSpans.length === 0 ? (
-        <div className="text-[11px] text-muted-foreground/40 italic">No active spans at this frame</div>
+        <div className="text-[11px] text-foreground italic">{e.no_active_spans_frame}</div>
       ) : (
         <div className="space-y-1.5">
           {activeSpans.map((span) => {
             const config = SPAN_CONFIG[span.span_type];
             const Icon = config?.icon ?? Activity;
-            const color = config?.color ?? 'text-muted-foreground/60';
+            const color = config?.color ?? 'text-foreground';
             const elapsed = currentMs - span.start_ms;
 
             return (
-              <div key={span.span_id} className="rounded-lg border border-blue-400/20 bg-blue-500/5 px-2.5 py-1.5">
+              <div key={span.span_id} className="rounded-card border border-blue-400/20 bg-blue-500/5 px-2.5 py-1.5">
                 <div className="flex items-center gap-2">
                   <Icon className={`w-3 h-3 shrink-0 ${color}`} />
-                  <span className="typo-code text-foreground/80 truncate">{span.name}</span>
+                  <span className="typo-code text-foreground truncate">{span.name}</span>
                   <span className="ml-auto text-[10px] font-mono text-blue-400/60 tabular-nums shrink-0">
                     {formatDuration(elapsed)}
                   </span>
                 </div>
                 {(span.input_tokens != null || span.output_tokens != null) && (
-                  <div className="mt-1 flex gap-2 text-[10px] font-mono text-muted-foreground/40">
+                  <div className="mt-1 flex gap-2 text-[10px] font-mono text-foreground">
                     {span.input_tokens != null && <span>{span.input_tokens.toLocaleString()} in</span>}
                     {span.output_tokens != null && <span>{span.output_tokens.toLocaleString()} out</span>}
                   </div>
@@ -517,25 +523,27 @@ function CostPanel({
   frame: DreamFrame;
   session: { totalCostUsd: number; totalInputTokens: number; totalOutputTokens: number };
 }) {
+  const { t } = useTranslation();
+  const e = t.agents.executions;
   const costPct = session.totalCostUsd > 0 ? (frame.cumulativeCostUsd / session.totalCostUsd) * 100 : 0;
   const inputPct = session.totalInputTokens > 0 ? (frame.cumulativeInputTokens / session.totalInputTokens) * 100 : 0;
   const outputPct = session.totalOutputTokens > 0 ? (frame.cumulativeOutputTokens / session.totalOutputTokens) * 100 : 0;
 
   return (
     <div className="px-3 py-2 space-y-3">
-      <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">
-        Cost Accumulation
+      <div className="text-[10px] font-mono text-foreground uppercase tracking-wider">
+        {e.cost_accumulation}
       </div>
 
       <CostBar label="Cost" value={`$${frame.cumulativeCostUsd.toFixed(4)}`} total={`$${session.totalCostUsd.toFixed(4)}`} pct={costPct} color="violet" />
       <CostBar label="Input" value={frame.cumulativeInputTokens.toLocaleString()} total={session.totalInputTokens.toLocaleString()} pct={inputPct} color="blue" />
       <CostBar label="Output" value={frame.cumulativeOutputTokens.toLocaleString()} total={session.totalOutputTokens.toLocaleString()} pct={outputPct} color="emerald" />
 
-      <div className="mt-4 p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/15">
-        <div className="text-[10px] font-mono text-violet-400/60 mb-1">Dream Replay Cost</div>
+      <div className="mt-4 p-2.5 rounded-card bg-violet-500/5 border border-violet-500/15">
+        <div className="text-[10px] font-mono text-violet-400/60 mb-1">{e.dream_replay_cost}</div>
         <div className="typo-heading-lg font-mono text-violet-400">$0.0000</div>
-        <div className="text-[10px] text-muted-foreground/40 mt-1">
-          Replaying from stored traces -- zero LLM tokens consumed
+        <div className="text-[10px] text-foreground mt-1">
+          {e.dream_replay_zero}
         </div>
       </div>
     </div>
@@ -546,8 +554,8 @@ function CostBar({ label, value, total, pct, color }: { label: string; value: st
   return (
     <div>
       <div className="flex items-center justify-between text-[11px] font-mono mb-1">
-        <span className="text-muted-foreground/60">{label}</span>
-        <span className="text-foreground/70">{value} <span className="text-muted-foreground/30">/ {total}</span></span>
+        <span className="text-foreground">{label}</span>
+        <span className="text-foreground">{value} <span className="text-foreground">/ {total}</span></span>
       </div>
       <div className="h-1.5 rounded-full bg-secondary/30 overflow-hidden">
         <div
@@ -563,20 +571,20 @@ function CostBar({ label, value, total, pct, color }: { label: string; value: st
 function MiniSpanCard({ span, variant }: { span: TraceSpan; variant: 'active' | 'completed' }) {
   const config = SPAN_CONFIG[span.span_type];
   const Icon = config?.icon ?? Activity;
-  const color = config?.color ?? 'text-muted-foreground/40';
+  const color = config?.color ?? 'text-foreground';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-mono ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-[11px] font-mono ${
       variant === 'active'
         ? 'bg-blue-500/8 border border-blue-400/20'
         : 'bg-secondary/15 border border-primary/5'
     }`}>
-      <Icon className={`w-3 h-3 shrink-0 ${variant === 'active' ? color : 'text-muted-foreground/30'}`} />
-      <span className={`truncate ${variant === 'active' ? 'text-foreground/70' : 'text-muted-foreground/50'}`}>
+      <Icon className={`w-3 h-3 shrink-0 ${variant === 'active' ? color : 'text-foreground'}`} />
+      <span className={`truncate ${variant === 'active' ? 'text-foreground' : 'text-foreground'}`}>
         {span.name}
       </span>
       {variant === 'completed' && span.duration_ms != null && (
-        <span className="ml-auto text-[9px] text-muted-foreground/35 shrink-0 tabular-nums">
+        <span className="ml-auto text-[9px] text-foreground shrink-0 tabular-nums">
           {formatDuration(span.duration_ms)}
         </span>
       )}
@@ -602,10 +610,10 @@ function PanelTab({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-body transition-all${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body transition-all${
         active
           ? 'bg-violet-500/15 text-violet-300 border border-violet-500/20'
-          : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent hover:border-violet-500/10'
+          : 'text-foreground hover:text-muted-foreground/80 border border-transparent hover:border-violet-500/10'
       }`}
       title={`${label} (${shortcut})`}
     >

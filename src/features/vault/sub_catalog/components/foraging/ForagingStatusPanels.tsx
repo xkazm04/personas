@@ -18,15 +18,17 @@ interface ForagingIdleProps {
 }
 
 export function ForagingIdle({ onScan }: ForagingIdleProps) {
+  const { t } = useTranslation();
+  const forg = t.vault.foraging;
   return (
     <div
       key="idle"
-      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
+      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
     >
       <EmptyIllustration
         icon={Radar}
         heading="Credential Foraging"
-        description="Scan your filesystem for existing credentials -- AWS profiles, environment variables, .env files, Docker configs, SSH keys, and more. Discovered credentials can be imported into your vault with one click."
+        description={forg.scan_description}
       />
       <Button
         variant="accent"
@@ -37,11 +39,11 @@ export function ForagingIdle({ onScan }: ForagingIdleProps) {
         data-testid="vault-foraging-scan"
         className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
       >
-        Start Scan
+        {forg.start_scan}
       </Button>
-      <div className="text-sm text-muted-foreground/60 space-y-0.5">
-        <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
-        <p>No secrets are uploaded -- scanning happens entirely on your machine.</p>
+      <div className="typo-body text-foreground space-y-0.5">
+        <p>{forg.scan_locations}</p>
+        <p>{forg.scan_privacy}</p>
       </div>
     </div>
   );
@@ -52,12 +54,12 @@ export function ForagingScanning() {
   return (
     <div
       key="scanning"
-      className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
     >
       <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
-      <p className="text-sm text-foreground/80">{t.vault.foraging.scanning}</p>
-      <p className="text-sm text-muted-foreground/50">
-        Checking environment variables, config files, and dev tool credentials
+      <p className="typo-body text-foreground">{t.vault.foraging.scanning}</p>
+      <p className="typo-body text-foreground">
+        {t.vault.foraging.checking_env}
       </p>
     </div>
   );
@@ -68,17 +70,19 @@ interface ForagingImportingProps {
 }
 
 export function ForagingImporting({ forage }: ForagingImportingProps) {
+  const { t } = useTranslation();
+  const forg = t.vault.foraging;
   return (
     <div
       key="importing"
       className="animate-fade-slide-in space-y-3"
     >
-      <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
+      <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
         <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
-        <p className="text-sm text-foreground/80">
-          Importing credentials to vault...
+        <p className="typo-body text-foreground">
+          {forg.importing}
         </p>
-        <p className="text-sm text-muted-foreground/50">
+        <p className="typo-body text-foreground">
           {forage.imported.size} of {forage.selected.size} complete
         </p>
       </div>
@@ -108,18 +112,21 @@ interface ForagingDoneProps {
 }
 
 export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
+  const { t, tx } = useTranslation();
+  const forg = t.vault.foraging;
+  const count = forage.imported.size;
   return (
     <div
       key="done"
-      className="animate-fade-slide-in rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
     >
       <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
       <div>
-        <p className="text-sm font-medium text-foreground/90">
-          {forage.imported.size} credential{forage.imported.size !== 1 ? 's' : ''} imported
+        <p className="typo-body font-medium text-foreground/90">
+          {tx(count === 1 ? forg.env_var_one : forg.env_var_other, { count })} {forg.imported} {forg.to_vault}
         </p>
         {forage.error && (
-          <p className="text-sm text-amber-400/80 mt-1">{forage.error}</p>
+          <p className="typo-body text-amber-400/80 mt-1">{forage.error}</p>
         )}
       </div>
       <div className="flex items-center justify-center gap-2">
@@ -127,18 +134,18 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
           variant="link"
           size="sm"
           onClick={forage.scan}
-          className="text-muted-foreground/60 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
         >
-          Scan again
+          {forg.scan_again}
         </Button>
-        <span className="text-muted-foreground/20">|</span>
+        <span className="text-foreground">|</span>
         <Button
           variant="link"
           size="sm"
           onClick={onBack}
           className="text-violet-400/80 hover:text-violet-400"
         >
-          Back to vault
+          {forg.back_to_vault}
         </Button>
       </div>
     </div>
@@ -155,12 +162,12 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
   return (
     <div
       key="error"
-      className="animate-fade-slide-in rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
     >
       <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
       <div>
-        <p className="text-sm font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
-        <p className="text-sm text-red-400/70 mt-1">{forage.error}</p>
+        <p className="typo-body font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
+        <p className="typo-body text-red-400/70 mt-1">{forage.error}</p>
       </div>
       <div className="flex items-center justify-center gap-2">
         <Button
@@ -169,16 +176,16 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
           onClick={forage.scan}
           className="text-violet-400/80 hover:text-violet-400"
         >
-          Try again
+          {t.vault.negotiator.try_again}
         </Button>
-        <span className="text-muted-foreground/20">|</span>
+        <span className="text-foreground">|</span>
         <Button
           variant="link"
           size="sm"
           onClick={onBack}
-          className="text-muted-foreground/60 hover:text-foreground/80"
+          className="text-foreground hover:text-foreground/80"
         >
-          Back
+          {t.common.back}
         </Button>
       </div>
     </div>

@@ -80,8 +80,8 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
       className="flex flex-col gap-6 max-w-lg 2xl:max-w-2xl 3xl:max-w-3xl 4xl:max-w-4xl w-full px-6"
     >
       <div>
-        <h2 className="text-lg font-semibold text-foreground/90">{t.agents.template_picker.title}</h2>
-        <p className="text-sm text-muted-foreground/90 mt-1">
+        <h2 className="typo-heading-lg font-semibold text-foreground/90">{t.agents.template_picker.title}</h2>
+        <p className="typo-body text-foreground mt-1">
           {t.agents.template_picker.subtitle}
         </p>
       </div>
@@ -91,15 +91,15 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === 'all'
-                ? 'border-primary/30 text-foreground/80'
-                : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
+            className={`relative px-2.5 py-1 typo-body font-medium rounded-modal border transition-colors ${activeFilter === 'all'
+                ? 'border-primary/30 text-foreground'
+                : 'border-primary/10 text-foreground hover:text-muted-foreground hover:border-primary/20'
               }`}
           >
             {activeFilter === 'all' && (
               <motion.div
                 layoutId="template-filter-pill"
-                className="absolute inset-0 bg-primary/10 rounded-lg"
+                className="absolute inset-0 bg-primary/10 rounded-card"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
@@ -109,15 +109,15 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === cat
-                  ? 'border-primary/30 text-foreground/80'
-                  : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
+              className={`relative px-2.5 py-1 typo-body font-medium rounded-modal border transition-colors ${activeFilter === cat
+                  ? 'border-primary/30 text-foreground'
+                  : 'border-primary/10 text-foreground hover:text-muted-foreground hover:border-primary/20'
                 }`}
             >
               {activeFilter === cat && (
                 <motion.div
                   layoutId="template-filter-pill"
-                  className="absolute inset-0 bg-primary/10 rounded-lg"
+                  className="absolute inset-0 bg-primary/10 rounded-card"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
@@ -139,7 +139,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   onClick={() => onSelect(template)}
-                  className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
+                  className="flex items-start gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
                 >
                   <div
                     className="icon-frame-md icon-frame-pop flex-shrink-0 border"
@@ -151,8 +151,8 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                     <PersonaIcon icon={templateAgentIcon(template)} color={template.color} size="w-5 h-5" framed frameSize='lg' />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>
-                    <p className="text-sm text-muted-foreground/45 line-clamp-2 leading-relaxed mt-0.5">
+                    <p className="typo-body font-medium text-foreground/85 truncate">{template.name}</p>
+                    <p className="typo-body text-foreground line-clamp-2 leading-relaxed mt-0.5">
                       {template.description}
                     </p>
                   </div>
@@ -167,7 +167,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         {onCancel ? (
           <button
             onClick={onCancel}
-            className="px-4 py-2.5 text-sm text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            className="px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground transition-colors"
           >
             {t.common.cancel}
           </button>
@@ -176,7 +176,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         )}
         <button
           onClick={onFromScratch}
-          className="px-4 py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground transition-colors flex items-center gap-1.5"
+          className="px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground transition-colors flex items-center gap-1.5"
         >
           <PenLine className="w-3.5 h-3.5" />
           {t.agents.template_picker.start_from_scratch}

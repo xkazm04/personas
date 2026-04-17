@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   x: number;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 function BusLaneComponent({ x, y, width, height, isActive }: Props) {
+  const { t } = useTranslation();
   const barHeight = height * 4;
   const barY = y - barHeight / 2;
   const cornerR = barHeight / 2;
@@ -61,7 +63,7 @@ function BusLaneComponent({ x, y, width, height, isActive }: Props) {
         fontFamily="monospace"
         letterSpacing={3}
       >
-        EVENT QUEUE
+        {t.overview.bus_lane.event_queue}
       </text>
 
       {/* Active pulse overlay */}

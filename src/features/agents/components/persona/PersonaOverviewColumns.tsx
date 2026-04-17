@@ -120,7 +120,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         ),
         render: (p) =>
           (!p.enabled || isDraft(p))
-            ? <span className="text-md text-foreground/30">--</span>
+            ? <span className="text-md text-foreground">--</span>
             : <TrustScoreBar score={p.trust_score ?? 0} />,
       },
       {
@@ -138,7 +138,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'lastRun', label: t.agents.overview_columns.last_run, width: '120px', sortable: true, align: 'right',
         render: (p) => {
           const lastRun = lastRunMap[p.id];
-          if (!lastRun) return <span className="text-md text-foreground/30">{t.agents.persona_list.never}</span>;
+          if (!lastRun) return <span className="text-md text-foreground">{t.agents.persona_list.never}</span>;
           return (
             <Tooltip content={new Date(lastRun).toLocaleString()}>
               <span className="flex items-center justify-end gap-1 text-md text-foreground cursor-help">
@@ -160,7 +160,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
               </span>
             </Tooltip>
           ) : (
-            <span className="text-md text-foreground/30">--</span>
+            <span className="text-md text-foreground">--</span>
           ),
       },
       {

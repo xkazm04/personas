@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Shared line classification --
 
@@ -46,10 +47,11 @@ export function useTerminalScroll(lines: string[]) {
 }
 
 export function TerminalBody({ lines }: TerminalBodyProps) {
+  const { t } = useTranslation();
   return (
     <>
       {lines.length === 0 ? (
-        <div className="p-4 text-foreground text-center typo-body">No output yet...</div>
+        <div className="p-4 text-foreground text-center typo-body">{t.shared.progress_extra.no_output}</div>
       ) : (
         <div className="p-3">
           {lines.map((line, index) => {

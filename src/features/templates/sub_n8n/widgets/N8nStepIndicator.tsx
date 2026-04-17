@@ -51,8 +51,8 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
   const showTimer = processing && !!STEP_DURATION_HINT[currentStep];
 
   return (
-    <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label="Import wizard progress">
-      <div className="flex items-center gap-1 w-full" role="list" aria-label="Wizard steps">
+    <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label={t.templates.n8n.wizard_progress_aria}>
+      <div className="flex items-center gap-1 w-full" role="list" aria-label={t.templates.n8n.wizard_steps_aria}>
       {VISIBLE_STEPS.map((step, i) => {
         const Icon = STEP_ICONS[step] ?? Hammer;
         const labelKey = STEP_LABEL_KEYS[step];
@@ -91,7 +91,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                   ) : (
                     <Icon
                       className={`w-3 h-3 ${
-                        isActive ? 'text-violet-300' : 'text-muted-foreground/80'
+                        isActive ? 'text-violet-300' : 'text-foreground'
                       }`}
                     />
                   )}
@@ -104,24 +104,24 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                   {`Step ${i + 1} of ${VISIBLE_STEPS.length}: ${label} (${statusText})`}
                 </span>
                 <span
-                  className={`text-sm font-medium truncate transition-colors duration-300 block ${
+                  className={`typo-body font-medium truncate transition-colors duration-300 block ${
                     isActive
                       ? 'text-violet-300'
                       : isCompleted
                         ? 'text-emerald-400/70'
-                        : 'text-muted-foreground/80'
+                        : 'text-foreground'
                   }`}
                 >
                   {label}
                 </span>
                 {isActive && showTimer && (
-                  <span className="text-sm font-mono text-muted-foreground/90 tabular-nums leading-none">
+                  <span className="typo-code font-mono text-foreground tabular-nums leading-none">
                     {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
-                    <span className="ml-1 text-muted-foreground/60">{hint}</span>
+                    <span className="ml-1 text-foreground">{hint}</span>
                   </span>
                 )}
                 {isActive && !showTimer && hint && (
-                  <span className="text-sm text-muted-foreground/90 leading-none">{hint}</span>
+                  <span className="typo-body text-foreground leading-none">{hint}</span>
                 )}
               </div>
             </div>

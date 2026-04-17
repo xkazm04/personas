@@ -59,7 +59,7 @@ export function DeploymentTable({
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
   return (
-    <table className="w-full text-sm">
+    <table className="w-full typo-body">
       <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
         <tr>
           <th className="px-4 py-2.5 w-10">
@@ -75,10 +75,10 @@ export function DeploymentTable({
           <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.col_health}</th>
+          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_health}</th>
           <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{dt.col_actions}</th>
+          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
@@ -103,18 +103,18 @@ export function DeploymentTable({
                 <span className="font-medium text-foreground/90">{row.name}</span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-lg border ${tb.cls}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${tb.cls}`}>
                   <TargetIcon className="w-3 h-3" />
                   {tb.label}
                 </span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-lg border ${statusBadge(row.status)}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}>
                   {statusIcon(row.status)}
                   {row.status}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground/80">
+              <td className="px-4 py-3 text-right tabular-nums text-foreground">
                 {row.invocations > 0 ? row.invocations.toLocaleString() : '-'}
               </td>
               <td className="px-4 py-3">
@@ -123,14 +123,14 @@ export function DeploymentTable({
                   return health ? (
                     <DeploymentHealthSparkline daily={health} />
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/40">{row.target === 'cloud' ? t.common.loading : '-'}</span>
+                    <span className="text-[10px] text-foreground">{row.target === 'cloud' ? t.common.loading : '-'}</span>
                   );
                 })()}
               </td>
-              <td className="px-4 py-3 text-muted-foreground/70">
+              <td className="px-4 py-3 text-foreground">
                 {timeAgo(row.lastActivity)}
               </td>
-              <td className="px-4 py-3 text-muted-foreground/70">
+              <td className="px-4 py-3 text-foreground">
                 {timeAgo(row.createdAt)}
               </td>
               <td className="px-4 py-3">
@@ -141,7 +141,7 @@ export function DeploymentTable({
                       title={dt.test_deployment}
                       onClick={() => onTest(row.id, row.personaId!)}
                       disabled={isBusy || testState?.running}
-                      className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-blue-400
+                      className="p-1.5 rounded-card text-foreground hover:text-blue-400
                                  hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
                     >
                       {testState?.running ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
@@ -149,7 +149,7 @@ export function DeploymentTable({
                   )}
                   {testResult && (
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded-lg border ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded-card border ${
                         testResult.status === 'pass'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
@@ -158,7 +158,7 @@ export function DeploymentTable({
                     >
                       {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
                       {testResult.durationMs != null && (
-                        <span className="text-muted-foreground/60">
+                        <span className="text-foreground">
                           {testResult.durationMs < 1000 ? `${testResult.durationMs}ms` : `${(testResult.durationMs / 1000).toFixed(1)}s`}
                         </span>
                       )}
@@ -215,7 +215,7 @@ export function DeploymentTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}
-                      className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+                      className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
