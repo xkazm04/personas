@@ -193,7 +193,7 @@ export function ActiveBuildProgress({
           className="flex items-center gap-2 px-4 py-2.5 rounded-modal bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
         >
           <HelpCircle className="w-4 h-4" />
-          <span className="text-sm font-medium">{tx(t.templates.matrix.answer_cell, { cell: highlightedCells[0] })}</span>
+          <span className="text-sm font-medium">{tx(t.templates.matrix.answer_cell, { cell: highlightedCells[0] ?? '' })}</span>
         </button>
       ) : (
         <div className="w-10 h-10 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">

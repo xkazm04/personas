@@ -3626,6 +3626,8 @@ export const en = {
     // -- Shared vault components (shared/) ----------------------------
     shared: {
       add: "Add",
+      // "Copied" confirmation shown briefly after a copy-to-clipboard action
+      copied: "Copied",
       no_connector_available: "No connector definition available for this credential type.",
       request_builder: "Request Builder",
       close: "Close",
@@ -8359,7 +8361,7 @@ export const en = {
     // Placeholder for composite config: debounce seconds input
     composite_debounce_placeholder: "300",
     // Placeholder for file watcher config: directory path input
-    file_watcher_path_placeholder: "C:\Users\me\projects or /home/me/src",
+    file_watcher_path_placeholder: "C:/Users/me/projects or /home/me/src",
     // Placeholder for file watcher config: file pattern input
     file_watcher_pattern_placeholder: "e.g. *.py, *.{ts,tsx}, Dockerfile",
     // Placeholder for polling config: endpoint URL input
