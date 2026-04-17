@@ -22,20 +22,21 @@ export function IdleSuggestions({
   onApplyTemplate,
 }: IdleSuggestionsProps) {
   const { t } = useTranslation();
+  const dp = t.vault.design_phases;
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   return (
     <div className="p-3 rounded-modal border border-primary/15 bg-secondary/20 space-y-2">
-      <p className="typo-body text-foreground">{t.vault.design_phases.saved_catalog}</p>
+      <p className="typo-body text-foreground">{dp.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
-        placeholder={t.vault.design_phases.search_catalog}
+        placeholder={dp.search_catalog}
         className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 typo-body text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
-        <p className="typo-body text-foreground">{t.vault.design_phases.no_catalog}</p>
+        <p className="typo-body text-foreground">{dp.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (
@@ -75,10 +76,10 @@ export function IdleSuggestions({
                   {applyingTemplateId === conn.id ? (
                     <span className="inline-flex items-center gap-1">
                       <LoadingSpinner size="sm" />
-                      Loading...
+                      {t.common.loading}
                     </span>
                   ) : (
-                    'Use'
+                    dp.use_template
                   )}
                 </button>
               </div>

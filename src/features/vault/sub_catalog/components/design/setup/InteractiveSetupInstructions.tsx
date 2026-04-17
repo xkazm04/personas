@@ -28,6 +28,7 @@ export function InteractiveSetupInstructions({
   firstSetupUrl,
 }: InteractiveSetupInstructionsProps) {
   const { t } = useTranslation();
+  const dp = t.vault.design_phases;
   const { preamble, steps } = useMemo(() => parseSteps(markdown), [markdown]);
   const hasSteps = steps.length > 0;
 
@@ -80,14 +81,14 @@ export function InteractiveSetupInstructions({
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
       {/* Header -- grouped controls with separate buttons */}
-      <div className="w-full flex items-center gap-2 px-4 py-3 hover:bg-secondary/30 transition-colors" role="group" aria-label="Setup instruction controls">
+      <div className="w-full flex items-center gap-2 px-4 py-3 hover:bg-secondary/30 transition-colors" role="group" aria-label={dp.setup_instructions}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 flex-1 text-left rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
         >
           <ListChecks className="w-3.5 h-3.5 text-foreground/90 shrink-0" />
           <span className="typo-body text-foreground/85 font-medium flex-1">
-            Setup instructions
+            {dp.setup_instructions}
           </span>
 
           {/* Progress ring + badge */}
@@ -112,7 +113,7 @@ export function InteractiveSetupInstructions({
               await handleOpenUrl(firstSetupUrl);
             }}
             className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded typo-body text-foreground/90 hover:text-foreground/95 hover:bg-secondary/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-            title={t.vault.design_phases.open_setup_page}
+            title={dp.open_setup_page}
           >
             <ExternalLink className="w-2.5 h-2.5" />
             Open
@@ -157,7 +158,7 @@ export function InteractiveSetupInstructions({
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="typo-body text-emerald-300/80">
-                        All steps complete -- fill in the fields below and test your connection.
+                        {dp.all_steps_complete}
                       </span>
                     </div>
                   )}

@@ -108,7 +108,7 @@ export function IdlePhase({
         value={instruction}
         onChange={(e) => onInstructionChange(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="e.g. Slack, OpenAI, GitHub, Stripe..."
+        placeholder={t.vault.design_phases.instruction_placeholder}
         rows={3}
         autoFocus
         data-testid="vault-design-input"

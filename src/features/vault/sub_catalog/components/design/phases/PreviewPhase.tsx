@@ -21,7 +21,8 @@ const AI_STATUS = STATUS_COLORS.ai!;
 const SUCCESS_STATUS = STATUS_COLORS.success!;
 
 export function PreviewPhase() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dp = t.vault.design_phases;
   const {
     result,
     credentialName,
@@ -90,8 +91,8 @@ export function PreviewPhase() {
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
                 <p className="typo-body text-foreground/90">
-                  <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.auto_provision}</span>{' '}
-                  -- let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
+                  <span className={`${AI_STATUS.text} font-medium`}>{dp.auto_provision}</span>{' '}
+                  {tx(dp.auto_provision_hint, { label: result.connector.label })}
                 </p>
               </div>
               <button
@@ -121,7 +122,7 @@ export function PreviewPhase() {
       {/* Credential name */}
       <div>
         <label className="block typo-body font-medium text-foreground mb-1.5">
-          Credential Name
+          {dp.credential_name_label}
         </label>
         <input
           type="text"
@@ -136,7 +137,7 @@ export function PreviewPhase() {
       <div className={`flex items-start gap-2.5 px-3 py-2 rounded-modal border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
         <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.text}`} />
         <p className="typo-body text-foreground">
-          Credentials are stored securely in the app vault and are available for agent tool execution.
+          {dp.credentials_secure_notice}
         </p>
       </div>
 
@@ -177,7 +178,7 @@ export function PreviewPhase() {
           className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full typo-body ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}
         >
           <CheckCircle className="w-3.5 h-3.5" />
-          Tested successfully at {lastSuccessfulTestAt}
+          {tx(dp.tested_successfully_at, { time: lastSuccessfulTestAt })}
         </div>
       )}
     </div>

@@ -16,7 +16,8 @@ interface PreviewBannersProps {
 }
 
 export function PreviewBanners({ result, fields, requiredCount, optionalCount, onRefine }: PreviewBannersProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dp = t.vault.design_phases;
   return (
     <>
       {/* Match existing banner */}
@@ -24,10 +25,10 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
         <div className={`flex items-start gap-3 px-4 py-3 border rounded-modal ${INFO_STATUS.bg} ${INFO_STATUS.border}`}>
           <Plug className={`w-4 h-4 mt-0.5 shrink-0 ${INFO_STATUS.text}`} />
           <div className="typo-body">
-            <span className={`${INFO_STATUS.text} font-medium`}>{t.vault.design_phases.existing_connector}</span>
+            <span className={`${INFO_STATUS.text} font-medium`}>{dp.existing_connector}</span>
             <span className={INFO_STATUS.text}>{result.match_existing}</span>
             <p className="text-foreground typo-body mt-1">
-              Your credential will be linked to the existing connector definition.
+              {dp.linked_to_existing}
             </p>
           </div>
         </div>
@@ -38,14 +39,12 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
         <div className={`flex items-start gap-3 px-4 py-3 border rounded-modal ${AI_STATUS.bg} ${AI_STATUS.border}`}>
           <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.text}`} />
           <div className="typo-body">
-            <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.new_connector}</span>
+            <span className={`${AI_STATUS.text} font-medium`}>{dp.new_connector}</span>
             <span className="text-foreground">
-              -- no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
+              {tx(dp.no_existing_connector, { name: result.connector.name })}
             </span>
             <p className="text-foreground typo-body mt-1">
-              When you save this credential, the AI-generated connector definition will be
-              automatically registered in your connector catalog -- making it reusable for
-              other personas and template adoption.
+              {dp.new_connector_will_be_registered}
             </p>
           </div>
         </div>
@@ -92,7 +91,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           className="flex items-center gap-1.5 typo-body text-foreground hover:text-primary/70 transition-colors"
         >
           <PenLine className="w-3 h-3" />
-          Not quite right? Refine your request
+          {dp.refine_request}
         </button>
       )}
     </>
