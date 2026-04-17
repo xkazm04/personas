@@ -58,26 +58,32 @@ function extractKeys(filePath) {
       .replace(/'(?:[^'\\]|\\.)*'/g, "''")
       .replace(/`(?:[^`\\]|\\.)*`/g, '""');
 
+    // Count net closing braces on the stripped line to track nesting
+    const opens = (stripped.match(/\{/g) || []).length;
+    const closes = (stripped.match(/\}/g) || []).length;
+    const netClose = closes - opens;
+
     // Detect a key: value line (key may be quoted or unquoted)
     const keyMatch = trimmed.match(/^(?:"([^"]+)"|'([^']+)'|([\w$]+))\s*:/);
     if (keyMatch) {
       const key = keyMatch[1] ?? keyMatch[2] ?? keyMatch[3];
 
-      // If the value (after stripping strings) contains an opening brace, it's nested
+      // If the value (after stripping strings) opens a brace that isn't closed on the
+      // same line (opens > closes), it's a multi-line nested object — push to the path stack.
+      // If opens === closes the braces are balanced on this line (inline object like
+      // `key: { a: "x", b: "y" },`); do NOT push, or the key accumulates on the stack
+      // forever and corrupts every subsequent leaf path.
       const afterColon = stripped.slice(stripped.indexOf(":") + 1);
-      if (afterColon.includes("{")) {
+      if (afterColon.includes("{") && opens > closes) {
         stack.push(key);
-      } else {
+      } else if (!afterColon.includes("{")) {
         // Leaf key
         const fullKey = [...stack, key].join(".");
         keys.push(fullKey);
       }
+      // else: inline object (opens === closes) — leaf keys inside are not individually
+      // parseable from this line, so skip silently (same behaviour as before the bug).
     }
-
-    // Count net closing braces on the stripped line to track nesting
-    const opens = (stripped.match(/\{/g) || []).length;
-    const closes = (stripped.match(/\}/g) || []).length;
-    const netClose = closes - opens;
     for (let i = 0; i < netClose && stack.length > 0; i++) {
       stack.pop();
     }
