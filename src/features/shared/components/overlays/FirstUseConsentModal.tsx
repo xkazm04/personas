@@ -20,7 +20,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { setTelemetryEnabled } from '@/lib/telemetryPreference';
 
 const CONSENT_KEY = '__personas_user_consent_accepted';
-const CONSENT_VERSION = '2';
+const CONSENT_VERSION = '3';
 
 export function hasUserConsented(): boolean {
   try {
@@ -279,7 +279,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
         {/* Footer */}
         <div className="px-6 py-4 border-t border-primary/10 flex items-center justify-between">
           <a
-            href="https://github.com/anthropics/personas-desktop"
+            href="https://github.com/xkazm04/personas"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-foreground hover:text-foreground transition-colors"
