@@ -31,7 +31,7 @@ interface VectorKbModalProps {
 }
 
 export function VectorKbModal({ credential, connector, onClose }: VectorKbModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [activeTab, setActiveTab] = useState<VectorTab>('documents');
   const [visited, setVisited] = useState<Set<VectorTab>>(() => new Set(['documents']));
@@ -150,7 +150,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
             {sh.vector_kb}
             {kb && (
               <span className="ml-2 typo-caption">
-                -- {kb.documentCount} docs, {kb.chunkCount} chunks
+                {tx(sh.kb_count_summary, { docs: kb.documentCount, chunks: kb.chunkCount })}
               </span>
             )}
           </p>

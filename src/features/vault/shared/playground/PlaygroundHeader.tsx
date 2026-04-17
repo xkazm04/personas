@@ -197,7 +197,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             <button
               onClick={() => { setShowTagInput(true); setTimeout(() => tagInputRef.current?.focus(), 0); }}
               className="inline-flex items-center gap-0.5 typo-caption text-foreground hover:text-muted-foreground/70 transition-colors"
-              title="Add tag"
+              title={t.vault.shared.add_tag_title}
             >
               <Plus className="w-2.5 h-2.5" /> tag
             </button>

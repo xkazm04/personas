@@ -144,7 +144,7 @@ export function OverviewTab({
               variant="ghost"
               size="xs"
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/10 bg-secondary/20 text-foreground hover:text-foreground/80"
-              title="Copy credential ID"
+              title={t.vault.shared.copy_credential_id}
             >
               <span className="font-mono">id</span>
               {copiedId ? (

@@ -1634,6 +1634,8 @@ export const en = {
       msg_count_one: "{count} msg",
       msg_count_other: "{count} msgs",
       resume: "Resume",
+      // aria-label on the conversation card controls group
+      conv_controls_aria: "Design conversation controls",
 
       // DesignConversationHistory -- section titles
       design_drift: "Design Drift",
@@ -1767,6 +1769,8 @@ export const en = {
       // GitHub token scope warning -- shown when repo or workflow scope is missing
       // {scopes} = e.g. "'repo' and 'workflow'"
       auto_github_token_needs: "Your token needs {scopes} scope(s). Update your token at github.com/settings/tokens.",
+      // Tooltip on fallback shield badge in AutomationCard
+      auto_fallback_title: "Falls back to direct connector on failure",
 
       // -- Notification channels --
       ch_title: "Notification Channels",
@@ -1970,6 +1974,8 @@ export const en = {
       model_name_placeholder_litellm: "e.g. anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "e.g. llama3.1:8b",
       model_name_placeholder_custom: "Model identifier",
+      // Placeholder for use-case model override form (shows full example model id)
+      model_name_placeholder_override: "e.g. claude-sonnet-4-20250514",
       base_url_hint: "The API endpoint for your model provider. Must include protocol (http/https) and port if non-standard.",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "Authentication token for the provider API. For Ollama local, use 'ollama'. For LiteLLM, use your master key.",
@@ -2650,6 +2656,14 @@ export const en = {
       health_watch: "Health Watch",
       health_watch_active: "Health monitoring active (every 6h)",
       health_watch_enable: "Enable continuous health monitoring",
+
+      // TwinBindingCard -- twin persona voice binding
+      // Label above the twin selector
+      speak_as: "Speak as",
+      // Shown when no twin profiles exist
+      no_twins_configured: "No twins configured. Open the Twin plugin to create one \u2014 this persona will then be able to adopt it.",
+      // aria-label on the twin profile select element
+      twin_profile_aria: "Twin profile this persona speaks as",
     },
 
     tool_runner: {
@@ -2660,6 +2674,8 @@ export const en = {
       success: "Success",
       failed: "Failed",
       error: "Error",
+      // Placeholder shown in the JSON input textarea
+      input_json_placeholder: '{ "key": "value" }',
     },
 
     // -- Health check panel (full-page health check) --
@@ -2718,6 +2734,8 @@ export const en = {
       new_section: "New Section",
       saved: "Saved",
       sections: "sections",
+      // aria-label on the vertical tab list in PromptSectionSidebar
+      sections_aria: "Prompt sections",
     },
 
     // -- Custom sections panel --
@@ -3706,8 +3724,13 @@ export const en = {
       local_embedding_hint: "Embeddings are generated locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.",
       // RequestBuilder placeholder and send button labels
       api_path_placeholder: "/api/v1/resource",
+      // RequestBuilder JSON body editor placeholder
+      json_body_placeholder: '{"key": "value"}',
       sending: "Sending...",
       send: "Send",
+      // SearchTab stats bar -- {count} = result count, {query} = search query
+      search_results_one: "{count} result for \"{query}\"",
+      search_results_other: "{count} results for \"{query}\"",
     },
     // Credential manager header / toolbar
     manager: {
@@ -4774,6 +4797,8 @@ export const en = {
       channel_desktop: "Desktop",
       // MessageDetailModal ID label
       id_label: "ID:",
+      // title for the confirm-delete button
+      confirm_delete_title: "Confirm delete",
       // title for the close button in MessageDetailModal
       close_message: "Close message detail",
     },
@@ -4809,6 +4834,12 @@ export const en = {
       no_memories_match: "No memories match current filters",
       // aria-label for the memory list container
       list_aria_label: "Memory list",
+      // "Add Memory" button label in MemoryHeaderActions
+      add_memory_btn: "Add Memory",
+      // "Search memories..." placeholder in MemoriesPage
+      search_placeholder: "Search memories...",
+      // "No memories match your filters" message  
+      no_filter_match: "No memories match your filters. Try adjusting your search.",
       form: {
         agent: "Agent",
         category: "Category",
@@ -5934,6 +5965,10 @@ export const en = {
       loading_patterns: "Loading knowledge patterns...",
       // Title attr for the drill-down toggle button
       drilldown_toggle_title: "Show/hide failure drill-down",
+      // Empty state when no patterns exist at all
+      no_patterns_yet: "No knowledge patterns yet",
+      // Subtitle for the no-patterns-yet empty state
+      no_patterns_yet_hint: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
       // Empty state when filters match nothing
       no_patterns_match: "No patterns match current filters",
       // Section heading
@@ -6787,16 +6822,28 @@ export const en = {
       drop_file_here: "Drop your workflow file here",
       import_from_any_platform: "Import a workflow from any platform",
       click_to_browse: "Click to browse or drag and drop your exported workflow",
+      // aria-label for the upload dropzone region
+      dropzone_aria: "Drop workflow file or click to browse",
       continue_btn: "Continue",
       press_enter_or_click: "Press Enter or click to continue",
       paste_workflow_json: "Paste workflow JSON",
       paste_placeholder: "Paste your exported workflow JSON here...",
+      // aria-label for the paste JSON textarea
+      paste_aria: "Workflow JSON content",
       import_btn: "Import",
       import_from_url: "Import from URL",
       url_description: "Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.",
       fetching: "Fetching",
       fetch: "Fetch",
       accepts_label: "Accepts:",
+      // aria-label for the URL input
+      url_aria: "Workflow URL",
+      // Placeholder for the URL input field
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      // Format examples shown next to the Accepts label in the URL tab
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "raw JSON endpoint",
       // N8nTransformChat
       customize_persona: "A few questions to customize your persona",
       answer_then_generate: "Answer below, then click Generate",
@@ -9215,11 +9262,25 @@ export const en = {
     // SkippedRecoveryPanel
     agents_missed: "{count} agent(s) missed executions",
     total_skipped: "~{count} total runs skipped while app was offline",
+    // {count} = number of missed runs, {time} = relative time label
+    missed_since: "{count} missed since {time}",
     recover: "Recover",
+    // Tooltip for the recover button
+    mark_for_recovery: "Mark for recovery",
+    // Tooltip for the run-once button
+    run_once_now: "Run once now",
     run_1x: "Run 1x",
     skip: "Skip",
+    // Tooltip for the skip/dismiss button
+    skip_dont_recover: "Skip -- don't recover",
     dismiss_all: "Dismiss all",
     recover_selected: "Recover {count} selected",
+    // EventTooltip overlap label
+    overlaps_with: "Overlaps with",
+    // ScheduleTimeline toolbar
+    refresh_schedules: "Refresh schedules",
+    // aria-label for the schedule view tab group
+    schedule_view_aria: "Schedule view",
 
     // ScheduleCalendar
     today: "Today",
@@ -12345,6 +12406,26 @@ export const en = {
       percent_similar: "% similar",
       // Section header for potential duplicate ideas
       potential_duplicates: "Potential Duplicates",
+      // Message showing which model is scanning; model name appended in JSX
+      scanning_with: "Scanning with",
+      // Status message while analyzing the codebase
+      analyzing_codebase: "Analyzing codebase...",
+      // Empty state message when no previous scans exist
+      no_previous_scans: "No previous scans yet.",
+      // Button label to run an automated scan
+      auto_scan: "Auto-Scan",
+      // Label for the automated context scan section
+      automated_context_scan: "Automated Context Scan",
+      // Prefix before the scan date/time in scan history
+      run_scan_prefix: "Run:",
+      // Prefix before the result count in scan history
+      results_prefix: "Results:",
+      // Prefix before the history item count
+      scan_history_prefix: "Scan History",
+      // Title for the idea scanner page/header
+      idea_scanner_title: "Idea Scanner",
+      // Subtitle describing the idea scanner feature
+      idea_scanner_subtitle: "AI-powered idea analysis and evolution",
     },
 
     // ---------------------------------------------------------------

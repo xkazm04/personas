@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, Play, CheckCircle2, XCircle, MinusCircle, Cl
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ApiEndpoint } from '@/api/system/apiProxy';
 import type { EndpointTestResult } from './useApiTestRunner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Method badge colors ------------------------------------------
 
@@ -26,6 +27,7 @@ interface EndpointRowProps {
 }
 
 export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult }: EndpointRowProps) {
+  const { t } = useTranslation();
   const methodStyle = METHOD_STYLES[endpoint.method.toUpperCase()] || DEFAULT_METHOD_STYLE;
 
   return (
@@ -121,7 +123,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           {endpoint.request_body && (
             <div className="space-y-1">
               <span className="typo-heading uppercase tracking-wider text-cyan-400/70 font-semibold">
-                Request Body
+                {t.vault.shared.request_body}
               </span>
               <div className="typo-body text-foreground">
                 {endpoint.request_body.content_type}

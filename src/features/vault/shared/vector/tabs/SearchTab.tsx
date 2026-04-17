@@ -11,7 +11,7 @@ interface SearchTabProps {
 }
 
 export function SearchTab({ kb }: SearchTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   const [query, setQuery] = useState('');
   const [topK, setTopK] = useState(10);
@@ -142,7 +142,7 @@ export function SearchTab({ kb }: SearchTabProps) {
                 <Clock className="w-3 h-3" />
                 {durationMs}ms
               </span>
-              <span>{results.length} result{results.length !== 1 ? 's' : ''} for "{lastQuery}"</span>
+              <span>{tx(results.length === 1 ? sh.search_results_one : sh.search_results_other, { count: results.length, query: lastQuery ?? '' })}</span>
             </div>
 
             {results.map((result, i) => (

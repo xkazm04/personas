@@ -60,8 +60,8 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
         {/* Metadata */}
         <div className="flex items-center gap-3 mt-2 typo-caption text-foreground">
-          <span>distance: {result.distance.toFixed(4)}</span>
-          <span>chunk: {result.chunkId.slice(0, 8)}</span>
+          <span>{sh.distance_label} {result.distance.toFixed(4)}</span>
+          <span>{sh.chunk_label} {result.chunkId.slice(0, 8)}</span>
         </div>
       </div>
     </div>

@@ -128,7 +128,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             {/* Default patterns hint */}
             {patterns.length === 0 && (
               <p className="typo-caption text-foreground mb-2">
-                Default: {DEFAULT_PATTERNS.slice(0, 6).join(', ')}...
+                {sh.default_patterns} {DEFAULT_PATTERNS.slice(0, 6).join(', ')}...
               </p>
             )}
 
@@ -153,7 +153,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 value={customPattern}
                 onChange={(e) => setCustomPattern(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
-                placeholder="*.pdf"
+                placeholder={sh.add_pattern_placeholder}
                 className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               />
               <button

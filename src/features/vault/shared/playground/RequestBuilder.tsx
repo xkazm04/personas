@@ -78,7 +78,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           type="text"
           value={path}
           onChange={(e) => setPath(e.target.value)}
-          placeholder="/api/v1/resource"
+          placeholder={t.vault.shared.api_path_placeholder}
           className="flex-1 px-3 py-2 rounded-modal typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
         />
         <button
@@ -87,7 +87,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
           className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {isSending ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-          {isSending ? 'Sending...' : 'Send'}
+          {isSending ? t.vault.shared.sending : t.vault.shared.send}
         </button>
       </div>
 
@@ -125,7 +125,7 @@ export function RequestBuilder({ endpoint, onSend, isSending }: RequestBuilderPr
             value={body}
             onChange={setBody}
             language="json"
-            placeholder='{"key": "value"}'
+            placeholder={t.vault.shared.json_body_placeholder}
             minHeight="80px"
           />
         </Section>

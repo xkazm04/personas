@@ -7,7 +7,7 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ kb }: SettingsTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -46,8 +46,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
           {sh.local_embedding}
         </h3>
         <p className="typo-caption text-foreground leading-relaxed">
-          Embeddings are generated locally using {kb.embeddingModel} ({kb.embeddingDims}-dim).
-          No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.
+          {tx(sh.local_embedding_hint, { model: kb.embeddingModel, dims: kb.embeddingDims })}
         </p>
       </div>
     </div>
