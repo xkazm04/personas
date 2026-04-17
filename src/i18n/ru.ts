@@ -1,4 +1,5 @@
 export const ru = {
+
   common: {
     loading: "Загрузка...",
     saving: "Сохранение...",
@@ -47,7 +48,6 @@ export const ru = {
     error: "Ошибка",
     success: "Успешно",
     required: "обязательно",
-    optional: "необязательно",
     select: "-- выберите --",
     no_results: "Ничего не найдено",
     active: "Активен",
@@ -167,7 +167,7 @@ export const ru = {
     edge_count_few: "{count} связи",
     edge_count_many: "{count} связей",
     adoption_count_few: "{count} внедрения",
-    adoption_count_many: "{count} внедрений"
+    adoption_count_many: "{count} внедрений",
   },
   chrome: {
     app_title: "Personas",
@@ -187,7 +187,7 @@ export const ru = {
     sign_in_google: "Войти через Google",
     signed_in: "Вы вошли",
     sign_out: "Выйти",
-    offline: "Офлайн"
+    offline: "Офлайн",
   },
   sidebar: {
     home: "Главная",
@@ -233,8 +233,6 @@ export const ru = {
     engine: "Движок",
     byom: "BYOM",
     data: "Данные",
-    quality_gates: "Фильтры контента",
-    config_resolution: "Настройка агента",
     admin: "Администрирование",
     create: "Создать",
     all_agents: "Все агенты",
@@ -264,7 +262,7 @@ export const ru = {
     unread_messages_sr_few: "{count} непрочитанных сообщения",
     unread_messages_sr_many: "{count} непрочитанных сообщений",
     pending_events_sr_few: "{count} ожидающих события",
-    pending_events_sr_many: "{count} ожидающих событий"
+    pending_events_sr_many: "{count} ожидающих событий",
   },
   home: {
     welcome: "Добро пожаловать",
@@ -289,7 +287,7 @@ export const ru = {
       priority_next: "Далее",
       priority_later: "Позже",
       in_progress_count: "{count} в процессе",
-      next_count: "{count} следующих"
+      next_count: "{count} следующих",
     },
     setup: {
       choose_role: "Выберите роль",
@@ -317,45 +315,45 @@ export const ru = {
       role_manager_hint: "Планирование и координация",
       role: "Роль",
       tool: "Инструмент",
-      goal: "Цель"
+      goal: "Цель",
     },
     nav: {
       overview: {
         label: "Обзор",
-        description: "Аналитика, история выполнений и мониторинг системы в реальном времени по всем агентам"
+        description: "Аналитика, история выполнений и мониторинг системы в реальном времени по всем агентам",
       },
       personas: {
         label: "Агенты",
-        description: "Создание, настройка и управление агентами с пользовательским поведением и возможностями"
+        description: "Создание, настройка и управление агентами с пользовательским поведением и возможностями",
       },
       events: {
         label: "События",
-        description: "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию"
+        description: "Настройка триггеров событий, обработчиков webhook и автоматизаций по расписанию",
       },
       credentials: {
         label: "Ключи",
-        description: "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами"
+        description: "Управление учётными данными API, подключениями к базам данных, токенами OAuth и зашифрованными секретами",
       },
       "design-reviews": {
         label: "Шаблоны",
-        description: "Импорт рабочих процессов n8n, галерея шаблонов и генерация схем агентов"
+        description: "Импорт рабочих процессов n8n, галерея шаблонов и генерация схем агентов",
       },
       team: {
         label: "Команды",
-        description: "Создание мультиагентных командных конвейеров с визуальной оркестрацией и маршрутизацией"
+        description: "Создание мультиагентных командных конвейеров с визуальной оркестрацией и маршрутизацией",
       },
       cloud: {
         label: "Облако",
-        description: "Развёртывание агентов в облаке, управление расписаниями и интеграция с GitLab CI"
+        description: "Развёртывание агентов в облаке, управление расписаниями и интеграция с GitLab CI",
       },
       settings: {
         label: "Настройки",
-        description: "Настройки аккаунта, темы оформления, правила уведомлений и конфигурация движка"
+        description: "Настройки аккаунта, темы оформления, правила уведомлений и конфигурация движка",
       },
       plugins: {
         label: "Плагины",
-        description: "Расширяйте агентов плагинами и пользовательскими расширениями"
-      }
+        description: "Расширяйте агентов плагинами и пользовательскими расширениями",
+      },
     },
     learning: {
       title: "Учебный центр",
@@ -372,7 +370,7 @@ export const ru = {
       pro_tip: "Совет: ",
       cat_agent_craft: "Создание агентов",
       cat_observability: "Мониторинг и события",
-      cat_platform: "Платформа и настройка"
+      cat_platform: "Платформа и настройка",
     },
     setup_stepper: {
       your_profile: "Ваш профиль",
@@ -388,18 +386,18 @@ export const ru = {
       ready_to_save: "Готово к сохранению",
       back: "Назад",
       next: "Далее",
-      finish: "Завершить"
+      finish: "Завершить",
     },
     welcome_layout: {
       get_started: "Начать",
-      language: "Язык"
+      language: "Язык",
     },
     icon_showcase: {
       lucide_tab: "Lucide (библиотека)",
       personas_tab: "Personas (анимированные)",
       lucide_footer: "lucide-react — универсальная библиотека иконок — статические",
-      personas_footer: "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
-    }
+      personas_footer: "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема",
+    },
   },
   agents: {
     title: "Personas",
@@ -412,12 +410,12 @@ export const ru = {
       active: "Активные",
       idle: "Неактивные",
       subtitle_few: "{count} агента -- отсортировано по релевантности",
-      subtitle_many: "{count} агентов -- отсортировано по релевантности"
+      subtitle_many: "{count} агентов -- отсортировано по релевантности",
     },
     sidebar: {
       no_match: "Нет агентов, соответствующих фильтрам",
       clear_filters: "Сбросить все фильтры",
-      empty: "Нет агентов"
+      empty: "Нет агентов",
     },
     preview: {
       sensitive_hidden: "Конфиденциальный предпросмотр скрыт",
@@ -434,7 +432,7 @@ export const ru = {
       no_triggers: "Нет триггеров",
       custom_model: "Пользовательская",
       triggers_active_few: "{count} активных триггера",
-      triggers_active_many: "{count} активных триггеров"
+      triggers_active_many: "{count} активных триггеров",
     },
     creation: {
       heading: "Новый агент",
@@ -451,7 +449,7 @@ export const ru = {
       no_group: "Без группы",
       create_button: "Создать агента",
       creating_button: "Создание...",
-      name_required: "Введите имя для продолжения"
+      name_required: "Введите имя для продолжения",
     },
     editor: {
       tabs: {
@@ -462,7 +460,7 @@ export const ru = {
         design: "Дизайн",
         health: "Здоровье",
         settings: "Настройки",
-        model: "Модель"
+        model: "Модель",
       },
       no_persona: "Агент не выбран",
       save_failed: "Не удалось сохранить {tabs}",
@@ -476,13 +474,13 @@ export const ru = {
       cloud_banner_connect: "Подключите облачный оркестратор для удалённого запуска агентов",
       cloud_banner_signin: "Войдите, чтобы разблокировать облачные функции и удалённое выполнение",
       sign_in: "Войти",
-      set_up_cloud: "Настроить облако"
+      set_up_cloud: "Настроить облако",
     },
     header: {
       no_triggers_warning: "Триггеры и подписки на события не настроены",
       missing_credentials: "Отсутствуют учётные данные: {credentials}",
       toggle_failed: "Не удалось переключить агента -- проверьте подключение",
-      cannot_enable: "Невозможно включить агента"
+      cannot_enable: "Невозможно включить агента",
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -503,7 +501,7 @@ export const ru = {
       selected: "{count} выбрано",
       remove_from_favorites: "Удалить из избранного",
       add_to_favorites: "Добавить в избранное",
-      filter_by: "Фильтр по {label}"
+      filter_by: "Фильтр по {label}",
     },
     status: {
       draft: "Черновик",
@@ -511,7 +509,7 @@ export const ru = {
       healthy: "В норме",
       degraded: "Деградация",
       failing: "Сбой",
-      building: "Строится"
+      building: "Строится",
     },
     executions: {
       no_persona_selected: "Агент не выбран",
@@ -752,10 +750,6 @@ export const ru = {
       loading_dream_replay: "Загрузка Dream Replay...",
       no_dream_trace: "Данные трассировки для Dream Replay недоступны",
       frame_count: "Кадр {index}/{total}",
-      depth_label: "Глубина:",
-      active_count_label: "Активные ({count})",
-      completed_count_label: "Завершённые ({count})",
-      metadata_section: "Метаданные",
       phase_initializing: "Инициализация",
       phase_thinking: "Обдумывание",
       phase_calling_tools: "Запуск инструментов",
@@ -783,15 +777,6 @@ export const ru = {
       offset_prefix: "смещение:",
       step_tooltip: "Шаг {step}: {name}",
       ms_into_stage: "{ms}мс в стадии",
-      chain_id_prefix: "Цепочка: {id}",
-      chain_total_duration: "Всего: {duration}",
-      zero_ms: "0мс",
-      tool_calls_count: "{count} вызов инструмента",
-      tool_calls_count_other: "{count} вызовов инструментов",
-      unique_tools_count: "({count} уникальных)",
-      prev_error_nav: "Предыдущая ошибка (Shift+E)",
-      next_error_nav: "Следующая ошибка (E)",
-      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "Арена",
@@ -925,8 +910,6 @@ export const ru = {
       quality_label: "Качество",
       speed_label: "Скорость",
       cost_label: "Стоимость",
-      objective_warning: "Проблема с целью оптимизации",
-      objective_fallback_toast: "Эволюция использовала веса по умолчанию — проверьте настройки цели",
       genome_breeding: "Геномное скрещивание",
       genome_breeding_subtitle: "Скрещивание лучших агентов для поиска новых конфигураций",
       select_parents: "Выберите родителей (2–5 агентов)",
@@ -1043,7 +1026,7 @@ export const ru = {
       quality_score_inline: "Балл: {score} | {coverage} сценариев",
       cancel_default: "Отменить",
       hide_impact: "Скрыть влияние",
-      show_impact: "Показать влияние"
+      show_impact: "Показать влияние",
     },
     design: {
       select_agent: "Выберите агента для анализа дизайна",
@@ -1053,7 +1036,7 @@ export const ru = {
       compile_from_examples: "Компилировать из примеров",
       compile_intent: "Компилировать намерение",
       analyze_build: "Анализировать и построить",
-      intent_placeholder: "Опишите на обычном языке, что должен делать агент...\\\n\\\nнапример, \\\"Отслеживать наш Stripe на предмет неудачных платежей более $100 и уведомлять финансовую команду в Slack\\\"",
+      intent_placeholder: "Опишите на обычном языке, что должен делать агент...\\n\\nнапример, \\\"Отслеживать наш Stripe на предмет неудачных платежей более $100 и уведомлять финансовую команду в Slack\\\"",
       intent_submit_hint: "Enter — отправить, Shift+Enter — новая строка.",
       intent_detail: "Компилятор создаст полную конфигурацию: промпт, инструменты, триггеры, сценарии, рекомендацию модели и тестовые сценарии.",
       example_context_placeholder: "Необязательно: добавьте контекст или ограничения",
@@ -1109,14 +1092,13 @@ export const ru = {
       msg_count_one: "{count} сообщ.",
       msg_count_other: "{count} сообщ.",
       resume: "Продолжить",
-      conv_controls_aria: "Элементы управления дизайн-беседой",
       design_drift: "Дрейф дизайна",
       design_sessions: "Сессии дизайна",
       example_n: "Пример {index}",
       remove_example: "Удалить пример",
       input_label: "Вход — что получает агент",
       output_label: "Выход — что должен выдать агент",
-      input_placeholder: "Вставьте реальные данные...\\\n\\\nнапример, тело письма, сообщение Slack, входящий запрос",
+      input_placeholder: "Вставьте реальные данные...\\n\\nнапример, тело письма, сообщение Slack, входящий запрос",
       output_placeholder: "Опишите или вставьте желаемый вывод...",
       example_instructions: "Вставьте реальные данные и покажите желаемый вывод. Компилятор создаст конфигурацию агента из примеров.",
       add_first_example: "Добавьте первый пример вход → выход",
@@ -1128,7 +1110,7 @@ export const ru = {
       next: "Далее",
       go_back_hint: "Вернитесь назад и ответьте на вопросы для настройки агента.",
       additional_instructions: "Дополнительные инструкции или контекст (необязательно)",
-      additional_instructions_placeholder: "Добавьте конкретные требования, знания предметной области или ограничения..."
+      additional_instructions_placeholder: "Добавьте конкретные требования, знания предметной области или ограничения...",
     },
     connectors: {
       connectors_label: "Коннекторы",
@@ -1214,9 +1196,6 @@ export const ru = {
       auto_event_type: "Тип события: {eventType}",
       auto_zapier_hint: "Catch hook будет проверен и подключён.",
       auto_custom_hint: "Требуется ручная настройка. Автоматизация будет сохранена как черновик.",
-      auto_input_schema_placeholder: "строка",
-      auto_github_token_needs: "Вашему токену нужны области доступа: {scopes}. Обновите токен на github.com/settings/tokens.",
-      auto_fallback_title: "При ошибке переключается на прямой коннектор",
       ch_title: "Каналы уведомлений",
       ch_add: "Добавить канал",
       ch_all_added: "Все типы каналов добавлены",
@@ -1292,7 +1271,7 @@ export const ru = {
       sub_confirm: "Подтвердить?",
       sub_triggers_title: "Триггеры и подписки",
       sub_suggested: "{count} предложено",
-      sub_filter: "фильтр: {filter}"
+      sub_filter: "фильтр: {filter}",
     },
     editor_chrome: {
       tab_activity: "Активность",
@@ -1325,7 +1304,7 @@ export const ru = {
       latency_label: "Задержка",
       cost_run_label: "Стоимость/запуск",
       last_run_label: "Последний запуск",
-      rank: "Ранг"
+      rank: "Ранг",
     },
     model_config: {
       model_provider: "Модель и провайдер",
@@ -1388,7 +1367,6 @@ export const ru = {
       model_name_placeholder_litellm: "например, anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "например, llama3.1:8b",
       model_name_placeholder_custom: "Идентификатор модели",
-      model_name_placeholder_override: "напр. claude-sonnet-4-20250514",
       base_url_hint: "Конечная точка API вашего провайдера. Должна включать протокол (http/https) и порт если нестандартный.",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "Токен аутентификации для API провайдера. Для Ollama используйте 'ollama'. Для LiteLLM — мастер-ключ.",
@@ -1429,7 +1407,7 @@ export const ru = {
       latency: "Задержка",
       cost: "Стоимость",
       output_previews: "Предпросмотр вывода",
-      no_output: "Вывода нет"
+      no_output: "Вывода нет",
     },
     use_cases: {
       no_persona: "Агент не выбран",
@@ -1524,7 +1502,7 @@ export const ru = {
       cron_field_hour: "час",
       cron_field_day: "день",
       cron_field_month: "месяц",
-      cron_field_weekday: "день нед."
+      cron_field_weekday: "день нед.",
     },
     tools: {
       no_persona: "Агент не выбран",
@@ -1563,11 +1541,11 @@ export const ru = {
       credential: "Учётные данные",
       linked: "— привязано",
       cred_missing: "— отсутствует",
-      often_used: "Часто используется вместе"
+      often_used: "Часто используется вместе",
     },
     chat_thread: {
       welcome: "Опишите, что должен делать этот агент. Я составлю полную конфигурацию — промпт, инструменты, триггеры — по вашему описанию.",
-      welcome_example: "Следить за PR в GitHub и каждое утро отправлять сводку в Slack"
+      welcome_example: "Следить за PR в GitHub и каждое утро отправлять сводку в Slack",
     },
     assign: {
       assign_to: "Назначить {role}",
@@ -1578,50 +1556,50 @@ export const ru = {
       no_saved_credentials: "Сохранённых учётных данных пока нет",
       no_credentials_match: "Учётные данные не найдены",
       vault_hint: "Сохраните учётные данные в хранилище или используйте вкладку Коннекторы",
-      no_connectors_match: "Коннекторы не найдены"
+      no_connectors_match: "Коннекторы не найдены",
     },
     credential_coverage: "{matched}/{total} учётных данных",
     role_card: {
       no_credential: "Нет учётных данных",
       edit_tables: "изменить",
       select_tables: "выбрать таблицы",
-      assign: "Назначить"
+      assign: "Назначить",
     },
     channel_picker: {
       in_app_messaging: "Внутреннее сообщение",
-      vault_hint: "Сохраните коммуникационные учётные данные (Slack, Email и т.д.) в хранилище, чтобы видеть их здесь."
+      vault_hint: "Сохраните коммуникационные учётные данные (Slack, Email и т.д.) в хранилище, чтобы видеть их здесь.",
     },
     connector_picker: {
       no_connectors: "Коннекторов нет",
       search: "Поиск коннекторов...",
-      no_match: "Нет коннекторов по запросу \\\"{search}\\\""
+      no_match: "Нет коннекторов по запросу \\\"{search}\\\"",
     },
     policy_picker: {
       error_handling: "Обработка ошибок",
-      manual_review: "Ручная проверка"
+      manual_review: "Ручная проверка",
     },
     table_selector: {
       title: "Выбрать таблицы",
       subtitle: "{label} — выберите таблицы для отслеживания",
       tables_selected_one: "{count} таблица выбрана",
       tables_selected_other: "{count} таблиц выбрано",
-      no_tables_selected: "Таблицы не выбраны — агент следит за всеми"
+      no_tables_selected: "Таблицы не выбраны — агент следит за всеми",
     },
     trigger_popover: {
       trigger: "Триггер",
-      clear_override: "Сбросить переопределение"
+      clear_override: "Сбросить переопределение",
     },
     use_case: {
       add: "Добавить сценарий",
       title_placeholder: "Название сценария — например, Обработка возвратов, Сводка тикетов",
-      description_placeholder: "Опишите шаги — например, При поступлении запроса на возврат проверить заказ, проверить политику и отправить одобрение или отказ"
+      description_placeholder: "Опишите шаги — например, При поступлении запроса на возврат проверить заказ, проверить политику и отправить одобрение или отказ",
     },
     builder_action: {
       processing: "Обработка...",
       error_retry: "Что-то пошло не так. Попробуйте ещё раз.",
       enhancing: "Улучшение...",
       enhance_with_ai: "Улучшить с ИИ",
-      describe_agent: "Опишите, что должен делать ваш агент"
+      describe_agent: "Опишите, что должен делать ваш агент",
     },
     builder_preview: {
       title: "Предпросмотр",
@@ -1635,7 +1613,7 @@ export const ru = {
       schedule: "Расписание",
       manual_only: "Только вручную",
       errors: "Ошибки",
-      review: "Проверка"
+      review: "Проверка",
     },
     dry_run: {
       ready: "Готово",
@@ -1647,7 +1625,7 @@ export const ru = {
       issues: "Проблемы",
       apply_fix: "Применить исправление: {label}",
       manual_action_needed: "Требуется ручное действие",
-      no_issues: "Проблем не найдено. Конфигурация агента выглядит хорошо."
+      no_issues: "Проблем не найдено. Конфигурация агента выглядит хорошо.",
     },
     identity_preview: {
       title: "Предпросмотр",
@@ -1658,7 +1636,7 @@ export const ru = {
       components: "Компоненты",
       schedule_label: "Расписание:",
       errors_label: "Ошибки:",
-      review_label: "Проверка:"
+      review_label: "Проверка:",
     },
     build_review: {
       agent_name: "Имя агента",
@@ -1667,7 +1645,7 @@ export const ru = {
       connectors_ready: "Коннекторы готовы",
       promote_agent: "Опубликовать агента",
       testing: "Тестирование...",
-      test_agent: "Тестировать агента"
+      test_agent: "Тестировать агента",
     },
     connectors_cell: {
       add_in_keys: "Добавить в Ключи",
@@ -1677,7 +1655,7 @@ export const ru = {
       swap_to: "Переключить на:",
       recalculating: "Пересчёт...",
       recalculate_dimensions: "Пересчитать измерения",
-      rebuilding: "Перестройка с новым коннектором..."
+      rebuilding: "Перестройка с новым коннектором...",
     },
     dimension_edit: {
       add_item: "Добавить элемент...",
@@ -1703,7 +1681,7 @@ export const ru = {
       fully_automated: "Полная автоматизация",
       cron_label: "Cron:",
       every_label: "Каждые:",
-      done: "Готово"
+      done: "Готово",
     },
     quick_config: {
       title: "Быстрая настройка",
@@ -1717,7 +1695,7 @@ export const ru = {
       monthly: "Ежемесячно",
       days: "Дни",
       day_of_month: "День месяца",
-      time: "Время"
+      time: "Время",
     },
     events_panel: {
       source_agent: "Агент-источник",
@@ -1726,23 +1704,23 @@ export const ru = {
       select_agent: "Выберите агента",
       loading_events: "Загрузка событий...",
       no_subscriptions: "Подписок на события не найдено",
-      choose_agent: "Выберите агента для просмотра его событий"
+      choose_agent: "Выберите агента для просмотра его событий",
     },
     matrix_cred_picker: {
       no_stored: "Нет сохранённых учётных данных",
       best_match: "Лучшее совпадение",
-      other: "Другое"
+      other: "Другое",
     },
     services_panel: {
       no_connectors: "Нет коннекторов с рабочими API-ключами. Сначала добавьте учётные данные в хранилище.",
-      select_table: "Выбрать таблицу"
+      select_table: "Выбрать таблицу",
     },
     spatial_question: {
       agent_configuration: "Конфигурация агента",
       or_custom_answer: "Или введите свой ответ",
       type_answer: "Введите ответ...",
       submit: "Отправить",
-      press_to_select: "Нажмите 1-{count} для быстрого выбора"
+      press_to_select: "Нажмите 1-{count} для быстрого выбора",
     },
     table_picker: {
       title: "Выбрать таблицу",
@@ -1750,12 +1728,12 @@ export const ru = {
       loading: "Загрузка таблиц...",
       no_tables: "Таблиц для этого коннектора не найдено",
       clear_selection: "Сбросить выбор",
-      no_match: "Нет таблиц по запросу \\\"{search}\\\""
+      no_match: "Нет таблиц по запросу \\\"{search}\\\"",
     },
     matrix_entry: {
       new_agent: "Новый агент",
       failed_to_create: "Не удалось создать черновик агента.",
-      build_failed: "Сборка не запустилась. Проверьте конфигурацию CLI."
+      build_failed: "Сборка не запустилась. Проверьте конфигурацию CLI.",
     },
     workflow_upload: {
       build_hint: "Нажмите Собрать, чтобы преобразовать этот рабочий процесс в агента.",
@@ -1763,22 +1741,22 @@ export const ru = {
       parse: "Разобрать",
       drop_file: "Перетащите файл рабочего процесса сюда",
       file_types: "n8n, Zapier, Make или GitHub Actions (.json, .yaml)",
-      paste_json: "Или вставьте JSON напрямую"
+      paste_json: "Или вставьте JSON напрямую",
     },
     config_popup: {
       load_error: "Не удалось загрузить сохранённые значения — возможно, потребуется ввести их повторно.",
       fill_hint: "Заполните хотя бы одно поле для сохранения",
-      failed_to_save: "Не удалось сохранить конфигурацию"
+      failed_to_save: "Не удалось сохранить конфигурацию",
     },
     onboarding: {
       setup_complete: "Настройка {score}% завершена",
       steps_done: "{completed}/{total} шагов выполнено",
-      dismiss_checklist: "Скрыть чеклист"
+      dismiss_checklist: "Скрыть чеклист",
     },
     template_picker: {
       title: "Выбрать шаблон",
       subtitle: "Выберите шаблон для предзаполнения агента или начните с нуля.",
-      start_from_scratch: "Начать с нуля"
+      start_from_scratch: "Начать с нуля",
     },
     persona_overview: {
       no_match: "Нет подходящих агентов",
@@ -1787,26 +1765,26 @@ export const ru = {
       description_copied: "Описание скопировано",
       failed_copy: "Не удалось скопировать описание",
       no_connectors_configured: "Коннекторы не настроены",
-      click_to_copy: "Нажмите для копирования"
+      click_to_copy: "Нажмите для копирования",
     },
     overview_empty: {
       title: "Нет агентов по этим фильтрам",
       subtitle: "Попробуйте изменить поиск или фильтры, либо сбросьте вид для просмотра всех агентов.",
-      clear_all_filters: "Сбросить все фильтры"
+      clear_all_filters: "Сбросить все фильтры",
     },
     overview_batch: {
-      selected: "{count} выбрано"
+      selected: "{count} выбрано",
     },
     overview_menu: {
       more_actions: "Ещё действия",
-      settings: "Настройки"
+      settings: "Настройки",
     },
     overview_toolbar: {
       search_placeholder: "Поиск агентов...",
       show_all: "Показать всех агентов",
       show_favorites: "Показать только избранных",
       favorites: "Избранное",
-      clear_search: "Очистить поиск"
+      clear_search: "Очистить поиск",
     },
     overview_columns: {
       persona: "Агент",
@@ -1821,10 +1799,10 @@ export const ru = {
       building_drafts: "Сборка / Черновики",
       all_health: "Всё состояние",
       all_connectors: "Все коннекторы",
-      active_triggers: "{count} активный триггер(ов)"
+      active_triggers: "{count} активный триггер(ов)",
     },
     health_indicator: {
-      last: "последние {count}"
+      last: "последние {count}",
     },
     view_presets: {
       views: "Виды",
@@ -1841,7 +1819,7 @@ export const ru = {
       needs_attention: "Требуют внимания",
       failing_agents: "Агенты со сбоями",
       my_favorites: "Мои избранные",
-      recently_active: "Недавно активные"
+      recently_active: "Недавно активные",
     },
     activity: {
       title: "Активность",
@@ -1864,7 +1842,7 @@ export const ru = {
       modal_execution_title: "{name} — Запуск",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "Проверка: {title}",
-      modal_review_subtitle: "Критичность: {severity} · Статус: {status}"
+      modal_review_subtitle: "Критичность: {severity} · Статус: {status}",
     },
     chat: {
       select_persona: "Выберите агента для начала разговора",
@@ -1883,7 +1861,7 @@ export const ru = {
       confirm_delete: "Удалить?",
       processing: "Обработка...",
       delete_conversation: "Удалить диалог",
-      confirm_delete_conversation: "Подтвердить удаление диалога"
+      confirm_delete_conversation: "Подтвердить удаление диалога",
     },
     advisory: {
       how_can_improve: "Как этот агент может работать лучше?",
@@ -1898,7 +1876,7 @@ export const ru = {
       analyze_desc: "Изучите тенденции и паттерны производительности",
       test_run: "Тестовый запуск",
       test_run_desc: "Запустите агента и оцените результат",
-      test_input_label: "Входные данные для теста (необязательно)"
+      test_input_label: "Входные данные для теста (необязательно)",
     },
     ops: {
       sessions: "Сессии",
@@ -1926,21 +1904,21 @@ export const ru = {
       reviews: "Проверки",
       reviews_desc: "Ожидающие одобрения и решения",
       versions: "Версии",
-      versions_desc: "История версий промпта и откат"
+      versions_desc: "История версий промпта и откат",
     },
     ops_run: {
       execute_agent: "Запустить агента",
       running: "Выполнение...",
       recent: "Недавние",
       no_executions: "Запусков пока нет",
-      refresh_executions: "Обновить запуски"
+      refresh_executions: "Обновить запуски",
     },
     ops_lab: {
       history: "История",
       no_lab_runs: "Запусков лаборатории пока нет",
       refresh_lab: "Обновить историю лаборатории",
       arena: "Арена",
-      improve: "Улучшить"
+      improve: "Улучшить",
     },
     ops_health: {
       no_health_data: "Нет данных о состоянии",
@@ -1952,22 +1930,22 @@ export const ru = {
       run_check_aria: "Запустить проверку состояния",
       healthy: "В норме",
       degraded: "Деградация",
-      unhealthy: "Нездорово"
+      unhealthy: "Нездорово",
     },
     ops_assertions: {
       active_count: "{enabled}/{total} активно",
       no_assertions: "Условия не настроены",
       refresh_assertions: "Обновить условия",
       enable_assertion: "Включить {name}",
-      disable_assertion: "Отключить {name}"
+      disable_assertion: "Отключить {name}",
     },
     health_tab: {
       title: "Проверка состояния",
-      description: "Запустите анализ без выполнения для обнаружения отсутствующих учётных данных, отключённых коннекторов, несовместимых инструментов и недостаточно конкретных сценариев. Проблемы отображаются как карточки с действиями."
+      description: "Запустите анализ без выполнения для обнаружения отсутствующих учётных данных, отключённых коннекторов, несовместимых инструментов и недостаточно конкретных сценариев. Проблемы отображаются как карточки с действиями.",
     },
     matrix_tab: {
       loading: "Загрузка матрицы",
-      no_data: "Данных матрицы нет. Соберите или пересоберите агента для генерации измерений."
+      no_data: "Данных матрицы нет. Соберите или пересоберите агента для генерации измерений.",
     },
     settings_status: {
       saving: "Сохранение {sections}...",
@@ -1991,9 +1969,6 @@ export const ru = {
       health_watch: "Мониторинг состояния",
       health_watch_active: "Мониторинг состояния активен (каждые 6ч)",
       health_watch_enable: "Включить непрерывный мониторинг состояния",
-      speak_as: "Говорить как",
-      no_twins_configured: "Двойники не настроены. Откройте плагин Twin, чтобы создать одного — после этого агент сможет его использовать.",
-      twin_profile_aria: "Профиль двойника, от имени которого говорит агент"
     },
     tool_runner: {
       no_tools: "Этому агенту не назначены инструменты.",
@@ -2003,7 +1978,6 @@ export const ru = {
       success: "Успешно",
       failed: "Не удалось",
       error: "Ошибка",
-      input_json_placeholder: "значение"
     },
     health_check: {
       title: "Проверка состояния агента",
@@ -2020,7 +1994,7 @@ export const ru = {
       rerun: "Повторить",
       capabilities: "Возможности",
       all_healthy: "Все системы в норме",
-      all_healthy_detail: "Проблем в конфигурации агента не обнаружено"
+      all_healthy_detail: "Проблем в конфигурации агента не обнаружено",
     },
     health_digest: {
       title: "Сводка состояния агентов",
@@ -2035,16 +2009,16 @@ export const ru = {
       agents_checked_other: "Проверено {count} агентов",
       issues_one: "{count} проблема",
       issues_other: "{count} проблем",
-      last_run: "Последний запуск: {time}"
+      last_run: "Последний запуск: {time}",
     },
     health_issue: {
       apply_fix: "Применить исправление: {label}",
-      manual_action: "Требуется ручное действие"
+      manual_action: "Требуется ручное действие",
     },
     health_score: {
       healthy: "В норме",
       degraded: "Деградация",
-      unhealthy: "Нездорово"
+      unhealthy: "Нездорово",
     },
     prompt_editor: {
       no_persona: "Агент не выбран",
@@ -2052,7 +2026,6 @@ export const ru = {
       new_section: "Новый раздел",
       saved: "Сохранено",
       sections: "разделы",
-      sections_aria: "Разделы промпта"
     },
     custom_sections: {
       title: "Пользовательские разделы",
@@ -2062,7 +2035,7 @@ export const ru = {
       remove_section: "Удалить раздел",
       title_placeholder: "Название раздела...",
       content_placeholder: "Содержимое раздела...",
-      custom_section: "Пользовательский раздел"
+      custom_section: "Пользовательский раздел",
     },
     activity_filters: {
       all: "Все",
@@ -2070,7 +2043,7 @@ export const ru = {
       events: "События",
       memories: "Память",
       reviews: "Проверки",
-      messages: "Сообщения"
+      messages: "Сообщения",
     },
     overview_actions: {
       delete_agent: "Удалить агента",
@@ -2078,7 +2051,7 @@ export const ru = {
       delete_agents: "Удалить {count} агент(ов)",
       delete_agents_message: "{count} агент(ов) и вся их конфигурация будут удалены навсегда.",
       delete_drafts: "Удалить {count} черновик(ов)",
-      delete_drafts_message: "{count} черновых агент(ов) будут удалены навсегда."
+      delete_drafts_message: "{count} черновых агент(ов) будут удалены навсегда.",
     },
     persona_list: {
       all_personas: "Все агенты",
@@ -2106,7 +2079,7 @@ export const ru = {
       show_only_favorites: "Показать только избранных",
       clear_search: "Очистить поиск",
       col_persona: "Агент",
-      no_connectors_configured: "Коннекторы не настроены"
+      no_connectors_configured: "Коннекторы не настроены",
     },
     design_preview: {
       preview: "Предпросмотр",
@@ -2120,7 +2093,7 @@ export const ru = {
       activating: "Активация...",
       activate_agent: "Активировать агента",
       create_agent: "Создать агента",
-      min_completeness: "Добавьте больше деталей для достижения 40% завершённости"
+      min_completeness: "Добавьте больше деталей для достижения 40% завершённости",
     },
     editor_ui: {
       max_budget_label: "Максимальный бюджет (USD)",
@@ -2244,8 +2217,8 @@ export const ru = {
       cost_per_run: "Стоимость/запуск",
       last_run: "Последний запуск",
       rank: "Рейтинг",
-      view_in_leaderboard: "Посмотреть в рейтинге"
-    }
+      view_in_leaderboard: "Посмотреть в рейтинге",
+    },
   },
   vault: {
     title: "Хранилище",
@@ -2257,7 +2230,7 @@ export const ru = {
     health: {
       healthy: "исправно",
       needs_attention: "требует внимания",
-      untested: "не проверено"
+      untested: "не проверено",
     },
     list: {
       no_credentials: "Аутентифицированные сервисы не обнаружены. Выберите вручную ниже.",
@@ -2266,7 +2239,6 @@ export const ru = {
       no_dependencies: "Ни один агент не зависит от этих учётных данных. Можно безопасно изменить или удалить.",
       affected_agents: "Затронутые агенты",
       affected_events: "Затронутые события",
-      sort_label: "Сортировка:"
     },
     import: {
       title: "Источник импорта",
@@ -2281,16 +2253,8 @@ export const ru = {
         min30: "30 мин",
         hour1: "1 час",
         hour6: "6 часов",
-        day1: "24 часа"
+        day1: "24 часа",
       },
-      parse_secrets: "Разобрать секреты",
-      selected_for_import: "выбрано для импорта",
-      auto_detected: "Автоопределено",
-      sync_supported: "Поддерживается синхронизация",
-      secrets_found_one: "Найден {count} секрет",
-      secrets_found_other: "Найдено {count} секретов",
-      import_secrets_one: "Импортировать {count} секрет",
-      import_secrets_other: "Импортировать {count} секретов"
     },
     features: {
       anomaly_detected: "Обнаружена аномалия: учётные данные внезапно перестали работать после предыдущего успеха. Возможный отзыв.",
@@ -2314,7 +2278,7 @@ export const ru = {
         remove_failed: "Не удалось удалить политику: {error}",
         update_failed: "Не удалось обновить период ротации: {error}",
         enable_failed: "Не удалось включить ротацию: {error}",
-        last_rotated: "Последняя ротация {time}"
+        last_rotated: "Последняя ротация {time}",
       },
       anomaly: {
         healthy: "В норме",
@@ -2326,13 +2290,13 @@ export const ru = {
         samples: "{count} проверок",
         permanent: "Постоянные: {rate}",
         transient: "Временные: {rate}",
-        tolerance: "Допустимо: {rate}"
+        tolerance: "Допустимо: {rate}",
       },
       rotation_badge: {
         disabled: "Отключено",
         perm_errors: "Постоянные ошибки",
         degrading: "Ухудшение",
-        backoff: "Ожидание повтора"
+        backoff: "Ожидание повтора",
       },
       audit: {
         empty: "Записей аудита пока нет. Операции будут записываться по мере выполнения.",
@@ -2341,13 +2305,13 @@ export const ru = {
         op_updated: "Обновлено",
         op_deleted: "Удалено",
         op_healthcheck: "Тест подключения",
-        filter_all: "все"
+        filter_all: "все",
       },
       intelligence: {
         operation: "Операция",
         detail: "Детали",
-        time: "Время"
-      }
+        time: "Время",
+      },
     },
     negotiator: {
       title: "ИИ-переговорщик по учётным данным",
@@ -2377,14 +2341,13 @@ export const ru = {
       mark_complete: "Отметить как выполненный",
       completed: "Выполнено",
       steps_auto_skipped_few: "{count} шага пропущено автоматически",
-      steps_auto_skipped_many: "{count} шагов пропущено автоматически"
+      steps_auto_skipped_many: "{count} шагов пропущено автоматически",
     },
     card: {
       scope_mismatch: "Несоответствие областей",
       scope_missing_one: "{count} запрошенная область не выдана: ",
       scope_missing_other: "{count} запрошенных областей не выданы: ",
       reauthorize: "Повторная авторизация",
-      reauthorize_scopes: "Повторно авторизоваться с дополнительными областями доступа"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2402,18 +2365,6 @@ export const ru = {
       configure_fields: "Настроить поля учётных данных",
       detect: "Обнаружить",
       auto_add: "Авто-добавление",
-      connection_test_heading: "Проверка подключения",
-      test_connection_btn: "Проверить подключение",
-      credential_fields_heading: "Поля учётных данных",
-      how_to_get_connector: "Как получить учётные данные {connectorLabel}",
-      authorization_complete: "Авторизация завершена",
-      copied_to_clipboard: "Скопировано в буфер обмена",
-      credential_name: "Название учётных данных",
-      credential_name_placeholder: "Назовите эти учётные данные — напр. Мой {label} аккаунт, Продакшн {label}",
-      authorizing_with: "Авторизация через {label}...",
-      authorize_with: "Авторизоваться через {label}",
-      oauth_consent_hint: "Откроет {label} в вашем браузере. Предоставьте доступ, затем вернитесь сюда.",
-      oauth_connected_at: "{label} подключён в {time}"
     },
     type_picker: {
       title: "Добавить учётные данные",
@@ -2442,7 +2393,7 @@ export const ru = {
       workspace_connect: "Подключение рабочего пространства",
       workspace_connect_hint: "Один вход через Google автоматически создаёт учётные данные для Gmail, Calendar, Drive и Sheets",
       auto_discover: "Автообнаружение учётных данных",
-      auto_discover_hint: "Сканирование файловой системы для поиска API-ключей, AWS-профилей, переменных среды и т.д."
+      auto_discover_hint: "Сканирование файловой системы для поиска API-ключей, AWS-профилей, переменных среды и т.д.",
     },
     body: {
       authorizing: "Авторизация через {name}...",
@@ -2450,12 +2401,12 @@ export const ru = {
       authorize_hint: "Открывает форму входа {name} и сохраняет доступ после подтверждения.",
       consent_completed: "Согласие {name} получено в {time}",
       update_failed: "Не удалось обновить учётные данные",
-      delete_credential: "Удалить учётные данные"
+      delete_credential: "Удалить учётные данные",
     },
     connector: {
       filter_all: "Все",
       filter_connected: "Подключённые",
-      filter_available: "Доступные"
+      filter_available: "Доступные",
     },
     auto_cred: {
       guided_setup: "Пошаговая настройка",
@@ -2487,14 +2438,6 @@ export const ru = {
       open_in_browser: "Открыть в браузере",
       completed_step: "Я выполнил это",
       input_requested: "Запрошен ввод",
-      cancel_session: "Отменить сессию",
-      test_connection: "Проверить подключение",
-      testing: "Проверка...",
-      re_run_browser: "Запустить браузер заново",
-      discard: "Отменить",
-      save_credential: "Сохранить учётные данные",
-      save_procedure: "Сохранить процедуру",
-      procedure_saved: "Процедура сохранена"
     },
     vector: {
       documents_tab: "Документы",
@@ -2526,7 +2469,7 @@ export const ru = {
       documents: "Документы",
       chunks: "Секции",
       local_embedding: "Локальный поиск",
-      local_embedding_hint: "Индексирование поиска работает локально с использованием {model} ({dims}-мерн.). Данные не покидают ваше устройство. Модель (~23 МБ) загружается при первом использовании и сохраняется локально."
+      local_embedding_hint: "Индексирование поиска работает локально с использованием {model} ({dims}-мерн.). Данные не покидают ваше устройство. Модель (~23 МБ) загружается при первом использовании и сохраняется локально.",
     },
     design_modal: {
       title: "Создать учётные данные",
@@ -2541,12 +2484,12 @@ export const ru = {
       how_to_fix: "Как это исправить",
       original_request: "Ваш исходный запрос (сохранён):",
       start_over: "Начать заново",
-      try_again_with: "Повторить с запросом"
+      try_again_with: "Повторить с запросом",
     },
     desktop: {
       installed: "Установлено",
       running: "Запущено",
-      not_installed: "Не установлено"
+      not_installed: "Не установлено",
     },
     graph: {
       no_dependencies: "Нет зависимостей",
@@ -2556,7 +2499,7 @@ export const ru = {
       dep_count_other: "{count} зависимостей",
       not_tested: "Не проверено",
       healthy: "В норме",
-      unhealthy: "Нездорово"
+      unhealthy: "Нездорово",
     },
     wizard: {
       detected: "Обнаружено ({count})",
@@ -2566,7 +2509,7 @@ export const ru = {
       already_added_badge: "Уже добавлено",
       local: "Локальный",
       cli_auth: "CLI-авторизация",
-      session: "Сессия"
+      session: "Сессия",
     },
     playground: {
       tab_overview: "Обзор",
@@ -2596,7 +2539,7 @@ export const ru = {
       query_parameters: "Параметры запроса",
       headers: "Заголовки",
       body: "Тело",
-      empty_response: "(пустой ответ)"
+      empty_response: "(пустой ответ)",
     },
     playground_extra: {
       add_tag: "Добавить тег...",
@@ -2617,11 +2560,11 @@ export const ru = {
       query_parameters: "Параметры запроса",
       recipes_title: "Сохранённые рецепты",
       truncated_warning: "Ответ усечён для отображения",
-      value_col: "Значение"
+      value_col: "Значение",
     },
     ingest: {
       save_name: "Сохранить название",
-      rename_credential: "Переименовать учётные данные"
+      rename_credential: "Переименовать учётные данные",
     },
     databases: {
       col_database: "База данных",
@@ -2735,8 +2678,6 @@ export const ru = {
       filter_tables: "Фильтр таблиц...",
       refresh: "Обновить",
       introspection_unavailable: "Интроспекция таблиц недоступна для этого типа коннектора.",
-      not_null: "NOT NULL",
-      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "Симулировать отзыв",
@@ -2782,14 +2723,9 @@ export const ru = {
       daily_execs_lost: "Потеряно запусков в день",
       daily_cost_impact: "Ежедневные потери стоимости",
       sim_low: "Ни один агент или процесс не зависит от этих учётных данных. Можно отозвать.",
-      sim_critical: "Отзыв {credentialName} нарушит {workflows} рабочих процесса{workflowPlural} и остановит {personas} агента{personaPlural}.",
-      sim_high: "Отзыв {credentialName} повлияет на {personas} агента{personaPlural} в рабочем пространстве.",
-      sim_medium: "Отзыв {credentialName} имеет ограниченную область воздействия.",
-      per_day: "/день"
     },
     shared: {
       add: "Добавить",
-      copied: "Скопировано",
       no_connector_available: "Для этого типа учётных данных нет определения коннектора.",
       request_builder: "Конструктор запросов",
       close: "Закрыть",
@@ -2916,21 +2852,6 @@ export const ru = {
       no_documents_description: "Перетащите файлы, вставьте текст или сканируйте директорию для создания базы знаний.",
       delete_document: "Удалить документ",
       chunks_label: "{count} фрагментов",
-      kb_count_summary: "-- {docs} документов, {chunks} фрагментов",
-      default_patterns: "По умолчанию:",
-      add_pattern_placeholder: "*.pdf",
-      distance_label: "расстояние:",
-      chunk_label: "фрагмент:",
-      copy_credential_id: "Скопировать ID учётных данных",
-      request_body: "Тело запроса",
-      add_tag_title: "Добавить тег",
-      local_embedding_hint: "Эмбеддинги создаются локально с помощью {model} ({dims}-мерные). Данные не покидают ваше устройство. Модель (~23МБ) скачивается при первом использовании и кэшируется локально.",
-      api_path_placeholder: "/api/v1/resource",
-      json_body_placeholder: "значение",
-      sending: "Отправка...",
-      send: "Отправить",
-      search_results_one: "{count} результат по запросу \"{query}\"",
-      search_results_other: "{count} результатов по запросу \"{query}\""
     },
     manager: {
       title: "Учётные данные",
@@ -2950,23 +2871,20 @@ export const ru = {
       test_all_credentials: "Проверить все учётные данные",
       test_all: "Проверить все",
       daily_progress: "Ежедневно {done}/{total}",
-      testing_progress: "Проверка {done}/{total}"
+      testing_progress: "Проверка {done}/{total}",
     },
     bulk_healthcheck: {
       title: "Результаты проверки здоровья",
       needs_attention: "Требует внимания",
       slowest_responses: "Самые медленные ответы",
-      passed_count: "{count} пройдено",
-      failed_count: "{count} провалено",
-      total_count: "{count} всего"
     },
     health_bar: {
       healthy: "в норме",
       needs_attention: "требует внимания",
-      untested: "не проверено"
+      untested: "не проверено",
     },
     breadcrumb: {
-      aria_label: "Навигация хранилища"
+      aria_label: "Навигация хранилища",
     },
     credential_card: {
       deleting: "Удаление {name}...",
@@ -2982,7 +2900,7 @@ export const ru = {
       remove_tag: "Удалить тег \\\"{tag}\\\"",
       copy_credential_id: "Скопировать ID учётных данных",
       refresh_oauth: "Обновить токен OAuth сейчас",
-      refresh: "Обновить"
+      refresh: "Обновить",
     },
     vault_badge: {
       needs_attention: "Требует внимания",
@@ -3005,21 +2923,21 @@ export const ru = {
       encrypt_now_other: "Зашифровать {count} незашифрованных учётных записей сейчас",
       encrypt_done_one: "Готово — {migrated} учётная запись зашифрована.",
       encrypt_done_other: "Готово — {migrated} учётных записей зашифровано.",
-      encrypt_partial: "Зашифровано {migrated}, не удалось {failed}. Попробуйте ещё раз или перезапустите приложение."
+      encrypt_partial: "Зашифровано {migrated}, не удалось {failed}. Попробуйте ещё раз или перезапустите приложение.",
     },
     delete_dialog: {
       title: "Удалить учётные данные",
       cannot_undo: "Это действие нельзя отменить.",
       label_name: "Имя",
       label_type: "Тип",
-      unverified_warning: "Не удалось проверить все зависимости. Некоторые подключённые агенты или автоматизации могут быть не показаны."
+      unverified_warning: "Не удалось проверить все зависимости. Некоторые подключённые агенты или автоматизации могут быть не показаны.",
     },
     card_body: {
       failed_update: "Не удалось обновить учётные данные",
       authorizing_with: "Авторизация через {name}...",
       authorize_with: "Авторизоваться через {name}",
       authorize_hint: "Запускает согласие {name} под управлением приложения и обновляет токен обновления после подтверждения.",
-      consent_completed: "Согласие {name} получено в {time}"
+      consent_completed: "Согласие {name} получено в {time}",
     },
     card_details: {
       tab_intelligence: "Аналитика",
@@ -3027,7 +2945,7 @@ export const ru = {
       tab_token_lifetime: "Время жизни токена",
       tab_services: "Сервисы ({count})",
       tab_events: "События ({count})",
-      tab_audit: "Аудит"
+      tab_audit: "Аудит",
     },
     intelligence_tab: {
       loading: "Загрузка аналитических данных",
@@ -3048,7 +2966,7 @@ export const ru = {
       dependents_warning_other: "Изменение или удаление этих учётных данных затронет {count} агентов:",
       link_structural: "структурное",
       link_observed: "наблюдаемое",
-      via_connector: "через {connector}"
+      via_connector: "через {connector}",
     },
     token_metrics: {
       loading: "Загрузка метрик...",
@@ -3060,11 +2978,6 @@ export const ru = {
       avg_drift: "Среднее отклонение",
       recent_ttls: "Последние TTL провайдера (новейшие первые)",
       recent_refreshes: "Последние обновления",
-      fallback_used: "Резерв ({fallback}с) использован в {rate}% обновлений ({count}/{total}) — провайдер не возвращает"
-    },
-    reauth_banner: {
-      access_revoked: ") -- доступ был отозван. Повторно авторизуйтесь, чтобы возобновить автоматизации.",
-      reconnect: "Переподключить"
     },
     rotation_section: {
       corrupted_warning: "Метаданные проверки состояния повреждены. Оценки аномалий недоступны до следующей успешной проверки.",
@@ -3085,7 +2998,6 @@ export const ru = {
       enabling: "Включение...",
       enable_rotation: "Включить ротацию",
       enable_failed: "Не удалось включить ротацию: {error}",
-      last_rotated: "Последняя ротация: {time}"
     },
     event_config: {
       event_triggers: "Триггеры событий",
@@ -3112,7 +3024,6 @@ export const ru = {
       minutes_10: "10 минут",
       healthcheck_auto_rotate: "Ротация запустится автоматически, когда ранее рабочие учётные данные начнут сбоить при проверке.",
       last_evaluated: "Последняя оценка: {time}",
-      loading: "Загрузка событий..."
     },
     credential_forms: {
       encrypted_keychain: "Зашифровано связкой ключей ОС",
@@ -3126,10 +3037,6 @@ export const ru = {
       new_credential: "Новые учётные данные {label}",
       configure_fields: "Настроить поля учётных данных",
       oauth_required: "Используйте кнопку авторизации ниже для подключения учётных данных.",
-      open_to_generate: "Откройте {label}, чтобы сгенерировать API-ключ или токен",
-      already_configured: "Учётные данные уже настроены -- обновите ниже, чтобы заменить",
-      setup_instructions_label: "Инструкции по настройке",
-      no_fields_defined: "Для этого коннектора не определены поля учётных данных."
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3150,21 +3057,12 @@ export const ru = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI"
+      save_failed: "Failed to capture credential from CLI",
     },
     audit_log: {
       empty: "Записей аудита пока нет",
       empty_hint: "Операции будут записываться по мере выполнения.",
       access_events_hint: "События доступа появятся здесь.",
-      loading: "Загрузка журнала аудита...",
-      total_accesses: "{count} всего",
-      personas_one: "{count} агент",
-      personas_other: "{count} агентов",
-      accesses_24h: "{count} за 24ч",
-      anomalies_one: "{count} аномалия",
-      anomalies_other: "{count} аномалий",
-      no_anomalies: "Нет аномалий",
-      show_all: "Показать все {count} записей"
     },
     credential_import: {
       import_from: "Импортировать из {source}",
@@ -3173,12 +3071,6 @@ export const ru = {
       enable_sync: "Включить режим синхронизации",
       source_ref: "Ссылка на источник",
       poll_interval: "Интервал опроса",
-      sync_hint: "Отслеживает изменения во внешнем хранилище и автоматически обновляет учётные данные через опрос.",
-      interval_15min: "15 мин",
-      interval_30min: "30 мин",
-      interval_1hr: "1 час",
-      interval_6hr: "6 часов",
-      interval_24hr: "24 часа"
     },
     empty_state: {
       heading: "Подключите первый сервис",
@@ -3187,11 +3079,11 @@ export const ru = {
       catalog_description: "Выберите известный сервис, например Slack, GitHub или OpenAI. Предварительно настроенные поля и проверки состояния.",
       ai_heading: "Учётные данные на основе ИИ",
       ai_description: "Опишите любой сервис, и ИИ настроит поля, тип аутентификации и проверку состояния.",
-      works_with_any: "Работает с любым API"
+      works_with_any: "Работает с любым API",
     },
     credential_list: {
       no_match: "Учётных данных не найдено",
-      no_match_hint: "Попробуйте изменить фильтры или поисковый запрос"
+      no_match_hint: "Попробуйте изменить фильтры или поисковый запрос",
     },
     wizard_detect: {
       no_services: "Нет сервисов по запросу \\\"{search}\\\"",
@@ -3203,15 +3095,6 @@ export const ru = {
       batch_complete: "Пакетная настройка завершена",
       skip_service: "Пропустить этот сервис",
       no_filter_match: "Попробуйте другой поисковый запрос или сбросьте фильтр.",
-      set_up_credentials: "Настроить учётные данные",
-      clear_selection: "Очистить выбор",
-      set_up_services: "Настроить {count} сервис{plural}",
-      setting_up: "Настройка {current} из {total}",
-      wizard_title: "Мастер настройки учётных данных",
-      choose_service: "Выберите сервис для настройки",
-      ai_walk_description: "ИИ проведёт вас шаг за шагом через получение учётных данных API.",
-      wizard_subtitle: "Настройка учётных данных с помощью ИИ",
-      wizard_subtitle_batch: "Настройка {count} сервис{plural}"
     },
     autopilot: {
       title: "API Autopilot",
@@ -3235,23 +3118,6 @@ export const ru = {
       query_parameters: "Параметры запроса",
       param_name_placeholder: "Имя параметра",
       request_body: "Тело запроса (JSON)",
-      from_url: "Из URL",
-      paste_content: "Вставить содержимое",
-      openapi_spec_url: "URL спецификации OpenAPI",
-      openapi_format_hint: "Поддерживает спецификации OpenAPI 3.x и Swagger 2.x в формате JSON или YAML",
-      parsing_spec: "Разбор спецификации...",
-      parse_analyze: "Разобрать и проанализировать",
-      connector_in_catalog: "{connectorLabel} теперь доступен в каталоге коннекторов с {toolCount} определениями инструментов.",
-      generated_tools: "Сгенерированные инструменты ({count})",
-      credential_fields: "Поля учётных данных",
-      open_playground: "Открыть песочницу",
-      copy_connector_id: "Скопировать ID коннектора",
-      go_to_catalog: "Перейти к каталогу",
-      response_headers: "Заголовки ответа ({count})",
-      base_url_placeholder: "https://api.example.com",
-      openapi_url_placeholder: "https://api.example.com/openapi.json",
-      auth_schemes: "схемы авторизации",
-      body_placeholder: "значение"
     },
     foraging: {
       no_credentials_found: "Учётных данных не найдено",
@@ -3268,44 +3134,10 @@ export const ru = {
       step_done: "Готово",
       step_completed: "(завершено)",
       step_current: "(текущий)",
-      start_scan: "Начать сканирование",
-      checking_env: "Проверка переменных окружения, конфигурационных файлов и учётных данных инструментов разработки",
-      importing: "Импорт учётных данных в хранилище...",
-      scan_again: "Сканировать снова",
-      back_to_vault: "Вернуться в хранилище",
-      already_in_vault: "Уже в хранилище",
-      imported: "Импортировано",
-      to_vault: "в хранилище",
-      credentials_found_one: "Найдены {count} учётные данные",
-      credentials_found_other: "Найдено {count} учётных данных",
-      selected: "выбрано",
-      import_to_vault_one: "Импортировать {count} учётные данные в хранилище",
-      import_to_vault_other: "Импортировать {count} учётных данных в хранилище",
-      env_var_one: "{count} переменная окружения",
-      env_var_other: "{count} переменных окружения",
-      import_server: "Импорт",
-      sources_in: "источников за",
-      progress_aria: "Прогресс поиска",
-      scanned_sources: "Просканировано {count} источников за {ms}мс"
     },
     desktop_discovery: {
       title: "Десктопные приложения",
       allowed_binaries: "Разрешённые исполняемые файлы: ",
-      connect_description: "Подключайте локальные приложения или импортируйте MCP-серверы Claude Desktop",
-      detected_apps_tab: "Обнаруженные приложения ({count})",
-      claude_mcp_tab: "Claude MCP ({count})",
-      scanning: "Поиск приложений на рабочем столе...",
-      detected_on_system: "Обнаружено в вашей системе",
-      not_detected: "Не обнаружено",
-      no_apps: "Приложения на рабочем столе не обнаружены. Попробуйте обновить.",
-      reading_config: "Чтение конфигурации Claude Desktop...",
-      mcp_servers_found_one: "Найден {count} MCP-сервер в конфигурации Claude Desktop. Импортируйте их как учётные данные для использования с агентами.",
-      mcp_servers_found_other: "Найдено {count} MCP-серверов в конфигурации Claude Desktop. Импортируйте их как учётные данные для использования с агентами.",
-      no_mcp_config: "Конфигурация Claude Desktop MCP не найдена.",
-      mcp_config_hint: "Если у вас установлен Claude Desktop, убедитесь, что MCP-серверы настроены в его параметрах.",
-      permission_required: "Требуется разрешение",
-      approve_description: "запрашивает следующие возможности. Проверьте и подтвердите для включения этого коннектора.",
-      approve_connect: "Подтвердить и подключить"
     },
     picker_section: {
       no_connectors: "Коннекторов не найдено",
@@ -3316,29 +3148,10 @@ export const ru = {
       filter_purpose: "Назначение",
       filter_category: "Категория",
       filter_license: "Лицензия",
-      credential_name: "Название учётных данных",
-      add_project_first: "Сначала добавьте проект в Инструментах разработчика, чтобы связать кодовую базу с агентами.",
-      go_to_dev_tools: "Перейти к Инструментам разработчика",
-      workspace_connect_description: "Один вход через Google создаёт учётные данные Gmail, Calendar, Drive и Sheets автоматически",
-      foraging_description: "Просканируйте файловую систему на наличие API-ключей, профилей AWS, переменных окружения и других секретов",
-      no_setup_guide: "Для этого коннектора нет руководства по настройке. Обратитесь к ссылке на документацию ниже.",
-      open_setup_page: "Открыть страницу настройки {label}"
-    },
-    cli_capture: {
-      cta: "Импортировать из локального CLI",
-      hint: "Используйте уже авторизованный локальный CLI вместо вставки API-ключа.",
-      running: "Запуск локального CLI...",
-      success: "Учётные данные получены из CLI",
-      token_ttl_notice: "Этот токен истекает через {seconds}с и будет автоматически обновлён.",
-      source_label: "CLI",
-      missing_binary: "`{binary}` не установлен или не находится в разрешённом расположении.",
-      unauthenticated: "Вы не авторизованы в {binary}. {instruction}",
-      capture_failed: "Получение данных из CLI не удалось: {detail}",
-      timeout: "Истекло время ожидания CLI. Попробуйте сначала выполнить команду вручную."
     },
     schemas: {
       none_configured: "Не настроено.",
-      required_badge: "ОБЯ"
+      required_badge: "ОБЯ",
     },
     design_phases: {
       saving: "Сохранение учётных данных...",
@@ -3371,32 +3184,8 @@ export const ru = {
       mark_done: "Отметить как выполненное",
       mark_step_complete: "Отметить шаг выполненным",
       copy_to_clipboard: "Скопировать в буфер обмена",
-      credential_saved_message: "Учётные данные {label} надёжно сохранены.",
-      revision_count: "(ревизия {count})",
-      connector_added_to_catalog: "коннектор добавлен в ваш каталог -- теперь доступен для других агентов и использования в шаблонах.",
-      view_credential: "Просмотреть учётные данные",
-      refine_hint: "Нужно изменить области доступа, добавить поля или изменить конфигурацию?",
-      refine_placeholder: "напр. добавить права на запись, добавить staging-окружение...",
-      refine: "Уточнить",
-      linked_to_existing: "Ваши учётные данные будут связаны с существующим определением коннектора.",
-      no_existing_connector: "-- существующий коннектор {name} не найден в каталоге.",
-      new_connector_will_be_registered: "При сохранении этих учётных данных сгенерированное ИИ определение коннектора будет автоматически зарегистрировано в каталоге -- что сделает его доступным для других агентов и шаблонов.",
-      refine_request: "Не совсем то? Уточните запрос",
-      auto_provision_hint: "-- позвольте ИИ провести вас шаг за шагом через получение учётных данных {label}.",
-      credential_name_label: "Название учётных данных",
-      credentials_secure_notice: "Учётные данные надёжно хранятся в хранилище приложения и доступны для выполнения инструментов агента.",
-      tested_successfully_at: "Успешно проверено в {time}",
-      setup_instructions: "Инструкции по настройке",
-      all_steps_complete: "Все шаги выполнены -- заполните поля ниже и проверьте подключение.",
-      use_template: "Использовать",
-      recipe_used_one: "-- использовано {count} раз",
-      recipe_used_other: "-- использовано {count} раз",
-      instruction_placeholder: "напр. Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
-      browser_automation_warning: "Автоматизация браузера запущена. Не взаимодействуйте с окном — оно возобновит работу по завершении.",
-      desktop_bridge_title: "{{label}} требует настольного приложения",
-      desktop_bridge_hint: "Этот коннектор использует нативную сессию браузера, работающую только в настольном приложении Personas.",
       preparing_guided: "Подготовка инструкций по пошаговой настройке...",
       starting_browser: "Запуск браузерной сессии...",
       no_log_output: "Вывод журнала не получен.",
@@ -3427,26 +3216,8 @@ export const ru = {
       step_browser_review: "Вернитесь сюда для проверки перед сохранением",
       step_guided_review: "Проверьте и сохраните учётные данные",
       setup_context: "Контекст настройки из анализа проектирования:",
-      review_extracted: "Проверить извлечённые учётные данные",
-      review_extracted_hint: "Значения, извлечённые из браузера -- проверьте перед сохранением",
-      completeness_partial: "Заполнено {filled} из {total} обязательных полей. Заполните недостающие поля перед сохранением.",
-      universal_auto_setup: "Универсальная автонастройка",
-      universal_auto_setup_hint: "Укажите URL и описание, а ИИ автоматически просмотрит сайт, обнаружит и создаст API-учётные данные.",
-      service_url_label: "URL сервиса",
-      service_url_placeholder: "https://app.example.com или https://developer.example.com",
-      what_do_you_need: "Что вам нужно?",
-      description_placeholder: "напр. Мне нужен API-ключ для их REST API для чтения и записи данных. Портал разработчика имеет раздел API Keys в настройках.",
-      discover_credentials: "Обнаружить учётные данные",
-      discovered_label: "Обнаружено: {label}",
-      fields_discovered_one: "Обнаружено {count} поле",
-      fields_discovered_other: "Обнаружено {count} полей",
-      extracted_values_label: "Извлечённые значения",
-      no_fields_discovered: "Поля не обнаружены. Попробуйте снова с более подробным описанием.",
-      fields_captured_partial: "Получено {filled}/{total} полей",
-      credential_stored: "Учётные данные {label} надёжно сохранены."
     },
     negotiator_extra: {
-      panel_title: "ИИ-переговорщик учётных данных",
       checking_auth: "Проверка существующих аутентификаций...",
       auto_provisioning: "Автоматическое предоставление API-ключей",
       generating_plan: "Создание плана подготовки...",
@@ -3455,7 +3226,6 @@ export const ru = {
       need_help: "Нужна помощь с этим шагом?",
       hide_help: "Скрыть справку",
       ask_question: "Задайте вопрос об этом шаге...",
-      planning_description: "ИИ анализирует портал разработчика и составляет пошаговый план настройки..."
     },
     workspace_panel: {
       select_services: "Выберите сервисы для подключения",
@@ -3463,15 +3233,6 @@ export const ru = {
       creating_credentials: "Создание учётных данных...",
       all_created: "Все учётные данные созданы",
       some_failed: "Некоторые учётные данные не удалось создать",
-      selected_count: "Выбрано {selected} из {total}",
-      select_all: "Выбрать все",
-      connect_services_one: "Подключить {count} сервис одним входом",
-      connect_services_other: "Подключить {count} сервисов одним входом",
-      granting_access_one: "Это предоставит доступ к {count} сервису",
-      granting_access_other: "Это предоставит доступ к {count} сервисам",
-      credentials_created_one: "{count} учётные данные созданы одним входом.",
-      credentials_created_other: "{count} учётных данных созданы одним входом.",
-      sign_in_browser: "Войдите в свою учётную запись Google в окне браузера."
     },
     gateway: {
       gateway_members: "{name} — участники шлюза",
@@ -3488,7 +3249,7 @@ export const ru = {
       display_name: "Отображаемое имя (префикс инструмента)",
       display_name_placeholder: "например, arcade, research_tools, docs",
       adding: "Добавление…",
-      add_member: "Добавить участника"
+      add_member: "Добавить участника",
     },
     pending_auth: {
       title: "Требуется авторизация",
@@ -3502,13 +3263,13 @@ export const ru = {
       open_first: "Сначала откройте URL и предоставьте согласие",
       retrying: "Повторная попытка…",
       retry_authorized: "Я авторизовал — повторить",
-      retry_failed: "Повтор не удался"
+      retry_failed: "Повтор не удался",
     },
     rotation_insight: {
       perm_errors: "Обнаружены постоянные ошибки — попытка ротации, отправка оповещений.",
       degrading: "Устойчивая деградация — запущена превентивная ротация.",
-      backoff: "Временные сбои — активна экспоненциальная задержка повтора."
-    }
+      backoff: "Временные сбои — активна экспоненциальная задержка повтора.",
+    },
   },
   deployment: {
     title: "Развёртывание",
@@ -3526,7 +3287,7 @@ export const ru = {
       token_available: "Токен доступен",
       no_token: "Токен не настроен",
       no_token_configured: "Токен не настроен",
-      no_status: "Данные о статусе недоступны."
+      no_status: "Данные о статусе недоступны.",
     },
     api_playground: {
       title: "Площадка API",
@@ -3536,12 +3297,10 @@ export const ru = {
       sending: "Отправка...",
       empty_response: "(пустой ответ)",
       snippets: "Примеры кода",
-      request_body_placeholder: "Ваш промпт здесь..."
     },
     connection: {
       orchestrator_url_label: "URL облачного сервера",
       orchestrator_prefix: "https://",
-      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "Введите API-ключ",
       connect: "Подключить",
       connected: "Подключено",
@@ -3551,28 +3310,16 @@ export const ru = {
       diagnostics_title: "Диагностика",
       url_protocol_error: "URL должен использовать http или https",
       url_hostname_error: "В URL отсутствует хост",
-      url_invalid: "Некорректный URL"
+      url_invalid: "Некорректный URL",
     },
     deployments_panel: {
       deploy_persona: "Развернуть агента",
       select_persona: "Выберите агента для развёртывания",
       all_deployed: "Все агенты уже развёрнуты",
-      no_deployments_yet: "Развёртываний пока нет. Выберите агента выше, чтобы развернуть его как облачную API-точку.",
-      active_deployments: "Активные развёртывания"
     },
     exec_detail: {
       fetching_output: "Получение вывода...",
       no_output: "Нет вывода",
-      label_status: "Статус:",
-      label_duration: "Длительность:",
-      label_cost: "Стоимость:",
-      label_tokens: "Токены:",
-      label_started: "Начато:",
-      label_completed: "Завершено:",
-      label_input: "Ввод:",
-      view_output: "Просмотреть вывод",
-      output_prefix: "Вывод (",
-      output_lines_suffix: "строк)"
     },
     oauth_panel: {
       connect_anthropic: "Подключить аккаунт Anthropic",
@@ -3584,13 +3331,6 @@ export const ru = {
       token_unknown: "Статус токена неизвестен",
       expires: "Истекает",
       scopes: "Области",
-      open_auth_window: "Открыть окно авторизации",
-      complete_authorization: "Завершить авторизацию",
-      refresh_token: "Обновить токен",
-      open_authorization_window: "Открыть окно авторизации",
-      token_unknown_msg: "Не удалось проверить действительность токена. Обновите токен, чтобы подтвердить, что он ещё активен.",
-      connect_anthropic_msg: "Подключите вашу учётную запись Anthropic, чтобы включить OAuth-аутентификацию для облачных выполнений.",
-      token_expired_msg_prefix: "Этот OAuth-токен истёк"
     },
     trigger_form: {
       new_cloud_trigger: "Новый облачный триггер",
@@ -3600,15 +3340,9 @@ export const ru = {
       schedule_cron: "Расписание (cron)",
       create_trigger: "Создать триггер",
       creating: "Создание...",
-      cron_expression: "Выражение cron",
-      utc_suffix: "(UTC)",
-      webhook_info: "Для этого триггера будет создана webhook-точка. Настроить фильтрацию полезной нагрузки можно после создания."
     },
     chart: {
       daily_executions: "Ежедневные запуски",
-      tooltip_runs: "Запуски:",
-      tooltip_cost: "Стоимость:",
-      tooltip_success: "Успех:"
     },
     deploy_card: {
       test_deployment: "Тестировать развёртывание",
@@ -3617,10 +3351,6 @@ export const ru = {
       remove_deployment: "Удалить развёртывание",
       copy_endpoint: "Скопировать адрес конечной точки",
       open_endpoint: "Открыть конечную точку",
-      budget_label: "Бюджет:",
-      label_invocations: "Вызовы:",
-      label_last_called: "Последний вызов:",
-      label_created: "Создано:"
     },
     tabs: {
       connection: "Подключение",
@@ -3628,7 +3358,7 @@ export const ru = {
       oauth: "OAuth",
       deployments: "Развёртывания",
       schedules: "Расписания",
-      history: "История"
+      history: "История",
     },
     cloud_execution: "Облачное выполнение",
     cloud_status: {
@@ -3640,7 +3370,7 @@ export const ru = {
       queue_length: "Длина очереди",
       active_executions: "Активные выполнения",
       active_execution: "Активное выполнение",
-      claude_token: "Токен Claude"
+      claude_token: "Токен Claude",
     },
     history: {
       just_now: "Только что",
@@ -3660,8 +3390,6 @@ export const ru = {
       last_30_days: "Последние 30 дней",
       last_90_days: "Последние 90 дней",
       top_errors: "Основные ошибки",
-      clear_filters: "Очистить фильтры",
-      execution_history: "История выполнений"
     },
     schedules: {
       header: "Облачные триггеры ({count})",
@@ -3671,12 +3399,6 @@ export const ru = {
       empty: "Облачных триггеров пока нет. Создайте один для планирования автоматических запусков.",
       recent_firings: "Последние запуски",
       no_firings: "Последних запусков нет",
-      label_type: "Тип:",
-      label_status: "Статус:",
-      label_last_triggered: "Последний запуск:",
-      label_next_trigger: "Следующий запуск:",
-      label_cron: "Cron:",
-      loading_firings: "Загрузка..."
     },
     dashboard: {
       title: "Развёртывания",
@@ -3731,7 +3453,7 @@ export const ru = {
       stage_generating: "Генерация",
       stage_completed: "Завершено",
       stage_failed: "Сбой",
-      tool_calls: "{count} вызовов инструментов"
+      tool_calls: "{count} вызовов инструментов",
     },
     cloud_trigger_schedule: "По расписанию (Cron)",
     cloud_trigger_polling: "Опрос",
@@ -3746,7 +3468,7 @@ export const ru = {
     cron_daily_midnight: "Ежедневно в полночь UTC",
     cron_daily_9am: "Ежедневно в 9:00 UTC",
     cron_weekdays_9am: "По будням в 9:00 UTC",
-    cron_weekly_sun: "Еженедельно (вс в полночь UTC)"
+    cron_weekly_sun: "Еженедельно (вс в полночь UTC)",
   },
   sharing: {
     export_title: "Экспорт пакета",
@@ -3824,7 +3546,6 @@ export const ru = {
     persistence_denied: "Запрещено",
     capabilities_label: "Возможности:",
     capabilities_none: "Нет",
-    enclave_hash_label: "Хеш:",
     network_sharing_title: "Сеть и общий доступ",
     network_sharing_subtitle: "Управление идентификацией, доверенными пользователями и общими ресурсами",
     exposed_resources: "Открытые ресурсы",
@@ -3888,17 +3609,8 @@ export const ru = {
     no_shared_resources: "Общих ресурсов нет. Синхронизируйте манифест для проверки.",
     discovered_peers: "Обнаруженные узлы",
     refresh: "Обновить",
-    refresh_peer_list: "Обновить список пиров",
     scanning_network: "Сканирование локальной сети...",
     lan_hint: "Другие экземпляры Personas в той же сети LAN будут автоматически появляться здесь.",
-    peer_list_stale: "Список пиров может быть устаревшим —",
-    network_data_stale: "Сетевые данные могут быть устаревшими —",
-    peer_id_footer: "ID пира",
-    remove_exposure: "Убрать из общего доступа",
-    revoke_trust: "Отозвать доверие",
-    remove_peer: "Удалить пира",
-    share_link_tooltip: "Сгенерировать одноразовую ссылку для доступа (истекает через 24ч)",
-    copy_clipboard_tooltip: "Скопировать пакет как base64 в буфер обмена (макс. 256 КБ)",
     message_throughput: "Пропускная способность сообщений",
     sent: "Отправлено",
     received: "Получено",
@@ -3914,7 +3626,7 @@ export const ru = {
     sync_rounds: "Циклов синхронизации",
     success_fail: "Успешно / Сбой",
     avg_sync_duration: "Средняя длительность синхронизации",
-    entries_received: "Записей получено"
+    entries_received: "Записей получено",
   },
   overview: {
     title: "Обзор",
@@ -3924,7 +3636,7 @@ export const ru = {
     filters: {
       start_date: "Дата начала",
       end_date: "Дата окончания",
-      all_personas: "Все агенты"
+      all_personas: "Все агенты",
     },
     messages: {
       loading: "Загрузка сообщений...",
@@ -3935,7 +3647,7 @@ export const ru = {
         title: "Заголовок",
         priority: "Приоритет",
         status: "Статус",
-        created: "Создано"
+        created: "Создано",
       },
       content_header: "Содержание",
       priority_high: "Высокий",
@@ -3952,9 +3664,6 @@ export const ru = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "Рабочий стол",
-      id_label: "ID:",
-      confirm_delete_title: "Подтвердить удаление",
-      close_message: "Закрыть подробности сообщения"
     },
     realtime: {
       idle: "Простой -- нажмите {action} для имитации трафика",
@@ -3962,7 +3671,7 @@ export const ru = {
       events_per_min: "событий/мин",
       pending: "ожидают",
       success: "успешно",
-      in_window: "в окне"
+      in_window: "в окне",
     },
     observability: {
       title: "Мониторинг",
@@ -3975,18 +3684,12 @@ export const ru = {
       manual_fix: "(исправлено вручную)",
       metrics_unavailable: "Метрики недоступны -- показанные данные могут быть устаревшими",
       no_open_issues: "Нет открытых проблем",
-      run_analysis: "Запустите анализ для проверки проблем."
+      run_analysis: "Запустите анализ для проверки проблем.",
     },
     memories: {
       title: "Воспоминания",
       created_success: "Воспоминание успешно создано",
       no_memories: "Воспоминаний пока нет",
-      no_memories_hint: "Когда агенты работают, они могут сохранять здесь ценные заметки и выводы.",
-      no_memories_match: "Нет воспоминаний, подходящих под текущие фильтры",
-      list_aria_label: "Список воспоминаний",
-      add_memory_btn: "Добавить воспоминание",
-      search_placeholder: "Поиск воспоминаний...",
-      no_filter_match: "Нет воспоминаний, подходящих под ваши фильтры. Попробуйте изменить запрос.",
       form: {
         agent: "Агент",
         category: "Категория",
@@ -3994,13 +3697,8 @@ export const ru = {
         content: "Содержание",
         importance: "Важность",
         tags: "Теги",
-        tags_hint: "(через запятую)"
-      }
-    },
-    memory_review: {
-      all_conflicts_resolved: "Все конфликты разрешены",
-      keep_prefix: "Оставить «",
-      keep_suffix: "»"
+        tags_hint: "(через запятую)",
+      },
     },
     executions: {
       title: "Выполнения",
@@ -4008,7 +3706,7 @@ export const ru = {
       no_agents: "Агенты ещё не созданы",
       create_first: "Создайте первого агента, чтобы увидеть здесь активность",
       no_executions: "Выполнений пока нет",
-      run_agent: "Запустите агента, чтобы увидеть здесь активность"
+      run_agent: "Запустите агента, чтобы увидеть здесь активность",
     },
     workflows: {
       loading: "Загрузка рабочих процессов...",
@@ -4019,7 +3717,7 @@ export const ru = {
       all_types: "Все типы",
       no_filter_match: "Нет задач по текущим фильтрам",
       auto_refreshing: "Автообновление при выполнении задач",
-      cancel_failed: "Не удалось отменить задачу рабочего процесса"
+      cancel_failed: "Не удалось отменить задачу рабочего процесса",
     },
     schedules: {
       title: "Шкала расписания",
@@ -4050,7 +3748,7 @@ export const ru = {
       change_frequency: "Изменить частоту",
       pause_schedule: "Приостановить расписание",
       resume_schedule: "Возобновить расписание",
-      headless_badge: "автономный"
+      headless_badge: "автономный",
     },
     frequency_editor: {
       title: "Изменить частоту",
@@ -4060,7 +3758,7 @@ export const ru = {
       interval_seconds: "Интервал (секунды)",
       previewing: "Предпросмотр...",
       next_runs: "Следующие запуски",
-      invalid_cron: "Недопустимое выражение cron"
+      invalid_cron: "Недопустимое выражение cron",
     },
     recovery: {
       agents_missed_one: "{count} агент пропустил выполнения",
@@ -4076,7 +3774,7 @@ export const ru = {
       dismiss_all: "Отклонить все",
       recover_selected: "Восстановить {count} выбранных",
       agents_missed_few: "{count} агента пропустили выполнения",
-      agents_missed_many: "{count} агентов пропустили выполнения"
+      agents_missed_many: "{count} агентов пропустили выполнения",
     },
     sla: {
       title: "SLA надёжности агентов",
@@ -4101,7 +3799,7 @@ export const ru = {
       metric_cost: "Стоимость",
       metric_mtbf: "MTBF",
       metric_auto_healed: "Автовосстановлено",
-      metric_cancelled: "Отменено"
+      metric_cancelled: "Отменено",
     },
     knowledge: {
       title: "Граф знаний",
@@ -4126,7 +3824,7 @@ export const ru = {
       failures: "Сбоев",
       avg_cost: "Средняя стоимость",
       avg_duration: "Средняя длительность",
-      pattern_data: "Данные паттерна"
+      pattern_data: "Данные паттерна",
     },
     conflicts: {
       dismissed: "Конфликт отклонён",
@@ -4135,7 +3833,7 @@ export const ru = {
       conflict_count_one: "{count} конфликт",
       conflict_count_other: "{count} конфликтов",
       conflict_count_few: "{count} конфликта",
-      conflict_count_many: "{count} конфликтов"
+      conflict_count_many: "{count} конфликтов",
     },
     dashboard: {
       title: "Дашборд",
@@ -4151,7 +3849,7 @@ export const ru = {
       empty_title: "Добро пожаловать в Personas",
       empty_subtitle: "Создайте первого агента, чтобы здесь начали отображаться метрики выполнения, графики трафика и активность.",
       create_persona: "Создать агента",
-      from_templates: "Из шаблонов"
+      from_templates: "Из шаблонов",
     },
     execution_metrics: {
       title: "Метрики выполнения",
@@ -4169,7 +3867,7 @@ export const ru = {
       cost_spike: "Скачок затрат",
       above_avg: "выше среднего",
       top_executions: "Топ запусков:",
-      executions_label: "{count} запусков"
+      executions_label: "{count} запусков",
     },
     execution_list: {
       recorded: "{count} запусков записано",
@@ -4194,7 +3892,7 @@ export const ru = {
       no_agents: "Агентов ещё нет",
       no_agents_hint: "Создайте первого агента, чтобы здесь отображалась активность выполнения.",
       unknown_persona: "Неизвестный",
-      healing_retry: "Повтор при самоисправлении #{count}"
+      healing_retry: "Повтор при самоисправлении #{count}",
     },
     review: {
       title: "Ручные проверки",
@@ -4258,7 +3956,7 @@ export const ru = {
       table_tooltip: "Только таблица",
       review_detail: "Детали проверки",
       select_review: "Выберите проверку для просмотра",
-      technical_context: "Технический контекст"
+      technical_context: "Технический контекст",
     },
     messages_view: {
       title: "Сообщения",
@@ -4306,7 +4004,7 @@ export const ru = {
       improve_placeholder: "Опишите, как можно улучшить этот вывод...",
       submit_improvement: "Отправить предложение",
       starting: "Запуск...",
-      unknown_persona: "Неизвестный"
+      unknown_persona: "Неизвестный",
     },
     events: {
       title: "События",
@@ -4344,7 +4042,7 @@ export const ru = {
       source: "Источник",
       processed: "Обработано",
       event_data: "Данные события",
-      error: "Ошибка"
+      error: "Ошибка",
     },
     health: {
       title: "Состояние агентов",
@@ -4374,26 +4072,18 @@ export const ru = {
       status_page: "Страница статуса",
       operational: "Работает",
       degraded: "Деградация",
-      outage: "Сбой"
+      outage: "Сбой",
     },
     leaderboard: {
       title: "Рейтинг агентов",
       subtitle: "Рейтинг производительности всех агентов",
       no_data: "Данных рейтинга нет",
       no_data_hint: "Запустите агентов для формирования рейтинга производительности",
-      fleet_avg: "Среднее по парку:",
-      refresh_label: "Обновить таблицу лидеров",
-      computing_scores: "Расчёт оценок агентов...",
-      single_agent_has_data: "имеет данные.",
-      add_more_agents: "Добавьте больше агентов, чтобы увидеть рейтинги. Сейчас только {name}",
-      open_agent: "Открыть агента",
-      no_agent_data_title: "Данных об агентах пока нет",
-      no_agent_data_hint: "Запустите агентов, чтобы увидеть рейтинг производительности. Таблице лидеров нужны история выполнений и данные о состоянии для расчёта оценок.",
       reliability: "Надёжность",
       speed: "Скорость",
       efficiency: "Эффективность",
       cost_effectiveness: "Экономичность",
-      overall: "Общий"
+      overall: "Общий",
     },
     analytics: {
       title: "Аналитика",
@@ -4410,25 +4100,25 @@ export const ru = {
       saved_views: "Сохранённые виды",
       create_view: "Создать вид",
       health_issues: "Проблемы состояния",
-      rotation_overview: "Обзор ротации"
+      rotation_overview: "Обзор ротации",
     },
     usage: {
       title: "Использование",
       subtitle: "Стоимость и потребление ресурсов",
       chart_error: "Ошибка загрузки графика",
       chart_error_hint: "Произошла ошибка при отображении графика",
-      try_again: "Повторить"
+      try_again: "Повторить",
     },
     cron_agents: {
       title: "Агенты по расписанию",
       subtitle: "Агенты, работающие по автоматическому расписанию",
       no_agents: "Агентов по расписанию нет",
-      no_agents_hint: "Добавьте cron-триггер любому агенту для отображения здесь"
+      no_agents_hint: "Добавьте cron-триггер любому агенту для отображения здесь",
     },
     timeline: {
       title: "Временная шкала активности",
       subtitle: "Единый вид активности всех агентов",
-      no_activity: "Активности пока нет"
+      no_activity: "Активности пока нет",
     },
     realtime_viz: {
       title: "Шина событий",
@@ -4445,7 +4135,7 @@ export const ru = {
       timestamp: "Время",
       payload: "Данные",
       saved_views: "Сохранённые виды",
-      save_current: "Сохранить текущий"
+      save_current: "Сохранить текущий",
     },
     observability_extra: {
       auto_refresh_on: "Авто-обновление включено",
@@ -4471,7 +4161,7 @@ export const ru = {
       ipc_channel: "IPC-канал",
       avg_duration: "Средняя длительность",
       call_count: "Число вызовов",
-      error_rate: "Процент ошибок"
+      error_rate: "Процент ошибок",
     },
     widgets: {
       recent_activity: "Недавняя активность",
@@ -4488,7 +4178,7 @@ export const ru = {
       executions_badge: "Запуски",
       success_badge: "Успех",
       alerts_badge: "Оповещения",
-      agents_badge: "Агенты"
+      agents_badge: "Агенты",
     },
     cards: {
       fleet_optimization: "Оптимизация флота",
@@ -4497,7 +4187,7 @@ export const ru = {
       remote_subtitle: "Быстрые действия для управления агентами",
       resume_setup: "Продолжить настройку",
       resume_subtitle: "Продолжите с места остановки",
-      knowledge_hub: "База знаний"
+      knowledge_hub: "База знаний",
     },
     activity: {
       title: "Активность",
@@ -4543,7 +4233,7 @@ export const ru = {
       create_persona: "Создать агента",
       from_templates: "Из шаблонов",
       execution_label: "Запуск",
-      unknown: "Неизвестно"
+      unknown: "Неизвестно",
     },
     analytics_dashboard: {
       title: "Аналитика",
@@ -4602,7 +4292,7 @@ export const ru = {
       issues_count: "{count} проблем",
       issues_count_one: "{count} проблема",
       never: "никогда",
-      fail_count: "{count}x сбоев"
+      fail_count: "{count}x сбоев",
     },
     cron: {
       title: "Cron-агенты",
@@ -4621,7 +4311,7 @@ export const ru = {
       no_schedule: "нет расписания",
       every_interval: "каждые {interval}",
       next: "следующий",
-      last: "последний"
+      last: "последний",
     },
     activity_timeline: {
       title: "Временная шкала активности",
@@ -4630,7 +4320,7 @@ export const ru = {
       events: "События",
       messages: "Сообщения",
       no_activity: "Активности пока нет",
-      high: "Высокая"
+      high: "Высокая",
     },
     sla_card: {
       successful: "Успешно",
@@ -4642,7 +4332,7 @@ export const ru = {
       auto_healed: "Авто-восстановлено",
       cancelled: "Отменено",
       failing: "{count} сбоев",
-      healed: "{count} восстановлено"
+      healed: "{count} восстановлено",
     },
     realtime_page: {
       title: "Монитор шины событий",
@@ -4696,7 +4386,7 @@ export const ru = {
       galaxy: "Галактика",
       galaxy_desc: "Орбитальное созвездие с хвостами комет",
       lanes: "Полосы",
-      lanes_desc: "Горизонтальная диаграмма потока в полосах"
+      lanes_desc: "Горизонтальная диаграмма потока в полосах",
     },
     memory_form: {
       agent: "Агент",
@@ -4713,25 +4403,25 @@ export const ru = {
       saving: "Сохранение...",
       created_success: "Память успешно создана",
       fill_required: "Заполните все обязательные поля для сохранения",
-      saving_memory: "Сохранение памяти..."
+      saving_memory: "Сохранение памяти...",
     },
     memory_filter: {
       search_placeholder: "Поиск воспоминаний...",
       all_agents: "Все агенты",
-      all_categories: "Все категории"
+      all_categories: "Все категории",
     },
     memory_actions: {
       dismiss_suggestion: "Отклонить предложение",
       memory_insights: "Аналитика памяти",
       suggestions: "{count} предложений",
-      suggestions_one: "{count} предложение"
+      suggestions_one: "{count} предложение",
     },
     memory_conflict: {
       memory_a: "Память A",
       memory_b: "Память B",
       merge: "Объединить",
       keep: "Сохранить",
-      vs: "против"
+      vs: "против",
     },
     observability_charts: {
       cost_over_time: "Затраты за период",
@@ -4743,7 +4433,7 @@ export const ru = {
       anomaly_detected: "Обнаружена {count} аномалия затрат",
       anomaly_click_hint: "Нажмите на маркер ромба на графике для анализа",
       clear_traces: "Очистить завершённые трассировки",
-      all_operations: "Все операции"
+      all_operations: "Все операции",
     },
     health_extra: {
       success: "Успех",
@@ -4759,11 +4449,6 @@ export const ru = {
       predicted_failure: "Прогнозируемый рост сбоев через",
       loading_status: "Загрузка данных страницы состояния...",
       no_personas: "Агентов для отображения нет.",
-      score_prefix: "Оценка:",
-      uptime_30d_prefix: "Аптайм за 30д:",
-      updated_prefix: "Обновлено",
-      consecutive_failures_one: "{count} сбой подряд",
-      consecutive_failures_other: "{count} сбоев подряд",
       score_label: "Оценка",
       uptime_30d: "Доступность 30д",
       updated: "Обновлено {time}",
@@ -4780,7 +4465,7 @@ export const ru = {
       open: "{count} открыто",
       sla_compliance: "Соответствие SLA",
       consecutive_failures: "{count} последовательных сбоев",
-      consecutive_failure: "{count} последовательный сбой"
+      consecutive_failure: "{count} последовательный сбой",
     },
     system_health: {
       title: "Системные проверки",
@@ -4794,7 +4479,7 @@ export const ru = {
       save_configuration: "Сохранить конфигурацию",
       litellm_footer: "Эти настройки хранятся локально и используются всеми агентами, настроенными на использование провайдера LiteLLM.",
       ipc_error: "Мост приложения не отвечает. Попробуйте перезапустить приложение. Вы можете продолжить изучение интерфейса.",
-      issues_warning: "Некоторые проверки выявили проблемы. Вы можете продолжить, но некоторые функции могут не работать корректно."
+      issues_warning: "Некоторые проверки выявили проблемы. Вы можете продолжить, но некоторые функции могут не работать корректно.",
     },
     review_extra: {
       add_note: "Добавить заметку (необязательно)...",
@@ -4806,7 +4491,7 @@ export const ru = {
       quick_actions: "Быстрые действия",
       accepted: "{count} принято",
       rejected: "{count} отклонено",
-      undecided: "{count} без решения"
+      undecided: "{count} без решения",
     },
     widgets_extra: {
       execution_health_chart: "Состояние запусков",
@@ -4815,147 +4500,29 @@ export const ru = {
       failed: "Сбои",
       close: "Закрыть",
       dismiss_help: "Скрыть справку",
-      skip_tour: "Пропустить тур полностью"
-    },
-    burn_rate_extra: {
-      active_personas_subtitle: "{count} активных агентов · местная граница месяца",
-      title: "Прогнозы скорости расхода",
-      daily_burn: "Ежедневный расход",
-      projected_monthly: "Прогноз на месяц",
-      at_risk: "Под угрозой",
-      top_cost_drivers: "Главные источники затрат",
-      budget_exhaustion_warnings: "Предупреждения об исчерпании бюджета",
-      exhausted: "Исчерпан",
-      days_left: "{days}д осталось"
-    },
-    predictive_alerts_extra: {
-      per_month: "/мес",
-      confidence_pct: "% увер.",
-      title: "Прогностические оповещения",
-      all_nominal: "Все системы в норме",
-      no_alerts: "Нет прогностических оповещений — все агенты в пределах нормы.",
-      budget_exhausted: "Бюджет исчерпан",
-      budget_exhaustion_in: "Исчерпание бюджета через {days}д",
-      failure_spike_predicted: "Прогнозируемый рост сбоев через {days}д",
-      excessive_healing: "Избыточная активность самоисправления",
-      critical_health: "Критическое состояние",
-      byom_recommendations: "Рекомендации по маршрутизации BYOM"
-    },
-    annotate_modal: {
-      annotation_placeholder: "напр. Для верификации webhook Stripe нужно сырое тело запроса, а не разобранный JSON",
-      title: "Добавить аннотацию знаний",
-      persona_label: "Агент для атрибуции",
-      scope_label: "Область",
-      tool_name: "Имя инструмента",
-      connector_type: "Коннектор / тип сервиса",
-      annotation_label: "Аннотация",
-      cancel: "Отмена",
-      saving: "Сохранение...",
-      save_annotation: "Сохранить аннотацию"
-    },
-    knowledge_row: {
-      execution_trend_label: "Тренд выполнений",
-      annotation: "Аннотация",
-      successes: "Успехи",
-      failures: "Сбои",
-      avg_cost: "Средние затраты",
-      avg_duration: "Средняя длительность",
-      pattern_data: "Данные паттерна",
-      collapse_details: "Свернуть детали",
-      expand_details: "Развернуть детали",
-      verify_annotation: "Подтвердить аннотацию",
-      dismiss_annotation: "Отклонить аннотацию"
-    },
-    knowledge_graph: {
-      mock_pattern: "Тестовый паттерн",
-      seed_tooltip: "Добавить тестовый паттерн (только для dev)",
-      all_types: "Все типы",
-      all_scopes: "Все области",
-      failure_drilldown_prefix: "Детализация сбоев:",
-      failure_date_filter: "Показаны паттерны сбоев, активные с {date}",
-      data_unavailable: "Данные о знаниях недоступны",
-      loading_patterns: "Загрузка паттернов знаний...",
-      drilldown_toggle_title: "Показать/скрыть детализацию сбоев",
-      no_patterns_yet: "Паттернов знаний пока нет",
-      no_patterns_yet_hint: "Запустите агентов, чтобы накопить паттерны знаний. Агенты становятся умнее со временем.",
-      no_patterns_match: "Нет паттернов, подходящих под текущие фильтры",
-      recent_learnings: "Недавние выводы",
-      curating_manually: "Курируете документы вручную?",
-      obsidian_tip: "Для менее чем ~1000 заметок коннектор Obsidian может синхронизировать ваше хранилище напрямую."
-    },
-    focused_decision: {
-      video_not_supported: "Ваш браузер не поддерживает воспроизведение видео.",
-      reject_this: "Отклонить это",
-      accept_this: "Принять это",
-      accept: "Принять",
-      reject: "Отклонить",
-      media_unavailable: "Медиа недоступно"
-    },
-    review_focus: {
-      video_not_supported: "Ваш браузер не поддерживает воспроизведение видео.",
-      all_caught_up: "Всё в порядке",
-      no_pending: "Нет ожидающих проверок.",
-      queue: "Очередь",
-      clear: "Очистить",
-      clear_all_verdicts: "Сбросить все решения",
-      quick_actions: "Быстрые действия",
-      reject_all: "Отклонить все",
-      accept_all: "Принять все",
-      retry_with_changes: "Повторить с изменениями"
-    },
-    bulk_action_bar: {
-      pending_reviews_selected_one: "Выбран {count} ожидающий проверки",
-      pending_reviews_selected_other: "Выбрано {count} ожидающих проверки"
-    },
-    review_inbox: {
-      drag_to_resize: "Потяните, чтобы изменить размер"
-    },
-    healing_issues_panel: {
-      ai_healing_title: "Самовосстановление ИИ",
-      diagnosis_label: "Диагноз:",
-      fixes_applied: "Применённые исправления",
-      alert_history_title: "История оповещений",
-      all_agents_global: "Все агенты (глобально)",
-      add_rule: "Добавить правило",
-      no_rules_configured: "Правила оповещений не настроены. Добавьте правило, чтобы начать мониторинг.",
-      confidence_pct_suffix: "% уверенности",
-      spike_on: "всплеск в",
-      correlated_events_prefix: "Связанные события (",
-      circuit_breaker_label: "автоматический выключатель",
-      auto_disabled_message: "Этот агент был автоматически отключён как реакция автоматического выключателя на повторные сбои.",
-      execution_label: "Выполнение:",
-      issue_marked_as: "Эта проблема помечена как",
-      retry_in_progress: "Повтор выполняется — статус обновится по завершении.",
-      resolve_issue_title: "Пометить проблему как решённую",
-      title: "Проблемы состояния",
-      analyzing: "Анализ...",
-      run_analysis: "Запустить анализ",
-      no_open_issues: "Нет открытых проблем",
-      run_analysis_hint: "Запустите анализ для проверки на наличие проблем.",
-      healing_audit_log: "Журнал аудита самоисправления",
-      no_silent_failures: "Скрытых сбоев не записано."
+      skip_tour: "Пропустить тур полностью",
     },
     remote_control_card: {
       connect_to_desktop: "Подключиться к десктопу",
       connect_description: "Запускайте агентов с помощью десктопного CLI через удалённое управление. Запустите {command} на компьютере, затем подключитесь здесь.",
-      requires_subscription: "Требуется подписка Claude Pro или Max"
+      requires_subscription: "Требуется подписка Claude Pro или Max",
     },
     resume_setup_card: {
       resume_tour: "Продолжить тур",
       left_off_at: "Вы остановились на",
       steps_completed: "{completed}/{total} шагов выполнено",
       skip_tour: "Пропустить тур полностью",
-      continue_label: "Продолжить"
+      continue_label: "Продолжить",
     },
     detail_modal: {
-      close: "Закрыть"
+      close: "Закрыть",
     },
     metric_help_popover: {
       help_for: "Справка для {label}",
       dismiss_help: "Скрыть справку",
       healthy: "В норме:",
       click: "Нажмите:",
-      got_it: "Понял, больше не показывать"
+      got_it: "Понял, больше не показывать",
     },
     install_button: {
       install_node: "Установить Node.js",
@@ -4966,7 +4533,7 @@ export const ru = {
       installation_failed: "Установка не удалась",
       try_manually: "Попробуйте выполнить вручную:",
       retry: "Повторить",
-      official_page: "Официальная страница"
+      official_page: "Официальная страница",
     },
     section_card: {
       checking: "Проверка {section}...",
@@ -4977,12 +4544,12 @@ export const ru = {
       sign_in_google: "Войти через Google",
       working: "Выполнение...",
       connect_claude: "Подключиться к Claude Desktop",
-      disconnect: "Отключить"
+      disconnect: "Отключить",
     },
     metrics_cards: {
       cost_spike: "Скачок затрат",
       above_avg: "выше среднего",
-      top_executions: "Топ запусков:"
+      top_executions: "Топ запусков:",
     },
     event_log_item: {
       event_id: "ID события",
@@ -4994,15 +4561,75 @@ export const ru = {
       copied: "Скопировано",
       copy: "Копировать",
       error: "Ошибка",
-      system: "Система"
+      system: "Система",
+    },
+    burn_rate_extra: {
+      title: "Прогнозы скорости расхода",
+      daily_burn: "Ежедневный расход",
+      projected_monthly: "Прогноз на месяц",
+      at_risk: "Под угрозой",
+      top_cost_drivers: "Главные источники затрат",
+      budget_exhaustion_warnings: "Предупреждения об исчерпании бюджета",
+      exhausted: "Исчерпан",
+      days_left: "{days}д осталось",
     },
     cascade: {
       title: "Карта каскадных цепочек",
-      no_chains: "Цепочек не обнаружено — все агенты работают независимо"
+      no_chains: "Цепочек не обнаружено — все агенты работают независимо",
+    },
+    predictive_alerts_extra: {
+      title: "Прогностические оповещения",
+      all_nominal: "Все системы в норме",
+      no_alerts: "Нет прогностических оповещений — все агенты в пределах нормы.",
+      budget_exhausted: "Бюджет исчерпан",
+      budget_exhaustion_in: "Исчерпание бюджета через {days}д",
+      failure_spike_predicted: "Прогнозируемый рост сбоев через {days}д",
+      excessive_healing: "Избыточная активность самоисправления",
+      critical_health: "Критическое состояние",
+      byom_recommendations: "Рекомендации по маршрутизации BYOM",
+    },
+    annotate_modal: {
+      title: "Добавить аннотацию знаний",
+      persona_label: "Агент для атрибуции",
+      scope_label: "Область",
+      tool_name: "Имя инструмента",
+      connector_type: "Коннектор / тип сервиса",
+      annotation_label: "Аннотация",
+      cancel: "Отмена",
+      saving: "Сохранение...",
+      save_annotation: "Сохранить аннотацию",
+    },
+    knowledge_row: {
+      annotation: "Аннотация",
+      successes: "Успехи",
+      failures: "Сбои",
+      avg_cost: "Средние затраты",
+      avg_duration: "Средняя длительность",
+      pattern_data: "Данные паттерна",
+      collapse_details: "Свернуть детали",
+      expand_details: "Развернуть детали",
+      verify_annotation: "Подтвердить аннотацию",
+      dismiss_annotation: "Отклонить аннотацию",
+    },
+    focused_decision: {
+      accept: "Принять",
+      reject: "Отклонить",
+      media_unavailable: "Медиа недоступно",
+    },
+    review_focus: {
+      all_caught_up: "Всё в порядке",
+      no_pending: "Нет ожидающих проверок.",
+      queue: "Очередь",
+      clear: "Очистить",
+      clear_all_verdicts: "Сбросить все решения",
+      quick_actions: "Быстрые действия",
+      reject_all: "Отклонить все",
+      accept_all: "Принять все",
+      retry_with_changes: "Повторить с изменениями",
     },
     memory_card: {
       confirm: "Подтвердить",
-      cancel: "Отмена"
+      cancel: "Отмена",
     },
     memory_detail: {
       title_label: "Заголовок",
@@ -5012,7 +4639,7 @@ export const ru = {
       tags_label: "Теги",
       view_source_execution: "Посмотреть исходный запуск",
       delete_memory: "Удалить память",
-      close: "Закрыть"
+      close: "Закрыть",
     },
     memory_table: {
       agent: "Агент",
@@ -5020,11 +4647,11 @@ export const ru = {
       category: "Категория",
       priority: "Приоритет",
       tags: "Теги",
-      created: "Создано"
+      created: "Создано",
     },
     review_results: {
       title: "Обзор памяти ИИ",
-      review_failed: "Проверка не удалась"
+      review_failed: "Проверка не удалась",
     },
     anomaly_drilldown_extra: {
       title: "Детальный анализ аномалии",
@@ -5033,7 +4660,7 @@ export const ru = {
       correlating: "Корреляция событий...",
       likely_root_causes: "Вероятные причины",
       correlated_events: "Коррелирующие события",
-      no_correlated: "Коррелирующих событий в окне ±24ч не найдено."
+      no_correlated: "Коррелирующих событий в окне ±24ч не найдено.",
     },
     healing_issue_modal: {
       issue_resolved: "Проблема устранена",
@@ -5048,14 +4675,23 @@ export const ru = {
       auto_resolved: "Эта проблема была автоматически устранена",
       close: "Закрыть",
       resolving: "Устранение…",
-      mark_resolved: "Отметить как устранённое"
+      mark_resolved: "Отметить как устранённое",
+    },
+    healing_issues_panel: {
+      title: "Проблемы состояния",
+      analyzing: "Анализ...",
+      run_analysis: "Запустить анализ",
+      no_open_issues: "Нет открытых проблем",
+      run_analysis_hint: "Запустите анализ для проверки на наличие проблем.",
+      healing_audit_log: "Журнал аудита самоисправления",
+      no_silent_failures: "Скрытых сбоев не записано.",
     },
     healing_timeline: {
       loading: "Загрузка временной шкалы...",
       no_events: "Нет событий самоисправления",
       no_events_hint: "Запустите анализ для построения временной шкалы устойчивости.",
       knowledge_base: "База знаний",
-      patterns_hint: "Паттерны, влияющие на решения самоисправления"
+      patterns_hint: "Паттерны, влияющие на решения самоисправления",
     },
     ipc_panel: {
       title: "Производительность IPC",
@@ -5064,29 +4700,29 @@ export const ru = {
       command: "Команда",
       calls_header: "Вызовы",
       duration_header: "Длительность",
-      when_header: "Когда"
+      when_header: "Когда",
     },
     system_trace_extra: {
       no_traces: "Системных трассировок не записано",
       no_traces_hint: "Трассировки появляются при выполнении операций проектирования, работы с учётными данными или шаблонами",
       all_operations: "Все операции",
       clear_completed: "Очистить завершённые трассировки",
-      span: "Период"
+      span: "Период",
     },
     event_log_sidebar: {
       title: "Журнал событий",
       no_events: "Событий пока нет",
-      open_detail_drawer: "Открыть в панели деталей"
+      open_detail_drawer: "Открыть в панели деталей",
     },
     chart_error: {
-      chart_unavailable: "График недоступен"
+      chart_unavailable: "График недоступен",
     },
     realtime_idle: {
-      idle: "Простой"
+      idle: "Простой",
     },
     day_range: {
-      apply: "Применить"
-    }
+      apply: "Применить",
+    },
   },
   templates: {
     gallery: {
@@ -5102,14 +4738,13 @@ export const ru = {
       triggers: "Триггеры",
       no_flows: "Нет сценариев",
       readiness_tooltip: "{percent}% коннекторов готово",
-      template_details_tabs_aria: "Детали шаблона"
     },
     actions: {
       view_details: "Подробнее",
       adopt: "Внедрить",
       try_it: "Попробовать",
       adopt_as_persona: "Внедрить как агента",
-      delete: "Удалить"
+      delete: "Удалить",
     },
     detail: {
       tab_overview: "Обзор",
@@ -5121,14 +4756,14 @@ export const ru = {
       review_error: "Ошибка",
       used_references: "Использованы эталонные паттерны",
       no_design_data: "Данные дизайна недоступны",
-      no_design_data_hint: "Данные дизайна для этого шаблона недоступны."
+      no_design_data_hint: "Данные дизайна для этого шаблона недоступны.",
     },
     detail_overview: {
       use_case_flows: "Потоки сценариев использования",
       suggested_adjustment: "Предлагаемая корректировка",
       adjustment_attempt: "(попытка {attempt}/3)",
       dimension_completion: "Заполнение параметров",
-      dimensions_score: "({score}/9 параметров)"
+      dimensions_score: "({score}/9 параметров)",
     },
     adoption: {
       title: "Внедрить шаблон",
@@ -5137,7 +4772,7 @@ export const ru = {
       step_credentials: "Связать учётные данные",
       step_preferences: "Задать параметры",
       step_generate: "Сгенерировать агента",
-      step_review: "Проверить и сохранить"
+      step_review: "Проверить и сохранить",
     },
     choose: {
       select_use_cases: "Выберите сценарии использования",
@@ -5147,7 +4782,7 @@ export const ru = {
       components: "Компоненты",
       examples: "Примеры",
       tools: "Инструменты",
-      none_selected: "Сценарии не выбраны -- выберите хотя бы один для продолжения"
+      none_selected: "Сценарии не выбраны -- выберите хотя бы один для продолжения",
     },
     connect: {
       all_set: "Коннекторы не требуются -- всё готово!",
@@ -5160,7 +4795,7 @@ export const ru = {
       select_credential: "Выберите учётные данные...",
       create_new: "+ Создать новые учётные данные",
       design_custom: "+ Создать пользовательский коннектор",
-      add_credential: "Добавить учётные данные"
+      add_credential: "Добавить учётные данные",
     },
     build: {
       title: "Создание агента",
@@ -5177,7 +4812,7 @@ export const ru = {
       close_hint: "Вы можете закрыть это окно -- обработка продолжается в фоне.",
       adjustments_label: "Запросить корректировки (необязательно)",
       adjustments_placeholder: "Пример: Изменить расписание на 9 утра, удалить интеграцию с ClickUp, добавить уведомления Slack",
-      discard_draft: "Отклонить черновик и начать заново"
+      discard_draft: "Отклонить черновик и начать заново",
     },
     quick_adopt: {
       all_matched: "Все коннекторы сопоставлены",
@@ -5185,7 +4820,7 @@ export const ru = {
       missing_prefix: "Отсутствуют: ",
       add_in_catalog: "добавить в каталоге ключей",
       build_persona: "Создать агента",
-      full_wizard: "Полный мастер"
+      full_wizard: "Полный мастер",
     },
     data: {
       title: "Настройка данных",
@@ -5194,7 +4829,7 @@ export const ru = {
       tables_found: "{tables} найдены во встроенной базе данных.",
       create_new: "Создать новые таблицы",
       use_existing: "Использовать существующие",
-      complete: "Настройка данных завершена"
+      complete: "Настройка данных завершена",
     },
     tune: {
       title: "Настройка агента",
@@ -5213,7 +4848,7 @@ export const ru = {
       check_interval: "Интервал проверки",
       check_interval_placeholder: "Каждые 5 минут",
       manual_hint: "Запускается вручную -- настройка не требуется",
-      system_hint: "Запускается по системным событиям -- настройка не требуется"
+      system_hint: "Запускается по системным событиям -- настройка не требуется",
     },
     review_policy: {
       title: "Ручная проверка",
@@ -5230,7 +4865,7 @@ export const ru = {
       timeout_1h: "1 час",
       timeout_4h: "4 часа",
       timeout_24h: "24 часа",
-      timeout_none: "Без тайм-аута"
+      timeout_none: "Без тайм-аута",
     },
     memory: {
       title: "Память",
@@ -5243,7 +4878,7 @@ export const ru = {
       scope_patterns: "Паттерны выполнения",
       scope_errors: "Решения ошибок",
       scope_custom: "Пользовательская область...",
-      scope_custom_placeholder: "Опишите, что запоминать..."
+      scope_custom_placeholder: "Опишите, что запоминать...",
     },
     create: {
       use_cases: "Сценарии использования",
@@ -5276,12 +4911,12 @@ export const ru = {
       with_connectors_few: ", {count} подписки на коннектор",
       with_connectors_many: ", {count} подписок на коннектор",
       safety_acknowledge_few: "Я признаю {count} критические проблемы безопасности и принимаю риск",
-      safety_acknowledge_many: "Я признаю {count} критических проблем безопасности и принимаю риск"
+      safety_acknowledge_many: "Я признаю {count} критических проблем безопасности и принимаю риск",
     },
     review: {
       use_cases_header: "Сценарии использования ({count})",
       tools_header: "Инструменты ({count})",
-      triggers_header: "Триггеры ({count})"
+      triggers_header: "Триггеры ({count})",
     },
     matrix: {
       preparing: "Подготовка сборки...",
@@ -5321,19 +4956,6 @@ export const ru = {
       build_complete: "Сборка завершена",
       adjust_placeholder: "Настройте что угодно...",
       answer_placeholder: "Ваш ответ...",
-      answer_cell: "Ответ: {cell}",
-      working_on: "Работаем над: {cells}",
-      draft_ready_label: "Черновик готов",
-      editing_cell: "Редактирование: {cell}",
-      protocol_active: "Протокол активен",
-      matrix_unavailable: "Данные матрицы недоступны.",
-      persona_matrix_title: "Матрица агента",
-      cell_status_analyzing: "Анализ",
-      cell_status_answered: "Отвечено",
-      cell_status_resolved: "Решено",
-      cell_status_input_needed: "Нужен ввод",
-      cell_status_missing_credential: "Отсутствуют учётные данные",
-      cell_status_error: "Ошибка"
     },
     sandbox: {
       restriction_events: "Отправка событий отключена",
@@ -5351,12 +4973,12 @@ export const ru = {
       badge_unverified: "Не проверен",
       badge_sandbox: "Режим песочницы",
       restriction_concurrent_few: "Максимум {max} одновременных запуска",
-      restriction_concurrent_many: "Максимум {max} одновременных запусков"
+      restriction_concurrent_many: "Максимум {max} одновременных запусков",
     },
     page: {
       title: "Агентные шаблоны",
       subtitle_one: "{count} шаблон доступен",
-      subtitle_other: "{count} шаблонов доступно"
+      subtitle_other: "{count} шаблонов доступно",
     },
     explore: {
       ready_to_deploy: "Готово к развёртыванию",
@@ -5377,7 +4999,7 @@ export const ru = {
       role_templates: "Шаблоны {role}",
       by_role: "По роли",
       by_need: "По потребности",
-      classic: "Классический"
+      classic: "Классический",
     },
     opportunities: {
       title: "Возможности автоматизации",
@@ -5385,15 +5007,15 @@ export const ru = {
       ready_now: "Готово сейчас",
       add_connector: "Добавить",
       unlock_more: "для разблокировки ещё {count}",
-      explore_templates: "Изучить шаблоны {label}"
+      explore_templates: "Изучить шаблоны {label}",
     },
     recommended: {
       title: "Рекомендуется для вас",
       subtitle: "На основе ваших коннекторов",
-      no_recommendations: "Рекомендаций пока нет."
+      no_recommendations: "Рекомендаций пока нет.",
     },
     trending: {
-      title: "Самые применяемые на этой неделе"
+      title: "Самые применяемые на этой неделе",
     },
     empty: {
       no_templates: "Созданных шаблонов пока нет",
@@ -5402,7 +5024,7 @@ export const ru = {
       no_search_results_hint: "Попробуйте изменить поисковые запросы или фильтры.",
       clear_search: "Очистить поиск",
       waiting_for_draft: "Ожидание черновика агента",
-      waiting_for_draft_hint: "ИИ создаёт черновик на основе ваших выборов. Обычно это занимает несколько секунд."
+      waiting_for_draft_hint: "ИИ создаёт черновик на основе ваших выборов. Обычно это занимает несколько секунд.",
     },
     banners: {
       draft_prefix: "Черновик: ",
@@ -5415,7 +5037,7 @@ export const ru = {
       status_completed: "Завершено",
       status_failed: "Сбой",
       click_to_view_result: "Нажмите для просмотра результата",
-      click_to_view_output: "Нажмите для просмотра вывода"
+      click_to_view_output: "Нажмите для просмотра вывода",
     },
     search: {
       switch_to_keyword: "Переключиться на поиск по ключевым словам",
@@ -5455,21 +5077,17 @@ export const ru = {
       autocomplete_difficulty: "Сложность",
       autocomplete_setup_time: "Время настройки",
       autocomplete_suggestions: "Предложения",
-      coverage_filter_aria: "Фильтр покрытия",
-      search_suggestions_aria: "Подсказки поиска",
-      clear_search_aria: "Очистить поиск",
-      search_with_ai_aria: "Поиск с помощью ИИ"
     },
     list: {
       template_name: "Имя шаблона",
       components: "Компоненты",
-      adoptions: "Применений"
+      adoptions: "Применений",
     },
     row_actions: {
       row_actions_label: "Действия строки",
       view_details: "Подробнее",
       rebuild: "Пересобрать",
-      delete_template: "Удалить шаблон"
+      delete_template: "Удалить шаблон",
     },
     connector_readiness: {
       click_to_add: "нажмите для добавления учётных данных",
@@ -5479,14 +5097,14 @@ export const ru = {
       needs_setup: "Нужна настройка",
       not_ready: "Не готово",
       needs_credential: "нужны учётные данные",
-      not_installed: "не установлен"
+      not_installed: "не установлен",
     },
     detail_modal: {
       adopted: "{count} применений",
       reference_patterns: "Эталонные паттерны",
       adopt_as_persona: "Применить как агента",
       try_it: "Попробовать",
-      design_unavailable: "Данные дизайна недоступны для этого шаблона."
+      design_unavailable: "Данные дизайна недоступны для этого шаблона.",
     },
     overview_tab: {
       loading_metrics: "Загрузка метрик производительности...",
@@ -5506,7 +5124,7 @@ export const ru = {
       suggested_adjustment: "Рекомендуемая корректировка",
       adjustment_attempt: "(попытка {attempt}/3)",
       dimension_completion: "Заполнение измерений",
-      dimensions_score: "({score}/9 измерений)"
+      dimensions_score: "({score}/9 измерений)",
     },
     review_detail: {
       design_unavailable: "Данные дизайна недоступны для этого шаблона.",
@@ -5516,7 +5134,7 @@ export const ru = {
       adopt_as_new_persona: "Принять как нового агента",
       view_raw_json: "Просмотреть необработанный JSON",
       hide_raw_json: "Скрыть необработанный JSON",
-      used_references: "Этот шаблон использовал эталонные паттерны из предыдущих успешных проверок"
+      used_references: "Этот шаблон использовал эталонные паттерны из предыдущих успешных проверок",
     },
     rebuild_modal: {
       title: "Перестроить шаблон",
@@ -5533,7 +5151,7 @@ export const ru = {
       unknown_error: "Во время перестроения произошла неизвестная ошибка.",
       start_rebuild: "Начать перестроение",
       cancel_rebuild: "Отменить перестроение",
-      run_in_background: "Запустить в фоне"
+      run_in_background: "Запустить в фоне",
     },
     preview_modal: {
       preview_title: "Предпросмотр: {name}",
@@ -5547,7 +5165,7 @@ export const ru = {
       completed: "Завершено",
       execution_failed: "Запуск не удался",
       run_again: "Запустить снова",
-      close_test_continues: "Можно закрыть — тест продолжится в фоне"
+      close_test_continues: "Можно закрыть — тест продолжится в фоне",
     },
     expanded: {
       adopt: "Принять",
@@ -5557,7 +5175,7 @@ export const ru = {
       architecture: "Архитектура",
       events: "События",
       reviews_label: "Проверки",
-      notifications: "Уведомления"
+      notifications: "Уведомления",
     },
     matrix_cmd: {
       identity: "Идентичность",
@@ -5576,7 +5194,7 @@ export const ru = {
       build_label: "Создать",
       adjust_placeholder: "Скорректируйте что угодно...",
       test_agent: "Протестировать агента",
-      save_version: "Сохранить версию"
+      save_version: "Сохранить версию",
     },
     questionnaire: {
       header: "{label} — Вопрос {current} из {total}",
@@ -5593,11 +5211,6 @@ export const ru = {
       answer_remaining: "Ответить на оставшиеся ({count})",
       next: "Далее",
       setup: "Настройка",
-      previous_question: "Предыдущий вопрос",
-      next_question: "Следующий вопрос",
-      go_to_question: "Перейти к вопросу {number}",
-      question_answered_suffix: " (отвечено)",
-      question_unanswered_suffix: " (без ответа)"
     },
     sandbox_banner: {
       community_sandbox: "Шаблон сообщества — изолированный режим",
@@ -5608,7 +5221,7 @@ export const ru = {
       human_review_required: "Требуется проверка человека",
       budget_cap_enforced: "Бюджетный лимит применён",
       max_concurrent_one: "Макс. {max} одновременный запуск",
-      max_concurrent_other: "Макс. {max} одновременных запусков"
+      max_concurrent_other: "Макс. {max} одновременных запусков",
     },
     n8n: {
       credential_label: "Учётные данные: {name}",
@@ -5695,26 +5308,18 @@ export const ru = {
       drop_file_here: "Перетащите файл процесса сюда",
       import_from_any_platform: "Импортировать процесс с любой платформы",
       click_to_browse: "Нажмите для выбора или перетащите экспортированный процесс",
-      dropzone_aria: "Перетащите файл рабочего процесса или нажмите для выбора",
       continue_btn: "Продолжить",
       press_enter_or_click: "Нажмите Enter или кликните для продолжения",
       paste_workflow_json: "Вставить JSON процесса",
       paste_placeholder: "Вставьте экспортированный JSON процесса здесь...",
-      paste_aria: "Содержимое workflow JSON",
       import_btn: "Импорт",
       import_from_url: "Импортировать из URL",
       url_description: "Вставьте URL на файл JSON процесса. Поддерживаются raw-ссылки GitHub, Gist и прямые конечные точки JSON.",
       fetching: "Загрузка",
       fetch: "Получить",
       accepts_label: "Принимает:",
-      url_aria: "URL рабочего процесса",
-      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
-      url_format_github: "github.com/*/blob/*",
-      url_format_gist: "gist.github.com/*",
-      url_format_raw: "raw JSON endpoint",
       customize_persona: "Несколько вопросов для настройки агента",
       answer_then_generate: "Ответьте ниже, затем нажмите Создать",
-      question_view_mode_aria: "Режим просмотра вопросов",
       list_view: "Список",
       focus_view: "Фокус",
       no_config_needed: "Настройка не нужна",
@@ -5735,16 +5340,13 @@ export const ru = {
       analyzing_btn: "Анализ...",
       upload_step: "Загрузка",
       analyze_step: "Анализ",
-      wizard_progress_aria: "Прогресс мастера импорта",
-      wizard_steps_aria: "Шаги мастера",
       streaming_sections: "Потоковые секции",
       awaiting_next_section: "Ожидание следующей секции...",
-      transform_progress_aria: "Прогресс преобразования",
       analyze_phase: "Анализ",
       questions_phase: "Вопросы",
       generate_phase: "Создание",
       type_your_answer: "Введите ответ...",
-      navigate_hint: "Используйте стрелки для навигации"
+      navigate_hint: "Используйте стрелки для навигации",
     },
     diagram: {
       no_flow_data: "Нет данных потока",
@@ -5754,7 +5356,7 @@ export const ru = {
       decisions_count: "{count} решение(й)",
       error_label: "Ошибка",
       request_label: "Запрос",
-      response_label: "Ответ"
+      response_label: "Ответ",
     },
     design: {
       connectors_and_tools: "Коннекторы и инструменты",
@@ -5771,7 +5373,7 @@ export const ru = {
       feasibility_assessment: "Оценка осуществимости",
       confirmed_capabilities: "Подтверждённые возможности",
       issues_label: "Проблемы",
-      suggested_next_steps: "Предлагаемые следующие шаги"
+      suggested_next_steps: "Предлагаемые следующие шаги",
     },
     card: {
       use_cases_label: "Сценарии",
@@ -5780,7 +5382,7 @@ export const ru = {
       no_flows: "Нет потоков",
       none_label: "Нет",
       more_count: "+{count} ещё",
-      system_prompt: "Системный промпт"
+      system_prompt: "Системный промпт",
     },
     matrix_grid: {
       prerequisites: "Предварительные условия",
@@ -5790,7 +5392,7 @@ export const ru = {
       credential_configured: "Учётные данные настроены",
       connector_not_installed: "Коннектор не установлен",
       needs_credential: "Нужны учётные данные",
-      setup_btn: "Настроить"
+      setup_btn: "Настроить",
     },
     adopt_modal: {
       adopt_template: "Применить шаблон",
@@ -5805,49 +5407,6 @@ export const ru = {
       credential_required: "Учётные данные {category} не найдены в хранилище. Добавьте для продолжения.",
       add_credential: "Добавить учётные данные",
       blocked_blocking_submit: "{count} вопрос(ов) требуют учётных данных перед продолжением",
-      credentials_required_title: "Требуются учётные данные",
-      credentials_required_body: "Этому шаблону нужны по одной учётной записи из каждой категории ниже перед продолжением. Нажмите «Добавить учётные данные» — вы автоматически вернётесь сюда после настройки.",
-      answered_of_total: "{answered} / {total} отвечено",
-      blocked_count: "{count} заблокировано",
-      question_number_of: "Вопрос {current} из {total}",
-      question_number_aria: "Вопрос {number}",
-      navigate_hint: "для навигации",
-      enter_to_advance: "для продолжения",
-      previous: "Назад",
-      next: "Далее",
-      live_preview: "Предпросмотр",
-      persona_label: "Агент",
-      untitled_agent: "Агент без названия",
-      not_yet_set: "Ещё не задано",
-      auto_badge: "авто",
-      jump_to_question_hint: "Нажмите на любую строку выше, чтобы перейти к тому вопросу. Автоопределённые значения получены из ваших подключённых учётных данных.",
-      hide_explanation: "Скрыть пояснение",
-      show_explanation: "Показать пояснение",
-      all_option: "Все",
-      add_custom: "Добавить",
-      custom_prefix: "+ Своё…",
-      custom_plain: "Своё…",
-      type_your_answer: "Введите ваш ответ...",
-      describe_in_detail: "Опишите подробно...",
-      select_directory: "Выберите папку...",
-      type_a_value: "Введите значение…",
-      preparing: "Подготовка…",
-      waiting_for_parent: "Ожидание предыдущего ответа…",
-      loading_from_service: "Загрузка вариантов из {service}…",
-      loaded_live_from: "Загружено из {service}",
-      no_items_found: "{item} не найдены. Сначала создайте в {service}.",
-      retry: "Повторить",
-      source_local: "Локальный файл или папка",
-      source_codebase: "Кодовая база",
-      source_database: "База данных",
-      source_local_hint: "Вставьте полный локальный путь к файлу или папке.",
-      source_codebase_hint: "Выберите проект, зарегистрированный в Инструментах разработчика.",
-      source_database_hint: "Выберите учётные данные базы данных из хранилища.",
-      source_local_placeholder: "/Users/me/project/design.md",
-      source_no_codebases: "Проекты в Инструментах разработчика не найдены. Сначала зарегистрируйте один.",
-      source_no_databases: "Учётные данные баз данных не найдены. Сначала добавьте их в Хранилище.",
-      source_pick_codebase: "Выберите кодовую базу…",
-      source_pick_database: "Выберите базу данных…"
     },
     scan: {
       scanning_draft: "Сканирование черновика агента...",
@@ -5861,7 +5420,7 @@ export const ru = {
       critical_label: "Критично",
       warnings_label: "Предупреждения",
       informational_label: "Информационно",
-      source_label: "Источник:"
+      source_label: "Источник:",
     },
     team_synthesis: {
       title: "Синтезировать команду",
@@ -5873,7 +5432,7 @@ export const ru = {
       synthesizing: "Синтез...",
       synthesize_team: "Синтезировать команду",
       personas_created: "{count} агентов создано и подключено",
-      done: "Готово"
+      done: "Готово",
     },
     matrix_variants: {
       processing: "Обработка...",
@@ -5887,17 +5446,6 @@ export const ru = {
       testing_agent: "Тестирование агента...",
       approve_and_promote: "Одобрить и опубликовать",
       view_agent_btn: "Просмотреть агента",
-      command_center_header: "КОМАНДНЫЙ ЦЕНТР // СБОРКА v1.0",
-      phase_label: "[ФАЗА: {phase}]",
-      your_answer_placeholder: "Ваш ответ...",
-      testing_background_hint: "Это может занять несколько минут. Можете уйти с этой страницы и вернуться позже — тестирование продолжается в фоне.",
-      cancel_test: "Отменить тест",
-      missing_keys: "Отсутствующие ключи:",
-      approve_anyway: "Всё равно одобрить",
-      delete_draft_title: "Удалить этот черновик агента и закрыть",
-      delete_draft: "Удалить черновик",
-      agent_promoted: "Агент повышен",
-      view_agent: "Просмотреть агента"
     },
     diagrams: {
       no_flow_data: "Нет данных потока",
@@ -5905,7 +5453,6 @@ export const ru = {
       edges_count: "{count} рёбер",
       connectors_count: "{count} коннектор(ов)",
       decisions_count: "{count} решение(й)",
-      close_dialog: "Закрыть диалог"
     },
     generation: {
       create_template: "Создать шаблон",
@@ -5928,51 +5475,6 @@ export const ru = {
       start_review_custom: "Начать проверку ({count} сценарий(ев))",
       copy_log: "Скопировать журнал",
       copied_log: "Скопировано!",
-      back: "Назад",
-      generate_template: "Сгенерировать шаблон",
-      view_draft: "Просмотреть черновик",
-      saving: "Сохранение...",
-      save_template: "Сохранить шаблон",
-      template_saved: "Шаблон сохранён",
-      template_name_label_step: "Название шаблона",
-      template_name_placeholder: "Название шаблона...",
-      description_label: "Описание",
-      description_placeholder: "Опишите, что должен делать этот агент, к каким сервисам подключаться и как себя вести. Будьте конкретны относительно инструментов, триггеров и необходимых интеграций.\n\nПример: Агент, который отслеживает входящие Gmail на важные письма, классифицирует их по приоритету, отправляет уведомления Slack для срочных и создаёт ежедневную сводку.",
-      description_hint: "ИИ сгенерирует полный шаблон агента, включая системный промпт, инструменты, триггеры, коннекторы и переменные шаблона.",
-      terminal_aria_label: "Вывод проверки дизайна",
-      terminal_placeholder: "Вывод появится здесь, когда проверка начнётся",
-      terminal_running: "Выполняется...",
-      result_passed: "{count} пройдено",
-      result_failed: "{count} провалено",
-      result_errored: "{count} ошибок",
-      result_total: "{count} тестов всего",
-      mode_predefined: "Предопределённые (5)",
-      mode_custom: "Свои",
-      mode_batch: "Пакетно",
-      mode_batch_count: "Пакетно ({count})",
-      batch_upload_hint: "Загрузите файл list.md с нумерованными записями шаблонов для пакетной генерации через Claude CLI.",
-      batch_upload_btn: "Загрузить list.md",
-      batch_format_hint: "Ожидаемый формат:",
-      batch_all: "Все ({count})",
-      batch_count: "{count} шаблон{plural} будет сгенерирован через Claude CLI (~45с каждый)",
-      batch_clear: "Очистить",
-      batch_format_example: "**1. Название шаблона**",
-      custom_count: "Определите сценарии использования шаблона ({count} готово)",
-      custom_load_file_title: "Загрузить из файла .txt или .md",
-      custom_load_file: "Загрузить файл",
-      custom_add: "Добавить",
-      custom_case_name_placeholder: "Название шаблона (напр. Умный фильтр Gmail)",
-      custom_instruction_placeholder: "Опишите, что должен делать этот агент, какие сервисы интегрировать и какие триггеры его активируют...",
-      custom_short_instruction: "{current}/{min} символов минимум",
-      custom_category_default: "Категория...",
-      custom_trigger_default: "Триггер...",
-      custom_connectors_placeholder: "Коннекторы (напр. gmail, slack)",
-      custom_detail_hint: "Больше деталей = лучше результат. Включите сервисы, триггеры и ожидаемое поведение.",
-      custom_show_example: "Показать пример",
-      custom_hide_example: "Скрыть пример",
-      custom_example_title: "Пример: Умный фильтр Gmail",
-      custom_example_body: "«Создать агента, который отслеживает Gmail на важные письма, классифицирует их по отправителю и срочности, применяет метки и пересылает срочные в Slack. Использовать опрос с коннекторами gmail и slack.»",
-      predefined_intro: "Запускает {count} предопределённых сценариев через движок проектирования:"
     },
     connector_edit: {
       credential: "Учётные данные",
@@ -5988,24 +5490,22 @@ export const ru = {
       existing_table_label: "Существующая таблица",
       schema: "Схема",
       table_name: "Имя таблицы",
-      table_name_placeholder: "напр. persona_data",
       in_app_messages: "Внутренние сообщения",
       not_connected: "не подключено",
       no_connectors: "Коннекторы не нужны",
       linked: "Привязано",
       set_up: "Настроить",
-      more_connectors: "+{count} ещё"
+      more_connectors: "+{count} ещё",
     },
     trigger_edit: {
       schedule: "Расписание",
       schedule_placeholder: "Каждый будний день в 9 утра",
       schedule_hint: "Естественный язык или cron (например, \\\"0 9 * * 1-5\\\")",
       webhook_url: "URL вебхука",
-      webhook_url_placeholder: "https://...",
       check_interval: "Интервал проверки",
       check_interval_placeholder: "Каждые 5 минут",
       no_config_needed: "Настройка не нужна",
-      manual_only: "Только ручное выполнение"
+      manual_only: "Только ручное выполнение",
     },
     preset_edit: {
       select_review: "Выберите политику проверки...",
@@ -6017,7 +5517,7 @@ export const ru = {
       retry_once: "Повторить один раз",
       retry_3x: "Повторить 3 раза",
       notify_continue: "Уведомить и продолжить",
-      skip_failed: "Пропустить неудавшийся шаг"
+      skip_failed: "Пропустить неудавшийся шаг",
     },
     test_report: {
       title: "Отчёт о тестировании",
@@ -6043,8 +5543,8 @@ export const ru = {
       response_preview: "Предпросмотр ответа",
       error_detail: "Детали ошибки",
       copy: "Копировать",
-      copied: "Скопировано"
-    }
+      copied: "Скопировано",
+    },
   },
   triggers: {
     title: "Триггеры и цепочки",
@@ -6086,7 +5586,7 @@ export const ru = {
       show_sidebar: "Показать панель",
       source: "Источник",
       source_personas: "Агенты-источники",
-      use_template: "Использовать шаблон"
+      use_template: "Использовать шаблон",
     },
     studio: {
       building_blocks: "Строительные блоки",
@@ -6102,7 +5602,7 @@ export const ru = {
       remove_from_chain: "Удалить из цепочки",
       studio_title: "Студия триггеров",
       trigger_sources: "Источники триггеров",
-      unsaved_changes: "Несохранённые изменения"
+      unsaved_changes: "Несохранённые изменения",
     },
     subscription_list: {
       active: "Активные",
@@ -6116,10 +5616,10 @@ export const ru = {
       error: "Ошибка",
       never: "Никогда",
       no_active_subs: "Нет активных подписок",
-      unsubscribe: "Отписаться"
+      unsubscribe: "Отписаться",
     },
     type_selector: {
-      trigger_type: "Тип триггера"
+      trigger_type: "Тип триггера",
     },
     tab_triggers: "Триггеры",
     tab_chains: "Цепочки",
@@ -6195,11 +5695,11 @@ export const ru = {
       cron_daily_midnight: "Ежедневно в полночь",
       cron_weekly_monday: "Еженедельно в понедельник",
       next_runs: "Следующие запуски",
-      invalid_cron: "Недопустимое выражение расписания"
+      invalid_cron: "Недопустимое выражение расписания",
     },
     add: {
       create_trigger: "Создать триггер",
-      creating: "Создание..."
+      creating: "Создание...",
     },
     detail: {
       test_fire: "Тестовый запуск",
@@ -6222,7 +5722,7 @@ export const ru = {
       last_fired: "Последний запуск",
       never_fired: "Ни разу не запускался",
       fire_count_one: "Запущен {count} раз",
-      fire_count_other: "Запущен {count} раз"
+      fire_count_other: "Запущен {count} раз",
     },
     list: {
       empty_title: "Триггеры ещё не настроены",
@@ -6232,28 +5732,28 @@ export const ru = {
       budget_unavailable: "Данные бюджета недоступны",
       unknown_budget: "Неизвестный бюджет",
       budget_exceeded: "Ежемесячный бюджет превышен — триггер приостановлен",
-      budget: "Бюджет"
+      budget: "Бюджет",
     },
     config: {
       no_persona: "Агент не выбран",
       title: "Триггеры",
       add_trigger: "Добавить триггер",
-      empty: "Триггеры не настроены. Добавьте, чтобы автоматизировать агента."
+      empty: "Триггеры не настроены. Добавьте, чтобы автоматизировать агента.",
     },
     countdown: {
       due_now: "Сейчас",
-      fires_in: "Запуск через {time}"
+      fires_in: "Запуск через {time}",
     },
     polling: {
       endpoint_label: "URL для проверки",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "Проверять каждые {interval}",
-      content_hash: "Обнаруживать только изменения"
+      content_hash: "Обнаруживать только изменения",
     },
     webhook: {
       url_label: "URL вебхука",
       secret_label: "Ключ безопасности (необязательно)",
-      secret_placeholder: "Секретный ключ для проверки входящих данных"
+      secret_placeholder: "Секретный ключ для проверки входящих данных",
     },
     file_watcher: {
       paths_label: "Отслеживаемые пути",
@@ -6265,7 +5765,7 @@ export const ru = {
       event_delete: "Удаление",
       recursive: "Рекурсивно",
       glob_filter: "Шаблон файлов",
-      glob_placeholder: "*.json"
+      glob_placeholder: "*.json",
     },
     clipboard: {
       content_type: "Тип содержимого",
@@ -6273,7 +5773,7 @@ export const ru = {
       type_image: "Изображение",
       pattern_label: "Шаблон совпадения",
       pattern_placeholder: "например, https?://.*",
-      interval_label: "Интервал проверки (секунды)"
+      interval_label: "Интервал проверки (секунды)",
     },
     app_focus: {
       app_names_label: "Имена приложений",
@@ -6281,20 +5781,20 @@ export const ru = {
       add_app: "Добавить приложение",
       title_pattern: "Шаблон заголовка окна",
       title_placeholder: "например, .*GitHub.*",
-      interval_label: "Интервал проверки (секунды)"
+      interval_label: "Интервал проверки (секунды)",
     },
     event_listener: {
       event_type_label: "Тип события",
       event_type_placeholder: "например, persona.execution.completed",
       source_filter_label: "Фильтр источника",
-      source_filter_placeholder: "например, persona:abc123"
+      source_filter_placeholder: "например, persona:abc123",
     },
     composite: {
       conditions_label: "Условия",
       add_condition: "Добавить условие",
       operator_all: "Все условия должны совпасть",
       operator_any: "Любое условие может совпасть",
-      window_label: "Временное окно (секунды)"
+      window_label: "Временное окно (секунды)",
     },
     rate_limit: {
       title: "Ограничения скорости",
@@ -6303,14 +5803,14 @@ export const ru = {
       window_seconds: "{seconds}с",
       window_minutes: "{minutes}м",
       window_hours: "{hours}ч",
-      currently_limited: "Сейчас приостановлен (лимит достигнут)"
+      currently_limited: "Сейчас приостановлен (лимит достигнут)",
     },
     dry_run: {
       title: "Результат тестового прогона",
       would_fire: "Запустится",
       would_not_fire: "Не запустится",
       matched_conditions: "Условия выполнены",
-      payload_preview: "Предпросмотр данных"
+      payload_preview: "Предпросмотр данных",
     },
     tab_live_stream: "Прямой эфир",
     tab_live_stream_subtitle: "Центр событий в реальном времени — агенты публикуют и подписываются на события через общую шину",
@@ -6474,186 +5974,6 @@ export const ru = {
     loading_catalog: "Загрузка каталога...",
     no_feeds: "Общих лент событий пока нет",
     no_feeds_hint: "Нажмите Обновить для получения последних лент из облака",
-    cron_colon: "Cron:",
-    interval_colon: "Интервал:",
-    event_colon: "Событие:",
-    endpoint_colon: "Точка:",
-    listens_for_colon: "Слушает:",
-    source_filter_colon: "Фильтр источника:",
-    hmac_colon: "HMAC:",
-    paths_colon: "Пути:",
-    events_colon: "События:",
-    recursive_yes: "Рекурсивно: да",
-    filter_colon: "Фильтр:",
-    watches_colon: "Отслеживает:",
-    pattern_colon: "Шаблон:",
-    poll_every: "Опрос: каждые",
-    apps_colon: "Приложения:",
-    title_colon: "Заголовок:",
-    operator_colon: "Оператор:",
-    window_colon: "Окно:",
-    id_colon: "ID:",
-    type_colon: "Тип:",
-    status_colon: "Статус:",
-    target_colon: "Цель:",
-    retry_hash: "повтор #",
-    model_colon: "модель:",
-    next_run_colon: "следующий запуск:",
-    local_label: "(локально)",
-    then_every: ", затем каждые",
-    source_colon: "источник:",
-    dry_run_target_colon: "цель:",
-    matched_subscriptions_count: "Найденные подписки ({count})",
-    last_label: "Последний:",
-    loading_history: "Загрузка...",
-    zero_unlimited: "0 = без ограничений",
-    category_section_label: "Категория триггера",
-    no_persona_selected: "Агент не выбран",
-    quick_templates_label: "Быстрые шаблоны",
-    quick_presets_label: "Быстрые пресеты",
-    cron_expression_label: "Выражение cron",
-    this_persona_will: "Этот агент будет",
-    starting_from: ", начиная с момента включения.",
-    per_day: "в день.",
-    last_poll_label: "Последний опрос:",
-    deployed_persona_label: "Развёрнутый агент",
-    fired_at_label: "Сработал в",
-    webhook_last_label: "Последний:",
-    relay_last_label: "Последний:",
-    optional_label: "(необязательно)",
-    optional_comma_separated: "(необязательно, через запятую)",
-    get_channel_url_from: "Получите URL канала с",
-    setup_step1: "Посетите smee.io/new, чтобы создать бесплатный канал ретрансляции",
-    setup_step2: "Добавьте ретранслятор здесь с меткой и URL канала",
-    setup_step3: "Вставьте URL канала как webhook в GitHub / Stripe / любой сервис",
-    setup_step4: "События появятся в Live Stream и автоматически попадут к вашим агентам",
-    studio_empty_desc: "Создавайте реактивные потоки событий для ваших агентов. Используйте типы триггеров как строительные блоки, добавляйте условное ветвление и параллельное разветвление для создания интеллектуальных цепочек автоматизации.",
-    studio_step1: "1. Добавьте источники триггеров из боковой панели (Расписание, Webhook, ...)",
-    studio_step2: "2. Добавьте шаги агентов для обработки событий",
-    studio_step3: "3. Соедините их для построения реактивных цепочек",
-    studio_step4: "4. Используйте условные гейты для логики маршрутизации",
-    gate_if_else: "Если / Иначе",
-    gate_if_else_desc: "Бинарное условное ветвление",
-    gate_classifier_desc: "Многовариантная маршрутизация (поддержка, продажи, ...)",
-    gate_fan_out: "Разветвление (параллельно)",
-    gate_fan_out_desc: "Запустить несколько ветвей параллельно",
-    palette_help: "Соедините источники триггеров с шагами агентов, чтобы строить реактивные цепочки. Добавляйте условные гейты для логики ветвления и параллельного разветвления.",
-    toolbar_title_auto_layout: "Авторазмещение",
-    toolbar_title_add_note: "Добавить стикер",
-    toolbar_title_start_dry_run: "Начать пробный запуск",
-    toolbar_title_stop_dry_run: "Остановить пробный запуск",
-    toolbar_title_assistant: "Ассистент холста",
-    toolbar_dry_run: "Пробный запуск",
-    canvas_assistant_title: "Ассистент холста",
-    try_asking_hint: "Попробуйте спросить",
-    assistant_placeholder: "Опишите вашу топологию событий...",
-    disconnect_persona_title: "Отключить агента?",
-    disconnect_will_no_longer: "больше не будет реагировать на",
-    disconnect_events_reconnect: "события. Вы можете снова подключить позже.",
-    rename_also_updates: "Также обновит исторические события, обработчики событий агента и метаданные аудита триггеров.",
-    delete_connection_label: "Удалить соединение",
-    search_personas_placeholder: "Поиск агентов...",
-    no_matching_personas_found: "Подходящих агентов не найдено",
-    clear_search_label: "Очистить поиск",
-    dead_letter_source: "Источник:",
-    dead_letter_id: "ID:",
-    event_data_label: "Данные события",
-    shared_prefix: "общий:",
-    nl_type_colon: "Тип:",
-    nl_cron_colon: "\\u00b7 Cron:",
-    nl_interval_colon: "\\u00b7 Интервал:",
-    nl_filter_colon: "\\u00b7 Фильтр:",
-    nl_could_not_parse: "Не удалось разобрать триггер из этого описания. Попробуйте что-то вроде",
-    active_hours_every_day: "Каждый день",
-    event_type_to_listen: "Тип события для прослушивания",
-    event_type_input_placeholder: "напр. file_changed, execution_completed",
-    event_type_helper: "Введите для поиска зарегистрированных типов событий или укажите свой.",
-    source_filter_optional_label: "(необязательно)",
-    wildcard_hint: "\\u2014 поддерживается префиксный шаблон с * в конце",
-    window_title_pattern_label: "Шаблон заголовка окна",
-    optional_regex_label: "(необязательно, regex)",
-    text_pattern_label: "Шаблон текста",
-    credential_event_label: "Событие учётных данных",
-    refresh_label: "Обновить",
-    copy_webhook_url_title: "Скопировать URL webhook",
-    copy_webhook_secret_title: "Скопировать секрет webhook",
-    delete_webhook_title: "Удалить триггер webhook",
-    status_col_label: "Статус",
-    duration_col_label: "Длительность",
-    cost_col_label: "Стоимость",
-    dead_letter_refresh: "Обновить",
-    dead_letter_loading: "Загрузка...",
-    dead_letter_retry: "Повторить",
-    dead_letter_discard: "Отклонить",
-    dead_letter_payload: "Полезная нагрузка",
-    event_data_section_label: "Данные события",
-    copy_event_data_title: "Скопировать данные события",
-    copied_label: "Скопировано",
-    error_section_label: "Ошибка",
-    meta_event_id: "ID события",
-    meta_project: "Проект",
-    meta_processed: "Обработано",
-    clear_stream: "Очистить",
-    clear_stream_title: "Очистить буфер потока",
-    col_type: "Тип",
-    col_source: "Источник",
-    col_target_agent: "Целевой агент",
-    col_status: "Статус",
-    col_time: "Время",
-    queued_bare: "в очереди",
-    pause_tooltip: "Приостановить входящие события",
-    resume_tooltip: "Возобновить обновления в реальном времени",
-    relay_label_field: "Метка",
-    relay_channel_url_field: "URL канала",
-    relay_route_to_agent: "Направить агенту",
-    optional_suffix: "(необязательно)",
-    relay_event_filter_field: "Фильтр событий",
-    relay_event_filter_note: "(необязательно, через запятую)",
-    relay_confirm_delete: "Подтвердить",
-    setup_guide_step2: "Добавьте ретранслятор здесь с меткой и URL канала",
-    setup_guide_step3: "Вставьте URL канала как webhook в GitHub / Stripe / любой сервис",
-    setup_guide_step4: "События появятся в Live Stream и автоматически попадут к вашим агентам",
-    get_channel_url_prompt: "Получите URL канала с",
-    gate_if_else_label: "Если / Иначе",
-    gate_if_else_description: "Бинарное условное ветвление",
-    gate_classifier_label: "Классификатор",
-    gate_classifier_description: "Многовариантная маршрутизация (поддержка, продажи, ...)",
-    gate_fan_out_label: "Разветвление (параллельно)",
-    gate_fan_out_description: "Запустить несколько ветвей параллельно",
-    palette_help_text: "Соедините источники триггеров с шагами агентов для построения реактивных цепочек. Добавляйте условные гейты для логики ветвления и параллельного разветвления.",
-    test_event_type_placeholder: "напр. build_complete, deploy, file_changed",
-    result_id_prefix: "ID:",
-    result_type_prefix: "Тип:",
-    result_status_prefix: "Статус:",
-    result_target_prefix: "Цель:",
-    tab_loading: "Загрузка...",
-    smee_open_new_title: "Открыть smee.io/new для создания канала",
-    relay_label_placeholder: "напр. GitHub — my-repo",
-    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
-    relay_filter_placeholder: "github_push, github_pull_request",
-    dead_letter_retry_exhausted_title: "Исчерпан лимит повторов — отклоните или изучите первопричину",
-    dead_letter_discard_title: "Отклонить это событие навсегда",
-    dead_letter_retry_title: "Повторить это событие",
-    replay_button_title: "Повторить с той же входной полезной нагрузкой",
-    interval_seconds_placeholder: "Секунды (мин. 60)",
-    cron_expression_placeholder: "* * * * *  (мин час день месяц день_нед)",
-    app_focus_window_placeholder: "напр. .*.rs$ или Project - Visual Studio",
-    app_focus_process_placeholder: "напр. Code.exe или firefox",
-    field_optional: "(необязательно)",
-    source_filter_input_placeholder: "напр. watcher-* или exact-source-id",
-    meta_source: "Источник",
-    relay_last_event: "Последний:",
-    relay_delete_title: "Удалить ретранслятор",
-    setup_guide_step1: "Создайте канал на smee.io/new",
-    clipboard_pattern_placeholder: "напр. https?://.* или error|exception",
-    composite_event_type_placeholder: "Тип события (напр. file_changed)",
-    composite_debounce_placeholder: "300",
-    file_watcher_path_placeholder: "C:/Users/me/projects или /home/me/src",
-    file_watcher_pattern_placeholder: "напр. *.py, *.{ts,tsx}, Dockerfile",
-    polling_endpoint_placeholder: "https://api.example.com/poll",
-    more_tools_title: "Больше инструментов",
-    validate_and_fire_title: "Проверить конфигурацию триггера и запустить",
-    simulate_trigger_title: "Симулировать триггер без выполнения"
   },
   teams: {
     title: "Команды агентов",
@@ -6661,11 +5981,10 @@ export const ru = {
     auto_team: "Автокоманда",
     new_team: "Новая команда",
     starter_templates: "Стартовые шаблоны",
-    use_template: "Использовать шаблон"
+    use_template: "Использовать шаблон",
   },
   settings: {
     title: "Настройки",
-    settings_saved: "Сохранено",
     account: {
       title: "Аккаунт",
       subtitle: "Управление входом и профилем",
@@ -6683,7 +6002,6 @@ export const ru = {
       telemetry_on: "Отчёты о сбоях и аналитика использования активны.",
       telemetry_off: "Телеметрия отключена. Данные не отправляются в Sentry.",
       telemetry_restart: "Перезапустите приложение для применения изменений",
-      telemetry_toggle_aria: "Переключить телеметрию"
     },
     appearance_extra: {
       simple: "Простой",
@@ -6691,7 +6009,7 @@ export const ru = {
       full: "Полный",
       full_hint: "Показать полный интерфейс",
       dev: "Dev",
-      dev_hint: "Разблокировать инструменты разработчика"
+      dev_hint: "Разблокировать инструменты разработчика",
     },
     appearance: {
       title: "Внешний вид",
@@ -6722,7 +6040,6 @@ export const ru = {
       applied: "Применено",
       reset: "Сбросить",
       enter_theme_name: "Введите название темы",
-      reset_to_auto: "Сбросить на авто",
       preview_dashboard: "Дашборд",
       preview_action: "Действие",
       preview_card_title: "Заголовок карточки",
@@ -6737,7 +6054,7 @@ export const ru = {
       coverage_hint: "Покрытие переводом — нажмите для экспорта",
       contribute_title: "Помочь с переводами",
       contribute_hint: "Помогите перевести Personas на ваш язык. Экспортируйте файл языка выше, переведите значения и отправьте через GitHub.",
-      contribute_github: "Помочь на GitHub"
+      contribute_github: "Помочь на GitHub",
     },
     notifications: {
       title: "Уведомления",
@@ -6755,7 +6072,7 @@ export const ru = {
       digest_description: "Еженедельное уведомление с обзором проблем здоровья всех агентов и общей оценкой",
       healing_alerts_hint: "Управляйте, какие оповещения о восстановлении вызывают уведомления",
       healing_severity: "Серьёзность оповещений о восстановлении",
-      notification_hint: "Уведомления на рабочем столе используют системные уведомления ОС. Всплывающие уведомления в приложении отображаются для критических и высокоприоритетных проблем независимо от этих настроек."
+      notification_hint: "Уведомления на рабочем столе используют системные уведомления ОС. Всплывающие уведомления в приложении отображаются для критических и высокоприоритетных проблем независимо от этих настроек.",
     },
     engine: {
       title: "Движок",
@@ -6773,7 +6090,6 @@ export const ru = {
       legend_not_installed: "Не установлен",
       defaults_heading: "Значения по умолчанию из интеграционных тестов",
       defaults_description: "Карта по умолчанию основана на интеграционных тестах раунда 9, которые проверяют каждого провайдера на соответствие точным JSON-схемам, анализируемым бэкендом. Включение провайдера для операции, которую он не прошёл, может привести к непарсируемым ответам. Claude Code -- единственный провайдер, прошедший все операции на 100%.",
-      engine_not_capable: "{provider} не прошёл интеграционные тесты для этой операции. Результаты могут быть нечитаемыми."
     },
     ambient: {
       title: "Слияние контекста окружения",
@@ -6809,7 +6125,7 @@ export const ru = {
       cancel: "Отмена",
       create_rule: "Создать правило",
       no_rules: "Правил контекста не определено",
-      all_sources: "все источники"
+      all_sources: "все источники",
     },
     byom: {
       title: "Приведи свою модель",
@@ -6861,7 +6177,6 @@ export const ru = {
       complexity: "Сложность",
       provider: "Провайдер",
       model_optional: "Модель (необязательно)",
-      model_placeholder: "напр. claude-haiku-4-5-20251001",
       compliance_title: "Ограничения на основе соответствия",
       compliance_hint: "Ограничить провайдеров для определённых типов рабочих процессов (например, HIPAA, SOC2)",
       compliance_empty: "Правила соответствия не настроены. Добавьте правила для ограничения провайдеров в чувствительных рабочих процессах.",
@@ -6878,7 +6193,7 @@ export const ru = {
       audit_status: "Статус",
       audit_cost: "Затраты",
       audit_time: "Время",
-      failover: "переключение"
+      failover: "переключение",
     },
     admin: {
       title: "Администрирование",
@@ -6904,7 +6219,7 @@ export const ru = {
       consent_not_accepted: "Не принято",
       storage_key: "Ключ хранилища",
       reset_consent: "Сбросить согласие",
-      reload_modal: "Перезагрузить для показа модального окна"
+      reload_modal: "Перезагрузить для показа модального окна",
     },
     portability: {
       title: "Переносимость данных",
@@ -6932,17 +6247,12 @@ export const ru = {
       passphrase_optional: "Пароль (необязательно)",
       import_complete: "Импорт завершён",
       warnings: "Предупреждения:",
-      import_personas: "{count} агент(ов)",
-      import_teams: "{count} команд(ы)",
-      import_tools: "{count} инструмент(ов)",
-      import_groups: "{count} групп(ы)",
-      import_credentials_count: "{count} учётных данных",
       export_title: "Экспорт рабочего пространства",
       export_subtitle: "Выберите что включить в экспорт",
       close: "Закрыть",
       loading_data: "Загрузка данных рабочего пространства...",
-      deselect_all: "Снять выбор",
       select_all: "Выбрать все",
+      deselect_all: "Снять выбор",
       items_selected: "{selected} из {total} элементов выбрано",
       of_selected: "{count} из {total} выбрано",
       encrypt_passphrase: "Зашифровать учётные данные с паролем",
@@ -6972,7 +6282,7 @@ export const ru = {
       cred_import_complete: "Импорт учётных данных завершён",
       cred_imported: "{count} импортировано",
       cred_skipped: ", {count} пропущено",
-      cred_replaced: ", {count} заменено"
+      cred_replaced: ", {count} заменено",
     },
     config: {
       title: "Разрешение конфигурации",
@@ -6985,7 +6295,7 @@ export const ru = {
       overrides_inherited: "Переопределяет унаследованное",
       agent: "Агент",
       loading_agents: "Загрузка агентов...",
-      no_agents: "Агентов не найдено"
+      no_agents: "Агентов не найдено",
     },
     quality_gates: {
       title: "Ворота качества",
@@ -7003,12 +6313,11 @@ export const ru = {
       rules_count_plural: "{count} правил",
       reset_defaults: "Сбросить по умолчанию",
       confirm_reset: "Подтвердить сброс?",
-      rules_hint: "Правила загружаются из базы данных при каждой диспетчеризации. Изменения вступают в силу немедленно."
-    }
+      rules_hint: "Правила загружаются из базы данных при каждой диспетчеризации. Изменения вступают в силу немедленно.",
+    },
   },
   design: {
     no_persona: "Агент не выбран",
-    conversation_truncated: "В этой беседе достигнут лимит сообщений. Старые сообщения удалены — подумайте о начале новой беседы, чтобы сохранить контекст.",
     stages: {
       assembling_label: "Сборка промпта",
       assembling_desc: "Построение промпта LLM из конфигурации и инструкций агента",
@@ -7019,8 +6328,8 @@ export const ru = {
       checking_label: "Проверка осуществимости",
       checking_desc: "Валидация доступности предложенных инструментов и коннекторов",
       saving_label: "Сохранение результата",
-      saving_desc: "Запись скомпилированного дизайна в базу данных"
-    }
+      saving_desc: "Запись скомпилированного дизайна в базу данных",
+    },
   },
   prompt_lab: {
     title: "Версии промпта",
@@ -7056,7 +6365,7 @@ export const ru = {
       running: "Запуск A/B-теста...",
       run: "Запустить A/B-тест",
       failed: "A/B-тест не выполнен",
-      completed: "A/B-тест успешно завершён"
+      completed: "A/B-тест успешно завершён",
     },
     rollback: {
       title: "Мониторинг ошибок",
@@ -7064,7 +6373,7 @@ export const ru = {
       rollback_hint: "Если частота ошибок превышает 50% после изменения промпта, откатитесь к продакшн-версии через список версий выше.",
       waiting: "Ожидание данных о выполнениях",
       waiting_hint: "Запустите агента несколько раз для начала отслеживания ошибок. Монитору нужно хотя бы одно выполнение для расчёта здоровья.",
-      check_again: "Проверить снова"
+      check_again: "Проверить снова",
     },
     performance: {
       cost_per_execution: "Стоимость за выполнение",
@@ -7073,8 +6382,8 @@ export const ru = {
       latency_distribution: "Распределение задержки",
       latency_delta: "Разница задержки",
       error_rate_trend: "Тренд ошибок",
-      error_delta: "Разница ошибок"
-    }
+      error_delta: "Разница ошибок",
+    },
   },
   tests: {
     title: "Тестовая песочница",
@@ -7101,17 +6410,17 @@ export const ru = {
       delete_tooltip: "Удалить набор",
       no_scenarios: "Нет сценариев в этом наборе",
       scenario_count_few: "{count} сценария",
-      scenario_count_many: "{count} сценариев"
+      scenario_count_many: "{count} сценариев",
     },
     progress: {
       generating: "Генерация тестовых сценариев...",
       testing: "Тестирование {model} -- {scenario}",
       tool_prefix: "Инструмент: ",
       output_prefix: "Вывод: ",
-      protocol_prefix: "Протокол: "
+      protocol_prefix: "Протокол: ",
     },
     run_test_few: "Запустить тест ({count} модели...)",
-    run_test_many: "Запустить тест ({count} моделей...)"
+    run_test_many: "Запустить тест ({count} моделей...)",
   },
   onboarding: {
     title: "Начало работы",
@@ -7235,7 +6544,7 @@ export const ru = {
     agent_promoted_hint: "Ваш первый агент активен. Тур почти завершён!",
     skip_build: "Пропустить создание",
     dark_themes: "Тёмные темы",
-    light_themes: "Светлые темы"
+    light_themes: "Светлые темы",
   },
   system_health: {
     title: "Проверки системы",
@@ -7272,7 +6581,7 @@ export const ru = {
     official_page: "Официальная страница",
     edit_key: "Изменить ключ",
     edit_config: "Изменить конфигурацию",
-    signing_in: "Вход..."
+    signing_in: "Вход...",
   },
   command_palette: {
     placeholder: "Поиск агентов, навигация... (введите \\\\\\\">\\\\\\\" для команд)",
@@ -7285,7 +6594,7 @@ export const ru = {
     key_esc: "ESC",
     hint_navigate: "навигация",
     hint_select: "выбор",
-    hint_commands: "команды"
+    hint_commands: "команды",
   },
   errors: {
     boundary_title: "Произошла непредвиденная ошибка в {name}",
@@ -7307,7 +6616,7 @@ export const ru = {
     database: "Ошибка базы данных -- перезапустите приложение",
     internal: "Произошла непредвиденная ошибка",
     cloud_error: "Ошибка облачного сервиса: {detail}",
-    gitlab_error: "Ошибка GitLab: {detail}"
+    gitlab_error: "Ошибка GitLab: {detail}",
   },
   error_registry: {
     network_offline_message: "Похоже, вы не в сети.",
@@ -7379,7 +6688,7 @@ export const ru = {
     severity_critical: "Требует немедленного внимания",
     severity_high: "Важная проблема",
     severity_medium: "Незначительная проблема",
-    severity_low: "Информационное"
+    severity_low: "Информационное",
   },
   empty_states: {
     credentials_title: "Вашим агентам нужны учётные данные для работы",
@@ -7396,11 +6705,11 @@ export const ru = {
     tools_title: "Инструменты и коннекторы не настроены",
     tools_subtitle: "Подключите внешние сервисы, чтобы агент мог выполнять действия и получать данные.",
     use_cases_title: "Сценарии использования ещё не определены",
-    use_cases_subtitle: "Определите, что должен делать агент -- импортируйте из рабочего процесса или опишите на естественном языке."
+    use_cases_subtitle: "Определите, что должен делать агент -- импортируйте из рабочего процесса или опишите на естественном языке.",
   },
   cli: {
     idle: "Вывода CLI пока нет.",
-    waiting: "Ожидание вывода Claude CLI..."
+    waiting: "Ожидание вывода Claude CLI...",
   },
   validation: {
     required: "Поле {field} обязательно",
@@ -7411,7 +6720,7 @@ export const ru = {
     passphrase_min: "Парольная фраза должна содержать не менее 8 символов",
     passphrase_prompt: "Введите парольную фразу, использованную при экспорте",
     at_least_one: "Требуется хотя бы одно поле {field}",
-    fill_one_field: "Заполните хотя бы одно поле для сохранения"
+    fill_one_field: "Заполните хотя бы одно поле для сохранения",
   },
   toasts: {
     copied: "Скопировано в буфер обмена",
@@ -7471,7 +6780,7 @@ export const ru = {
     scheduled_agents_failed: "Не удалось загрузить запланированных агентов",
     design_start_failed: "Не удалось начать диалог дизайна",
     recipe_save_failed: "Не удалось сохранить рецепт",
-    recipe_test_failed: "Быстрый тест не пройден"
+    recipe_test_failed: "Быстрый тест не пройден",
   },
   consent: {
     title: "Добро пожаловать в Personas Desktop",
@@ -7538,7 +6847,7 @@ export const ru = {
     checkbox: "Я понимаю, что это приложение отправляет данные провайдерам ИИ, обращается к системным ресурсам (буфер обмена, файловая система, сеть) и выполняет процессы от моего имени. Я принимаю ответственность за настройку и использование.",
     checkbox_telemetry: "Помогите улучшить Personas, отправляя анонимные отчёты об ошибках и аналитику использования. Персональные данные не включаются. Изменить можно в Настройках.",
     source_link: "Просмотреть исходный код и лицензию",
-    accept_button: "Я понимаю, продолжить"
+    accept_button: "Я понимаю, продолжить",
   },
   schedules: {
     title: "Хронология расписаний",
@@ -7578,26 +6887,17 @@ export const ru = {
     overlap_warning: "Это расписание пересекается с {count} другими запусками в следующие 7 дней. Одновременные агенты конкурируют за API-квоту и системные ресурсы.",
     agents_missed: "{count} агент(-ов) пропустили запуски",
     total_skipped: "~{count} запусков пропущено пока приложение было offline",
-    missed_since: "Пропущено {count} с {time}",
-    every_interval: "каждые {interval}",
     recover: "Восстановить",
-    mark_for_recovery: "Пометить для восстановления",
-    run_once_now: "Запустить один раз сейчас",
     run_1x: "Запустить 1x",
     skip: "Пропустить",
-    skip_dont_recover: "Пропустить -- не восстанавливать",
     dismiss_all: "Закрыть все",
     recover_selected: "Восстановить {count} выбранных",
-    overlaps_with: "Пересекается с",
-    refresh_schedules: "Обновить расписания",
-    seed_mock_tooltip: "Добавить тестовое расписание (только для dev)",
-    schedule_view_aria: "Вид расписания",
     today: "Сегодня",
     projected: "Прогноз",
     success: "Успех",
     overlap: "Пересечение",
     week: "Неделя",
-    month: "Месяц"
+    month: "Месяц",
   },
   recipes: {
     no_match: "Подходящих рецептов нет",
@@ -7651,8 +6951,6 @@ export const ru = {
     saved_mock_values: "Сохранённые тестовые значения",
     no_mock_values: "Тестовых значений нет",
     free_input_placeholder: "Введите JSON или простой текст...",
-    recipe_label: "Рецепт:",
-    executed_label: "Выполнено:",
     rendered_prompt: "Отрендеренный промпт",
     execution_result: "Результат выполнения",
     rendering_prompt: "Рендеринг промпта...",
@@ -7682,7 +6980,7 @@ export const ru = {
     no_matching: "Подходящих рецептов не найдено.",
     loading_linked: "Загрузка связанных рецептов...",
     no_linked: "Связанных рецептов нет. Нажмите «Добавить» для связи рецептов из библиотеки.",
-    run: "Запустить"
+    run: "Запустить",
   },
   execution_status: {
     queued: "В очереди",
@@ -7690,7 +6988,7 @@ export const ru = {
     completed: "Завершено",
     failed: "Ошибка",
     cancelled: "Отменено",
-    error: "Ошибка"
+    error: "Ошибка",
   },
   status_tokens: {
     execution: {
@@ -7699,61 +6997,61 @@ export const ru = {
       completed: "Завершено",
       failed: "Сбой",
       cancelled: "Отменено",
-      error: "Ошибка"
+      error: "Ошибка",
     },
     event: {
       pending: "Ожидание",
       processing: "Обработка",
       processed: "Обработано",
       failed: "Сбой",
-      retrying: "Повтор"
+      retrying: "Повтор",
     },
     automation: {
       pending: "Ожидание",
       running: "Выполняется",
       completed: "Завершено",
       failed: "Сбой",
-      timeout: "Истекло время"
+      timeout: "Истекло время",
     },
     severity: {
       info: "Инфо",
       low: "Низкий",
       medium: "Средний",
       high: "Высокий",
-      critical: "Критический"
+      critical: "Критический",
     },
     priority: {
       low: "Низкий",
       normal: "Нормальный",
       high: "Высокий",
-      urgent: "Срочный"
+      urgent: "Срочный",
     },
     healing_status: {
       open: "Открыто",
       auto_fixed: "Авто-исправлено",
       acknowledged: "Принято",
-      resolved: "Решено"
+      resolved: "Решено",
     },
     healing_category: {
       config: "Конфигурация",
       auth: "Аутентификация",
       network: "Сеть",
       timeout: "Таймаут",
-      quota: "Квота"
+      quota: "Квота",
     },
     connector_status: {
       ready: "Готов",
       untested: "Не проверен",
       failed: "Сбой",
       no_credential: "Нет учётных данных",
-      testing: "Тестирование"
+      testing: "Тестирование",
     },
     test: {
       generating: "Генерация",
       running: "Выполняется",
       completed: "Завершено",
       failed: "Сбой",
-      pending: "Ожидание"
+      pending: "Ожидание",
     },
     dev: {
       open: "Открыто",
@@ -7762,8 +7060,8 @@ export const ru = {
       blocked: "Заблокировано",
       queued: "В очереди",
       running: "Выполняется",
-      failed: "Сбой"
-    }
+      failed: "Сбой",
+    },
   },
   project_overview: {
     codebase: "Кодовая база",
@@ -7793,7 +7091,7 @@ export const ru = {
     failed_to_load: "Не удалось загрузить статистику",
     retry: "Повторить",
     no_project_selected: "Проект не выбран",
-    select_project_hint: "Выберите проект для просмотра обзора."
+    select_project_hint: "Выберите проект для просмотра обзора.",
   },
   plugins: {
     title: "Плагины",
@@ -7802,98 +7100,12 @@ export const ru = {
     artist_desc: "Создавайте 3D-модели с Blender, генерируйте изображения с Leonardo AI и управляйте творческими ресурсами.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Управление проектами, картирование контекста, сканирование идей, триаж и утилиты запуска задач.",
+    doc_signing_label: "Подписание документов",
+    doc_signing_desc: "Подписывайте и проверяйте документы с цифровыми подписями прямо из рабочего пространства.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
-    drive_label: "Drive",
-    drive_desc: "Управляемая локальная файловая система, куда агенты сохраняют экспорты. Просматривайте файлы в UI как в Finder; сохраняется при обновлениях приложения.",
-    drive: {
-      title: "Drive",
-      subtitle: "Управляемая локальная файловая система для экспортов агентов",
-      root_label: "Корень Drive",
-      dev_badge: "Dev",
-      back: "Назад",
-      forward: "Вперёд",
-      up: "Вверх",
-      refresh: "Обновить",
-      search_placeholder: "Поиск в этой папке...",
-      view_list: "Список",
-      view_icons: "Значки",
-      view_columns: "Столбцы",
-      new_folder: "Новая папка",
-      new_file: "Новый файл",
-      reveal_in_os: "Показать в файловом менеджере",
-      open_in_os: "Открыть",
-      sidebar_root: "Drive",
-      sidebar_recent: "Недавние",
-      sidebar_storage: "Хранилище",
-      storage_used: "Использовано {used} \\u2022 {count} элементов",
-      empty_folder: "Эта папка пуста",
-      empty_hint: "Агенты, экспортирующие в Local Drive, будут сохранять файлы сюда.",
-      empty_cta: "Создать папку",
-      col_name: "Имя",
-      col_size: "Размер",
-      col_kind: "Тип",
-      col_modified: "Изменено",
-      folder_kind: "Папка",
-      ctx_open: "Открыть",
-      ctx_rename: "Переименовать",
-      ctx_duplicate: "Дублировать",
-      ctx_delete: "Удалить",
-      ctx_copy: "Копировать",
-      ctx_cut: "Вырезать",
-      ctx_paste: "Вставить",
-      ctx_new_folder: "Новая папка",
-      ctx_new_file: "Новый файл",
-      ctx_reveal: "Показать в файловом менеджере",
-      ctx_copy_path: "Копировать путь",
-      rename_title: "Переименовать",
-      rename_placeholder: "Новое имя",
-      new_folder_title: "Новая папка",
-      new_folder_placeholder: "Имя папки",
-      new_file_title: "Новый файл",
-      new_file_placeholder: "filename.txt",
-      delete_confirm_title: "Удалить {count} элемент(ов)?",
-      delete_confirm_body: "Это действие нельзя отменить. Удалённые файлы исчезнут навсегда.",
-      confirm: "Подтвердить",
-      cancel: "Отмена",
-      details_title: "Детали",
-      details_path: "Путь",
-      details_size: "Размер",
-      details_kind: "Тип",
-      details_modified: "Изменено",
-      details_items: "Элементов",
-      details_preview: "Предпросмотр",
-      preview_unavailable: "Предпросмотр недоступен",
-      preview_binary: "Бинарный файл \\u2014 откройте в файловом менеджере ОС для просмотра.",
-      preview_too_large: "Файл слишком большой для встроенного предпросмотра.",
-      loading: "Загрузка...",
-      error_prefix: "Ошибка:",
-      items_selected: "Выбрано {count}",
-      items_total: "{count} элементов",
-      signatures_button: "Подписи",
-      ctx_sign_file: "Подписать файл\\u2026",
-      ctx_verify_file: "Проверить подпись\\u2026",
-      ctx_extract_text: "Извлечь текст (OCR)\\u2026",
-      ctx_extract_text_no_gemini: "Извлечь текст \\u2014 подключите Gemini, чтобы включить",
-      ocr_title: "Извлечь текст с помощью Gemini",
-      ocr_subtitle: "Vision OCR через Google Gemini 3 Flash Preview",
-      ocr_model_label: "Модель",
-      ocr_connector_ready: "Коннектор Gemini готов",
-      ocr_connector_missing: "Учётные данные Gemini не найдены в хранилище. Подключите Google Gemini, чтобы включить OCR.",
-      ocr_prompt_label: "Необязательный промпт",
-      ocr_prompt_placeholder: "напр. Извлечь только итог счёта и позиции",
-      ocr_extract: "Извлечь текст",
-      ocr_running: "Извлечение\\u2026",
-      ocr_done: "Извлечение завершено",
-      ocr_save: "Сохранить как .ocr.txt",
-      ocr_saved: "Сохранено",
-      ocr_saved_to: "Сохранено в",
-      ocr_copied: "Скопировано в буфер обмена",
-      select_file_or_folder: "Выберите файл или папку, чтобы увидеть детали.",
-      download_aria: "Скачать",
-      download_title: "Скачать",
-      sign_reason_placeholder: "Причина подписания…"
-    },
+    ocr_label: "OCR",
+    ocr_desc: "Извлечение текста из изображений и PDF с помощью Gemini Vision или Claude multimodal.",
     artist: {
       title: "Artist",
       subtitle: "Создавайте 3D-модели, генерируйте изображения и управляйте творческими ресурсами",
@@ -7955,31 +7167,6 @@ export const ru = {
       viewer_3d: "3D-просмотрщик",
       viewer_3d_hint: "Установите @react-three/fiber и @react-three/drei для включения интерактивных 3D-предпросмотров с управлением орбитой.",
       tags_label: "Теги:",
-      status_partial: "Частично",
-      status_not_checked: "Не проверено",
-      blender_label: "Blender",
-      blender_mcp_label: "Blender MCP",
-      session_cancelled: "Сессия отменена.",
-      imported_assets_one: "Импортирован 1 новый ассет в галерею.",
-      imported_assets_other: "Импортировано {count} новых ассетов в галерею.",
-      scan_result_one: "Найдено {scanned} ассетов, импортирован 1 новый.",
-      scan_result_other: "Найдено {scanned} ассетов, импортировано {imported} новых.",
-      tool_blender: "Blender",
-      tool_leonardo: "Leonardo",
-      tool_gemini: "Gemini",
-      tag_editor_hint: "Enter или запятая — добавить, Backspace — удалить последний тег.",
-      tag_editor_placeholder: "тег, другой-тег",
-      send_to_media_studio: "Отправить в Media Studio",
-      sent_to_media_studio: "Добавлено в очередь Media Studio",
-      session_history: "История",
-      session_history_empty: "Запущенные сессии появятся здесь.",
-      session_tools_label: "Инструменты:",
-      session_status_running: "Выполняется",
-      session_status_completed: "Завершено",
-      session_status_failed: "Не удалось",
-      session_status_cancelled: "Отменено",
-      replay_session: "Повторить",
-      delete_session: "Удалить сессию"
     },
     dev_tools: {
       no_project_configured: "Проект разработки не настроен",
@@ -8021,8 +7208,6 @@ export const ru = {
       task: "Задача",
       pick_winner: "Выбрать победителя",
       winner: "Победитель",
-      disqualified_label: "Дисквалифицировано",
-      elapsed_label: "прошло",
       cancel_competition: "Отменить соревнование",
       no_goals_constellation: "Целей пока нет. Создайте цели во вкладке «Проекты» для отображения созвездия.",
       your_turn: "Ваш ход",
@@ -8127,8 +7312,6 @@ export const ru = {
       task_depth: "Глубина задачи",
       goal_link: "Связь с целью",
       create_task: "Создать задачу",
-      partial_context: "Частичный контекст",
-      context_warnings_title: "Предупреждения о контексте — задача выполнялась с отсутствующей информацией",
       campaign: "Кампания",
       deep_build: "Глубокая сборка",
       idea_evolution: "Эволюция идей",
@@ -8143,8 +7326,6 @@ export const ru = {
       edit: "Редактировать",
       save: "Сохранить",
       file_empty: "Файл пустой или не удалось загрузить.",
-      file_load_failed: "Не удалось загрузить файл. Редактирование отключено для предотвращения потери данных.",
-      file_load_failed_hint: "Попробуйте обновить или выбрать навык заново.",
       effort: "Усилие",
       risk: "Риск",
       quick_wins: "Быстрые победы",
@@ -8159,155 +7340,6 @@ export const ru = {
       add_condition: "+ Добавить условие",
       accept: "Принять",
       reject: "Отклонить",
-      triage_title: "Сортировка идей",
-      triage_subtitle: "Оцените и расставьте приоритеты сгенерированных идей",
-      accepted_badge: "{count} принято",
-      rejected_badge: "{count} отклонено",
-      pending_badge: "{count} ожидает",
-      sidebar_category: "Категория",
-      sidebar_scan_type: "Тип сканирования",
-      sidebar_all: "Все ({count})",
-      remaining_count: "{count} осталось",
-      reviewed_count: "{done} / {total} рассмотрено",
-      empty_no_ideas: "Нет идей для сортировки",
-      empty_no_ideas_hint: "Сначала запустите сканер идей, чтобы сгенерировать идеи.",
-      empty_all_reviewed: "Все идеи рассмотрены!",
-      empty_all_reviewed_summary: "{accepted} принято, {rejected} отклонено",
-      swipe_reject: "Отклонить",
-      swipe_accept: "Принять",
-      reasoning_label: "Обоснование",
-      hint_reject: "Отклонить",
-      hint_accept: "Принять",
-      shortcuts_title: "Клавиатурные сокращения",
-      shortcuts_reject: "Отклонить идею",
-      shortcuts_accept: "Принять идею",
-      shortcuts_toggle: "Переключить этот оверлей",
-      shortcuts_close: "Закрыть оверлей",
-      shortcuts_dismiss_hint: "Нажмите ? или Esc, чтобы закрыть",
-      shortcuts_open_title: "Клавиатурные сокращения (?)",
-      shortcuts_btn_reject_title: "Отклонить (Стрелка влево / A)",
-      shortcuts_btn_accept_title: "Принять (Стрелка вправо / Z)",
-      shortcuts_btn_delete_title: "Удалить",
-      pr_bridge_title: "Отправить как черновик PR",
-      pr_bridge_subtitle: "Ветка, коммит и предзаполненный PR — обоснование агента включено в описание.",
-      pr_bridge_branch: "Ветка",
-      pr_bridge_commit_msg: "Сообщение коммита",
-      pr_bridge_pr_title: "Заголовок PR",
-      pr_bridge_pr_body: "Текст PR",
-      pr_bridge_agent_citation: "Предложено {label} {emoji}",
-      pr_bridge_no_github: "Привяжите репозиторий GitHub к этому проекту, чтобы включить рабочие процессы PR.",
-      pr_bridge_link_project: "Открыть настройки проекта",
-      pr_bridge_unsupported_host: "Автозаполнение сейчас работает только с GitHub. Скопируйте текст PR и откройте вручную.",
-      pr_bridge_copy_body: "Скопировать текст PR",
-      pr_bridge_copy_all: "Копировать всё",
-      pr_bridge_prepare: "Подготовить ветку и коммит",
-      pr_bridge_open_github: "Открыть черновик PR на GitHub",
-      pr_bridge_expand: "Показать предпросмотр PR",
-      pr_bridge_collapse: "Скрыть предпросмотр PR",
-      pr_bridge_copied: "Текст PR скопирован в буфер обмена",
-      pr_bridge_copy_failed: "Не удалось скопировать в буфер обмена",
-      pr_bridge_branch_prepared: "Ветка подготовлена: {branch}",
-      pr_bridge_branch_failed: "Подготовка ветки не удалась: {message}",
-      pr_bridge_opening: "Открытие GitHub...",
-      pr_bridge_open_failed: "Не удалось открыть внешний URL",
-      pr_bridge_draft_hint: "Совет: на странице GitHub используйте выпадающий список рядом с «Create pull request», чтобы пометить как черновик.",
-      scoreboard_title: "Производительность агентов",
-      scoreboard_subtitle: "Процент принятия и реализации для каждого сканирующего агента в этом проекте.",
-      scoreboard_toggle_show: "Показать таблицу",
-      scoreboard_toggle_hide: "Скрыть таблицу",
-      scoreboard_empty: "Данных пока нет — запустите сканирование и отсортируйте идеи, чтобы заполнить таблицу.",
-      scoreboard_col_agent: "Агент",
-      scoreboard_col_ideas: "Идеи",
-      scoreboard_col_accept_rate: "Принято %",
-      scoreboard_col_impl_rate: "Реализ. %",
-      scoreboard_col_avg_impact: "Ср. влияние",
-      scoreboard_col_avg_effort: "Ср. усилия",
-      scoreboard_tip_ideas: "Общее число идей, сгенерированных этим агентом по всем сканированиям.",
-      scoreboard_tip_accept_rate: "Принято / (Принято + Отклонено). Ожидающие идеи исключаются из знаменателя.",
-      scoreboard_tip_impl_rate: "Завершённые задачи / задачи, созданные из идей этого агента.",
-      scoreboard_tip_avg_impact: "Среднее значение влияния (1-10) для всех идей, сгенерированных этим агентом.",
-      scoreboard_tip_avg_effort: "Среднее значение усилий (1-10) для всех идей, сгенерированных этим агентом.",
-      scoreboard_no_signal: "—",
-      scoreboard_n_pending: "{n} ожидает",
-      scoreboard_top_performer: "Лидер",
-      zoom_in: "Приблизить",
-      zoom_out: "Отдалить",
-      reset_view: "Сбросить вид",
-      goals_label: "цели,",
-      connections_label: "связи",
-      legend_parent: "━━ родитель",
-      legend_dependency: "┄┄ зависимость",
-      competitors_dot: "соперники ·",
-      of_4_selected: "/4 выбрано",
-      status_label: "Статус:",
-      wt_label: "вт:",
-      winning_insight: "Победный инсайт",
-      completed_in: "Завершено за",
-      achievements_label: "Достижения:",
-      output_lines: "строк вывода",
-      loading_diff: "Загрузка diff...",
-      first_slot_bias: "Первый слот смещён в сторону подхода предыдущего победителя.",
-      start_competition_prefix: "Начать соревнование (",
-      slots_suffix: "слотов)",
-      strategy_leaderboard: "Таблица стратегий",
-      dq_label: "ДК x",
-      leaderboard_subtitle: "Суммировано по завершённым соревнованиям. Выше — лучше.",
-      capture_winning_insight: "Зафиксировать победный инсайт",
-      capture_insight_desc: "Что сделало этот подход победителем? Эта заметка сохраняется вместе с победителем и используется для будущих соревнований.",
-      insight_placeholder: "Опишите, что сделало этот подход успешным…",
-      confirm_winner: "Подтвердить победителя",
-      github_required_title: "Требуется репозиторий GitHub",
-      folder_required_title: "Требуется папка проекта",
-      requirements_met_title: "Все требования выполнены",
-      can_still_adopt: "Вы всё ещё можете применить сейчас — добавьте URL GitHub и папку проекта позже в настройках проекта.",
-      active_triggers_prefix: "Активные триггеры (",
-      lifecycle_readiness: "Готовность жизненного цикла —",
-      goals_tab_no_goals: "Целей пока нет. Создайте цели в Менеджере проектов.",
-      goal_constellation_prefix: "Созвездие целей (",
-      sync_to_obsidian: "Синхронизировать в Obsidian",
-      select_or_create: "Выберите проект ниже или создайте новый.",
-      all_projects_prefix: "Все проекты (",
-      percent_overall: "% общего",
-      task_queue_prefix: "Очередь задач (",
-      project_created_title: "Проект создан",
-      generate_context_map_desc: "Сканирует вашу кодовую базу, чтобы определить бизнес-логику, точки входа и структуры данных.",
-      source_label: "Источник:",
-      auto_filled_hint: "(автозаполнено из папки)",
-      project_type_optional: "(необязательно, только визуально)",
-      optional_label: "(необязательно)",
-      implementation_log_label: "Журнал реализации",
-      cross_project_desc_btn: "Суммировано из существующих карт контекста. Нажмите на любой проект, чтобы развернуть.",
-      generate_metadata_prompt: "для анализа карт контекста всех проектов и извлечения общих паттернов.",
-      projects_count_prefix: "Проекты (",
-      entry_points_header: "Точки входа",
-      db_tables_header: "Таблицы базы данных",
-      entry_points_count: "точек входа",
-      db_tables_count: "таблиц БД",
-      run_context_map_scan: "Запустите сканирование карты контекста для этого проекта, чтобы заполнить метаданные.",
-      active_goals_label: "активных целей",
-      no_goals_add_below: "Целей пока нет. Добавьте ниже.",
-      goal_title_placeholder: "Название цели…",
-      loading_repos: "Загрузка репозиториев...",
-      github_url_label: "URL GitHub",
-      github_repo_label: "Репозиторий GitHub",
-      idea_evolution_title: "Эволюция идей",
-      fitness_ranking_label: "Рейтинг пригодности",
-      similar_to_rejected: "Похоже на отклонённое:",
-      percent_similar: "% похоже",
-      scanning_with: "Сканирование с помощью",
-      scanning_subtitle: "Анализ паттернов кодовой базы и генерация контекстных групп…",
-      no_previous_scans: "Предыдущих сканирований нет.",
-      run_scan_prefix: "Запустить сканирование (",
-      automated_context_scan: "Автоматическое сканирование контекста",
-      results_prefix: "Результаты (",
-      scan_history_prefix: "История сканирований (",
-      action_label: "Действие:",
-      self_healing_title: "Самовосстановление",
-      heal_all_prefix: "Исправить все (",
-      task_title_placeholder: "Название задачи…",
-      task_details_placeholder: "Детали задачи или вставьте спецификацию…",
-      goal_link_placeholder: "Выберите цель…",
-      no_tasks_queued_sub: "Создайте задачи вручную или пакетом из принятых идей."
     },
     doc_signing: {
       title: "Подписание документов",
@@ -8346,7 +7378,7 @@ export const ru = {
       no_signatures: "Подписей пока нет",
       no_signatures_hint: "Подпишите документ для отображения здесь.",
       export_sig: "Экспортировать .sig.json",
-      delete_signature: "Удалить подпись"
+      delete_signature: "Удалить подпись",
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -8354,7 +7386,6 @@ export const ru = {
       tab_setup: "Настройка",
       tab_sync: "Синхронизация",
       tab_browse: "Обзор хранилища",
-      tab_graph: "Граф",
       tab_cloud: "Облако",
       filter_notes: "Фильтр заметок...",
       vault_empty: "Хранилище пустое",
@@ -8424,7 +7455,7 @@ export const ru = {
       sync_log: "Журнал синхронизации",
       no_sync_activity: "Синхронизации пока не было. Загрузите или скачайте для начала.",
       select_note: "Выберите заметку",
-      select_note_hint: "Выберите заметку в дереве слева для просмотра содержимого."
+      select_note_hint: "Выберите заметку в дереве слева для просмотра содержимого.",
     },
     ocr: {
       title: "OCR",
@@ -8451,292 +7482,8 @@ export const ru = {
       comparison_stats: "Статистика сравнения",
       history_heading: "История OCR",
       no_results: "Результатов OCR пока нет",
-      no_results_hint: "Извлеките текст из документа для отображения здесь."
+      no_results_hint: "Извлеките текст из документа для отображения здесь.",
     },
-    artist_gallery: {
-      loading_viewer: "Загрузка просмотрщика…",
-      loading_model: "Загрузка модели...",
-      could_not_load_model: "Не удалось загрузить модель"
-    },
-    artist_media_studio: {
-      drag_drop_hint: "— перетащите файлы в любое место",
-      keyboard_shortcuts: "Space / Del / стрелки",
-      px_per_second: "пикс/с",
-      running_loudnorm: "Запуск ffmpeg loudnorm dry-run…"
-    },
-    dev_context: {
-      files_header: "Файлы (",
-      filter_groups_placeholder: "Фильтровать группы…",
-      rescan_title: "Пересканировать",
-      scanning_with: "Сканирование с помощью",
-      scanning_subtitle: "Анализ паттернов кодовой базы и генерация контекстных групп…",
-      no_previous_scans: "Предыдущих сканирований нет.",
-      run_scan: "Запустить сканирование (",
-      auto_scan: "Автосканирование",
-      automated_context_scan: "Автоматическое сканирование контекста",
-      results: "Результаты (",
-      scan_history: "История сканирований ("
-    },
-    dev_lifecycle: {
-      start_a_competition: "Начать соревнование",
-      start_a_competition_desc: "Запустите 2–4 конкурентов с разными стратегиями для решения одной задачи. Подход победителя будет продвинут.",
-      task_title: "Название задачи",
-      task_title_placeholder: "Напр. Рефакторить модуль авторизации",
-      task_description: "Описание задачи (необязательно)",
-      task_description_placeholder: "Опишите, как выглядит успех…",
-      strategy_slots: "Слоты стратегий (выберите 2–4)",
-      of_4_selected: "/4 выбрано",
-      cost_warning: "Предупреждение о стоимости:",
-      cost_warning_desc: "каждый конкурент запускает задачу независимо — это использует в {count}× больше токенов.",
-      start_competition: "Начать соревнование",
-      competitors_dot: "конкурентов ·",
-      loading_competitors: "Загрузка конкурентов...",
-      failed_to_load_detail: "Не удалось загрузить детали.",
-      status_label: "Статус:",
-      weight_label: "вт:",
-      pick_winner: "Выбрать победителя",
-      cancel_competition: "Отменить соревнование",
-      select_project_for_competitions: "Выберите проект, чтобы увидеть соревнования.",
-      new_competition: "Новое соревнование",
-      no_competitions_yet: "Соревнований пока нет. Начните одно, чтобы 2–4 стратегии соревновались в решении задачи.",
-      no_goals_yet_project: "Целей пока нет. Создайте цели в Менеджере проектов, чтобы отслеживать прогресс.",
-      zoom_in_title: "Приблизить",
-      zoom_out_title: "Отдалить",
-      reset_view_title: "Сбросить вид",
-      goals_label: "целей,",
-      legend_parent: "━━ родитель",
-      legend_dependency: "┄┄ зависимость",
-      no_goals_kanban: "Целей пока нет. Создайте цели, чтобы увидеть их здесь.",
-      no_goals_here: "Здесь нет целей",
-      auto_setup_title: "Запустить автоматическую настройку жизненного цикла",
-      auto_setup: "Автонастройка",
-      loading_lifecycle: "Загрузка состояния жизненного цикла...",
-      no_project_click_to_create: "Нет проекта — нажмите, чтобы создать",
-      no_repo: "нет репозитория",
-      baseline_label: "Базовый уровень:",
-      ts_errors_label: "TS-ошибки:",
-      cargo_errors_label: "Ошибки Cargo:",
-      tests_label: "Тесты:",
-      git_label: "Git:",
-      winning_insight: "Победный инсайт",
-      completed_in: "Завершено за",
-      achievements_label: "Достижения:",
-      output_lines: "строк вывода",
-      expand_slot_title: "Развернуть слот",
-      collapse_slot_title: "Свернуть слот",
-      copy_diff_title: "Скопировать diff",
-      loading_diff: "Загрузка diff...",
-      new_competition_modal_title: "Начать соревнование",
-      first_slot_bias: "Первый слот смещён в сторону подхода предыдущего победителя.",
-      start_competition_slots: "Начать соревнование (",
-      slots_suffix: "слотов)",
-      strategy_leaderboard: "Таблица стратегий",
-      dq_title: "Дисквалифицирован",
-      dq_label: "ДК x",
-      leaderboard_subtitle: "Суммировано по завершённым соревнованиям. Выше — лучше.",
-      capture_winning_insight: "Зафиксировать победный инсайт",
-      capture_insight_desc: "Что сделало этот подход победителем? Эта заметка сохраняется вместе с победителем и используется для будущих соревнований.",
-      insight_placeholder: "Опишите, что сделало этот подход успешным…",
-      confirm_winner: "Подтвердить победителя",
-      competition_title_placeholder: "напр. Добавить rate limiting к /api/auth/login",
-      competition_desc_placeholder: "Критерии приёмки, целевые файлы, ограничения...",
-      regenerate_strategies_title: "Перегенерировать стратегии",
-      start_dev_server_title: "Запустить dev-сервер в этом worktree",
-      stop_dev_server_title: "Остановить dev-сервер",
-      open_worktree_title: "Открыть директорию worktree",
-      adopt_dev_clone: "Применить Dev Clone",
-      dev_clone_desc: "Dev Clone — автономный агент-разработчик, который управляет жизненным циклом вашего проекта: соревнующиеся стратегии, исправление ошибок и отгрузка кода.",
-      github_required_title: "Требуется репозиторий GitHub",
-      folder_required_title: "Требуется папка проекта",
-      requirements_met_title: "Все требования выполнены",
-      can_still_adopt: "Вы всё ещё можете применить сейчас — добавьте URL GitHub и папку проекта позже в настройках проекта.",
-      active_triggers: "Активные триггеры (",
-      lifecycle_readiness: "Готовность жизненного цикла —",
-      goals_tab_no_goals: "Целей пока нет. Создайте цели в Менеджере проектов.",
-      goal_constellation: "Созвездие целей (",
-      sync_to_obsidian: "Синхронизировать в Obsidian"
-    },
-    dev_projects: {
-      active_goals: "активных целей",
-      run_context_map_scan: "Запустите сканирование карты контекста для этого проекта, чтобы заполнить метаданные.",
-      entry_points: "точек входа",
-      db_tables: "таблиц БД",
-      top_keywords: "Топ-ключевые слова",
-      entry_points_header: "Точки входа",
-      db_tables_header: "Таблицы базы данных",
-      api_surface: "Поверхность API",
-      hot_directories: "Горячие директории",
-      cross_project_map_title: "Кросс-проектная карта метаданных",
-      cross_project_map_subtitle: "Суммировано из существующих карт контекста. Нажмите на любой проект, чтобы развернуть.",
-      tech_distribution: "Распределение технологий",
-      shared_keywords: "Общие ключевые слова (",
-      shared_keywords_subtitle: "Концепции, присутствующие в нескольких проектах — могут указывать на общую архитектуру.",
-      project_similarity: "Сходство проектов",
-      projects_header: "Проекты (",
-      cross_project_map_btn: "Кросс-проектная карта",
-      new_project: "Новый проект",
-      select_or_create: "Выберите проект ниже или создайте новый.",
-      all_projects: "Все проекты (",
-      no_projects_yet: "Проектов пока нет",
-      create_first_project: "Создать первый проект",
-      tech_stack: "Технологический стек",
-      edit_project: "Редактировать проект",
-      no_goals_add_below: "Целей пока нет. Добавьте ниже.",
-      goal_title_placeholder: "Название цели…",
-      project_folder: "Папка проекта",
-      select_folder: "Выберите папку...",
-      project_name: "Название проекта",
-      auto_filled_from_folder: "(автозаполнено из папки)",
-      project_name_placeholder: "Мой проект",
-      project_type: "Тип проекта",
-      project_type_optional: "(необязательно, только визуально)",
-      project_created: "Проект создан",
-      project_ready_desc: "готов. Сгенерировать карту контекста сейчас?",
-      generate_context_map: "Сгенерировать карту контекста",
-      generate_context_map_desc: "Сканирует вашу кодовую базу, чтобы определить бизнес-логику, точки входа и структуры данных.",
-      skip_for_now: "Пропустить сейчас",
-      scan_codebase: "Сканировать кодовую базу",
-      loading_repositories: "Загрузка репозиториев...",
-      github_url_label: "URL GitHub",
-      optional: "(необязательно)",
-      github_url_placeholder: "https://github.com/owner/repo",
-      github_repository: "Репозиторий GitHub",
-      select_repository: "Выберите репозиторий...",
-      no_repositories_found: "Репозиториев не найдено",
-      implementation_log: "Журнал реализации",
-      loading_metadata: "Загрузка...",
-      no_metadata_yet: "Карта метаданных ещё не сгенерирована",
-      generate_metadata_prompt: "для анализа карт контекста всех проектов и извлечения общих паттернов."
-    },
-    dev_runner: {
-      self_healing: "Самовосстановление",
-      auto_heal: "Автоисправление",
-      heal_all: "Исправить все (",
-      task_title_placeholder: "Название задачи…",
-      task_details_placeholder: "Детали задачи или вставьте спецификацию…",
-      task_depth: "Глубина задачи",
-      goal_link: "Связь с целью",
-      optional: "(необязательно)",
-      goal_link_placeholder: "Выберите цель…",
-      create_task: "Создать задачу",
-      source_label: "Источник:",
-      new_task: "Новая задача",
-      batch_from_accepted: "Пакетно из принятых",
-      start_batch: "Запустить пакет",
-      cancel_all: "Отменить все",
-      batch_progress: "Прогресс пакета",
-      percent_overall: "% общего",
-      task_queue: "Очередь задач (",
-      no_tasks_queued: "Задач в очереди нет",
-      no_tasks_queued_sub: "Создайте задачи вручную или пакетом из принятых идей."
-    },
-    dev_scanner: {
-      idea_evolution: "Эволюция идей",
-      fitness_ranking: "Рейтинг пригодности",
-      similar_to_rejected: "Похоже на отклонённое:",
-      synthesis_suggestions: "Предложения по синтезу",
-      percent_similar: "% похоже",
-      potential_duplicates: "Возможные дубликаты",
-      scanning_with: "Сканирование с помощью",
-      analyzing_codebase: "Анализ кодовой базы...",
-      no_previous_scans: "Предыдущих сканирований ещё нет.",
-      auto_scan: "Автосканирование",
-      automated_context_scan: "Автоматическое сканирование контекста",
-      run_scan_prefix: "Запуск:",
-      results_prefix: "Результаты:",
-      scan_history_prefix: "История сканирований",
-      idea_scanner_title: "Сканер идей",
-      idea_scanner_subtitle: "Запустите специализированных агентов, чтобы сгенерировать идеи улучшений",
-      run_scan_btn: "Запустить сканирование (",
-      results_header: "Результаты (",
-      scan_history_header: "История сканирований ("
-    },
-    dev_triage: {
-      auto_triage_rules: "Правила автосортировки",
-      add_condition: "+ Добавить условие",
-      action_label: "Действие:",
-      new_rule: "Новое правило",
-      run_rules: "Запустить правила"
-    },
-    obsidian: {
-      saved_vaults: "Сохранённые хранилища",
-      remove_vault_title: "Удалить сохранённое хранилище",
-      vault_is_empty: "Хранилище пусто",
-      failed_to_load: "Не удалось загрузить",
-      open_in_obsidian: "Открыть в Obsidian",
-      copy_path_title: "Скопировать путь",
-      disconnect_title: "Отключить Google Drive",
-      sign_in_to_enable: "Войдите, чтобы включить облачную синхронизацию",
-      sign_in_subtitle: "Войдите через Google, чтобы создать резервную копию хранилища в Google Drive.",
-      refresh_title: "Обновить статус синхронизации",
-      drive_connected: "Drive подключён",
-      files_synced: "файлов синхронизировано с Drive",
-      connect_drive_desc: "Подключите Google Drive, чтобы создать резервную копию хранилища в облаке.",
-      step_connect_drive: "Подключите Google Drive",
-      step_connect_drive_desc: "Предоставьте Personas доступ для создания файлов в вашем Google Drive.",
-      step_push_vault: "Отправьте хранилище",
-      step_push_vault_desc: "Заметки хранилища загружаются как markdown-файлы в Google Drive.",
-      step_sync_devices: "Синхронизация между устройствами",
-      step_sync_devices_desc: "Загрузите на другом устройстве, чтобы скачать. Ваше хранилище — ваши данные.",
-      push_title: "Отправить хранилище в Google Drive",
-      push_desc: "Push загружает локальные изменения хранилища в Google Drive.",
-      last_sync_result: "Результат последней синхронизации",
-      pull_title: "Загрузить хранилище из Google Drive",
-      connect_google_drive: "Подключить Google Drive",
-      connect_drive_btn_desc: "Предоставьте Personas доступ для создания файлов в вашем Google Drive.",
-      no_stats_yet: "Статистики пока нет.",
-      search_title: "Поиск заметок",
-      search_placeholder: "Поиск заметок…",
-      no_matches: "Совпадений нет.",
-      no_orphan_notes: "Заметок-сирот нет — каждая заметка связана хотя бы с одной другой.",
-      no_mocs: "MOC не обнаружены — попробуйте снизить порог связей.",
-      quick_capture_title: "Быстрый захват ИИ",
-      note_search_placeholder: "Поиск заметок или задайте вопрос…",
-      append_to_today: "Добавить к сегодня",
-      append_content_placeholder: "Содержимое для добавления…",
-      save_meeting_title: "Сохранить заметку встречи",
-      meeting_attendees_placeholder: "Участники…",
-      meeting_summary_placeholder: "Резюме встречи…",
-      meeting_action_items_placeholder: "Действия…",
-      meeting_decisions_placeholder: "Решения…",
-      save_meeting_note: "Сохранить заметку встречи",
-      remove_vault_setup_title: "Удалить",
-      detected_vaults: "Обнаруженные хранилища:",
-      connected_to: "Подключено к \"",
-      notes_found: "заметок найдено",
-      scan_for_vaults_title: "Сканировать хранилища",
-      manual_path_title: "Ввести путь вручную",
-      preview_label: "Предпросмотр:",
-      vault_path_agent_placeholder: "/AgentName/",
-      vault_path_note_example: "/fact/memory-title.md",
-      disconnect_sync_title: "Отключить",
-      active_vault: "Активное хранилище:",
-      refresh_stats_title: "Обновить статистику",
-      select_personas: "Выберите агентов для отправки",
-      select_all: "Выбрать все",
-      no_personas_found: "Агенты не найдены",
-      last_push_result: "Результат последнего push",
-      app_version: "Версия приложения",
-      vault_version: "Версия хранилища",
-      keep_app: "Сохранить из приложения",
-      keep_vault: "Сохранить из хранилища",
-      clear_history_title: "Очистить историю",
-      no_sync_activity: "Активности синхронизации пока нет. Сделайте push или pull, чтобы начать."
-    },
-    research_lab: {
-      review_before_saving: "Проверьте перед сохранением. Снимите отметки с тех, которые не хотите добавлять.",
-      re_run: "Перезапустить",
-      search_placeholder: "Поиск…",
-      filter_title: "Фильтр",
-      query_placeholder: "Введите запрос и нажмите Enter для поиска по всем панелям…",
-      close_panel_title: "Закрыть панель",
-      md_extension: ".md",
-      edit_note_aria: "Редактировать заметку"
-    },
-    doc_signing_label: "Подписание документов",
-    doc_signing_desc: "Подписывайте и проверяйте документы с цифровыми подписями прямо из рабочего пространства.",
-    ocr_label: "OCR",
-    ocr_desc: "Извлечение текста из изображений и PDF с помощью Gemini Vision или Claude multimodal."
   },
   media_studio: {
     title: "Медиастудия",
@@ -8798,32 +7545,10 @@ export const ru = {
     empty_title: "Начните монтаж",
     empty_hint: "Добавьте видео или аудио клипы на хронологию для начала.",
     split: "Разрезать по позиции воспроизведения",
-    undo: "Отменить",
-    redo: "Повторить",
     import_media: "Импорт медиа",
     supported_video: "Видеофайлы",
     supported_audio: "Аудиофайлы",
     supported_images: "Файлы изображений",
-    clip_actions: "Действия с клипом",
-    action_split: "Разрезать на позиции курсора",
-    action_extract_audio: "Извлечь аудио",
-    action_strip_audio: "Удалить аудио",
-    action_keep_audio: "Сохранить аудио",
-    action_save_thumbnail: "Сохранить кадр как изображение",
-    action_trim_to_file: "Обрезать в новый файл",
-    extracting_audio: "Извлечение аудиодорожки...",
-    extract_audio_done: "Аудиодорожка извлечена",
-    saving_thumbnail: "Сохранение кадра...",
-    thumbnail_saved: "Кадр сохранён",
-    trimming_file: "Обрезка файла...",
-    trim_done: "Обрезка сохранена",
-    effects: "Эффекты",
-    speed: "Скорость",
-    fade_in: "Нарастание",
-    fade_out: "Затухание",
-    normalize: "Нормализовать громкость",
-    normalize_hint: "EBU R128 применяется при экспорте; предпросмотр является приближением",
-    strip_audio_hint: "Заглушает аудио этого клипа при экспорте"
   },
   research_lab: {
     dashboard: "Панель",
@@ -8833,29 +7558,20 @@ export const ru = {
     experiments: "Эксперименты",
     findings: "Результаты",
     reports: "Отчёты",
-    graph: "Граф",
     active: "активный",
     sources: "Источники",
     sources_count: "источников",
-    recent_projects: "Недавние проекты",
-    view_all: "Посмотреть все",
     no_projects: "Исследовательских проектов пока нет",
     no_projects_hint: "Создайте исследовательский проект для организации литературы, гипотез и экспериментов.",
     create_project: "Новый проект",
-    edit_project: "Редактировать проект",
-    save_changes: "Сохранить изменения",
     project_name: "Название проекта",
-    project_name_placeholder: "напр. Верность цепочки рассуждений LLM",
     project_description: "Описание",
-    project_description_placeholder: "Краткое описание того, что исследует этот проект",
     project_thesis: "Исследовательский вопрос или тезис",
-    project_thesis_placeholder: "Центральное утверждение или вопрос, который вы проверяете",
     project_domain: "Область",
     project_scope: "Ограничения области",
     obsidian_vault: "Хранилище Obsidian",
     obsidian_vault_hint: "Свяжите хранилище Obsidian для синхронизации экспериментов и результатов",
     select_vault: "Выбрать хранилище",
-    clear_vault: "Очистить",
     vault_connected: "Хранилище подключено",
     sync_to_obsidian: "Синхронизировать с Obsidian",
     syncing: "Синхронизация...",
@@ -8871,42 +7587,13 @@ export const ru = {
     status_writing: "Написание",
     status_review: "Проверка",
     status_complete: "Завершено",
-    domain_cs: "Компьютерные науки",
-    domain_biology: "Биология",
-    domain_chemistry: "Химия",
-    domain_physics: "Физика",
-    domain_mathematics: "Математика",
-    domain_business: "Бизнес",
-    domain_medicine: "Медицина",
-    domain_general: "Общее",
     select_project_first: "Сначала выберите исследовательский проект",
     no_sources: "Источников пока нет",
     no_sources_hint: "Ищите в arXiv, Semantic Scholar или PubMed для нахождения статей, или добавляйте источники вручную.",
-    no_matching_sources: "Нет источников, соответствующих фильтру",
-    filter_sources_placeholder: "Фильтр по названию или автору…",
     relevance: "Релевантность",
     search_sources: "Поиск источников",
     ingest: "Загрузить",
     ingesting: "Загрузка...",
-    source_title: "Название",
-    source_title_placeholder: "Название статьи",
-    source_type: "Тип источника",
-    source_year: "Год",
-    source_year_placeholder: "напр. 2024",
-    source_authors: "Авторы",
-    source_authors_placeholder: "Автор 1, Автор 2, …",
-    source_url: "URL",
-    source_url_placeholder: "https://arxiv.org/abs/…",
-    source_doi: "DOI",
-    source_doi_placeholder: "10.xxxx/…",
-    source_abstract: "Аннотация",
-    source_abstract_placeholder: "Аннотация статьи…",
-    source_type_arxiv: "arXiv",
-    source_type_scholar: "Semantic Scholar",
-    source_type_pubmed: "PubMed",
-    source_type_web: "Веб-страница",
-    source_type_pdf: "PDF",
-    source_type_manual: "Ручной ввод",
     no_hypotheses: "Гипотез пока нет",
     no_hypotheses_hint: "Добавляйте гипотезы вручную или позвольте AI сгенерировать их из вашего корпуса литературы.",
     add_hypothesis: "Добавить гипотезу",
@@ -8914,58 +7601,23 @@ export const ru = {
     confidence: "Достоверность",
     supporting: "Подтверждающие",
     counter: "Опровергающие",
-    hypothesis_statement: "Утверждение",
-    hypothesis_statement_placeholder: "Проверяемое утверждение — напр. Промпт X улучшает точность по сравнению с базовым на >5%",
-    hypothesis_rationale: "Обоснование",
-    hypothesis_rationale_placeholder: "Почему эту гипотезу стоит проверить",
     no_experiments: "Экспериментов пока нет",
     no_experiments_hint: "Разработайте эксперимент для проверки гипотезы.",
     create_experiment: "Новый эксперимент",
-    experiment_name: "Название эксперимента",
-    experiment_name_placeholder: "напр. Сравнить базовый и дообученный на GSM8K",
     methodology: "Методология",
-    methodology_placeholder: "Как будет проводиться этот эксперимент?",
     success_criteria: "Критерии успеха",
-    success_criteria_placeholder: "Какой результат подтвердит гипотезу?",
-    linked_hypothesis: "Связанная гипотеза",
-    no_linked_hypothesis: "Гипотеза не связана",
-    linked_persona: "Связанный агент",
-    no_linked_persona: "Агент не связан",
-    run_input: "Входные данные запуска (необязательно)",
-    run_input_placeholder: "Входной текст, который будет передан агенту при каждом запуске.",
-    pass_pattern: "Шаблон успеха (regex)",
-    pass_pattern_placeholder: "напр. PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "Запустить",
-    running_experiment: "Выполняется…",
     run_count: "запусков",
-    view_runs: "Просмотр запусков",
-    no_runs_yet: "Запусков пока нет",
-    run_passed: "Пройдено",
-    run_failed: "Провалено",
-    run_duration: "Длительность",
-    run_cost: "Стоимость",
-    run_number: "Запуск №",
-    runs_history: "История запусков",
     no_findings: "Результатов пока нет",
     no_findings_hint: "Результаты извлекаются из данных экспериментов агентами анализа.",
-    create_finding: "Новый результат",
-    finding_title: "Название",
-    finding_title_placeholder: "Короткий заголовок для результата",
-    finding_description: "Описание",
-    finding_description_placeholder: "Что вы наблюдали и почему это важно?",
-    finding_category: "Категория",
-    finding_category_placeholder: "напр. производительность, ограничение, сюрприз",
     no_reports: "Отчётов пока нет",
     no_reports_hint: "Создайте отчёт для компиляции результатов в структурированный документ.",
     create_report: "Новый отчёт",
-    report_title: "Название",
-    report_title_placeholder: "напр. Исследовательское резюме Q2",
     report_type: "Тип отчёта",
-    report_format: "Формат",
     literature_review: "Обзор литературы",
     experiment_report: "Отчёт об эксперименте",
     full_paper: "Полная статья",
-    executive_summary: "Краткое резюме"
+    executive_summary: "Краткое резюме",
   },
   event_types: {
     webhook_received_label: "Webhook получен",
@@ -9040,7 +7692,7 @@ export const ru = {
     source_filter_no_regex: "Поддерживается только завершающий * (без regex, без ? подстановок)",
     source_filter_no_source_id: "Если source_filter задан, но у события нет source_id, фильтр не совпадёт",
     source_filter_allowed_chars: "Разрешённые символы: буквы, цифры, _, -, :, . и *",
-    source_filter_max_length: "Максимум 120 символов, максимум 3 символа подстановки"
+    source_filter_max_length: "Максимум 120 символов, максимум 3 символа подстановки",
   },
   connector_roles: {
     chat_messaging: "Чат и мессенджеры",
@@ -9107,12 +7759,12 @@ export const ru = {
     purpose_ecommerce: "Электронная торговля",
     purpose_scheduling: "Планирование",
     purpose_forms: "Формы",
-    purpose_ai: "AI"
+    purpose_ai: "AI",
   },
   connector_licensing: {
     personal: "Личный",
     paid: "Платный",
-    enterprise: "Корпоративный"
+    enterprise: "Корпоративный",
   },
   alerts: {
     metric_error_rate: "Процент ошибок",
@@ -9128,7 +7780,7 @@ export const ru = {
     error_delete_rule: "Не удалось удалить правило оповещения:",
     error_toggle_rule: "Не удалось переключить правило оповещения:",
     error_dismiss: "Не удалось закрыть оповещение:",
-    error_clear_history: "Не удалось очистить историю оповещений:"
+    error_clear_history: "Не удалось очистить историю оповещений:",
   },
   deploy_errors: {
     not_reachable: "Не удалось достичь сервера. Проверьте URL и сетевое подключение.",
@@ -9143,18 +7795,18 @@ export const ru = {
     oauth_expired: "Токен OAuth истёк. Повторно авторизуйтесь.",
     url_empty: "Введите URL оркестратора.",
     api_key_empty: "Введите API-ключ.",
-    token_empty: "Введите персональный токен доступа GitLab."
+    token_empty: "Введите персональный токен доступа GitLab.",
   },
   tiers: {
     starter_label: "Простой",
     starter_desc: "Основные функции для ежедневного использования",
     team_label: "Расширенный",
-    team_desc: "Полный набор функций"
+    team_desc: "Полный набор функций",
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus"
+    opus: "Opus",
   },
   error_explanation: {
     action_go_to_vault: "Перейти в хранилище",
@@ -9198,7 +7850,7 @@ export const ru = {
     guidance_import_invalid: "Файл импорта пустой или повреждён. Попробуйте повторно экспортировать и импортировать.",
     guidance_circular_chain: "Это создаст петлю где агенты бесконечно запускают друг друга. Проверьте цепочку и удалите циклическую ссылку.",
     guidance_parse_error: "Ответ не в ожидаемом формате. Возможно, изменился API или данные некорректны.",
-    guidance_process_exit: "Базовый процесс сообщил об ошибке. Проверьте журнал запуска для деталей."
+    guidance_process_exit: "Базовый процесс сообщил об ошибке. Проверьте журнал запуска для деталей.",
   },
   process_labels: {
     n8n_transform: "Трансформация n8n",
@@ -9212,11 +7864,10 @@ export const ru = {
     lab_run: "Запуск лаборатории",
     connector_test: "Тест коннектора",
     creative_session: "Творческая сессия",
-    feedback_chat: "Чат обратной связи",
     complete_suffix: "Завершено",
     failed_suffix: "Не удалось",
     pending_reviews_one: "{count} ожидающая проверка",
-    pending_reviews_other: "{count} ожидающих проверок"
+    pending_reviews_other: "{count} ожидающих проверок",
   },
   eval_strategies: {
     keyword_match_label: "Качество вывода",
@@ -9228,7 +7879,7 @@ export const ru = {
     confusion_detect_label: "Обнаружение путаницы",
     confusion_detect_description: "Проверяет известные фразы путаницы/сбоя",
     composite_label: "Составной",
-    composite_description: "Взвешенная комбинация всех стратегий"
+    composite_description: "Взвешенная комбинация всех стратегий",
   },
   drift_labels: {
     kind_error_pattern: "Паттерн ошибки",
@@ -9256,7 +7907,7 @@ export const ru = {
     suggestion_error_handling: "Проверьте раздел errorHandling и добавьте обработку для этого паттерна сбоя.",
     suggestion_near_timeout: "Рассмотрите увеличение таймаута или упрощение задачи агента в инструкциях.",
     suggestion_high_cost: "Уточните инструкции для уменьшения использования токенов или используйте меньшую модель.",
-    suggestion_repeated_failure: "Рассмотрите запуск нового анализа дизайна для перестроения конфигурации агента."
+    suggestion_repeated_failure: "Рассмотрите запуск нового анализа дизайна для перестроения конфигурации агента.",
   },
   feedback_labels: {
     accurate_prompt: "Точный промпт",
@@ -9269,13 +7920,13 @@ export const ru = {
     over_engineered: "Избыточная сложность",
     under_specified: "Недостаточная спецификация",
     wrong_triggers: "Неверные триггеры",
-    credential_issues: "Проблемы учётных данных"
+    credential_issues: "Проблемы учётных данных",
   },
   protocol_labels: {
     manual_review: "Ручная проверка",
     user_message: "Уведомления пользователя",
     agent_memory: "Память агента",
-    emit_event: "Эмиссия событий"
+    emit_event: "Эмиссия событий",
   },
   execution: {
     budget_exceeded: "Месячный бюджет для этого агента превышен. Отмените паузу бюджета в настройках агента или увеличьте бюджет для продолжения.",
@@ -9292,11 +7943,6 @@ export const ru = {
     waiting_for_output: "Ожидание вывода...",
     no_output: "Нет вывода",
     background: "Фон",
-    needs_credential: "нужны учётные данные",
-    run_preview: "Предпросмотр запуска",
-    close_preview: "Закрыть предпросмотр",
-    budget_limit: "Лимит бюджета",
-    run_agent: "Запустить агента"
   },
   gitlab: {
     integration_title: "Интеграция GitLab",
@@ -9411,10 +8057,6 @@ export const ru = {
     play_sound: "Воспроизвести звук",
     cicd_agent_templates: "Шаблоны CI/CD-агентов",
     your_tier: "(ваш)",
-    trigger_on: "по:",
-    connecting_to_gitlab: "Подключение к GitLab...",
-    deploying_to_gitlab: "Развёртывание агента в GitLab...",
-    pipeline_hash: "Пайплайн №"
   },
   pipeline: {
     agent_teams: "Команды агентов",
@@ -9562,11 +8204,6 @@ export const ru = {
     run_pipeline_or_add: "Запустите конвейер или добавьте вручную",
     load_more: "Загрузить ещё",
     showing_count: "Показано {shown} из {total}",
-    no_timeline_data: "Нет данных временной шкалы",
-    clear_filter: "Очистить фильтр",
-    filter_to_run: "Фильтр по этому запуску",
-    new_memories_one: "{count} новое воспоминание",
-    new_memories_other: "{count} новых воспоминаний"
   },
   composition: {
     select_persona: "Выбрать агента",
@@ -9615,10 +8252,10 @@ export const ru = {
     add_input_node: "Добавить узел ввода",
     add_persona_node: "Добавить узел агента",
     add_output_node: "Добавить узел вывода",
-    run: "Запустить"
+    run: "Запустить",
   },
   auth: {
-    login_timed_out: "Время входа истекло. Попробуйте снова."
+    login_timed_out: "Время входа истекло. Попробуйте снова.",
   },
   shared: {
     blast_checking_impact: "Проверка влияния...",
@@ -9753,15 +8390,6 @@ export const ru = {
     cmd_select: "выбрать",
     cmd_commands: "команды",
     draft_editor: {
-      edit_tabs_label: "Вкладки редактирования черновика",
-      request_ai_adjustments: "Запросить корректировки ИИ",
-      edit_raw_json_hint: "Редактировать сырой JSON. Изменения переопределяют поля формы.",
-      no_custom_sections: "Пользовательских разделов пока нет",
-      no_content_to_preview: "Нет содержимого для предпросмотра",
-      edit_raw: "Редактировать исходник",
-      credential_links: "Ссылки на учётные данные",
-      view_full_prompt: "Показать полный промпт",
-      hide_full_prompt: "Скрыть полный промпт",
       persona_name_placeholder: "Название агента...",
       description_placeholder: "Краткое описание...",
       refine_placeholder: "Например: Сделать обработку ошибок строже, добавить логику повтора...",
@@ -9782,108 +8410,55 @@ export const ru = {
       design_context_json: "JSON контекста дизайна...",
       click_next: "Нажмите «Далее» для продолжения трансформации.",
       configure_transform: "Настроить трансформацию",
-      select: "Выбрать..."
+      select: "Выбрать...",
     },
     forms_extra: {
-      color_hex_placeholder: "#8b5cf6",
-      attach_file_title: "Прикрепить файл (спецификация API, схема, конфигурация MCP)",
-      add_references_title: "Добавить ссылочные URL или строки подключения",
-      no_matches: "Совпадений нет",
-      all_prefix: "Все (",
       references: "Ссылки",
       references_placeholder: "Вставьте URL, строки подключения, API-ключи или справочную информацию (по одной на строке)",
       remove_file: "Удалить файл",
       choose_color: "Выбрать цвет",
       choose_icon: "Выбрать иконку",
       filter_placeholder: "Фильтр...",
-      reset_to_default: "Сбросить по умолчанию"
+      reset_to_default: "Сбросить по умолчанию",
     },
     reasoning_trace: {
-      heartbeat_silent: "с (молчит",
-      waiting: "Ожидание событий выполнения...",
-      tool_call_label: "Вызов инструмента:",
       system_init: "Инициализация системы",
       reasoning: "Рассуждение",
       tool_call: "Вызов инструмента: {name}",
       result: "Результат",
       complete: "Завершено",
-      error: "Ошибка"
+      error: "Ошибка",
     },
     sidebar_extra: {
-      clear_completed_title: "Очистить завершённые и поставленные в очередь элементы",
-      no_credentials: "Учётных данных пока нет",
-      ai_setup_wizard: "Мастер настройки ИИ",
-      all_personas: "Все агенты",
-      no_scheduled_agents: "Нет агентов с расписанием",
-      all_agents_label: "Все агенты",
-      draft_builds: "Сборки черновиков",
-      dev_tools_label: "Инструменты разработчика",
-      obsidian_brain: "Мозг Obsidian",
-      active_twin: "Активный двойник",
-      research_lab: "Исследовательская лаборатория",
       agents: "Агенты",
       schedules: "Расписания",
       remove_favorites: "Удалить из избранного",
       add_favorites: "Добавить в избранное",
-      active_project: "Активный проект"
+      active_project: "Активный проект",
     },
     execution_detail: {
-      running: "Выполняется...",
-      rerun: "Перезапустить",
-      retry_prefix: "Повтор №",
-      importance_prefix: "важность:",
-      confidence_suffix: "% уверенности",
       copy: "Копировать",
       suggested_actions: "Рекомендуемые действия",
       knowledge_insight: "Аналитика знаний",
       outcome_assessment: "Оценка результата",
-      blockers: "Блокеры"
+      blockers: "Блокеры",
     },
     progress_extra: {
-      continue_working: "Вы можете продолжать работу -- мы уведомим, когда черновик будет готов.",
-      draft_ready: "Ваш черновик агента готов к проверке и редактированию.",
-      click_generate: "Нажмите \\u201cСгенерировать черновик агента\\u201d, чтобы начать.",
-      skip_configuration: "Пропустить настройку",
-      no_config_questions: "Вопросов о конфигурации не требуется.",
-      answer_questions: "Ответьте на эти вопросы, чтобы настроить генерацию агента.",
-      no_output: "Вывода пока нет...",
-      s_elapsed: "с прошло",
-      s_remaining: "с осталось",
-      show_cli_output: "Показать вывод CLI",
-      hide_cli_output: "Скрыть вывод CLI",
       taking_longer: "Занимает дольше ожидаемого",
       complete: "Завершено",
       resuming: "Возобновление предыдущей сессии трансформации...",
       cancel_transformation: "Отменить трансформацию",
       draft_generated: "Черновик сгенерирован успешно",
       transformation_failed: "Трансформация не удалась",
-      waiting_to_start: "Ожидание начала трансформации..."
+      waiting_to_start: "Ожидание начала трансформации...",
     },
     terminal_extra: {
-      connecting: "Подключение к провайдеру",
-      queued_at: "В очереди на позиции",
-      new_line: "новая строка",
-      new_lines: "новых строк",
-      below: "ниже",
-      lines_suffix: "строк)",
-      search_and_filter: "Поиск и фильтр",
       press_enter: "Нажмите Enter или кликните «Воспроизвести» для начала",
       connection_failed: "Подключение не удалось — проверьте настройки провайдера и повторите",
       search_output: "Поиск в выводе...",
-      dismiss: "Закрыть"
+      dismiss: "Закрыть",
     },
     use_cases_extra: {
-      input_placeholder: "Введите входные данные для запуска этого сценария…",
-      model_placeholder: "напр. claude-3-5-sonnet-latest",
-      use_case_singular: "сценарий использования",
-      window_prefix: "(окно:",
-      loading_history: "Загрузка истории...",
-      no_executions: "Выполнений пока нет",
-      run_to_see_history: "Запустите этот сценарий, чтобы увидеть здесь историю выполнений, тайминги и стоимость.",
-      run_use_case: "Запустить этот сценарий",
-      custom_model: "Пользовательская модель",
-      no_results: "Результатов не найдено",
-      ctrl_enter: "Ctrl+Enter",
       example_output: "Пример вывода",
       input_data: "Входные данные",
       rerun_input: "Повторить с этими данными",
@@ -9891,7 +8466,7 @@ export const ru = {
       error_prefix: "Ошибка: ",
       output_prefix: "Вывод: ",
       toggle_history: "Переключить историю запусков",
-      configure_model: "Настроить модель, уведомления и подписки"
+      configure_model: "Настроить модель, уведомления и подписки",
     },
     json_valid: "Корректный JSON",
     json_invalid: "Некорректный JSON",
@@ -9899,85 +8474,6 @@ export const ru = {
     json_format_tooltip: "Форматировать JSON",
     agent_icon_label: "иконка агента",
     breadcrumb_label: "Навигационная цепочка",
-    breadcrumb_show_hidden: "Показать скрытые"
+    breadcrumb_show_hidden: "Показать скрытые",
   },
-  releases: {
-    whats_new: {
-      title: "Что нового",
-      subtitle_roadmap: "Что мы создаём сейчас и что будет дальше.",
-      subtitle_changelog: "Что нового в вашей версии Personas.",
-      nav_bar_roadmap_label: "Дорожная карта",
-      empty: "Для этого релиза пока нечем поделиться — заглядывайте позже.",
-      status_released: "Выпущено",
-      status_active: "Текущий",
-      status_planned: "Запланировано",
-      status_roadmap: "Дорожная карта",
-      type_feature: "Новое",
-      type_fix: "Исправлено",
-      type_security: "Безопасность",
-      type_docs: "Документация",
-      type_chore: "Обслуживание",
-      type_breaking: "Ломающие",
-      item_status_in_progress: "В работе",
-      item_status_planned: "Запланировано",
-      item_status_completed: "Готово",
-      priority_now: "Сейчас",
-      priority_next: "Далее",
-      priority_later: "Позже",
-      summary_in_progress: "{count} в работе",
-      summary_next: "{count} далее",
-      release_0_0_1_label: "Alpha 1",
-      release_0_0_1_summary: "Первый превью Personas.",
-      release_0_0_1_item_1_title: "Первый публичный превью",
-      release_0_0_1_item_1_description: "Проектируйте ИИ-агентов, запускайте их по расписанию или триггеру и наблюдайте за их работой в реальном времени на рабочем столе.",
-      release_0_0_2_label: "Alpha 2",
-      release_0_0_2_summary: "Подключайте Personas к другим ИИ-инструментам и читайте новости прямо в приложении.",
-      release_0_0_2_item_1_title: "Откройте агентов для других ИИ-инструментов",
-      release_0_0_2_item_1_description: "Personas теперь может общаться с другими ИИ-инструментами через общий протокол. Выбирайте, каких агентов делиться, и защищайте их ключами доступа, которые вы контролируете — приватные агенты остаются приватными по умолчанию.",
-      release_0_0_2_item_2_title: "Безопаснее доступ для настольного приложения",
-      release_0_0_2_item_2_description: "Настольное приложение создаёт собственный краткоживущий ключ доступа при каждом запуске, чтобы общаться с фоновыми службами, не раскрывая ничего, что вы не одобрили.",
-      release_0_0_2_item_3_title: "Заметки о релизах внутри приложения",
-      release_0_0_2_item_3_description: "Смотрите, что нового в каждом релизе Personas, не покидая приложения. Переключайтесь между прошлыми версиями, текущим релизом и долгосрочной дорожной картой в одном месте.",
-      release_0_0_2_item_4_title: "Агенты учатся из каждой сессии",
-      release_0_0_2_item_4_description: "Personas теперь фиксирует уроки из каждой сессии агента, дистиллирует их в переиспользуемые знания и переносит в следующий запуск. Ваши агенты становятся умнее чем дольше вы их используете — без ручного обучения.",
-      release_0_0_2_item_5_title: "Превращайте любой документ в прослушиваемый брифинг",
-      release_0_0_2_item_5_description: "Новый шаблон превращает исследовательские отчёты, стенограммы встреч или длинные статьи в 5-15-минутный разговор двух ведущих, который можно слушать в пути. Вы выбираете стиль — неформальный, официальный, новостной или деловой — и просматриваете сценарий до генерации голосов.",
-      release_0_0_2_item_6_title: "Редактор для вашего письма, обученный по Стэнфорду",
-      release_0_0_2_item_6_description: "Новый шаблон проверяет черновики по методу Стэнфорда \"Writing in the Sciences\". Отмечает пассивный залог, лишние фразы и жаргон — и объясняет, почему каждая предложенная правка делает предложение яснее. Учится вашему стилю из принятых и отклонённых правок.",
-      release_0_0_2_item_7_title: "Превращайте 20 часов производства YouTube в 3",
-      release_0_0_2_item_7_description: "Новый шаблон сжимает полный цикл создания YouTube-видео до примерно трёх часов, беря на себя всё, кроме съёмки. Проверяет, стоит ли развивать вашу нишу, составляет сценарий с крючком в вашем стиле и автоматически убирает дубли из сырой записи, используя утверждённый сценарий как эталон — так вы снимаете естественно, свободно запинаетесь и продолжаете.",
-      release_0_0_2_item_8_title: "Запускайте скраперы Apify из агентов",
-      release_0_0_2_item_8_description: "Подключайте любого актёра с платформы Apify — скраперы YouTube, Twitter, автоматизация браузера и сотни других — напрямую к вашим агентам. Открывает исследовательские рабочие процессы, которым нужны данные, недоступные официальным API.",
-      release_0_0_2_item_9_title: "X (Twitter) теперь коннектор",
-      release_0_0_2_item_9_description: "Ищите свежие твиты, отслеживайте тренды и публикуйте напрямую из агентов. Полезно для исследования контента, социального прослушивания и маркетинговой автоматизации без выхода из Personas.",
-      release_0_0_2_item_10_title: "Смотрите YouTube из агентов",
-      release_0_0_2_item_10_description: "Первый коннектор видеоплатформы в Personas. Ищите видео, получайте статистику каналов, трендовый контент и анализируйте конкурентов напрямую из любого агента, которому нужно понимать, что происходит на YouTube.",
-      release_0_0_2_item_11_title: "Превращайте аудио в текст с Deepgram",
-      release_0_0_2_item_11_description: "Новый коннектор speech-to-text транскрибирует аудиофайлы или URL с точностью до слова. Движет ассистентом YouTube-автора для автомонтажа и даёт любому агенту возможность обрабатывать голосовые заметки, записи встреч или подкасты.",
-      release_0_0_2_item_12_title: "Другие ИИ-инструменты могут проверять и останавливать агентов",
-      release_0_0_2_item_12_description: "Когда другой ИИ-инструмент вызывает одного из ваших общих агентов, он теперь может спросить «ещё выполняется?» и «пожалуйста, остановитесь сейчас» в процессе. Долгим исследовательским задачам больше не нужно держать соединение открытым всё время, а застрявшие запуски можно чисто отменить со стороны вызывающего. Каждый агент видит только свои запуски, так что ничего не протекает между агентами.",
-      release_0_0_2_item_13_title: "Новый коннектор: аналитика Humbalytics",
-      release_0_0_2_item_13_description: "Отслеживайте трафик, запускайте A/B-эксперименты и меняйте тексты лендингов, не трогая код. Personas теперь может получать тепловые карты и данные конверсии из Humbalytics и использовать их для направления экспериментов.",
-      release_0_0_2_item_14_title: "Новый коннектор: веб-скрапинг Firecrawl",
-      release_0_0_2_item_14_description: "Агенты теперь могут читать любой сайт — даже современные JavaScript-насыщенные — как чистый структурированный контент. Полезно для агентов исследования, рыночной аналитики и мониторинга контента.",
-      release_0_0_2_item_15_title: "Маркетинг-агент, который реально запускает A/B-тесты",
-      release_0_0_2_item_15_description: "Новый шаблон предлагает варианты заголовков, развёртывает их с вашим одобрением, ждёт статистической значимости и автоматически продвигает победителей. Каждое изменение проходит человеческий контроль до выхода в прод, и каждый эксперимент идёт достаточно долго, чтобы результаты действительно имели смысл.",
-      release_0_0_2_item_16_title: "Читайте BI-дашборды вашей команды из любого агента",
-      release_0_0_2_item_16_description: "Personas теперь может получать результаты сохранённых запросов и дашбордов Redash. Если команда уже ведёт общие дашборды, агенты читают те же цифры, что видят люди — без переписывания SQL, экспортов CSV и копипаста.",
-      release_0_0_2_item_17_title: "Metabase теперь коннектор",
-      release_0_0_2_item_17_description: "Агенты могут выполнять сохранённые вопросы Metabase и читать дашборды прямо из вашего рабочего пространства. Работает с Metabase Pro, Enterprise и любыми self-hosted инстансами.",
-      release_0_0_2_item_18_title: "Ежедневная BI-сводка для вас",
-      release_0_0_2_item_18_description: "Новый шаблон берёт сохранённые запросы, которые вы уже ведёте в Redash или Metabase, суммирует последние цифры каждое утро и публикует сводку простым языком с метками аномалий неделя-к-неделе. Ваши дашборды остаются полезными, даже когда никто их не открывает.",
-      release_roadmap_label: "Дорожная карта",
-      release_roadmap_summary: "Что мы создаём сейчас и что будет дальше.",
-      release_roadmap_item_2_title: "Облачная интеграция",
-      release_roadmap_item_2_description: "Запускайте агентов 24/7 в облаке и транслируйте их работу обратно на рабочий стол в реальном времени.",
-      release_roadmap_item_3_title: "Веб-приложение",
-      release_roadmap_item_3_description: "Веб-компаньон для учётных записей, биллинга и управления агентами из любого браузера.",
-      release_roadmap_item_4_title: "Используйте Personas на вашем языке",
-      release_roadmap_item_4_description: "Полная поддержка нескольких языков, включая раскладки справа налево и языковые шрифты.",
-      release_roadmap_item_6_title: "Командные рабочие пространства",
-      release_roadmap_item_6_description: "Создавайте агентов вместе с командой — общие пространства, ролевые права и живые дашборды."
-    }
-  }
 };

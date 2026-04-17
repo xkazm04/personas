@@ -1,4 +1,5 @@
 export const vi = {
+
   common: {
     loading: "Đang tải...",
     saving: "Đang lưu...",
@@ -47,7 +48,6 @@ export const vi = {
     error: "Lỗi",
     success: "Thành công",
     required: "bắt buộc",
-    optional: "tùy chọn",
     select: "-- chọn --",
     no_results: "Không tìm thấy kết quả",
     active: "Hoạt động",
@@ -143,7 +143,7 @@ export const vi = {
     command_palette_navigate: "điều hướng",
     command_palette_select: "chọn",
     command_palette_commands: "lệnh",
-    loading_label: "Đang tải"
+    loading_label: "Đang tải",
   },
   chrome: {
     app_title: "Personas",
@@ -163,7 +163,7 @@ export const vi = {
     sign_in_google: "Đăng nhập bằng Google",
     signed_in: "Đã đăng nhập",
     sign_out: "Đăng xuất",
-    offline: "Ngoại tuyến"
+    offline: "Ngoại tuyến",
   },
   sidebar: {
     home: "Trang chủ",
@@ -209,8 +209,6 @@ export const vi = {
     engine: "Công cụ xử lý",
     byom: "BYOM",
     data: "Dữ liệu",
-    quality_gates: "Bộ lọc nội dung",
-    config_resolution: "Cấu hình tác tử",
     admin: "Quản trị",
     create: "Tạo mới",
     all_agents: "Tất cả tác nhân",
@@ -234,7 +232,7 @@ export const vi = {
     unread_messages_sr: "{count} tin nhắn chưa đọc",
     unread_messages_sr_other: "{count} tin nhắn chưa đọc",
     pending_events_sr: "{count} sự kiện đang chờ",
-    pending_events_sr_other: "{count} sự kiện đang chờ"
+    pending_events_sr_other: "{count} sự kiện đang chờ",
   },
   home: {
     welcome: "Chào mừng",
@@ -259,7 +257,7 @@ export const vi = {
       priority_next: "Tiếp theo",
       priority_later: "Sau này",
       in_progress_count: "{count} Đang thực hiện",
-      next_count: "{count} Tiếp theo"
+      next_count: "{count} Tiếp theo",
     },
     setup: {
       choose_role: "Chọn vai trò của bạn",
@@ -287,45 +285,45 @@ export const vi = {
       role_manager_hint: "Lập kế hoạch & điều phối",
       role: "Vai trò",
       tool: "Công cụ",
-      goal: "Mục tiêu"
+      goal: "Mục tiêu",
     },
     nav: {
       overview: {
         label: "Tổng quan",
-        description: "Phân tích bảng điều khiển, lịch sử thực thi và giám sát hệ thống thời gian thực trên tất cả tác tử"
+        description: "Phân tích bảng điều khiển, lịch sử thực thi và giám sát hệ thống thời gian thực trên tất cả tác tử",
       },
       personas: {
         label: "Tác tử",
-        description: "Tạo, cấu hình và quản lý tác tử AI với hành vi và khả năng tùy chỉnh"
+        description: "Tạo, cấu hình và quản lý tác tử AI với hành vi và khả năng tùy chỉnh",
       },
       events: {
         label: "Sự kiện",
-        description: "Cấu hình trình kích hoạt sự kiện, trình lắng nghe webhook và tự động hóa theo lịch trình"
+        description: "Cấu hình trình kích hoạt sự kiện, trình lắng nghe webhook và tự động hóa theo lịch trình",
       },
       credentials: {
         label: "Khóa",
-        description: "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu, mã thông báo OAuth và bí mật được mã hóa"
+        description: "Quản lý thông tin xác thực API, kết nối cơ sở dữ liệu, mã thông báo OAuth và bí mật được mã hóa",
       },
       "design-reviews": {
         label: "Mẫu",
-        description: "Nhập quy trình n8n, duyệt thư viện mẫu và tạo bản thiết kế tác tử"
+        description: "Nhập quy trình n8n, duyệt thư viện mẫu và tạo bản thiết kế tác tử",
       },
       team: {
         label: "Nhóm",
-        description: "Xây dựng đường ống tác tử đa tác tử với điều phối kéo thả và định tuyến"
+        description: "Xây dựng đường ống tác tử đa tác tử với điều phối kéo thả và định tuyến",
       },
       cloud: {
         label: "Đám mây",
-        description: "Triển khai tác tử lên hạ tầng đám mây, quản lý lịch trình và tích hợp GitLab CI"
+        description: "Triển khai tác tử lên hạ tầng đám mây, quản lý lịch trình và tích hợp GitLab CI",
       },
       settings: {
         label: "Cài đặt",
-        description: "Tùy chọn tài khoản, giao diện, quy tắc thông báo và cấu hình công cụ xử lý"
+        description: "Tùy chọn tài khoản, giao diện, quy tắc thông báo và cấu hình công cụ xử lý",
       },
       plugins: {
         label: "Plugin",
-        description: "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh"
-      }
+        description: "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh",
+      },
     },
     learning: {
       title: "Trung tâm học tập",
@@ -342,7 +340,7 @@ export const vi = {
       pro_tip: "Mẹo chuyên gia: ",
       cat_agent_craft: "Xây dựng tác nhân",
       cat_observability: "Quan sát & Sự kiện",
-      cat_platform: "Nền tảng & Cài đặt"
+      cat_platform: "Nền tảng & Cài đặt",
     },
     setup_stepper: {
       your_profile: "Hồ sơ của bạn",
@@ -358,18 +356,18 @@ export const vi = {
       ready_to_save: "Sẵn sàng lưu",
       back: "Quay lại",
       next: "Tiếp theo",
-      finish: "Hoàn tất"
+      finish: "Hoàn tất",
     },
     welcome_layout: {
       get_started: "Bắt đầu",
-      language: "Ngôn ngữ"
+      language: "Ngôn ngữ",
     },
     icon_showcase: {
       lucide_tab: "Lucide (Thư viện)",
       personas_tab: "Personas (Hoạt hình)",
       lucide_footer: "lucide-react -- thư viện biểu tượng chung -- tĩnh",
-      personas_footer: "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
-    }
+      personas_footer: "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề",
+    },
   },
   agents: {
     title: "Personas",
@@ -380,12 +378,12 @@ export const vi = {
       subtitle_other: "{count} tác tử -- sắp xếp theo mức độ liên quan",
       needs_attention: "Cần chú ý",
       active: "Hoạt động",
-      idle: "Nhàn rỗi"
+      idle: "Nhàn rỗi",
     },
     sidebar: {
       no_match: "Không có tác tử nào khớp bộ lọc",
       clear_filters: "Xóa tất cả bộ lọc",
-      empty: "Chưa có tác tử nào"
+      empty: "Chưa có tác tử nào",
     },
     preview: {
       sensitive_hidden: "Đã ẩn xem trước nhạy cảm",
@@ -400,7 +398,7 @@ export const vi = {
       triggers_active_one: "{count} trình kích hoạt đang hoạt động",
       triggers_active_other: "{count} trình kích hoạt đang hoạt động",
       no_triggers: "Không có trình kích hoạt",
-      custom_model: "Tùy chỉnh"
+      custom_model: "Tùy chỉnh",
     },
     creation: {
       heading: "Tác tử mới",
@@ -417,7 +415,7 @@ export const vi = {
       no_group: "Không có nhóm",
       create_button: "Tạo tác tử",
       creating_button: "Đang tạo...",
-      name_required: "Nhập tên để tiếp tục"
+      name_required: "Nhập tên để tiếp tục",
     },
     editor: {
       tabs: {
@@ -428,7 +426,7 @@ export const vi = {
         design: "Thiết kế",
         health: "Sức khỏe",
         settings: "Cài đặt",
-        model: "Mô hình"
+        model: "Mô hình",
       },
       no_persona: "Chưa chọn tác tử",
       save_failed: "Không thể lưu {tabs}",
@@ -442,13 +440,13 @@ export const vi = {
       cloud_banner_connect: "Kết nối bộ điều phối đám mây để chạy tác tử từ xa",
       cloud_banner_signin: "Đăng nhập để mở khóa tính năng đám mây và thực thi từ xa",
       sign_in: "Đăng nhập",
-      set_up_cloud: "Thiết lập đám mây"
+      set_up_cloud: "Thiết lập đám mây",
     },
     header: {
       no_triggers_warning: "Chưa cấu hình trình kích hoạt hoặc đăng ký sự kiện",
       missing_credentials: "Thiếu thông tin xác thực: {credentials}",
       toggle_failed: "Không thể bật/tắt tác tử -- kiểm tra kết nối",
-      cannot_enable: "Không thể bật tác tử"
+      cannot_enable: "Không thể bật tác tử",
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -469,7 +467,7 @@ export const vi = {
       selected: "{count} đã chọn",
       remove_from_favorites: "Xóa khỏi yêu thích",
       add_to_favorites: "Thêm vào yêu thích",
-      filter_by: "Lọc theo {label}"
+      filter_by: "Lọc theo {label}",
     },
     status: {
       draft: "Bản nháp",
@@ -477,7 +475,7 @@ export const vi = {
       healthy: "Khỏe mạnh",
       degraded: "Suy giảm",
       failing: "Lỗi",
-      building: "Đang xây dựng"
+      building: "Đang xây dựng",
     },
     executions: {
       no_persona_selected: "Chưa chọn tác nhân",
@@ -718,10 +716,6 @@ export const vi = {
       loading_dream_replay: "Đang tải phát lại mơ...",
       no_dream_trace: "Không có dữ liệu theo dõi cho phát lại mơ",
       frame_count: "Khung {index}/{total}",
-      depth_label: "Độ sâu:",
-      active_count_label: "Đang hoạt động ({count})",
-      completed_count_label: "Hoàn thành ({count})",
-      metadata_section: "Siêu dữ liệu",
       phase_initializing: "Đang khởi tạo",
       phase_thinking: "Đang suy nghĩ",
       phase_calling_tools: "Đang chạy công cụ",
@@ -749,15 +743,6 @@ export const vi = {
       offset_prefix: "offset:",
       step_tooltip: "Bước {step}: {name}",
       ms_into_stage: "{ms}ms vào giai đoạn",
-      chain_id_prefix: "Chuỗi: {id}",
-      chain_total_duration: "Tổng: {duration}",
-      zero_ms: "0ms",
-      tool_calls_count: "{count} lần gọi công cụ",
-      tool_calls_count_other: "{count} lần gọi công cụ",
-      unique_tools_count: "({count} duy nhất)",
-      prev_error_nav: "Lỗi trước đó (Shift+E)",
-      next_error_nav: "Lỗi tiếp theo (E)",
-      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "Đấu trường",
@@ -891,8 +876,6 @@ export const vi = {
       quality_label: "Chất lượng",
       speed_label: "Tốc độ",
       cost_label: "Chi phí",
-      objective_warning: "Vấn đề mục tiêu fitness",
-      objective_fallback_toast: "Tiến hóa đã sử dụng trọng số fitness mặc định — kiểm tra cài đặt mục tiêu",
       genome_breeding: "Lai ghép genome",
       genome_breeding_subtitle: "Lai ghép tác nhân hiệu suất cao để khám phá cấu hình mới",
       select_parents: "Chọn tác nhân cha mẹ (2-5)",
@@ -1009,7 +992,7 @@ export const vi = {
       quality_score_inline: "Điểm: {score} | {coverage} kịch bản",
       cancel_default: "Hủy",
       hide_impact: "Ẩn tác động",
-      show_impact: "Hiển thị tác động"
+      show_impact: "Hiển thị tác động",
     },
     design: {
       select_agent: "Chọn tác nhân để bắt đầu phân tích thiết kế",
@@ -1019,7 +1002,7 @@ export const vi = {
       compile_from_examples: "Biên dịch từ ví dụ",
       compile_intent: "Biên dịch ý định",
       analyze_build: "Phân tích & Xây dựng",
-      intent_placeholder: "Mô tả điều bạn muốn tác nhân làm bằng ngôn ngữ thông thường...\\\n\\\nVí dụ: \\\"Theo dõi tài khoản Stripe của chúng tôi để phát hiện thanh toán thất bại trên $100 và thông báo cho nhóm tài chính trên Slack\\\"",
+      intent_placeholder: "Mô tả điều bạn muốn tác nhân làm bằng ngôn ngữ thông thường...\\n\\nVí dụ: \\\"Theo dõi tài khoản Stripe của chúng tôi để phát hiện thanh toán thất bại trên $100 và thông báo cho nhóm tài chính trên Slack\\\"",
       intent_submit_hint: "Nhấn Enter để gửi, Shift+Enter để xuống dòng.",
       intent_detail: "Trình biên dịch sẽ tạo cấu hình đầy đủ: prompt, công cụ, trình kích hoạt, trường hợp sử dụng, khuyến nghị mô hình và kịch bản kiểm tra.",
       example_context_placeholder: "Tùy chọn: thêm ngữ cảnh hoặc ràng buộc",
@@ -1075,15 +1058,14 @@ export const vi = {
       msg_count_one: "{count} tin nhắn",
       msg_count_other: "{count} tin nhắn",
       resume: "Tiếp tục",
-      conv_controls_aria: "Điều khiển cuộc hội thoại thiết kế",
       design_drift: "Lệch thiết kế",
       design_sessions: "Phiên thiết kế",
       example_n: "Ví dụ {index}",
       remove_example: "Xóa ví dụ",
       input_label: "Đầu vào -- những gì tác nhân nhận",
       output_label: "Đầu ra -- những gì bạn muốn tác nhân tạo ra",
-      input_placeholder: "Dán đầu vào thực tế...\\\n\\\nVí dụ: nội dung email, tin nhắn Slack, yêu cầu đến, dòng CSV",
-      output_placeholder: "Mô tả hoặc dán đầu ra mong muốn...\\\n\\\nVí dụ: \\\"Tạo vé Jira với tiêu đề từ chủ đề, ưu tiên P2, giao cho nhóm backend\\\"",
+      input_placeholder: "Dán đầu vào thực tế...\\n\\nVí dụ: nội dung email, tin nhắn Slack, yêu cầu đến, dòng CSV",
+      output_placeholder: "Mô tả hoặc dán đầu ra mong muốn...\\n\\nVí dụ: \\\"Tạo vé Jira với tiêu đề từ chủ đề, ưu tiên P2, giao cho nhóm backend\\\"",
       example_instructions: "Dán đầu vào thực tế (email, yêu cầu, tin nhắn) và hiển thị đầu ra bạn muốn. Trình biên dịch tái tạo cấu hình tác nhân đầy đủ từ các ví dụ của bạn.",
       add_first_example: "Thêm ví dụ đầu vào -> đầu ra đầu tiên",
       current_config_preserved: "Cấu hình hiện tại sẽ được giữ nguyên. Mô tả điều cần thay đổi.",
@@ -1094,7 +1076,7 @@ export const vi = {
       next: "Tiếp theo",
       go_back_hint: "Quay lại và trả lời các câu hỏi để cấu hình tác nhân của bạn.",
       additional_instructions: "Hướng dẫn hoặc ngữ cảnh bổ sung (tùy chọn)",
-      additional_instructions_placeholder: "Thêm các yêu cầu cụ thể, kiến thức chuyên môn hoặc ràng buộc..."
+      additional_instructions_placeholder: "Thêm các yêu cầu cụ thể, kiến thức chuyên môn hoặc ràng buộc...",
     },
     connectors: {
       connectors_label: "Trình kết nối",
@@ -1180,9 +1162,6 @@ export const vi = {
       auto_event_type: "Loại sự kiện: {eventType}",
       auto_zapier_hint: "Catch hook sẽ được xác thực và kết nối.",
       auto_custom_hint: "Cần thiết lập thủ công. Tự động hóa sẽ được lưu làm bản nháp.",
-      auto_input_schema_placeholder: "chuỗi",
-      auto_github_token_needs: "Token của bạn cần phạm vi {scopes}. Cập nhật token tại github.com/settings/tokens.",
-      auto_fallback_title: "Quay về trình kết nối trực tiếp khi thất bại",
       ch_title: "Kênh thông báo",
       ch_add: "Thêm kênh",
       ch_all_added: "Đã thêm tất cả loại kênh",
@@ -1258,7 +1237,7 @@ export const vi = {
       sub_confirm: "Xác nhận?",
       sub_triggers_title: "Trình kích hoạt & Đăng ký",
       sub_suggested: "{count} được đề xuất",
-      sub_filter: "lọc: {filter}"
+      sub_filter: "lọc: {filter}",
     },
     editor_chrome: {
       tab_activity: "Hoạt động",
@@ -1291,7 +1270,7 @@ export const vi = {
       latency_label: "Độ trễ",
       cost_run_label: "Chi phí/lần",
       last_run_label: "Lần chạy cuối",
-      rank: "Hạng"
+      rank: "Hạng",
     },
     model_config: {
       model_provider: "Mô hình & Nhà cung cấp",
@@ -1354,7 +1333,6 @@ export const vi = {
       model_name_placeholder_litellm: "ví dụ anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "ví dụ llama3.1:8b",
       model_name_placeholder_custom: "Định danh mô hình",
-      model_name_placeholder_override: "ví dụ: claude-sonnet-4-20250514",
       base_url_hint: "Điểm cuối API cho nhà cung cấp mô hình. Phải bao gồm giao thức (http/https) và cổng nếu không chuẩn.",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "Token xác thực cho API nhà cung cấp. Với Ollama cục bộ, dùng 'ollama'. Với LiteLLM, dùng khóa master.",
@@ -1395,7 +1373,7 @@ export const vi = {
       latency: "Độ trễ",
       cost: "Chi phí",
       output_previews: "Xem trước đầu ra",
-      no_output: "Không có đầu ra"
+      no_output: "Không có đầu ra",
     },
     use_cases: {
       no_persona: "Chưa chọn tác nhân",
@@ -1490,7 +1468,7 @@ export const vi = {
       cron_field_hour: "giờ",
       cron_field_day: "ngày",
       cron_field_month: "tháng",
-      cron_field_weekday: "thứ"
+      cron_field_weekday: "thứ",
     },
     tools: {
       no_persona: "Chưa chọn tác nhân",
@@ -1529,11 +1507,11 @@ export const vi = {
       credential: "Thông tin xác thực",
       linked: "-- đã liên kết",
       cred_missing: "-- thiếu",
-      often_used: "Thường dùng cùng với"
+      often_used: "Thường dùng cùng với",
     },
     chat_thread: {
       welcome: "Cho tôi biết bạn muốn tác nhân này làm gì. Tôi sẽ xây dựng cấu hình đầy đủ -- lời nhắc, công cụ, trình kích hoạt -- từ mô tả của bạn.",
-      welcome_example: "Theo dõi PR GitHub của tôi và đăng tóm tắt lên Slack mỗi sáng"
+      welcome_example: "Theo dõi PR GitHub của tôi và đăng tóm tắt lên Slack mỗi sáng",
     },
     assign: {
       assign_to: "Gán cho {role}",
@@ -1544,50 +1522,50 @@ export const vi = {
       no_saved_credentials: "Chưa có thông tin xác thực nào",
       no_credentials_match: "Không có thông tin xác thực nào khớp",
       vault_hint: "Lưu thông tin xác thực trong Kho, hoặc dùng tab Trình kết nối",
-      no_connectors_match: "Không có trình kết nối nào khớp"
+      no_connectors_match: "Không có trình kết nối nào khớp",
     },
     credential_coverage: "{matched}/{total} thông tin xác thực",
     role_card: {
       no_credential: "Không có thông tin xác thực",
       edit_tables: "sửa",
       select_tables: "chọn bảng",
-      assign: "Gán"
+      assign: "Gán",
     },
     channel_picker: {
       in_app_messaging: "Nhắn tin trong ứng dụng",
-      vault_hint: "Lưu thông tin xác thực giao tiếp (Slack, Email, v.v.) trong Kho để thấy ở đây."
+      vault_hint: "Lưu thông tin xác thực giao tiếp (Slack, Email, v.v.) trong Kho để thấy ở đây.",
     },
     connector_picker: {
       no_connectors: "Không có trình kết nối nào",
       search: "Tìm trình kết nối...",
-      no_match: "Không có trình kết nối nào khớp \\\"{search}\\\""
+      no_match: "Không có trình kết nối nào khớp \\\"{search}\\\"",
     },
     policy_picker: {
       error_handling: "Xử lý lỗi",
-      manual_review: "Xem xét thủ công"
+      manual_review: "Xem xét thủ công",
     },
     table_selector: {
       title: "Chọn bảng",
       subtitle: "{label} -- chọn bảng để theo dõi",
       tables_selected_one: "{count} bảng được chọn",
       tables_selected_other: "{count} bảng được chọn",
-      no_tables_selected: "Không chọn bảng nào -- tác nhân theo dõi tất cả"
+      no_tables_selected: "Không chọn bảng nào -- tác nhân theo dõi tất cả",
     },
     trigger_popover: {
       trigger: "Trình kích hoạt",
-      clear_override: "Xóa ghi đè"
+      clear_override: "Xóa ghi đè",
     },
     use_case: {
       add: "Thêm trường hợp sử dụng",
       title_placeholder: "Tiêu đề trường hợp sử dụng -- ví dụ: Xử lý yêu cầu hoàn tiền, Tóm tắt phiếu hàng ngày",
-      description_placeholder: "Mô tả các bước -- ví dụ: Khi nhận yêu cầu hoàn tiền, xác minh đơn hàng, kiểm tra chính sách và gửi chấp thuận hoặc từ chối"
+      description_placeholder: "Mô tả các bước -- ví dụ: Khi nhận yêu cầu hoàn tiền, xác minh đơn hàng, kiểm tra chính sách và gửi chấp thuận hoặc từ chối",
     },
     builder_action: {
       processing: "Đang xử lý...",
       error_retry: "Có lỗi xảy ra. Vui lòng thử lại.",
       enhancing: "Đang cải tiến...",
       enhance_with_ai: "Cải tiến với AI",
-      describe_agent: "Mô tả tác nhân của bạn nên làm gì"
+      describe_agent: "Mô tả tác nhân của bạn nên làm gì",
     },
     builder_preview: {
       title: "Xem trước",
@@ -1601,7 +1579,7 @@ export const vi = {
       schedule: "Lịch",
       manual_only: "Chỉ thủ công",
       errors: "Lỗi",
-      review: "Xem xét"
+      review: "Xem xét",
     },
     dry_run: {
       ready: "Sẵn sàng",
@@ -1613,7 +1591,7 @@ export const vi = {
       issues: "Vấn đề",
       apply_fix: "Áp dụng sửa lỗi: {label}",
       manual_action_needed: "Cần hành động thủ công",
-      no_issues: "Không phát hiện vấn đề. Cấu hình tác nhân trông ổn."
+      no_issues: "Không phát hiện vấn đề. Cấu hình tác nhân trông ổn.",
     },
     identity_preview: {
       title: "Xem trước",
@@ -1624,7 +1602,7 @@ export const vi = {
       components: "Thành phần",
       schedule_label: "Lịch:",
       errors_label: "Lỗi:",
-      review_label: "Xem xét:"
+      review_label: "Xem xét:",
     },
     build_review: {
       agent_name: "Tên tác nhân",
@@ -1633,7 +1611,7 @@ export const vi = {
       connectors_ready: "Trình kết nối sẵn sàng",
       promote_agent: "Đề bạt tác nhân",
       testing: "Đang kiểm tra...",
-      test_agent: "Kiểm tra tác nhân"
+      test_agent: "Kiểm tra tác nhân",
     },
     connectors_cell: {
       add_in_keys: "Thêm trong Khóa",
@@ -1643,7 +1621,7 @@ export const vi = {
       swap_to: "Hoán đổi sang:",
       recalculating: "Đang tính lại...",
       recalculate_dimensions: "Tính lại các chiều",
-      rebuilding: "Đang xây dựng lại với trình kết nối mới..."
+      rebuilding: "Đang xây dựng lại với trình kết nối mới...",
     },
     dimension_edit: {
       add_item: "Thêm mục...",
@@ -1669,7 +1647,7 @@ export const vi = {
       fully_automated: "Tự động hoàn toàn",
       cron_label: "Cron:",
       every_label: "Mỗi:",
-      done: "Xong"
+      done: "Xong",
     },
     quick_config: {
       title: "Cài đặt nhanh",
@@ -1683,7 +1661,7 @@ export const vi = {
       monthly: "Hàng tháng",
       days: "Ngày",
       day_of_month: "Ngày trong tháng",
-      time: "Giờ"
+      time: "Giờ",
     },
     events_panel: {
       source_agent: "Tác nhân nguồn",
@@ -1692,23 +1670,23 @@ export const vi = {
       select_agent: "Chọn một tác nhân",
       loading_events: "Đang tải sự kiện...",
       no_subscriptions: "Không tìm thấy đăng ký sự kiện",
-      choose_agent: "Chọn tác nhân để xem sự kiện"
+      choose_agent: "Chọn tác nhân để xem sự kiện",
     },
     matrix_cred_picker: {
       no_stored: "Không có thông tin xác thực đã lưu",
       best_match: "Phù hợp nhất",
-      other: "Khác"
+      other: "Khác",
     },
     services_panel: {
       no_connectors: "Không tìm thấy trình kết nối với khóa API khỏe mạnh. Thêm thông tin xác thực trong Kho trước.",
-      select_table: "Chọn bảng"
+      select_table: "Chọn bảng",
     },
     spatial_question: {
       agent_configuration: "Cấu hình tác nhân",
       or_custom_answer: "Hoặc nhập câu trả lời tùy chỉnh",
       type_answer: "Nhập câu trả lời...",
       submit: "Gửi",
-      press_to_select: "Nhấn 1-{count} để chọn ngay"
+      press_to_select: "Nhấn 1-{count} để chọn ngay",
     },
     table_picker: {
       title: "Chọn bảng",
@@ -1716,12 +1694,12 @@ export const vi = {
       loading: "Đang tải bảng...",
       no_tables: "Không tìm thấy bảng nào cho trình kết nối này",
       clear_selection: "Xóa lựa chọn",
-      no_match: "Không có bảng nào khớp \\\"{search}\\\""
+      no_match: "Không có bảng nào khớp \\\"{search}\\\"",
     },
     matrix_entry: {
       new_agent: "Tác nhân mới",
       failed_to_create: "Không thể tạo tác nhân nháp.",
-      build_failed: "Xây dựng không khởi động được. Kiểm tra cấu hình CLI."
+      build_failed: "Xây dựng không khởi động được. Kiểm tra cấu hình CLI.",
     },
     workflow_upload: {
       build_hint: "Nhấn Xây dựng để chuyển đổi quy trình này thành tác nhân.",
@@ -1729,22 +1707,22 @@ export const vi = {
       parse: "Phân tích",
       drop_file: "Thả tệp quy trình vào đây",
       file_types: "n8n, Zapier, Make, hoặc GitHub Actions (.json, .yaml)",
-      paste_json: "Hoặc dán JSON trực tiếp"
+      paste_json: "Hoặc dán JSON trực tiếp",
     },
     config_popup: {
       load_error: "Không thể tải giá trị đã lưu -- bạn có thể cần nhập lại.",
       fill_hint: "Điền ít nhất một trường để lưu",
-      failed_to_save: "Không thể lưu cấu hình"
+      failed_to_save: "Không thể lưu cấu hình",
     },
     onboarding: {
       setup_complete: "Hoàn tất cài đặt {score}%",
       steps_done: "{completed}/{total} bước hoàn thành",
-      dismiss_checklist: "Bỏ qua danh sách"
+      dismiss_checklist: "Bỏ qua danh sách",
     },
     template_picker: {
       title: "Chọn mẫu",
       subtitle: "Chọn mẫu để điền sẵn tác nhân, hoặc bắt đầu từ đầu.",
-      start_from_scratch: "Bắt đầu từ đầu"
+      start_from_scratch: "Bắt đầu từ đầu",
     },
     persona_overview: {
       no_match: "Không có tác nhân nào khớp",
@@ -1753,26 +1731,26 @@ export const vi = {
       description_copied: "Đã sao chép mô tả vào clipboard",
       failed_copy: "Không thể sao chép mô tả",
       no_connectors_configured: "Chưa cấu hình trình kết nối",
-      click_to_copy: "Nhấp để sao chép"
+      click_to_copy: "Nhấp để sao chép",
     },
     overview_empty: {
       title: "Không có tác nhân nào khớp các bộ lọc này",
       subtitle: "Thử điều chỉnh tìm kiếm hoặc bộ lọc, hoặc đặt lại để xem tất cả tác nhân.",
-      clear_all_filters: "Xóa tất cả bộ lọc"
+      clear_all_filters: "Xóa tất cả bộ lọc",
     },
     overview_batch: {
-      selected: "{count} đã chọn"
+      selected: "{count} đã chọn",
     },
     overview_menu: {
       more_actions: "Thêm thao tác",
-      settings: "Cài đặt"
+      settings: "Cài đặt",
     },
     overview_toolbar: {
       search_placeholder: "Tìm tác nhân...",
       show_all: "Hiển thị tất cả tác nhân",
       show_favorites: "Chỉ hiển thị yêu thích",
       favorites: "Yêu thích",
-      clear_search: "Xóa tìm kiếm"
+      clear_search: "Xóa tìm kiếm",
     },
     overview_columns: {
       persona: "Tác nhân",
@@ -1787,10 +1765,10 @@ export const vi = {
       building_drafts: "Đang xây dựng / Nháp",
       all_health: "Tất cả sức khỏe",
       all_connectors: "Tất cả trình kết nối",
-      active_triggers: "{count} trình kích hoạt đang hoạt động"
+      active_triggers: "{count} trình kích hoạt đang hoạt động",
     },
     health_indicator: {
-      last: "cuối {count}"
+      last: "cuối {count}",
     },
     view_presets: {
       views: "Chế độ xem",
@@ -1807,7 +1785,7 @@ export const vi = {
       needs_attention: "Cần chú ý",
       failing_agents: "Tác nhân thất bại",
       my_favorites: "Yêu thích của tôi",
-      recently_active: "Hoạt động gần đây"
+      recently_active: "Hoạt động gần đây",
     },
     activity: {
       title: "Hoạt động",
@@ -1830,7 +1808,7 @@ export const vi = {
       modal_execution_title: "{name} - Thực thi",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "Xem xét: {title}",
-      modal_review_subtitle: "Mức độ: {severity} · Trạng thái: {status}"
+      modal_review_subtitle: "Mức độ: {severity} · Trạng thái: {status}",
     },
     chat: {
       select_persona: "Chọn tác nhân để bắt đầu trò chuyện",
@@ -1849,7 +1827,7 @@ export const vi = {
       confirm_delete: "Xóa?",
       processing: "Đang xử lý...",
       delete_conversation: "Xóa cuộc trò chuyện",
-      confirm_delete_conversation: "Xác nhận xóa cuộc trò chuyện"
+      confirm_delete_conversation: "Xác nhận xóa cuộc trò chuyện",
     },
     advisory: {
       how_can_improve: "Làm thế nào tác nhân này có thể hoạt động tốt hơn cho bạn?",
@@ -1864,7 +1842,7 @@ export const vi = {
       analyze_desc: "Xem xét xu hướng và mẫu hiệu suất",
       test_run: "Chạy thử",
       test_run_desc: "Chạy tác nhân và đánh giá kết quả",
-      test_input_label: "Đầu vào thử (tùy chọn)"
+      test_input_label: "Đầu vào thử (tùy chọn)",
     },
     ops: {
       sessions: "Phiên",
@@ -1892,21 +1870,21 @@ export const vi = {
       reviews: "Xem xét",
       reviews_desc: "Phê duyệt và quyết định đang chờ",
       versions: "Phiên bản",
-      versions_desc: "Lịch sử phiên bản lời nhắc và khôi phục"
+      versions_desc: "Lịch sử phiên bản lời nhắc và khôi phục",
     },
     ops_run: {
       execute_agent: "Thực thi tác nhân",
       running: "Đang chạy...",
       recent: "Gần đây",
       no_executions: "Chưa có lần thực thi nào",
-      refresh_executions: "Làm mới thực thi"
+      refresh_executions: "Làm mới thực thi",
     },
     ops_lab: {
       history: "Lịch sử",
       no_lab_runs: "Chưa có lần chạy phòng thí nghiệm nào",
       refresh_lab: "Làm mới lịch sử phòng thí nghiệm",
       arena: "Đấu trường",
-      improve: "Cải tiến"
+      improve: "Cải tiến",
     },
     ops_health: {
       no_health_data: "Không có dữ liệu sức khỏe",
@@ -1918,22 +1896,22 @@ export const vi = {
       run_check_aria: "Chạy kiểm tra sức khỏe",
       healthy: "Khỏe mạnh",
       degraded: "Suy giảm",
-      unhealthy: "Không khỏe"
+      unhealthy: "Không khỏe",
     },
     ops_assertions: {
       active_count: "{enabled}/{total} đang hoạt động",
       no_assertions: "Chưa cấu hình xác nhận",
       refresh_assertions: "Làm mới xác nhận",
       enable_assertion: "Bật {name}",
-      disable_assertion: "Tắt {name}"
+      disable_assertion: "Tắt {name}",
     },
     health_tab: {
       title: "Kiểm tra sức khỏe",
-      description: "Chạy phân tích giả lập đối với cấu hình hiện tại của tác nhân để phát hiện thông tin xác thực thiếu, trình kết nối bị ngắt, kết hợp công cụ không tương thích và trường hợp sử dụng chưa đủ."
+      description: "Chạy phân tích giả lập đối với cấu hình hiện tại của tác nhân để phát hiện thông tin xác thực thiếu, trình kết nối bị ngắt, kết hợp công cụ không tương thích và trường hợp sử dụng chưa đủ.",
     },
     matrix_tab: {
       loading: "Đang tải ma trận",
-      no_data: "Không có dữ liệu ma trận. Xây dựng hoặc xây dựng lại tác nhân để tạo các chiều."
+      no_data: "Không có dữ liệu ma trận. Xây dựng hoặc xây dựng lại tác nhân để tạo các chiều.",
     },
     settings_status: {
       saving: "Đang lưu {sections}...",
@@ -1957,9 +1935,6 @@ export const vi = {
       health_watch: "Theo dõi sức khỏe",
       health_watch_active: "Đang theo dõi sức khỏe (mỗi 6 giờ)",
       health_watch_enable: "Bật theo dõi sức khỏe liên tục",
-      speak_as: "Nói với tư cách",
-      no_twins_configured: "Chưa cấu hình bản sao nào. Mở plugin Twin để tạo một bản sao — tác nhân này sau đó có thể áp dụng nó.",
-      twin_profile_aria: "Hồ sơ bản sao mà tác nhân này nói với tư cách"
     },
     tool_runner: {
       no_tools: "Không có công cụ nào được gán cho tác nhân này.",
@@ -1969,7 +1944,6 @@ export const vi = {
       success: "Thành công",
       failed: "Thất bại",
       error: "Lỗi",
-      input_json_placeholder: "giá trị"
     },
     health_check: {
       title: "Kiểm tra sức khỏe tác nhân",
@@ -1986,7 +1960,7 @@ export const vi = {
       rerun: "Chạy lại",
       capabilities: "Khả năng",
       all_healthy: "Tất cả hệ thống khỏe mạnh",
-      all_healthy_detail: "Không phát hiện vấn đề trong cấu hình tác nhân"
+      all_healthy_detail: "Không phát hiện vấn đề trong cấu hình tác nhân",
     },
     health_digest: {
       title: "Tóm tắt sức khỏe tác nhân",
@@ -2001,16 +1975,16 @@ export const vi = {
       agents_checked_other: "{count} tác nhân được kiểm tra",
       issues_one: "{count} vấn đề",
       issues_other: "{count} vấn đề",
-      last_run: "Lần chạy cuối: {time}"
+      last_run: "Lần chạy cuối: {time}",
     },
     health_issue: {
       apply_fix: "Áp dụng sửa lỗi: {label}",
-      manual_action: "Cần hành động thủ công"
+      manual_action: "Cần hành động thủ công",
     },
     health_score: {
       healthy: "Khỏe mạnh",
       degraded: "Suy giảm",
-      unhealthy: "Không khỏe"
+      unhealthy: "Không khỏe",
     },
     prompt_editor: {
       no_persona: "Chưa chọn tác nhân",
@@ -2018,7 +1992,6 @@ export const vi = {
       new_section: "Phần mới",
       saved: "Đã lưu",
       sections: "phần",
-      sections_aria: "Các phần prompt"
     },
     custom_sections: {
       title: "Phần tùy chỉnh",
@@ -2028,7 +2001,7 @@ export const vi = {
       remove_section: "Xóa phần",
       title_placeholder: "Tiêu đề phần...",
       content_placeholder: "Nội dung phần...",
-      custom_section: "Phần tùy chỉnh"
+      custom_section: "Phần tùy chỉnh",
     },
     activity_filters: {
       all: "Tất cả",
@@ -2036,7 +2009,7 @@ export const vi = {
       events: "Sự kiện",
       memories: "Bộ nhớ",
       reviews: "Xem xét",
-      messages: "Tin nhắn"
+      messages: "Tin nhắn",
     },
     overview_actions: {
       delete_agent: "Xóa tác nhân",
@@ -2044,7 +2017,7 @@ export const vi = {
       delete_agents: "Xóa {count} tác nhân",
       delete_agents_message: "{count} tác nhân và toàn bộ cấu hình của chúng sẽ bị xóa vĩnh viễn.",
       delete_drafts: "Xóa {count} nháp",
-      delete_drafts_message: "{count} tác nhân nháp sẽ bị xóa vĩnh viễn."
+      delete_drafts_message: "{count} tác nhân nháp sẽ bị xóa vĩnh viễn.",
     },
     persona_list: {
       all_personas: "Tất cả tác nhân",
@@ -2072,7 +2045,7 @@ export const vi = {
       show_only_favorites: "Chỉ hiển thị yêu thích",
       clear_search: "Xóa tìm kiếm",
       col_persona: "Tác nhân",
-      no_connectors_configured: "Chưa cấu hình trình kết nối"
+      no_connectors_configured: "Chưa cấu hình trình kết nối",
     },
     design_preview: {
       preview: "Xem trước",
@@ -2086,7 +2059,7 @@ export const vi = {
       activating: "Đang kích hoạt...",
       activate_agent: "Kích hoạt tác nhân",
       create_agent: "Tạo tác nhân",
-      min_completeness: "Thêm chi tiết để đạt 40% hoàn chỉnh"
+      min_completeness: "Thêm chi tiết để đạt 40% hoàn chỉnh",
     },
     editor_ui: {
       max_budget_label: "Ngân sách tối đa (USD)",
@@ -2210,8 +2183,8 @@ export const vi = {
       cost_per_run: "Chi phí/lần chạy",
       last_run: "Lần chạy cuối",
       rank: "Hạng",
-      view_in_leaderboard: "Xem trong bảng xếp hạng"
-    }
+      view_in_leaderboard: "Xem trong bảng xếp hạng",
+    },
   },
   vault: {
     title: "Kho lưu trữ",
@@ -2223,7 +2196,7 @@ export const vi = {
     health: {
       healthy: "khỏe mạnh",
       needs_attention: "cần chú ý",
-      untested: "chưa kiểm tra"
+      untested: "chưa kiểm tra",
     },
     list: {
       no_credentials: "Không phát hiện dịch vụ đã xác thực. Chọn thủ công bên dưới.",
@@ -2232,7 +2205,6 @@ export const vi = {
       no_dependencies: "Không có tác tử nào phụ thuộc vào thông tin xác thực này. An toàn để chỉnh sửa hoặc xóa.",
       affected_agents: "Tác tử bị ảnh hưởng",
       affected_events: "Sự kiện bị ảnh hưởng",
-      sort_label: "Sắp xếp:"
     },
     import: {
       title: "Nguồn nhập",
@@ -2247,16 +2219,8 @@ export const vi = {
         min30: "30 phút",
         hour1: "1 giờ",
         hour6: "6 giờ",
-        day1: "24 giờ"
+        day1: "24 giờ",
       },
-      parse_secrets: "Phân tích bí mật",
-      selected_for_import: "đã chọn để nhập",
-      auto_detected: "Tự động phát hiện",
-      sync_supported: "Hỗ trợ đồng bộ",
-      secrets_found_one: "Tìm thấy {count} bí mật",
-      secrets_found_other: "Tìm thấy {count} bí mật",
-      import_secrets_one: "Nhập {count} bí mật",
-      import_secrets_other: "Nhập {count} bí mật"
     },
     features: {
       anomaly_detected: "Phát hiện bất thường: thông tin xác thực đột ngột thất bại sau khi thành công trước đó. Có thể đã bị thu hồi.",
@@ -2280,7 +2244,7 @@ export const vi = {
         remove_failed: "Không thể xóa chính sách: {error}",
         update_failed: "Không thể cập nhật chu kỳ xoay vòng: {error}",
         enable_failed: "Không thể bật xoay vòng: {error}",
-        last_rotated: "Lần xoay cuối: {time}"
+        last_rotated: "Lần xoay cuối: {time}",
       },
       anomaly: {
         healthy: "Bình thường",
@@ -2292,13 +2256,13 @@ export const vi = {
         samples: "{count} lần kiểm tra",
         permanent: "Liên tục: {rate}",
         transient: "Tạm thời: {rate}",
-        tolerance: "Ngưỡng: {rate}"
+        tolerance: "Ngưỡng: {rate}",
       },
       rotation_badge: {
         disabled: "Tắt",
         perm_errors: "Lỗi liên tục",
         degrading: "Đang xấu đi",
-        backoff: "Đang chờ thử lại"
+        backoff: "Đang chờ thử lại",
       },
       audit: {
         empty: "Chưa có mục kiểm tra. Các thao tác sẽ được ghi lại khi xảy ra.",
@@ -2307,13 +2271,13 @@ export const vi = {
         op_updated: "Đã cập nhật",
         op_deleted: "Đã xóa",
         op_healthcheck: "Kiểm tra kết nối",
-        filter_all: "tất cả"
+        filter_all: "tất cả",
       },
       intelligence: {
         operation: "Thao tác",
         detail: "Chi tiết",
-        time: "Thời gian"
-      }
+        time: "Thời gian",
+      },
     },
     negotiator: {
       title: "Trình đàm phán thông tin xác thực AI",
@@ -2341,14 +2305,13 @@ export const vi = {
       open_in_browser: "Mở trong trình duyệt",
       step_complete_captured: "Bước hoàn thành -- đã thu thập giá trị",
       mark_complete: "Đánh dấu hoàn thành",
-      completed: "Đã hoàn thành"
+      completed: "Đã hoàn thành",
     },
     card: {
       scope_mismatch: "Phạm vi không khớp",
       scope_missing_one: "{count} phạm vi yêu cầu chưa được cấp: ",
       scope_missing_other: "{count} phạm vi yêu cầu chưa được cấp: ",
       reauthorize: "Cấp quyền lại",
-      reauthorize_scopes: "Cấp phép lại với phạm vi bổ sung"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2366,18 +2329,6 @@ export const vi = {
       configure_fields: "Cấu hình các trường thông tin xác thực",
       detect: "Phát hiện",
       auto_add: "Tự động thêm",
-      connection_test_heading: "Kiểm tra kết nối",
-      test_connection_btn: "Kiểm tra kết nối",
-      credential_fields_heading: "Các trường thông tin xác thực",
-      how_to_get_connector: "Cách lấy thông tin xác thực {connectorLabel}",
-      authorization_complete: "Hoàn tất ủy quyền",
-      copied_to_clipboard: "Đã sao chép vào bộ nhớ tạm",
-      credential_name: "Tên thông tin xác thực",
-      credential_name_placeholder: "Gắn nhãn thông tin xác thực này — ví dụ: Tài khoản {label} của tôi, {label} Production",
-      authorizing_with: "Đang ủy quyền với {label}...",
-      authorize_with: "Ủy quyền với {label}",
-      oauth_consent_hint: "Mở {label} trong trình duyệt. Cấp quyền truy cập, sau đó quay lại đây.",
-      oauth_connected_at: "Đã kết nối {label} lúc {time}"
     },
     type_picker: {
       title: "Thêm thông tin xác thực",
@@ -2406,7 +2357,7 @@ export const vi = {
       workspace_connect: "Kết nối không gian làm việc",
       workspace_connect_hint: "Một lần đăng nhập Google tạo thông tin xác thực Gmail, Calendar, Drive và Sheets tự động",
       auto_discover: "Tự động phát hiện thông tin xác thực",
-      auto_discover_hint: "Quét hệ thống tệp để tìm khóa API, cấu hình AWS, biến môi trường và nhiều hơn nữa"
+      auto_discover_hint: "Quét hệ thống tệp để tìm khóa API, cấu hình AWS, biến môi trường và nhiều hơn nữa",
     },
     body: {
       authorizing: "Đang xác thực với {name}...",
@@ -2414,12 +2365,12 @@ export const vi = {
       authorize_hint: "Mở đăng nhập {name} và lưu quyền truy cập sau khi bạn chấp thuận.",
       consent_completed: "Đã hoàn tất xác nhận {name} lúc {time}",
       update_failed: "Không thể cập nhật thông tin xác thực",
-      delete_credential: "Xóa thông tin xác thực"
+      delete_credential: "Xóa thông tin xác thực",
     },
     connector: {
       filter_all: "Tất cả",
       filter_connected: "Đã kết nối",
-      filter_available: "Khả dụng"
+      filter_available: "Khả dụng",
     },
     auto_cred: {
       guided_setup: "Thiết lập có hướng dẫn",
@@ -2451,14 +2402,6 @@ export const vi = {
       open_in_browser: "Mở trong trình duyệt",
       completed_step: "Tôi đã hoàn thành bước này",
       input_requested: "Yêu cầu nhập liệu",
-      cancel_session: "Hủy phiên",
-      test_connection: "Kiểm tra kết nối",
-      testing: "Đang kiểm tra...",
-      re_run_browser: "Chạy lại trình duyệt",
-      discard: "Hủy bỏ",
-      save_credential: "Lưu thông tin xác thực",
-      save_procedure: "Lưu quy trình",
-      procedure_saved: "Đã lưu quy trình"
     },
     vector: {
       documents_tab: "Tài liệu",
@@ -2490,7 +2433,7 @@ export const vi = {
       documents: "Tài liệu",
       chunks: "Đoạn",
       local_embedding: "Tìm kiếm cục bộ",
-      local_embedding_hint: "Lập chỉ mục tìm kiếm chạy cục bộ bằng {model} ({dims} chiều). Dữ liệu không rời máy. Mô hình (~23MB) được tải xuống lần đầu và lưu cục bộ."
+      local_embedding_hint: "Lập chỉ mục tìm kiếm chạy cục bộ bằng {model} ({dims} chiều). Dữ liệu không rời máy. Mô hình (~23MB) được tải xuống lần đầu và lưu cục bộ.",
     },
     design_modal: {
       title: "Thiết kế thông tin xác thực",
@@ -2505,12 +2448,12 @@ export const vi = {
       how_to_fix: "Cách khắc phục",
       original_request: "Yêu cầu gốc của bạn (đã giữ nguyên):",
       start_over: "Bắt đầu lại",
-      try_again_with: "Thử lại với yêu cầu của bạn"
+      try_again_with: "Thử lại với yêu cầu của bạn",
     },
     desktop: {
       installed: "Đã cài đặt",
       running: "Đang chạy",
-      not_installed: "Chưa cài đặt"
+      not_installed: "Chưa cài đặt",
     },
     graph: {
       no_dependencies: "Không có phụ thuộc",
@@ -2520,7 +2463,7 @@ export const vi = {
       dep_count_other: "{count} phụ thuộc",
       not_tested: "Chưa kiểm tra",
       healthy: "Bình thường",
-      unhealthy: "Không bình thường"
+      unhealthy: "Không bình thường",
     },
     wizard: {
       detected: "Đã phát hiện ({count})",
@@ -2530,7 +2473,7 @@ export const vi = {
       already_added_badge: "Đã thêm",
       local: "Cục bộ",
       cli_auth: "Xác thực CLI",
-      session: "Phiên"
+      session: "Phiên",
     },
     playground: {
       tab_overview: "Tổng quan",
@@ -2560,7 +2503,7 @@ export const vi = {
       query_parameters: "Tham số truy vấn",
       headers: "Tiêu đề",
       body: "Nội dung",
-      empty_response: "(phản hồi rỗng)"
+      empty_response: "(phản hồi rỗng)",
     },
     playground_extra: {
       add_tag: "Thêm thẻ...",
@@ -2581,11 +2524,11 @@ export const vi = {
       query_parameters: "Tham số truy vấn",
       recipes_title: "Công thức đã lưu",
       truncated_warning: "Phản hồi bị cắt bớt để hiển thị",
-      value_col: "Giá trị"
+      value_col: "Giá trị",
     },
     ingest: {
       save_name: "Lưu tên",
-      rename_credential: "Đổi tên thông tin xác thực"
+      rename_credential: "Đổi tên thông tin xác thực",
     },
     databases: {
       col_database: "Cơ sở dữ liệu",
@@ -2699,8 +2642,6 @@ export const vi = {
       filter_tables: "Lọc bảng...",
       refresh: "Làm mới",
       introspection_unavailable: "Kiểm tra bảng không khả dụng cho loại trình kết nối này.",
-      not_null: "NOT NULL",
-      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "Mô phỏng thu hồi",
@@ -2746,14 +2687,9 @@ export const vi = {
       daily_execs_lost: "Lần thực thi hàng ngày bị mất",
       daily_cost_impact: "Tác động chi phí hàng ngày",
       sim_low: "Không có personas hoặc quy trình nào phụ thuộc vào thông tin xác thực này. Có thể thu hồi an toàn.",
-      sim_critical: "Thu hồi {credentialName} sẽ phá vỡ {workflows} quy trình{workflowPlural} và dừng {personas} tác nhân{personaPlural}.",
-      sim_high: "Thu hồi {credentialName} sẽ ảnh hưởng đến {personas} tác nhân{personaPlural} trên không gian làm việc của bạn.",
-      sim_medium: "Thu hồi {credentialName} có phạm vi ảnh hưởng hạn chế.",
-      per_day: "/ngày"
     },
     shared: {
       add: "Thêm",
-      copied: "Đã sao chép",
       no_connector_available: "Không có định nghĩa trình kết nối cho loại thông tin xác thực này.",
       request_builder: "Trình tạo yêu cầu",
       close: "Đóng",
@@ -2880,21 +2816,6 @@ export const vi = {
       no_documents_description: "Kéo tệp vào đây, dán văn bản, hoặc quét thư mục để bắt đầu xây dựng cơ sở kiến thức.",
       delete_document: "Xóa tài liệu",
       chunks_label: "{count} đoạn",
-      kb_count_summary: "-- {docs} tài liệu, {chunks} đoạn",
-      default_patterns: "Mặc định:",
-      add_pattern_placeholder: "*.pdf",
-      distance_label: "khoảng cách:",
-      chunk_label: "đoạn:",
-      copy_credential_id: "Sao chép ID thông tin xác thực",
-      request_body: "Nội dung yêu cầu",
-      add_tag_title: "Thêm thẻ",
-      local_embedding_hint: "Embedding được tạo cục bộ bằng {model} ({dims}-chiều). Không có dữ liệu nào rời khỏi máy của bạn. Mô hình (~23MB) được tải xuống khi sử dụng lần đầu và lưu vào bộ nhớ cache cục bộ.",
-      api_path_placeholder: "/api/v1/resource",
-      json_body_placeholder: "giá trị",
-      sending: "Đang gửi...",
-      send: "Gửi",
-      search_results_one: "{count} kết quả cho \"{query}\"",
-      search_results_other: "{count} kết quả cho \"{query}\""
     },
     manager: {
       title: "Thông tin xác thực",
@@ -2914,23 +2835,20 @@ export const vi = {
       test_all_credentials: "Kiểm tra tất cả thông tin xác thực",
       test_all: "Kiểm tra tất cả",
       daily_progress: "Hàng ngày {done}/{total}",
-      testing_progress: "Đang kiểm tra {done}/{total}"
+      testing_progress: "Đang kiểm tra {done}/{total}",
     },
     bulk_healthcheck: {
       title: "Kết quả kiểm tra sức khỏe",
       needs_attention: "Cần chú ý",
       slowest_responses: "Phản hồi chậm nhất",
-      passed_count: "{count} đã qua",
-      failed_count: "{count} thất bại",
-      total_count: "{count} tổng cộng"
     },
     health_bar: {
       healthy: "bình thường",
       needs_attention: "cần chú ý",
-      untested: "chưa kiểm tra"
+      untested: "chưa kiểm tra",
     },
     breadcrumb: {
-      aria_label: "Điều hướng Kho lưu trữ"
+      aria_label: "Điều hướng Kho lưu trữ",
     },
     credential_card: {
       deleting: "Đang xóa {name}...",
@@ -2946,7 +2864,7 @@ export const vi = {
       remove_tag: "Xóa thẻ \\\"{tag}\\\"",
       copy_credential_id: "Sao chép ID thông tin xác thực",
       refresh_oauth: "Làm mới token OAuth ngay",
-      refresh: "Làm mới"
+      refresh: "Làm mới",
     },
     vault_badge: {
       needs_attention: "Cần chú ý",
@@ -2969,21 +2887,21 @@ export const vi = {
       encrypt_now_other: "Mã hóa {count} thông tin xác thực chưa mã hóa ngay",
       encrypt_done_one: "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
       encrypt_done_other: "Hoàn tất -- {migrated} thông tin xác thực đã mã hóa.",
-      encrypt_partial: "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng."
+      encrypt_partial: "Đã mã hóa {migrated}, thất bại {failed}. Hãy thử lại hoặc khởi động lại ứng dụng.",
     },
     delete_dialog: {
       title: "Xóa thông tin xác thực",
       cannot_undo: "Thao tác này không thể hoàn tác.",
       label_name: "Tên",
       label_type: "Loại",
-      unverified_warning: "Không thể xác minh tất cả phụ thuộc. Một số tác nhân hoặc tự động hóa đã kết nối có thể không hiển thị."
+      unverified_warning: "Không thể xác minh tất cả phụ thuộc. Một số tác nhân hoặc tự động hóa đã kết nối có thể không hiển thị.",
     },
     card_body: {
       failed_update: "Không thể cập nhật thông tin xác thực",
       authorizing_with: "Đang xác thực với {name}...",
       authorize_with: "Xác thực với {name}",
       authorize_hint: "Khởi chạy đồng ý {name} được quản lý bởi ứng dụng và cập nhật refresh token sau khi chấp thuận.",
-      consent_completed: "Đã hoàn tất xác nhận {name} lúc {time}"
+      consent_completed: "Đã hoàn tất xác nhận {name} lúc {time}",
     },
     card_details: {
       tab_intelligence: "Thông minh",
@@ -2991,7 +2909,7 @@ export const vi = {
       tab_token_lifetime: "Thời hạn token",
       tab_services: "Dịch vụ ({count})",
       tab_events: "Sự kiện ({count})",
-      tab_audit: "Kiểm tra"
+      tab_audit: "Kiểm tra",
     },
     intelligence_tab: {
       loading: "Đang tải dữ liệu thông minh",
@@ -3012,7 +2930,7 @@ export const vi = {
       dependents_warning_other: "Thay đổi hoặc xóa thông tin xác thực này sẽ ảnh hưởng đến {count} persona:",
       link_structural: "cấu trúc",
       link_observed: "quan sát",
-      via_connector: "qua {connector}"
+      via_connector: "qua {connector}",
     },
     token_metrics: {
       loading: "Đang tải số liệu...",
@@ -3024,11 +2942,6 @@ export const vi = {
       avg_drift: "Độ lệch trung bình",
       recent_ttls: "TTL gần đây từ nhà cung cấp (mới nhất trước)",
       recent_refreshes: "Lần làm mới gần đây",
-      fallback_used: "Fallback ({fallback}s) được sử dụng trong {rate}% các lần làm mới ({count}/{total}) — nhà cung cấp bỏ qua"
-    },
-    reauth_banner: {
-      access_revoked: ") -- quyền truy cập đã bị thu hồi. Vui lòng cấp phép lại để tiếp tục tự động hóa.",
-      reconnect: "Kết nối lại"
     },
     rotation_section: {
       corrupted_warning: "Metadata healthcheck bị hỏng. Điểm bất thường không khả dụng cho đến khi healthcheck thành công tiếp theo ghi đè dữ liệu xấu.",
@@ -3049,7 +2962,6 @@ export const vi = {
       enabling: "Đang bật...",
       enable_rotation: "Bật xoay vòng",
       enable_failed: "Không thể bật xoay vòng: {error}",
-      last_rotated: "Lần xoay cuối cùng {time}"
     },
     event_config: {
       event_triggers: "Trình kích hoạt sự kiện",
@@ -3076,7 +2988,6 @@ export const vi = {
       minutes_10: "10 phút",
       healthcheck_auto_rotate: "Xoay vòng sẽ tự động kích hoạt khi thông tin xác thực đang hoạt động tốt bắt đầu thất bại healthcheck.",
       last_evaluated: "Đánh giá lần cuối: {time}",
-      loading: "Đang tải sự kiện..."
     },
     credential_forms: {
       encrypted_keychain: "Mã hóa với OS Keychain",
@@ -3090,10 +3001,6 @@ export const vi = {
       new_credential: "Thông tin xác thực {label} mới",
       configure_fields: "Cấu hình các trường thông tin xác thực",
       oauth_required: "Dùng nút xác thực bên dưới để kết nối thông tin xác thực này.",
-      open_to_generate: "Mở {label} để tạo khóa API hoặc token",
-      already_configured: "Thông tin xác thực đã được cấu hình -- cập nhật bên dưới để thay thế",
-      setup_instructions_label: "Hướng dẫn thiết lập",
-      no_fields_defined: "Không có trường thông tin xác thực nào được định nghĩa cho trình kết nối này."
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3114,21 +3021,12 @@ export const vi = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI"
+      save_failed: "Failed to capture credential from CLI",
     },
     audit_log: {
       empty: "Chưa có mục kiểm tra",
       empty_hint: "Các thao tác sẽ được ghi lại khi xảy ra.",
       access_events_hint: "Sự kiện truy cập sẽ xuất hiện ở đây.",
-      loading: "Đang tải dòng thời gian kiểm toán...",
-      total_accesses: "{count} tổng cộng",
-      personas_one: "{count} tác nhân",
-      personas_other: "{count} tác nhân",
-      accesses_24h: "{count} trong 24h",
-      anomalies_one: "{count} bất thường",
-      anomalies_other: "{count} bất thường",
-      no_anomalies: "Không có bất thường",
-      show_all: "Hiển thị tất cả {count} mục"
     },
     credential_import: {
       import_from: "Nhập từ {source}",
@@ -3137,12 +3035,6 @@ export const vi = {
       enable_sync: "Bật chế độ đồng bộ",
       source_ref: "Tham chiếu nguồn",
       poll_interval: "Khoảng thời gian kiểm tra",
-      sync_hint: "Giám sát vault bên ngoài để phát hiện thay đổi và tự động cập nhật thông tin xác thực bằng cách thăm dò.",
-      interval_15min: "15 phút",
-      interval_30min: "30 phút",
-      interval_1hr: "1 giờ",
-      interval_6hr: "6 giờ",
-      interval_24hr: "24 giờ"
     },
     empty_state: {
       heading: "Kết nối dịch vụ đầu tiên",
@@ -3151,11 +3043,11 @@ export const vi = {
       catalog_description: "Chọn dịch vụ đã biết như Slack, GitHub hoặc OpenAI. Trường và healthcheck được cấu hình sẵn.",
       ai_heading: "Thông tin xác thực do AI thiết kế",
       ai_description: "Mô tả bất kỳ dịch vụ nào và AI sẽ cấu hình các trường, loại xác thực và healthcheck cho bạn.",
-      works_with_any: "Hoạt động với bất kỳ API"
+      works_with_any: "Hoạt động với bất kỳ API",
     },
     credential_list: {
       no_match: "Không có thông tin xác thực nào phù hợp",
-      no_match_hint: "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm"
+      no_match_hint: "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm",
     },
     wizard_detect: {
       no_services: "Không có dịch vụ nào khớp với \\\"{search}\\\"",
@@ -3167,15 +3059,6 @@ export const vi = {
       batch_complete: "Thiết lập hàng loạt hoàn tất",
       skip_service: "Bỏ qua dịch vụ này",
       no_filter_match: "Hãy thử cụm từ tìm kiếm khác hoặc xóa bộ lọc.",
-      set_up_credentials: "Thiết lập thông tin xác thực",
-      clear_selection: "Xóa lựa chọn",
-      set_up_services: "Thiết lập {count} dịch vụ{plural}",
-      setting_up: "Đang thiết lập {current} trên {total}",
-      wizard_title: "Trình hướng dẫn thiết lập thông tin xác thực",
-      choose_service: "Chọn một dịch vụ để thiết lập",
-      ai_walk_description: "AI sẽ hướng dẫn bạn từng bước để lấy thông tin xác thực API.",
-      wizard_subtitle: "Thiết lập thông tin xác thực do AI hướng dẫn",
-      wizard_subtitle_batch: "Đang thiết lập {count} dịch vụ{plural}"
     },
     autopilot: {
       title: "API Autopilot",
@@ -3199,23 +3082,6 @@ export const vi = {
       query_parameters: "Tham số truy vấn",
       param_name_placeholder: "Tên tham số",
       request_body: "Nội dung yêu cầu (JSON)",
-      from_url: "Từ URL",
-      paste_content: "Dán nội dung",
-      openapi_spec_url: "URL đặc tả OpenAPI",
-      openapi_format_hint: "Hỗ trợ đặc tả OpenAPI 3.x và Swagger 2.x ở định dạng JSON hoặc YAML",
-      parsing_spec: "Đang phân tích đặc tả...",
-      parse_analyze: "Phân tích & Phân tích chi tiết",
-      connector_in_catalog: "{connectorLabel} hiện có sẵn trong danh mục trình kết nối của bạn với {toolCount} định nghĩa công cụ.",
-      generated_tools: "Công cụ đã tạo ({count})",
-      credential_fields: "Các trường thông tin xác thực",
-      open_playground: "Mở Playground",
-      copy_connector_id: "Sao chép ID trình kết nối",
-      go_to_catalog: "Đi đến danh mục",
-      response_headers: "Các header phản hồi ({count})",
-      base_url_placeholder: "https://api.example.com",
-      openapi_url_placeholder: "https://api.example.com/openapi.json",
-      auth_schemes: "các phương thức xác thực",
-      body_placeholder: "giá trị"
     },
     foraging: {
       no_credentials_found: "Không tìm thấy thông tin xác thực",
@@ -3232,44 +3098,10 @@ export const vi = {
       step_done: "Xong",
       step_completed: "(đã hoàn tất)",
       step_current: "(hiện tại)",
-      start_scan: "Bắt đầu quét",
-      checking_env: "Đang kiểm tra biến môi trường, tệp cấu hình và thông tin xác thực công cụ dev",
-      importing: "Đang nhập thông tin xác thực vào vault...",
-      scan_again: "Quét lại",
-      back_to_vault: "Quay lại vault",
-      already_in_vault: "Đã có trong vault",
-      imported: "Đã nhập",
-      to_vault: "vào vault",
-      credentials_found_one: "Tìm thấy {count} thông tin xác thực",
-      credentials_found_other: "Tìm thấy {count} thông tin xác thực",
-      selected: "đã chọn",
-      import_to_vault_one: "Nhập {count} thông tin xác thực vào vault",
-      import_to_vault_other: "Nhập {count} thông tin xác thực vào vault",
-      env_var_one: "{count} biến môi trường",
-      env_var_other: "{count} biến môi trường",
-      import_server: "Nhập",
-      sources_in: "nguồn trong",
-      progress_aria: "Tiến trình thu thập",
-      scanned_sources: "Đã quét {count} nguồn trong {ms}ms"
     },
     desktop_discovery: {
       title: "Ứng dụng máy tính",
       allowed_binaries: "Tệp nhị phân được phép: ",
-      connect_description: "Kết nối các ứng dụng cục bộ hoặc nhập máy chủ MCP từ Claude Desktop",
-      detected_apps_tab: "Ứng dụng đã phát hiện ({count})",
-      claude_mcp_tab: "Claude MCP ({count})",
-      scanning: "Đang quét các ứng dụng desktop...",
-      detected_on_system: "Đã phát hiện trên hệ thống của bạn",
-      not_detected: "Không phát hiện",
-      no_apps: "Không phát hiện ứng dụng desktop nào. Hãy thử làm mới.",
-      reading_config: "Đang đọc cấu hình Claude Desktop...",
-      mcp_servers_found_one: "Tìm thấy {count} máy chủ MCP trong cấu hình Claude Desktop. Nhập chúng làm thông tin xác thực để sử dụng với các tác nhân của bạn.",
-      mcp_servers_found_other: "Tìm thấy {count} máy chủ MCP trong cấu hình Claude Desktop. Nhập chúng làm thông tin xác thực để sử dụng với các tác nhân của bạn.",
-      no_mcp_config: "Không tìm thấy cấu hình MCP của Claude Desktop.",
-      mcp_config_hint: "Nếu bạn đã cài đặt Claude Desktop, hãy đảm bảo nó có các máy chủ MCP được cấu hình trong cài đặt.",
-      permission_required: "Yêu cầu quyền",
-      approve_description: "yêu cầu các khả năng sau. Xem xét và phê duyệt để kích hoạt trình kết nối này.",
-      approve_connect: "Phê duyệt & Kết nối"
     },
     picker_section: {
       no_connectors: "Không tìm thấy trình kết nối",
@@ -3280,29 +3112,10 @@ export const vi = {
       filter_purpose: "Mục đích",
       filter_category: "Danh mục",
       filter_license: "Giấy phép",
-      credential_name: "Tên thông tin xác thực",
-      add_project_first: "Thêm một dự án trong Dev Tools trước để kết nối codebase với tác nhân của bạn.",
-      go_to_dev_tools: "Đi đến Dev Tools",
-      workspace_connect_description: "Một lần đăng nhập Google tự động tạo thông tin xác thực Gmail, Calendar, Drive và Sheets",
-      foraging_description: "Quét hệ thống tệp của bạn để tìm các khóa API, hồ sơ AWS, biến môi trường hiện có và nhiều hơn nữa",
-      no_setup_guide: "Không có hướng dẫn thiết lập cho trình kết nối này. Truy cập liên kết tài liệu bên dưới để biết hướng dẫn.",
-      open_setup_page: "Mở trang thiết lập {label}"
-    },
-    cli_capture: {
-      cta: "Nhập từ CLI cục bộ",
-      hint: "Sử dụng CLI cục bộ đã đăng nhập thay vì dán khóa API.",
-      running: "Đang chạy CLI cục bộ...",
-      success: "Đã lấy thông tin xác thực từ CLI",
-      token_ttl_notice: "Token này hết hạn trong {seconds}s và sẽ được làm mới tự động.",
-      source_label: "CLI",
-      missing_binary: "`{binary}` chưa được cài đặt hoặc không nằm ở vị trí được cho phép.",
-      unauthenticated: "Bạn chưa đăng nhập vào {binary}. {instruction}",
-      capture_failed: "Lấy thông tin từ CLI thất bại: {detail}",
-      timeout: "Lấy thông tin từ CLI hết thời gian chờ. Hãy thử chạy lệnh thủ công trước."
     },
     schemas: {
       none_configured: "Chưa cấu hình.",
-      required_badge: "BẮT BUỘC"
+      required_badge: "BẮT BUỘC",
     },
     design_phases: {
       saving: "Đang lưu thông tin xác thực...",
@@ -3335,32 +3148,8 @@ export const vi = {
       mark_done: "Đánh dấu hoàn thành",
       mark_step_complete: "Đánh dấu bước hoàn thành",
       copy_to_clipboard: "Sao chép vào clipboard",
-      credential_saved_message: "Thông tin xác thực {label} đã được lưu an toàn.",
-      revision_count: "(phiên bản {count})",
-      connector_added_to_catalog: "trình kết nối đã được thêm vào danh mục của bạn -- hiện có sẵn cho các tác nhân khác và việc áp dụng mẫu.",
-      view_credential: "Xem thông tin xác thực",
-      refine_hint: "Cần điều chỉnh phạm vi, thêm trường hoặc chỉnh sửa cấu hình?",
-      refine_placeholder: "ví dụ: thêm phạm vi ghi, thêm môi trường staging...",
-      refine: "Tinh chỉnh",
-      linked_to_existing: "Thông tin xác thực của bạn sẽ được liên kết với định nghĩa trình kết nối hiện có.",
-      no_existing_connector: "-- không tìm thấy trình kết nối {name} hiện có trong danh mục của bạn.",
-      new_connector_will_be_registered: "Khi bạn lưu thông tin xác thực này, định nghĩa trình kết nối do AI tạo sẽ được tự động đăng ký trong danh mục trình kết nối của bạn -- giúp nó có thể tái sử dụng cho các tác nhân khác và việc áp dụng mẫu.",
-      refine_request: "Chưa đúng? Tinh chỉnh yêu cầu của bạn",
-      auto_provision_hint: "-- để AI hướng dẫn bạn từng bước lấy thông tin xác thực {label} của bạn.",
-      credential_name_label: "Tên thông tin xác thực",
-      credentials_secure_notice: "Thông tin xác thực được lưu trữ an toàn trong vault của ứng dụng và có sẵn để thực thi công cụ tác nhân.",
-      tested_successfully_at: "Đã kiểm tra thành công lúc {time}",
-      setup_instructions: "Hướng dẫn thiết lập",
-      all_steps_complete: "Tất cả các bước đã hoàn thành -- điền vào các trường bên dưới và kiểm tra kết nối của bạn.",
-      use_template: "Sử dụng",
-      recipe_used_one: "-- đã sử dụng {count} lần",
-      recipe_used_other: "-- đã sử dụng {count} lần",
-      instruction_placeholder: "ví dụ: Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
-      browser_automation_warning: "Tự động hóa trình duyệt đang chạy. Không tương tác với cửa sổ — nó sẽ tiếp tục khi hoàn tất.",
-      desktop_bridge_title: "{{label}} yêu cầu ứng dụng desktop",
-      desktop_bridge_hint: "Trình kết nối này điều khiển một phiên trình duyệt gốc chỉ chạy trong ứng dụng desktop Personas.",
       preparing_guided: "Đang chuẩn bị hướng dẫn thiết lập...",
       starting_browser: "Đang bắt đầu phiên trình duyệt...",
       no_log_output: "Không có đầu ra nhật ký nào được ghi.",
@@ -3391,26 +3180,8 @@ export const vi = {
       step_browser_review: "Quay lại đây để xem xét trước khi lưu",
       step_guided_review: "Xem xét và lưu thông tin xác thực",
       setup_context: "Ngữ cảnh thiết lập từ phân tích thiết kế:",
-      review_extracted: "Xem xét thông tin xác thực đã trích xuất",
-      review_extracted_hint: "Các giá trị được trích xuất từ trình duyệt -- xác minh trước khi lưu",
-      completeness_partial: "{filled} trong số {total} trường bắt buộc đã được điền. Hoàn thành các trường còn thiếu trước khi lưu.",
-      universal_auto_setup: "Thiết lập tự động phổ quát",
-      universal_auto_setup_hint: "Cung cấp URL và mô tả, AI sẽ điều hướng trang web để tự động khám phá và tạo thông tin xác thực API.",
-      service_url_label: "URL dịch vụ",
-      service_url_placeholder: "https://app.example.com hoặc https://developer.example.com",
-      what_do_you_need: "Bạn cần gì?",
-      description_placeholder: "ví dụ: Tôi cần khóa API cho REST API của họ để đọc và ghi dữ liệu. Cổng thông tin nhà phát triển có phần API Keys trong Settings.",
-      discover_credentials: "Khám phá thông tin xác thực",
-      discovered_label: "Đã khám phá: {label}",
-      fields_discovered_one: "Đã khám phá {count} trường",
-      fields_discovered_other: "Đã khám phá {count} trường",
-      extracted_values_label: "Giá trị đã trích xuất",
-      no_fields_discovered: "Không có trường nào được khám phá. Thử lại với mô tả cụ thể hơn.",
-      fields_captured_partial: "{filled}/{total} trường đã được thu thập",
-      credential_stored: "Thông tin xác thực {label} đã được lưu trữ an toàn."
     },
     negotiator_extra: {
-      panel_title: "Trình đàm phán thông tin xác thực AI",
       checking_auth: "Đang kiểm tra xác thực hiện có...",
       auto_provisioning: "Cấp phát khóa API tự động",
       generating_plan: "Đang tạo kế hoạch cấp phát...",
@@ -3419,7 +3190,6 @@ export const vi = {
       need_help: "Cần trợ giúp với bước này?",
       hide_help: "Ẩn trợ giúp",
       ask_question: "Đặt câu hỏi về bước này...",
-      planning_description: "AI đang phân tích cổng thông tin nhà phát triển và tạo kế hoạch cung cấp từng bước..."
     },
     workspace_panel: {
       select_services: "Chọn dịch vụ để kết nối",
@@ -3427,15 +3197,6 @@ export const vi = {
       creating_credentials: "Đang tạo thông tin xác thực...",
       all_created: "Tất cả thông tin xác thực đã tạo",
       some_failed: "Một số thông tin xác thực thất bại",
-      selected_count: "{selected} trên {total} đã chọn",
-      select_all: "Chọn tất cả",
-      connect_services_one: "Kết nối {count} dịch vụ bằng một lần đăng nhập",
-      connect_services_other: "Kết nối {count} dịch vụ bằng một lần đăng nhập",
-      granting_access_one: "Điều này sẽ cấp quyền truy cập vào {count} dịch vụ",
-      granting_access_other: "Điều này sẽ cấp quyền truy cập vào {count} dịch vụ",
-      credentials_created_one: "{count} thông tin xác thực được tạo từ một lần đăng nhập duy nhất.",
-      credentials_created_other: "{count} thông tin xác thực được tạo từ một lần đăng nhập duy nhất.",
-      sign_in_browser: "Đăng nhập bằng tài khoản Google của bạn trong cửa sổ trình duyệt."
     },
     gateway: {
       gateway_members: "{name} — thành viên gateway",
@@ -3452,7 +3213,7 @@ export const vi = {
       display_name: "Tên hiển thị (tiền tố công cụ)",
       display_name_placeholder: "vd: arcade, research_tools, docs",
       adding: "Đang thêm…",
-      add_member: "Thêm thành viên"
+      add_member: "Thêm thành viên",
     },
     pending_auth: {
       title: "Yêu cầu xác thực",
@@ -3466,13 +3227,13 @@ export const vi = {
       open_first: "Mở URL và cấp quyền trước",
       retrying: "Đang thử lại…",
       retry_authorized: "Tôi đã xác thực — thử lại",
-      retry_failed: "Thử lại thất bại"
+      retry_failed: "Thử lại thất bại",
     },
     rotation_insight: {
       perm_errors: "Phát hiện lỗi vĩnh viễn -- đã thử xoay vòng, đang cảnh báo.",
       degrading: "Suy giảm kéo dài -- đã kích hoạt xoay vòng phòng ngừa.",
-      backoff: "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân."
-    }
+      backoff: "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân.",
+    },
   },
   deployment: {
     title: "Triển khai",
@@ -3490,7 +3251,7 @@ export const vi = {
       token_available: "Mã thông báo khả dụng",
       no_token: "Chưa cấu hình mã thông báo",
       no_token_configured: "Chưa cấu hình token",
-      no_status: "Không có dữ liệu trạng thái."
+      no_status: "Không có dữ liệu trạng thái.",
     },
     api_playground: {
       title: "Sân chơi API",
@@ -3500,12 +3261,10 @@ export const vi = {
       sending: "Đang gửi...",
       empty_response: "(phản hồi trống)",
       snippets: "Đoạn mã",
-      request_body_placeholder: "Prompt của bạn tại đây..."
     },
     connection: {
       orchestrator_url_label: "URL máy chủ đám mây",
       orchestrator_prefix: "https://",
-      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "Nhập khóa API",
       connect: "Kết nối",
       connected: "Đã kết nối",
@@ -3515,28 +3274,16 @@ export const vi = {
       diagnostics_title: "Chẩn đoán",
       url_protocol_error: "URL phải dùng http hoặc https",
       url_hostname_error: "URL thiếu tên máy chủ",
-      url_invalid: "URL không hợp lệ"
+      url_invalid: "URL không hợp lệ",
     },
     deployments_panel: {
       deploy_persona: "Triển khai persona",
       select_persona: "Chọn persona để triển khai",
       all_deployed: "Tất cả personas đã được triển khai",
-      no_deployments_yet: "Chưa có triển khai nào. Chọn một tác nhân ở trên để triển khai nó dưới dạng endpoint API đám mây.",
-      active_deployments: "Triển khai đang hoạt động"
     },
     exec_detail: {
       fetching_output: "Đang lấy đầu ra...",
       no_output: "Không có đầu ra",
-      label_status: "Trạng thái:",
-      label_duration: "Thời lượng:",
-      label_cost: "Chi phí:",
-      label_tokens: "Token:",
-      label_started: "Đã bắt đầu:",
-      label_completed: "Đã hoàn thành:",
-      label_input: "Đầu vào:",
-      view_output: "Xem kết quả",
-      output_prefix: "Kết quả (",
-      output_lines_suffix: "dòng)"
     },
     oauth_panel: {
       connect_anthropic: "Kết nối tài khoản Anthropic",
@@ -3548,13 +3295,6 @@ export const vi = {
       token_unknown: "Trạng thái token không rõ",
       expires: "Hết hạn",
       scopes: "Phạm vi",
-      open_auth_window: "Mở cửa sổ ủy quyền",
-      complete_authorization: "Hoàn tất ủy quyền",
-      refresh_token: "Làm mới token",
-      open_authorization_window: "Mở cửa sổ ủy quyền",
-      token_unknown_msg: "Không thể xác minh tính hợp lệ của token. Làm mới token để xác nhận token vẫn còn hoạt động.",
-      connect_anthropic_msg: "Kết nối tài khoản Anthropic của bạn để kích hoạt xác thực dựa trên OAuth cho các lần thực thi đám mây.",
-      token_expired_msg_prefix: "Token OAuth này đã hết hạn"
     },
     trigger_form: {
       new_cloud_trigger: "Trình kích hoạt đám mây mới",
@@ -3564,15 +3304,9 @@ export const vi = {
       schedule_cron: "Lịch (cron)",
       create_trigger: "Tạo trình kích hoạt",
       creating: "Đang tạo...",
-      cron_expression: "Biểu thức cron",
-      utc_suffix: "(UTC)",
-      webhook_info: "Một endpoint webhook sẽ được tạo cho trình kích hoạt này. Bạn có thể cấu hình lọc payload sau khi tạo."
     },
     chart: {
       daily_executions: "Thực thi hàng ngày",
-      tooltip_runs: "Lần chạy:",
-      tooltip_cost: "Chi phí:",
-      tooltip_success: "Thành công:"
     },
     deploy_card: {
       test_deployment: "Kiểm thử triển khai",
@@ -3581,10 +3315,6 @@ export const vi = {
       remove_deployment: "Xóa triển khai",
       copy_endpoint: "Sao chép điểm cuối",
       open_endpoint: "Mở điểm cuối",
-      budget_label: "Ngân sách:",
-      label_invocations: "Lần gọi:",
-      label_last_called: "Lần gọi cuối:",
-      label_created: "Đã tạo:"
     },
     tabs: {
       connection: "Kết nối",
@@ -3592,7 +3322,7 @@ export const vi = {
       oauth: "OAuth",
       deployments: "Triển khai",
       schedules: "Lịch trình",
-      history: "Lịch sử"
+      history: "Lịch sử",
     },
     cloud_execution: "Thực thi đám mây",
     cloud_status: {
@@ -3604,7 +3334,7 @@ export const vi = {
       queue_length: "Độ dài hàng đợi",
       active_executions: "Thực thi đang hoạt động",
       active_execution: "Thực thi đang hoạt động",
-      claude_token: "Mã thông báo Claude"
+      claude_token: "Mã thông báo Claude",
     },
     history: {
       just_now: "Vừa xong",
@@ -3624,8 +3354,6 @@ export const vi = {
       last_30_days: "30 ngày qua",
       last_90_days: "90 ngày qua",
       top_errors: "Lỗi hàng đầu",
-      clear_filters: "Xóa bộ lọc",
-      execution_history: "Lịch sử thực thi"
     },
     schedules: {
       header: "Trình kích hoạt đám mây ({count})",
@@ -3635,12 +3363,6 @@ export const vi = {
       empty: "Chưa có trình kích hoạt đám mây. Tạo một trình kích hoạt để lên lịch chạy tự động.",
       recent_firings: "Lần kích hoạt gần đây",
       no_firings: "Không có lần kích hoạt gần đây",
-      label_type: "Loại:",
-      label_status: "Trạng thái:",
-      label_last_triggered: "Lần kích hoạt cuối:",
-      label_next_trigger: "Lần kích hoạt tiếp theo:",
-      label_cron: "Cron:",
-      loading_firings: "Đang tải..."
     },
     dashboard: {
       title: "Triển khai",
@@ -3695,7 +3417,7 @@ export const vi = {
       stage_generating: "Đang tạo",
       stage_completed: "Đã hoàn tất",
       stage_failed: "Thất bại",
-      tool_calls: "{count} lần gọi công cụ"
+      tool_calls: "{count} lần gọi công cụ",
     },
     cloud_trigger_schedule: "Theo lịch (Cron)",
     cloud_trigger_polling: "Polling",
@@ -3710,7 +3432,7 @@ export const vi = {
     cron_daily_midnight: "Hàng ngày lúc nửa đêm UTC",
     cron_daily_9am: "Hàng ngày lúc 9 giờ sáng UTC",
     cron_weekdays_9am: "Các ngày trong tuần lúc 9 giờ sáng UTC",
-    cron_weekly_sun: "Hàng tuần (Chủ Nhật nửa đêm UTC)"
+    cron_weekly_sun: "Hàng tuần (Chủ Nhật nửa đêm UTC)",
   },
   sharing: {
     export_title: "Xuất gói",
@@ -3788,7 +3510,6 @@ export const vi = {
     persistence_denied: "Từ chối",
     capabilities_label: "Khả năng:",
     capabilities_none: "Không có",
-    enclave_hash_label: "Hash:",
     network_sharing_title: "Mạng & Chia sẻ",
     network_sharing_subtitle: "Quản lý danh tính, đối tác tin cậy và tài nguyên chia sẻ",
     exposed_resources: "Tài nguyên được hiển thị",
@@ -3852,17 +3573,8 @@ export const vi = {
     no_shared_resources: "Không có tài nguyên chia sẻ. Đồng bộ manifest để kiểm tra.",
     discovered_peers: "Đối tác đã phát hiện",
     refresh: "Làm mới",
-    refresh_peer_list: "Làm mới danh sách peer",
     scanning_network: "Đang quét mạng cục bộ...",
     lan_hint: "Các phiên bản Personas khác trên cùng mạng LAN sẽ tự động xuất hiện tại đây.",
-    peer_list_stale: "Danh sách peer có thể đã cũ \\u2014",
-    network_data_stale: "Dữ liệu mạng có thể đã cũ \\u2014",
-    peer_id_footer: "Peer ID",
-    remove_exposure: "Xóa phơi nhiễm",
-    revoke_trust: "Thu hồi tin cậy",
-    remove_peer: "Xóa peer",
-    share_link_tooltip: "Tạo liên kết chia sẻ một lần (hết hạn trong 24h)",
-    copy_clipboard_tooltip: "Sao chép gói dưới dạng base64 vào bộ nhớ tạm (tối đa 256 KB)",
     message_throughput: "Thông lượng tin nhắn",
     sent: "Đã gửi",
     received: "Đã nhận",
@@ -3878,7 +3590,7 @@ export const vi = {
     sync_rounds: "Số vòng đồng bộ",
     success_fail: "Thành công / Thất bại",
     avg_sync_duration: "Thời gian đồng bộ trung bình",
-    entries_received: "Mục đã nhận"
+    entries_received: "Mục đã nhận",
   },
   overview: {
     title: "Tổng quan",
@@ -3888,7 +3600,7 @@ export const vi = {
     filters: {
       start_date: "Ngày bắt đầu",
       end_date: "Ngày kết thúc",
-      all_personas: "Tất cả tác tử"
+      all_personas: "Tất cả tác tử",
     },
     messages: {
       loading: "Đang tải tin nhắn...",
@@ -3899,7 +3611,7 @@ export const vi = {
         title: "Tiêu đề",
         priority: "Ưu tiên",
         status: "Trạng thái",
-        created: "Ngày tạo"
+        created: "Ngày tạo",
       },
       content_header: "Nội dung",
       priority_high: "Cao",
@@ -3916,9 +3628,6 @@ export const vi = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "Máy tính",
-      id_label: "ID:",
-      confirm_delete_title: "Xác nhận xóa",
-      close_message: "Đóng chi tiết tin nhắn"
     },
     realtime: {
       idle: "Nhàn rỗi -- nhấp {action} để mô phỏng lưu lượng",
@@ -3926,7 +3635,7 @@ export const vi = {
       events_per_min: "sự kiện/phút",
       pending: "đang chờ",
       success: "thành công",
-      in_window: "trong cửa sổ"
+      in_window: "trong cửa sổ",
     },
     observability: {
       title: "Khả năng quan sát",
@@ -3939,18 +3648,12 @@ export const vi = {
       manual_fix: "(đã sửa thủ công)",
       metrics_unavailable: "Số liệu không khả dụng -- dữ liệu hiển thị có thể đã cũ",
       no_open_issues: "Không có vấn đề mở",
-      run_analysis: "Chạy phân tích để kiểm tra vấn đề."
+      run_analysis: "Chạy phân tích để kiểm tra vấn đề.",
     },
     memories: {
       title: "Bộ nhớ",
       created_success: "Đã tạo bộ nhớ thành công",
       no_memories: "Chưa có bộ nhớ",
-      no_memories_hint: "Khi các tác nhân chạy, chúng có thể lưu trữ các ghi chú và bài học có giá trị tại đây.",
-      no_memories_match: "Không có bộ nhớ nào khớp với bộ lọc hiện tại",
-      list_aria_label: "Danh sách bộ nhớ",
-      add_memory_btn: "Thêm bộ nhớ",
-      search_placeholder: "Tìm kiếm bộ nhớ...",
-      no_filter_match: "Không có bộ nhớ nào khớp với bộ lọc của bạn. Hãy thử điều chỉnh tìm kiếm.",
       form: {
         agent: "Tác tử",
         category: "Danh mục",
@@ -3958,13 +3661,8 @@ export const vi = {
         content: "Nội dung",
         importance: "Mức quan trọng",
         tags: "Thẻ",
-        tags_hint: "(phân cách bằng dấu phẩy)"
-      }
-    },
-    memory_review: {
-      all_conflicts_resolved: "Tất cả xung đột đã được giải quyết",
-      keep_prefix: "Giữ lại \"",
-      keep_suffix: "\""
+        tags_hint: "(phân cách bằng dấu phẩy)",
+      },
     },
     executions: {
       title: "Thực thi",
@@ -3972,7 +3670,7 @@ export const vi = {
       no_agents: "Chưa tạo tác tử nào",
       create_first: "Tạo tác tử đầu tiên để xem hoạt động thực thi tại đây",
       no_executions: "Chưa có thực thi nào",
-      run_agent: "Chạy tác tử để xem hoạt động thực thi tại đây"
+      run_agent: "Chạy tác tử để xem hoạt động thực thi tại đây",
     },
     workflows: {
       loading: "Đang tải quy trình...",
@@ -3983,7 +3681,7 @@ export const vi = {
       all_types: "Tất cả loại",
       no_filter_match: "Không có tác vụ nào khớp bộ lọc hiện tại",
       auto_refreshing: "Tự động làm mới khi tác vụ đang chạy",
-      cancel_failed: "Không thể hủy tác vụ quy trình"
+      cancel_failed: "Không thể hủy tác vụ quy trình",
     },
     schedules: {
       title: "Dòng thời gian lịch trình",
@@ -4014,7 +3712,7 @@ export const vi = {
       change_frequency: "Thay đổi tần suất",
       pause_schedule: "Tạm dừng lịch trình",
       resume_schedule: "Tiếp tục lịch trình",
-      headless_badge: "không giao diện"
+      headless_badge: "không giao diện",
     },
     frequency_editor: {
       title: "Thay đổi tần suất",
@@ -4024,7 +3722,7 @@ export const vi = {
       interval_seconds: "Khoảng cách (giây)",
       previewing: "Đang xem trước...",
       next_runs: "Lần chạy tiếp theo",
-      invalid_cron: "Biểu thức cron không hợp lệ"
+      invalid_cron: "Biểu thức cron không hợp lệ",
     },
     recovery: {
       agents_missed_one: "{count} tác tử đã bỏ lỡ thực thi",
@@ -4038,7 +3736,7 @@ export const vi = {
       run_once_tooltip: "Chạy một lần ngay",
       skip_tooltip: "Bỏ qua -- không khôi phục",
       dismiss_all: "Bỏ qua tất cả",
-      recover_selected: "Khôi phục {count} đã chọn"
+      recover_selected: "Khôi phục {count} đã chọn",
     },
     sla: {
       title: "SLA độ tin cậy tác tử",
@@ -4063,7 +3761,7 @@ export const vi = {
       metric_cost: "Chi phí",
       metric_mtbf: "MTBF",
       metric_auto_healed: "Tự phục hồi",
-      metric_cancelled: "Đã hủy"
+      metric_cancelled: "Đã hủy",
     },
     knowledge: {
       title: "Đồ thị tri thức",
@@ -4088,14 +3786,14 @@ export const vi = {
       failures: "Thất bại",
       avg_cost: "Chi phí TB",
       avg_duration: "Thời lượng TB",
-      pattern_data: "Dữ liệu mẫu"
+      pattern_data: "Dữ liệu mẫu",
     },
     conflicts: {
       dismissed: "Đã bỏ qua xung đột",
       resolved: "Đã giải quyết xung đột",
       resolve_failed: "Không thể giải quyết xung đột",
       conflict_count_one: "{count} xung đột",
-      conflict_count_other: "{count} xung đột"
+      conflict_count_other: "{count} xung đột",
     },
     dashboard: {
       title: "Bảng điều khiển",
@@ -4111,7 +3809,7 @@ export const vi = {
       empty_title: "Chào mừng đến Personas",
       empty_subtitle: "Tạo tác nhân đầu tiên để bắt đầu xem số liệu thực thi, biểu đồ lưu lượng và hoạt động tại đây.",
       create_persona: "Tạo Persona",
-      from_templates: "Từ mẫu"
+      from_templates: "Từ mẫu",
     },
     execution_metrics: {
       title: "Số liệu thực thi",
@@ -4129,7 +3827,7 @@ export const vi = {
       cost_spike: "Tăng đột biến chi phí",
       above_avg: "trên mức trung bình",
       top_executions: "Thực thi hàng đầu:",
-      executions_label: "{count} thực thi"
+      executions_label: "{count} thực thi",
     },
     execution_list: {
       recorded: "{count} thực thi đã ghi",
@@ -4154,7 +3852,7 @@ export const vi = {
       no_agents: "Chưa tạo tác nhân nào",
       no_agents_hint: "Tạo tác nhân đầu tiên để xem hoạt động thực thi tại đây.",
       unknown_persona: "Không rõ",
-      healing_retry: "Lần thử phục hồi #{count}"
+      healing_retry: "Lần thử phục hồi #{count}",
     },
     review: {
       title: "Đánh giá thủ công",
@@ -4218,7 +3916,7 @@ export const vi = {
       table_tooltip: "Chỉ bảng",
       review_detail: "Chi tiết đánh giá",
       select_review: "Chọn đánh giá để xem",
-      technical_context: "Ngữ cảnh kỹ thuật"
+      technical_context: "Ngữ cảnh kỹ thuật",
     },
     messages_view: {
       title: "Tin nhắn",
@@ -4266,7 +3964,7 @@ export const vi = {
       improve_placeholder: "Mô tả cách đầu ra này có thể được cải thiện...",
       submit_improvement: "Gửi cải thiện",
       starting: "Đang bắt đầu...",
-      unknown_persona: "Không rõ"
+      unknown_persona: "Không rõ",
     },
     events: {
       title: "Sự kiện",
@@ -4304,7 +4002,7 @@ export const vi = {
       source: "Nguồn",
       processed: "Đã xử lý",
       event_data: "Dữ liệu sự kiện",
-      error: "Lỗi"
+      error: "Lỗi",
     },
     health: {
       title: "Sức khỏe tác nhân",
@@ -4334,26 +4032,18 @@ export const vi = {
       status_page: "Trang trạng thái",
       operational: "Hoạt động",
       degraded: "Suy giảm",
-      outage: "Gián đoạn"
+      outage: "Gián đoạn",
     },
     leaderboard: {
       title: "Bảng xếp hạng tác nhân",
       subtitle: "Xếp hạng hiệu suất trên tất cả tác nhân",
       no_data: "Không có dữ liệu bảng xếp hạng",
       no_data_hint: "Chạy tác nhân để bắt đầu xây dựng xếp hạng hiệu suất",
-      fleet_avg: "Trung bình đội:",
-      refresh_label: "Làm mới bảng xếp hạng",
-      computing_scores: "Đang tính điểm tác nhân...",
-      single_agent_has_data: "có dữ liệu.",
-      add_more_agents: "Thêm nhiều tác nhân hơn để xem xếp hạng. Hiện chỉ có {name}",
-      open_agent: "Mở tác nhân",
-      no_agent_data_title: "Chưa có dữ liệu tác nhân nào",
-      no_agent_data_hint: "Chạy một số tác nhân để xem xếp hạng hiệu suất. Bảng xếp hạng cần lịch sử thực thi và dữ liệu sức khỏe để tính điểm.",
       reliability: "Độ tin cậy",
       speed: "Tốc độ",
       efficiency: "Hiệu quả",
       cost_effectiveness: "Hiệu quả chi phí",
-      overall: "Tổng thể"
+      overall: "Tổng thể",
     },
     analytics: {
       title: "Phân tích",
@@ -4370,25 +4060,25 @@ export const vi = {
       saved_views: "Chế độ xem đã lưu",
       create_view: "Tạo chế độ xem",
       health_issues: "Vấn đề sức khỏe",
-      rotation_overview: "Tổng quan xoay vòng"
+      rotation_overview: "Tổng quan xoay vòng",
     },
     usage: {
       title: "Mức sử dụng",
       subtitle: "Chi phí và tiêu thụ tài nguyên",
       chart_error: "Biểu đồ tải thất bại",
       chart_error_hint: "Đã xảy ra lỗi khi hiển thị biểu đồ này",
-      try_again: "Thử lại"
+      try_again: "Thử lại",
     },
     cron_agents: {
       title: "Tác nhân theo lịch",
       subtitle: "Tác nhân chạy theo lịch tự động",
       no_agents: "Không có tác nhân theo lịch",
-      no_agents_hint: "Thêm trình kích hoạt cron vào bất kỳ tác nhân nào để xem tại đây"
+      no_agents_hint: "Thêm trình kích hoạt cron vào bất kỳ tác nhân nào để xem tại đây",
     },
     timeline: {
       title: "Dòng thời gian hoạt động",
       subtitle: "Xem tổng hợp tất cả hoạt động tác nhân",
-      no_activity: "Chưa có hoạt động gần đây"
+      no_activity: "Chưa có hoạt động gần đây",
     },
     realtime_viz: {
       title: "Bus sự kiện",
@@ -4405,7 +4095,7 @@ export const vi = {
       timestamp: "Thời gian",
       payload: "Payload",
       saved_views: "Chế độ xem đã lưu",
-      save_current: "Lưu hiện tại"
+      save_current: "Lưu hiện tại",
     },
     observability_extra: {
       auto_refresh_on: "Tự động làm mới bật",
@@ -4431,7 +4121,7 @@ export const vi = {
       ipc_channel: "Kênh IPC",
       avg_duration: "Thời gian trung bình",
       call_count: "Số lần gọi",
-      error_rate: "Tỷ lệ lỗi"
+      error_rate: "Tỷ lệ lỗi",
     },
     widgets: {
       recent_activity: "Hoạt động gần đây",
@@ -4448,7 +4138,7 @@ export const vi = {
       executions_badge: "Thực thi",
       success_badge: "Thành công",
       alerts_badge: "Cảnh báo",
-      agents_badge: "Tác nhân"
+      agents_badge: "Tác nhân",
     },
     cards: {
       fleet_optimization: "Tối ưu hóa đội",
@@ -4457,7 +4147,7 @@ export const vi = {
       remote_subtitle: "Thao tác nhanh để quản lý tác nhân",
       resume_setup: "Tiếp tục thiết lập",
       resume_subtitle: "Tiếp tục từ nơi bạn đã dừng",
-      knowledge_hub: "Trung tâm kiến thức"
+      knowledge_hub: "Trung tâm kiến thức",
     },
     activity: {
       title: "Hoạt động",
@@ -4503,7 +4193,7 @@ export const vi = {
       create_persona: "Tạo Persona",
       from_templates: "Từ mẫu",
       execution_label: "Thực thi",
-      unknown: "Không rõ"
+      unknown: "Không rõ",
     },
     analytics_dashboard: {
       title: "Phân tích",
@@ -4562,7 +4252,7 @@ export const vi = {
       issues_count: "{count} vấn đề",
       issues_count_one: "{count} vấn đề",
       never: "chưa bao giờ",
-      fail_count: "{count} lần thất bại"
+      fail_count: "{count} lần thất bại",
     },
     cron: {
       title: "Tác nhân Cron",
@@ -4581,7 +4271,7 @@ export const vi = {
       no_schedule: "không có lịch",
       every_interval: "mỗi {interval}",
       next: "tiếp",
-      last: "cuối"
+      last: "cuối",
     },
     activity_timeline: {
       title: "Dòng thời gian hoạt động",
@@ -4590,7 +4280,7 @@ export const vi = {
       events: "Sự kiện",
       messages: "Tin nhắn",
       no_activity: "Chưa có hoạt động",
-      high: "Cao"
+      high: "Cao",
     },
     sla_card: {
       successful: "Thành công",
@@ -4602,7 +4292,7 @@ export const vi = {
       auto_healed: "Tự động phục hồi",
       cancelled: "Đã hủy",
       failing: "{count} đang thất bại",
-      healed: "{count} đã phục hồi"
+      healed: "{count} đã phục hồi",
     },
     realtime_page: {
       title: "Màn hình Bus sự kiện",
@@ -4656,7 +4346,7 @@ export const vi = {
       galaxy: "Thiên hà",
       galaxy_desc: "Chùm sao quỹ đạo với đuôi sao chổi",
       lanes: "Làn",
-      lanes_desc: "Sơ đồ luồng làn ngang"
+      lanes_desc: "Sơ đồ luồng làn ngang",
     },
     memory_form: {
       agent: "Tác nhân",
@@ -4673,25 +4363,25 @@ export const vi = {
       saving: "Đang lưu...",
       created_success: "Đã tạo bộ nhớ thành công",
       fill_required: "Điền tất cả các trường bắt buộc để lưu",
-      saving_memory: "Đang lưu bộ nhớ..."
+      saving_memory: "Đang lưu bộ nhớ...",
     },
     memory_filter: {
       search_placeholder: "Tìm kiếm bộ nhớ...",
       all_agents: "Tất cả tác nhân",
-      all_categories: "Tất cả danh mục"
+      all_categories: "Tất cả danh mục",
     },
     memory_actions: {
       dismiss_suggestion: "Bỏ qua gợi ý",
       memory_insights: "Hiểu biết bộ nhớ",
       suggestions: "{count} gợi ý",
-      suggestions_one: "{count} gợi ý"
+      suggestions_one: "{count} gợi ý",
     },
     memory_conflict: {
       memory_a: "Bộ nhớ A",
       memory_b: "Bộ nhớ B",
       merge: "Gộp",
       keep: "Giữ",
-      vs: "vs"
+      vs: "vs",
     },
     observability_charts: {
       cost_over_time: "Chi phí theo thời gian",
@@ -4703,7 +4393,7 @@ export const vi = {
       anomaly_detected: "{count} bất thường chi phí được phát hiện",
       anomaly_click_hint: "Nhấp vào điểm kim cương trên biểu đồ để điều tra",
       clear_traces: "Xóa trace đã hoàn thành",
-      all_operations: "Tất cả thao tác"
+      all_operations: "Tất cả thao tác",
     },
     health_extra: {
       success: "Thành công",
@@ -4719,11 +4409,6 @@ export const vi = {
       predicted_failure: "Dự đoán tăng đột biến thất bại trong",
       loading_status: "Đang tải dữ liệu trang trạng thái...",
       no_personas: "Không có personas để hiển thị.",
-      score_prefix: "Điểm:",
-      uptime_30d_prefix: "Thời gian hoạt động 30d:",
-      updated_prefix: "Đã cập nhật",
-      consecutive_failures_one: "{count} lần thất bại liên tiếp",
-      consecutive_failures_other: "{count} lần thất bại liên tiếp",
       score_label: "Điểm",
       uptime_30d: "Uptime 30 ngày",
       updated: "Cập nhật {time}",
@@ -4740,7 +4425,7 @@ export const vi = {
       open: "{count} mở",
       sla_compliance: "Tuân thủ SLA",
       consecutive_failures: "{count} lần thất bại liên tiếp",
-      consecutive_failure: "{count} lần thất bại liên tiếp"
+      consecutive_failure: "{count} lần thất bại liên tiếp",
     },
     system_health: {
       title: "Kiểm tra hệ thống",
@@ -4754,7 +4439,7 @@ export const vi = {
       save_configuration: "Lưu cấu hình",
       litellm_footer: "Cài đặt này được lưu cục bộ và chia sẻ trên tất cả tác nhân được cấu hình dùng nhà cung cấp LiteLLM.",
       ipc_error: "Cầu nối ứng dụng không phản hồi. Hãy thử khởi động lại ứng dụng. Bạn vẫn có thể tiếp tục khám phá giao diện.",
-      issues_warning: "Một số kiểm tra báo cáo vấn đề. Bạn vẫn có thể tiếp tục, nhưng một số tính năng có thể không hoạt động đúng."
+      issues_warning: "Một số kiểm tra báo cáo vấn đề. Bạn vẫn có thể tiếp tục, nhưng một số tính năng có thể không hoạt động đúng.",
     },
     review_extra: {
       add_note: "Thêm ghi chú (tùy chọn)...",
@@ -4766,7 +4451,7 @@ export const vi = {
       quick_actions: "Thao tác nhanh",
       accepted: "{count} đã chấp nhận",
       rejected: "{count} đã từ chối",
-      undecided: "{count} chưa quyết định"
+      undecided: "{count} chưa quyết định",
     },
     widgets_extra: {
       execution_health_chart: "Sức khỏe thực thi",
@@ -4775,147 +4460,29 @@ export const vi = {
       failed: "Thất bại",
       close: "Đóng",
       dismiss_help: "Bỏ qua trợ giúp",
-      skip_tour: "Bỏ qua hướng dẫn hoàn toàn"
-    },
-    burn_rate_extra: {
-      active_personas_subtitle: "{count} tác nhân hoạt động · ranh giới tháng cục bộ",
-      title: "Dự đoán tốc độ tiêu hao",
-      daily_burn: "Tiêu hao hàng ngày",
-      projected_monthly: "Dự kiến hàng tháng",
-      at_risk: "Có rủi ro",
-      top_cost_drivers: "Yếu tố chi phí hàng đầu",
-      budget_exhaustion_warnings: "Cảnh báo cạn ngân sách",
-      exhausted: "Đã cạn",
-      days_left: "còn {days} ngày"
-    },
-    predictive_alerts_extra: {
-      per_month: "/tháng",
-      confidence_pct: "% tin cậy",
-      title: "Cảnh báo dự đoán",
-      all_nominal: "Tất cả hệ thống bình thường",
-      no_alerts: "Không có cảnh báo dự đoán -- tất cả personas trong thông số bình thường.",
-      budget_exhausted: "Ngân sách đã cạn",
-      budget_exhaustion_in: "Ngân sách cạn trong {days} ngày",
-      failure_spike_predicted: "Dự đoán tăng đột biến tỷ lệ thất bại trong {days} ngày",
-      excessive_healing: "Hoạt động tự phục hồi quá mức",
-      critical_health: "Trạng thái sức khỏe nghiêm trọng",
-      byom_recommendations: "Đề xuất định tuyến BYOM"
-    },
-    annotate_modal: {
-      annotation_placeholder: "ví dụ: Xác minh webhook Stripe yêu cầu nội dung yêu cầu thô, không phải JSON đã phân tích",
-      title: "Thêm chú thích kiến thức",
-      persona_label: "Persona phân bổ",
-      scope_label: "Phạm vi",
-      tool_name: "Tên công cụ",
-      connector_type: "Loại trình kết nối / Dịch vụ",
-      annotation_label: "Chú thích",
-      cancel: "Hủy",
-      saving: "Đang lưu...",
-      save_annotation: "Lưu chú thích"
-    },
-    knowledge_row: {
-      execution_trend_label: "Xu hướng thực thi",
-      annotation: "Chú thích",
-      successes: "Thành công",
-      failures: "Thất bại",
-      avg_cost: "Chi phí trung bình",
-      avg_duration: "Thời gian trung bình",
-      pattern_data: "Dữ liệu mẫu",
-      collapse_details: "Thu gọn chi tiết",
-      expand_details: "Mở rộng chi tiết",
-      verify_annotation: "Xác minh chú thích",
-      dismiss_annotation: "Bỏ qua chú thích"
-    },
-    knowledge_graph: {
-      mock_pattern: "Mẫu giả lập",
-      seed_tooltip: "Tạo mẫu giả lập (chỉ dev)",
-      all_types: "Tất cả loại",
-      all_scopes: "Tất cả phạm vi",
-      failure_drilldown_prefix: "Phân tích thất bại:",
-      failure_date_filter: "Hiển thị các mẫu thất bại hoạt động từ hoặc sau {date}",
-      data_unavailable: "Dữ liệu tri thức không khả dụng",
-      loading_patterns: "Đang tải các mẫu tri thức...",
-      drilldown_toggle_title: "Hiện/ẩn phân tích thất bại",
-      no_patterns_yet: "Chưa có mẫu tri thức nào",
-      no_patterns_yet_hint: "Chạy các lần thực thi tác nhân để xây dựng các mẫu tri thức. Các tác nhân trở nên thông minh hơn theo thời gian.",
-      no_patterns_match: "Không có mẫu nào khớp với bộ lọc hiện tại",
-      recent_learnings: "Bài học gần đây",
-      curating_manually: "Tuyển chọn tài liệu thủ công?",
-      obsidian_tip: "Với ít hơn ~1000 ghi chú, trình kết nối Obsidian có thể đồng bộ trực tiếp vault của bạn."
-    },
-    focused_decision: {
-      video_not_supported: "Trình duyệt của bạn không hỗ trợ phát video.",
-      reject_this: "Từ chối cái này",
-      accept_this: "Chấp nhận cái này",
-      accept: "Chấp nhận",
-      reject: "Từ chối",
-      media_unavailable: "Phương tiện không khả dụng"
-    },
-    review_focus: {
-      video_not_supported: "Trình duyệt của bạn không hỗ trợ phát video.",
-      all_caught_up: "Tất cả xong rồi",
-      no_pending: "Không có đánh giá đang chờ để xử lý.",
-      queue: "Hàng đợi",
-      clear: "Xóa",
-      clear_all_verdicts: "Xóa tất cả phán quyết",
-      quick_actions: "Thao tác nhanh",
-      reject_all: "Từ chối tất cả",
-      accept_all: "Chấp nhận tất cả",
-      retry_with_changes: "Thử lại với thay đổi"
-    },
-    bulk_action_bar: {
-      pending_reviews_selected_one: "{count} bài duyệt chờ xử lý đã chọn",
-      pending_reviews_selected_other: "{count} bài duyệt chờ xử lý đã chọn"
-    },
-    review_inbox: {
-      drag_to_resize: "Kéo để thay đổi kích thước"
-    },
-    healing_issues_panel: {
-      ai_healing_title: "Tự phục hồi AI",
-      diagnosis_label: "Chẩn đoán:",
-      fixes_applied: "Đã áp dụng sửa lỗi",
-      alert_history_title: "Lịch sử cảnh báo",
-      all_agents_global: "Tất cả tác nhân (toàn cục)",
-      add_rule: "Thêm quy tắc",
-      no_rules_configured: "Không có quy tắc cảnh báo nào được cấu hình. Thêm quy tắc để bắt đầu giám sát.",
-      confidence_pct_suffix: "% tin cậy",
-      spike_on: "tăng đột biến vào",
-      correlated_events_prefix: "Sự kiện tương quan (",
-      circuit_breaker_label: "circuit breaker",
-      auto_disabled_message: "Tác nhân này đã bị tự động vô hiệu hóa như một phản ứng circuit-breaker đối với các lần thất bại lặp lại.",
-      execution_label: "Thực thi:",
-      issue_marked_as: "Vấn đề này được đánh dấu là",
-      retry_in_progress: "Đang thử lại — trạng thái sẽ cập nhật khi hoàn tất.",
-      resolve_issue_title: "Đánh dấu vấn đề đã giải quyết",
-      title: "Vấn đề sức khỏe",
-      analyzing: "Đang phân tích...",
-      run_analysis: "Chạy phân tích",
-      no_open_issues: "Không có vấn đề nào mở",
-      run_analysis_hint: "Chạy phân tích để kiểm tra vấn đề.",
-      healing_audit_log: "Nhật ký kiểm tra phục hồi",
-      no_silent_failures: "Không có lỗi thầm lặng nào được ghi."
+      skip_tour: "Bỏ qua hướng dẫn hoàn toàn",
     },
     remote_control_card: {
       connect_to_desktop: "Kết nối với máy tính",
       connect_description: "Chạy tác nhân bằng CLI máy tính qua Điều khiển từ xa. Khởi động {command} trên máy tính, sau đó kết nối tại đây.",
-      requires_subscription: "Yêu cầu đăng ký Claude Pro hoặc Max"
+      requires_subscription: "Yêu cầu đăng ký Claude Pro hoặc Max",
     },
     resume_setup_card: {
       resume_tour: "Tiếp tục hướng dẫn",
       left_off_at: "Bạn đã dừng tại",
       steps_completed: "{completed}/{total} bước đã hoàn thành",
       skip_tour: "Bỏ qua hướng dẫn hoàn toàn",
-      continue_label: "Tiếp tục"
+      continue_label: "Tiếp tục",
     },
     detail_modal: {
-      close: "Đóng"
+      close: "Đóng",
     },
     metric_help_popover: {
       help_for: "Trợ giúp cho {label}",
       dismiss_help: "Bỏ qua trợ giúp",
       healthy: "Bình thường:",
       click: "Nhấp:",
-      got_it: "Hiểu rồi, đừng hiện lại"
+      got_it: "Hiểu rồi, đừng hiện lại",
     },
     install_button: {
       install_node: "Cài đặt Node.js",
@@ -4926,7 +4493,7 @@ export const vi = {
       installation_failed: "Cài đặt thất bại",
       try_manually: "Thử chạy thủ công:",
       retry: "Thử lại",
-      official_page: "Trang chính thức"
+      official_page: "Trang chính thức",
     },
     section_card: {
       checking: "Đang kiểm tra {section}...",
@@ -4937,12 +4504,12 @@ export const vi = {
       sign_in_google: "Đăng nhập với Google",
       working: "Đang xử lý...",
       connect_claude: "Kết nối với Claude Desktop",
-      disconnect: "Ngắt kết nối"
+      disconnect: "Ngắt kết nối",
     },
     metrics_cards: {
       cost_spike: "Tăng đột biến chi phí",
       above_avg: "trên mức trung bình",
-      top_executions: "Thực thi hàng đầu:"
+      top_executions: "Thực thi hàng đầu:",
     },
     event_log_item: {
       event_id: "ID sự kiện",
@@ -4954,15 +4521,75 @@ export const vi = {
       copied: "Đã sao chép",
       copy: "Sao chép",
       error: "Lỗi",
-      system: "Hệ thống"
+      system: "Hệ thống",
+    },
+    burn_rate_extra: {
+      title: "Dự đoán tốc độ tiêu hao",
+      daily_burn: "Tiêu hao hàng ngày",
+      projected_monthly: "Dự kiến hàng tháng",
+      at_risk: "Có rủi ro",
+      top_cost_drivers: "Yếu tố chi phí hàng đầu",
+      budget_exhaustion_warnings: "Cảnh báo cạn ngân sách",
+      exhausted: "Đã cạn",
+      days_left: "còn {days} ngày",
     },
     cascade: {
       title: "Bản đồ tầng chuỗi",
-      no_chains: "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập"
+      no_chains: "Không phát hiện chuỗi -- tất cả personas hoạt động độc lập",
+    },
+    predictive_alerts_extra: {
+      title: "Cảnh báo dự đoán",
+      all_nominal: "Tất cả hệ thống bình thường",
+      no_alerts: "Không có cảnh báo dự đoán -- tất cả personas trong thông số bình thường.",
+      budget_exhausted: "Ngân sách đã cạn",
+      budget_exhaustion_in: "Ngân sách cạn trong {days} ngày",
+      failure_spike_predicted: "Dự đoán tăng đột biến tỷ lệ thất bại trong {days} ngày",
+      excessive_healing: "Hoạt động tự phục hồi quá mức",
+      critical_health: "Trạng thái sức khỏe nghiêm trọng",
+      byom_recommendations: "Đề xuất định tuyến BYOM",
+    },
+    annotate_modal: {
+      title: "Thêm chú thích kiến thức",
+      persona_label: "Persona phân bổ",
+      scope_label: "Phạm vi",
+      tool_name: "Tên công cụ",
+      connector_type: "Loại trình kết nối / Dịch vụ",
+      annotation_label: "Chú thích",
+      cancel: "Hủy",
+      saving: "Đang lưu...",
+      save_annotation: "Lưu chú thích",
+    },
+    knowledge_row: {
+      annotation: "Chú thích",
+      successes: "Thành công",
+      failures: "Thất bại",
+      avg_cost: "Chi phí trung bình",
+      avg_duration: "Thời gian trung bình",
+      pattern_data: "Dữ liệu mẫu",
+      collapse_details: "Thu gọn chi tiết",
+      expand_details: "Mở rộng chi tiết",
+      verify_annotation: "Xác minh chú thích",
+      dismiss_annotation: "Bỏ qua chú thích",
+    },
+    focused_decision: {
+      accept: "Chấp nhận",
+      reject: "Từ chối",
+      media_unavailable: "Phương tiện không khả dụng",
+    },
+    review_focus: {
+      all_caught_up: "Tất cả xong rồi",
+      no_pending: "Không có đánh giá đang chờ để xử lý.",
+      queue: "Hàng đợi",
+      clear: "Xóa",
+      clear_all_verdicts: "Xóa tất cả phán quyết",
+      quick_actions: "Thao tác nhanh",
+      reject_all: "Từ chối tất cả",
+      accept_all: "Chấp nhận tất cả",
+      retry_with_changes: "Thử lại với thay đổi",
     },
     memory_card: {
       confirm: "Xác nhận",
-      cancel: "Hủy"
+      cancel: "Hủy",
     },
     memory_detail: {
       title_label: "Tiêu đề",
@@ -4972,7 +4599,7 @@ export const vi = {
       tags_label: "Thẻ",
       view_source_execution: "Xem thực thi nguồn",
       delete_memory: "Xóa bộ nhớ",
-      close: "Đóng"
+      close: "Đóng",
     },
     memory_table: {
       agent: "Tác nhân",
@@ -4980,11 +4607,11 @@ export const vi = {
       category: "Danh mục",
       priority: "Ưu tiên",
       tags: "Thẻ",
-      created: "Ngày tạo"
+      created: "Ngày tạo",
     },
     review_results: {
       title: "Đánh giá bộ nhớ AI",
-      review_failed: "Đánh giá thất bại"
+      review_failed: "Đánh giá thất bại",
     },
     anomaly_drilldown_extra: {
       title: "Phân tích sâu bất thường",
@@ -4993,7 +4620,7 @@ export const vi = {
       correlating: "Đang tương quan sự kiện...",
       likely_root_causes: "Nguyên nhân gốc rễ có thể",
       correlated_events: "Sự kiện tương quan",
-      no_correlated: "Không tìm thấy sự kiện tương quan trong cửa sổ ±24h."
+      no_correlated: "Không tìm thấy sự kiện tương quan trong cửa sổ ±24h.",
     },
     healing_issue_modal: {
       issue_resolved: "Vấn đề đã giải quyết",
@@ -5008,14 +4635,23 @@ export const vi = {
       auto_resolved: "Vấn đề này đã tự động giải quyết",
       close: "Đóng",
       resolving: "Đang giải quyết…",
-      mark_resolved: "Đánh dấu đã giải quyết"
+      mark_resolved: "Đánh dấu đã giải quyết",
+    },
+    healing_issues_panel: {
+      title: "Vấn đề sức khỏe",
+      analyzing: "Đang phân tích...",
+      run_analysis: "Chạy phân tích",
+      no_open_issues: "Không có vấn đề nào mở",
+      run_analysis_hint: "Chạy phân tích để kiểm tra vấn đề.",
+      healing_audit_log: "Nhật ký kiểm tra phục hồi",
+      no_silent_failures: "Không có lỗi thầm lặng nào được ghi.",
     },
     healing_timeline: {
       loading: "Đang tải dòng thời gian...",
       no_events: "Không có sự kiện phục hồi",
       no_events_hint: "Chạy phân tích để xây dựng dòng thời gian khả năng phục hồi.",
       knowledge_base: "Cơ sở kiến thức",
-      patterns_hint: "Các mẫu ảnh hưởng đến quyết định phục hồi"
+      patterns_hint: "Các mẫu ảnh hưởng đến quyết định phục hồi",
     },
     ipc_panel: {
       title: "Hiệu suất IPC",
@@ -5024,29 +4660,29 @@ export const vi = {
       command: "Lệnh",
       calls_header: "Số lần gọi",
       duration_header: "Thời gian",
-      when_header: "Khi nào"
+      when_header: "Khi nào",
     },
     system_trace_extra: {
       no_traces: "Không có trace hệ thống nào được ghi",
       no_traces_hint: "Trace xuất hiện khi các thao tác thiết kế, thông tin xác thực hoặc mẫu chạy",
       all_operations: "Tất cả thao tác",
       clear_completed: "Xóa trace đã hoàn thành",
-      span: "Span"
+      span: "Span",
     },
     event_log_sidebar: {
       title: "Nhật ký sự kiện",
       no_events: "Chưa có sự kiện",
-      open_detail_drawer: "Mở trong ngăn chi tiết"
+      open_detail_drawer: "Mở trong ngăn chi tiết",
     },
     chart_error: {
-      chart_unavailable: "Biểu đồ không khả dụng"
+      chart_unavailable: "Biểu đồ không khả dụng",
     },
     realtime_idle: {
-      idle: "Rảnh"
+      idle: "Rảnh",
     },
     day_range: {
-      apply: "Áp dụng"
-    }
+      apply: "Áp dụng",
+    },
   },
   templates: {
     gallery: {
@@ -5062,14 +4698,13 @@ export const vi = {
       triggers: "Trình kích hoạt",
       no_flows: "Không có luồng",
       readiness_tooltip: "{percent}% trình kết nối sẵn sàng",
-      template_details_tabs_aria: "Chi tiết mẫu"
     },
     actions: {
       view_details: "Xem chi tiết",
       adopt: "Áp dụng",
       try_it: "Thử ngay",
       adopt_as_persona: "Áp dụng làm tác tử",
-      delete: "Xóa"
+      delete: "Xóa",
     },
     detail: {
       tab_overview: "Tổng quan",
@@ -5081,14 +4716,14 @@ export const vi = {
       review_error: "Lỗi",
       used_references: "Đã sử dụng mẫu tham chiếu",
       no_design_data: "Không có dữ liệu thiết kế",
-      no_design_data_hint: "Dữ liệu thiết kế không khả dụng cho mẫu này."
+      no_design_data_hint: "Dữ liệu thiết kế không khả dụng cho mẫu này.",
     },
     detail_overview: {
       use_case_flows: "Luồng trường hợp sử dụng",
       suggested_adjustment: "Điều chỉnh đề xuất",
       adjustment_attempt: "(lần thử {attempt}/3)",
       dimension_completion: "Hoàn thành chiều",
-      dimensions_score: "({score}/9 chiều)"
+      dimensions_score: "({score}/9 chiều)",
     },
     adoption: {
       title: "Áp dụng mẫu",
@@ -5097,7 +4732,7 @@ export const vi = {
       step_credentials: "Liên kết thông tin xác thực",
       step_preferences: "Đặt tùy chọn",
       step_generate: "Tạo tác tử",
-      step_review: "Xem lại & lưu"
+      step_review: "Xem lại & lưu",
     },
     choose: {
       select_use_cases: "Chọn trường hợp sử dụng",
@@ -5107,7 +4742,7 @@ export const vi = {
       components: "Thành phần",
       examples: "Ví dụ",
       tools: "Công cụ",
-      none_selected: "Chưa chọn trường hợp sử dụng -- chọn ít nhất một để tiếp tục"
+      none_selected: "Chưa chọn trường hợp sử dụng -- chọn ít nhất một để tiếp tục",
     },
     connect: {
       all_set: "Không cần trình kết nối -- bạn đã sẵn sàng!",
@@ -5120,7 +4755,7 @@ export const vi = {
       select_credential: "Chọn thông tin xác thực...",
       create_new: "+ Tạo thông tin xác thực mới",
       design_custom: "+ Thiết kế trình kết nối tùy chỉnh",
-      add_credential: "Thêm thông tin xác thực"
+      add_credential: "Thêm thông tin xác thực",
     },
     build: {
       title: "Xây dựng tác tử",
@@ -5137,7 +4772,7 @@ export const vi = {
       close_hint: "Bạn có thể đóng hộp thoại này -- xử lý tiếp tục ở nền.",
       adjustments_label: "Yêu cầu điều chỉnh (tùy chọn)",
       adjustments_placeholder: "Ví dụ: Thay đổi lịch trình chạy lúc 9 giờ sáng, xóa tích hợp ClickUp, thêm thông báo Slack",
-      discard_draft: "Bỏ bản nháp và bắt đầu lại"
+      discard_draft: "Bỏ bản nháp và bắt đầu lại",
     },
     quick_adopt: {
       all_matched: "Tất cả trình kết nối đã khớp",
@@ -5145,7 +4780,7 @@ export const vi = {
       missing_prefix: "Thiếu: ",
       add_in_catalog: "thêm trong danh mục khóa",
       build_persona: "Xây dựng tác tử",
-      full_wizard: "Trình hướng dẫn đầy đủ"
+      full_wizard: "Trình hướng dẫn đầy đủ",
     },
     data: {
       title: "Thiết lập dữ liệu",
@@ -5154,7 +4789,7 @@ export const vi = {
       tables_found: "{tables} được tìm thấy trong cơ sở dữ liệu tích hợp.",
       create_new: "Tạo bảng mới",
       use_existing: "Sử dụng bảng hiện có",
-      complete: "Thiết lập dữ liệu hoàn tất"
+      complete: "Thiết lập dữ liệu hoàn tất",
     },
     tune: {
       title: "Cấu hình tác tử",
@@ -5173,7 +4808,7 @@ export const vi = {
       check_interval: "Khoảng thời gian kiểm tra",
       check_interval_placeholder: "Mỗi 5 phút",
       manual_hint: "Kích hoạt thủ công -- không cần cấu hình",
-      system_hint: "Kích hoạt bởi sự kiện hệ thống -- không cần cấu hình"
+      system_hint: "Kích hoạt bởi sự kiện hệ thống -- không cần cấu hình",
     },
     review_policy: {
       title: "Duyệt thủ công",
@@ -5190,7 +4825,7 @@ export const vi = {
       timeout_1h: "1 giờ",
       timeout_4h: "4 giờ",
       timeout_24h: "24 giờ",
-      timeout_none: "Không giới hạn"
+      timeout_none: "Không giới hạn",
     },
     memory: {
       title: "Bộ nhớ",
@@ -5203,7 +4838,7 @@ export const vi = {
       scope_patterns: "Mẫu thực thi",
       scope_errors: "Giải pháp lỗi",
       scope_custom: "Phạm vi tùy chỉnh...",
-      scope_custom_placeholder: "Mô tả những gì cần nhớ..."
+      scope_custom_placeholder: "Mô tả những gì cần nhớ...",
     },
     create: {
       use_cases: "Trường hợp sử dụng",
@@ -5228,12 +4863,12 @@ export const vi = {
       safety_issues: "Vấn đề an toàn",
       safety_acknowledge_one: "Tôi xác nhận {count} phát hiện an toàn nghiêm trọng và chấp nhận rủi ro",
       safety_acknowledge_other: "Tôi xác nhận {count} phát hiện an toàn nghiêm trọng và chấp nhận rủi ro",
-      edit_details: "Sửa chi tiết"
+      edit_details: "Sửa chi tiết",
     },
     review: {
       use_cases_header: "Trường hợp sử dụng ({count})",
       tools_header: "Công cụ ({count})",
-      triggers_header: "Trình kích hoạt ({count})"
+      triggers_header: "Trình kích hoạt ({count})",
     },
     matrix: {
       preparing: "Đang chuẩn bị build...",
@@ -5273,19 +4908,6 @@ export const vi = {
       build_complete: "Build hoàn tất",
       adjust_placeholder: "Điều chỉnh bất kỳ điều gì...",
       answer_placeholder: "Câu trả lời của bạn...",
-      answer_cell: "Câu trả lời: {cell}",
-      working_on: "Đang làm việc trên: {cells}",
-      draft_ready_label: "Bản nháp sẵn sàng",
-      editing_cell: "Đang chỉnh sửa: {cell}",
-      protocol_active: "Giao thức đang hoạt động",
-      matrix_unavailable: "Dữ liệu ma trận không khả dụng.",
-      persona_matrix_title: "Ma trận tác nhân",
-      cell_status_analyzing: "Đang phân tích",
-      cell_status_answered: "Đã trả lời",
-      cell_status_resolved: "Đã giải quyết",
-      cell_status_input_needed: "Cần đầu vào",
-      cell_status_missing_credential: "Thiếu thông tin xác thực",
-      cell_status_error: "Lỗi"
     },
     sandbox: {
       restriction_events: "Đã tắt phát sự kiện",
@@ -5301,12 +4923,12 @@ export const vi = {
       desc_unverified: "Mẫu này đến từ nguồn không xác định và chưa được xác minh. Nó sẽ chạy với khả năng hạn chế để bảo vệ hệ thống của bạn.",
       desc_community: "Mẫu cộng đồng này chưa được xác minh chính thức. Nó sẽ chạy trong chế độ hộp cát với khả năng hạn chế.",
       badge_unverified: "Chưa xác minh",
-      badge_sandbox: "Chế độ hộp cát"
+      badge_sandbox: "Chế độ hộp cát",
     },
     page: {
       title: "Mẫu tác nhân",
       subtitle_one: "{count} mẫu khả dụng",
-      subtitle_other: "{count} mẫu khả dụng"
+      subtitle_other: "{count} mẫu khả dụng",
     },
     explore: {
       ready_to_deploy: "Sẵn sàng triển khai",
@@ -5327,7 +4949,7 @@ export const vi = {
       role_templates: "Mẫu {role}",
       by_role: "Theo vai trò",
       by_need: "Theo nhu cầu",
-      classic: "Cổ điển"
+      classic: "Cổ điển",
     },
     opportunities: {
       title: "Cơ hội tự động hóa",
@@ -5335,15 +4957,15 @@ export const vi = {
       ready_now: "Sẵn sàng ngay",
       add_connector: "Thêm",
       unlock_more: "để mở khóa thêm {count}",
-      explore_templates: "Khám phá mẫu {label}"
+      explore_templates: "Khám phá mẫu {label}",
     },
     recommended: {
       title: "Đề xuất cho bạn",
       subtitle: "Dựa trên trình kết nối của bạn",
-      no_recommendations: "Chưa có đề xuất nào."
+      no_recommendations: "Chưa có đề xuất nào.",
     },
     trending: {
-      title: "Được áp dụng nhiều nhất tuần này"
+      title: "Được áp dụng nhiều nhất tuần này",
     },
     empty: {
       no_templates: "Chưa có mẫu nào được tạo",
@@ -5352,7 +4974,7 @@ export const vi = {
       no_search_results_hint: "Hãy thử điều chỉnh cụm từ tìm kiếm hoặc bộ lọc.",
       clear_search: "Xóa tìm kiếm",
       waiting_for_draft: "Đang chờ bản nháp persona",
-      waiting_for_draft_hint: "AI đang tạo bản nháp dựa trên lựa chọn của bạn. Thường mất vài giây."
+      waiting_for_draft_hint: "AI đang tạo bản nháp dựa trên lựa chọn của bạn. Thường mất vài giây.",
     },
     banners: {
       draft_prefix: "Bản nháp: ",
@@ -5365,7 +4987,7 @@ export const vi = {
       status_completed: "Đã hoàn tất",
       status_failed: "Thất bại",
       click_to_view_result: "Nhấp để xem kết quả",
-      click_to_view_output: "Nhấp để xem đầu ra"
+      click_to_view_output: "Nhấp để xem đầu ra",
     },
     search: {
       switch_to_keyword: "Chuyển sang tìm kiếm theo từ khóa",
@@ -5405,21 +5027,17 @@ export const vi = {
       autocomplete_difficulty: "Độ khó",
       autocomplete_setup_time: "Thời gian thiết lập",
       autocomplete_suggestions: "Gợi ý",
-      coverage_filter_aria: "Bộ lọc phạm vi",
-      search_suggestions_aria: "Gợi ý tìm kiếm",
-      clear_search_aria: "Xóa tìm kiếm",
-      search_with_ai_aria: "Tìm kiếm với AI"
     },
     list: {
       template_name: "Tên mẫu",
       components: "Thành phần",
-      adoptions: "Lần áp dụng"
+      adoptions: "Lần áp dụng",
     },
     row_actions: {
       row_actions_label: "Thao tác hàng",
       view_details: "Xem chi tiết",
       rebuild: "Xây dựng lại",
-      delete_template: "Xóa mẫu"
+      delete_template: "Xóa mẫu",
     },
     connector_readiness: {
       click_to_add: "nhấp để thêm thông tin xác thực",
@@ -5429,14 +5047,14 @@ export const vi = {
       needs_setup: "Cần thiết lập",
       not_ready: "Chưa sẵn sàng",
       needs_credential: "cần thông tin xác thực",
-      not_installed: "chưa cài đặt"
+      not_installed: "chưa cài đặt",
     },
     detail_modal: {
       adopted: "{count} lần áp dụng",
       reference_patterns: "Mẫu tham chiếu",
       adopt_as_persona: "Áp dụng làm Persona",
       try_it: "Thử ngay",
-      design_unavailable: "Dữ liệu thiết kế không khả dụng cho mẫu này."
+      design_unavailable: "Dữ liệu thiết kế không khả dụng cho mẫu này.",
     },
     overview_tab: {
       loading_metrics: "Đang tải số liệu hiệu suất...",
@@ -5456,7 +5074,7 @@ export const vi = {
       suggested_adjustment: "Điều chỉnh đề xuất",
       adjustment_attempt: "(lần thử {attempt}/3)",
       dimension_completion: "Hoàn thành chiều",
-      dimensions_score: "({score}/9 chiều)"
+      dimensions_score: "({score}/9 chiều)",
     },
     review_detail: {
       design_unavailable: "Dữ liệu thiết kế không khả dụng cho mẫu này.",
@@ -5466,7 +5084,7 @@ export const vi = {
       adopt_as_new_persona: "Áp dụng làm Persona mới",
       view_raw_json: "Xem JSON thô",
       hide_raw_json: "Ẩn JSON thô",
-      used_references: "Mẫu này đã dùng các mẫu tham chiếu từ các đánh giá đạt trước đó"
+      used_references: "Mẫu này đã dùng các mẫu tham chiếu từ các đánh giá đạt trước đó",
     },
     rebuild_modal: {
       title: "Xây dựng lại mẫu",
@@ -5483,7 +5101,7 @@ export const vi = {
       unknown_error: "Đã xảy ra lỗi không rõ trong quá trình xây dựng lại.",
       start_rebuild: "Bắt đầu xây dựng lại",
       cancel_rebuild: "Hủy xây dựng lại",
-      run_in_background: "Chạy ở nền"
+      run_in_background: "Chạy ở nền",
     },
     preview_modal: {
       preview_title: "Xem trước: {name}",
@@ -5497,7 +5115,7 @@ export const vi = {
       completed: "Đã hoàn tất",
       execution_failed: "Thực thi thất bại",
       run_again: "Chạy lại",
-      close_test_continues: "Bạn có thể đóng -- kiểm thử sẽ tiếp tục ở nền"
+      close_test_continues: "Bạn có thể đóng -- kiểm thử sẽ tiếp tục ở nền",
     },
     expanded: {
       adopt: "Áp dụng",
@@ -5507,7 +5125,7 @@ export const vi = {
       architecture: "Kiến trúc",
       events: "Sự kiện",
       reviews_label: "Đánh giá",
-      notifications: "Thông báo"
+      notifications: "Thông báo",
     },
     matrix_cmd: {
       identity: "Danh tính",
@@ -5526,7 +5144,7 @@ export const vi = {
       build_label: "Build",
       adjust_placeholder: "Điều chỉnh bất kỳ điều gì...",
       test_agent: "Kiểm thử tác nhân",
-      save_version: "Lưu phiên bản"
+      save_version: "Lưu phiên bản",
     },
     questionnaire: {
       header: "{label} -- Câu hỏi {current} trong {total}",
@@ -5543,11 +5161,6 @@ export const vi = {
       answer_remaining: "Trả lời còn lại ({count})",
       next: "Tiếp theo",
       setup: "Thiết lập",
-      previous_question: "Câu hỏi trước",
-      next_question: "Câu hỏi tiếp theo",
-      go_to_question: "Đến câu hỏi {number}",
-      question_answered_suffix: " (đã trả lời)",
-      question_unanswered_suffix: " (chưa trả lời)"
     },
     sandbox_banner: {
       community_sandbox: "Mẫu cộng đồng -- Chế độ hộp cát",
@@ -5558,7 +5171,7 @@ export const vi = {
       human_review_required: "Yêu cầu đánh giá con người",
       budget_cap_enforced: "Giới hạn ngân sách được áp dụng",
       max_concurrent_one: "Tối đa {max} lần chạy đồng thời",
-      max_concurrent_other: "Tối đa {max} lần chạy đồng thời"
+      max_concurrent_other: "Tối đa {max} lần chạy đồng thời",
     },
     n8n: {
       credential_label: "Thông tin xác thực: {name}",
@@ -5645,26 +5258,18 @@ export const vi = {
       drop_file_here: "Thả tệp quy trình tại đây",
       import_from_any_platform: "Nhập quy trình từ bất kỳ nền tảng nào",
       click_to_browse: "Nhấp để duyệt hoặc kéo thả quy trình đã xuất",
-      dropzone_aria: "Thả tệp quy trình làm việc hoặc nhấp để duyệt",
       continue_btn: "Tiếp tục",
       press_enter_or_click: "Nhấn Enter hoặc nhấp để tiếp tục",
       paste_workflow_json: "Dán JSON quy trình",
       paste_placeholder: "Dán JSON quy trình đã xuất tại đây...",
-      paste_aria: "Nội dung JSON quy trình làm việc",
       import_btn: "Nhập",
       import_from_url: "Nhập từ URL",
       url_description: "Dán URL đến tệp JSON quy trình thô. Hỗ trợ URL raw GitHub, liên kết Gist và điểm cuối JSON trực tiếp.",
       fetching: "Đang lấy",
       fetch: "Lấy",
       accepts_label: "Chấp nhận:",
-      url_aria: "URL quy trình làm việc",
-      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
-      url_format_github: "github.com/*/blob/*",
-      url_format_gist: "gist.github.com/*",
-      url_format_raw: "endpoint JSON thô",
       customize_persona: "Một vài câu hỏi để tùy chỉnh persona",
       answer_then_generate: "Trả lời bên dưới, rồi nhấp Tạo",
-      question_view_mode_aria: "Chế độ xem câu hỏi",
       list_view: "Danh sách",
       focus_view: "Tập trung",
       no_config_needed: "Không cần cấu hình",
@@ -5685,16 +5290,13 @@ export const vi = {
       analyzing_btn: "Đang phân tích...",
       upload_step: "Tải lên",
       analyze_step: "Phân tích",
-      wizard_progress_aria: "Tiến trình trình hướng dẫn nhập",
-      wizard_steps_aria: "Các bước trình hướng dẫn",
       streaming_sections: "Đang phát trực tiếp các phần",
       awaiting_next_section: "Đang chờ phần tiếp theo...",
-      transform_progress_aria: "Tiến trình chuyển đổi",
       analyze_phase: "Phân tích",
       questions_phase: "Câu hỏi",
       generate_phase: "Tạo",
       type_your_answer: "Nhập câu trả lời của bạn...",
-      navigate_hint: "Dùng phím mũi tên để điều hướng"
+      navigate_hint: "Dùng phím mũi tên để điều hướng",
     },
     diagram: {
       no_flow_data: "Không có dữ liệu luồng",
@@ -5704,7 +5306,7 @@ export const vi = {
       decisions_count: "{count} quyết định",
       error_label: "Lỗi",
       request_label: "Yêu cầu",
-      response_label: "Phản hồi"
+      response_label: "Phản hồi",
     },
     design: {
       connectors_and_tools: "Trình kết nối & Công cụ",
@@ -5721,7 +5323,7 @@ export const vi = {
       feasibility_assessment: "Đánh giá tính khả thi",
       confirmed_capabilities: "Khả năng đã xác nhận",
       issues_label: "Vấn đề",
-      suggested_next_steps: "Các bước tiếp theo đề xuất"
+      suggested_next_steps: "Các bước tiếp theo đề xuất",
     },
     card: {
       use_cases_label: "Trường hợp sử dụng",
@@ -5730,7 +5332,7 @@ export const vi = {
       no_flows: "Không có luồng",
       none_label: "Không có",
       more_count: "+{count} thêm",
-      system_prompt: "System Prompt"
+      system_prompt: "System Prompt",
     },
     matrix_grid: {
       prerequisites: "Điều kiện tiên quyết",
@@ -5740,7 +5342,7 @@ export const vi = {
       credential_configured: "Thông tin xác thực đã cấu hình",
       connector_not_installed: "Trình kết nối chưa cài đặt",
       needs_credential: "Cần thông tin xác thực",
-      setup_btn: "Thiết lập"
+      setup_btn: "Thiết lập",
     },
     adopt_modal: {
       adopt_template: "Áp dụng mẫu",
@@ -5755,49 +5357,6 @@ export const vi = {
       credential_required: "Không tìm thấy thông tin xác thực {category} trong kho. Thêm một cái để tiếp tục.",
       add_credential: "Thêm thông tin xác thực",
       blocked_blocking_submit: "{count} câu hỏi cần thông tin xác thực trước khi bạn có thể tiếp tục",
-      credentials_required_title: "Cần thông tin xác thực",
-      credentials_required_body: "Mẫu này cần ít nhất một thông tin xác thực từ mỗi danh mục bên dưới trước khi có thể tiếp tục áp dụng. Nhấp vào \"Thêm thông tin xác thực\" — bạn sẽ tự động quay lại đây khi thiết lập hoàn tất.",
-      answered_of_total: "{answered} / {total} đã trả lời",
-      blocked_count: "{count} bị chặn",
-      question_number_of: "Câu hỏi {current} trên {total}",
-      question_number_aria: "Câu hỏi {number}",
-      navigate_hint: "để điều hướng",
-      enter_to_advance: "để tiếp tục",
-      previous: "Trước",
-      next: "Tiếp",
-      live_preview: "Xem trước trực tiếp",
-      persona_label: "Tác nhân",
-      untitled_agent: "Tác tử không có tiêu đề",
-      not_yet_set: "Chưa được thiết lập",
-      auto_badge: "tự động",
-      jump_to_question_hint: "Nhấp vào bất kỳ hàng nào ở trên để chuyển đến câu hỏi đó. Các giá trị tự động phát hiện được suy ra từ thông tin xác thực đã kết nối của bạn.",
-      hide_explanation: "Ẩn giải thích",
-      show_explanation: "Hiện giải thích",
-      all_option: "Tất cả",
-      add_custom: "Thêm",
-      custom_prefix: "+ Tùy chỉnh…",
-      custom_plain: "Tùy chỉnh…",
-      type_your_answer: "Nhập câu trả lời của bạn...",
-      describe_in_detail: "Mô tả chi tiết...",
-      select_directory: "Chọn một thư mục...",
-      type_a_value: "Nhập một giá trị…",
-      preparing: "Đang chuẩn bị…",
-      waiting_for_parent: "Đang chờ câu trả lời trước đó…",
-      loading_from_service: "Đang tải tùy chọn từ {service}…",
-      loaded_live_from: "Đã tải trực tiếp từ {service}",
-      no_items_found: "Không tìm thấy {item}. Tạo một cái trong {service} trước.",
-      retry: "Thử lại",
-      source_local: "Tệp hoặc thư mục cục bộ",
-      source_codebase: "Codebase",
-      source_database: "Cơ sở dữ liệu",
-      source_local_hint: "Dán đường dẫn cục bộ đầy đủ đến tệp hoặc thư mục.",
-      source_codebase_hint: "Chọn một dự án đã đăng ký trong Dev Tools.",
-      source_database_hint: "Chọn một thông tin xác thực cơ sở dữ liệu từ vault của bạn.",
-      source_local_placeholder: "/Users/me/project/design.md",
-      source_no_codebases: "Không tìm thấy dự án Dev Tools nào. Đăng ký một cái trong Dev Tools trước.",
-      source_no_databases: "Không tìm thấy thông tin xác thực cơ sở dữ liệu. Thêm một cái trong Vault trước.",
-      source_pick_codebase: "Chọn một codebase…",
-      source_pick_database: "Chọn một cơ sở dữ liệu…"
     },
     scan: {
       scanning_draft: "Đang quét bản nháp persona...",
@@ -5811,7 +5370,7 @@ export const vi = {
       critical_label: "Nghiêm trọng",
       warnings_label: "Cảnh báo",
       informational_label: "Thông tin",
-      source_label: "Nguồn:"
+      source_label: "Nguồn:",
     },
     team_synthesis: {
       title: "Tổng hợp nhóm",
@@ -5823,7 +5382,7 @@ export const vi = {
       synthesizing: "Đang tổng hợp...",
       synthesize_team: "Tổng hợp nhóm",
       personas_created: "{count} personas đã tạo và kết nối",
-      done: "Xong"
+      done: "Xong",
     },
     matrix_variants: {
       processing: "Đang xử lý...",
@@ -5837,17 +5396,6 @@ export const vi = {
       testing_agent: "Đang kiểm thử tác nhân...",
       approve_and_promote: "Phê duyệt & Thăng cấp",
       view_agent_btn: "Xem tác nhân",
-      command_center_header: "TRUNG TÂM ĐIỀU KHIỂN // BUILD v1.0",
-      phase_label: "[GIAI ĐOẠN: {phase}]",
-      your_answer_placeholder: "Câu trả lời của bạn...",
-      testing_background_hint: "Việc này có thể mất vài phút. Bạn có thể rời trang này và quay lại sau — kiểm thử tiếp tục ở chế độ nền.",
-      cancel_test: "Hủy kiểm thử",
-      missing_keys: "Khóa bị thiếu:",
-      approve_anyway: "Dù sao vẫn phê duyệt",
-      delete_draft_title: "Hủy bản nháp tác nhân này và đóng",
-      delete_draft: "Xóa bản nháp",
-      agent_promoted: "Tác tử đã được thăng cấp",
-      view_agent: "Xem tác tử"
     },
     diagrams: {
       no_flow_data: "Không có dữ liệu luồng",
@@ -5855,7 +5403,6 @@ export const vi = {
       edges_count: "{count} cạnh",
       connectors_count: "{count} trình kết nối",
       decisions_count: "{count} quyết định",
-      close_dialog: "Đóng hộp thoại"
     },
     generation: {
       create_template: "Tạo mẫu",
@@ -5878,51 +5425,6 @@ export const vi = {
       start_review_custom: "Bắt đầu đánh giá ({count} trường hợp)",
       copy_log: "Sao chép nhật ký",
       copied_log: "Đã sao chép!",
-      back: "Quay lại",
-      generate_template: "Tạo mẫu",
-      view_draft: "Xem bản nháp",
-      saving: "Đang lưu...",
-      save_template: "Lưu mẫu",
-      template_saved: "Đã lưu mẫu",
-      template_name_label_step: "Tên mẫu",
-      template_name_placeholder: "Tên mẫu...",
-      description_label: "Mô tả",
-      description_placeholder: "Mô tả những gì tác nhân này nên làm, các dịch vụ nó kết nối và cách nó nên hoạt động. Hãy cụ thể về các công cụ, trình kích hoạt và tích hợp cần thiết.\n\nVí dụ: Một tác nhân giám sát hộp thư đến Gmail để tìm email quan trọng, phân loại chúng theo độ ưu tiên, gửi thông báo Slack cho các email khẩn cấp và tạo bản tóm tắt hàng ngày.",
-      description_hint: "AI sẽ tạo một mẫu tác nhân đầy đủ bao gồm prompt hệ thống, công cụ, trình kích hoạt, trình kết nối và biến mẫu.",
-      terminal_aria_label: "Đầu ra đánh giá thiết kế",
-      terminal_placeholder: "Đầu ra sẽ xuất hiện ở đây khi đánh giá bắt đầu",
-      terminal_running: "Đang chạy...",
-      result_passed: "{count} đã qua",
-      result_failed: "{count} thất bại",
-      result_errored: "{count} lỗi",
-      result_total: "{count} tổng số kiểm thử",
-      mode_predefined: "Xác định trước (5)",
-      mode_custom: "Tùy chỉnh",
-      mode_batch: "Hàng loạt",
-      mode_batch_count: "Hàng loạt ({count})",
-      batch_upload_hint: "Tải lên tệp list.md với các mục mẫu được đánh số để tạo mẫu hàng loạt qua Claude CLI.",
-      batch_upload_btn: "Tải lên list.md",
-      batch_format_hint: "Định dạng mong đợi:",
-      batch_all: "Tất cả ({count})",
-      batch_count: "{count} mẫu{plural} sẽ được tạo qua Claude CLI (~45s mỗi cái)",
-      batch_clear: "Xóa",
-      batch_format_example: "**1. Tên mẫu**",
-      custom_count: "Xác định các trường hợp sử dụng mẫu ({count} đã sẵn sàng)",
-      custom_load_file_title: "Tải từ tệp .txt hoặc .md",
-      custom_load_file: "Tải tệp",
-      custom_add: "Thêm",
-      custom_case_name_placeholder: "Tên mẫu (ví dụ: Bộ lọc thông minh Gmail)",
-      custom_instruction_placeholder: "Mô tả những gì tác nhân này nên làm, các dịch vụ cần tích hợp và trình kích hoạt nào nên kích hoạt nó...",
-      custom_short_instruction: "{current}/{min} ký tự tối thiểu",
-      custom_category_default: "Danh mục...",
-      custom_trigger_default: "Trình kích hoạt...",
-      custom_connectors_placeholder: "Trình kết nối (ví dụ: gmail, slack)",
-      custom_detail_hint: "Chi tiết hơn = kết quả tốt hơn. Bao gồm dịch vụ, trình kích hoạt và hành vi mong đợi.",
-      custom_show_example: "Hiển thị ví dụ",
-      custom_hide_example: "Ẩn ví dụ",
-      custom_example_title: "Ví dụ: Bộ lọc thông minh Gmail",
-      custom_example_body: "\"Tạo một tác tử giám sát Gmail để tìm email quan trọng, phân loại chúng theo người gửi và mức độ khẩn cấp, áp dụng nhãn và chuyển tiếp các email khẩn cấp đến Slack. Sử dụng trình kích hoạt polling với các trình kết nối gmail và slack.\"",
-      predefined_intro: "Chạy {count} trường hợp sử dụng xác định trước qua engine thiết kế:"
     },
     connector_edit: {
       credential: "Thông tin xác thực",
@@ -5938,24 +5440,22 @@ export const vi = {
       existing_table_label: "Bảng hiện có",
       schema: "Lược đồ",
       table_name: "Tên bảng",
-      table_name_placeholder: "ví dụ: persona_data",
       in_app_messages: "Tin nhắn trong ứng dụng",
       not_connected: "chưa kết nối",
       no_connectors: "Không cần trình kết nối",
       linked: "Đã liên kết",
       set_up: "Thiết lập",
-      more_connectors: "+{count} thêm"
+      more_connectors: "+{count} thêm",
     },
     trigger_edit: {
       schedule: "Lịch",
       schedule_placeholder: "Mỗi ngày trong tuần lúc 9 giờ sáng",
       schedule_hint: "Ngôn ngữ tự nhiên hoặc cron (vd: \\\"0 9 * * 1-5\\\")",
       webhook_url: "URL Webhook",
-      webhook_url_placeholder: "https://...",
       check_interval: "Khoảng kiểm tra",
       check_interval_placeholder: "Mỗi 5 phút",
       no_config_needed: "Không cần cấu hình",
-      manual_only: "Chỉ thực thi thủ công"
+      manual_only: "Chỉ thực thi thủ công",
     },
     preset_edit: {
       select_review: "Chọn chính sách đánh giá...",
@@ -5967,7 +5467,7 @@ export const vi = {
       retry_once: "Thử lại một lần",
       retry_3x: "Thử lại 3 lần",
       notify_continue: "Thông báo & tiếp tục",
-      skip_failed: "Bỏ qua bước thất bại"
+      skip_failed: "Bỏ qua bước thất bại",
     },
     test_report: {
       title: "Báo cáo kiểm thử",
@@ -5993,8 +5493,8 @@ export const vi = {
       response_preview: "Xem trước phản hồi",
       error_detail: "Chi tiết lỗi",
       copy: "Sao chép",
-      copied: "Đã sao chép"
-    }
+      copied: "Đã sao chép",
+    },
   },
   triggers: {
     title: "Trình kích hoạt & Chuỗi",
@@ -6036,7 +5536,7 @@ export const vi = {
       show_sidebar: "Hiện thanh bên",
       source: "Nguồn",
       source_personas: "Personas nguồn",
-      use_template: "Dùng mẫu"
+      use_template: "Dùng mẫu",
     },
     studio: {
       building_blocks: "Khối xây dựng",
@@ -6052,7 +5552,7 @@ export const vi = {
       remove_from_chain: "Xóa khỏi chuỗi",
       studio_title: "Trigger Studio",
       trigger_sources: "Nguồn trình kích hoạt",
-      unsaved_changes: "Thay đổi chưa lưu"
+      unsaved_changes: "Thay đổi chưa lưu",
     },
     subscription_list: {
       active: "Đang hoạt động",
@@ -6066,10 +5566,10 @@ export const vi = {
       error: "Lỗi",
       never: "Chưa bao giờ",
       no_active_subs: "Không có đăng ký nào đang hoạt động",
-      unsubscribe: "Hủy đăng ký"
+      unsubscribe: "Hủy đăng ký",
     },
     type_selector: {
-      trigger_type: "Loại trình kích hoạt"
+      trigger_type: "Loại trình kích hoạt",
     },
     tab_triggers: "Trình kích hoạt",
     tab_chains: "Chuỗi",
@@ -6145,11 +5645,11 @@ export const vi = {
       cron_daily_midnight: "Hàng ngày nửa đêm",
       cron_weekly_monday: "Hàng tuần Thứ Hai",
       next_runs: "Các lần chạy tiếp theo",
-      invalid_cron: "Biểu thức lịch không hợp lệ"
+      invalid_cron: "Biểu thức lịch không hợp lệ",
     },
     add: {
       create_trigger: "Tạo trình kích hoạt",
-      creating: "Đang tạo..."
+      creating: "Đang tạo...",
     },
     detail: {
       test_fire: "Kích hoạt thử",
@@ -6172,7 +5672,7 @@ export const vi = {
       last_fired: "Lần kích hoạt cuối",
       never_fired: "Chưa bao giờ kích hoạt",
       fire_count_one: "Đã kích hoạt {count} lần",
-      fire_count_other: "Đã kích hoạt {count} lần"
+      fire_count_other: "Đã kích hoạt {count} lần",
     },
     list: {
       empty_title: "Chưa cấu hình trình kích hoạt nào",
@@ -6182,28 +5682,28 @@ export const vi = {
       budget_unavailable: "Dữ liệu ngân sách không khả dụng",
       unknown_budget: "Ngân sách không rõ",
       budget_exceeded: "Ngân sách tháng vượt quá -- trình kích hoạt đã tạm dừng",
-      budget: "Ngân sách"
+      budget: "Ngân sách",
     },
     config: {
       no_persona: "Chưa chọn persona",
       title: "Trình kích hoạt",
       add_trigger: "Thêm trình kích hoạt",
-      empty: "Chưa cấu hình trình kích hoạt. Thêm một cái để tự động hóa persona này."
+      empty: "Chưa cấu hình trình kích hoạt. Thêm một cái để tự động hóa persona này.",
     },
     countdown: {
       due_now: "Đến hạn rồi",
-      fires_in: "Kích hoạt trong {time}"
+      fires_in: "Kích hoạt trong {time}",
     },
     polling: {
       endpoint_label: "URL để kiểm tra",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "Kiểm tra mỗi {interval}",
-      content_hash: "Chỉ phát hiện thay đổi"
+      content_hash: "Chỉ phát hiện thay đổi",
     },
     webhook: {
       url_label: "URL Webhook",
       secret_label: "Khóa bảo mật (tùy chọn)",
-      secret_placeholder: "Khóa bí mật để xác minh dữ liệu đến"
+      secret_placeholder: "Khóa bí mật để xác minh dữ liệu đến",
     },
     file_watcher: {
       paths_label: "Đường dẫn theo dõi",
@@ -6215,7 +5715,7 @@ export const vi = {
       event_delete: "Xóa",
       recursive: "Đệ quy",
       glob_filter: "Mẫu tệp",
-      glob_placeholder: "*.json"
+      glob_placeholder: "*.json",
     },
     clipboard: {
       content_type: "Loại nội dung",
@@ -6223,7 +5723,7 @@ export const vi = {
       type_image: "Hình ảnh",
       pattern_label: "Mẫu khớp",
       pattern_placeholder: "vd: https?://.*",
-      interval_label: "Khoảng kiểm tra (giây)"
+      interval_label: "Khoảng kiểm tra (giây)",
     },
     app_focus: {
       app_names_label: "Tên ứng dụng",
@@ -6231,20 +5731,20 @@ export const vi = {
       add_app: "Thêm ứng dụng",
       title_pattern: "Mẫu tiêu đề cửa sổ",
       title_placeholder: "vd: .*GitHub.*",
-      interval_label: "Khoảng kiểm tra (giây)"
+      interval_label: "Khoảng kiểm tra (giây)",
     },
     event_listener: {
       event_type_label: "Loại sự kiện",
       event_type_placeholder: "vd: persona.execution.completed",
       source_filter_label: "Bộ lọc nguồn",
-      source_filter_placeholder: "vd: persona:abc123"
+      source_filter_placeholder: "vd: persona:abc123",
     },
     composite: {
       conditions_label: "Điều kiện",
       add_condition: "Thêm điều kiện",
       operator_all: "Tất cả điều kiện phải khớp",
       operator_any: "Bất kỳ điều kiện nào có thể khớp",
-      window_label: "Cửa sổ thời gian (giây)"
+      window_label: "Cửa sổ thời gian (giây)",
     },
     rate_limit: {
       title: "Giới hạn tốc độ",
@@ -6253,14 +5753,14 @@ export const vi = {
       window_seconds: "{seconds}s",
       window_minutes: "{minutes}m",
       window_hours: "{hours}h",
-      currently_limited: "Hiện đang tạm dừng (đạt giới hạn)"
+      currently_limited: "Hiện đang tạm dừng (đạt giới hạn)",
     },
     dry_run: {
       title: "Kết quả chạy thử",
       would_fire: "Sẽ chạy",
       would_not_fire: "Sẽ không chạy",
       matched_conditions: "Điều kiện đã đáp ứng",
-      payload_preview: "Xem trước dữ liệu"
+      payload_preview: "Xem trước dữ liệu",
     },
     tab_live_stream: "Luồng trực tiếp",
     tab_live_stream_subtitle: "Hub sự kiện thời gian thực -- tác nhân xuất bản và đăng ký sự kiện qua bus chia sẻ này",
@@ -6424,186 +5924,6 @@ export const vi = {
     loading_catalog: "Đang tải danh mục...",
     no_feeds: "Chưa có nguồn cấp sự kiện chia sẻ nào",
     no_feeds_hint: "Nhấp Làm mới để lấy nguồn cấp mới nhất từ đám mây",
-    cron_colon: "Cron:",
-    interval_colon: "Khoảng thời gian:",
-    event_colon: "Sự kiện:",
-    endpoint_colon: "Endpoint:",
-    listens_for_colon: "Lắng nghe:",
-    source_filter_colon: "Bộ lọc nguồn:",
-    hmac_colon: "HMAC:",
-    paths_colon: "Đường dẫn:",
-    events_colon: "Sự kiện:",
-    recursive_yes: "Đệ quy: có",
-    filter_colon: "Bộ lọc:",
-    watches_colon: "Giám sát:",
-    pattern_colon: "Mẫu:",
-    poll_every: "Thăm dò: mỗi",
-    apps_colon: "Ứng dụng:",
-    title_colon: "Tiêu đề:",
-    operator_colon: "Toán tử:",
-    window_colon: "Cửa sổ:",
-    id_colon: "ID:",
-    type_colon: "Loại:",
-    status_colon: "Trạng thái:",
-    target_colon: "Mục tiêu:",
-    retry_hash: "thử lại #",
-    model_colon: "mô hình:",
-    next_run_colon: "lần chạy tiếp:",
-    local_label: "(cục bộ)",
-    then_every: ", sau đó mỗi",
-    source_colon: "nguồn:",
-    dry_run_target_colon: "mục tiêu:",
-    matched_subscriptions_count: "Đăng ký khớp ({count})",
-    last_label: "Cuối:",
-    loading_history: "Đang tải...",
-    zero_unlimited: "0 = không giới hạn",
-    category_section_label: "Danh mục trình kích hoạt",
-    no_persona_selected: "Chưa chọn tác nhân",
-    quick_templates_label: "Mẫu nhanh",
-    quick_presets_label: "Cài đặt sẵn nhanh",
-    cron_expression_label: "Biểu thức cron",
-    this_persona_will: "Tác nhân này sẽ",
-    starting_from: ", bắt đầu từ khi bạn kích hoạt nó.",
-    per_day: "mỗi ngày.",
-    last_poll_label: "Lần thăm dò cuối:",
-    deployed_persona_label: "Tác nhân đã triển khai",
-    fired_at_label: "Đã kích hoạt lúc",
-    webhook_last_label: "Cuối:",
-    relay_last_label: "Cuối:",
-    optional_label: "(tùy chọn)",
-    optional_comma_separated: "(tùy chọn, phân tách bằng dấu phẩy)",
-    get_channel_url_from: "Lấy URL kênh từ",
-    setup_step1: "Truy cập smee.io/new để tạo kênh relay miễn phí",
-    setup_step2: "Thêm relay ở đây với nhãn và URL kênh",
-    setup_step3: "Dán URL kênh như một webhook trong GitHub / Stripe / bất kỳ dịch vụ nào",
-    setup_step4: "Các sự kiện xuất hiện trong Luồng trực tiếp và được định tuyến đến các tác nhân của bạn tự động",
-    studio_empty_desc: "Soạn các luồng sự kiện phản ứng trên các tác nhân của bạn. Sử dụng các loại trình kích hoạt làm khối xây dựng, thêm rẽ nhánh có điều kiện và fan-out song song để tạo chuỗi tự động hóa thông minh.",
-    studio_step1: "1. Thêm các nguồn trình kích hoạt từ thanh bên (Lịch trình, Webhook, ...)",
-    studio_step2: "2. Thêm các bước tác nhân để xử lý sự kiện",
-    studio_step3: "3. Kết nối chúng để xây dựng các chuỗi phản ứng",
-    studio_step4: "4. Sử dụng các cổng điều kiện cho logic định tuyến",
-    gate_if_else: "If / Else",
-    gate_if_else_desc: "Nhánh điều kiện nhị phân",
-    gate_classifier_desc: "Định tuyến đa hướng (hỗ trợ, bán hàng, ...)",
-    gate_fan_out: "Fan-Out (Song song)",
-    gate_fan_out_desc: "Chạy nhiều nhánh song song",
-    palette_help: "Kết nối các nguồn trình kích hoạt với các bước tác nhân để xây dựng chuỗi phản ứng. Thêm cổng điều kiện cho logic rẽ nhánh và fan-out song song.",
-    toolbar_title_auto_layout: "Bố cục tự động",
-    toolbar_title_add_note: "Thêm ghi chú",
-    toolbar_title_start_dry_run: "Bắt đầu chạy thử",
-    toolbar_title_stop_dry_run: "Dừng chạy thử",
-    toolbar_title_assistant: "Trợ lý canvas",
-    toolbar_dry_run: "Chạy thử",
-    canvas_assistant_title: "Trợ lý canvas",
-    try_asking_hint: "Thử hỏi",
-    assistant_placeholder: "Mô tả cấu trúc sự kiện của bạn...",
-    disconnect_persona_title: "Ngắt kết nối tác nhân?",
-    disconnect_will_no_longer: "sẽ không còn phản ứng với",
-    disconnect_events_reconnect: "các sự kiện. Bạn có thể kết nối lại sau.",
-    rename_also_updates: "Cũng cập nhật các sự kiện lịch sử, trình xử lý sự kiện tác nhân và siêu dữ liệu kiểm toán trình kích hoạt.",
-    delete_connection_label: "Xóa kết nối",
-    search_personas_placeholder: "Tìm kiếm tác nhân...",
-    no_matching_personas_found: "Không tìm thấy tác nhân khớp",
-    clear_search_label: "Xóa tìm kiếm",
-    dead_letter_source: "Nguồn:",
-    dead_letter_id: "ID:",
-    event_data_label: "Dữ liệu sự kiện",
-    shared_prefix: "chia sẻ:",
-    nl_type_colon: "Loại:",
-    nl_cron_colon: "\\u00b7 Cron:",
-    nl_interval_colon: "\\u00b7 Khoảng thời gian:",
-    nl_filter_colon: "\\u00b7 Bộ lọc:",
-    nl_could_not_parse: "Không thể phân tích trình kích hoạt từ mô tả đó. Thử cái gì đó như",
-    active_hours_every_day: "Mỗi ngày",
-    event_type_to_listen: "Loại sự kiện để lắng nghe",
-    event_type_input_placeholder: "ví dụ: file_changed, execution_completed",
-    event_type_helper: "Nhập để tìm kiếm các loại sự kiện đã đăng ký hoặc nhập loại tùy chỉnh.",
-    source_filter_optional_label: "(tùy chọn)",
-    wildcard_hint: "\\u2014 ký tự đại diện prefix * ở cuối được hỗ trợ",
-    window_title_pattern_label: "Mẫu tiêu đề cửa sổ",
-    optional_regex_label: "(regex tùy chọn)",
-    text_pattern_label: "Mẫu văn bản",
-    credential_event_label: "Sự kiện thông tin xác thực",
-    refresh_label: "Làm mới",
-    copy_webhook_url_title: "Sao chép URL webhook",
-    copy_webhook_secret_title: "Sao chép bí mật webhook",
-    delete_webhook_title: "Xóa trình kích hoạt webhook",
-    status_col_label: "Trạng thái",
-    duration_col_label: "Thời lượng",
-    cost_col_label: "Chi phí",
-    dead_letter_refresh: "Làm mới",
-    dead_letter_loading: "Đang tải...",
-    dead_letter_retry: "Thử lại",
-    dead_letter_discard: "Hủy bỏ",
-    dead_letter_payload: "Payload",
-    event_data_section_label: "Dữ liệu sự kiện",
-    copy_event_data_title: "Sao chép dữ liệu sự kiện",
-    copied_label: "Đã sao chép",
-    error_section_label: "Lỗi",
-    meta_event_id: "ID sự kiện",
-    meta_project: "Dự án",
-    meta_processed: "Đã xử lý",
-    clear_stream: "Xóa",
-    clear_stream_title: "Xóa bộ đệm luồng",
-    col_type: "Loại",
-    col_source: "Nguồn",
-    col_target_agent: "Tác tử mục tiêu",
-    col_status: "Trạng thái",
-    col_time: "Thời gian",
-    queued_bare: "đã xếp hàng",
-    pause_tooltip: "Tạm dừng sự kiện đến",
-    resume_tooltip: "Tiếp tục cập nhật trực tiếp",
-    relay_label_field: "Nhãn",
-    relay_channel_url_field: "URL kênh",
-    relay_route_to_agent: "Định tuyến đến tác tử",
-    optional_suffix: "(tùy chọn)",
-    relay_event_filter_field: "Bộ lọc sự kiện",
-    relay_event_filter_note: "(tùy chọn, phân tách bằng dấu phẩy)",
-    relay_confirm_delete: "Xác nhận",
-    setup_guide_step2: "Thêm relay ở đây với nhãn và URL kênh",
-    setup_guide_step3: "Dán URL kênh như một webhook trong GitHub / Stripe / bất kỳ dịch vụ nào",
-    setup_guide_step4: "Các sự kiện xuất hiện trong Luồng trực tiếp và được định tuyến đến các tác nhân của bạn tự động",
-    get_channel_url_prompt: "Lấy URL kênh từ",
-    gate_if_else_label: "If / Else",
-    gate_if_else_description: "Nhánh điều kiện nhị phân",
-    gate_classifier_label: "Bộ phân loại",
-    gate_classifier_description: "Định tuyến đa hướng (hỗ trợ, bán hàng, ...)",
-    gate_fan_out_label: "Fan-Out (Song song)",
-    gate_fan_out_description: "Chạy nhiều nhánh song song",
-    palette_help_text: "Kết nối các nguồn trình kích hoạt với các bước tác nhân để xây dựng chuỗi phản ứng. Thêm cổng điều kiện cho logic rẽ nhánh và fan-out song song.",
-    test_event_type_placeholder: "ví dụ: build_complete, deploy, file_changed",
-    result_id_prefix: "ID:",
-    result_type_prefix: "Loại:",
-    result_status_prefix: "Trạng thái:",
-    result_target_prefix: "Mục tiêu:",
-    tab_loading: "Đang tải...",
-    smee_open_new_title: "Mở smee.io/new để tạo kênh",
-    relay_label_placeholder: "ví dụ: GitHub — repo-của-tôi",
-    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
-    relay_filter_placeholder: "github_push, github_pull_request",
-    dead_letter_retry_exhausted_title: "Giới hạn thử lại đã cạn — hủy bỏ hoặc điều tra nguyên nhân gốc rễ",
-    dead_letter_discard_title: "Hủy bỏ sự kiện này vĩnh viễn",
-    dead_letter_retry_title: "Thử lại sự kiện này",
-    replay_button_title: "Kích hoạt lại với cùng payload đầu vào",
-    interval_seconds_placeholder: "Giây (tối thiểu 60)",
-    cron_expression_placeholder: "* * * * *  (phút giờ ngày tháng thứ)",
-    app_focus_window_placeholder: "ví dụ: .*.rs$ hoặc Project - Visual Studio",
-    app_focus_process_placeholder: "ví dụ: Code.exe hoặc firefox",
-    field_optional: "(tùy chọn)",
-    source_filter_input_placeholder: "ví dụ: watcher-* hoặc exact-source-id",
-    meta_source: "Nguồn",
-    relay_last_event: "Cuối:",
-    relay_delete_title: "Xóa relay",
-    setup_guide_step1: "Tạo kênh tại smee.io/new",
-    clipboard_pattern_placeholder: "ví dụ: https?://.* hoặc error|exception",
-    composite_event_type_placeholder: "Loại sự kiện (ví dụ: file_changed)",
-    composite_debounce_placeholder: "300",
-    file_watcher_path_placeholder: "C:/Users/me/projects hoặc /home/me/src",
-    file_watcher_pattern_placeholder: "ví dụ: *.py, *.{ts,tsx}, Dockerfile",
-    polling_endpoint_placeholder: "https://api.example.com/poll",
-    more_tools_title: "Thêm công cụ",
-    validate_and_fire_title: "Xác thực cấu hình trình kích hoạt, sau đó kích hoạt",
-    simulate_trigger_title: "Mô phỏng trình kích hoạt mà không thực thi"
   },
   teams: {
     title: "Nhóm tác tử",
@@ -6611,11 +5931,10 @@ export const vi = {
     auto_team: "Tự động nhóm",
     new_team: "Nhóm mới",
     starter_templates: "Mẫu khởi đầu",
-    use_template: "Sử dụng mẫu"
+    use_template: "Sử dụng mẫu",
   },
   settings: {
     title: "Cài đặt",
-    settings_saved: "Đã lưu",
     account: {
       title: "Tài khoản",
       subtitle: "Quản lý đăng nhập và hồ sơ của bạn",
@@ -6633,7 +5952,6 @@ export const vi = {
       telemetry_on: "Báo cáo sự cố và phân tích sử dụng đang hoạt động.",
       telemetry_off: "Telemetry bị tắt. Không có dữ liệu nào được gửi đến Sentry.",
       telemetry_restart: "Khởi động lại ứng dụng để thay đổi này có hiệu lực",
-      telemetry_toggle_aria: "Bật/tắt telemetry"
     },
     appearance_extra: {
       simple: "Đơn giản",
@@ -6641,7 +5959,7 @@ export const vi = {
       full: "Đầy đủ",
       full_hint: "Hiện giao diện đầy đủ",
       dev: "Dev",
-      dev_hint: "Mở khóa công cụ phát triển"
+      dev_hint: "Mở khóa công cụ phát triển",
     },
     appearance: {
       title: "Giao diện",
@@ -6672,7 +5990,6 @@ export const vi = {
       applied: "Đã áp dụng",
       reset: "Đặt lại",
       enter_theme_name: "Nhập tên chủ đề",
-      reset_to_auto: "Đặt lại về tự động",
       preview_dashboard: "Bảng điều khiển",
       preview_action: "Thao tác",
       preview_card_title: "Tiêu đề thẻ",
@@ -6687,7 +6004,7 @@ export const vi = {
       coverage_hint: "Độ phủ bản dịch -- nhấp để xuất",
       contribute_title: "Đóng góp bản dịch",
       contribute_hint: "Giúp dịch Personas sang ngôn ngữ của bạn. Xuất tệp ngôn ngữ bên trên, dịch các giá trị và gửi qua GitHub.",
-      contribute_github: "Đóng góp trên GitHub"
+      contribute_github: "Đóng góp trên GitHub",
     },
     notifications: {
       title: "Thông báo",
@@ -6705,7 +6022,7 @@ export const vi = {
       digest_description: "Thông báo hàng tuần tóm tắt các vấn đề sức khỏe trên tất cả tác tử với điểm sức khỏe tổng",
       healing_alerts_hint: "Kiểm soát cảnh báo tự phục hồi nào kích hoạt thông báo",
       healing_severity: "Mức nghiêm trọng cảnh báo tự phục hồi",
-      notification_hint: "Thông báo trên máy tính sử dụng hệ thống thông báo gốc của hệ điều hành. Thông báo trong ứng dụng xuất hiện cho các vấn đề nghiêm trọng và cao bất kể cài đặt này."
+      notification_hint: "Thông báo trên máy tính sử dụng hệ thống thông báo gốc của hệ điều hành. Thông báo trong ứng dụng xuất hiện cho các vấn đề nghiêm trọng và cao bất kể cài đặt này.",
     },
     engine: {
       title: "Engine",
@@ -6723,7 +6040,6 @@ export const vi = {
       legend_not_installed: "Chưa cài đặt",
       defaults_heading: "Mặc định từ kiểm thử tích hợp",
       defaults_description: "Bản đồ mặc định được tạo từ các kiểm thử tích hợp cấp doanh nghiệp Vòng 9 xác thực từng nhà cung cấp với lược đồ JSON chính xác mà backend phân tích. Bật nhà cung cấp cho thao tác mà nó không đạt có thể gây phản hồi không phân tích được. Claude Code là nhà cung cấp duy nhất đạt 100% tất cả thao tác.",
-      engine_not_capable: "{provider} chưa vượt qua các kiểm thử tích hợp cho thao tác này. Kết quả có thể không phân tích được."
     },
     ambient: {
       title: "Hợp nhất ngữ cảnh môi trường",
@@ -6759,7 +6075,7 @@ export const vi = {
       cancel: "Hủy",
       create_rule: "Tạo quy tắc",
       no_rules: "Chưa có quy tắc ngữ cảnh",
-      all_sources: "tất cả nguồn"
+      all_sources: "tất cả nguồn",
     },
     byom: {
       title: "Mang mô hình của bạn",
@@ -6811,7 +6127,6 @@ export const vi = {
       complexity: "Độ phức tạp",
       provider: "Nhà cung cấp",
       model_optional: "Mô hình (tùy chọn)",
-      model_placeholder: "ví dụ: claude-haiku-4-5-20251001",
       compliance_title: "Hạn chế tuân thủ",
       compliance_hint: "Hạn chế nhà cung cấp cho các loại quy trình cụ thể (vd: HIPAA, SOC2)",
       compliance_empty: "Chưa cấu hình quy tắc tuân thủ. Thêm quy tắc để hạn chế nhà cung cấp cho quy trình nhạy cảm.",
@@ -6828,7 +6143,7 @@ export const vi = {
       audit_status: "Trạng thái",
       audit_cost: "Chi phí",
       audit_time: "Thời gian",
-      failover: "chuyển dự phòng"
+      failover: "chuyển dự phòng",
     },
     admin: {
       title: "Quản trị",
@@ -6854,7 +6169,7 @@ export const vi = {
       consent_not_accepted: "Chưa chấp nhận",
       storage_key: "Khóa lưu trữ",
       reset_consent: "Đặt lại đồng ý",
-      reload_modal: "Tải lại để hiện modal"
+      reload_modal: "Tải lại để hiện modal",
     },
     portability: {
       title: "Tính di động dữ liệu",
@@ -6882,17 +6197,12 @@ export const vi = {
       passphrase_optional: "Cụm mật khẩu (tùy chọn)",
       import_complete: "Nhập hoàn tất",
       warnings: "Cảnh báo:",
-      import_personas: "{count} tác nhân",
-      import_teams: "{count} nhóm",
-      import_tools: "{count} công cụ",
-      import_groups: "{count} nhóm",
-      import_credentials_count: "{count} thông tin xác thực",
       export_title: "Xuất không gian làm việc",
       export_subtitle: "Chọn những gì cần đưa vào bản xuất",
       close: "Đóng",
       loading_data: "Đang tải dữ liệu không gian làm việc...",
-      deselect_all: "Bỏ chọn tất cả",
       select_all: "Chọn tất cả",
+      deselect_all: "Bỏ chọn tất cả",
       items_selected: "{selected} trong {total} mục đã chọn",
       of_selected: "{count} trong {total} đã chọn",
       encrypt_passphrase: "Mã hóa thông tin xác thực bằng cụm mật khẩu",
@@ -6922,7 +6232,7 @@ export const vi = {
       cred_import_complete: "Nhập thông tin xác thực hoàn tất",
       cred_imported: "{count} đã nhập",
       cred_skipped: ", {count} bỏ qua",
-      cred_replaced: ", {count} đã thay thế"
+      cred_replaced: ", {count} đã thay thế",
     },
     config: {
       title: "Giải quyết cấu hình",
@@ -6935,7 +6245,7 @@ export const vi = {
       overrides_inherited: "Ghi đè kế thừa",
       agent: "Tác nhân",
       loading_agents: "Đang tải tác nhân...",
-      no_agents: "Không tìm thấy tác nhân"
+      no_agents: "Không tìm thấy tác nhân",
     },
     quality_gates: {
       title: "Cổng chất lượng",
@@ -6953,12 +6263,11 @@ export const vi = {
       rules_count_plural: "{count} quy tắc",
       reset_defaults: "Đặt lại về mặc định",
       confirm_reset: "Xác nhận đặt lại?",
-      rules_hint: "Quy tắc được tải từ cơ sở dữ liệu ở mỗi lần phân phối. Thay đổi có hiệu lực ngay."
-    }
+      rules_hint: "Quy tắc được tải từ cơ sở dữ liệu ở mỗi lần phân phối. Thay đổi có hiệu lực ngay.",
+    },
   },
   design: {
     no_persona: "Chưa chọn tác tử",
-    conversation_truncated: "Cuộc hội thoại này đã đạt giới hạn tin nhắn. Các tin nhắn cũ hơn đã bị xóa — hãy cân nhắc bắt đầu cuộc hội thoại mới để duy trì ngữ cảnh.",
     stages: {
       assembling_label: "Đang lắp ráp prompt",
       assembling_desc: "Xây dựng prompt LLM từ cấu hình và chỉ dẫn tác tử",
@@ -6969,8 +6278,8 @@ export const vi = {
       checking_label: "Đang kiểm tra tính khả thi",
       checking_desc: "Xác thực các công cụ và trình kết nối đề xuất có sẵn",
       saving_label: "Đang lưu kết quả",
-      saving_desc: "Ghi thiết kế đã biên dịch vào cơ sở dữ liệu"
-    }
+      saving_desc: "Ghi thiết kế đã biên dịch vào cơ sở dữ liệu",
+    },
   },
   prompt_lab: {
     title: "Phiên bản prompt",
@@ -7006,7 +6315,7 @@ export const vi = {
       running: "Đang chạy kiểm thử A/B...",
       run: "Chạy kiểm thử A/B",
       failed: "Kiểm thử A/B thất bại",
-      completed: "Kiểm thử A/B hoàn thành thành công"
+      completed: "Kiểm thử A/B hoàn thành thành công",
     },
     rollback: {
       title: "Giám sát tỷ lệ lỗi",
@@ -7014,7 +6323,7 @@ export const vi = {
       rollback_hint: "Nếu tỷ lệ lỗi vượt quá 50% sau khi thay đổi prompt, quay lại phiên bản sản xuất bằng danh sách phiên bản ở trên.",
       waiting: "Đang chờ dữ liệu thực thi",
       waiting_hint: "Chạy tác tử vài lần để bắt đầu theo dõi tỷ lệ lỗi. Bộ giám sát cần ít nhất một thực thi để tính sức khỏe.",
-      check_again: "Kiểm tra lại"
+      check_again: "Kiểm tra lại",
     },
     performance: {
       cost_per_execution: "Chi phí mỗi thực thi",
@@ -7023,8 +6332,8 @@ export const vi = {
       latency_distribution: "Phân bố độ trễ",
       latency_delta: "Chênh lệch độ trễ",
       error_rate_trend: "Xu hướng tỷ lệ lỗi",
-      error_delta: "Chênh lệch lỗi"
-    }
+      error_delta: "Chênh lệch lỗi",
+    },
   },
   tests: {
     title: "Trình chạy kiểm thử hộp cát",
@@ -7049,15 +6358,15 @@ export const vi = {
       rerun_tooltip: "Chạy lại bộ kiểm thử này",
       rename_tooltip: "Đổi tên",
       delete_tooltip: "Xóa bộ kiểm thử",
-      no_scenarios: "Không có kịch bản trong bộ kiểm thử này"
+      no_scenarios: "Không có kịch bản trong bộ kiểm thử này",
     },
     progress: {
       generating: "Đang tạo kịch bản kiểm thử...",
       testing: "Đang kiểm thử {model} -- {scenario}",
       tool_prefix: "Công cụ: ",
       output_prefix: "Đầu ra: ",
-      protocol_prefix: "Giao thức: "
-    }
+      protocol_prefix: "Giao thức: ",
+    },
   },
   onboarding: {
     title: "Bắt đầu",
@@ -7181,7 +6490,7 @@ export const vi = {
     agent_promoted_hint: "Tác nhân đầu tiên của bạn đã hoạt động. Tour gần như hoàn thành!",
     skip_build: "Bỏ qua xây dựng tạm thời",
     dark_themes: "Giao diện tối",
-    light_themes: "Giao diện sáng"
+    light_themes: "Giao diện sáng",
   },
   system_health: {
     title: "Kiểm tra hệ thống",
@@ -7218,7 +6527,7 @@ export const vi = {
     official_page: "Trang chính thức",
     edit_key: "Sửa khóa",
     edit_config: "Sửa cấu hình",
-    signing_in: "Đang đăng nhập..."
+    signing_in: "Đang đăng nhập...",
   },
   command_palette: {
     placeholder: "Tìm tác tử, điều hướng... (gõ \\\\\\\">\\\\\\\" để xem lệnh)",
@@ -7231,7 +6540,7 @@ export const vi = {
     key_esc: "ESC",
     hint_navigate: "điều hướng",
     hint_select: "chọn",
-    hint_commands: "lệnh"
+    hint_commands: "lệnh",
   },
   errors: {
     boundary_title: "Đã xảy ra lỗi không mong muốn trong {name}",
@@ -7253,7 +6562,7 @@ export const vi = {
     database: "Lỗi cơ sở dữ liệu -- vui lòng khởi động lại ứng dụng",
     internal: "Đã xảy ra lỗi không mong muốn",
     cloud_error: "Lỗi dịch vụ đám mây: {detail}",
-    gitlab_error: "Lỗi GitLab: {detail}"
+    gitlab_error: "Lỗi GitLab: {detail}",
   },
   error_registry: {
     network_offline_message: "Bạn có vẻ đang ngoại tuyến.",
@@ -7325,7 +6634,7 @@ export const vi = {
     severity_critical: "Cần xử lý ngay",
     severity_high: "Vấn đề quan trọng",
     severity_medium: "Vấn đề nhỏ",
-    severity_low: "Thông tin"
+    severity_low: "Thông tin",
   },
   empty_states: {
     credentials_title: "Tác tử cần thông tin xác thực để chạy",
@@ -7342,11 +6651,11 @@ export const vi = {
     tools_title: "Chưa cấu hình công cụ hoặc trình kết nối",
     tools_subtitle: "Liên kết dịch vụ bên ngoài để tác tử có thể thực hiện hành động và truy cập dữ liệu.",
     use_cases_title: "Chưa định nghĩa trường hợp sử dụng",
-    use_cases_subtitle: "Xác định tác tử nên làm gì -- nhập từ quy trình hoặc mô tả bằng ngôn ngữ tự nhiên."
+    use_cases_subtitle: "Xác định tác tử nên làm gì -- nhập từ quy trình hoặc mô tả bằng ngôn ngữ tự nhiên.",
   },
   cli: {
     idle: "Chưa có đầu ra CLI.",
-    waiting: "Đang chờ đầu ra Claude CLI..."
+    waiting: "Đang chờ đầu ra Claude CLI...",
   },
   validation: {
     required: "{field} là bắt buộc",
@@ -7357,7 +6666,7 @@ export const vi = {
     passphrase_min: "Mật khẩu phải có ít nhất 8 ký tự",
     passphrase_prompt: "Vui lòng nhập mật khẩu đã sử dụng khi xuất",
     at_least_one: "Cần ít nhất một {field}",
-    fill_one_field: "Điền ít nhất một trường để lưu"
+    fill_one_field: "Điền ít nhất một trường để lưu",
   },
   toasts: {
     copied: "Đã sao chép vào bộ nhớ tạm",
@@ -7417,7 +6726,7 @@ export const vi = {
     scheduled_agents_failed: "Không thể tải tác tử đã lên lịch",
     design_start_failed: "Không thể bắt đầu cuộc hội thoại thiết kế",
     recipe_save_failed: "Không thể lưu công thức",
-    recipe_test_failed: "Kiểm thử nhanh thất bại"
+    recipe_test_failed: "Kiểm thử nhanh thất bại",
   },
   consent: {
     title: "Chào mừng đến với Personas Desktop",
@@ -7484,7 +6793,7 @@ export const vi = {
     checkbox: "Tôi hiểu rằng ứng dụng này gửi dữ liệu đến nhà cung cấp AI, truy cập tài nguyên hệ thống (bộ nhớ tạm, hệ thống tệp, mạng) và thực thi tiến trình thay mặt tôi. Tôi chấp nhận trách nhiệm về cách tôi cấu hình và sử dụng nó.",
     checkbox_telemetry: "Giúp cải thiện Personas bằng cách gửi báo cáo sự cố ẩn danh và phân tích sử dụng. Không có dữ liệu cá nhân nào được bao gồm. Bạn có thể thay đổi điều này sau trong Cài đặt.",
     source_link: "Xem mã nguồn & giấy phép",
-    accept_button: "Tôi hiểu, Tiếp tục"
+    accept_button: "Tôi hiểu, Tiếp tục",
   },
   schedules: {
     title: "Lịch trình",
@@ -7524,26 +6833,17 @@ export const vi = {
     overlap_warning: "Lịch này chồng chéo với {count} lần thực thi khác trong 7 ngày tới. Các tác nhân đồng thời cạnh tranh hạn ngạch API và tài nguyên hệ thống.",
     agents_missed: "{count} tác nhân đã bỏ lỡ các lần thực thi",
     total_skipped: "~{count} tổng số lần chạy bị bỏ qua khi ứng dụng ngoại tuyến",
-    missed_since: "{count} bỏ lỡ kể từ {time}",
-    every_interval: "mỗi {interval}",
     recover: "Khôi phục",
-    mark_for_recovery: "Đánh dấu để phục hồi",
-    run_once_now: "Chạy một lần ngay bây giờ",
     run_1x: "Chạy 1 lần",
     skip: "Bỏ qua",
-    skip_dont_recover: "Bỏ qua -- không phục hồi",
     dismiss_all: "Bỏ qua tất cả",
     recover_selected: "Khôi phục {count} đã chọn",
-    overlaps_with: "Chồng chéo với",
-    refresh_schedules: "Làm mới lịch trình",
-    seed_mock_tooltip: "Tạo lịch trình giả (chỉ dev)",
-    schedule_view_aria: "Xem lịch trình",
     today: "Hôm nay",
     projected: "Dự kiến",
     success: "Thành công",
     overlap: "Chồng chéo",
     week: "Tuần",
-    month: "Tháng"
+    month: "Tháng",
   },
   recipes: {
     no_match: "Không có công thức khớp",
@@ -7597,8 +6897,6 @@ export const vi = {
     saved_mock_values: "Giá trị giả đã lưu",
     no_mock_values: "Không có giá trị giả nào được lưu",
     free_input_placeholder: "Nhập JSON đầu vào hoặc văn bản thuần túy...",
-    recipe_label: "Công thức:",
-    executed_label: "Đã thực thi:",
     rendered_prompt: "Câu lệnh đã kết xuất",
     execution_result: "Kết quả thực thi",
     rendering_prompt: "Đang kết xuất câu lệnh...",
@@ -7628,7 +6926,7 @@ export const vi = {
     no_matching: "Không tìm thấy công thức phù hợp.",
     loading_linked: "Đang tải công thức đã liên kết...",
     no_linked: "Chưa có công thức nào được liên kết. Nhấp \\\"Thêm\\\" để liên kết công thức từ thư viện.",
-    run: "Chạy"
+    run: "Chạy",
   },
   execution_status: {
     queued: "Trong hàng đợi",
@@ -7636,7 +6934,7 @@ export const vi = {
     completed: "Hoàn thành",
     failed: "Thất bại",
     cancelled: "Đã hủy",
-    error: "Lỗi"
+    error: "Lỗi",
   },
   status_tokens: {
     execution: {
@@ -7645,61 +6943,61 @@ export const vi = {
       completed: "Hoàn thành",
       failed: "Thất bại",
       cancelled: "Đã hủy",
-      error: "Lỗi"
+      error: "Lỗi",
     },
     event: {
       pending: "Đang chờ",
       processing: "Đang xử lý",
       processed: "Đã xử lý",
       failed: "Thất bại",
-      retrying: "Đang thử lại"
+      retrying: "Đang thử lại",
     },
     automation: {
       pending: "Đang chờ",
       running: "Đang chạy",
       completed: "Hoàn thành",
       failed: "Thất bại",
-      timeout: "Hết thời gian"
+      timeout: "Hết thời gian",
     },
     severity: {
       info: "Thông tin",
       low: "Thấp",
       medium: "Trung bình",
       high: "Cao",
-      critical: "Nghiêm trọng"
+      critical: "Nghiêm trọng",
     },
     priority: {
       low: "Thấp",
       normal: "Bình thường",
       high: "Cao",
-      urgent: "Khẩn cấp"
+      urgent: "Khẩn cấp",
     },
     healing_status: {
       open: "Mở",
       auto_fixed: "Tự động sửa",
       acknowledged: "Đã xác nhận",
-      resolved: "Đã giải quyết"
+      resolved: "Đã giải quyết",
     },
     healing_category: {
       config: "Cấu hình",
       auth: "Xác thực",
       network: "Mạng",
       timeout: "Hết thời gian",
-      quota: "Hạn ngạch"
+      quota: "Hạn ngạch",
     },
     connector_status: {
       ready: "Sẵn sàng",
       untested: "Chưa kiểm tra",
       failed: "Thất bại",
       no_credential: "Không có thông tin xác thực",
-      testing: "Đang kiểm tra"
+      testing: "Đang kiểm tra",
     },
     test: {
       generating: "Đang tạo",
       running: "Đang chạy",
       completed: "Hoàn thành",
       failed: "Thất bại",
-      pending: "Đang chờ"
+      pending: "Đang chờ",
     },
     dev: {
       open: "Mở",
@@ -7708,8 +7006,8 @@ export const vi = {
       blocked: "Bị chặn",
       queued: "Đang chờ",
       running: "Đang chạy",
-      failed: "Thất bại"
-    }
+      failed: "Thất bại",
+    },
   },
   project_overview: {
     codebase: "Cơ sở mã",
@@ -7739,7 +7037,7 @@ export const vi = {
     failed_to_load: "Tải thống kê thất bại",
     retry: "Thử lại",
     no_project_selected: "Chưa chọn dự án",
-    select_project_hint: "Chọn dự án phát triển để xem tổng quan."
+    select_project_hint: "Chọn dự án phát triển để xem tổng quan.",
   },
   plugins: {
     title: "Plugin",
@@ -7748,98 +7046,12 @@ export const vi = {
     artist_desc: "Tạo mô hình 3D với Blender, tạo hình ảnh với Leonardo AI và quản lý tài nguyên sáng tạo.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Quản lý dự án, lập bản đồ ngữ cảnh, quét ý tưởng, phân loại và tiện ích trình chạy tác vụ.",
+    doc_signing_label: "Ký tài liệu",
+    doc_signing_desc: "Ký và xác minh tài liệu bằng chữ ký số trực tiếp từ không gian làm việc.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
-    drive_label: "Drive",
-    drive_desc: "Hệ thống tệp cục bộ được quản lý nơi các tác nhân lưu các bản xuất. Duyệt tệp trong giao diện kiểu Finder; tồn tại qua các bản nâng cấp ứng dụng.",
-    drive: {
-      title: "Drive",
-      subtitle: "Hệ thống tệp cục bộ được quản lý cho xuất tác nhân",
-      root_label: "Gốc Drive",
-      dev_badge: "Dev",
-      back: "Quay lại",
-      forward: "Tiến tới",
-      up: "Lên",
-      refresh: "Làm mới",
-      search_placeholder: "Tìm kiếm trong thư mục này...",
-      view_list: "Danh sách",
-      view_icons: "Biểu tượng",
-      view_columns: "Cột",
-      new_folder: "Thư mục mới",
-      new_file: "Tệp mới",
-      reveal_in_os: "Hiển thị trong trình quản lý tệp",
-      open_in_os: "Mở",
-      sidebar_root: "Drive",
-      sidebar_recent: "Gần đây",
-      sidebar_storage: "Bộ nhớ",
-      storage_used: "Đã sử dụng {used} \\u2022 {count} mục",
-      empty_folder: "Thư mục này trống",
-      empty_hint: "Các tác nhân xuất sang Local Drive sẽ lưu tệp ở đây.",
-      empty_cta: "Tạo thư mục",
-      col_name: "Tên",
-      col_size: "Kích thước",
-      col_kind: "Loại",
-      col_modified: "Sửa đổi",
-      folder_kind: "Thư mục",
-      ctx_open: "Mở",
-      ctx_rename: "Đổi tên",
-      ctx_duplicate: "Nhân bản",
-      ctx_delete: "Xóa",
-      ctx_copy: "Sao chép",
-      ctx_cut: "Cắt",
-      ctx_paste: "Dán",
-      ctx_new_folder: "Thư mục mới",
-      ctx_new_file: "Tệp mới",
-      ctx_reveal: "Hiển thị trong trình quản lý tệp",
-      ctx_copy_path: "Sao chép đường dẫn",
-      rename_title: "Đổi tên",
-      rename_placeholder: "Tên mới",
-      new_folder_title: "Thư mục mới",
-      new_folder_placeholder: "Tên thư mục",
-      new_file_title: "Tệp mới",
-      new_file_placeholder: "filename.txt",
-      delete_confirm_title: "Xóa {count} mục?",
-      delete_confirm_body: "Hành động này không thể hoàn tác. Các tệp đã xóa sẽ mất vĩnh viễn.",
-      confirm: "Xác nhận",
-      cancel: "Hủy",
-      details_title: "Chi tiết",
-      details_path: "Đường dẫn",
-      details_size: "Kích thước",
-      details_kind: "Loại",
-      details_modified: "Sửa đổi",
-      details_items: "Mục",
-      details_preview: "Xem trước",
-      preview_unavailable: "Không thể xem trước",
-      preview_binary: "Tệp nhị phân \\u2014 mở trong trình quản lý tệp của hệ điều hành để kiểm tra.",
-      preview_too_large: "Tệp quá lớn để xem trước trực tiếp.",
-      loading: "Đang tải...",
-      error_prefix: "Lỗi:",
-      items_selected: "{count} đã chọn",
-      items_total: "{count} mục",
-      signatures_button: "Chữ ký",
-      ctx_sign_file: "Ký tệp\\u2026",
-      ctx_verify_file: "Xác minh chữ ký\\u2026",
-      ctx_extract_text: "Trích xuất văn bản (OCR)\\u2026",
-      ctx_extract_text_no_gemini: "Trích xuất văn bản \\u2014 kết nối Gemini để bật",
-      ocr_title: "Trích xuất văn bản với Gemini",
-      ocr_subtitle: "OCR Vision qua Google Gemini 3 Flash Preview",
-      ocr_model_label: "Mô hình",
-      ocr_connector_ready: "Trình kết nối Gemini sẵn sàng",
-      ocr_connector_missing: "Không tìm thấy thông tin xác thực Gemini trong vault. Kết nối Google Gemini để bật OCR.",
-      ocr_prompt_label: "Prompt tùy chọn",
-      ocr_prompt_placeholder: "ví dụ: Chỉ trích xuất tổng hóa đơn và các mục",
-      ocr_extract: "Trích xuất văn bản",
-      ocr_running: "Đang trích xuất\\u2026",
-      ocr_done: "Hoàn tất trích xuất",
-      ocr_save: "Lưu dưới dạng .ocr.txt",
-      ocr_saved: "Đã lưu",
-      ocr_saved_to: "Đã lưu vào",
-      ocr_copied: "Đã sao chép vào bộ nhớ tạm",
-      select_file_or_folder: "Chọn một tệp hoặc thư mục để xem chi tiết.",
-      download_aria: "Tải xuống",
-      download_title: "Tải xuống",
-      sign_reason_placeholder: "Lý do ký…"
-    },
+    ocr_label: "OCR",
+    ocr_desc: "Trích xuất văn bản từ hình ảnh và PDF bằng Gemini Vision hoặc Claude đa phương thức.",
     artist: {
       title: "Artist",
       subtitle: "Tạo mô hình 3D, tạo hình ảnh và quản lý tài nguyên sáng tạo",
@@ -7901,31 +7113,6 @@ export const vi = {
       viewer_3d: "Trình xem 3D",
       viewer_3d_hint: "Cài đặt @react-three/fiber và @react-three/drei để bật xem trước 3D tương tác với điều khiển quỹ đạo.",
       tags_label: "Thẻ:",
-      status_partial: "Một phần",
-      status_not_checked: "Chưa kiểm tra",
-      blender_label: "Blender",
-      blender_mcp_label: "Blender MCP",
-      session_cancelled: "Đã hủy phiên.",
-      imported_assets_one: "Đã nhập 1 tài nguyên mới vào bộ sưu tập.",
-      imported_assets_other: "Đã nhập {count} tài nguyên mới vào bộ sưu tập.",
-      scan_result_one: "Tìm thấy {scanned} tài nguyên, đã nhập 1 mới.",
-      scan_result_other: "Tìm thấy {scanned} tài nguyên, đã nhập {imported} mới.",
-      tool_blender: "Blender",
-      tool_leonardo: "Leonardo",
-      tool_gemini: "Gemini",
-      tag_editor_hint: "Nhấn Enter hoặc dấu phẩy để thêm, Backspace để xóa thẻ cuối.",
-      tag_editor_placeholder: "thẻ, thẻ-khác",
-      send_to_media_studio: "Gửi đến Media Studio",
-      sent_to_media_studio: "Đã xếp hàng cho Media Studio",
-      session_history: "Lịch sử",
-      session_history_empty: "Các phiên bạn chạy sẽ xuất hiện ở đây.",
-      session_tools_label: "Công cụ:",
-      session_status_running: "Đang chạy",
-      session_status_completed: "Hoàn thành",
-      session_status_failed: "Thất bại",
-      session_status_cancelled: "Đã hủy",
-      replay_session: "Phát lại",
-      delete_session: "Xóa phiên"
     },
     dev_tools: {
       no_project_configured: "Chưa cấu hình dự án dev",
@@ -7967,8 +7154,6 @@ export const vi = {
       task: "Nhiệm vụ",
       pick_winner: "Chọn người thắng",
       winner: "Người thắng",
-      disqualified_label: "Bị loại",
-      elapsed_label: "đã trôi qua",
       cancel_competition: "Hủy cuộc thi",
       no_goals_constellation: "Chưa có mục tiêu. Tạo mục tiêu trong tab Dự án để xem chòm sao.",
       your_turn: "Lượt của bạn",
@@ -8073,8 +7258,6 @@ export const vi = {
       task_depth: "Độ sâu nhiệm vụ",
       goal_link: "Liên kết mục tiêu",
       create_task: "Tạo nhiệm vụ",
-      partial_context: "Ngữ cảnh một phần",
-      context_warnings_title: "Cảnh báo ngữ cảnh — tác vụ chạy thiếu thông tin",
       campaign: "Chiến dịch",
       deep_build: "Xây dựng sâu",
       idea_evolution: "Tiến hóa ý tưởng",
@@ -8089,8 +7272,6 @@ export const vi = {
       edit: "Chỉnh sửa",
       save: "Lưu",
       file_empty: "Tệp trống hoặc không thể tải.",
-      file_load_failed: "Không thể tải tệp. Chỉnh sửa bị vô hiệu hóa để tránh mất dữ liệu.",
-      file_load_failed_hint: "Hãy thử làm mới hoặc chọn lại skill.",
       effort: "Nỗ lực",
       risk: "Rủi ro",
       quick_wins: "Thắng nhanh",
@@ -8105,155 +7286,6 @@ export const vi = {
       add_condition: "+ Thêm điều kiện",
       accept: "Chấp nhận",
       reject: "Từ chối",
-      triage_title: "Phân loại ý tưởng",
-      triage_subtitle: "Đánh giá và ưu tiên các ý tưởng đã tạo",
-      accepted_badge: "{count} đã chấp nhận",
-      rejected_badge: "{count} bị từ chối",
-      pending_badge: "{count} đang chờ",
-      sidebar_category: "Danh mục",
-      sidebar_scan_type: "Loại quét",
-      sidebar_all: "Tất cả ({count})",
-      remaining_count: "{count} còn lại",
-      reviewed_count: "{done} / {total} đã duyệt",
-      empty_no_ideas: "Không có ý tưởng để phân loại",
-      empty_no_ideas_hint: "Chạy Idea Scanner trước để tạo ý tưởng.",
-      empty_all_reviewed: "Đã duyệt tất cả ý tưởng!",
-      empty_all_reviewed_summary: "{accepted} đã chấp nhận, {rejected} bị từ chối",
-      swipe_reject: "Từ chối",
-      swipe_accept: "Chấp nhận",
-      reasoning_label: "Lý luận",
-      hint_reject: "Từ chối",
-      hint_accept: "Chấp nhận",
-      shortcuts_title: "Phím tắt",
-      shortcuts_reject: "Từ chối ý tưởng",
-      shortcuts_accept: "Chấp nhận ý tưởng",
-      shortcuts_toggle: "Bật/tắt lớp phủ này",
-      shortcuts_close: "Đóng lớp phủ",
-      shortcuts_dismiss_hint: "Nhấn ? hoặc Esc để đóng",
-      shortcuts_open_title: "Phím tắt (?)",
-      shortcuts_btn_reject_title: "Từ chối (Mũi tên trái / A)",
-      shortcuts_btn_accept_title: "Chấp nhận (Mũi tên phải / Z)",
-      shortcuts_btn_delete_title: "Xóa",
-      pr_bridge_title: "Ship dưới dạng Draft PR",
-      pr_bridge_subtitle: "Nhánh, commit và PR điền sẵn — lý luận của tác tử được đưa vào phần mô tả.",
-      pr_bridge_branch: "Nhánh",
-      pr_bridge_commit_msg: "Thông điệp commit",
-      pr_bridge_pr_title: "Tiêu đề PR",
-      pr_bridge_pr_body: "Nội dung PR",
-      pr_bridge_agent_citation: "Đề xuất bởi {label} {emoji}",
-      pr_bridge_no_github: "Liên kết repo GitHub trên dự án này để bật quy trình PR.",
-      pr_bridge_link_project: "Mở cài đặt dự án",
-      pr_bridge_unsupported_host: "Tự động điền chỉ hoạt động với GitHub hiện tại. Sao chép nội dung PR và mở thủ công.",
-      pr_bridge_copy_body: "Sao chép nội dung PR",
-      pr_bridge_copy_all: "Sao chép tất cả",
-      pr_bridge_prepare: "Chuẩn bị nhánh & commit",
-      pr_bridge_open_github: "Mở draft PR trên GitHub",
-      pr_bridge_expand: "Hiện xem trước PR",
-      pr_bridge_collapse: "Ẩn xem trước PR",
-      pr_bridge_copied: "Đã sao chép nội dung PR vào bộ nhớ tạm",
-      pr_bridge_copy_failed: "Không thể sao chép vào bộ nhớ tạm",
-      pr_bridge_branch_prepared: "Đã chuẩn bị nhánh: {branch}",
-      pr_bridge_branch_failed: "Chuẩn bị nhánh thất bại: {message}",
-      pr_bridge_opening: "Đang mở GitHub...",
-      pr_bridge_open_failed: "Không thể mở URL bên ngoài",
-      pr_bridge_draft_hint: "Mẹo: trên trang GitHub, sử dụng menu thả xuống cạnh \"Create pull request\" để đánh dấu là draft.",
-      scoreboard_title: "Hiệu suất tác tử",
-      scoreboard_subtitle: "Tỷ lệ chấp nhận & triển khai mỗi tác tử quét cho dự án này.",
-      scoreboard_toggle_show: "Hiện bảng điểm",
-      scoreboard_toggle_hide: "Ẩn bảng điểm",
-      scoreboard_empty: "Chưa có dữ liệu — chạy quét và phân loại một số ý tưởng để điền vào bảng.",
-      scoreboard_col_agent: "Tác tử",
-      scoreboard_col_ideas: "Ý tưởng",
-      scoreboard_col_accept_rate: "Chấp nhận %",
-      scoreboard_col_impl_rate: "Triển khai %",
-      scoreboard_col_avg_impact: "Tác động TB",
-      scoreboard_col_avg_effort: "Nỗ lực TB",
-      scoreboard_tip_ideas: "Tổng số ý tưởng tác tử này đã tạo trên tất cả các lần quét.",
-      scoreboard_tip_accept_rate: "Chấp nhận / (Chấp nhận + Từ chối). Ý tưởng đang chờ bị loại khỏi mẫu số.",
-      scoreboard_tip_impl_rate: "Tác vụ hoàn thành / tác vụ được tạo từ ý tưởng của tác tử này.",
-      scoreboard_tip_avg_impact: "Điểm tác động trung bình (1-10) của tất cả ý tưởng tác tử này tạo ra.",
-      scoreboard_tip_avg_effort: "Điểm nỗ lực trung bình (1-10) của tất cả ý tưởng tác tử này tạo ra.",
-      scoreboard_no_signal: "—",
-      scoreboard_n_pending: "{n} đang chờ",
-      scoreboard_top_performer: "Người thực hiện hàng đầu",
-      zoom_in: "Phóng to",
-      zoom_out: "Thu nhỏ",
-      reset_view: "Đặt lại chế độ xem",
-      goals_label: "mục tiêu,",
-      connections_label: "kết nối",
-      legend_parent: "━━ cha",
-      legend_dependency: "┄┄ phụ thuộc",
-      competitors_dot: "đối thủ ·",
-      of_4_selected: "/4 đã chọn",
-      status_label: "Trạng thái:",
-      wt_label: "wt:",
-      winning_insight: "Thông tin chi tiết chiến thắng",
-      completed_in: "Hoàn thành trong",
-      achievements_label: "Thành tựu:",
-      output_lines: "dòng đầu ra",
-      loading_diff: "Đang tải diff...",
-      first_slot_bias: "Slot đầu tiên thiên về cách tiếp cận của người chiến thắng trước đó.",
-      start_competition_prefix: "Bắt đầu cuộc thi (",
-      slots_suffix: "slot)",
-      strategy_leaderboard: "Bảng xếp hạng chiến lược",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "Tổng hợp trên các cuộc thi đã giải quyết. Cao hơn thắng.",
-      capture_winning_insight: "Ghi lại thông tin chi tiết chiến thắng",
-      capture_insight_desc: "Điều gì khiến cách tiếp cận này chiến thắng? Ghi chú này được lưu với người chiến thắng và được sử dụng để khởi tạo các cuộc thi trong tương lai.",
-      insight_placeholder: "Mô tả điều gì khiến cách tiếp cận này thành công…",
-      confirm_winner: "Xác nhận người chiến thắng",
-      github_required_title: "Cần repository GitHub",
-      folder_required_title: "Cần thư mục dự án",
-      requirements_met_title: "Đã đáp ứng tất cả yêu cầu",
-      can_still_adopt: "Bạn vẫn có thể áp dụng ngay — thêm URL GitHub và thư mục dự án sau trong cài đặt dự án.",
-      active_triggers_prefix: "Trình kích hoạt đang hoạt động (",
-      lifecycle_readiness: "Sẵn sàng vòng đời —",
-      goals_tab_no_goals: "Chưa có mục tiêu nào. Tạo mục tiêu trong Trình quản lý dự án.",
-      goal_constellation_prefix: "Chòm sao mục tiêu (",
-      sync_to_obsidian: "Đồng bộ với Obsidian",
-      select_or_create: "Chọn một dự án bên dưới hoặc tạo một dự án mới.",
-      all_projects_prefix: "Tất cả dự án (",
-      percent_overall: "% tổng thể",
-      task_queue_prefix: "Hàng đợi tác vụ (",
-      project_created_title: "Đã tạo dự án",
-      generate_context_map_desc: "Quét codebase để xác định logic kinh doanh, điểm vào và cấu trúc dữ liệu.",
-      source_label: "Nguồn:",
-      auto_filled_hint: "(tự động điền từ thư mục)",
-      project_type_optional: "(tùy chọn, chỉ trực quan)",
-      optional_label: "(tùy chọn)",
-      implementation_log_label: "Nhật ký triển khai",
-      cross_project_desc_btn: "Tổng hợp từ các bản đồ ngữ cảnh hiện có. Nhấp vào bất kỳ dự án nào để mở rộng.",
-      generate_metadata_prompt: "để phân tích bản đồ ngữ cảnh của tất cả dự án và trích xuất các mẫu chung.",
-      projects_count_prefix: "Dự án (",
-      entry_points_header: "Điểm vào",
-      db_tables_header: "Bảng cơ sở dữ liệu",
-      entry_points_count: "điểm vào",
-      db_tables_count: "bảng db",
-      run_context_map_scan: "Chạy quét Context Map cho dự án này để điền siêu dữ liệu.",
-      active_goals_label: "mục tiêu đang hoạt động",
-      no_goals_add_below: "Chưa có mục tiêu nào. Thêm một cái bên dưới.",
-      goal_title_placeholder: "Tiêu đề mục tiêu…",
-      loading_repos: "Đang tải repository...",
-      github_url_label: "URL GitHub",
-      github_repo_label: "Repository GitHub",
-      idea_evolution_title: "Tiến hóa ý tưởng",
-      fitness_ranking_label: "Xếp hạng Fitness",
-      similar_to_rejected: "Tương tự với ý tưởng bị từ chối:",
-      percent_similar: "% tương tự",
-      scanning_with: "Đang quét với",
-      scanning_subtitle: "Đang phân tích các mẫu codebase và tạo các nhóm ngữ cảnh…",
-      no_previous_scans: "Chưa có lần quét trước đó.",
-      run_scan_prefix: "Chạy quét (",
-      automated_context_scan: "Quét ngữ cảnh tự động",
-      results_prefix: "Kết quả (",
-      scan_history_prefix: "Lịch sử quét (",
-      action_label: "Hành động:",
-      self_healing_title: "Tự phục hồi",
-      heal_all_prefix: "Phục hồi tất cả (",
-      task_title_placeholder: "Tiêu đề tác vụ…",
-      task_details_placeholder: "Chi tiết tác vụ hoặc dán đặc tả…",
-      goal_link_placeholder: "Chọn một mục tiêu…",
-      no_tasks_queued_sub: "Tạo tác vụ thủ công hoặc theo lô từ các ý tưởng đã chấp nhận."
     },
     doc_signing: {
       title: "Ký tài liệu",
@@ -8292,7 +7324,7 @@ export const vi = {
       no_signatures: "Chưa có chữ ký",
       no_signatures_hint: "Ký tài liệu để xem ở đây.",
       export_sig: "Xuất .sig.json",
-      delete_signature: "Xóa chữ ký"
+      delete_signature: "Xóa chữ ký",
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -8300,7 +7332,6 @@ export const vi = {
       tab_setup: "Cài đặt",
       tab_sync: "Đồng bộ",
       tab_browse: "Duyệt kho",
-      tab_graph: "Đồ thị",
       tab_cloud: "Đám mây",
       filter_notes: "Lọc ghi chú...",
       vault_empty: "Kho trống",
@@ -8370,7 +7401,7 @@ export const vi = {
       sync_log: "Nhật ký đồng bộ",
       no_sync_activity: "Chưa có hoạt động đồng bộ. Đẩy hoặc kéo để bắt đầu.",
       select_note: "Chọn ghi chú",
-      select_note_hint: "Chọn ghi chú từ cây bên trái để xem trước nội dung."
+      select_note_hint: "Chọn ghi chú từ cây bên trái để xem trước nội dung.",
     },
     ocr: {
       title: "OCR",
@@ -8397,292 +7428,8 @@ export const vi = {
       comparison_stats: "Thống kê so sánh",
       history_heading: "Lịch sử OCR",
       no_results: "Chưa có kết quả OCR",
-      no_results_hint: "Trích xuất văn bản từ tài liệu để xem ở đây."
+      no_results_hint: "Trích xuất văn bản từ tài liệu để xem ở đây.",
     },
-    artist_gallery: {
-      loading_viewer: "Đang tải trình xem…",
-      loading_model: "Đang tải mô hình...",
-      could_not_load_model: "Không thể tải mô hình"
-    },
-    artist_media_studio: {
-      drag_drop_hint: "— kéo & thả tệp vào bất cứ đâu",
-      keyboard_shortcuts: "Space / Del / Mũi tên",
-      px_per_second: "px/s",
-      running_loudnorm: "Đang chạy ffmpeg loudnorm dry-run…"
-    },
-    dev_context: {
-      files_header: "Tệp (",
-      filter_groups_placeholder: "Lọc nhóm…",
-      rescan_title: "Quét lại",
-      scanning_with: "Đang quét với",
-      scanning_subtitle: "Đang phân tích các mẫu codebase và tạo các nhóm ngữ cảnh…",
-      no_previous_scans: "Chưa có lần quét trước đó.",
-      run_scan: "Chạy quét (",
-      auto_scan: "Tự động quét",
-      automated_context_scan: "Quét ngữ cảnh tự động",
-      results: "Kết quả (",
-      scan_history: "Lịch sử quét ("
-    },
-    dev_lifecycle: {
-      start_a_competition: "Bắt đầu một cuộc thi",
-      start_a_competition_desc: "Tạo 2–4 đối thủ với các chiến lược khác nhau để giải quyết cùng một tác vụ. Cách tiếp cận của người chiến thắng được thăng cấp.",
-      task_title: "Tiêu đề tác vụ",
-      task_title_placeholder: "ví dụ: Refactor mô-đun auth",
-      task_description: "Mô tả tác vụ (tùy chọn)",
-      task_description_placeholder: "Mô tả thành công trông như thế nào…",
-      strategy_slots: "Các slot chiến lược (chọn 2–4)",
-      of_4_selected: "/4 đã chọn",
-      cost_warning: "Cảnh báo chi phí:",
-      cost_warning_desc: "mỗi đối thủ chạy đầy đủ tác vụ độc lập — điều này sử dụng gấp {count}× token.",
-      start_competition: "Bắt đầu cuộc thi",
-      competitors_dot: "đối thủ ·",
-      loading_competitors: "Đang tải đối thủ...",
-      failed_to_load_detail: "Không thể tải chi tiết.",
-      status_label: "Trạng thái:",
-      weight_label: "wt:",
-      pick_winner: "Chọn người chiến thắng",
-      cancel_competition: "Hủy cuộc thi",
-      select_project_for_competitions: "Chọn một dự án để xem các cuộc thi.",
-      new_competition: "Cuộc thi mới",
-      no_competitions_yet: "Chưa có cuộc thi nào. Bắt đầu một cuộc để có 2–4 chiến lược đua nhau giải quyết một tác vụ.",
-      no_goals_yet_project: "Chưa có mục tiêu nào. Tạo mục tiêu trong Trình quản lý dự án để theo dõi tiến trình.",
-      zoom_in_title: "Phóng to",
-      zoom_out_title: "Thu nhỏ",
-      reset_view_title: "Đặt lại chế độ xem",
-      goals_label: "mục tiêu,",
-      legend_parent: "━━ cha",
-      legend_dependency: "┄┄ phụ thuộc",
-      no_goals_kanban: "Chưa có mục tiêu nào. Tạo mục tiêu để xem chúng ở đây.",
-      no_goals_here: "Không có mục tiêu ở đây",
-      auto_setup_title: "Chạy thiết lập vòng đời tự động",
-      auto_setup: "Tự động thiết lập",
-      loading_lifecycle: "Đang tải trạng thái vòng đời...",
-      no_project_click_to_create: "Không có dự án — nhấp để tạo",
-      no_repo: "không có repo",
-      baseline_label: "Baseline:",
-      ts_errors_label: "Lỗi TS:",
-      cargo_errors_label: "Lỗi Cargo:",
-      tests_label: "Kiểm thử:",
-      git_label: "Git:",
-      winning_insight: "Thông tin chi tiết chiến thắng",
-      completed_in: "Hoàn thành trong",
-      achievements_label: "Thành tựu:",
-      output_lines: "dòng đầu ra",
-      expand_slot_title: "Mở rộng slot",
-      collapse_slot_title: "Thu gọn slot",
-      copy_diff_title: "Sao chép diff",
-      loading_diff: "Đang tải diff...",
-      new_competition_modal_title: "Bắt đầu một cuộc thi",
-      first_slot_bias: "Slot đầu tiên thiên về cách tiếp cận của người chiến thắng trước đó.",
-      start_competition_slots: "Bắt đầu cuộc thi (",
-      slots_suffix: "slot)",
-      strategy_leaderboard: "Bảng xếp hạng chiến lược",
-      dq_title: "Bị loại",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "Tổng hợp trên các cuộc thi đã giải quyết. Cao hơn thắng.",
-      capture_winning_insight: "Ghi lại thông tin chi tiết chiến thắng",
-      capture_insight_desc: "Điều gì khiến cách tiếp cận này chiến thắng? Ghi chú này được lưu với người chiến thắng và được sử dụng để khởi tạo các cuộc thi trong tương lai.",
-      insight_placeholder: "Mô tả điều gì khiến cách tiếp cận này thành công…",
-      confirm_winner: "Xác nhận người chiến thắng",
-      competition_title_placeholder: "ví dụ: Thêm giới hạn tốc độ cho /api/auth/login",
-      competition_desc_placeholder: "Tiêu chí chấp nhận, tệp mục tiêu, ràng buộc...",
-      regenerate_strategies_title: "Tạo lại chiến lược",
-      start_dev_server_title: "Khởi động máy chủ dev trong worktree này",
-      stop_dev_server_title: "Dừng máy chủ dev",
-      open_worktree_title: "Mở thư mục worktree",
-      adopt_dev_clone: "Áp dụng Dev Clone",
-      dev_clone_desc: "Dev Clone là một tác nhân phát triển tự trị quản lý vòng đời dự án của bạn — thi đấu các chiến lược, sửa lỗi và ship code.",
-      github_required_title: "Cần repository GitHub",
-      folder_required_title: "Cần thư mục dự án",
-      requirements_met_title: "Đã đáp ứng tất cả yêu cầu",
-      can_still_adopt: "Bạn vẫn có thể áp dụng ngay — thêm URL GitHub và thư mục dự án sau trong cài đặt dự án.",
-      active_triggers: "Trình kích hoạt đang hoạt động (",
-      lifecycle_readiness: "Sẵn sàng vòng đời —",
-      goals_tab_no_goals: "Chưa có mục tiêu nào. Tạo mục tiêu trong Trình quản lý dự án.",
-      goal_constellation: "Chòm sao mục tiêu (",
-      sync_to_obsidian: "Đồng bộ với Obsidian"
-    },
-    dev_projects: {
-      active_goals: "mục tiêu đang hoạt động",
-      run_context_map_scan: "Chạy quét Context Map cho dự án này để điền siêu dữ liệu.",
-      entry_points: "điểm vào",
-      db_tables: "bảng db",
-      top_keywords: "Từ khóa hàng đầu",
-      entry_points_header: "Điểm vào",
-      db_tables_header: "Bảng cơ sở dữ liệu",
-      api_surface: "Bề mặt API",
-      hot_directories: "Thư mục hoạt động cao",
-      cross_project_map_title: "Bản đồ siêu dữ liệu đa dự án",
-      cross_project_map_subtitle: "Tổng hợp từ các bản đồ ngữ cảnh hiện có. Nhấp vào bất kỳ dự án nào để mở rộng.",
-      tech_distribution: "Phân phối công nghệ",
-      shared_keywords: "Từ khóa chia sẻ (",
-      shared_keywords_subtitle: "Các khái niệm xuất hiện trong nhiều dự án — có thể cho thấy kiến trúc chung.",
-      project_similarity: "Độ tương đồng dự án",
-      projects_header: "Dự án (",
-      cross_project_map_btn: "Bản đồ đa dự án",
-      new_project: "Dự án mới",
-      select_or_create: "Chọn một dự án bên dưới hoặc tạo một dự án mới.",
-      all_projects: "Tất cả dự án (",
-      no_projects_yet: "Chưa có dự án nào",
-      create_first_project: "Tạo dự án đầu tiên",
-      tech_stack: "Tech Stack",
-      edit_project: "Chỉnh sửa dự án",
-      no_goals_add_below: "Chưa có mục tiêu nào. Thêm một cái bên dưới.",
-      goal_title_placeholder: "Tiêu đề mục tiêu…",
-      project_folder: "Thư mục dự án",
-      select_folder: "Chọn một thư mục...",
-      project_name: "Tên dự án",
-      auto_filled_from_folder: "(tự động điền từ thư mục)",
-      project_name_placeholder: "Dự án của tôi",
-      project_type: "Loại dự án",
-      project_type_optional: "(tùy chọn, chỉ trực quan)",
-      project_created: "Đã tạo dự án",
-      project_ready_desc: "đã sẵn sàng. Bạn có muốn tạo bản đồ ngữ cảnh ngay bây giờ không?",
-      generate_context_map: "Tạo bản đồ ngữ cảnh",
-      generate_context_map_desc: "Quét codebase để xác định logic kinh doanh, điểm vào và cấu trúc dữ liệu.",
-      skip_for_now: "Bỏ qua bây giờ",
-      scan_codebase: "Quét codebase",
-      loading_repositories: "Đang tải repository...",
-      github_url_label: "URL GitHub",
-      optional: "(tùy chọn)",
-      github_url_placeholder: "https://github.com/owner/repo",
-      github_repository: "Repository GitHub",
-      select_repository: "Chọn một repository...",
-      no_repositories_found: "Không tìm thấy repository",
-      implementation_log: "Nhật ký triển khai",
-      loading_metadata: "Đang tải...",
-      no_metadata_yet: "Chưa có bản đồ siêu dữ liệu được tạo",
-      generate_metadata_prompt: "để phân tích bản đồ ngữ cảnh của tất cả dự án và trích xuất các mẫu chung."
-    },
-    dev_runner: {
-      self_healing: "Tự phục hồi",
-      auto_heal: "Tự động phục hồi",
-      heal_all: "Phục hồi tất cả (",
-      task_title_placeholder: "Tiêu đề tác vụ…",
-      task_details_placeholder: "Chi tiết tác vụ hoặc dán đặc tả…",
-      task_depth: "Độ sâu tác vụ",
-      goal_link: "Liên kết mục tiêu",
-      optional: "(tùy chọn)",
-      goal_link_placeholder: "Chọn một mục tiêu…",
-      create_task: "Tạo tác vụ",
-      source_label: "Nguồn:",
-      new_task: "Tác vụ mới",
-      batch_from_accepted: "Hàng loạt từ đã chấp nhận",
-      start_batch: "Bắt đầu hàng loạt",
-      cancel_all: "Hủy tất cả",
-      batch_progress: "Tiến trình hàng loạt",
-      percent_overall: "% tổng thể",
-      task_queue: "Hàng đợi tác vụ (",
-      no_tasks_queued: "Không có tác vụ trong hàng đợi",
-      no_tasks_queued_sub: "Tạo tác vụ thủ công hoặc theo lô từ các ý tưởng đã chấp nhận."
-    },
-    dev_scanner: {
-      idea_evolution: "Tiến hóa ý tưởng",
-      fitness_ranking: "Xếp hạng Fitness",
-      similar_to_rejected: "Tương tự với ý tưởng bị từ chối:",
-      synthesis_suggestions: "Đề xuất tổng hợp",
-      percent_similar: "% tương tự",
-      potential_duplicates: "Các bản trùng tiềm năng",
-      scanning_with: "Đang quét với",
-      analyzing_codebase: "Đang phân tích codebase...",
-      no_previous_scans: "Chưa có lần quét trước đó.",
-      auto_scan: "Tự động quét",
-      automated_context_scan: "Quét ngữ cảnh tự động",
-      run_scan_prefix: "Chạy:",
-      results_prefix: "Kết quả:",
-      scan_history_prefix: "Lịch sử quét",
-      idea_scanner_title: "Idea Scanner",
-      idea_scanner_subtitle: "Chạy các tác tử chuyên biệt để tạo ra các ý tưởng cải tiến",
-      run_scan_btn: "Chạy quét (",
-      results_header: "Kết quả (",
-      scan_history_header: "Lịch sử quét ("
-    },
-    dev_triage: {
-      auto_triage_rules: "Quy tắc phân loại tự động",
-      add_condition: "+ Thêm điều kiện",
-      action_label: "Hành động:",
-      new_rule: "Quy tắc mới",
-      run_rules: "Chạy quy tắc"
-    },
-    obsidian: {
-      saved_vaults: "Vault đã lưu",
-      remove_vault_title: "Xóa vault đã lưu",
-      vault_is_empty: "Vault trống",
-      failed_to_load: "Không thể tải",
-      open_in_obsidian: "Mở trong Obsidian",
-      copy_path_title: "Sao chép đường dẫn",
-      disconnect_title: "Ngắt kết nối Google Drive",
-      sign_in_to_enable: "Đăng nhập để bật đồng bộ đám mây",
-      sign_in_subtitle: "Đăng nhập bằng tài khoản Google của bạn để sao lưu vault vào Google Drive.",
-      refresh_title: "Làm mới trạng thái đồng bộ",
-      drive_connected: "Đã kết nối Drive",
-      files_synced: "tệp đã đồng bộ với Drive",
-      connect_drive_desc: "Kết nối Google Drive để sao lưu vault của bạn vào đám mây.",
-      step_connect_drive: "Kết nối Google Drive",
-      step_connect_drive_desc: "Cấp cho Personas quyền tạo tệp trong Google Drive của bạn.",
-      step_push_vault: "Đẩy vault của bạn",
-      step_push_vault_desc: "Các ghi chú vault được tải lên dưới dạng tệp markdown vào Google Drive.",
-      step_sync_devices: "Đồng bộ trên các thiết bị",
-      step_sync_devices_desc: "Kéo trên thiết bị khác để tải xuống. Vault của bạn là dữ liệu của bạn.",
-      push_title: "Đẩy vault vào Google Drive",
-      push_desc: "Đẩy tải lên các thay đổi vault cục bộ vào Google Drive.",
-      last_sync_result: "Kết quả đồng bộ cuối",
-      pull_title: "Kéo vault từ Google Drive",
-      connect_google_drive: "Kết nối Google Drive",
-      connect_drive_btn_desc: "Cấp cho Personas quyền tạo tệp trong Google Drive của bạn.",
-      no_stats_yet: "Chưa có thống kê.",
-      search_title: "Tìm kiếm ghi chú",
-      search_placeholder: "Tìm kiếm ghi chú…",
-      no_matches: "Không có kết quả khớp.",
-      no_orphan_notes: "Không có ghi chú mồ côi — mọi ghi chú đều được liên kết từ ít nhất một ghi chú khác.",
-      no_mocs: "Không phát hiện MOC nào — hãy thử giảm ngưỡng liên kết.",
-      quick_capture_title: "Ghi chú nhanh AI",
-      note_search_placeholder: "Tìm kiếm ghi chú hoặc đặt câu hỏi…",
-      append_to_today: "Thêm vào hôm nay",
-      append_content_placeholder: "Nội dung để thêm…",
-      save_meeting_title: "Lưu ghi chú cuộc họp",
-      meeting_attendees_placeholder: "Người tham dự…",
-      meeting_summary_placeholder: "Tóm tắt cuộc họp…",
-      meeting_action_items_placeholder: "Mục hành động…",
-      meeting_decisions_placeholder: "Quyết định…",
-      save_meeting_note: "Lưu ghi chú cuộc họp",
-      remove_vault_setup_title: "Xóa",
-      detected_vaults: "Vault đã phát hiện:",
-      connected_to: "Đã kết nối với \"",
-      notes_found: "ghi chú được tìm thấy",
-      scan_for_vaults_title: "Quét tìm vault",
-      manual_path_title: "Nhập đường dẫn thủ công",
-      preview_label: "Xem trước:",
-      vault_path_agent_placeholder: "/AgentName/",
-      vault_path_note_example: "/fact/memory-title.md",
-      disconnect_sync_title: "Ngắt kết nối",
-      active_vault: "Vault đang hoạt động:",
-      refresh_stats_title: "Làm mới thống kê",
-      select_personas: "Chọn các tác nhân để đẩy",
-      select_all: "Chọn tất cả",
-      no_personas_found: "Không tìm thấy tác nhân",
-      last_push_result: "Kết quả đẩy cuối",
-      app_version: "Phiên bản ứng dụng",
-      vault_version: "Phiên bản vault",
-      keep_app: "Giữ ứng dụng",
-      keep_vault: "Giữ vault",
-      clear_history_title: "Xóa lịch sử",
-      no_sync_activity: "Chưa có hoạt động đồng bộ nào. Đẩy hoặc kéo để bắt đầu."
-    },
-    research_lab: {
-      review_before_saving: "Xem xét trước khi lưu. Bỏ chọn những cái bạn không muốn thêm.",
-      re_run: "Chạy lại",
-      search_placeholder: "Tìm kiếm…",
-      filter_title: "Bộ lọc",
-      query_placeholder: "Nhập truy vấn và nhấn Enter để tìm kiếm trên tất cả các bảng…",
-      close_panel_title: "Đóng bảng",
-      md_extension: ".md",
-      edit_note_aria: "Chỉnh sửa ghi chú"
-    },
-    doc_signing_label: "Ký tài liệu",
-    doc_signing_desc: "Ký và xác minh tài liệu bằng chữ ký số trực tiếp từ không gian làm việc.",
-    ocr_label: "OCR",
-    ocr_desc: "Trích xuất văn bản từ hình ảnh và PDF bằng Gemini Vision hoặc Claude đa phương thức."
   },
   media_studio: {
     title: "Media Studio",
@@ -8744,32 +7491,10 @@ export const vi = {
     empty_title: "Bắt đầu sắp xếp",
     empty_hint: "Thêm video hoặc clip âm thanh vào dòng thời gian để bắt đầu.",
     split: "Cắt tại đầu phát",
-    undo: "Hoàn tác",
-    redo: "Làm lại",
     import_media: "Nhập phương tiện",
     supported_video: "Tệp video",
     supported_audio: "Tệp âm thanh",
     supported_images: "Tệp hình ảnh",
-    clip_actions: "Hành động clip",
-    action_split: "Chia tại đầu phát",
-    action_extract_audio: "Trích xuất âm thanh",
-    action_strip_audio: "Loại bỏ âm thanh",
-    action_keep_audio: "Giữ âm thanh",
-    action_save_thumbnail: "Lưu khung hình thành ảnh",
-    action_trim_to_file: "Cắt thành tệp mới",
-    extracting_audio: "Đang trích xuất bản nhạc âm thanh...",
-    extract_audio_done: "Đã trích xuất bản nhạc âm thanh",
-    saving_thumbnail: "Đang lưu khung hình...",
-    thumbnail_saved: "Đã lưu khung hình",
-    trimming_file: "Đang cắt tệp...",
-    trim_done: "Đã lưu bản cắt",
-    effects: "Hiệu ứng",
-    speed: "Tốc độ",
-    fade_in: "Mờ dần vào",
-    fade_out: "Mờ dần ra",
-    normalize: "Chuẩn hóa âm lượng",
-    normalize_hint: "EBU R128 được áp dụng khi xuất; xem trước chỉ là ước tính",
-    strip_audio_hint: "Tắt tiếng âm thanh của clip này khi xuất"
   },
   research_lab: {
     dashboard: "Bảng điều khiển",
@@ -8779,29 +7504,20 @@ export const vi = {
     experiments: "Thí nghiệm",
     findings: "Kết quả",
     reports: "Báo cáo",
-    graph: "Đồ thị",
     active: "đang hoạt động",
     sources: "Nguồn",
     sources_count: "nguồn",
-    recent_projects: "Dự án gần đây",
-    view_all: "Xem tất cả",
     no_projects: "Chưa có dự án nghiên cứu",
     no_projects_hint: "Tạo một dự án nghiên cứu để bắt đầu sắp xếp tài liệu, giả thuyết và thí nghiệm.",
     create_project: "Dự án mới",
-    edit_project: "Chỉnh sửa dự án",
-    save_changes: "Lưu thay đổi",
     project_name: "Tên dự án",
-    project_name_placeholder: "ví dụ: Độ trung thực chuỗi suy luận LLM",
     project_description: "Mô tả",
-    project_description_placeholder: "Tóm tắt ngắn về những gì dự án này điều tra",
     project_thesis: "Câu hỏi nghiên cứu hoặc luận đề",
-    project_thesis_placeholder: "Tuyên bố trung tâm hoặc câu hỏi bạn đang kiểm tra",
     project_domain: "Lĩnh vực",
     project_scope: "Giới hạn phạm vi",
     obsidian_vault: "Kho Obsidian",
     obsidian_vault_hint: "Liên kết kho Obsidian để đồng bộ thí nghiệm và kết quả",
     select_vault: "Chọn kho",
-    clear_vault: "Xóa",
     vault_connected: "Kho đã kết nối",
     sync_to_obsidian: "Đồng bộ với Obsidian",
     syncing: "Đang đồng bộ...",
@@ -8817,42 +7533,13 @@ export const vi = {
     status_writing: "Viết",
     status_review: "Xem xét",
     status_complete: "Hoàn thành",
-    domain_cs: "Khoa học máy tính",
-    domain_biology: "Sinh học",
-    domain_chemistry: "Hóa học",
-    domain_physics: "Vật lý",
-    domain_mathematics: "Toán học",
-    domain_business: "Kinh doanh",
-    domain_medicine: "Y học",
-    domain_general: "Tổng quát",
     select_project_first: "Chọn dự án nghiên cứu trước",
     no_sources: "Chưa có nguồn",
     no_sources_hint: "Tìm kiếm trên arXiv, Semantic Scholar hoặc PubMed để tìm bài báo liên quan, hoặc thêm nguồn thủ công.",
-    no_matching_sources: "Không có nguồn nào khớp với bộ lọc",
-    filter_sources_placeholder: "Lọc theo tiêu đề hoặc tác giả…",
     relevance: "Độ liên quan",
     search_sources: "Tìm kiếm nguồn",
     ingest: "Nạp",
     ingesting: "Đang nạp...",
-    source_title: "Tiêu đề",
-    source_title_placeholder: "Tiêu đề bài báo",
-    source_type: "Loại nguồn",
-    source_year: "Năm",
-    source_year_placeholder: "ví dụ: 2024",
-    source_authors: "Tác giả",
-    source_authors_placeholder: "Tác giả 1, Tác giả 2, …",
-    source_url: "URL",
-    source_url_placeholder: "https://arxiv.org/abs/…",
-    source_doi: "DOI",
-    source_doi_placeholder: "10.xxxx/…",
-    source_abstract: "Tóm tắt",
-    source_abstract_placeholder: "Tóm tắt bài báo…",
-    source_type_arxiv: "arXiv",
-    source_type_scholar: "Semantic Scholar",
-    source_type_pubmed: "PubMed",
-    source_type_web: "Trang web",
-    source_type_pdf: "PDF",
-    source_type_manual: "Nhập thủ công",
     no_hypotheses: "Chưa có giả thuyết",
     no_hypotheses_hint: "Thêm giả thuyết thủ công hoặc để tác nhân AI tạo từ kho tài liệu của bạn.",
     add_hypothesis: "Thêm giả thuyết",
@@ -8860,58 +7547,23 @@ export const vi = {
     confidence: "Độ tin cậy",
     supporting: "Hỗ trợ",
     counter: "Phản biện",
-    hypothesis_statement: "Tuyên bố",
-    hypothesis_statement_placeholder: "Một tuyên bố có thể kiểm tra — ví dụ: Prompt X cải thiện độ chính xác so với baseline > 5%",
-    hypothesis_rationale: "Lý do",
-    hypothesis_rationale_placeholder: "Tại sao giả thuyết này đáng để kiểm tra",
     no_experiments: "Chưa có thí nghiệm",
     no_experiments_hint: "Thiết kế một thí nghiệm để kiểm tra giả thuyết.",
     create_experiment: "Thí nghiệm mới",
-    experiment_name: "Tên thí nghiệm",
-    experiment_name_placeholder: "ví dụ: So sánh baseline vs. fine-tuned trên GSM8K",
     methodology: "Phương pháp",
-    methodology_placeholder: "Thí nghiệm này sẽ được chạy như thế nào?",
     success_criteria: "Tiêu chí thành công",
-    success_criteria_placeholder: "Kết quả nào sẽ xác nhận giả thuyết?",
-    linked_hypothesis: "Giả thuyết liên kết",
-    no_linked_hypothesis: "Không có giả thuyết liên kết",
-    linked_persona: "Tác nhân liên kết",
-    no_linked_persona: "Không có tác nhân liên kết",
-    run_input: "Đầu vào chạy (tùy chọn)",
-    run_input_placeholder: "Văn bản đầu vào sẽ được chuyển đến tác nhân trong mỗi lần chạy.",
-    pass_pattern: "Mẫu đạt (regex)",
-    pass_pattern_placeholder: "ví dụ: PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "Chạy",
-    running_experiment: "Đang chạy…",
     run_count: "lần chạy",
-    view_runs: "Xem các lần chạy",
-    no_runs_yet: "Chưa có lần chạy nào",
-    run_passed: "Đã qua",
-    run_failed: "Thất bại",
-    run_duration: "Thời lượng",
-    run_cost: "Chi phí",
-    run_number: "Lần chạy #",
-    runs_history: "Lịch sử chạy",
     no_findings: "Chưa có kết quả",
     no_findings_hint: "Kết quả được trích xuất từ kết quả thí nghiệm bởi các tác nhân phân tích.",
-    create_finding: "Phát hiện mới",
-    finding_title: "Tiêu đề",
-    finding_title_placeholder: "Tiêu đề ngắn cho phát hiện",
-    finding_description: "Mô tả",
-    finding_description_placeholder: "Bạn đã quan sát thấy gì và tại sao nó quan trọng?",
-    finding_category: "Danh mục",
-    finding_category_placeholder: "ví dụ: hiệu suất, giới hạn, bất ngờ",
     no_reports: "Chưa có báo cáo",
     no_reports_hint: "Tạo một báo cáo để tổng hợp kết quả thành tài liệu có cấu trúc.",
     create_report: "Báo cáo mới",
-    report_title: "Tiêu đề",
-    report_title_placeholder: "ví dụ: Tóm tắt nghiên cứu Q2",
     report_type: "Loại báo cáo",
-    report_format: "Định dạng",
     literature_review: "Xem xét tài liệu",
     experiment_report: "Báo cáo thí nghiệm",
     full_paper: "Bài báo đầy đủ",
-    executive_summary: "Tóm tắt điều hành"
+    executive_summary: "Tóm tắt điều hành",
   },
   event_types: {
     webhook_received_label: "Nhận Webhook",
@@ -8986,7 +7638,7 @@ export const vi = {
     source_filter_no_regex: "Chỉ hỗ trợ * ở cuối (không có regex, không có ký tự ? đại diện)",
     source_filter_no_source_id: "Nếu source_filter được đặt nhưng sự kiện không có source_id, bộ lọc sẽ không khớp",
     source_filter_allowed_chars: "Ký tự được phép: chữ cái, số, _, -, :, . và *",
-    source_filter_max_length: "Tối đa 120 ký tự, tối đa 3 ký tự đại diện"
+    source_filter_max_length: "Tối đa 120 ký tự, tối đa 3 ký tự đại diện",
   },
   connector_roles: {
     chat_messaging: "Chat & Nhắn tin",
@@ -9053,12 +7705,12 @@ export const vi = {
     purpose_ecommerce: "Thương mại điện tử",
     purpose_scheduling: "Lập lịch",
     purpose_forms: "Biểu mẫu",
-    purpose_ai: "AI"
+    purpose_ai: "AI",
   },
   connector_licensing: {
     personal: "Cá nhân",
     paid: "Trả phí",
-    enterprise: "Doanh nghiệp"
+    enterprise: "Doanh nghiệp",
   },
   alerts: {
     metric_error_rate: "Tỷ lệ lỗi",
@@ -9074,7 +7726,7 @@ export const vi = {
     error_delete_rule: "Xóa quy tắc cảnh báo thất bại:",
     error_toggle_rule: "Bật/tắt quy tắc cảnh báo thất bại:",
     error_dismiss: "Bỏ qua cảnh báo thất bại:",
-    error_clear_history: "Xóa lịch sử cảnh báo thất bại:"
+    error_clear_history: "Xóa lịch sử cảnh báo thất bại:",
   },
   deploy_errors: {
     not_reachable: "Không thể kết nối máy chủ. Kiểm tra URL và kết nối mạng.",
@@ -9089,18 +7741,18 @@ export const vi = {
     oauth_expired: "Token OAuth đã hết hạn. Vui lòng cấp quyền lại.",
     url_empty: "Vui lòng nhập URL điều phối.",
     api_key_empty: "Vui lòng nhập khóa API của bạn.",
-    token_empty: "Vui lòng nhập token truy cập cá nhân GitLab."
+    token_empty: "Vui lòng nhập token truy cập cá nhân GitLab.",
   },
   tiers: {
     starter_label: "Đơn giản",
     starter_desc: "Tính năng cốt lõi cho sử dụng hàng ngày",
     team_label: "Nâng cao",
-    team_desc: "Bộ tính năng đầy đủ"
+    team_desc: "Bộ tính năng đầy đủ",
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus"
+    opus: "Opus",
   },
   error_explanation: {
     action_go_to_vault: "Đi đến Kho",
@@ -9144,7 +7796,7 @@ export const vi = {
     guidance_import_invalid: "Tệp nhập trống hoặc bị hỏng. Thử xuất lại từ nguồn và nhập lại.",
     guidance_circular_chain: "Điều này sẽ tạo vòng lặp tác nhân kích hoạt nhau vô tận. Xem lại chuỗi tác nhân và xóa tham chiếu vòng.",
     guidance_parse_error: "Phản hồi không đúng định dạng mong đợi. Có thể do thay đổi API hoặc dữ liệu sai.",
-    guidance_process_exit: "Tiến trình nền thông báo lỗi. Kiểm tra nhật ký thực thi để biết thêm chi tiết."
+    guidance_process_exit: "Tiến trình nền thông báo lỗi. Kiểm tra nhật ký thực thi để biết thêm chi tiết.",
   },
   process_labels: {
     n8n_transform: "Biến đổi n8n",
@@ -9158,11 +7810,10 @@ export const vi = {
     lab_run: "Chạy phòng thí nghiệm",
     connector_test: "Kiểm tra trình kết nối",
     creative_session: "Phiên sáng tạo",
-    feedback_chat: "Trò chuyện phản hồi",
     complete_suffix: "Hoàn thành",
     failed_suffix: "Thất bại",
     pending_reviews_one: "{count} xem xét đang chờ phê duyệt",
-    pending_reviews_other: "{count} xem xét đang chờ phê duyệt"
+    pending_reviews_other: "{count} xem xét đang chờ phê duyệt",
   },
   eval_strategies: {
     keyword_match_label: "Chất lượng đầu ra",
@@ -9174,7 +7825,7 @@ export const vi = {
     confusion_detect_label: "Phát hiện nhầm lẫn",
     confusion_detect_description: "Kiểm tra các cụm từ nhầm lẫn/thất bại đã biết",
     composite_label: "Tổ hợp",
-    composite_description: "Kết hợp có trọng số của tất cả chiến lược"
+    composite_description: "Kết hợp có trọng số của tất cả chiến lược",
   },
   drift_labels: {
     kind_error_pattern: "Mẫu lỗi",
@@ -9202,7 +7853,7 @@ export const vi = {
     suggestion_error_handling: "Xem lại phần errorHandling và thêm xử lý cho mẫu thất bại này.",
     suggestion_near_timeout: "Cân nhắc tăng thời gian chờ hoặc đơn giản hóa phạm vi nhiệm vụ của tác nhân.",
     suggestion_high_cost: "Siết chặt hướng dẫn để giảm sử dụng token, hoặc cân nhắc dùng mô hình nhỏ hơn.",
-    suggestion_repeated_failure: "Cân nhắc chạy phân tích thiết kế mới để xây dựng lại cấu hình tác nhân."
+    suggestion_repeated_failure: "Cân nhắc chạy phân tích thiết kế mới để xây dựng lại cấu hình tác nhân.",
   },
   feedback_labels: {
     accurate_prompt: "Lời nhắc chính xác",
@@ -9215,13 +7866,13 @@ export const vi = {
     over_engineered: "Quá phức tạp",
     under_specified: "Thiếu đặc tả",
     wrong_triggers: "Trình kích hoạt sai",
-    credential_issues: "Vấn đề thông tin xác thực"
+    credential_issues: "Vấn đề thông tin xác thực",
   },
   protocol_labels: {
     manual_review: "Xem xét thủ công",
     user_message: "Thông báo người dùng",
     agent_memory: "Ký ức tác nhân",
-    emit_event: "Phát sự kiện"
+    emit_event: "Phát sự kiện",
   },
   execution: {
     budget_exceeded: "Ngân sách hàng tháng cho tác nhân này đã vượt. Ghi đè tạm dừng ngân sách trong cài đặt hoặc tăng ngân sách để tiếp tục.",
@@ -9238,11 +7889,6 @@ export const vi = {
     waiting_for_output: "Đang chờ đầu ra...",
     no_output: "Không có đầu ra",
     background: "Nền",
-    needs_credential: "cần thông tin xác thực",
-    run_preview: "Xem trước lần chạy",
-    close_preview: "Đóng xem trước",
-    budget_limit: "Giới hạn ngân sách",
-    run_agent: "Chạy tác tử"
   },
   gitlab: {
     integration_title: "Tích hợp GitLab",
@@ -9357,10 +8003,6 @@ export const vi = {
     play_sound: "Phát âm thanh",
     cicd_agent_templates: "Mẫu CI/CD Agent",
     your_tier: "(của bạn)",
-    trigger_on: "trên:",
-    connecting_to_gitlab: "Đang kết nối với GitLab...",
-    deploying_to_gitlab: "Đang triển khai tác nhân tới GitLab...",
-    pipeline_hash: "Pipeline #"
   },
   pipeline: {
     agent_teams: "Nhóm tác nhân",
@@ -9508,11 +8150,6 @@ export const vi = {
     run_pipeline_or_add: "Chạy một pipeline hoặc thêm thủ công",
     load_more: "Tải thêm",
     showing_count: "Hiển thị {shown} trong số {total}",
-    no_timeline_data: "Không có dữ liệu dòng thời gian",
-    clear_filter: "Xóa bộ lọc",
-    filter_to_run: "Lọc tới lần chạy này",
-    new_memories_one: "{count} bộ nhớ mới",
-    new_memories_other: "{count} bộ nhớ mới"
   },
   composition: {
     select_persona: "Chọn tác nhân",
@@ -9561,10 +8198,10 @@ export const vi = {
     add_input_node: "Thêm nút đầu vào",
     add_persona_node: "Thêm nút tác nhân",
     add_output_node: "Thêm nút đầu ra",
-    run: "Chạy"
+    run: "Chạy",
   },
   auth: {
-    login_timed_out: "Đăng nhập hết thời gian. Vui lòng thử lại."
+    login_timed_out: "Đăng nhập hết thời gian. Vui lòng thử lại.",
   },
   shared: {
     blast_checking_impact: "Đang kiểm tra tác động...",
@@ -9699,15 +8336,6 @@ export const vi = {
     cmd_select: "chọn",
     cmd_commands: "lệnh",
     draft_editor: {
-      edit_tabs_label: "Tab chỉnh sửa bản nháp",
-      request_ai_adjustments: "Yêu cầu điều chỉnh AI",
-      edit_raw_json_hint: "Chỉnh sửa JSON thô. Thay đổi ghi đè các trường form.",
-      no_custom_sections: "Chưa có phần tùy chỉnh nào",
-      no_content_to_preview: "Không có nội dung để xem trước",
-      edit_raw: "Chỉnh sửa thô",
-      credential_links: "Liên kết thông tin xác thực",
-      view_full_prompt: "Xem toàn bộ prompt",
-      hide_full_prompt: "Ẩn toàn bộ prompt",
       persona_name_placeholder: "Tên tác nhân...",
       description_placeholder: "Mô tả ngắn gọn...",
       refine_placeholder: "Ví dụ: Làm xử lý lỗi chặt chẽ hơn, thêm logic thử lại...",
@@ -9728,108 +8356,55 @@ export const vi = {
       design_context_json: "JSON ngữ cảnh thiết kế...",
       click_next: "Nhấp tiếp theo để tiến hành biến đổi.",
       configure_transform: "Cấu hình biến đổi",
-      select: "Chọn..."
+      select: "Chọn...",
     },
     forms_extra: {
-      color_hex_placeholder: "#8b5cf6",
-      attach_file_title: "Đính kèm tệp (đặc tả API, schema, cấu hình MCP)",
-      add_references_title: "Thêm URL tham chiếu hoặc chuỗi kết nối",
-      no_matches: "Không có kết quả khớp",
-      all_prefix: "Tất cả (",
       references: "Tham chiếu",
       references_placeholder: "Dán URL, chuỗi kết nối, khóa API hoặc thông tin tham chiếu (mỗi dòng một)",
       remove_file: "Xóa tệp",
       choose_color: "Chọn màu",
       choose_icon: "Chọn biểu tượng",
       filter_placeholder: "Lọc...",
-      reset_to_default: "Đặt lại mặc định"
+      reset_to_default: "Đặt lại mặc định",
     },
     reasoning_trace: {
-      heartbeat_silent: "s (im lặng",
-      waiting: "Đang chờ sự kiện thực thi...",
-      tool_call_label: "Gọi công cụ:",
       system_init: "Khởi tạo hệ thống",
       reasoning: "Lập luận",
       tool_call: "Gọi công cụ: {name}",
       result: "Kết quả",
       complete: "Hoàn thành",
-      error: "Lỗi"
+      error: "Lỗi",
     },
     sidebar_extra: {
-      clear_completed_title: "Xóa các mục đã hoàn thành và đã xếp hàng",
-      no_credentials: "Chưa có thông tin xác thực nào",
-      ai_setup_wizard: "Trình hướng dẫn thiết lập AI",
-      all_personas: "Tất cả tác nhân",
-      no_scheduled_agents: "Không có tác tử nào có lịch trình",
-      all_agents_label: "Tất cả tác tử",
-      draft_builds: "Bản xây dựng nháp",
-      dev_tools_label: "Dev Tools",
-      obsidian_brain: "Obsidian Brain",
-      active_twin: "Bản sao đang hoạt động",
-      research_lab: "Research Lab",
       agents: "Tác nhân",
       schedules: "Lịch trình",
       remove_favorites: "Xóa khỏi yêu thích",
       add_favorites: "Thêm vào yêu thích",
-      active_project: "Dự án đang hoạt động"
+      active_project: "Dự án đang hoạt động",
     },
     execution_detail: {
-      running: "Đang chạy...",
-      rerun: "Chạy lại",
-      retry_prefix: "Thử lại #",
-      importance_prefix: "độ quan trọng:",
-      confidence_suffix: "% tin cậy",
       copy: "Sao chép",
       suggested_actions: "Hành động được đề xuất",
       knowledge_insight: "Kiến thức chính",
       outcome_assessment: "Đánh giá kết quả",
-      blockers: "Cản trở"
+      blockers: "Cản trở",
     },
     progress_extra: {
-      continue_working: "Bạn có thể tiếp tục làm việc -- chúng tôi sẽ thông báo cho bạn khi bản nháp sẵn sàng.",
-      draft_ready: "Bản nháp tác nhân của bạn đã sẵn sàng để xem xét và chỉnh sửa.",
-      click_generate: "Nhấp \\u201cTạo bản nháp tác nhân\\u201d để bắt đầu.",
-      skip_configuration: "Bỏ qua cấu hình",
-      no_config_questions: "Không cần câu hỏi cấu hình.",
-      answer_questions: "Trả lời những câu hỏi này để tùy chỉnh việc tạo tác nhân.",
-      no_output: "Chưa có đầu ra...",
-      s_elapsed: "s đã trôi qua",
-      s_remaining: "s còn lại",
-      show_cli_output: "Hiện đầu ra CLI",
-      hide_cli_output: "Ẩn đầu ra CLI",
       taking_longer: "Đang mất nhiều thời gian hơn dự kiến",
       complete: "Hoàn thành",
       resuming: "Đang tiếp tục phiên biến đổi trước...",
       cancel_transformation: "Hủy biến đổi",
       draft_generated: "Bản nháp đã được tạo thành công",
       transformation_failed: "Biến đổi thất bại",
-      waiting_to_start: "Đang chờ bắt đầu biến đổi..."
+      waiting_to_start: "Đang chờ bắt đầu biến đổi...",
     },
     terminal_extra: {
-      connecting: "Đang kết nối với nhà cung cấp",
-      queued_at: "Đã xếp hàng tại vị trí",
-      new_line: "dòng mới",
-      new_lines: "dòng mới",
-      below: "bên dưới",
-      lines_suffix: "dòng)",
-      search_and_filter: "Tìm kiếm & Lọc",
       press_enter: "Nhấn Enter hoặc nhấp Phát để bắt đầu",
       connection_failed: "Kết nối thất bại — kiểm tra cài đặt nhà cung cấp và thử lại",
       search_output: "Tìm kiếm đầu ra...",
-      dismiss: "Bỏ qua"
+      dismiss: "Bỏ qua",
     },
     use_cases_extra: {
-      input_placeholder: "Nhập đầu vào để chạy trường hợp sử dụng này…",
-      model_placeholder: "ví dụ: claude-3-5-sonnet-latest",
-      use_case_singular: "trường hợp sử dụng",
-      window_prefix: "(cửa sổ:",
-      loading_history: "Đang tải lịch sử...",
-      no_executions: "Chưa có lần thực thi nào",
-      run_to_see_history: "Chạy trường hợp sử dụng này để xem lịch sử thực thi, thời gian và chi phí ở đây.",
-      run_use_case: "Chạy trường hợp sử dụng này",
-      custom_model: "Mô hình tùy chỉnh",
-      no_results: "Không tìm thấy kết quả",
-      ctrl_enter: "Ctrl+Enter",
       example_output: "Đầu ra mẫu",
       input_data: "Dữ liệu đầu vào",
       rerun_input: "Chạy lại với đầu vào này",
@@ -9837,7 +8412,7 @@ export const vi = {
       error_prefix: "Lỗi: ",
       output_prefix: "Đầu ra: ",
       toggle_history: "Bật/tắt lịch sử thực thi",
-      configure_model: "Cấu hình mô hình, thông báo & đăng ký"
+      configure_model: "Cấu hình mô hình, thông báo & đăng ký",
     },
     json_valid: "JSON hợp lệ",
     json_invalid: "JSON không hợp lệ",
@@ -9845,85 +8420,6 @@ export const vi = {
     json_format_tooltip: "Định dạng JSON",
     agent_icon_label: "biểu tượng tác nhân",
     breadcrumb_label: "Breadcrumb",
-    breadcrumb_show_hidden: "Hiển thị breadcrumb ẩn"
+    breadcrumb_show_hidden: "Hiển thị breadcrumb ẩn",
   },
-  releases: {
-    whats_new: {
-      title: "Có gì mới",
-      subtitle_roadmap: "Những gì chúng tôi đang xây dựng bây giờ và những gì sắp tới.",
-      subtitle_changelog: "Có gì mới trong phiên bản Personas của bạn.",
-      nav_bar_roadmap_label: "Lộ trình",
-      empty: "Chưa có gì để chia sẻ cho bản phát hành này — hãy quay lại sớm.",
-      status_released: "Đã phát hành",
-      status_active: "Hiện tại",
-      status_planned: "Đã lên kế hoạch",
-      status_roadmap: "Lộ trình",
-      type_feature: "Mới",
-      type_fix: "Đã sửa",
-      type_security: "Bảo mật",
-      type_docs: "Tài liệu",
-      type_chore: "Bảo trì",
-      type_breaking: "Phá vỡ",
-      item_status_in_progress: "Đang thực hiện",
-      item_status_planned: "Đã lên kế hoạch",
-      item_status_completed: "Hoàn thành",
-      priority_now: "Bây giờ",
-      priority_next: "Tiếp theo",
-      priority_later: "Sau này",
-      summary_in_progress: "{count} Đang thực hiện",
-      summary_next: "{count} Tiếp theo",
-      release_0_0_1_label: "Alpha 1",
-      release_0_0_1_summary: "Bản xem trước đầu tiên của Personas.",
-      release_0_0_1_item_1_title: "Bản xem trước công khai đầu tiên",
-      release_0_0_1_item_1_description: "Thiết kế tác tử AI, chạy chúng theo lịch trình hoặc trình kích hoạt và xem công việc của chúng trực tiếp trên desktop của bạn.",
-      release_0_0_2_label: "Alpha 2",
-      release_0_0_2_summary: "Kết nối Personas với các công cụ AI khác và đọc tin mới mà không cần rời khỏi ứng dụng.",
-      release_0_0_2_item_1_title: "Mở các tác nhân của bạn cho các công cụ AI khác",
-      release_0_0_2_item_1_description: "Personas giờ đây có thể giao tiếp với các công cụ AI khác thông qua một giao thức chung. Chọn chính xác các tác nhân bạn muốn chia sẻ và bảo vệ chúng bằng các khóa truy cập bạn kiểm soát — các tác nhân riêng tư của bạn vẫn riêng tư theo mặc định.",
-      release_0_0_2_item_2_title: "Truy cập an toàn hơn cho ứng dụng desktop",
-      release_0_0_2_item_2_description: "Ứng dụng desktop tạo khóa truy cập ngắn hạn của riêng nó khi mỗi lần khởi chạy, vì vậy nó có thể giao tiếp với các dịch vụ nền mà không làm lộ bất cứ điều gì bạn chưa phê duyệt.",
-      release_0_0_2_item_3_title: "Ghi chú phát hành trong ứng dụng",
-      release_0_0_2_item_3_description: "Xem những gì mới trong mọi bản phát hành Personas mà không cần rời khỏi ứng dụng. Chuyển đổi giữa các phiên bản cũ, bản phát hành hiện tại và lộ trình dài hạn từ một nơi.",
-      release_0_0_2_item_4_title: "Các tác nhân của bạn học từ mỗi phiên",
-      release_0_0_2_item_4_description: "Personas giờ đây nắm bắt các bài học từ mỗi phiên tác nhân, chắt lọc chúng thành kiến thức có thể tái sử dụng và đưa chúng vào lần chạy tiếp theo. Các tác nhân của bạn trở nên thông minh hơn khi bạn sử dụng chúng lâu hơn — không cần huấn luyện thủ công.",
-      release_0_0_2_item_5_title: "Biến bất kỳ tài liệu nào thành bản tóm tắt có thể nghe",
-      release_0_0_2_item_5_description: "Một mẫu mới biến các báo cáo nghiên cứu, bản ghi cuộc họp hoặc bài viết dài thành cuộc trò chuyện âm thanh hai người dẫn chương trình từ 5 đến 15 phút mà bạn có thể nghe khi di chuyển. Bạn chọn phong cách — thân mật, trang trọng, tin tức hoặc điều hành — và xem lại kịch bản trước khi giọng nói được tạo.",
-      release_0_0_2_item_6_title: "Biên tập viên được đào tạo tại Stanford cho bài viết của bạn",
-      release_0_0_2_item_6_description: "Một mẫu mới xem xét các bản nháp của bạn bằng phương pháp \"Writing in the Sciences\" của Stanford. Nó đánh dấu giọng thụ động, cụm từ vô ích và biệt ngữ — và giải thích chính xác lý do tại sao mọi thay đổi được đề xuất làm cho câu rõ ràng hơn. Nó học giọng điệu của bạn từ các chỉnh sửa bạn chấp nhận hoặc từ chối.",
-      release_0_0_2_item_7_title: "Biến 20 giờ sản xuất YouTube thành 3",
-      release_0_0_2_item_7_description: "Một mẫu mới nén toàn bộ chu kỳ video YouTube xuống khoảng ba giờ bằng cách xử lý mọi thứ ngoại trừ quay phim. Nó kiểm tra xem ngách của bạn có đáng theo đuổi không, soạn kịch bản lấy hook-first theo giọng của bạn và tự động loại bỏ các bản quay lại khỏi cảnh quay thô bằng cách sử dụng kịch bản được phê duyệt làm sự thật nền tảng — để bạn có thể quay phim tự nhiên, vấp ngã tự do và tiếp tục.",
-      release_0_0_2_item_8_title: "Chạy scraper Apify từ các tác nhân của bạn",
-      release_0_0_2_item_8_description: "Kết nối bất kỳ actor nào từ nền tảng Apify — scraper YouTube, scraper Twitter, tự động hóa trình duyệt và hàng trăm cái khác — trực tiếp với các tác nhân của bạn. Mở khóa các quy trình nghiên cứu cần dữ liệu mà API chính thức không thể tiếp cận.",
-      release_0_0_2_item_9_title: "X (Twitter) giờ đây là một trình kết nối",
-      release_0_0_2_item_9_description: "Tìm kiếm tweet gần đây, theo dõi các chủ đề xu hướng và đăng trực tiếp từ các tác nhân của bạn. Hữu ích cho nghiên cứu nội dung, lắng nghe xã hội và tự động hóa tiếp thị mà không cần rời khỏi Personas.",
-      release_0_0_2_item_10_title: "Xem YouTube từ các tác nhân của bạn",
-      release_0_0_2_item_10_description: "Trình kết nối nền tảng video đầu tiên trong Personas. Tìm kiếm video, lấy thống kê kênh, kéo nội dung xu hướng và phân tích đối thủ trực tiếp từ bất kỳ tác nhân nào cần hiểu những gì đang xảy ra trên YouTube.",
-      release_0_0_2_item_11_title: "Biến âm thanh thành văn bản với Deepgram",
-      release_0_0_2_item_11_description: "Một trình kết nối speech-to-text mới phiên âm các tệp âm thanh hoặc URL với thời gian ở mức từ. Cung cấp sức mạnh cho trợ lý người sáng tạo YouTube để chỉnh sửa tự động và cung cấp cho bất kỳ tác nhân nào khả năng xử lý ghi chú thoại, bản ghi cuộc họp hoặc nội dung podcast.",
-      release_0_0_2_item_12_title: "Các công cụ AI khác có thể kiểm tra và dừng các tác nhân của bạn",
-      release_0_0_2_item_12_description: "Khi một công cụ AI khác gọi một trong các tác nhân được chia sẻ của bạn, giờ đây nó có thể hỏi 'điều này có còn đang chạy không?' và 'vui lòng dừng ngay bây giờ' giữa chừng. Các tác vụ nghiên cứu dài không còn phải giữ kết nối mở suốt thời gian và các lần chạy bị kẹt có thể được hủy sạch từ phía gọi. Mỗi tác nhân chỉ thấy các lần chạy của chính nó, vì vậy không có gì rò rỉ giữa các tác nhân.",
-      release_0_0_2_item_13_title: "Trình kết nối mới: Phân tích Humbalytics",
-      release_0_0_2_item_13_description: "Theo dõi lưu lượng, chạy thử nghiệm A/B và hoán đổi bản sao landing page mà không cần chạm vào code của bạn. Personas giờ đây có thể kéo heat map và dữ liệu chuyển đổi từ Humbalytics và sử dụng chúng để hướng dẫn các thử nghiệm của bạn.",
-      release_0_0_2_item_14_title: "Trình kết nối mới: Firecrawl scraping web",
-      release_0_0_2_item_14_description: "Các tác nhân giờ đây có thể đọc bất kỳ trang web nào — ngay cả những trang hiện đại nặng JavaScript — dưới dạng nội dung có cấu trúc, sạch. Hữu ích cho các tác nhân nghiên cứu, thông tin thị trường và giám sát nội dung.",
-      release_0_0_2_item_15_title: "Một tác nhân tiếp thị thực sự chạy các thử nghiệm A/B của bạn",
-      release_0_0_2_item_15_description: "Một mẫu mới đề xuất các biến thể tiêu đề, triển khai chúng với sự chấp thuận của bạn, chờ đợi ý nghĩa thống kê và tự động thăng cấp người chiến thắng. Mọi thay đổi đều được con người phê duyệt trước khi đi vào hoạt động và mỗi thử nghiệm chạy đủ lâu để kết quả thực sự có ý nghĩa.",
-      release_0_0_2_item_16_title: "Đọc các bảng điều khiển BI của nhóm bạn từ bất kỳ tác nhân nào",
-      release_0_0_2_item_16_description: "Personas giờ đây có thể kéo kết quả từ các truy vấn và bảng điều khiển Redash đã lưu. Nếu nhóm của bạn đã duy trì các bảng điều khiển chung, các tác nhân của bạn đọc cùng các con số mà con người thấy — không cần viết lại SQL, không xuất CSV, không sao chép-dán.",
-      release_0_0_2_item_17_title: "Metabase giờ đây là một trình kết nối",
-      release_0_0_2_item_17_description: "Các tác nhân của bạn có thể chạy các câu hỏi Metabase đã lưu và đọc bảng điều khiển thẳng từ không gian làm việc của bạn. Hoạt động với Metabase Pro, Enterprise và bất kỳ phiên bản tự lưu trữ nào.",
-      release_0_0_2_item_18_title: "Bản tóm tắt BI hàng ngày được gửi đến bạn",
-      release_0_0_2_item_18_description: "Một mẫu mới chọn các truy vấn đã lưu mà bạn đã duy trì trong Redash hoặc Metabase, tóm tắt các con số mới nhất mỗi sáng và đăng bản tóm tắt bằng tiếng Anh đơn giản với cờ bất thường tuần-qua-tuần. Các bảng điều khiển của bạn vẫn hữu ích ngay cả khi không ai mở chúng.",
-      release_roadmap_label: "Lộ trình",
-      release_roadmap_summary: "Những gì chúng tôi đang xây dựng bây giờ và những gì sắp tới.",
-      release_roadmap_item_2_title: "Tích hợp đám mây",
-      release_roadmap_item_2_description: "Chạy các tác nhân của bạn 24/7 trên đám mây và phát trực tuyến công việc của chúng trở lại desktop của bạn theo thời gian thực.",
-      release_roadmap_item_3_title: "Ứng dụng web",
-      release_roadmap_item_3_description: "Một bạn đồng hành web cho tài khoản, thanh toán và quản lý tác nhân từ bất kỳ trình duyệt nào.",
-      release_roadmap_item_4_title: "Sử dụng Personas bằng ngôn ngữ của bạn",
-      release_roadmap_item_4_description: "Hỗ trợ đầy đủ đa ngôn ngữ, bao gồm bố cục từ phải sang trái và các phông chữ đặc trưng theo ngôn ngữ.",
-      release_roadmap_item_6_title: "Không gian làm việc nhóm",
-      release_roadmap_item_6_description: "Xây dựng các tác nhân cùng với nhóm của bạn — không gian chung, quyền theo vai trò và bảng điều khiển trực tiếp."
-    }
-  }
 };

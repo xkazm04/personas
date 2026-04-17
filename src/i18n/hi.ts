@@ -1,4 +1,5 @@
 export const hi = {
+
   common: {
     loading: "लोड हो रहा है...",
     saving: "सहेजा जा रहा है...",
@@ -47,7 +48,6 @@ export const hi = {
     error: "त्रुटि",
     success: "सफल",
     required: "आवश्यक",
-    optional: "वैकल्पिक",
     select: "-- चुनें --",
     no_results: "कोई परिणाम नहीं मिला",
     active: "सक्रिय",
@@ -143,7 +143,7 @@ export const hi = {
     command_palette_navigate: "नेविगेट करें",
     command_palette_select: "चुनें",
     command_palette_commands: "कमांड",
-    loading_label: "लोड हो रहा है"
+    loading_label: "लोड हो रहा है",
   },
   chrome: {
     app_title: "Personas",
@@ -163,7 +163,7 @@ export const hi = {
     sign_in_google: "Google से साइन इन करें",
     signed_in: "साइन इन किया",
     sign_out: "साइन आउट करें",
-    offline: "ऑफ़लाइन"
+    offline: "ऑफ़लाइन",
   },
   sidebar: {
     home: "होम",
@@ -209,8 +209,6 @@ export const hi = {
     engine: "इंजन",
     byom: "BYOM",
     data: "डेटा",
-    quality_gates: "सामग्री फ़िल्टर",
-    config_resolution: "एजेंट कॉन्फ़िगरेशन",
     admin: "एडमिन",
     create: "बनाएं",
     all_agents: "सभी एजेंट",
@@ -234,7 +232,7 @@ export const hi = {
     unread_messages_sr: "{count} अपठित संदेश",
     unread_messages_sr_other: "{count} अपठित संदेश",
     pending_events_sr: "{count} लंबित इवेंट",
-    pending_events_sr_other: "{count} लंबित इवेंट"
+    pending_events_sr_other: "{count} लंबित इवेंट",
   },
   home: {
     welcome: "स्वागत है",
@@ -259,7 +257,7 @@ export const hi = {
       priority_next: "अगला",
       priority_later: "बाद में",
       in_progress_count: "{count} प्रगति में",
-      next_count: "{count} अगला"
+      next_count: "{count} अगला",
     },
     setup: {
       choose_role: "अपनी भूमिका चुनें",
@@ -287,45 +285,45 @@ export const hi = {
       role_manager_hint: "योजना और समन्वय",
       role: "भूमिका",
       tool: "टूल",
-      goal: "लक्ष्य"
+      goal: "लक्ष्य",
     },
     nav: {
       overview: {
         label: "अवलोकन",
-        description: "सभी एजेंटों का डैशबोर्ड एनालिटिक्स, निष्पादन इतिहास और रीयल-टाइम सिस्टम मॉनिटरिंग"
+        description: "सभी एजेंटों का डैशबोर्ड एनालिटिक्स, निष्पादन इतिहास और रीयल-टाइम सिस्टम मॉनिटरिंग",
       },
       personas: {
         label: "एजेंट",
-        description: "कस्टम व्यवहार और क्षमताओं के साथ AI एजेंट बनाएँ, कॉन्फ़िगर करें और प्रबंधित करें"
+        description: "कस्टम व्यवहार और क्षमताओं के साथ AI एजेंट बनाएँ, कॉन्फ़िगर करें और प्रबंधित करें",
       },
       events: {
         label: "इवेंट",
-        description: "इवेंट ट्रिगर, webhook लिसनर और शेड्यूल-आधारित ऑटोमेशन कॉन्फ़िगर करें"
+        description: "इवेंट ट्रिगर, webhook लिसनर और शेड्यूल-आधारित ऑटोमेशन कॉन्फ़िगर करें",
       },
       credentials: {
         label: "कुंजियाँ",
-        description: "API क्रेडेंशियल, डेटाबेस कनेक्शन, OAuth टोकन और एन्क्रिप्टेड सीक्रेट प्रबंधित करें"
+        description: "API क्रेडेंशियल, डेटाबेस कनेक्शन, OAuth टोकन और एन्क्रिप्टेड सीक्रेट प्रबंधित करें",
       },
       "design-reviews": {
         label: "टेम्पलेट",
-        description: "n8n वर्कफ़्लो आयात करें, टेम्पलेट गैलरी ब्राउज़ करें और एजेंट ब्लूप्रिंट जनरेट करें"
+        description: "n8n वर्कफ़्लो आयात करें, टेम्पलेट गैलरी ब्राउज़ करें और एजेंट ब्लूप्रिंट जनरेट करें",
       },
       team: {
         label: "टीमें",
-        description: "ड्रैग-एंड-ड्रॉप ऑर्केस्ट्रेशन और रूटिंग के साथ मल्टी-एजेंट टीम पाइपलाइन बनाएँ"
+        description: "ड्रैग-एंड-ड्रॉप ऑर्केस्ट्रेशन और रूटिंग के साथ मल्टी-एजेंट टीम पाइपलाइन बनाएँ",
       },
       cloud: {
         label: "क्लाउड",
-        description: "एजेंट क्लाउड इंफ़्रास्ट्रक्चर पर डिप्लॉय करें, शेड्यूल प्रबंधित करें और GitLab CI इंटीग्रेट करें"
+        description: "एजेंट क्लाउड इंफ़्रास्ट्रक्चर पर डिप्लॉय करें, शेड्यूल प्रबंधित करें और GitLab CI इंटीग्रेट करें",
       },
       settings: {
         label: "सेटिंग्स",
-        description: "खाता प्राथमिकताएँ, दिखावट थीम, सूचना नियम और इंजन कॉन्फ़िगरेशन"
+        description: "खाता प्राथमिकताएँ, दिखावट थीम, सूचना नियम और इंजन कॉन्फ़िगरेशन",
       },
       plugins: {
         label: "प्लगइन",
-        description: "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं"
-      }
+        description: "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं",
+      },
     },
     learning: {
       title: "लर्निंग सेंटर",
@@ -342,7 +340,7 @@ export const hi = {
       pro_tip: "प्रो टिप: ",
       cat_agent_craft: "एजेंट क्राफ्ट",
       cat_observability: "ऑब्जर्वेबिलिटी और इवेंट",
-      cat_platform: "प्लेटफ़ॉर्म और सेटअप"
+      cat_platform: "प्लेटफ़ॉर्म और सेटअप",
     },
     setup_stepper: {
       your_profile: "आपकी प्रोफ़ाइल",
@@ -358,18 +356,18 @@ export const hi = {
       ready_to_save: "सहेजने के लिए तैयार",
       back: "वापस",
       next: "अगला",
-      finish: "समाप्त"
+      finish: "समाप्त",
     },
     welcome_layout: {
       get_started: "शुरू करें",
-      language: "भाषा"
+      language: "भाषा",
     },
     icon_showcase: {
       lucide_tab: "Lucide (लाइब्रेरी)",
       personas_tab: "Personas (एनिमेटेड)",
       lucide_footer: "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
-      personas_footer: "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
-    }
+      personas_footer: "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली",
+    },
   },
   agents: {
     title: "Personas",
@@ -380,12 +378,12 @@ export const hi = {
       subtitle_other: "{count} एजेंट -- प्रासंगिकता के अनुसार क्रमबद्ध",
       needs_attention: "ध्यान आवश्यक",
       active: "सक्रिय",
-      idle: "निष्क्रिय"
+      idle: "निष्क्रिय",
     },
     sidebar: {
       no_match: "कोई एजेंट आपके फ़िल्टर से मेल नहीं खाता",
       clear_filters: "सभी फ़िल्टर साफ़ करें",
-      empty: "अभी कोई Personas नहीं"
+      empty: "अभी कोई Personas नहीं",
     },
     preview: {
       sensitive_hidden: "संवेदनशील पूर्वावलोकन छिपा हुआ",
@@ -400,7 +398,7 @@ export const hi = {
       triggers_active_one: "{count} ट्रिगर सक्रिय",
       triggers_active_other: "{count} ट्रिगर सक्रिय",
       no_triggers: "कोई ट्रिगर नहीं",
-      custom_model: "कस्टम"
+      custom_model: "कस्टम",
     },
     creation: {
       heading: "नया एजेंट",
@@ -417,7 +415,7 @@ export const hi = {
       no_group: "कोई समूह नहीं",
       create_button: "एजेंट बनाएँ",
       creating_button: "बनाया जा रहा है...",
-      name_required: "जारी रखने के लिए नाम दर्ज करें"
+      name_required: "जारी रखने के लिए नाम दर्ज करें",
     },
     editor: {
       tabs: {
@@ -428,7 +426,7 @@ export const hi = {
         design: "डिज़ाइन",
         health: "स्वास्थ्य",
         settings: "सेटिंग्स",
-        model: "मॉडल"
+        model: "मॉडल",
       },
       no_persona: "कोई Persona चयनित नहीं",
       save_failed: "{tabs} सहेजने में विफल",
@@ -442,13 +440,13 @@ export const hi = {
       cloud_banner_connect: "Personas को दूरस्थ रूप से चलाने के लिए क्लाउड ऑर्केस्ट्रेटर कनेक्ट करें",
       cloud_banner_signin: "क्लाउड सुविधाएँ और दूरस्थ निष्पादन अनलॉक करने के लिए साइन इन करें",
       sign_in: "साइन इन",
-      set_up_cloud: "क्लाउड सेट करें"
+      set_up_cloud: "क्लाउड सेट करें",
     },
     header: {
       no_triggers_warning: "कोई ट्रिगर या इवेंट सब्सक्रिप्शन कॉन्फ़िगर नहीं है",
       missing_credentials: "अनुपलब्ध क्रेडेंशियल: {credentials}",
       toggle_failed: "Persona टॉगल करने में विफल -- अपना कनेक्शन जाँचें",
-      cannot_enable: "Persona सक्षम नहीं किया जा सकता"
+      cannot_enable: "Persona सक्षम नहीं किया जा सकता",
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -469,7 +467,7 @@ export const hi = {
       selected: "{count} चयनित",
       remove_from_favorites: "पसंदीदा से हटाएं",
       add_to_favorites: "पसंदीदा में जोड़ें",
-      filter_by: "{label} से फ़िल्टर करें"
+      filter_by: "{label} से फ़िल्टर करें",
     },
     status: {
       draft: "ड्राफ्ट",
@@ -477,7 +475,7 @@ export const hi = {
       healthy: "स्वस्थ",
       degraded: "क्षीण",
       failing: "विफल",
-      building: "बन रहा है"
+      building: "बन रहा है",
     },
     executions: {
       no_persona_selected: "कोई पर्सोना नहीं चुना",
@@ -718,10 +716,6 @@ export const hi = {
       loading_dream_replay: "ड्रीम रिप्ले लोड हो रहा है...",
       no_dream_trace: "ड्रीम रिप्ले के लिए कोई ट्रेस डेटा उपलब्ध नहीं",
       frame_count: "फ्रेम {index}/{total}",
-      depth_label: "गहराई:",
-      active_count_label: "सक्रिय ({count})",
-      completed_count_label: "पूर्ण ({count})",
-      metadata_section: "मेटाडेटा",
       phase_initializing: "प्रारंभ हो रहा है",
       phase_thinking: "सोच रहा है",
       phase_calling_tools: "टूल चला रहा है",
@@ -749,15 +743,6 @@ export const hi = {
       offset_prefix: "ऑफसेट:",
       step_tooltip: "चरण {step}: {name}",
       ms_into_stage: "चरण में {ms}ms",
-      chain_id_prefix: "चेन: {id}",
-      chain_total_duration: "कुल: {duration}",
-      zero_ms: "0ms",
-      tool_calls_count: "{count} टूल कॉल",
-      tool_calls_count_other: "{count} टूल कॉल",
-      unique_tools_count: "({count} अद्वितीय)",
-      prev_error_nav: "पिछली त्रुटि (Shift+E)",
-      next_error_nav: "अगली त्रुटि (E)",
-      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "एरेना",
@@ -891,8 +876,6 @@ export const hi = {
       quality_label: "गुणवत्ता",
       speed_label: "गति",
       cost_label: "लागत",
-      objective_warning: "फ़िटनेस उद्देश्य समस्या",
-      objective_fallback_toast: "Evolution ने डिफ़ॉल्ट फ़िटनेस भार का उपयोग किया — उद्देश्य सेटिंग्स जाँचें",
       genome_breeding: "जीनोम ब्रीडिंग",
       genome_breeding_subtitle: "नई कॉन्फ़िगरेशन खोजने के लिए शीर्ष प्रदर्शन करने वाले पर्सोना को क्रॉस-ब्रीड करें",
       select_parents: "माता-पिता चुनें (2-5 पर्सोना)",
@@ -1009,7 +992,7 @@ export const hi = {
       quality_score_inline: "स्कोर: {score} | {coverage} परिदृश्य",
       cancel_default: "रद्द करें",
       hide_impact: "प्रभाव छुपाएं",
-      show_impact: "प्रभाव दिखाएं"
+      show_impact: "प्रभाव दिखाएं",
     },
     design: {
       select_agent: "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",
@@ -1019,7 +1002,7 @@ export const hi = {
       compile_from_examples: "उदाहरणों से कम्पाइल करें",
       compile_intent: "इंटेंट कम्पाइल करें",
       analyze_build: "विश्लेषण करें और बनाएं",
-      intent_placeholder: "वर्णन करें कि आप इस एजेंट से क्या करवाना चाहते हैं...\\\n\\\nजैसे \\",
+      intent_placeholder: "वर्णन करें कि आप इस एजेंट से क्या करवाना चाहते हैं...\\n\\nजैसे \\",
       intent_submit_hint: "सबमिट करने के लिए Enter दबाएं, नई लाइन के लिए Shift+Enter।",
       intent_detail: "कम्पाइलर एक पूर्ण कॉन्फ़िगरेशन जनरेट करेगा: प्रॉम्प्ट, टूल, ट्रिगर, उपयोग मामले, मॉडल सिफारिश, और परीक्षण परिदृश्य।",
       example_context_placeholder: "वैकल्पिक: संदर्भ या बाधाएं जोड़ें (जैसे \\",
@@ -1075,15 +1058,14 @@ export const hi = {
       msg_count_one: "{count} संदेश",
       msg_count_other: "{count} संदेश",
       resume: "फिर शुरू करें",
-      conv_controls_aria: "डिज़ाइन वार्तालाप नियंत्रण",
       design_drift: "डिज़ाइन ड्रिफ्ट",
       design_sessions: "डिज़ाइन सत्र",
       example_n: "उदाहरण {index}",
       remove_example: "उदाहरण हटाएं",
       input_label: "इनपुट -- एजेंट क्या प्राप्त करता है",
       output_label: "आउटपुट -- आप एजेंट से क्या चाहते हैं",
-      input_placeholder: "एक वास्तविक इनपुट पेस्ट करें...\\\n\\\nजैसे एक ईमेल बॉडी, Slack संदेश, आने वाला अनुरोध, CSV पंक्ति",
-      output_placeholder: "वांछित आउटपुट वर्णित या पेस्ट करें...\\\n\\\nजैसे \\",
+      input_placeholder: "एक वास्तविक इनपुट पेस्ट करें...\\n\\nजैसे एक ईमेल बॉडी, Slack संदेश, आने वाला अनुरोध, CSV पंक्ति",
+      output_placeholder: "वांछित आउटपुट वर्णित या पेस्ट करें...\\n\\nजैसे \\",
       example_instructions: "एक वास्तविक इनपुट (ईमेल, आने वाला अनुरोध, संदेश) पेस्ट करें और वह आउटपुट दिखाएं जो आप चाहते हैं। कम्पाइलर आपके उदाहरणों से पूरी एजेंट कॉन्फ़िगरेशन रिवर्स-इंजीनियर करेगा।",
       add_first_example: "अपना पहला इनपुट -> आउटपुट उदाहरण जोड़ें",
       current_config_preserved: "वर्तमान कॉन्फ़िगरेशन सुरक्षित रहेगी। क्या बदलना है वर्णित करें।",
@@ -1094,7 +1076,7 @@ export const hi = {
       next: "अगला",
       go_back_hint: "वापस जाएं और अपने एजेंट को कॉन्फ़िगर करने के लिए प्रश्नों का उत्तर दें।",
       additional_instructions: "अतिरिक्त निर्देश या संदर्भ (वैकल्पिक)",
-      additional_instructions_placeholder: "कोई विशिष्ट आवश्यकताएं, डोमेन ज्ञान, या बाधाएं जोड़ें..."
+      additional_instructions_placeholder: "कोई विशिष्ट आवश्यकताएं, डोमेन ज्ञान, या बाधाएं जोड़ें...",
     },
     connectors: {
       connectors_label: "कनेक्टर",
@@ -1180,9 +1162,6 @@ export const hi = {
       auto_event_type: "इवेंट प्रकार: {eventType}",
       auto_zapier_hint: "Catch hook मान्य और कनेक्ट किया जाएगा।",
       auto_custom_hint: "मैन्युअल सेटअप आवश्यक। ऑटोमेशन ड्राफ्ट के रूप में सहेजा जाएगा।",
-      auto_input_schema_placeholder: "string",
-      auto_github_token_needs: "आपके टोकन को {scopes} scope की आवश्यकता है। github.com/settings/tokens पर अपना टोकन अपडेट करें।",
-      auto_fallback_title: "विफलता पर सीधे कनेक्टर पर वापस आता है",
       ch_title: "अधिसूचना चैनल",
       ch_add: "चैनल जोड़ें",
       ch_all_added: "सभी चैनल प्रकार जोड़े गए",
@@ -1258,7 +1237,7 @@ export const hi = {
       sub_confirm: "पुष्टि करें?",
       sub_triggers_title: "ट्रिगर और सब्सक्रिप्शन",
       sub_suggested: "{count} सुझाए गए",
-      sub_filter: "फ़िल्टर: {filter}"
+      sub_filter: "फ़िल्टर: {filter}",
     },
     editor_chrome: {
       tab_activity: "गतिविधि",
@@ -1291,7 +1270,7 @@ export const hi = {
       latency_label: "विलंबता",
       cost_run_label: "लागत/रन",
       last_run_label: "अंतिम रन",
-      rank: "रैंक"
+      rank: "रैंक",
     },
     model_config: {
       model_provider: "मॉडल और प्रदाता",
@@ -1354,7 +1333,6 @@ export const hi = {
       model_name_placeholder_litellm: "जैसे anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "जैसे llama3.1:8b",
       model_name_placeholder_custom: "मॉडल पहचानकर्ता",
-      model_name_placeholder_override: "उदा. claude-sonnet-4-20250514",
       base_url_hint: "आपके मॉडल प्रदाता के लिए API एंडपॉइंट। इसमें प्रोटोकॉल (http/https) और गैर-मानक होने पर पोर्ट शामिल होना चाहिए।",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "प्रदाता API के लिए प्रमाणीकरण टोकन। Ollama local के लिए 'ollama' उपयोग करें। LiteLLM के लिए अपनी मास्टर key उपयोग करें।",
@@ -1395,7 +1373,7 @@ export const hi = {
       latency: "विलंबता",
       cost: "लागत",
       output_previews: "आउटपुट प्रीव्यू",
-      no_output: "कोई आउटपुट नहीं"
+      no_output: "कोई आउटपुट नहीं",
     },
     use_cases: {
       no_persona: "कोई पर्सोना नहीं चुना गया",
@@ -1490,7 +1468,7 @@ export const hi = {
       cron_field_hour: "घंटा",
       cron_field_day: "दिन",
       cron_field_month: "महीना",
-      cron_field_weekday: "सप्ताहदिन"
+      cron_field_weekday: "सप्ताहदिन",
     },
     tools: {
       no_persona: "कोई पर्सोना नहीं चुना गया",
@@ -1529,11 +1507,11 @@ export const hi = {
       credential: "क्रेडेंशियल",
       linked: "-- लिंक्ड",
       cred_missing: "-- अनुपस्थित",
-      often_used: "अक्सर इसके साथ उपयोग किया जाता है"
+      often_used: "अक्सर इसके साथ उपयोग किया जाता है",
     },
     chat_thread: {
       welcome: "बताएं कि आप इस एजेंट से क्या करवाना चाहते हैं। मैं आपके विवरण से पूरी कॉन्फ़िगरेशन बनाऊंगा -- प्रॉम्प्ट, टूल, ट्रिगर।",
-      welcome_example: "मेरे GitHub PRs देखें और हर सुबह Slack पर एक सारांश पोस्ट करें"
+      welcome_example: "मेरे GitHub PRs देखें और हर सुबह Slack पर एक सारांश पोस्ट करें",
     },
     assign: {
       assign_to: "{role} को असाइन करें",
@@ -1544,50 +1522,50 @@ export const hi = {
       no_saved_credentials: "अभी तक कोई सहेजे गए क्रेडेंशियल नहीं",
       no_credentials_match: "आपकी खोज से कोई क्रेडेंशियल मेल नहीं",
       vault_hint: "वॉल्ट में क्रेडेंशियल सहेजें, या कनेक्टर टैब उपयोग करें",
-      no_connectors_match: "आपकी खोज से कोई कनेक्टर मेल नहीं"
+      no_connectors_match: "आपकी खोज से कोई कनेक्टर मेल नहीं",
     },
     credential_coverage: "{matched}/{total} क्रेडेंशियल",
     role_card: {
       no_credential: "कोई क्रेडेंशियल नहीं",
       edit_tables: "संपादित करें",
       select_tables: "टेबल चुनें",
-      assign: "असाइन करें"
+      assign: "असाइन करें",
     },
     channel_picker: {
       in_app_messaging: "इन-ऐप मैसेजिंग",
-      vault_hint: "यहाँ देखने के लिए वॉल्ट में संचार क्रेडेंशियल (Slack, Email, आदि) सहेजें।"
+      vault_hint: "यहाँ देखने के लिए वॉल्ट में संचार क्रेडेंशियल (Slack, Email, आदि) सहेजें।",
     },
     connector_picker: {
       no_connectors: "कोई कनेक्टर उपलब्ध नहीं",
       search: "कनेक्टर खोजें...",
-      no_match: "\\"
+      no_match: "\\",
     },
     policy_picker: {
       error_handling: "त्रुटि प्रबंधन",
-      manual_review: "मैन्युअल समीक्षा"
+      manual_review: "मैन्युअल समीक्षा",
     },
     table_selector: {
       title: "टेबल चुनें",
       subtitle: "{label} -- देखने के लिए टेबल चुनें",
       tables_selected_one: "{count} टेबल चुनी गई",
       tables_selected_other: "{count} टेबलें चुनी गईं",
-      no_tables_selected: "कोई टेबल नहीं चुनी -- एजेंट सभी देखता है"
+      no_tables_selected: "कोई टेबल नहीं चुनी -- एजेंट सभी देखता है",
     },
     trigger_popover: {
       trigger: "ट्रिगर",
-      clear_override: "ओवरराइड साफ़ करें"
+      clear_override: "ओवरराइड साफ़ करें",
     },
     use_case: {
       add: "उपयोग मामला जोड़ें",
       title_placeholder: "उपयोग मामले का शीर्षक -- जैसे रिफंड अनुरोध संभालें, दैनिक टिकट सारांशित करें",
-      description_placeholder: "चरण वर्णित करें -- जैसे जब रिफंड अनुरोध आए, ऑर्डर सत्यापित करें, नीति जांचें, और अनुमोदन या अस्वीकृति भेजें"
+      description_placeholder: "चरण वर्णित करें -- जैसे जब रिफंड अनुरोध आए, ऑर्डर सत्यापित करें, नीति जांचें, और अनुमोदन या अस्वीकृति भेजें",
     },
     builder_action: {
       processing: "प्रोसेस हो रहा है...",
       error_retry: "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
       enhancing: "बेहतर बनाया जा रहा है...",
       enhance_with_ai: "AI से बेहतर बनाएं",
-      describe_agent: "वर्णन करें कि आपके एजेंट को क्या करना चाहिए"
+      describe_agent: "वर्णन करें कि आपके एजेंट को क्या करना चाहिए",
     },
     builder_preview: {
       title: "प्रीव्यू",
@@ -1601,7 +1579,7 @@ export const hi = {
       schedule: "शेड्यूल",
       manual_only: "केवल मैन्युअल",
       errors: "त्रुटियां",
-      review: "समीक्षा"
+      review: "समीक्षा",
     },
     dry_run: {
       ready: "तैयार",
@@ -1613,7 +1591,7 @@ export const hi = {
       issues: "समस्याएं",
       apply_fix: "सुधार लागू करें: {label}",
       manual_action_needed: "मैन्युअल कार्रवाई आवश्यक",
-      no_issues: "कोई समस्या नहीं मिली। आपकी एजेंट कॉन्फ़िगरेशन अच्छी दिखती है।"
+      no_issues: "कोई समस्या नहीं मिली। आपकी एजेंट कॉन्फ़िगरेशन अच्छी दिखती है।",
     },
     identity_preview: {
       title: "प्रीव्यू",
@@ -1624,7 +1602,7 @@ export const hi = {
       components: "घटक",
       schedule_label: "शेड्यूल:",
       errors_label: "त्रुटियां:",
-      review_label: "समीक्षा:"
+      review_label: "समीक्षा:",
     },
     build_review: {
       agent_name: "एजेंट नाम",
@@ -1633,7 +1611,7 @@ export const hi = {
       connectors_ready: "कनेक्टर तैयार",
       promote_agent: "एजेंट प्रमोट करें",
       testing: "परीक्षण हो रहा है...",
-      test_agent: "एजेंट परीक्षण करें"
+      test_agent: "एजेंट परीक्षण करें",
     },
     connectors_cell: {
       add_in_keys: "Keys में जोड़ें",
@@ -1643,7 +1621,7 @@ export const hi = {
       swap_to: "इस पर स्विच करें:",
       recalculating: "पुनर्गणना हो रही है...",
       recalculate_dimensions: "आयाम पुनर्गणना करें",
-      rebuilding: "नए कनेक्टर के साथ फिर से बना रहा है..."
+      rebuilding: "नए कनेक्टर के साथ फिर से बना रहा है...",
     },
     dimension_edit: {
       add_item: "आइटम जोड़ें...",
@@ -1669,7 +1647,7 @@ export const hi = {
       fully_automated: "पूरी तरह स्वचालित",
       cron_label: "Cron:",
       every_label: "हर:",
-      done: "पूर्ण"
+      done: "पूर्ण",
     },
     quick_config: {
       title: "त्वरित सेटअप",
@@ -1683,7 +1661,7 @@ export const hi = {
       monthly: "मासिक",
       days: "दिन",
       day_of_month: "महीने का दिन",
-      time: "समय"
+      time: "समय",
     },
     events_panel: {
       source_agent: "स्रोत एजेंट",
@@ -1692,23 +1670,23 @@ export const hi = {
       select_agent: "एक एजेंट चुनें",
       loading_events: "इवेंट लोड हो रहे हैं...",
       no_subscriptions: "कोई इवेंट सब्सक्रिप्शन नहीं मिला",
-      choose_agent: "इसके इवेंट देखने के लिए एक एजेंट चुनें"
+      choose_agent: "इसके इवेंट देखने के लिए एक एजेंट चुनें",
     },
     matrix_cred_picker: {
       no_stored: "कोई संग्रहीत क्रेडेंशियल नहीं",
       best_match: "सर्वोत्तम मेल",
-      other: "अन्य"
+      other: "अन्य",
     },
     services_panel: {
       no_connectors: "स्वस्थ API keys वाला कोई कनेक्टर नहीं मिला। पहले वॉल्ट में क्रेडेंशियल जोड़ें।",
-      select_table: "टेबल चुनें"
+      select_table: "टेबल चुनें",
     },
     spatial_question: {
       agent_configuration: "एजेंट कॉन्फ़िगरेशन",
       or_custom_answer: "या कस्टम उत्तर टाइप करें",
       type_answer: "अपना उत्तर टाइप करें...",
       submit: "सबमिट करें",
-      press_to_select: "तुरंत चुनने के लिए 1-{count} दबाएं"
+      press_to_select: "तुरंत चुनने के लिए 1-{count} दबाएं",
     },
     table_picker: {
       title: "टेबल चुनें",
@@ -1716,12 +1694,12 @@ export const hi = {
       loading: "टेबलें लोड हो रही हैं...",
       no_tables: "इस कनेक्टर के लिए कोई टेबल नहीं मिली",
       clear_selection: "चयन साफ़ करें",
-      no_match: "\\"
+      no_match: "\\",
     },
     matrix_entry: {
       new_agent: "नया एजेंट",
       failed_to_create: "ड्राफ्ट एजेंट बनाने में विफल।",
-      build_failed: "बिल्ड शुरू नहीं हुई। CLI कॉन्फ़िगरेशन जांचें।"
+      build_failed: "बिल्ड शुरू नहीं हुई। CLI कॉन्फ़िगरेशन जांचें।",
     },
     workflow_upload: {
       build_hint: "इस वर्कफ़्लो को पर्सोना एजेंट में बदलने के लिए Build दबाएं।",
@@ -1729,22 +1707,22 @@ export const hi = {
       parse: "पार्स",
       drop_file: "यहाँ एक वर्कफ़्लो फ़ाइल ड्रॉप करें",
       file_types: "n8n, Zapier, Make, या GitHub Actions (.json, .yaml)",
-      paste_json: "या JSON सीधे पेस्ट करें"
+      paste_json: "या JSON सीधे पेस्ट करें",
     },
     config_popup: {
       load_error: "सहेजे गए मूल्य लोड नहीं हो सके -- आपको उन्हें फिर से दर्ज करना पड़ सकता है।",
       fill_hint: "सहेजने के लिए कम से कम एक फ़ील्ड भरें",
-      failed_to_save: "कॉन्फ़िगरेशन सहेजने में विफल"
+      failed_to_save: "कॉन्फ़िगरेशन सहेजने में विफल",
     },
     onboarding: {
       setup_complete: "सेटअप {score}% पूर्ण",
       steps_done: "{completed}/{total} चरण पूर्ण",
-      dismiss_checklist: "चेकलिस्ट बंद करें"
+      dismiss_checklist: "चेकलिस्ट बंद करें",
     },
     template_picker: {
       title: "टेम्पलेट चुनें",
       subtitle: "अपने एजेंट को पूर्व-भरने के लिए एक टेम्पलेट चुनें, या शुरुआत से शुरू करें।",
-      start_from_scratch: "शुरुआत से शुरू करें"
+      start_from_scratch: "शुरुआत से शुरू करें",
     },
     persona_overview: {
       no_match: "कोई पर्सोना मेल नहीं",
@@ -1753,26 +1731,26 @@ export const hi = {
       description_copied: "विवरण क्लिपबोर्ड पर कॉपी",
       failed_copy: "विवरण कॉपी करने में विफल",
       no_connectors_configured: "कोई कनेक्टर कॉन्फ़िगर नहीं",
-      click_to_copy: "कॉपी करने के लिए क्लिक करें"
+      click_to_copy: "कॉपी करने के लिए क्लिक करें",
     },
     overview_empty: {
       title: "इन फ़िल्टर से कोई पर्सोना मेल नहीं",
       subtitle: "अपनी खोज या फ़िल्टर चिप्स समायोजित करने का प्रयास करें, या सभी पर्सोना देखने के लिए दृश्य रीसेट करें।",
-      clear_all_filters: "सभी फ़िल्टर साफ़ करें"
+      clear_all_filters: "सभी फ़िल्टर साफ़ करें",
     },
     overview_batch: {
-      selected: "{count} चुने गए"
+      selected: "{count} चुने गए",
     },
     overview_menu: {
       more_actions: "अधिक कार्रवाइयां",
-      settings: "सेटिंग्स"
+      settings: "सेटिंग्स",
     },
     overview_toolbar: {
       search_placeholder: "पर्सोना खोजें...",
       show_all: "सभी पर्सोना दिखाएं",
       show_favorites: "केवल पसंदीदा दिखाएं",
       favorites: "पसंदीदा",
-      clear_search: "खोज साफ़ करें"
+      clear_search: "खोज साफ़ करें",
     },
     overview_columns: {
       persona: "पर्सोना",
@@ -1787,10 +1765,10 @@ export const hi = {
       building_drafts: "बिल्डिंग / ड्राफ्ट",
       all_health: "सभी स्वास्थ्य",
       all_connectors: "सभी कनेक्टर",
-      active_triggers: "{count} सक्रिय ट्रिगर"
+      active_triggers: "{count} सक्रिय ट्रिगर",
     },
     health_indicator: {
-      last: "अंतिम {count}"
+      last: "अंतिम {count}",
     },
     view_presets: {
       views: "दृश्य",
@@ -1807,7 +1785,7 @@ export const hi = {
       needs_attention: "ध्यान चाहिए",
       failing_agents: "विफल एजेंट",
       my_favorites: "मेरे पसंदीदा",
-      recently_active: "हाल ही में सक्रिय"
+      recently_active: "हाल ही में सक्रिय",
     },
     activity: {
       title: "गतिविधि",
@@ -1830,7 +1808,7 @@ export const hi = {
       modal_execution_title: "{name} - निष्पादन",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "समीक्षा: {title}",
-      modal_review_subtitle: "गंभीरता: {severity} · स्थिति: {status}"
+      modal_review_subtitle: "गंभीरता: {severity} · स्थिति: {status}",
     },
     chat: {
       select_persona: "चैट शुरू करने के लिए एक पर्सोना चुनें",
@@ -1849,7 +1827,7 @@ export const hi = {
       confirm_delete: "हटाएं?",
       processing: "प्रोसेस हो रहा है...",
       delete_conversation: "बातचीत हटाएं",
-      confirm_delete_conversation: "बातचीत हटाने की पुष्टि करें"
+      confirm_delete_conversation: "बातचीत हटाने की पुष्टि करें",
     },
     advisory: {
       how_can_improve: "यह एजेंट आपके लिए बेहतर कैसे काम कर सकता है?",
@@ -1864,7 +1842,7 @@ export const hi = {
       analyze_desc: "प्रदर्शन रुझानों और पैटर्नों की समीक्षा करें",
       test_run: "परीक्षण रन",
       test_run_desc: "एजेंट चलाएं और परिणाम का मूल्यांकन करें",
-      test_input_label: "परीक्षण इनपुट (वैकल्पिक)"
+      test_input_label: "परीक्षण इनपुट (वैकल्पिक)",
     },
     ops: {
       sessions: "सत्र",
@@ -1892,21 +1870,21 @@ export const hi = {
       reviews: "समीक्षाएं",
       reviews_desc: "लंबित अनुमोदन और निर्णय",
       versions: "संस्करण",
-      versions_desc: "प्रॉम्प्ट संस्करण इतिहास और रोलबैक"
+      versions_desc: "प्रॉम्प्ट संस्करण इतिहास और रोलबैक",
     },
     ops_run: {
       execute_agent: "एजेंट निष्पादित करें",
       running: "चल रहा है...",
       recent: "हाल के",
       no_executions: "अभी तक कोई निष्पादन नहीं",
-      refresh_executions: "निष्पादन ताज़ा करें"
+      refresh_executions: "निष्पादन ताज़ा करें",
     },
     ops_lab: {
       history: "इतिहास",
       no_lab_runs: "अभी तक कोई लैब रन नहीं",
       refresh_lab: "लैब इतिहास ताज़ा करें",
       arena: "एरेना",
-      improve: "सुधार"
+      improve: "सुधार",
     },
     ops_health: {
       no_health_data: "कोई स्वास्थ्य डेटा नहीं",
@@ -1918,22 +1896,22 @@ export const hi = {
       run_check_aria: "हेल्थ चेक चलाएं",
       healthy: "स्वस्थ",
       degraded: "क्षीण",
-      unhealthy: "अस्वस्थ"
+      unhealthy: "अस्वस्थ",
     },
     ops_assertions: {
       active_count: "{enabled}/{total} सक्रिय",
       no_assertions: "कोई अभिकथन कॉन्फ़िगर नहीं",
       refresh_assertions: "अभिकथन ताज़ा करें",
       enable_assertion: "{name} सक्षम करें",
-      disable_assertion: "{name} अक्षम करें"
+      disable_assertion: "{name} अक्षम करें",
     },
     health_tab: {
       title: "हेल्थ चेक",
-      description: "अनुपस्थित क्रेडेंशियल, डिसकनेक्टेड कनेक्टर, असंगत टूल संयोजन, और अनिर्दिष्ट उपयोग मामलों का पता लगाने के लिए इस एजेंट की वर्तमान कॉन्फ़िगरेशन के विरुद्ध ड्राई-रन विश्लेषण चलाएं। समस्याएं एक-क्लिक सुधार वाले कार्रवाई योग्य कार्डों के रूप में दिखाई जाती हैं।"
+      description: "अनुपस्थित क्रेडेंशियल, डिसकनेक्टेड कनेक्टर, असंगत टूल संयोजन, और अनिर्दिष्ट उपयोग मामलों का पता लगाने के लिए इस एजेंट की वर्तमान कॉन्फ़िगरेशन के विरुद्ध ड्राई-रन विश्लेषण चलाएं। समस्याएं एक-क्लिक सुधार वाले कार्रवाई योग्य कार्डों के रूप में दिखाई जाती हैं।",
     },
     matrix_tab: {
       loading: "मैट्रिक्स लोड हो रहा है",
-      no_data: "कोई मैट्रिक्स डेटा उपलब्ध नहीं। आयाम जनरेट करने के लिए इस पर्सोना को बिल्ड या रीबिल्ड करें।"
+      no_data: "कोई मैट्रिक्स डेटा उपलब्ध नहीं। आयाम जनरेट करने के लिए इस पर्सोना को बिल्ड या रीबिल्ड करें।",
     },
     settings_status: {
       saving: "{sections} सहेजा जा रहा है...",
@@ -1957,9 +1935,6 @@ export const hi = {
       health_watch: "हेल्थ वॉच",
       health_watch_active: "स्वास्थ्य निगरानी सक्रिय (हर 6 घंटे)",
       health_watch_enable: "निरंतर स्वास्थ्य निगरानी सक्षम करें",
-      speak_as: "इस रूप में बोलें",
-      no_twins_configured: "कोई ट्विन कॉन्फ़िगर नहीं किया गया। एक बनाने के लिए Twin प्लगइन खोलें — तब यह पर्सोना उसे अपना सकेगा।",
-      twin_profile_aria: "ट्विन प्रोफ़ाइल जिसके रूप में यह पर्सोना बोलता है"
     },
     tool_runner: {
       no_tools: "इस पर्सोना को कोई टूल असाइन नहीं।",
@@ -1969,7 +1944,6 @@ export const hi = {
       success: "सफल",
       failed: "विफल",
       error: "त्रुटि",
-      input_json_placeholder: "value"
     },
     health_check: {
       title: "एजेंट हेल्थ चेक",
@@ -1986,7 +1960,7 @@ export const hi = {
       rerun: "पुनः चलाएं",
       capabilities: "क्षमताएं",
       all_healthy: "सभी सिस्टम स्वस्थ",
-      all_healthy_detail: "एजेंट कॉन्फ़िगरेशन में कोई समस्या नहीं"
+      all_healthy_detail: "एजेंट कॉन्फ़िगरेशन में कोई समस्या नहीं",
     },
     health_digest: {
       title: "एजेंट हेल्थ डाइजेस्ट",
@@ -2001,16 +1975,16 @@ export const hi = {
       agents_checked_other: "{count} एजेंट जाँचे गए",
       issues_one: "{count} समस्या",
       issues_other: "{count} समस्याएं",
-      last_run: "अंतिम रन: {time}"
+      last_run: "अंतिम रन: {time}",
     },
     health_issue: {
       apply_fix: "सुधार लागू करें: {label}",
-      manual_action: "मैन्युअल कार्रवाई आवश्यक"
+      manual_action: "मैन्युअल कार्रवाई आवश्यक",
     },
     health_score: {
       healthy: "स्वस्थ",
       degraded: "क्षीण",
-      unhealthy: "अस्वस्थ"
+      unhealthy: "अस्वस्थ",
     },
     prompt_editor: {
       no_persona: "कोई पर्सोना नहीं चुना गया",
@@ -2018,7 +1992,6 @@ export const hi = {
       new_section: "नया अनुभाग",
       saved: "सहेजा गया",
       sections: "अनुभाग",
-      sections_aria: "प्रॉम्प्ट अनुभाग"
     },
     custom_sections: {
       title: "कस्टम अनुभाग",
@@ -2028,7 +2001,7 @@ export const hi = {
       remove_section: "अनुभाग हटाएं",
       title_placeholder: "अनुभाग शीर्षक...",
       content_placeholder: "अनुभाग सामग्री...",
-      custom_section: "कस्टम अनुभाग"
+      custom_section: "कस्टम अनुभाग",
     },
     activity_filters: {
       all: "सभी",
@@ -2036,7 +2009,7 @@ export const hi = {
       events: "इवेंट",
       memories: "यादें",
       reviews: "समीक्षाएं",
-      messages: "संदेश"
+      messages: "संदेश",
     },
     overview_actions: {
       delete_agent: "एजेंट हटाएं",
@@ -2044,7 +2017,7 @@ export const hi = {
       delete_agents: "{count} एजेंट हटाएं",
       delete_agents_message: "{count} एजेंट और उनकी सभी कॉन्फ़िगरेशन स्थायी रूप से हटाई जाएगी।",
       delete_drafts: "{count} ड्राफ्ट हटाएं",
-      delete_drafts_message: "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।"
+      delete_drafts_message: "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।",
     },
     persona_list: {
       all_personas: "सभी पर्सोना",
@@ -2072,7 +2045,7 @@ export const hi = {
       show_only_favorites: "केवल पसंदीदा दिखाएं",
       clear_search: "खोज साफ़ करें",
       col_persona: "पर्सोना",
-      no_connectors_configured: "कोई कनेक्टर कॉन्फ़िगर नहीं"
+      no_connectors_configured: "कोई कनेक्टर कॉन्फ़िगर नहीं",
     },
     design_preview: {
       preview: "प्रीव्यू",
@@ -2086,7 +2059,7 @@ export const hi = {
       activating: "सक्रिय हो रहा है...",
       activate_agent: "एजेंट सक्रिय करें",
       create_agent: "एजेंट बनाएं",
-      min_completeness: "40% पूर्णता तक पहुंचने के लिए अधिक विवरण जोड़ें"
+      min_completeness: "40% पूर्णता तक पहुंचने के लिए अधिक विवरण जोड़ें",
     },
     editor_ui: {
       max_budget_label: "अधिकतम बजट (USD)",
@@ -2210,8 +2183,8 @@ export const hi = {
       cost_per_run: "लागत/रन",
       last_run: "अंतिम रन",
       rank: "रैंक",
-      view_in_leaderboard: "लीडरबोर्ड में देखें"
-    }
+      view_in_leaderboard: "लीडरबोर्ड में देखें",
+    },
   },
   vault: {
     title: "वॉल्ट",
@@ -2223,7 +2196,7 @@ export const hi = {
     health: {
       healthy: "स्वस्थ",
       needs_attention: "ध्यान आवश्यक",
-      untested: "अपरीक्षित"
+      untested: "अपरीक्षित",
     },
     list: {
       no_credentials: "कोई प्रमाणित सेवा नहीं मिली। नीचे से मैन्युअली चुनें।",
@@ -2232,7 +2205,6 @@ export const hi = {
       no_dependencies: "इस क्रेडेंशियल पर कोई एजेंट निर्भर नहीं है। संशोधित या हटाना सुरक्षित है।",
       affected_agents: "प्रभावित एजेंट",
       affected_events: "प्रभावित इवेंट",
-      sort_label: "क्रमबद्ध करें:"
     },
     import: {
       title: "आयात स्रोत",
@@ -2247,16 +2219,8 @@ export const hi = {
         min30: "30 मिनट",
         hour1: "1 घंटा",
         hour6: "6 घंटे",
-        day1: "24 घंटे"
+        day1: "24 घंटे",
       },
-      parse_secrets: "सीक्रेट्स पार्स करें",
-      selected_for_import: "आयात के लिए चयनित",
-      auto_detected: "स्वतः पहचाना गया",
-      sync_supported: "Sync समर्थित",
-      secrets_found_one: "{count} सीक्रेट मिला",
-      secrets_found_other: "{count} सीक्रेट्स मिले",
-      import_secrets_one: "{count} सीक्रेट आयात करें",
-      import_secrets_other: "{count} सीक्रेट्स आयात करें"
     },
     features: {
       anomaly_detected: "विसंगति पाई गई: पहले सफल होने के बाद क्रेडेंशियल अचानक विफल हो रहा है। संभावित निरस्तीकरण।",
@@ -2280,7 +2244,7 @@ export const hi = {
         remove_failed: "नीति हटाने में विफल: {error}",
         update_failed: "रोटेशन अवधि अपडेट करने में विफल: {error}",
         enable_failed: "रोटेशन सक्षम करने में विफल: {error}",
-        last_rotated: "अंतिम रोटेट {time}"
+        last_rotated: "अंतिम रोटेट {time}",
       },
       anomaly: {
         healthy: "स्वस्थ",
@@ -2292,13 +2256,13 @@ export const hi = {
         samples: "{count} जाँचें",
         permanent: "जारी: {rate}",
         transient: "अस्थायी: {rate}",
-        tolerance: "सहनशीलता: {rate}"
+        tolerance: "सहनशीलता: {rate}",
       },
       rotation_badge: {
         disabled: "अक्षम",
         perm_errors: "जारी त्रुटियां",
         degrading: "बिगड़ रहा है",
-        backoff: "पुनः प्रयास की प्रतीक्षा"
+        backoff: "पुनः प्रयास की प्रतीक्षा",
       },
       audit: {
         empty: "अभी तक कोई ऑडिट प्रविष्टियां नहीं। ऑपरेशन होने पर लॉग किए जाएंगे।",
@@ -2307,13 +2271,13 @@ export const hi = {
         op_updated: "अपडेट किया",
         op_deleted: "हटाया",
         op_healthcheck: "कनेक्शन परीक्षण",
-        filter_all: "सभी"
+        filter_all: "सभी",
       },
       intelligence: {
         operation: "ऑपरेशन",
         detail: "विवरण",
-        time: "समय"
-      }
+        time: "समय",
+      },
     },
     negotiator: {
       title: "AI क्रेडेंशियल नेगोशिएटर",
@@ -2341,14 +2305,13 @@ export const hi = {
       open_in_browser: "ब्राउज़र में खोलें",
       step_complete_captured: "चरण पूर्ण -- मान कैप्चर किए गए",
       mark_complete: "पूर्ण चिह्नित करें",
-      completed: "पूर्ण"
+      completed: "पूर्ण",
     },
     card: {
       scope_mismatch: "स्कोप बेमेल",
       scope_missing_one: "{count} अनुरोधित स्कोप प्रदान नहीं किया गया: ",
       scope_missing_other: "{count} अनुरोधित स्कोप प्रदान नहीं किए गए: ",
       reauthorize: "पुनः प्राधिकृत करें",
-      reauthorize_scopes: "अतिरिक्त scope के साथ पुनः प्राधिकृत करें"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2366,18 +2329,6 @@ export const hi = {
       configure_fields: "क्रेडेंशियल फ़ील्ड कॉन्फ़िगर करें",
       detect: "पता लगाएं",
       auto_add: "ऑटो जोड़ें",
-      connection_test_heading: "कनेक्शन परीक्षण",
-      test_connection_btn: "कनेक्शन परीक्षण करें",
-      credential_fields_heading: "क्रेडेंशियल फ़ील्ड्स",
-      how_to_get_connector: "{connectorLabel} क्रेडेंशियल कैसे प्राप्त करें",
-      authorization_complete: "प्राधिकरण पूर्ण",
-      copied_to_clipboard: "क्लिपबोर्ड पर कॉपी किया गया",
-      credential_name: "क्रेडेंशियल नाम",
-      credential_name_placeholder: "इस क्रेडेंशियल को लेबल करें — उदा. My {label} Account, Production {label}",
-      authorizing_with: "{label} के साथ प्राधिकृत हो रहा है...",
-      authorize_with: "{label} के साथ प्राधिकृत करें",
-      oauth_consent_hint: "आपके ब्राउज़र में {label} खोलता है। एक्सेस प्रदान करें, फिर यहाँ वापस आएँ।",
-      oauth_connected_at: "{label} {time} पर कनेक्ट हुआ"
     },
     type_picker: {
       title: "क्रेडेंशियल जोड़ें",
@@ -2406,7 +2357,7 @@ export const hi = {
       workspace_connect: "वर्कस्पेस कनेक्ट",
       workspace_connect_hint: "एक Google लॉगिन स्वचालित रूप से Gmail, Calendar, Drive, और Sheets क्रेडेंशियल बनाता है",
       auto_discover: "क्रेडेंशियल ऑटो-डिस्कवर",
-      auto_discover_hint: "मौजूदा API keys, AWS प्रोफाइल, env vars, और अधिक के लिए अपनी फ़ाइलसिस्टम स्कैन करें"
+      auto_discover_hint: "मौजूदा API keys, AWS प्रोफाइल, env vars, और अधिक के लिए अपनी फ़ाइलसिस्टम स्कैन करें",
     },
     body: {
       authorizing: "{name} के साथ प्राधिकृत हो रहा है...",
@@ -2414,12 +2365,12 @@ export const hi = {
       authorize_hint: "{name} साइन-इन खोलता है और आपकी मंजूरी के बाद आपकी पहुंच सहेजता है।",
       consent_completed: "{name} सहमति {time} पर पूर्ण",
       update_failed: "क्रेडेंशियल अपडेट करने में विफल",
-      delete_credential: "क्रेडेंशियल हटाएं"
+      delete_credential: "क्रेडेंशियल हटाएं",
     },
     connector: {
       filter_all: "सभी",
       filter_connected: "कनेक्टेड",
-      filter_available: "उपलब्ध"
+      filter_available: "उपलब्ध",
     },
     auto_cred: {
       guided_setup: "गाइडेड सेटअप",
@@ -2451,14 +2402,6 @@ export const hi = {
       open_in_browser: "ब्राउज़र में खोलें",
       completed_step: "मैंने यह पूरा किया",
       input_requested: "इनपुट अनुरोधित",
-      cancel_session: "सत्र रद्द करें",
-      test_connection: "कनेक्शन परीक्षण",
-      testing: "परीक्षण हो रहा है...",
-      re_run_browser: "ब्राउज़र पुनः चलाएँ",
-      discard: "खारिज करें",
-      save_credential: "क्रेडेंशियल सहेजें",
-      save_procedure: "प्रक्रिया सहेजें",
-      procedure_saved: "प्रक्रिया सहेजी गई"
     },
     vector: {
       documents_tab: "दस्तावेज़",
@@ -2490,7 +2433,7 @@ export const hi = {
       documents: "दस्तावेज़",
       chunks: "अनुभाग",
       local_embedding: "स्थानीय खोज",
-      local_embedding_hint: "खोज इंडेक्सिंग {model} ({dims}-dim) का उपयोग करके स्थानीय रूप से चलती है। कोई डेटा आपकी मशीन नहीं छोड़ता। मॉडल (~23MB) पहली बार उपयोग पर डाउनलोड होता है और स्थानीय रूप से सहेजा जाता है।"
+      local_embedding_hint: "खोज इंडेक्सिंग {model} ({dims}-dim) का उपयोग करके स्थानीय रूप से चलती है। कोई डेटा आपकी मशीन नहीं छोड़ता। मॉडल (~23MB) पहली बार उपयोग पर डाउनलोड होता है और स्थानीय रूप से सहेजा जाता है।",
     },
     design_modal: {
       title: "क्रेडेंशियल डिज़ाइन करें",
@@ -2505,12 +2448,12 @@ export const hi = {
       how_to_fix: "इसे कैसे ठीक करें",
       original_request: "आपका मूल अनुरोध (सुरक्षित):",
       start_over: "फिर से शुरू करें",
-      try_again_with: "अपने अनुरोध के साथ पुनः प्रयास करें"
+      try_again_with: "अपने अनुरोध के साथ पुनः प्रयास करें",
     },
     desktop: {
       installed: "इंस्टॉल किया गया",
       running: "चल रहा है",
-      not_installed: "इंस्टॉल नहीं"
+      not_installed: "इंस्टॉल नहीं",
     },
     graph: {
       no_dependencies: "कोई निर्भरताएं नहीं",
@@ -2520,7 +2463,7 @@ export const hi = {
       dep_count_other: "{count} निर्भरताएं",
       not_tested: "परीक्षण नहीं किया",
       healthy: "स्वस्थ",
-      unhealthy: "अस्वस्थ"
+      unhealthy: "अस्वस्थ",
     },
     wizard: {
       detected: "पाया गया ({count})",
@@ -2530,7 +2473,7 @@ export const hi = {
       already_added_badge: "पहले से जोड़ा",
       local: "स्थानीय",
       cli_auth: "CLI auth",
-      session: "सत्र"
+      session: "सत्र",
     },
     playground: {
       tab_overview: "अवलोकन",
@@ -2560,7 +2503,7 @@ export const hi = {
       query_parameters: "क्वेरी पैरामीटर",
       headers: "हेडर",
       body: "बॉडी",
-      empty_response: "(खाली प्रतिक्रिया)"
+      empty_response: "(खाली प्रतिक्रिया)",
     },
     playground_extra: {
       add_tag: "टैग जोड़ें...",
@@ -2581,11 +2524,11 @@ export const hi = {
       query_parameters: "क्वेरी पैरामीटर",
       recipes_title: "सहेजी गई रेसिपी",
       truncated_warning: "प्रदर्शन के लिए प्रतिक्रिया छोटी की गई",
-      value_col: "मूल्य"
+      value_col: "मूल्य",
     },
     ingest: {
       save_name: "नाम सहेजें",
-      rename_credential: "क्रेडेंशियल नाम बदलें"
+      rename_credential: "क्रेडेंशियल नाम बदलें",
     },
     databases: {
       col_database: "डेटाबेस",
@@ -2699,8 +2642,6 @@ export const hi = {
       filter_tables: "टेबल फ़िल्टर करें...",
       refresh: "ताज़ा करें",
       introspection_unavailable: "इस कनेक्टर प्रकार के लिए टेबल इंट्रोस्पेक्शन उपलब्ध नहीं है।",
-      not_null: "NOT NULL",
-      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "रद्दीकरण अनुकरण करें",
@@ -2746,14 +2687,9 @@ export const hi = {
       daily_execs_lost: "खोए दैनिक निष्पादन",
       daily_cost_impact: "दैनिक लागत प्रभाव",
       sim_low: "कोई पर्सोना या वर्कफ़्लो इस क्रेडेंशियल पर निर्भर नहीं। रद्द करना सुरक्षित है।",
-      sim_critical: "{credentialName} को रद्द करने से {workflows} वर्कफ़्लो{workflowPlural} टूट जाएँगे और {personas} पर्सोना{personaPlural} रुक जाएँगे।",
-      sim_high: "{credentialName} को रद्द करने से आपके वर्कस्पेस में {personas} पर्सोना{personaPlural} प्रभावित होंगे।",
-      sim_medium: "{credentialName} को रद्द करने का सीमित प्रभाव है।",
-      per_day: "/दिन"
     },
     shared: {
       add: "जोड़ें",
-      copied: "कॉपी किया",
       no_connector_available: "इस क्रेडेंशियल प्रकार के लिए कोई कनेक्टर परिभाषा उपलब्ध नहीं।",
       request_builder: "अनुरोध बिल्डर",
       close: "बंद करें",
@@ -2880,21 +2816,6 @@ export const hi = {
       no_documents_description: "अपना ज्ञान आधार बनाना शुरू करने के लिए फ़ाइलें यहाँ ड्रॉप करें, टेक्स्ट पेस्ट करें, या एक डायरेक्टरी स्कैन करें।",
       delete_document: "दस्तावेज़ हटाएं",
       chunks_label: "{count} चंक",
-      kb_count_summary: "-- {docs} दस्तावेज़, {chunks} खंड",
-      default_patterns: "डिफ़ॉल्ट:",
-      add_pattern_placeholder: "*.pdf",
-      distance_label: "दूरी:",
-      chunk_label: "खंड:",
-      copy_credential_id: "क्रेडेंशियल ID कॉपी करें",
-      request_body: "अनुरोध बॉडी",
-      add_tag_title: "टैग जोड़ें",
-      local_embedding_hint: "Embedding {model} ({dims}-dim) का उपयोग करके स्थानीय रूप से उत्पन्न होते हैं। कोई डेटा आपकी मशीन नहीं छोड़ता। मॉडल (~23MB) पहली बार उपयोग पर डाउनलोड होता है और स्थानीय रूप से कैश होता है।",
-      api_path_placeholder: "/api/v1/resource",
-      json_body_placeholder: "value",
-      sending: "भेजा जा रहा है...",
-      send: "भेजें",
-      search_results_one: "\"{query}\" के लिए {count} परिणाम",
-      search_results_other: "\"{query}\" के लिए {count} परिणाम"
     },
     manager: {
       title: "क्रेडेंशियल",
@@ -2914,23 +2835,20 @@ export const hi = {
       test_all_credentials: "सभी क्रेडेंशियल परीक्षण करें",
       test_all: "सभी परीक्षण करें",
       daily_progress: "दैनिक {done}/{total}",
-      testing_progress: "परीक्षण {done}/{total}"
+      testing_progress: "परीक्षण {done}/{total}",
     },
     bulk_healthcheck: {
       title: "हेल्थचेक परिणाम",
       needs_attention: "ध्यान चाहिए",
       slowest_responses: "सबसे धीमी प्रतिक्रियाएं",
-      passed_count: "{count} सफल",
-      failed_count: "{count} विफल",
-      total_count: "{count} कुल"
     },
     health_bar: {
       healthy: "स्वस्थ",
       needs_attention: "ध्यान चाहिए",
-      untested: "परीक्षण नहीं किया"
+      untested: "परीक्षण नहीं किया",
     },
     breadcrumb: {
-      aria_label: "वॉल्ट ब्रेडक्रंब"
+      aria_label: "वॉल्ट ब्रेडक्रंब",
     },
     credential_card: {
       deleting: "{name} हटाया जा रहा है...",
@@ -2946,7 +2864,7 @@ export const hi = {
       remove_tag: "टैग \\",
       copy_credential_id: "क्रेडेंशियल ID कॉपी करें",
       refresh_oauth: "अभी OAuth टोकन ताज़ा करें",
-      refresh: "ताज़ा करें"
+      refresh: "ताज़ा करें",
     },
     vault_badge: {
       needs_attention: "ध्यान चाहिए",
@@ -2969,21 +2887,21 @@ export const hi = {
       encrypt_now_other: "अभी {count} अनएन्क्रिप्टेड क्रेडेंशियल एन्क्रिप्ट करें",
       encrypt_done_one: "पूर्ण -- {migrated} क्रेडेंशियल एन्क्रिप्ट हुआ।",
       encrypt_done_other: "पूर्ण -- {migrated} क्रेडेंशियल एन्क्रिप्ट हुए।",
-      encrypt_partial: "{migrated} एन्क्रिप्ट हुए, {failed} विफल। पुनः प्रयास करें या ऐप पुनः प्रारंभ करें।"
+      encrypt_partial: "{migrated} एन्क्रिप्ट हुए, {failed} विफल। पुनः प्रयास करें या ऐप पुनः प्रारंभ करें।",
     },
     delete_dialog: {
       title: "क्रेडेंशियल हटाएं",
       cannot_undo: "यह कार्रवाई पूर्ववत नहीं की जा सकती।",
       label_name: "नाम",
       label_type: "प्रकार",
-      unverified_warning: "सभी निर्भरताओं को सत्यापित नहीं किया जा सका। कुछ कनेक्टेड एजेंट या ऑटोमेशन नहीं दिखाए जा सकते हैं।"
+      unverified_warning: "सभी निर्भरताओं को सत्यापित नहीं किया जा सका। कुछ कनेक्टेड एजेंट या ऑटोमेशन नहीं दिखाए जा सकते हैं।",
     },
     card_body: {
       failed_update: "क्रेडेंशियल अपडेट करने में विफल",
       authorizing_with: "{name} के साथ प्राधिकृत हो रहा है...",
       authorize_with: "{name} के साथ प्राधिकृत करें",
       authorize_hint: "ऐप-प्रबंधित {name} सहमति लॉन्च करता है और अनुमोदन के बाद रिफ्रेश टोकन अपडेट करता है।",
-      consent_completed: "{name} सहमति {time} पर पूर्ण"
+      consent_completed: "{name} सहमति {time} पर पूर्ण",
     },
     card_details: {
       tab_intelligence: "इंटेलिजेंस",
@@ -2991,7 +2909,7 @@ export const hi = {
       tab_token_lifetime: "टोकन जीवनकाल",
       tab_services: "सेवाएं ({count})",
       tab_events: "इवेंट ({count})",
-      tab_audit: "ऑडिट"
+      tab_audit: "ऑडिट",
     },
     intelligence_tab: {
       loading: "इंटेलिजेंस डेटा लोड हो रहा है",
@@ -3012,7 +2930,7 @@ export const hi = {
       dependents_warning_other: "इस क्रेडेंशियल को बदलने या हटाने से {count} पर्सोना प्रभावित होंगे:",
       link_structural: "संरचनात्मक",
       link_observed: "देखा गया",
-      via_connector: "{connector} के माध्यम से"
+      via_connector: "{connector} के माध्यम से",
     },
     token_metrics: {
       loading: "मेट्रिक्स लोड हो रही हैं...",
@@ -3024,11 +2942,6 @@ export const hi = {
       avg_drift: "औसत ड्रिफ्ट",
       recent_ttls: "हाल के प्रदाता TTL (नवीनतम पहले)",
       recent_refreshes: "हाल के रिफ्रेश",
-      fallback_used: "{rate}% रिफ़्रेश में Fallback ({fallback}s) उपयोग ({count}/{total}) — प्रदाता छोड़ देता है"
-    },
-    reauth_banner: {
-      access_revoked: ") -- एक्सेस रद्द कर दिया गया था। स्वचालन फिर से शुरू करने के लिए पुनः प्राधिकृत करें।",
-      reconnect: "पुनः कनेक्ट करें"
     },
     rotation_section: {
       corrupted_warning: "हेल्थचेक मेटाडेटा दूषित है। अगली सफल हेल्थचेक खराब डेटा को ओवरराइट करने तक अनोमली स्कोर अनुपलब्ध हैं।",
@@ -3049,7 +2962,6 @@ export const hi = {
       enabling: "सक्षम हो रहा है...",
       enable_rotation: "रोटेशन सक्षम करें",
       enable_failed: "रोटेशन सक्षम करने में विफल: {error}",
-      last_rotated: "अंतिम बार {time} घुमाया गया"
     },
     event_config: {
       event_triggers: "इवेंट ट्रिगर",
@@ -3076,7 +2988,6 @@ export const hi = {
       minutes_10: "10 मिनट",
       healthcheck_auto_rotate: "जब एक पहले स्वस्थ क्रेडेंशियल अपनी हेल्थचेक विफल करना शुरू करे तो रोटेशन स्वचालित रूप से ट्रिगर होगा।",
       last_evaluated: "अंतिम मूल्यांकन: {time}",
-      loading: "इवेंट लोड हो रहे हैं..."
     },
     credential_forms: {
       encrypted_keychain: "OS Keychain से एन्क्रिप्टेड",
@@ -3090,10 +3001,6 @@ export const hi = {
       new_credential: "नया {label} क्रेडेंशियल",
       configure_fields: "क्रेडेंशियल फ़ील्ड कॉन्फ़िगर करें",
       oauth_required: "इस क्रेडेंशियल को कनेक्ट करने के लिए नीचे दिए गए प्राधिकरण बटन का उपयोग करें।",
-      open_to_generate: "API कुंजी या टोकन उत्पन्न करने के लिए {label} खोलें",
-      already_configured: "क्रेडेंशियल पहले से कॉन्फ़िगर है -- बदलने के लिए नीचे अपडेट करें",
-      setup_instructions_label: "सेटअप निर्देश",
-      no_fields_defined: "इस कनेक्टर के लिए कोई क्रेडेंशियल फ़ील्ड परिभाषित नहीं।"
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3114,21 +3021,12 @@ export const hi = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI"
+      save_failed: "Failed to capture credential from CLI",
     },
     audit_log: {
       empty: "अभी तक कोई ऑडिट प्रविष्टियां नहीं",
       empty_hint: "ऑपरेशन होने पर लॉग किए जाएंगे।",
       access_events_hint: "एक्सेस इवेंट यहाँ दिखाई देंगे।",
-      loading: "ऑडिट टाइमलाइन लोड हो रही है...",
-      total_accesses: "{count} कुल",
-      personas_one: "{count} पर्सोना",
-      personas_other: "{count} पर्सोना",
-      accesses_24h: "24 घंटे में {count}",
-      anomalies_one: "{count} विसंगति",
-      anomalies_other: "{count} विसंगतियाँ",
-      no_anomalies: "कोई विसंगति नहीं",
-      show_all: "सभी {count} प्रविष्टियाँ दिखाएँ"
     },
     credential_import: {
       import_from: "{source} से आयात करें",
@@ -3137,12 +3035,6 @@ export const hi = {
       enable_sync: "सिंक मोड सक्षम करें",
       source_ref: "स्रोत संदर्भ",
       poll_interval: "पोल अंतराल",
-      sync_hint: "बाहरी vault में बदलाव देखता है और polling का उपयोग करके क्रेडेंशियल स्वतः अपडेट करता है।",
-      interval_15min: "15 मिनट",
-      interval_30min: "30 मिनट",
-      interval_1hr: "1 घंटा",
-      interval_6hr: "6 घंटे",
-      interval_24hr: "24 घंटे"
     },
     empty_state: {
       heading: "अपनी पहली सेवा कनेक्ट करें",
@@ -3151,11 +3043,11 @@ export const hi = {
       catalog_description: "Slack, GitHub, या OpenAI जैसी ज्ञात सेवा चुनें। पूर्व-कॉन्फ़िगर्ड फ़ील्ड और हेल्थचेक।",
       ai_heading: "AI-डिज़ाइन क्रेडेंशियल",
       ai_description: "किसी भी सेवा का वर्णन करें और AI आपके लिए फ़ील्ड, auth प्रकार और हेल्थचेक कॉन्फ़िगर करेगा।",
-      works_with_any: "किसी भी API के साथ काम करता है"
+      works_with_any: "किसी भी API के साथ काम करता है",
     },
     credential_list: {
       no_match: "कोई क्रेडेंशियल मेल नहीं",
-      no_match_hint: "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें"
+      no_match_hint: "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें",
     },
     wizard_detect: {
       no_services: "\\",
@@ -3167,15 +3059,6 @@ export const hi = {
       batch_complete: "बैच सेटअप पूर्ण",
       skip_service: "इस सेवा को छोड़ें",
       no_filter_match: "एक अलग खोज शब्द आज़माएं या अपना फ़िल्टर साफ़ करें।",
-      set_up_credentials: "क्रेडेंशियल सेट करें",
-      clear_selection: "चयन साफ़ करें",
-      set_up_services: "{count} सेवा{plural} सेट करें",
-      setting_up: "{total} में से {current} सेट किया जा रहा है",
-      wizard_title: "क्रेडेंशियल सेटअप विज़ार्ड",
-      choose_service: "सेट करने के लिए एक सेवा चुनें",
-      ai_walk_description: "AI आपको API क्रेडेंशियल प्राप्त करने के लिए चरण-दर-चरण मार्गदर्शन देगा।",
-      wizard_subtitle: "AI-निर्देशित क्रेडेंशियल सेटअप",
-      wizard_subtitle_batch: "{count} सेवा{plural} सेट की जा रही हैं"
     },
     autopilot: {
       title: "API ऑटोपायलट",
@@ -3199,23 +3082,6 @@ export const hi = {
       query_parameters: "क्वेरी पैरामीटर",
       param_name_placeholder: "पैरामीटर नाम",
       request_body: "अनुरोध बॉडी (JSON)",
-      from_url: "URL से",
-      paste_content: "सामग्री पेस्ट करें",
-      openapi_spec_url: "OpenAPI स्पेक URL",
-      openapi_format_hint: "JSON या YAML फ़ॉर्मेट में OpenAPI 3.x और Swagger 2.x स्पेक्स का समर्थन करता है",
-      parsing_spec: "स्पेक पार्स हो रहा है...",
-      parse_analyze: "पार्स और विश्लेषण करें",
-      connector_in_catalog: "{connectorLabel} अब {toolCount} टूल परिभाषाओं के साथ आपके कनेक्टर कैटलॉग में उपलब्ध है।",
-      generated_tools: "उत्पन्न टूल ({count})",
-      credential_fields: "क्रेडेंशियल फ़ील्ड्स",
-      open_playground: "Playground खोलें",
-      copy_connector_id: "कनेक्टर ID कॉपी करें",
-      go_to_catalog: "कैटलॉग पर जाएँ",
-      response_headers: "प्रतिक्रिया हेडर ({count})",
-      base_url_placeholder: "https://api.example.com",
-      openapi_url_placeholder: "https://api.example.com/openapi.json",
-      auth_schemes: "प्रमाणीकरण schemes",
-      body_placeholder: "value"
     },
     foraging: {
       no_credentials_found: "कोई क्रेडेंशियल नहीं मिले",
@@ -3232,44 +3098,10 @@ export const hi = {
       step_done: "पूर्ण",
       step_completed: "(पूर्ण)",
       step_current: "(वर्तमान)",
-      start_scan: "स्कैन शुरू करें",
-      checking_env: "पर्यावरण चर, कॉन्फ़िग फ़ाइलें, और डेव टूल क्रेडेंशियल जाँच रहे हैं",
-      importing: "क्रेडेंशियल vault में आयात हो रहे हैं...",
-      scan_again: "फिर से स्कैन करें",
-      back_to_vault: "vault पर वापस",
-      already_in_vault: "पहले से vault में",
-      imported: "आयात किया गया",
-      to_vault: "vault में",
-      credentials_found_one: "{count} क्रेडेंशियल मिला",
-      credentials_found_other: "{count} क्रेडेंशियल मिले",
-      selected: "चयनित",
-      import_to_vault_one: "{count} क्रेडेंशियल vault में आयात करें",
-      import_to_vault_other: "{count} क्रेडेंशियल vault में आयात करें",
-      env_var_one: "{count} env var",
-      env_var_other: "{count} env vars",
-      import_server: "आयात",
-      sources_in: "स्रोत",
-      progress_aria: "Foraging प्रगति",
-      scanned_sources: "{count} स्रोत {ms}ms में स्कैन किए"
     },
     desktop_discovery: {
       title: "डेस्कटॉप ऐप",
       allowed_binaries: "अनुमत बाइनरी: ",
-      connect_description: "स्थानीय एप्लिकेशन कनेक्ट करें या Claude Desktop MCP सर्वर आयात करें",
-      detected_apps_tab: "पहचाने गए ऐप्स ({count})",
-      claude_mcp_tab: "Claude MCP ({count})",
-      scanning: "डेस्कटॉप ऐप्स के लिए स्कैन हो रहा है...",
-      detected_on_system: "आपके सिस्टम पर पहचाना गया",
-      not_detected: "पहचाना नहीं गया",
-      no_apps: "कोई डेस्कटॉप ऐप नहीं मिला। रिफ़्रेश करने का प्रयास करें।",
-      reading_config: "Claude Desktop कॉन्फ़िग पढ़ा जा रहा है...",
-      mcp_servers_found_one: "Claude Desktop कॉन्फ़िगरेशन में {count} MCP सर्वर मिला। अपने एजेंटों के साथ उपयोग के लिए उन्हें क्रेडेंशियल के रूप में आयात करें।",
-      mcp_servers_found_other: "Claude Desktop कॉन्फ़िगरेशन में {count} MCP सर्वर मिले। अपने एजेंटों के साथ उपयोग के लिए उन्हें क्रेडेंशियल के रूप में आयात करें।",
-      no_mcp_config: "कोई Claude Desktop MCP कॉन्फ़िगरेशन नहीं मिला।",
-      mcp_config_hint: "यदि आपके पास Claude Desktop इंस्टॉल है, तो सुनिश्चित करें कि इसकी सेटिंग्स में MCP सर्वर कॉन्फ़िगर किए गए हैं।",
-      permission_required: "अनुमति आवश्यक",
-      approve_description: "निम्नलिखित क्षमताओं का अनुरोध करता है। इस कनेक्टर को सक्षम करने के लिए समीक्षा करें और स्वीकृत करें।",
-      approve_connect: "स्वीकृत करें और कनेक्ट करें"
     },
     picker_section: {
       no_connectors: "कोई कनेक्टर नहीं मिले",
@@ -3280,29 +3112,10 @@ export const hi = {
       filter_purpose: "उद्देश्य",
       filter_category: "श्रेणी",
       filter_license: "लाइसेंस",
-      credential_name: "क्रेडेंशियल नाम",
-      add_project_first: "अपने एजेंटों से codebase कनेक्ट करने के लिए पहले Dev Tools में एक प्रोजेक्ट जोड़ें।",
-      go_to_dev_tools: "Dev Tools पर जाएँ",
-      workspace_connect_description: "एक Google लॉगिन स्वचालित रूप से Gmail, Calendar, Drive, और Sheets क्रेडेंशियल बनाता है",
-      foraging_description: "मौजूदा API कुंजियों, AWS प्रोफ़ाइलों, env vars, और अधिक के लिए अपने फ़ाइलसिस्टम को स्कैन करें",
-      no_setup_guide: "इस कनेक्टर के लिए कोई सेटअप गाइड उपलब्ध नहीं। निर्देशों के लिए नीचे दस्तावेज़ लिंक पर जाएँ।",
-      open_setup_page: "{label} सेटअप पेज खोलें"
-    },
-    cli_capture: {
-      cta: "स्थानीय CLI से आयात",
-      hint: "API कुंजी पेस्ट करने के बजाय पहले से लॉग-इन स्थानीय CLI का उपयोग करें।",
-      running: "स्थानीय CLI चल रहा है...",
-      success: "CLI से क्रेडेंशियल कैप्चर किए गए",
-      token_ttl_notice: "यह टोकन {seconds}s में समाप्त हो जाता है और स्वचालित रूप से रिफ़्रेश किया जाएगा।",
-      source_label: "CLI",
-      missing_binary: "`{binary}` स्थापित नहीं है या अनुमत स्थान पर नहीं है।",
-      unauthenticated: "आप {binary} में साइन इन नहीं हैं। {instruction}",
-      capture_failed: "CLI कैप्चर विफल: {detail}",
-      timeout: "CLI कैप्चर टाइमआउट हुआ। पहले कमांड मैन्युअल रूप से चलाने का प्रयास करें।"
     },
     schemas: {
       none_configured: "कोई कॉन्फ़िगर नहीं।",
-      required_badge: "आवश्यक"
+      required_badge: "आवश्यक",
     },
     design_phases: {
       saving: "क्रेडेंशियल सहेजा जा रहा है...",
@@ -3335,32 +3148,8 @@ export const hi = {
       mark_done: "पूर्ण चिह्नित करें",
       mark_step_complete: "चरण पूर्ण चिह्नित करें",
       copy_to_clipboard: "क्लिपबोर्ड पर कॉपी करें",
-      credential_saved_message: "{label} क्रेडेंशियल सुरक्षित रूप से सहेजा गया है।",
-      revision_count: "(संशोधन {count})",
-      connector_added_to_catalog: "कनेक्टर आपके कैटलॉग में जोड़ा गया -- अब अन्य पर्सोना और टेम्पलेट अपनाने के लिए उपलब्ध।",
-      view_credential: "क्रेडेंशियल देखें",
-      refine_hint: "scope समायोजित करने, फ़ील्ड जोड़ने, या कॉन्फ़िगरेशन बदलने की आवश्यकता है?",
-      refine_placeholder: "उदा. लेखन scope जोड़ें, staging पर्यावरण जोड़ें...",
-      refine: "परिष्कृत करें",
-      linked_to_existing: "आपका क्रेडेंशियल मौजूदा कनेक्टर परिभाषा से लिंक किया जाएगा।",
-      no_existing_connector: "-- आपके कैटलॉग में कोई मौजूदा {name} कनेक्टर नहीं मिला।",
-      new_connector_will_be_registered: "जब आप यह क्रेडेंशियल सहेजेंगे, तो AI-उत्पन्न कनेक्टर परिभाषा स्वचालित रूप से आपके कनेक्टर कैटलॉग में पंजीकृत हो जाएगी -- इसे अन्य पर्सोना और टेम्पलेट अपनाने के लिए पुन: प्रयोज्य बनाती है।",
-      refine_request: "बिल्कुल सही नहीं? अपना अनुरोध परिष्कृत करें",
-      auto_provision_hint: "-- AI को आपके {label} क्रेडेंशियल प्राप्त करने के लिए चरण-दर-चरण मार्गदर्शन करने दें।",
-      credential_name_label: "क्रेडेंशियल नाम",
-      credentials_secure_notice: "क्रेडेंशियल ऐप vault में सुरक्षित रूप से संग्रहीत हैं और एजेंट टूल निष्पादन के लिए उपलब्ध हैं।",
-      tested_successfully_at: "{time} पर सफलतापूर्वक परीक्षण किया गया",
-      setup_instructions: "सेटअप निर्देश",
-      all_steps_complete: "सभी चरण पूर्ण -- नीचे फ़ील्ड भरें और अपना कनेक्शन परीक्षण करें।",
-      use_template: "उपयोग करें",
-      recipe_used_one: "-- {count} बार उपयोग किया गया",
-      recipe_used_other: "-- {count} बार उपयोग किया गया",
-      instruction_placeholder: "उदा. Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
-      browser_automation_warning: "ब्राउज़र automation चल रहा है। विंडो के साथ इंटरैक्ट न करें — पूरा होने पर यह फिर से शुरू हो जाएगा।",
-      desktop_bridge_title: "{{label}} के लिए डेस्कटॉप ऐप आवश्यक है",
-      desktop_bridge_hint: "यह कनेक्टर एक नेटिव ब्राउज़र सत्र चलाता है जो केवल Personas डेस्कटॉप ऐप में चलता है।",
       preparing_guided: "गाइडेड सेटअप निर्देश तैयार हो रहे हैं...",
       starting_browser: "ब्राउज़र सत्र शुरू हो रहा है...",
       no_log_output: "कोई लॉग आउटपुट कैप्चर नहीं हुआ।",
@@ -3391,26 +3180,8 @@ export const hi = {
       step_browser_review: "सहेजने से पहले समीक्षा के लिए यहाँ वापस लौटें",
       step_guided_review: "क्रेडेंशियल की समीक्षा करें और सहेजें",
       setup_context: "डिज़ाइन विश्लेषण से सेटअप संदर्भ:",
-      review_extracted: "निकाले गए क्रेडेंशियल की समीक्षा करें",
-      review_extracted_hint: "ब्राउज़र से निकाले गए मान -- सहेजने से पहले सत्यापित करें",
-      completeness_partial: "{total} में से {filled} आवश्यक फ़ील्ड भरे गए। सहेजने से पहले शेष फ़ील्ड पूरे करें।",
-      universal_auto_setup: "यूनिवर्सल ऑटो-सेटअप",
-      universal_auto_setup_hint: "एक URL और विवरण प्रदान करें, और AI API क्रेडेंशियल खोजने और स्वचालित रूप से बनाने के लिए साइट पर नेविगेट करेगा।",
-      service_url_label: "सेवा URL",
-      service_url_placeholder: "https://app.example.com या https://developer.example.com",
-      what_do_you_need: "आपको क्या चाहिए?",
-      description_placeholder: "उदा. मुझे उनके REST API के लिए डेटा पढ़ने और लिखने हेतु API कुंजी चाहिए। डेवलपर पोर्टल में Settings के अंतर्गत API Keys अनुभाग है।",
-      discover_credentials: "क्रेडेंशियल खोजें",
-      discovered_label: "खोजा गया: {label}",
-      fields_discovered_one: "{count} फ़ील्ड खोजा गया",
-      fields_discovered_other: "{count} फ़ील्ड्स खोजे गए",
-      extracted_values_label: "निकाले गए मान",
-      no_fields_discovered: "कोई फ़ील्ड नहीं मिला। अधिक विशिष्ट विवरण के साथ पुनः प्रयास करें।",
-      fields_captured_partial: "{filled}/{total} फ़ील्ड्स कैप्चर किए गए",
-      credential_stored: "{label} क्रेडेंशियल सुरक्षित रूप से संग्रहीत किया गया है।"
     },
     negotiator_extra: {
-      panel_title: "AI क्रेडेंशियल Negotiator",
       checking_auth: "मौजूदा प्रमाणीकरण जाँचे जा रहे हैं...",
       auto_provisioning: "स्वचालित API key प्रावधान",
       generating_plan: "प्रावधान योजना जनरेट हो रही है...",
@@ -3419,7 +3190,6 @@ export const hi = {
       need_help: "इस चरण में मदद चाहिए?",
       hide_help: "मदद छुपाएं",
       ask_question: "इस चरण के बारे में प्रश्न पूछें...",
-      planning_description: "AI डेवलपर पोर्टल का विश्लेषण कर रहा है और चरण-दर-चरण प्रावधान योजना बना रहा है..."
     },
     workspace_panel: {
       select_services: "कनेक्ट करने के लिए सेवाएं चुनें",
@@ -3427,15 +3197,6 @@ export const hi = {
       creating_credentials: "क्रेडेंशियल बनाए जा रहे हैं...",
       all_created: "सभी क्रेडेंशियल बनाए गए",
       some_failed: "कुछ क्रेडेंशियल विफल हुए",
-      selected_count: "{total} में से {selected} चयनित",
-      select_all: "सभी चुनें",
-      connect_services_one: "एक लॉगिन के साथ {count} सेवा कनेक्ट करें",
-      connect_services_other: "एक लॉगिन के साथ {count} सेवाएँ कनेक्ट करें",
-      granting_access_one: "यह {count} सेवा के लिए एक्सेस प्रदान करेगा",
-      granting_access_other: "यह {count} सेवाओं के लिए एक्सेस प्रदान करेगा",
-      credentials_created_one: "एक लॉगिन से {count} क्रेडेंशियल बनाया गया।",
-      credentials_created_other: "एक लॉगिन से {count} क्रेडेंशियल बनाए गए।",
-      sign_in_browser: "ब्राउज़र विंडो में अपने Google खाते से साइन इन करें।"
     },
     gateway: {
       gateway_members: "{name} — गेटवे सदस्य",
@@ -3452,7 +3213,7 @@ export const hi = {
       display_name: "डिस्प्ले नाम (टूल प्रीफ़िक्स)",
       display_name_placeholder: "जैसे arcade, research_tools, docs",
       adding: "जोड़ा जा रहा है…",
-      add_member: "सदस्य जोड़ें"
+      add_member: "सदस्य जोड़ें",
     },
     pending_auth: {
       title: "प्राधिकरण आवश्यक",
@@ -3466,13 +3227,13 @@ export const hi = {
       open_first: "पहले URL खोलें और सहमति दें",
       retrying: "पुनः प्रयास हो रहा है…",
       retry_authorized: "मैंने प्राधिकृत किया — पुनः प्रयास",
-      retry_failed: "पुनः प्रयास विफल"
+      retry_failed: "पुनः प्रयास विफल",
     },
     rotation_insight: {
       perm_errors: "स्थायी त्रुटियां पाई गईं -- रोटेशन का प्रयास किया, अलर्ट किया।",
       degrading: "निरंतर क्षरण -- पूर्व-निवारक रोटेशन ट्रिगर हुआ।",
-      backoff: "क्षणिक विफलताएं -- एक्सपोनेंशियल बैकऑफ सक्रिय।"
-    }
+      backoff: "क्षणिक विफलताएं -- एक्सपोनेंशियल बैकऑफ सक्रिय।",
+    },
   },
   deployment: {
     title: "डिप्लॉयमेंट",
@@ -3490,7 +3251,7 @@ export const hi = {
       token_available: "टोकन उपलब्ध है",
       no_token: "कोई टोकन कॉन्फ़िगर नहीं है",
       no_token_configured: "कोई टोकन कॉन्फ़िगर नहीं",
-      no_status: "कोई स्थिति डेटा उपलब्ध नहीं है।"
+      no_status: "कोई स्थिति डेटा उपलब्ध नहीं है।",
     },
     api_playground: {
       title: "API Playground",
@@ -3500,12 +3261,10 @@ export const hi = {
       sending: "भेजा जा रहा है...",
       empty_response: "(खाली प्रतिक्रिया)",
       snippets: "स्निपेट",
-      request_body_placeholder: "यहाँ अपना प्रॉम्प्ट..."
     },
     connection: {
       orchestrator_url_label: "क्लाउड सर्वर URL",
       orchestrator_prefix: "https://",
-      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "API key दर्ज करें",
       connect: "कनेक्ट करें",
       connected: "कनेक्टेड",
@@ -3515,28 +3274,16 @@ export const hi = {
       diagnostics_title: "डायग्नोस्टिक्स",
       url_protocol_error: "URL में http या https उपयोग होना चाहिए",
       url_hostname_error: "URL में होस्टनाम अनुपस्थित है",
-      url_invalid: "अमान्य URL"
+      url_invalid: "अमान्य URL",
     },
     deployments_panel: {
       deploy_persona: "पर्सोना तैनात करें",
       select_persona: "तैनात करने के लिए एक पर्सोना चुनें",
       all_deployed: "सभी पर्सोना पहले से तैनात हैं",
-      no_deployments_yet: "अभी तक कोई deployment नहीं। cloud API endpoint के रूप में deploy करने के लिए ऊपर एक पर्सोना चुनें।",
-      active_deployments: "सक्रिय Deployment"
     },
     exec_detail: {
       fetching_output: "आउटपुट लोड हो रहा है...",
       no_output: "कोई आउटपुट नहीं",
-      label_status: "स्थिति:",
-      label_duration: "अवधि:",
-      label_cost: "लागत:",
-      label_tokens: "टोकन:",
-      label_started: "शुरू:",
-      label_completed: "पूर्ण:",
-      label_input: "इनपुट:",
-      view_output: "आउटपुट देखें",
-      output_prefix: "आउटपुट (",
-      output_lines_suffix: "पंक्तियाँ)"
     },
     oauth_panel: {
       connect_anthropic: "Anthropic खाता कनेक्ट करें",
@@ -3548,13 +3295,6 @@ export const hi = {
       token_unknown: "टोकन स्थिति अज्ञात",
       expires: "समाप्त होता है",
       scopes: "Scopes",
-      open_auth_window: "प्राधिकरण विंडो खोलें",
-      complete_authorization: "प्राधिकरण पूर्ण करें",
-      refresh_token: "Refresh Token",
-      open_authorization_window: "प्राधिकरण विंडो खोलें",
-      token_unknown_msg: "टोकन वैधता सत्यापित नहीं की जा सकी। यह सक्रिय है या नहीं, इसकी पुष्टि के लिए टोकन रिफ़्रेश करें।",
-      connect_anthropic_msg: "क्लाउड निष्पादन के लिए OAuth-आधारित प्रमाणीकरण सक्षम करने हेतु अपना Anthropic खाता कनेक्ट करें।",
-      token_expired_msg_prefix: "यह OAuth टोकन समाप्त हो गया है"
     },
     trigger_form: {
       new_cloud_trigger: "नया क्लाउड ट्रिगर",
@@ -3564,15 +3304,9 @@ export const hi = {
       schedule_cron: "शेड्यूल (cron)",
       create_trigger: "ट्रिगर बनाएं",
       creating: "बनाया जा रहा है...",
-      cron_expression: "Cron Expression",
-      utc_suffix: "(UTC)",
-      webhook_info: "इस ट्रिगर के लिए एक webhook endpoint बनाया जाएगा। निर्माण के बाद आप payload फ़िल्टरिंग कॉन्फ़िगर कर सकते हैं।"
     },
     chart: {
       daily_executions: "दैनिक निष्पादन",
-      tooltip_runs: "रन:",
-      tooltip_cost: "लागत:",
-      tooltip_success: "सफलता:"
     },
     deploy_card: {
       test_deployment: "तैनाती परीक्षण",
@@ -3581,10 +3315,6 @@ export const hi = {
       remove_deployment: "तैनाती हटाएं",
       copy_endpoint: "एंडपॉइंट कॉपी करें",
       open_endpoint: "एंडपॉइंट खोलें",
-      budget_label: "बजट:",
-      label_invocations: "आह्वान:",
-      label_last_called: "अंतिम कॉल:",
-      label_created: "बनाया गया:"
     },
     tabs: {
       connection: "कनेक्शन",
@@ -3592,7 +3322,7 @@ export const hi = {
       oauth: "OAuth",
       deployments: "डिप्लॉयमेंट",
       schedules: "शेड्यूल",
-      history: "इतिहास"
+      history: "इतिहास",
     },
     cloud_execution: "क्लाउड निष्पादन",
     cloud_status: {
@@ -3604,7 +3334,7 @@ export const hi = {
       queue_length: "कतार की लंबाई",
       active_executions: "सक्रिय निष्पादन",
       active_execution: "सक्रिय निष्पादन",
-      claude_token: "Claude टोकन"
+      claude_token: "Claude टोकन",
     },
     history: {
       just_now: "अभी",
@@ -3624,8 +3354,6 @@ export const hi = {
       last_30_days: "पिछले 30 दिन",
       last_90_days: "पिछले 90 दिन",
       top_errors: "शीर्ष त्रुटियाँ",
-      clear_filters: "फ़िल्टर साफ़ करें",
-      execution_history: "निष्पादन इतिहास"
     },
     schedules: {
       header: "क्लाउड ट्रिगर ({count})",
@@ -3635,12 +3363,6 @@ export const hi = {
       empty: "अभी कोई क्लाउड ट्रिगर नहीं। स्वचालित रन शेड्यूल करने के लिए एक बनाएँ।",
       recent_firings: "हाल की फायरिंग",
       no_firings: "कोई हाल की फायरिंग नहीं",
-      label_type: "प्रकार:",
-      label_status: "स्थिति:",
-      label_last_triggered: "अंतिम ट्रिगर:",
-      label_next_trigger: "अगला ट्रिगर:",
-      label_cron: "Cron:",
-      loading_firings: "लोड हो रहा है..."
     },
     dashboard: {
       title: "तैनाती",
@@ -3695,7 +3417,7 @@ export const hi = {
       stage_generating: "जनरेट हो रहा है",
       stage_completed: "पूर्ण",
       stage_failed: "विफल",
-      tool_calls: "{count} टूल कॉल"
+      tool_calls: "{count} टूल कॉल",
     },
     cloud_trigger_schedule: "शेड्यूल्ड (Cron)",
     cloud_trigger_polling: "पोलिंग",
@@ -3710,7 +3432,7 @@ export const hi = {
     cron_daily_midnight: "मध्यरात्रि UTC पर दैनिक",
     cron_daily_9am: "सुबह 9 बजे UTC पर दैनिक",
     cron_weekdays_9am: "सुबह 9 बजे UTC पर कार्यदिवस",
-    cron_weekly_sun: "साप्ताहिक (रवि मध्यरात्रि UTC)"
+    cron_weekly_sun: "साप्ताहिक (रवि मध्यरात्रि UTC)",
   },
   sharing: {
     export_title: "बंडल निर्यात",
@@ -3788,7 +3510,6 @@ export const hi = {
     persistence_denied: "अस्वीकृत",
     capabilities_label: "क्षमताएं:",
     capabilities_none: "कोई नहीं",
-    enclave_hash_label: "Hash:",
     network_sharing_title: "नेटवर्क और साझाकरण",
     network_sharing_subtitle: "अपनी पहचान, विश्वसनीय सहकर्मियों और साझा संसाधनों का प्रबंधन करें",
     exposed_resources: "उजागर संसाधन",
@@ -3852,17 +3573,8 @@ export const hi = {
     no_shared_resources: "कोई साझा संसाधन नहीं। जाँचने के लिए मेनिफेस्ट सिंक करें।",
     discovered_peers: "खोजे गए सहकर्मी",
     refresh: "ताज़ा करें",
-    refresh_peer_list: "peer सूची रिफ़्रेश करें",
     scanning_network: "स्थानीय नेटवर्क स्कैन हो रहा है...",
     lan_hint: "उसी LAN पर अन्य Personas इंस्टेंस यहाँ स्वचालित रूप से दिखाई देंगे।",
-    peer_list_stale: "peer सूची पुरानी हो सकती है —",
-    network_data_stale: "नेटवर्क डेटा पुराना हो सकता है —",
-    peer_id_footer: "Peer ID",
-    remove_exposure: "exposure हटाएँ",
-    revoke_trust: "trust रद्द करें",
-    remove_peer: "peer हटाएँ",
-    share_link_tooltip: "एक-बार का share link उत्पन्न करें (24 घंटे में समाप्त)",
-    copy_clipboard_tooltip: "bundle को base64 के रूप में क्लिपबोर्ड पर कॉपी करें (अधिकतम 256 KB)",
     message_throughput: "संदेश थ्रूपुट",
     sent: "भेजे गए",
     received: "प्राप्त",
@@ -3878,7 +3590,7 @@ export const hi = {
     sync_rounds: "सिंक राउंड",
     success_fail: "सफल / विफल",
     avg_sync_duration: "औसत सिंक अवधि",
-    entries_received: "प्रविष्टियां प्राप्त"
+    entries_received: "प्रविष्टियां प्राप्त",
   },
   overview: {
     title: "अवलोकन",
@@ -3888,7 +3600,7 @@ export const hi = {
     filters: {
       start_date: "प्रारंभ तिथि",
       end_date: "समाप्ति तिथि",
-      all_personas: "सभी Personas"
+      all_personas: "सभी Personas",
     },
     messages: {
       loading: "संदेश लोड हो रहे हैं...",
@@ -3899,7 +3611,7 @@ export const hi = {
         title: "शीर्षक",
         priority: "प्राथमिकता",
         status: "स्थिति",
-        created: "बनाया गया"
+        created: "बनाया गया",
       },
       content_header: "सामग्री",
       priority_high: "उच्च",
@@ -3916,9 +3628,6 @@ export const hi = {
       channel_slack: "Slack",
       channel_telegram: "टेलीग्राम",
       channel_desktop: "डेस्कटॉप",
-      id_label: "ID:",
-      confirm_delete_title: "हटाने की पुष्टि करें",
-      close_message: "संदेश विवरण बंद करें"
     },
     realtime: {
       idle: "निष्क्रिय -- ट्रैफ़िक सिम्युलेट करने के लिए {action} पर क्लिक करें",
@@ -3926,7 +3635,7 @@ export const hi = {
       events_per_min: "इवेंट/मिनट",
       pending: "लंबित",
       success: "सफल",
-      in_window: "विंडो में"
+      in_window: "विंडो में",
     },
     observability: {
       title: "अवलोकनशीलता",
@@ -3939,18 +3648,12 @@ export const hi = {
       manual_fix: "(मैनुअल सुधार लागू)",
       metrics_unavailable: "मेट्रिक्स अनुपलब्ध -- दिखाया गया डेटा पुराना हो सकता है",
       no_open_issues: "कोई खुली समस्या नहीं",
-      run_analysis: "समस्याओं की जाँच के लिए विश्लेषण चलाएँ।"
+      run_analysis: "समस्याओं की जाँच के लिए विश्लेषण चलाएँ।",
     },
     memories: {
       title: "स्मृतियाँ",
       created_success: "स्मृति सफलतापूर्वक बनाई गई",
       no_memories: "अभी कोई स्मृति नहीं",
-      no_memories_hint: "जब एजेंट चलते हैं, तो वे यहाँ मूल्यवान नोट्स और सीख संग्रहीत कर सकते हैं।",
-      no_memories_match: "कोई memory वर्तमान फ़िल्टर से मेल नहीं खाती",
-      list_aria_label: "Memory सूची",
-      add_memory_btn: "Memory जोड़ें",
-      search_placeholder: "memories खोजें...",
-      no_filter_match: "कोई memory आपके फ़िल्टर से मेल नहीं खाती। अपनी खोज समायोजित करने का प्रयास करें।",
       form: {
         agent: "एजेंट",
         category: "श्रेणी",
@@ -3958,13 +3661,8 @@ export const hi = {
         content: "सामग्री",
         importance: "महत्व",
         tags: "टैग",
-        tags_hint: "(अल्पविराम से अलग)"
-      }
-    },
-    memory_review: {
-      all_conflicts_resolved: "सभी टकराव हल हो गए",
-      keep_prefix: "\"",
-      keep_suffix: "\" रखें"
+        tags_hint: "(अल्पविराम से अलग)",
+      },
     },
     executions: {
       title: "निष्पादन",
@@ -3972,7 +3670,7 @@ export const hi = {
       no_agents: "अभी कोई एजेंट नहीं बनाया गया",
       create_first: "निष्पादन गतिविधि देखने के लिए अपना पहला एजेंट बनाएँ",
       no_executions: "अभी कोई निष्पादन नहीं",
-      run_agent: "निष्पादन गतिविधि देखने के लिए एजेंट चलाएँ"
+      run_agent: "निष्पादन गतिविधि देखने के लिए एजेंट चलाएँ",
     },
     workflows: {
       loading: "वर्कफ़्लो लोड हो रहे हैं...",
@@ -3983,7 +3681,7 @@ export const hi = {
       all_types: "सभी प्रकार",
       no_filter_match: "वर्तमान फ़िल्टर से कोई जॉब मेल नहीं",
       auto_refreshing: "जॉब चलते समय ऑटो-ताज़ा",
-      cancel_failed: "वर्कफ़्लो जॉब रद्द करने में विफल"
+      cancel_failed: "वर्कफ़्लो जॉब रद्द करने में विफल",
     },
     schedules: {
       title: "शेड्यूल टाइमलाइन",
@@ -4014,7 +3712,7 @@ export const hi = {
       change_frequency: "आवृत्ति बदलें",
       pause_schedule: "शेड्यूल रोकें",
       resume_schedule: "शेड्यूल फिर शुरू करें",
-      headless_badge: "हेडलेस"
+      headless_badge: "हेडलेस",
     },
     frequency_editor: {
       title: "आवृत्ति बदलें",
@@ -4024,7 +3722,7 @@ export const hi = {
       interval_seconds: "अंतराल (सेकंड)",
       previewing: "पूर्वावलोकन...",
       next_runs: "अगले रन",
-      invalid_cron: "अमान्य cron एक्सप्रेशन"
+      invalid_cron: "अमान्य cron एक्सप्रेशन",
     },
     recovery: {
       agents_missed_one: "{count} एजेंट के निष्पादन छूट गए",
@@ -4038,7 +3736,7 @@ export const hi = {
       run_once_tooltip: "अभी एक बार चलाएँ",
       skip_tooltip: "छोड़ें -- पुनर्प्राप्त न करें",
       dismiss_all: "सभी खारिज करें",
-      recover_selected: "{count} चयनित पुनर्प्राप्त करें"
+      recover_selected: "{count} चयनित पुनर्प्राप्त करें",
     },
     sla: {
       title: "एजेंट विश्वसनीयता SLA",
@@ -4063,7 +3761,7 @@ export const hi = {
       metric_cost: "लागत",
       metric_mtbf: "MTBF",
       metric_auto_healed: "ऑटो-हील",
-      metric_cancelled: "रद्द"
+      metric_cancelled: "रद्द",
     },
     knowledge: {
       title: "ज्ञान ग्राफ़",
@@ -4088,14 +3786,14 @@ export const hi = {
       failures: "विफलताएँ",
       avg_cost: "औसत लागत",
       avg_duration: "औसत अवधि",
-      pattern_data: "पैटर्न डेटा"
+      pattern_data: "पैटर्न डेटा",
     },
     conflicts: {
       dismissed: "विवाद खारिज किया गया",
       resolved: "विवाद हल किया गया",
       resolve_failed: "विवाद हल करने में विफल",
       conflict_count_one: "{count} विवाद",
-      conflict_count_other: "{count} विवाद"
+      conflict_count_other: "{count} विवाद",
     },
     dashboard: {
       title: "डैशबोर्ड",
@@ -4111,7 +3809,7 @@ export const hi = {
       empty_title: "Personas में आपका स्वागत है",
       empty_subtitle: "निष्पादन मेट्रिक्स, ट्रैफ़िक चार्ट और गतिविधि यहाँ देखना शुरू करने के लिए अपना पहला एजेंट बनाएं।",
       create_persona: "पर्सोना बनाएं",
-      from_templates: "टेम्पलेट से"
+      from_templates: "टेम्पलेट से",
     },
     execution_metrics: {
       title: "निष्पादन मेट्रिक्स",
@@ -4129,7 +3827,7 @@ export const hi = {
       cost_spike: "लागत स्पाइक",
       above_avg: "औसत से ऊपर",
       top_executions: "शीर्ष निष्पादन:",
-      executions_label: "{count} निष्पादन"
+      executions_label: "{count} निष्पादन",
     },
     execution_list: {
       recorded: "{count} निष्पादन रिकॉर्ड",
@@ -4154,7 +3852,7 @@ export const hi = {
       no_agents: "अभी तक कोई एजेंट नहीं बनाया",
       no_agents_hint: "यहाँ निष्पादन गतिविधि देखने के लिए अपना पहला एजेंट बनाएं।",
       unknown_persona: "अज्ञात",
-      healing_retry: "हीलिंग पुनः प्रयास #{count}"
+      healing_retry: "हीलिंग पुनः प्रयास #{count}",
     },
     review: {
       title: "मैन्युअल समीक्षाएं",
@@ -4218,7 +3916,7 @@ export const hi = {
       table_tooltip: "केवल टेबल",
       review_detail: "समीक्षा विवरण",
       select_review: "देखने के लिए एक समीक्षा चुनें",
-      technical_context: "तकनीकी संदर्भ"
+      technical_context: "तकनीकी संदर्भ",
     },
     messages_view: {
       title: "संदेश",
@@ -4266,7 +3964,7 @@ export const hi = {
       improve_placeholder: "वर्णन करें कि यह आउटपुट कैसे सुधारा जा सकता है...",
       submit_improvement: "सुधार सबमिट करें",
       starting: "शुरू हो रहा है...",
-      unknown_persona: "अज्ञात"
+      unknown_persona: "अज्ञात",
     },
     events: {
       title: "इवेंट",
@@ -4304,7 +4002,7 @@ export const hi = {
       source: "स्रोत",
       processed: "प्रोसेस किया",
       event_data: "इवेंट डेटा",
-      error: "त्रुटि"
+      error: "त्रुटि",
     },
     health: {
       title: "एजेंट स्वास्थ्य",
@@ -4334,26 +4032,18 @@ export const hi = {
       status_page: "स्थिति पेज",
       operational: "परिचालित",
       degraded: "क्षीण",
-      outage: "आउटेज"
+      outage: "आउटेज",
     },
     leaderboard: {
       title: "एजेंट लीडरबोर्ड",
       subtitle: "सभी एजेंटों में प्रदर्शन रैंकिंग",
       no_data: "कोई लीडरबोर्ड डेटा उपलब्ध नहीं",
       no_data_hint: "प्रदर्शन रैंकिंग बनाना शुरू करने के लिए अपने एजेंट चलाएं",
-      fleet_avg: "Fleet औसत:",
-      refresh_label: "leaderboard रिफ़्रेश करें",
-      computing_scores: "एजेंट स्कोर की गणना हो रही है...",
-      single_agent_has_data: "के पास डेटा है।",
-      add_more_agents: "रैंकिंग देखने के लिए अधिक एजेंट जोड़ें। वर्तमान में केवल {name}",
-      open_agent: "एजेंट खोलें",
-      no_agent_data_title: "अभी तक कोई एजेंट डेटा नहीं",
-      no_agent_data_hint: "प्रदर्शन रैंकिंग देखने के लिए कुछ एजेंट चलाएँ। Leaderboard को स्कोर की गणना करने के लिए निष्पादन इतिहास और स्वास्थ्य डेटा चाहिए।",
       reliability: "विश्वसनीयता",
       speed: "गति",
       efficiency: "दक्षता",
       cost_effectiveness: "लागत-प्रभावशीलता",
-      overall: "कुल"
+      overall: "कुल",
     },
     analytics: {
       title: "एनालिटिक्स",
@@ -4370,25 +4060,25 @@ export const hi = {
       saved_views: "सहेजे गए दृश्य",
       create_view: "दृश्य बनाएं",
       health_issues: "स्वास्थ्य समस्याएं",
-      rotation_overview: "रोटेशन अवलोकन"
+      rotation_overview: "रोटेशन अवलोकन",
     },
     usage: {
       title: "उपयोग",
       subtitle: "लागत और संसाधन उपभोग",
       chart_error: "चार्ट लोड करने में विफल",
       chart_error_hint: "इस चार्ट को रेंडर करने में त्रुटि हुई",
-      try_again: "पुनः प्रयास करें"
+      try_again: "पुनः प्रयास करें",
     },
     cron_agents: {
       title: "शेड्यूल्ड एजेंट",
       subtitle: "स्वचालित शेड्यूल पर चलने वाले एजेंट",
       no_agents: "कोई शेड्यूल्ड एजेंट नहीं",
-      no_agents_hint: "यहाँ देखने के लिए किसी भी एजेंट में cron ट्रिगर जोड़ें"
+      no_agents_hint: "यहाँ देखने के लिए किसी भी एजेंट में cron ट्रिगर जोड़ें",
     },
     timeline: {
       title: "गतिविधि टाइमलाइन",
       subtitle: "सभी एजेंट गतिविधि का एकीकृत दृश्य",
-      no_activity: "कोई हाल की गतिविधि नहीं"
+      no_activity: "कोई हाल की गतिविधि नहीं",
     },
     realtime_viz: {
       title: "इवेंट बस",
@@ -4405,7 +4095,7 @@ export const hi = {
       timestamp: "टाइमस्टैम्प",
       payload: "पेलोड",
       saved_views: "सहेजे गए दृश्य",
-      save_current: "वर्तमान सहेजें"
+      save_current: "वर्तमान सहेजें",
     },
     observability_extra: {
       auto_refresh_on: "ऑटो-ताज़ा चालू",
@@ -4431,7 +4121,7 @@ export const hi = {
       ipc_channel: "IPC चैनल",
       avg_duration: "औसत अवधि",
       call_count: "कॉल गिनती",
-      error_rate: "त्रुटि दर"
+      error_rate: "त्रुटि दर",
     },
     widgets: {
       recent_activity: "हाल की गतिविधि",
@@ -4448,7 +4138,7 @@ export const hi = {
       executions_badge: "निष्पादन",
       success_badge: "सफल",
       alerts_badge: "अलर्ट",
-      agents_badge: "एजेंट"
+      agents_badge: "एजेंट",
     },
     cards: {
       fleet_optimization: "फ्लीट अनुकूलन",
@@ -4457,7 +4147,7 @@ export const hi = {
       remote_subtitle: "एजेंट प्रबंधन के लिए त्वरित कार्रवाइयां",
       resume_setup: "सेटअप जारी रखें",
       resume_subtitle: "जहाँ छोड़ा वहाँ से उठाएं",
-      knowledge_hub: "ज्ञान हब"
+      knowledge_hub: "ज्ञान हब",
     },
     activity: {
       title: "गतिविधि",
@@ -4503,7 +4193,7 @@ export const hi = {
       create_persona: "पर्सोना बनाएं",
       from_templates: "टेम्पलेट से",
       execution_label: "निष्पादन",
-      unknown: "अज्ञात"
+      unknown: "अज्ञात",
     },
     analytics_dashboard: {
       title: "एनालिटिक्स",
@@ -4562,7 +4252,7 @@ export const hi = {
       issues_count: "{count} समस्याएं",
       issues_count_one: "{count} समस्या",
       never: "कभी नहीं",
-      fail_count: "{count}x विफल"
+      fail_count: "{count}x विफल",
     },
     cron: {
       title: "Cron एजेंट",
@@ -4581,7 +4271,7 @@ export const hi = {
       no_schedule: "कोई शेड्यूल नहीं",
       every_interval: "हर {interval}",
       next: "अगला",
-      last: "अंतिम"
+      last: "अंतिम",
     },
     activity_timeline: {
       title: "गतिविधि टाइमलाइन",
@@ -4590,7 +4280,7 @@ export const hi = {
       events: "इवेंट",
       messages: "संदेश",
       no_activity: "अभी तक कोई गतिविधि नहीं",
-      high: "उच्च"
+      high: "उच्च",
     },
     sla_card: {
       successful: "सफल",
@@ -4602,7 +4292,7 @@ export const hi = {
       auto_healed: "स्वतः-ठीक",
       cancelled: "रद्द",
       failing: "{count} विफल",
-      healed: "{count} ठीक"
+      healed: "{count} ठीक",
     },
     realtime_page: {
       title: "इवेंट बस मॉनिटर",
@@ -4656,7 +4346,7 @@ export const hi = {
       galaxy: "गैलेक्सी",
       galaxy_desc: "धूमकेतु पथ के साथ कक्षीय नक्षत्र",
       lanes: "लेन",
-      lanes_desc: "क्षैतिज स्विम-लेन फ्लो आरेख"
+      lanes_desc: "क्षैतिज स्विम-लेन फ्लो आरेख",
     },
     memory_form: {
       agent: "एजेंट",
@@ -4673,25 +4363,25 @@ export const hi = {
       saving: "सहेजा जा रहा है...",
       created_success: "मेमोरी सफलतापूर्वक बनाई गई",
       fill_required: "सहेजने के लिए सभी आवश्यक फ़ील्ड भरें",
-      saving_memory: "मेमोरी सहेजी जा रही है..."
+      saving_memory: "मेमोरी सहेजी जा रही है...",
     },
     memory_filter: {
       search_placeholder: "मेमोरी खोजें...",
       all_agents: "सभी एजेंट",
-      all_categories: "सभी श्रेणियाँ"
+      all_categories: "सभी श्रेणियाँ",
     },
     memory_actions: {
       dismiss_suggestion: "सुझाव खारिज करें",
       memory_insights: "मेमोरी अंतर्दृष्टि",
       suggestions: "{count} सुझाव",
-      suggestions_one: "{count} सुझाव"
+      suggestions_one: "{count} सुझाव",
     },
     memory_conflict: {
       memory_a: "मेमोरी A",
       memory_b: "मेमोरी B",
       merge: "मर्ज करें",
       keep: "रखें",
-      vs: "बनाम"
+      vs: "बनाम",
     },
     observability_charts: {
       cost_over_time: "समय के साथ लागत",
@@ -4703,7 +4393,7 @@ export const hi = {
       anomaly_detected: "{count} लागत विसंगति पाई गई",
       anomaly_click_hint: "जांच करने के लिए चार्ट पर डायमंड मार्कर पर क्लिक करें",
       clear_traces: "पूर्ण ट्रेस साफ़ करें",
-      all_operations: "सभी ऑपरेशन"
+      all_operations: "सभी ऑपरेशन",
     },
     health_extra: {
       success: "सफलता",
@@ -4719,11 +4409,6 @@ export const hi = {
       predicted_failure: "विफलता स्पाइक पूर्वानुमान",
       loading_status: "स्थिति पृष्ठ डेटा लोड हो रहा है...",
       no_personas: "प्रदर्शित करने के लिए कोई एजेंट नहीं।",
-      score_prefix: "स्कोर:",
-      uptime_30d_prefix: "30-दिन uptime:",
-      updated_prefix: "अपडेट किया गया",
-      consecutive_failures_one: "{count} लगातार विफलता",
-      consecutive_failures_other: "{count} लगातार विफलताएँ",
       score_label: "स्कोर",
       uptime_30d: "30 दिन अपटाइम",
       updated: "{time} पर अपडेट किया",
@@ -4740,7 +4425,7 @@ export const hi = {
       open: "{count} खुली",
       sla_compliance: "SLA अनुपालन",
       consecutive_failures: "{count} लगातार विफलताएं",
-      consecutive_failure: "{count} लगातार विफलता"
+      consecutive_failure: "{count} लगातार विफलता",
     },
     system_health: {
       title: "सिस्टम जाँच",
@@ -4754,7 +4439,7 @@ export const hi = {
       save_configuration: "कॉन्फ़िगरेशन सहेजें",
       litellm_footer: "ये सेटिंग्स स्थानीय रूप से संग्रहीत हैं और LiteLLM प्रदाता का उपयोग करने वाले सभी एजेंटों के साथ साझा की जाती हैं।",
       ipc_error: "एप्लिकेशन ब्रिज प्रतिक्रिया नहीं दे रहा। ऐप पुनः शुरू करने का प्रयास करें। आप अभी भी इंटरफ़ेस एक्सप्लोर कर सकते हैं।",
-      issues_warning: "कुछ जाँचों में समस्याएं रिपोर्ट हुईं। आप जारी रख सकते हैं, लेकिन कुछ सुविधाएं सही तरह से काम नहीं कर सकती हैं।"
+      issues_warning: "कुछ जाँचों में समस्याएं रिपोर्ट हुईं। आप जारी रख सकते हैं, लेकिन कुछ सुविधाएं सही तरह से काम नहीं कर सकती हैं।",
     },
     review_extra: {
       add_note: "एक नोट जोड़ें (वैकल्पिक)...",
@@ -4766,7 +4451,7 @@ export const hi = {
       quick_actions: "त्वरित क्रियाएं",
       accepted: "{count} स्वीकार",
       rejected: "{count} अस्वीकार",
-      undecided: "{count} अनिर्णीत"
+      undecided: "{count} अनिर्णीत",
     },
     widgets_extra: {
       execution_health_chart: "निष्पादन स्वास्थ्य",
@@ -4775,147 +4460,29 @@ export const hi = {
       failed: "विफल",
       close: "बंद करें",
       dismiss_help: "सहायता खारिज करें",
-      skip_tour: "टूर पूरी तरह छोड़ें"
-    },
-    burn_rate_extra: {
-      active_personas_subtitle: "{count} सक्रिय पर्सोना · स्थानीय माह सीमा",
-      title: "बर्न रेट अनुमान",
-      daily_burn: "दैनिक बर्न",
-      projected_monthly: "अनुमानित मासिक",
-      at_risk: "जोखिम में",
-      top_cost_drivers: "शीर्ष लागत कारक",
-      budget_exhaustion_warnings: "बजट समाप्ति चेतावनियाँ",
-      exhausted: "समाप्त",
-      days_left: "{days} दिन शेष"
-    },
-    predictive_alerts_extra: {
-      per_month: "/माह",
-      confidence_pct: "% विश्वास",
-      title: "पूर्वानुमानित अलर्ट",
-      all_nominal: "सभी सिस्टम सामान्य",
-      no_alerts: "कोई पूर्वानुमानित अलर्ट नहीं -- सभी एजेंट स्वस्थ मापदंडों के भीतर हैं।",
-      budget_exhausted: "बजट समाप्त",
-      budget_exhaustion_in: "{days} दिन में बजट समाप्ति",
-      failure_spike_predicted: "{days} दिन में विफलता दर स्पाइक का अनुमान",
-      excessive_healing: "अत्यधिक स्व-उपचार गतिविधि",
-      critical_health: "गंभीर स्वास्थ्य स्थिति",
-      byom_recommendations: "BYOM रूटिंग सिफारिशें"
-    },
-    annotate_modal: {
-      annotation_placeholder: "उदा. Stripe webhook सत्यापन को parsed JSON नहीं, बल्कि raw request body की आवश्यकता है",
-      title: "ज्ञान एनोटेशन जोड़ें",
-      persona_label: "एट्रीब्यूशन एजेंट",
-      scope_label: "दायरा",
-      tool_name: "टूल नाम",
-      connector_type: "कनेक्टर / सेवा प्रकार",
-      annotation_label: "एनोटेशन",
-      cancel: "रद्द करें",
-      saving: "सहेजा जा रहा है...",
-      save_annotation: "एनोटेशन सहेजें"
-    },
-    knowledge_row: {
-      execution_trend_label: "निष्पादन प्रवृत्ति",
-      annotation: "एनोटेशन",
-      successes: "सफलताएं",
-      failures: "विफलताएं",
-      avg_cost: "औसत लागत",
-      avg_duration: "औसत अवधि",
-      pattern_data: "पैटर्न डेटा",
-      collapse_details: "विवरण छुपाएं",
-      expand_details: "विवरण देखें",
-      verify_annotation: "एनोटेशन सत्यापित करें",
-      dismiss_annotation: "एनोटेशन खारिज करें"
-    },
-    knowledge_graph: {
-      mock_pattern: "Mock पैटर्न",
-      seed_tooltip: "एक mock पैटर्न seed करें (केवल dev)",
-      all_types: "सभी प्रकार",
-      all_scopes: "सभी scopes",
-      failure_drilldown_prefix: "विफलता drill-down:",
-      failure_date_filter: "{date} पर या उसके बाद सक्रिय विफलता पैटर्न दिखा रहा है",
-      data_unavailable: "Knowledge डेटा अनुपलब्ध",
-      loading_patterns: "knowledge पैटर्न लोड हो रहे हैं...",
-      drilldown_toggle_title: "विफलता drill-down दिखाएँ/छिपाएँ",
-      no_patterns_yet: "अभी तक कोई knowledge पैटर्न नहीं",
-      no_patterns_yet_hint: "knowledge पैटर्न बनाने के लिए एजेंट निष्पादन चलाएँ। एजेंट समय के साथ स्मार्ट होते जाते हैं।",
-      no_patterns_match: "कोई पैटर्न वर्तमान फ़िल्टर से मेल नहीं खाता",
-      recent_learnings: "हाल की सीख",
-      curating_manually: "दस्तावेज़ मैन्युअल रूप से curate कर रहे हैं?",
-      obsidian_tip: "~1000 से कम नोट्स के लिए, एक Obsidian कनेक्टर आपके vault को सीधे sync कर सकता है।"
-    },
-    focused_decision: {
-      video_not_supported: "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।",
-      reject_this: "इसे अस्वीकार करें",
-      accept_this: "इसे स्वीकार करें",
-      accept: "स्वीकार करें",
-      reject: "अस्वीकार करें",
-      media_unavailable: "मीडिया उपलब्ध नहीं"
-    },
-    review_focus: {
-      video_not_supported: "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।",
-      all_caught_up: "सब ठीक है",
-      no_pending: "प्रोसेस करने के लिए कोई लंबित समीक्षा नहीं।",
-      queue: "कतार",
-      clear: "साफ़ करें",
-      clear_all_verdicts: "सभी निर्णय साफ़ करें",
-      quick_actions: "त्वरित क्रियाएं",
-      reject_all: "सभी अस्वीकार करें",
-      accept_all: "सभी स्वीकार करें",
-      retry_with_changes: "बदलावों के साथ पुनः प्रयास करें"
-    },
-    bulk_action_bar: {
-      pending_reviews_selected_one: "{count} लंबित समीक्षा चयनित",
-      pending_reviews_selected_other: "{count} लंबित समीक्षाएँ चयनित"
-    },
-    review_inbox: {
-      drag_to_resize: "आकार बदलने के लिए खींचें"
-    },
-    healing_issues_panel: {
-      ai_healing_title: "AI Healing",
-      diagnosis_label: "निदान:",
-      fixes_applied: "लागू किए गए fixes",
-      alert_history_title: "Alert इतिहास",
-      all_agents_global: "सभी एजेंट (वैश्विक)",
-      add_rule: "नियम जोड़ें",
-      no_rules_configured: "कोई alert नियम कॉन्फ़िगर नहीं। निगरानी शुरू करने के लिए एक नियम जोड़ें।",
-      confidence_pct_suffix: "% विश्वास",
-      spike_on: "spike पर",
-      correlated_events_prefix: "सहसंबद्ध इवेंट्स (",
-      circuit_breaker_label: "circuit breaker",
-      auto_disabled_message: "इस पर्सोना को बार-बार विफलताओं के circuit-breaker प्रतिक्रिया के रूप में स्वचालित रूप से अक्षम किया गया था।",
-      execution_label: "निष्पादन:",
-      issue_marked_as: "इस समस्या को इस रूप में चिह्नित किया गया है",
-      retry_in_progress: "पुनः प्रयास प्रगति पर — पूरा होने पर स्थिति अपडेट होगी।",
-      resolve_issue_title: "समस्या को हल के रूप में चिह्नित करें",
-      title: "स्वास्थ्य समस्याएं",
-      analyzing: "विश्लेषण हो रहा है...",
-      run_analysis: "विश्लेषण चलाएं",
-      no_open_issues: "कोई खुली समस्या नहीं",
-      run_analysis_hint: "समस्याओं की जाँच के लिए विश्लेषण चलाएं।",
-      healing_audit_log: "उपचार ऑडिट लॉग",
-      no_silent_failures: "कोई मूक विफलता दर्ज नहीं।"
+      skip_tour: "टूर पूरी तरह छोड़ें",
     },
     remote_control_card: {
       connect_to_desktop: "डेस्कटॉप से कनेक्ट करें",
       connect_description: "रिमोट कंट्रोल के माध्यम से अपने डेस्कटॉप CLI का उपयोग करके एजेंट चलाएं। अपने कंप्यूटर पर {command} शुरू करें, फिर यहाँ कनेक्ट करें।",
-      requires_subscription: "Claude Pro या Max सदस्यता आवश्यक है"
+      requires_subscription: "Claude Pro या Max सदस्यता आवश्यक है",
     },
     resume_setup_card: {
       resume_tour: "टूर फिर शुरू करें",
       left_off_at: "आप यहाँ छोड़ गए थे",
       steps_completed: "{completed}/{total} चरण पूर्ण",
       skip_tour: "टूर पूरी तरह छोड़ें",
-      continue_label: "जारी रखें"
+      continue_label: "जारी रखें",
     },
     detail_modal: {
-      close: "बंद करें"
+      close: "बंद करें",
     },
     metric_help_popover: {
       help_for: "{label} के लिए सहायता",
       dismiss_help: "सहायता खारिज करें",
       healthy: "स्वस्थ:",
       click: "क्लिक:",
-      got_it: "समझ गया, दोबारा न दिखाएं"
+      got_it: "समझ गया, दोबारा न दिखाएं",
     },
     install_button: {
       install_node: "Node.js इंस्टॉल करें",
@@ -4926,7 +4493,7 @@ export const hi = {
       installation_failed: "इंस्टॉलेशन विफल",
       try_manually: "मैन्युअल रूप से चलाने का प्रयास करें:",
       retry: "पुनः प्रयास करें",
-      official_page: "आधिकारिक पृष्ठ"
+      official_page: "आधिकारिक पृष्ठ",
     },
     section_card: {
       checking: "{section} जाँचा जा रहा है...",
@@ -4937,12 +4504,12 @@ export const hi = {
       sign_in_google: "Google से साइन इन करें",
       working: "काम हो रहा है...",
       connect_claude: "Claude Desktop से कनेक्ट करें",
-      disconnect: "डिस्कनेक्ट करें"
+      disconnect: "डिस्कनेक्ट करें",
     },
     metrics_cards: {
       cost_spike: "लागत स्पाइक",
       above_avg: "औसत से ऊपर",
-      top_executions: "शीर्ष निष्पादन:"
+      top_executions: "शीर्ष निष्पादन:",
     },
     event_log_item: {
       event_id: "इवेंट ID",
@@ -4954,15 +4521,75 @@ export const hi = {
       copied: "कॉपी किया",
       copy: "कॉपी करें",
       error: "त्रुटि",
-      system: "सिस्टम"
+      system: "सिस्टम",
+    },
+    burn_rate_extra: {
+      title: "बर्न रेट अनुमान",
+      daily_burn: "दैनिक बर्न",
+      projected_monthly: "अनुमानित मासिक",
+      at_risk: "जोखिम में",
+      top_cost_drivers: "शीर्ष लागत कारक",
+      budget_exhaustion_warnings: "बजट समाप्ति चेतावनियाँ",
+      exhausted: "समाप्त",
+      days_left: "{days} दिन शेष",
     },
     cascade: {
       title: "चेन कैस्केड मानचित्र",
-      no_chains: "कोई चेन नहीं पाई गई -- सभी एजेंट स्वतंत्र रूप से काम कर रहे हैं"
+      no_chains: "कोई चेन नहीं पाई गई -- सभी एजेंट स्वतंत्र रूप से काम कर रहे हैं",
+    },
+    predictive_alerts_extra: {
+      title: "पूर्वानुमानित अलर्ट",
+      all_nominal: "सभी सिस्टम सामान्य",
+      no_alerts: "कोई पूर्वानुमानित अलर्ट नहीं -- सभी एजेंट स्वस्थ मापदंडों के भीतर हैं।",
+      budget_exhausted: "बजट समाप्त",
+      budget_exhaustion_in: "{days} दिन में बजट समाप्ति",
+      failure_spike_predicted: "{days} दिन में विफलता दर स्पाइक का अनुमान",
+      excessive_healing: "अत्यधिक स्व-उपचार गतिविधि",
+      critical_health: "गंभीर स्वास्थ्य स्थिति",
+      byom_recommendations: "BYOM रूटिंग सिफारिशें",
+    },
+    annotate_modal: {
+      title: "ज्ञान एनोटेशन जोड़ें",
+      persona_label: "एट्रीब्यूशन एजेंट",
+      scope_label: "दायरा",
+      tool_name: "टूल नाम",
+      connector_type: "कनेक्टर / सेवा प्रकार",
+      annotation_label: "एनोटेशन",
+      cancel: "रद्द करें",
+      saving: "सहेजा जा रहा है...",
+      save_annotation: "एनोटेशन सहेजें",
+    },
+    knowledge_row: {
+      annotation: "एनोटेशन",
+      successes: "सफलताएं",
+      failures: "विफलताएं",
+      avg_cost: "औसत लागत",
+      avg_duration: "औसत अवधि",
+      pattern_data: "पैटर्न डेटा",
+      collapse_details: "विवरण छुपाएं",
+      expand_details: "विवरण देखें",
+      verify_annotation: "एनोटेशन सत्यापित करें",
+      dismiss_annotation: "एनोटेशन खारिज करें",
+    },
+    focused_decision: {
+      accept: "स्वीकार करें",
+      reject: "अस्वीकार करें",
+      media_unavailable: "मीडिया उपलब्ध नहीं",
+    },
+    review_focus: {
+      all_caught_up: "सब ठीक है",
+      no_pending: "प्रोसेस करने के लिए कोई लंबित समीक्षा नहीं।",
+      queue: "कतार",
+      clear: "साफ़ करें",
+      clear_all_verdicts: "सभी निर्णय साफ़ करें",
+      quick_actions: "त्वरित क्रियाएं",
+      reject_all: "सभी अस्वीकार करें",
+      accept_all: "सभी स्वीकार करें",
+      retry_with_changes: "बदलावों के साथ पुनः प्रयास करें",
     },
     memory_card: {
       confirm: "पुष्टि करें",
-      cancel: "रद्द करें"
+      cancel: "रद्द करें",
     },
     memory_detail: {
       title_label: "शीर्षक",
@@ -4972,7 +4599,7 @@ export const hi = {
       tags_label: "टैग",
       view_source_execution: "स्रोत निष्पादन देखें",
       delete_memory: "मेमोरी हटाएं",
-      close: "बंद करें"
+      close: "बंद करें",
     },
     memory_table: {
       agent: "एजेंट",
@@ -4980,11 +4607,11 @@ export const hi = {
       category: "श्रेणी",
       priority: "प्राथमिकता",
       tags: "टैग",
-      created: "बनाया गया"
+      created: "बनाया गया",
     },
     review_results: {
       title: "AI मेमोरी समीक्षा",
-      review_failed: "समीक्षा विफल"
+      review_failed: "समीक्षा विफल",
     },
     anomaly_drilldown_extra: {
       title: "विसंगति ड्रिल-डाउन",
@@ -4993,7 +4620,7 @@ export const hi = {
       correlating: "सहसंबंधित इवेंट...",
       likely_root_causes: "संभावित मूल कारण",
       correlated_events: "सहसंबंधित इवेंट",
-      no_correlated: "±24 घंटे की विंडो में कोई सहसंबंधित इवेंट नहीं मिला।"
+      no_correlated: "±24 घंटे की विंडो में कोई सहसंबंधित इवेंट नहीं मिला।",
     },
     healing_issue_modal: {
       issue_resolved: "समस्या हल हुई",
@@ -5008,14 +4635,23 @@ export const hi = {
       auto_resolved: "यह समस्या स्वचालित रूप से हल हो गई",
       close: "बंद करें",
       resolving: "हल हो रहा है…",
-      mark_resolved: "हल के रूप में चिह्नित करें"
+      mark_resolved: "हल के रूप में चिह्नित करें",
+    },
+    healing_issues_panel: {
+      title: "स्वास्थ्य समस्याएं",
+      analyzing: "विश्लेषण हो रहा है...",
+      run_analysis: "विश्लेषण चलाएं",
+      no_open_issues: "कोई खुली समस्या नहीं",
+      run_analysis_hint: "समस्याओं की जाँच के लिए विश्लेषण चलाएं।",
+      healing_audit_log: "उपचार ऑडिट लॉग",
+      no_silent_failures: "कोई मूक विफलता दर्ज नहीं।",
     },
     healing_timeline: {
       loading: "टाइमलाइन लोड हो रही है...",
       no_events: "कोई उपचार इवेंट नहीं",
       no_events_hint: "प्रतिरोध टाइमलाइन बनाने के लिए विश्लेषण चलाएं।",
       knowledge_base: "ज्ञान आधार",
-      patterns_hint: "उपचार निर्णयों को प्रभावित करने वाले पैटर्न"
+      patterns_hint: "उपचार निर्णयों को प्रभावित करने वाले पैटर्न",
     },
     ipc_panel: {
       title: "IPC प्रदर्शन",
@@ -5024,29 +4660,29 @@ export const hi = {
       command: "कमांड",
       calls_header: "कॉल",
       duration_header: "अवधि",
-      when_header: "कब"
+      when_header: "कब",
     },
     system_trace_extra: {
       no_traces: "कोई सिस्टम ट्रेस दर्ज नहीं",
       no_traces_hint: "डिज़ाइन, क्रेडेंशियल, या टेम्पलेट ऑपरेशन चलने पर ट्रेस दिखाई देते हैं",
       all_operations: "सभी ऑपरेशन",
       clear_completed: "पूर्ण ट्रेस साफ़ करें",
-      span: "स्पैन"
+      span: "स्पैन",
     },
     event_log_sidebar: {
       title: "इवेंट लॉग",
       no_events: "अभी कोई इवेंट नहीं",
-      open_detail_drawer: "विवरण ड्रॉअर में खोलें"
+      open_detail_drawer: "विवरण ड्रॉअर में खोलें",
     },
     chart_error: {
-      chart_unavailable: "चार्ट उपलब्ध नहीं"
+      chart_unavailable: "चार्ट उपलब्ध नहीं",
     },
     realtime_idle: {
-      idle: "निष्क्रिय"
+      idle: "निष्क्रिय",
     },
     day_range: {
-      apply: "लागू करें"
-    }
+      apply: "लागू करें",
+    },
   },
   templates: {
     gallery: {
@@ -5062,14 +4698,13 @@ export const hi = {
       triggers: "ट्रिगर",
       no_flows: "कोई फ़्लो नहीं",
       readiness_tooltip: "{percent}% कनेक्टर तैयार",
-      template_details_tabs_aria: "टेम्पलेट विवरण"
     },
     actions: {
       view_details: "विवरण देखें",
       adopt: "अपनाएँ",
       try_it: "आज़माएँ",
       adopt_as_persona: "Persona के रूप में अपनाएँ",
-      delete: "हटाएँ"
+      delete: "हटाएँ",
     },
     detail: {
       tab_overview: "अवलोकन",
@@ -5081,14 +4716,14 @@ export const hi = {
       review_error: "त्रुटि",
       used_references: "संदर्भ पैटर्न का उपयोग किया गया",
       no_design_data: "कोई डिज़ाइन डेटा उपलब्ध नहीं",
-      no_design_data_hint: "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।"
+      no_design_data_hint: "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।",
     },
     detail_overview: {
       use_case_flows: "उपयोग मामला फ़्लो",
       suggested_adjustment: "सुझाया गया समायोजन",
       adjustment_attempt: "(प्रयास {attempt}/3)",
       dimension_completion: "डाइमेंशन पूर्णता",
-      dimensions_score: "({score}/9 डाइमेंशन)"
+      dimensions_score: "({score}/9 डाइमेंशन)",
     },
     adoption: {
       title: "टेम्पलेट अपनाएँ",
@@ -5097,7 +4732,7 @@ export const hi = {
       step_credentials: "क्रेडेंशियल लिंक करें",
       step_preferences: "प्राथमिकताएँ सेट करें",
       step_generate: "Persona जनरेट करें",
-      step_review: "समीक्षा और सहेजें"
+      step_review: "समीक्षा और सहेजें",
     },
     choose: {
       select_use_cases: "उपयोग मामले चुनें",
@@ -5107,7 +4742,7 @@ export const hi = {
       components: "घटक",
       examples: "उदाहरण",
       tools: "टूल",
-      none_selected: "कोई उपयोग मामला चयनित नहीं -- जारी रखने के लिए कम से कम एक चुनें"
+      none_selected: "कोई उपयोग मामला चयनित नहीं -- जारी रखने के लिए कम से कम एक चुनें",
     },
     connect: {
       all_set: "कोई कनेक्टर आवश्यक नहीं -- आप तैयार हैं!",
@@ -5120,7 +4755,7 @@ export const hi = {
       select_credential: "क्रेडेंशियल चुनें...",
       create_new: "+ नया क्रेडेंशियल बनाएँ",
       design_custom: "+ कस्टम कनेक्टर डिज़ाइन करें",
-      add_credential: "क्रेडेंशियल जोड़ें"
+      add_credential: "क्रेडेंशियल जोड़ें",
     },
     build: {
       title: "Persona बनाएँ",
@@ -5137,7 +4772,7 @@ export const hi = {
       close_hint: "आप इस डायलॉग को बंद कर सकते हैं -- प्रोसेसिंग बैकग्राउंड में जारी रहेगी।",
       adjustments_label: "समायोजन का अनुरोध करें (वैकल्पिक)",
       adjustments_placeholder: "उदाहरण: शेड्यूल को सुबह 9 बजे बदलें, ClickUp इंटीग्रेशन हटाएँ, Slack सूचनाएँ जोड़ें",
-      discard_draft: "ड्राफ़्ट त्यागें और फिर से शुरू करें"
+      discard_draft: "ड्राफ़्ट त्यागें और फिर से शुरू करें",
     },
     quick_adopt: {
       all_matched: "सभी कनेक्टर मिलान किए गए",
@@ -5145,7 +4780,7 @@ export const hi = {
       missing_prefix: "अनुपलब्ध: ",
       add_in_catalog: "कुंजी कैटलॉग में जोड़ें",
       build_persona: "Persona बनाएँ",
-      full_wizard: "पूर्ण विज़ार्ड"
+      full_wizard: "पूर्ण विज़ार्ड",
     },
     data: {
       title: "डेटा सेटअप",
@@ -5154,7 +4789,7 @@ export const hi = {
       tables_found: "बिल्ट-इन डेटाबेस में {tables} मिले।",
       create_new: "नई टेबल बनाएँ",
       use_existing: "मौजूदा टेबल उपयोग करें",
-      complete: "डेटा सेटअप पूर्ण"
+      complete: "डेटा सेटअप पूर्ण",
     },
     tune: {
       title: "Persona कॉन्फ़िगर करें",
@@ -5173,7 +4808,7 @@ export const hi = {
       check_interval: "जाँच अंतराल",
       check_interval_placeholder: "हर 5 मिनट",
       manual_hint: "मैन्युअल रूप से ट्रिगर -- कोई कॉन्फ़िगरेशन आवश्यक नहीं",
-      system_hint: "सिस्टम इवेंट द्वारा ट्रिगर -- कोई कॉन्फ़िगरेशन आवश्यक नहीं"
+      system_hint: "सिस्टम इवेंट द्वारा ट्रिगर -- कोई कॉन्फ़िगरेशन आवश्यक नहीं",
     },
     review_policy: {
       title: "मानव समीक्षा",
@@ -5190,7 +4825,7 @@ export const hi = {
       timeout_1h: "1 घंटा",
       timeout_4h: "4 घंटे",
       timeout_24h: "24 घंटे",
-      timeout_none: "कोई टाइमआउट नहीं"
+      timeout_none: "कोई टाइमआउट नहीं",
     },
     memory: {
       title: "मेमोरी",
@@ -5203,7 +4838,7 @@ export const hi = {
       scope_patterns: "निष्पादन पैटर्न",
       scope_errors: "त्रुटि समाधान",
       scope_custom: "कस्टम दायरा...",
-      scope_custom_placeholder: "बताएँ कि क्या याद रखना है..."
+      scope_custom_placeholder: "बताएँ कि क्या याद रखना है...",
     },
     create: {
       use_cases: "उपयोग मामले",
@@ -5228,12 +4863,12 @@ export const hi = {
       safety_issues: "सुरक्षा समस्याएँ",
       safety_acknowledge_one: "मैं {count} गंभीर सुरक्षा निष्कर्ष को स्वीकार करता हूँ और जोखिम स्वीकार करता हूँ",
       safety_acknowledge_other: "मैं {count} गंभीर सुरक्षा निष्कर्षों को स्वीकार करता हूँ और जोखिम स्वीकार करता हूँ",
-      edit_details: "विवरण संपादित करें"
+      edit_details: "विवरण संपादित करें",
     },
     review: {
       use_cases_header: "उपयोग मामले ({count})",
       tools_header: "टूल ({count})",
-      triggers_header: "ट्रिगर ({count})"
+      triggers_header: "ट्रिगर ({count})",
     },
     matrix: {
       preparing: "निर्माण की तैयारी...",
@@ -5273,19 +4908,6 @@ export const hi = {
       build_complete: "निर्माण पूर्ण",
       adjust_placeholder: "कुछ भी समायोजित करें...",
       answer_placeholder: "आपका उत्तर...",
-      answer_cell: "उत्तर: {cell}",
-      working_on: "पर काम कर रहा है: {cells}",
-      draft_ready_label: "ड्राफ़्ट तैयार",
-      editing_cell: "संपादन: {cell}",
-      protocol_active: "प्रोटोकॉल सक्रिय",
-      matrix_unavailable: "Matrix डेटा अनुपलब्ध।",
-      persona_matrix_title: "Persona Matrix",
-      cell_status_analyzing: "विश्लेषण",
-      cell_status_answered: "उत्तर दिया",
-      cell_status_resolved: "हल किया",
-      cell_status_input_needed: "इनपुट आवश्यक",
-      cell_status_missing_credential: "क्रेडेंशियल गायब",
-      cell_status_error: "त्रुटि"
     },
     sandbox: {
       restriction_events: "इवेंट एमिशन अक्षम",
@@ -5301,12 +4923,12 @@ export const hi = {
       desc_unverified: "यह टेम्पलेट अज्ञात स्रोत से है और सत्यापित नहीं किया गया है। आपके सिस्टम की सुरक्षा के लिए यह प्रतिबंधित क्षमताओं के साथ चलेगा।",
       desc_community: "यह सामुदायिक टेम्पलेट आधिकारिक रूप से सत्यापित नहीं किया गया है। यह प्रतिबंधित क्षमताओं के साथ सैंडबॉक्स मोड में चलेगा।",
       badge_unverified: "असत्यापित",
-      badge_sandbox: "सैंडबॉक्स मोड"
+      badge_sandbox: "सैंडबॉक्स मोड",
     },
     page: {
       title: "एजेंटिक टेम्पलेट",
       subtitle_one: "{count} टेम्पलेट उपलब्ध",
-      subtitle_other: "{count} टेम्पलेट उपलब्ध"
+      subtitle_other: "{count} टेम्पलेट उपलब्ध",
     },
     explore: {
       ready_to_deploy: "तैनाती के लिए तैयार",
@@ -5327,7 +4949,7 @@ export const hi = {
       role_templates: "{role} टेम्पलेट",
       by_role: "भूमिका के अनुसार",
       by_need: "जरूरत के अनुसार",
-      classic: "क्लासिक"
+      classic: "क्लासिक",
     },
     opportunities: {
       title: "स्वचालन अवसर",
@@ -5335,15 +4957,15 @@ export const hi = {
       ready_now: "अभी तैयार",
       add_connector: "जोड़ें",
       unlock_more: "{count} और अनलॉक करने के लिए",
-      explore_templates: "{label} टेम्पलेट एक्सप्लोर करें"
+      explore_templates: "{label} टेम्पलेट एक्सप्लोर करें",
     },
     recommended: {
       title: "आपके लिए अनुशंसित",
       subtitle: "आपके कनेक्टर के आधार पर",
-      no_recommendations: "अभी कोई अनुशंसा उपलब्ध नहीं।"
+      no_recommendations: "अभी कोई अनुशंसा उपलब्ध नहीं।",
     },
     trending: {
-      title: "इस सप्ताह सबसे अधिक अपनाए गए"
+      title: "इस सप्ताह सबसे अधिक अपनाए गए",
     },
     empty: {
       no_templates: "अभी कोई उत्पन्न टेम्पलेट नहीं",
@@ -5352,7 +4974,7 @@ export const hi = {
       no_search_results_hint: "जो आप ढूंढ रहे हैं वह खोजने के लिए खोज शब्द या फ़िल्टर समायोजित करने का प्रयास करें।",
       clear_search: "खोज साफ़ करें",
       waiting_for_draft: "एजेंट ड्राफ्ट का इंतज़ार",
-      waiting_for_draft_hint: "AI आपके चयन के आधार पर ड्राफ्ट उत्पन्न कर रहा है। इसमें आमतौर पर कुछ सेकंड लगते हैं।"
+      waiting_for_draft_hint: "AI आपके चयन के आधार पर ड्राफ्ट उत्पन्न कर रहा है। इसमें आमतौर पर कुछ सेकंड लगते हैं।",
     },
     banners: {
       draft_prefix: "ड्राफ्ट: ",
@@ -5365,7 +4987,7 @@ export const hi = {
       status_completed: "पूर्ण",
       status_failed: "विफल",
       click_to_view_result: "परिणाम देखने के लिए क्लिक करें",
-      click_to_view_output: "आउटपुट देखने के लिए क्लिक करें"
+      click_to_view_output: "आउटपुट देखने के लिए क्लिक करें",
     },
     search: {
       switch_to_keyword: "कीवर्ड खोज पर स्विच करें",
@@ -5405,21 +5027,17 @@ export const hi = {
       autocomplete_difficulty: "कठिनाई",
       autocomplete_setup_time: "सेटअप समय",
       autocomplete_suggestions: "सुझाव",
-      coverage_filter_aria: "कवरेज फ़िल्टर",
-      search_suggestions_aria: "खोज सुझाव",
-      clear_search_aria: "खोज साफ़ करें",
-      search_with_ai_aria: "AI के साथ खोजें"
     },
     list: {
       template_name: "टेम्पलेट नाम",
       components: "घटक",
-      adoptions: "अपनाव"
+      adoptions: "अपनाव",
     },
     row_actions: {
       row_actions_label: "पंक्ति क्रियाएं",
       view_details: "विवरण देखें",
       rebuild: "पुनर्निर्माण करें",
-      delete_template: "टेम्पलेट हटाएं"
+      delete_template: "टेम्पलेट हटाएं",
     },
     connector_readiness: {
       click_to_add: "क्रेडेंशियल जोड़ने के लिए क्लिक करें",
@@ -5429,14 +5047,14 @@ export const hi = {
       needs_setup: "सेटअप चाहिए",
       not_ready: "तैयार नहीं",
       needs_credential: "क्रेडेंशियल चाहिए",
-      not_installed: "इंस्टॉल नहीं"
+      not_installed: "इंस्टॉल नहीं",
     },
     detail_modal: {
       adopted: "{count} अपनाए गए",
       reference_patterns: "संदर्भ पैटर्न",
       adopt_as_persona: "एजेंट के रूप में अपनाएं",
       try_it: "आज़माएं",
-      design_unavailable: "इस टेम्पलेट के लिए डिज़ाइन डेटा उपलब्ध नहीं।"
+      design_unavailable: "इस टेम्पलेट के लिए डिज़ाइन डेटा उपलब्ध नहीं।",
     },
     overview_tab: {
       loading_metrics: "प्रदर्शन मेट्रिक्स लोड हो रहे हैं...",
@@ -5456,7 +5074,7 @@ export const hi = {
       suggested_adjustment: "सुझाया गया समायोजन",
       adjustment_attempt: "(प्रयास {attempt}/3)",
       dimension_completion: "आयाम पूर्णता",
-      dimensions_score: "({score}/9 आयाम)"
+      dimensions_score: "({score}/9 आयाम)",
     },
     review_detail: {
       design_unavailable: "इस टेम्पलेट के लिए डिज़ाइन डेटा उपलब्ध नहीं।",
@@ -5466,7 +5084,7 @@ export const hi = {
       adopt_as_new_persona: "नए एजेंट के रूप में अपनाएं",
       view_raw_json: "रॉ JSON देखें",
       hide_raw_json: "रॉ JSON छुपाएं",
-      used_references: "इस टेम्पलेट ने पिछली पास हुई समीक्षाओं के संदर्भ पैटर्न का उपयोग किया"
+      used_references: "इस टेम्पलेट ने पिछली पास हुई समीक्षाओं के संदर्भ पैटर्न का उपयोग किया",
     },
     rebuild_modal: {
       title: "टेम्पलेट पुनर्निर्माण करें",
@@ -5483,7 +5101,7 @@ export const hi = {
       unknown_error: "पुनर्निर्माण के दौरान अज्ञात त्रुटि हुई।",
       start_rebuild: "पुनर्निर्माण शुरू करें",
       cancel_rebuild: "पुनर्निर्माण रद्द करें",
-      run_in_background: "पृष्ठभूमि में चलाएं"
+      run_in_background: "पृष्ठभूमि में चलाएं",
     },
     preview_modal: {
       preview_title: "पूर्वावलोकन: {name}",
@@ -5497,7 +5115,7 @@ export const hi = {
       completed: "पूर्ण",
       execution_failed: "निष्पादन विफल",
       run_again: "फिर चलाएं",
-      close_test_continues: "आप बंद कर सकते हैं -- टेस्ट पृष्ठभूमि में जारी रहेगा"
+      close_test_continues: "आप बंद कर सकते हैं -- टेस्ट पृष्ठभूमि में जारी रहेगा",
     },
     expanded: {
       adopt: "अपनाएं",
@@ -5507,7 +5125,7 @@ export const hi = {
       architecture: "आर्किटेक्चर",
       events: "इवेंट",
       reviews_label: "समीक्षाएं",
-      notifications: "सूचनाएं"
+      notifications: "सूचनाएं",
     },
     matrix_cmd: {
       identity: "पहचान",
@@ -5526,7 +5144,7 @@ export const hi = {
       build_label: "बनाएं",
       adjust_placeholder: "कुछ भी समायोजित करें...",
       test_agent: "एजेंट टेस्ट करें",
-      save_version: "संस्करण सहेजें"
+      save_version: "संस्करण सहेजें",
     },
     questionnaire: {
       header: "{label} -- प्रश्न {current} / {total}",
@@ -5543,11 +5161,6 @@ export const hi = {
       answer_remaining: "शेष उत्तर दें ({count})",
       next: "अगला",
       setup: "सेटअप",
-      previous_question: "पिछला प्रश्न",
-      next_question: "अगला प्रश्न",
-      go_to_question: "प्रश्न {number} पर जाएँ",
-      question_answered_suffix: " (उत्तर दिया)",
-      question_unanswered_suffix: " (उत्तर नहीं दिया)"
     },
     sandbox_banner: {
       community_sandbox: "सामुदायिक टेम्पलेट -- सैंडबॉक्स मोड",
@@ -5558,7 +5171,7 @@ export const hi = {
       human_review_required: "मानव समीक्षा आवश्यक",
       budget_cap_enforced: "बजट सीमा लागू",
       max_concurrent_one: "अधिकतम {max} समवर्ती रन",
-      max_concurrent_other: "अधिकतम {max} समवर्ती रन"
+      max_concurrent_other: "अधिकतम {max} समवर्ती रन",
     },
     n8n: {
       credential_label: "क्रेडेंशियल: {name}",
@@ -5645,26 +5258,18 @@ export const hi = {
       drop_file_here: "यहाँ अपनी वर्कफ़्लो फ़ाइल ड्रॉप करें",
       import_from_any_platform: "किसी भी प्लेटफ़ॉर्म से वर्कफ़्लो आयात करें",
       click_to_browse: "ब्राउज़ करने के लिए क्लिक करें या अपना निर्यात किया हुआ वर्कफ़्लो ड्रैग और ड्रॉप करें",
-      dropzone_aria: "workflow फ़ाइल drop करें या ब्राउज़ करने के लिए क्लिक करें",
       continue_btn: "जारी रखें",
       press_enter_or_click: "जारी रखने के लिए Enter दबाएं या क्लिक करें",
       paste_workflow_json: "वर्कफ़्लो JSON पेस्ट करें",
       paste_placeholder: "अपना निर्यात किया हुआ वर्कफ़्लो JSON यहाँ पेस्ट करें...",
-      paste_aria: "Workflow JSON सामग्री",
       import_btn: "आयात करें",
       import_from_url: "URL से आयात करें",
       url_description: "रॉ वर्कफ़्लो JSON फ़ाइल का URL पेस्ट करें। GitHub रॉ URLs, Gist लिंक, और डायरेक्ट JSON एंडपॉइंट सपोर्ट करता है।",
       fetching: "प्राप्त हो रहा है",
       fetch: "प्राप्त करें",
       accepts_label: "स्वीकार करता है:",
-      url_aria: "Workflow URL",
-      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
-      url_format_github: "github.com/*/blob/*",
-      url_format_gist: "gist.github.com/*",
-      url_format_raw: "raw JSON endpoint",
       customize_persona: "आपके एजेंट को कस्टमाइज़ करने के लिए कुछ प्रश्न",
       answer_then_generate: "नीचे उत्तर दें, फिर Generate पर क्लिक करें",
-      question_view_mode_aria: "प्रश्न दृश्य मोड",
       list_view: "सूची",
       focus_view: "फोकस",
       no_config_needed: "कोई कॉन्फ़िगरेशन आवश्यक नहीं",
@@ -5685,16 +5290,13 @@ export const hi = {
       analyzing_btn: "विश्लेषण हो रहा है...",
       upload_step: "अपलोड",
       analyze_step: "विश्लेषण",
-      wizard_progress_aria: "आयात विज़ार्ड प्रगति",
-      wizard_steps_aria: "विज़ार्ड चरण",
       streaming_sections: "सेक्शन स्ट्रीमिंग",
       awaiting_next_section: "अगले सेक्शन का इंतज़ार...",
-      transform_progress_aria: "परिवर्तन प्रगति",
       analyze_phase: "विश्लेषण",
       questions_phase: "प्रश्न",
       generate_phase: "उत्पन्न करें",
       type_your_answer: "अपना उत्तर टाइप करें...",
-      navigate_hint: "नेविगेट करने के लिए तीर कुंजियाँ उपयोग करें"
+      navigate_hint: "नेविगेट करने के लिए तीर कुंजियाँ उपयोग करें",
     },
     diagram: {
       no_flow_data: "कोई फ्लो डेटा उपलब्ध नहीं",
@@ -5704,7 +5306,7 @@ export const hi = {
       decisions_count: "{count} निर्णय",
       error_label: "त्रुटि",
       request_label: "अनुरोध",
-      response_label: "प्रतिक्रिया"
+      response_label: "प्रतिक्रिया",
     },
     design: {
       connectors_and_tools: "कनेक्टर और टूल",
@@ -5721,7 +5323,7 @@ export const hi = {
       feasibility_assessment: "व्यवहार्यता मूल्यांकन",
       confirmed_capabilities: "पुष्टि की गई क्षमताएं",
       issues_label: "समस्याएं",
-      suggested_next_steps: "सुझाए गए अगले कदम"
+      suggested_next_steps: "सुझाए गए अगले कदम",
     },
     card: {
       use_cases_label: "उपयोग मामले",
@@ -5730,7 +5332,7 @@ export const hi = {
       no_flows: "कोई प्रवाह नहीं",
       none_label: "कोई नहीं",
       more_count: "+{count} और",
-      system_prompt: "सिस्टम प्रॉम्प्ट"
+      system_prompt: "सिस्टम प्रॉम्प्ट",
     },
     matrix_grid: {
       prerequisites: "पूर्वापेक्षाएं",
@@ -5740,7 +5342,7 @@ export const hi = {
       credential_configured: "क्रेडेंशियल कॉन्फ़िगर किया गया",
       connector_not_installed: "कनेक्टर इंस्टॉल नहीं",
       needs_credential: "क्रेडेंशियल चाहिए",
-      setup_btn: "सेटअप"
+      setup_btn: "सेटअप",
     },
     adopt_modal: {
       adopt_template: "टेम्पलेट अपनाएं",
@@ -5755,49 +5357,6 @@ export const hi = {
       credential_required: "आपके वॉल्ट में कोई {category} क्रेडेंशियल नहीं। जारी रखने के लिए एक जोड़ें।",
       add_credential: "क्रेडेंशियल जोड़ें",
       blocked_blocking_submit: "जारी रखने से पहले {count} प्रश्न को क्रेडेंशियल की आवश्यकता है",
-      credentials_required_title: "क्रेडेंशियल आवश्यक",
-      credentials_required_body: "इस टेम्पलेट को अपनाने से पहले नीचे दी गई प्रत्येक श्रेणी से कम से कम एक क्रेडेंशियल की आवश्यकता है। \"क्रेडेंशियल जोड़ें\" क्लिक करें — सेटअप पूरा होने पर आप स्वचालित रूप से यहाँ लौट आएँगे।",
-      answered_of_total: "{total} में से {answered} उत्तर दिए",
-      blocked_count: "{count} अवरुद्ध",
-      question_number_of: "{total} में से प्रश्न {current}",
-      question_number_aria: "प्रश्न {number}",
-      navigate_hint: "नेविगेट करने के लिए",
-      enter_to_advance: "आगे बढ़ने के लिए",
-      previous: "पिछला",
-      next: "अगला",
-      live_preview: "लाइव पूर्वावलोकन",
-      persona_label: "पर्सोना",
-      untitled_agent: "शीर्षकहीन एजेंट",
-      not_yet_set: "अभी तक सेट नहीं",
-      auto_badge: "auto",
-      jump_to_question_hint: "उस प्रश्न पर जाने के लिए ऊपर किसी भी पंक्ति पर क्लिक करें। स्वतः-पहचाने गए मान आपके कनेक्ट किए गए क्रेडेंशियल से अनुमानित हैं।",
-      hide_explanation: "व्याख्या छिपाएँ",
-      show_explanation: "व्याख्या दिखाएँ",
-      all_option: "सभी",
-      add_custom: "जोड़ें",
-      custom_prefix: "+ कस्टम…",
-      custom_plain: "कस्टम…",
-      type_your_answer: "अपना उत्तर टाइप करें...",
-      describe_in_detail: "विस्तार से वर्णन करें...",
-      select_directory: "एक डायरेक्टरी चुनें...",
-      type_a_value: "एक मान टाइप करें…",
-      preparing: "तैयार हो रहा है…",
-      waiting_for_parent: "पिछले उत्तर की प्रतीक्षा…",
-      loading_from_service: "{service} से विकल्प लोड हो रहे हैं…",
-      loaded_live_from: "{service} से लाइव लोड किया गया",
-      no_items_found: "कोई {item} नहीं मिला। पहले {service} में एक बनाएँ।",
-      retry: "पुनः प्रयास",
-      source_local: "स्थानीय फ़ाइल या फ़ोल्डर",
-      source_codebase: "Codebase",
-      source_database: "Database",
-      source_local_hint: "किसी फ़ाइल या फ़ोल्डर का पूरा स्थानीय पथ paste करें।",
-      source_codebase_hint: "Dev Tools में पंजीकृत एक प्रोजेक्ट चुनें।",
-      source_database_hint: "अपने vault से एक database क्रेडेंशियल चुनें।",
-      source_local_placeholder: "/Users/me/project/design.md",
-      source_no_codebases: "कोई Dev Tools प्रोजेक्ट नहीं मिला। पहले Dev Tools में पंजीकरण करें।",
-      source_no_databases: "कोई database क्रेडेंशियल नहीं मिला। पहले Vault में एक जोड़ें।",
-      source_pick_codebase: "एक codebase चुनें…",
-      source_pick_database: "एक database चुनें…"
     },
     scan: {
       scanning_draft: "एजेंट ड्राफ्ट स्कैन हो रहा है...",
@@ -5811,7 +5370,7 @@ export const hi = {
       critical_label: "गंभीर",
       warnings_label: "चेतावनियाँ",
       informational_label: "सूचनात्मक",
-      source_label: "स्रोत:"
+      source_label: "स्रोत:",
     },
     team_synthesis: {
       title: "टीम संश्लेषण",
@@ -5823,7 +5382,7 @@ export const hi = {
       synthesizing: "संश्लेषण हो रहा है...",
       synthesize_team: "टीम संश्लेषण करें",
       personas_created: "{count} एजेंट बनाए और जोड़े गए",
-      done: "पूर्ण"
+      done: "पूर्ण",
     },
     matrix_variants: {
       processing: "प्रोसेस हो रहा है...",
@@ -5837,17 +5396,6 @@ export const hi = {
       testing_agent: "एजेंट टेस्ट हो रहा है...",
       approve_and_promote: "मंज़ूर करें और प्रमोट करें",
       view_agent_btn: "एजेंट देखें",
-      command_center_header: "COMMAND CENTER // BUILD v1.0",
-      phase_label: "[PHASE: {phase}]",
-      your_answer_placeholder: "आपका उत्तर...",
-      testing_background_hint: "इसमें कुछ मिनट लग सकते हैं। आप यह पेज छोड़कर बाद में वापस आ सकते हैं — परीक्षण पृष्ठभूमि में जारी रहता है।",
-      cancel_test: "परीक्षण रद्द करें",
-      missing_keys: "गायब keys:",
-      approve_anyway: "फिर भी स्वीकृत करें",
-      delete_draft_title: "इस draft पर्सोना को खारिज करें और बंद करें",
-      delete_draft: "Draft हटाएँ",
-      agent_promoted: "एजेंट प्रोमोट किया गया",
-      view_agent: "एजेंट देखें"
     },
     diagrams: {
       no_flow_data: "कोई फ्लो डेटा उपलब्ध नहीं",
@@ -5855,7 +5403,6 @@ export const hi = {
       edges_count: "{count} एज",
       connectors_count: "{count} कनेक्टर",
       decisions_count: "{count} निर्णय",
-      close_dialog: "डायलॉग बंद करें"
     },
     generation: {
       create_template: "टेम्पलेट बनाएं",
@@ -5878,51 +5425,6 @@ export const hi = {
       start_review_custom: "समीक्षा शुरू करें ({count} मामला{plural})",
       copy_log: "लॉग कॉपी करें",
       copied_log: "कॉपी किया!",
-      back: "वापस",
-      generate_template: "टेम्पलेट उत्पन्न करें",
-      view_draft: "ड्राफ़्ट देखें",
-      saving: "सहेजा जा रहा है...",
-      save_template: "टेम्पलेट सहेजें",
-      template_saved: "टेम्पलेट सहेजा गया",
-      template_name_label_step: "टेम्पलेट नाम",
-      template_name_placeholder: "टेम्पलेट नाम...",
-      description_label: "विवरण",
-      description_placeholder: "वर्णन करें कि इस पर्सोना को क्या करना चाहिए, यह किन सेवाओं से कनेक्ट होता है, और यह कैसे व्यवहार करना चाहिए। आवश्यक tools, triggers, और integrations के बारे में विशिष्ट रहें।\n\nउदाहरण: एक पर्सोना जो महत्वपूर्ण ईमेल के लिए Gmail inbox की निगरानी करता है, उन्हें प्राथमिकता के आधार पर वर्गीकृत करता है, तत्काल लोगों के लिए Slack सूचनाएँ भेजता है, और एक दैनिक digest सारांश बनाता है।",
-      description_hint: "AI एक पूर्ण पर्सोना टेम्पलेट उत्पन्न करेगा जिसमें system prompt, tools, triggers, connectors, और टेम्पलेट चर शामिल हैं।",
-      terminal_aria_label: "डिज़ाइन समीक्षा आउटपुट",
-      terminal_placeholder: "समीक्षा शुरू होने पर आउटपुट यहाँ दिखाई देगा",
-      terminal_running: "चल रहा है...",
-      result_passed: "{count} सफल",
-      result_failed: "{count} विफल",
-      result_errored: "{count} त्रुटियाँ",
-      result_total: "{count} कुल परीक्षण",
-      mode_predefined: "पूर्वनिर्धारित (5)",
-      mode_custom: "कस्टम",
-      mode_batch: "Batch",
-      mode_batch_count: "Batch ({count})",
-      batch_upload_hint: "Claude CLI के माध्यम से batch-generate टेम्पलेट के लिए क्रमांकित टेम्पलेट प्रविष्टियों वाली list.md फ़ाइल अपलोड करें।",
-      batch_upload_btn: "list.md अपलोड करें",
-      batch_format_hint: "अपेक्षित फ़ॉर्मेट:",
-      batch_all: "सभी ({count})",
-      batch_count: "{count} टेम्पलेट{plural} Claude CLI के माध्यम से उत्पन्न किए जाएँगे (~45s प्रत्येक)",
-      batch_clear: "साफ़ करें",
-      batch_format_example: "**1. Template Name**",
-      custom_count: "टेम्पलेट use cases परिभाषित करें ({count} तैयार)",
-      custom_load_file_title: ".txt या .md फ़ाइल से लोड करें",
-      custom_load_file: "फ़ाइल लोड करें",
-      custom_add: "जोड़ें",
-      custom_case_name_placeholder: "टेम्पलेट नाम (उदा. Gmail Smart Filter)",
-      custom_instruction_placeholder: "वर्णन करें कि यह पर्सोना क्या करे, किन सेवाओं को integrate करे, और किन triggers को सक्रिय करना चाहिए...",
-      custom_short_instruction: "न्यूनतम {current}/{min} वर्ण",
-      custom_category_default: "श्रेणी...",
-      custom_trigger_default: "Trigger...",
-      custom_connectors_placeholder: "Connectors (उदा. gmail, slack)",
-      custom_detail_hint: "अधिक विवरण = बेहतर परिणाम। सेवाएँ, triggers, और अपेक्षित व्यवहार शामिल करें।",
-      custom_show_example: "उदाहरण दिखाएँ",
-      custom_hide_example: "उदाहरण छिपाएँ",
-      custom_example_title: "उदाहरण: Gmail Smart Filter",
-      custom_example_body: "\"एक एजेंट बनाएँ जो महत्वपूर्ण ईमेल के लिए Gmail की निगरानी करे, उन्हें प्रेषक और तात्कालिकता के अनुसार वर्गीकृत करे, लेबल लागू करे, और तात्कालिक को Slack पर अग्रेषित करे। gmail और slack connectors के साथ polling trigger का उपयोग करें।\"",
-      predefined_intro: "डिज़ाइन engine के माध्यम से {count} पूर्वनिर्धारित use cases चलाता है:"
     },
     connector_edit: {
       credential: "क्रेडेंशियल",
@@ -5938,24 +5440,22 @@ export const hi = {
       existing_table_label: "मौजूदा तालिका",
       schema: "स्कीमा",
       table_name: "तालिका नाम",
-      table_name_placeholder: "उदा. persona_data",
       in_app_messages: "इन-ऐप संदेश",
       not_connected: "जुड़ा नहीं",
       no_connectors: "कोई कनेक्टर आवश्यक नहीं",
       linked: "लिंक किया",
       set_up: "सेट अप करें",
-      more_connectors: "+{count} और"
+      more_connectors: "+{count} और",
     },
     trigger_edit: {
       schedule: "शेड्यूल",
       schedule_placeholder: "हर कार्यदिवस सुबह 9 बजे",
       schedule_hint: "प्राकृतिक भाषा या cron (जैसे \\",
       webhook_url: "Webhook URL",
-      webhook_url_placeholder: "https://...",
       check_interval: "जाँच अंतराल",
       check_interval_placeholder: "हर 5 मिनट",
       no_config_needed: "कोई कॉन्फ़िगरेशन आवश्यक नहीं",
-      manual_only: "केवल मैन्युअल निष्पादन"
+      manual_only: "केवल मैन्युअल निष्पादन",
     },
     preset_edit: {
       select_review: "समीक्षा नीति चुनें...",
@@ -5967,7 +5467,7 @@ export const hi = {
       retry_once: "एक बार पुनः प्रयास",
       retry_3x: "3 बार पुनः प्रयास",
       notify_continue: "सूचित करें और जारी रखें",
-      skip_failed: "विफल चरण छोड़ें"
+      skip_failed: "विफल चरण छोड़ें",
     },
     test_report: {
       title: "टेस्ट रिपोर्ट",
@@ -5993,8 +5493,8 @@ export const hi = {
       response_preview: "प्रतिक्रिया पूर्वावलोकन",
       error_detail: "त्रुटि विवरण",
       copy: "कॉपी करें",
-      copied: "कॉपी किया"
-    }
+      copied: "कॉपी किया",
+    },
   },
   triggers: {
     title: "ट्रिगर और चेन",
@@ -6036,7 +5536,7 @@ export const hi = {
       show_sidebar: "साइडबार दिखाएं",
       source: "स्रोत",
       source_personas: "स्रोत एजेंट",
-      use_template: "टेम्पलेट उपयोग करें"
+      use_template: "टेम्पलेट उपयोग करें",
     },
     studio: {
       building_blocks: "बिल्डिंग ब्लॉक",
@@ -6052,7 +5552,7 @@ export const hi = {
       remove_from_chain: "चेन से हटाएं",
       studio_title: "ट्रिगर स्टूडियो",
       trigger_sources: "ट्रिगर स्रोत",
-      unsaved_changes: "सहेजे नहीं गए बदलाव"
+      unsaved_changes: "सहेजे नहीं गए बदलाव",
     },
     subscription_list: {
       active: "सक्रिय",
@@ -6066,10 +5566,10 @@ export const hi = {
       error: "त्रुटि",
       never: "कभी नहीं",
       no_active_subs: "कोई सक्रिय सदस्यता नहीं",
-      unsubscribe: "सदस्यता रद्द करें"
+      unsubscribe: "सदस्यता रद्द करें",
     },
     type_selector: {
-      trigger_type: "ट्रिगर प्रकार"
+      trigger_type: "ट्रिगर प्रकार",
     },
     tab_triggers: "ट्रिगर",
     tab_chains: "चेन",
@@ -6145,11 +5645,11 @@ export const hi = {
       cron_daily_midnight: "दैनिक मध्यरात्रि",
       cron_weekly_monday: "साप्ताहिक सोमवार",
       next_runs: "अगले रन",
-      invalid_cron: "अमान्य शेड्यूल एक्सप्रेशन"
+      invalid_cron: "अमान्य शेड्यूल एक्सप्रेशन",
     },
     add: {
       create_trigger: "ट्रिगर बनाएं",
-      creating: "बनाया जा रहा है..."
+      creating: "बनाया जा रहा है...",
     },
     detail: {
       test_fire: "टेस्ट फायर",
@@ -6172,7 +5672,7 @@ export const hi = {
       last_fired: "अंतिम बार फायर हुआ",
       never_fired: "कभी फायर नहीं हुआ",
       fire_count_one: "{count} बार फायर हुआ",
-      fire_count_other: "{count} बार फायर हुआ"
+      fire_count_other: "{count} बार फायर हुआ",
     },
     list: {
       empty_title: "अभी कोई ट्रिगर कॉन्फ़िगर नहीं",
@@ -6182,28 +5682,28 @@ export const hi = {
       budget_unavailable: "बजट डेटा उपलब्ध नहीं",
       unknown_budget: "अज्ञात बजट",
       budget_exceeded: "मासिक बजट पार हो गया -- ट्रिगर रुका",
-      budget: "बजट"
+      budget: "बजट",
     },
     config: {
       no_persona: "कोई एजेंट नहीं चुना",
       title: "ट्रिगर",
       add_trigger: "ट्रिगर जोड़ें",
-      empty: "कोई ट्रिगर कॉन्फ़िगर नहीं। इस एजेंट को स्वचालित करने के लिए एक जोड़ें।"
+      empty: "कोई ट्रिगर कॉन्फ़िगर नहीं। इस एजेंट को स्वचालित करने के लिए एक जोड़ें।",
     },
     countdown: {
       due_now: "अभी देय",
-      fires_in: "{time} में फायर होगा"
+      fires_in: "{time} में फायर होगा",
     },
     polling: {
       endpoint_label: "जाँचने के लिए URL",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "हर {interval} जाँचें",
-      content_hash: "केवल बदलाव पाएं"
+      content_hash: "केवल बदलाव पाएं",
     },
     webhook: {
       url_label: "Webhook URL",
       secret_label: "सुरक्षा कुंजी (वैकल्पिक)",
-      secret_placeholder: "आने वाले डेटा सत्यापित करने के लिए गुप्त कुंजी"
+      secret_placeholder: "आने वाले डेटा सत्यापित करने के लिए गुप्त कुंजी",
     },
     file_watcher: {
       paths_label: "देखने के पथ",
@@ -6215,7 +5715,7 @@ export const hi = {
       event_delete: "हटाएं",
       recursive: "पुनरावर्ती",
       glob_filter: "फ़ाइल पैटर्न",
-      glob_placeholder: "*.json"
+      glob_placeholder: "*.json",
     },
     clipboard: {
       content_type: "सामग्री प्रकार",
@@ -6223,7 +5723,7 @@ export const hi = {
       type_image: "छवि",
       pattern_label: "मेल पैटर्न",
       pattern_placeholder: "जैसे https?://.*",
-      interval_label: "जाँच अंतराल (सेकंड)"
+      interval_label: "जाँच अंतराल (सेकंड)",
     },
     app_focus: {
       app_names_label: "एप्लिकेशन नाम",
@@ -6231,20 +5731,20 @@ export const hi = {
       add_app: "ऐप जोड़ें",
       title_pattern: "विंडो शीर्षक पैटर्न",
       title_placeholder: "जैसे .*GitHub.*",
-      interval_label: "जाँच अंतराल (सेकंड)"
+      interval_label: "जाँच अंतराल (सेकंड)",
     },
     event_listener: {
       event_type_label: "इवेंट प्रकार",
       event_type_placeholder: "जैसे persona.execution.completed",
       source_filter_label: "स्रोत फ़िल्टर",
-      source_filter_placeholder: "जैसे persona:abc123"
+      source_filter_placeholder: "जैसे persona:abc123",
     },
     composite: {
       conditions_label: "शर्तें",
       add_condition: "शर्त जोड़ें",
       operator_all: "सभी शर्तें मेल होनी चाहिए",
       operator_any: "कोई भी शर्त मेल हो सकती है",
-      window_label: "समय विंडो (सेकंड)"
+      window_label: "समय विंडो (सेकंड)",
     },
     rate_limit: {
       title: "गति सीमाएं",
@@ -6253,14 +5753,14 @@ export const hi = {
       window_seconds: "{seconds}s",
       window_minutes: "{minutes}m",
       window_hours: "{hours}h",
-      currently_limited: "वर्तमान में रुका है (सीमा पहुँची)"
+      currently_limited: "वर्तमान में रुका है (सीमा पहुँची)",
     },
     dry_run: {
       title: "टेस्ट रन परिणाम",
       would_fire: "चलेगा",
       would_not_fire: "नहीं चलेगा",
       matched_conditions: "शर्तें पूरी",
-      payload_preview: "डेटा पूर्वावलोकन"
+      payload_preview: "डेटा पूर्वावलोकन",
     },
     tab_live_stream: "लाइव स्ट्रीम",
     tab_live_stream_subtitle: "रीयल-टाइम इवेंट हब -- एजेंट इस साझा बस के माध्यम से इवेंट प्रकाशित और सब्सक्राइब करते हैं",
@@ -6424,186 +5924,6 @@ export const hi = {
     loading_catalog: "कैटलॉग लोड हो रहा है...",
     no_feeds: "अभी कोई साझा इवेंट फ़ीड उपलब्ध नहीं",
     no_feeds_hint: "क्लाउड से नवीनतम फ़ीड प्राप्त करने के लिए Refresh क्लिक करें",
-    cron_colon: "Cron:",
-    interval_colon: "अंतराल:",
-    event_colon: "इवेंट:",
-    endpoint_colon: "Endpoint:",
-    listens_for_colon: "सुन रहा है:",
-    source_filter_colon: "स्रोत फ़िल्टर:",
-    hmac_colon: "HMAC:",
-    paths_colon: "पथ:",
-    events_colon: "इवेंट्स:",
-    recursive_yes: "पुनरावर्ती: हाँ",
-    filter_colon: "फ़िल्टर:",
-    watches_colon: "देख रहा है:",
-    pattern_colon: "पैटर्न:",
-    poll_every: "Poll: प्रत्येक",
-    apps_colon: "ऐप्स:",
-    title_colon: "शीर्षक:",
-    operator_colon: "ऑपरेटर:",
-    window_colon: "विंडो:",
-    id_colon: "ID:",
-    type_colon: "प्रकार:",
-    status_colon: "स्थिति:",
-    target_colon: "लक्ष्य:",
-    retry_hash: "retry #",
-    model_colon: "मॉडल:",
-    next_run_colon: "अगला रन:",
-    local_label: "(स्थानीय)",
-    then_every: ", फिर प्रत्येक",
-    source_colon: "स्रोत:",
-    dry_run_target_colon: "लक्ष्य:",
-    matched_subscriptions_count: "मिलान subscriptions ({count})",
-    last_label: "अंतिम:",
-    loading_history: "लोड हो रहा है...",
-    zero_unlimited: "0 = असीमित",
-    category_section_label: "Trigger श्रेणी",
-    no_persona_selected: "कोई पर्सोना चयनित नहीं",
-    quick_templates_label: "त्वरित टेम्पलेट्स",
-    quick_presets_label: "त्वरित presets",
-    cron_expression_label: "Cron Expression",
-    this_persona_will: "यह पर्सोना करेगा",
-    starting_from: ", जब आप इसे सक्षम करते हैं।",
-    per_day: "प्रति दिन।",
-    last_poll_label: "अंतिम poll:",
-    deployed_persona_label: "Deployed पर्सोना",
-    fired_at_label: "Fired at",
-    webhook_last_label: "अंतिम:",
-    relay_last_label: "अंतिम:",
-    optional_label: "(वैकल्पिक)",
-    optional_comma_separated: "(वैकल्पिक, कॉमा से अलग)",
-    get_channel_url_from: "चैनल URL प्राप्त करें",
-    setup_step1: "एक मुफ़्त relay चैनल बनाने के लिए smee.io/new पर जाएँ",
-    setup_step2: "यहाँ एक लेबल और चैनल URL के साथ relay जोड़ें",
-    setup_step3: "चैनल URL को GitHub / Stripe / किसी भी सेवा में webhook के रूप में paste करें",
-    setup_step4: "इवेंट Live Stream में दिखाई देते हैं और आपके एजेंटों को स्वचालित रूप से route होते हैं",
-    studio_empty_desc: "अपने पर्सोना में reactive event flows compose करें। intelligent automation chains बनाने के लिए trigger types को building blocks के रूप में उपयोग करें, conditional branching और parallel fan-out जोड़ें।",
-    studio_step1: "1. sidebar से trigger स्रोत जोड़ें (Schedule, Webhook, ...)",
-    studio_step2: "2. इवेंट process करने के लिए पर्सोना चरण जोड़ें",
-    studio_step3: "3. reactive chains बनाने के लिए उन्हें कनेक्ट करें",
-    studio_step4: "4. routing logic के लिए condition gates का उपयोग करें",
-    gate_if_else: "If / Else",
-    gate_if_else_desc: "Binary conditional शाखा",
-    gate_classifier_desc: "Multi-way routing (support, sales, ...)",
-    gate_fan_out: "Fan-Out (समानांतर)",
-    gate_fan_out_desc: "एकाधिक शाखाएँ समानांतर में चलाएँ",
-    palette_help: "reactive chains बनाने के लिए trigger स्रोतों को पर्सोना चरणों से कनेक्ट करें। branching logic और parallel fan-out के लिए condition gates जोड़ें।",
-    toolbar_title_auto_layout: "स्वतः Layout",
-    toolbar_title_add_note: "Sticky नोट जोड़ें",
-    toolbar_title_start_dry_run: "Dry Run शुरू करें",
-    toolbar_title_stop_dry_run: "Dry Run रोकें",
-    toolbar_title_assistant: "Canvas सहायक",
-    toolbar_dry_run: "Dry Run",
-    canvas_assistant_title: "Canvas सहायक",
-    try_asking_hint: "पूछने का प्रयास करें",
-    assistant_placeholder: "अपनी event topology का वर्णन करें...",
-    disconnect_persona_title: "पर्सोना डिसकनेक्ट करें?",
-    disconnect_will_no_longer: "अब प्रतिक्रिया नहीं देगा",
-    disconnect_events_reconnect: "events पर। आप बाद में पुनः कनेक्ट कर सकते हैं।",
-    rename_also_updates: "ऐतिहासिक events, पर्सोना event handlers, और trigger audit metadata को भी अपडेट करता है।",
-    delete_connection_label: "कनेक्शन हटाएँ",
-    search_personas_placeholder: "पर्सोना खोजें...",
-    no_matching_personas_found: "कोई मेल खाता पर्सोना नहीं मिला",
-    clear_search_label: "खोज साफ़ करें",
-    dead_letter_source: "स्रोत:",
-    dead_letter_id: "ID:",
-    event_data_label: "इवेंट डेटा",
-    shared_prefix: "shared:",
-    nl_type_colon: "प्रकार:",
-    nl_cron_colon: "· Cron:",
-    nl_interval_colon: "· अंतराल:",
-    nl_filter_colon: "· फ़िल्टर:",
-    nl_could_not_parse: "उस वर्णन से trigger parse नहीं कर सका। कुछ इस तरह आज़माएँ",
-    active_hours_every_day: "हर दिन",
-    event_type_to_listen: "सुनने के लिए इवेंट प्रकार",
-    event_type_input_placeholder: "उदा. file_changed, execution_completed",
-    event_type_helper: "पंजीकृत इवेंट प्रकार खोजने के लिए type करें, या एक कस्टम प्रकार दर्ज करें।",
-    source_filter_optional_label: "(वैकल्पिक)",
-    wildcard_hint: "— trailing * prefix wildcard समर्थित",
-    window_title_pattern_label: "विंडो शीर्षक पैटर्न",
-    optional_regex_label: "(वैकल्पिक regex)",
-    text_pattern_label: "टेक्स्ट पैटर्न",
-    credential_event_label: "क्रेडेंशियल इवेंट",
-    refresh_label: "रिफ़्रेश",
-    copy_webhook_url_title: "webhook URL कॉपी करें",
-    copy_webhook_secret_title: "webhook secret कॉपी करें",
-    delete_webhook_title: "webhook trigger हटाएँ",
-    status_col_label: "स्थिति",
-    duration_col_label: "अवधि",
-    cost_col_label: "लागत",
-    dead_letter_refresh: "रिफ़्रेश",
-    dead_letter_loading: "लोड हो रहा है...",
-    dead_letter_retry: "पुनः प्रयास",
-    dead_letter_discard: "खारिज करें",
-    dead_letter_payload: "Payload",
-    event_data_section_label: "इवेंट डेटा",
-    copy_event_data_title: "इवेंट डेटा कॉपी करें",
-    copied_label: "कॉपी किया",
-    error_section_label: "त्रुटि",
-    meta_event_id: "इवेंट ID",
-    meta_project: "प्रोजेक्ट",
-    meta_processed: "Processed",
-    clear_stream: "साफ़ करें",
-    clear_stream_title: "stream buffer साफ़ करें",
-    col_type: "प्रकार",
-    col_source: "स्रोत",
-    col_target_agent: "लक्ष्य एजेंट",
-    col_status: "स्थिति",
-    col_time: "समय",
-    queued_bare: "कतारबद्ध",
-    pause_tooltip: "आने वाले events रोकें",
-    resume_tooltip: "लाइव अपडेट फिर से शुरू करें",
-    relay_label_field: "लेबल",
-    relay_channel_url_field: "चैनल URL",
-    relay_route_to_agent: "एजेंट को Route करें",
-    optional_suffix: "(वैकल्पिक)",
-    relay_event_filter_field: "इवेंट फ़िल्टर",
-    relay_event_filter_note: "(वैकल्पिक, कॉमा से अलग)",
-    relay_confirm_delete: "पुष्टि करें",
-    setup_guide_step2: "यहाँ एक लेबल और चैनल URL के साथ relay जोड़ें",
-    setup_guide_step3: "चैनल URL को GitHub / Stripe / किसी भी सेवा में webhook के रूप में paste करें",
-    setup_guide_step4: "इवेंट Live Stream में दिखाई देते हैं और आपके एजेंटों को स्वचालित रूप से route होते हैं",
-    get_channel_url_prompt: "चैनल URL प्राप्त करें",
-    gate_if_else_label: "If / Else",
-    gate_if_else_description: "Binary conditional शाखा",
-    gate_classifier_label: "Classifier",
-    gate_classifier_description: "Multi-way routing (support, sales, ...)",
-    gate_fan_out_label: "Fan-Out (समानांतर)",
-    gate_fan_out_description: "एकाधिक शाखाएँ समानांतर में चलाएँ",
-    palette_help_text: "reactive chains बनाने के लिए trigger स्रोतों को पर्सोना चरणों से कनेक्ट करें। branching logic और parallel fan-out के लिए condition gates जोड़ें।",
-    test_event_type_placeholder: "उदा. build_complete, deploy, file_changed",
-    result_id_prefix: "ID:",
-    result_type_prefix: "प्रकार:",
-    result_status_prefix: "स्थिति:",
-    result_target_prefix: "लक्ष्य:",
-    tab_loading: "लोड हो रहा है...",
-    smee_open_new_title: "चैनल बनाने के लिए smee.io/new खोलें",
-    relay_label_placeholder: "उदा. GitHub — my-repo",
-    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
-    relay_filter_placeholder: "github_push, github_pull_request",
-    dead_letter_retry_exhausted_title: "पुनः प्रयास सीमा समाप्त — खारिज करें या मूल कारण की जाँच करें",
-    dead_letter_discard_title: "इस इवेंट को स्थायी रूप से खारिज करें",
-    dead_letter_retry_title: "इस इवेंट को पुनः प्रयास करें",
-    replay_button_title: "समान input payload के साथ फिर से fire करें",
-    interval_seconds_placeholder: "सेकंड (न्यूनतम 60)",
-    cron_expression_placeholder: "* * * * *  (min hour dom mon dow)",
-    app_focus_window_placeholder: "उदा. .*.rs$ या Project - Visual Studio",
-    app_focus_process_placeholder: "उदा. Code.exe या firefox",
-    field_optional: "(वैकल्पिक)",
-    source_filter_input_placeholder: "उदा. watcher-* या exact-source-id",
-    meta_source: "स्रोत",
-    relay_last_event: "अंतिम:",
-    relay_delete_title: "relay हटाएँ",
-    setup_guide_step1: "smee.io/new पर एक चैनल बनाएँ",
-    clipboard_pattern_placeholder: "उदा. https?://.* या error|exception",
-    composite_event_type_placeholder: "इवेंट प्रकार (उदा. file_changed)",
-    composite_debounce_placeholder: "300",
-    file_watcher_path_placeholder: "C:/Users/me/projects या /home/me/src",
-    file_watcher_pattern_placeholder: "उदा. *.py, *.{ts,tsx}, Dockerfile",
-    polling_endpoint_placeholder: "https://api.example.com/poll",
-    more_tools_title: "अधिक tools",
-    validate_and_fire_title: "trigger कॉन्फ़िग सत्यापित करें, फिर fire करें",
-    simulate_trigger_title: "निष्पादित किए बिना trigger simulate करें"
   },
   teams: {
     title: "एजेंट टीमें",
@@ -6611,11 +5931,10 @@ export const hi = {
     auto_team: "ऑटो-टीम",
     new_team: "नई टीम",
     starter_templates: "स्टार्टर टेम्पलेट",
-    use_template: "टेम्पलेट उपयोग करें"
+    use_template: "टेम्पलेट उपयोग करें",
   },
   settings: {
     title: "सेटिंग्स",
-    settings_saved: "सहेजा गया",
     account: {
       title: "खाता",
       subtitle: "अपना साइन-इन और प्रोफ़ाइल प्रबंधित करें",
@@ -6633,7 +5952,6 @@ export const hi = {
       telemetry_on: "क्रैश रिपोर्ट और उपयोग विश्लेषण सक्रिय हैं।",
       telemetry_off: "टेलीमेट्री अक्षम है। Sentry को कोई डेटा नहीं भेजा जाता।",
       telemetry_restart: "यह बदलाव प्रभावी होने के लिए ऐप पुनः शुरू करें",
-      telemetry_toggle_aria: "telemetry toggle करें"
     },
     appearance_extra: {
       simple: "सरल",
@@ -6641,7 +5959,7 @@ export const hi = {
       full: "पूर्ण",
       full_hint: "पूरा इंटरफ़ेस दिखाएं",
       dev: "डेव",
-      dev_hint: "डेवलपर टूलिंग अनलॉक करें"
+      dev_hint: "डेवलपर टूलिंग अनलॉक करें",
     },
     appearance: {
       title: "दिखावट",
@@ -6672,7 +5990,6 @@ export const hi = {
       applied: "लागू",
       reset: "रीसेट करें",
       enter_theme_name: "थीम नाम दर्ज करें",
-      reset_to_auto: "auto पर रीसेट करें",
       preview_dashboard: "डैशबोर्ड",
       preview_action: "क्रिया",
       preview_card_title: "कार्ड शीर्षक",
@@ -6687,7 +6004,7 @@ export const hi = {
       coverage_hint: "अनुवाद कवरेज -- निर्यात के लिए क्लिक करें",
       contribute_title: "अनुवाद में योगदान करें",
       contribute_hint: "Personas को अपनी भाषा में अनुवाद करने में मदद करें। ऊपर एक भाषा फ़ाइल निर्यात करें, मान अनुवाद करें, और GitHub के माध्यम से सबमिट करें।",
-      contribute_github: "GitHub पर योगदान करें"
+      contribute_github: "GitHub पर योगदान करें",
     },
     notifications: {
       title: "सूचनाएं",
@@ -6705,7 +6022,7 @@ export const hi = {
       digest_description: "कुल स्वास्थ्य स्कोर के साथ सभी एजेंटों की स्वास्थ्य समस्याओं का साप्ताहिक सूचना सारांश",
       healing_alerts_hint: "नियंत्रित करें कि कौन से हीलिंग अलर्ट सूचनाएँ ट्रिगर करें",
       healing_severity: "हीलिंग अलर्ट गंभीरता",
-      notification_hint: "डेस्कटॉप सूचनाएँ मूल OS सूचना प्रणाली का उपयोग करती हैं। इन-ऐप टोस्ट इन सेटिंग्स की परवाह किए बिना गंभीर और उच्च गंभीरता की समस्याओं के लिए दिखाई देते हैं।"
+      notification_hint: "डेस्कटॉप सूचनाएँ मूल OS सूचना प्रणाली का उपयोग करती हैं। इन-ऐप टोस्ट इन सेटिंग्स की परवाह किए बिना गंभीर और उच्च गंभीरता की समस्याओं के लिए दिखाई देते हैं।",
     },
     engine: {
       title: "इंजन",
@@ -6723,7 +6040,6 @@ export const hi = {
       legend_not_installed: "इंस्टॉल नहीं है",
       defaults_heading: "इंटीग्रेशन टेस्ट से डिफ़ॉल्ट",
       defaults_description: "डिफ़ॉल्ट मैप राउंड 9 बिज़नेस-लेवल इंटीग्रेशन टेस्ट से प्राप्त है जो प्रत्येक प्रदाता को बैकएंड द्वारा पार्स किए जाने वाले JSON स्कीमा के विरुद्ध सत्यापित करता है। किसी विफल ऑपरेशन के लिए प्रदाता सक्षम करने से अपार्सेबल प्रतिक्रियाएँ हो सकती हैं। Claude Code एकमात्र प्रदाता है जिसने सभी ऑपरेशन 100% पास किए।",
-      engine_not_capable: "{provider} ने इस ऑपरेशन के लिए integration परीक्षण पास नहीं किए। परिणाम unparseable हो सकते हैं।"
     },
     ambient: {
       title: "परिवेश संदर्भ फ्यूज़न",
@@ -6759,7 +6075,7 @@ export const hi = {
       cancel: "रद्द करें",
       create_rule: "नियम बनाएं",
       no_rules: "कोई संदर्भ नियम नहीं",
-      all_sources: "सभी स्रोत"
+      all_sources: "सभी स्रोत",
     },
     byom: {
       title: "अपना मॉडल लाएं",
@@ -6811,7 +6127,6 @@ export const hi = {
       complexity: "जटिलता",
       provider: "प्रदाता",
       model_optional: "मॉडल (वैकल्पिक)",
-      model_placeholder: "उदा. claude-haiku-4-5-20251001",
       compliance_title: "अनुपालन-चालित प्रतिबंध",
       compliance_hint: "विशिष्ट वर्कफ़्लो प्रकारों के लिए प्रदाता प्रतिबंधित करें (जैसे HIPAA, SOC2)",
       compliance_empty: "कोई अनुपालन नियम कॉन्फ़िगर नहीं। संवेदनशील वर्कफ़्लो के लिए प्रदाता प्रतिबंधित करने के लिए नियम जोड़ें।",
@@ -6828,7 +6143,7 @@ export const hi = {
       audit_status: "स्थिति",
       audit_cost: "लागत",
       audit_time: "समय",
-      failover: "फेलओवर"
+      failover: "फेलओवर",
     },
     admin: {
       title: "एडमिन",
@@ -6854,7 +6169,7 @@ export const hi = {
       consent_not_accepted: "स्वीकृत नहीं",
       storage_key: "स्टोरेज कुंजी",
       reset_consent: "सहमति रीसेट करें",
-      reload_modal: "मॉडल दिखाने के लिए पुनः लोड करें"
+      reload_modal: "मॉडल दिखाने के लिए पुनः लोड करें",
     },
     portability: {
       title: "डेटा पोर्टेबिलिटी",
@@ -6882,17 +6197,12 @@ export const hi = {
       passphrase_optional: "पासफ़्रेज़ (वैकल्पिक)",
       import_complete: "आयात पूर्ण",
       warnings: "चेतावनियाँ:",
-      import_personas: "{count} पर्सोना",
-      import_teams: "{count} टीम",
-      import_tools: "{count} tool",
-      import_groups: "{count} group",
-      import_credentials_count: "{count} क्रेडेंशियल",
       export_title: "वर्कस्पेस निर्यात करें",
       export_subtitle: "अपने निर्यात में क्या शामिल करना है चुनें",
       close: "बंद करें",
       loading_data: "वर्कस्पेस डेटा लोड हो रहा है...",
-      deselect_all: "सभी अचयनित करें",
       select_all: "सभी चुनें",
+      deselect_all: "सभी अचयनित करें",
       items_selected: "{total} में से {selected} आइटम चुने",
       of_selected: "{total} में से {count} चुने",
       encrypt_passphrase: "पासफ़्रेज़ से क्रेडेंशियल एन्क्रिप्ट करें",
@@ -6922,7 +6232,7 @@ export const hi = {
       cred_import_complete: "क्रेडेंशियल आयात पूर्ण",
       cred_imported: "{count} आयात किए",
       cred_skipped: ", {count} छोड़े गए",
-      cred_replaced: ", {count} बदले गए"
+      cred_replaced: ", {count} बदले गए",
     },
     config: {
       title: "कॉन्फ़िग रिज़ॉल्यूशन",
@@ -6935,7 +6245,7 @@ export const hi = {
       overrides_inherited: "इनहेरिट को ओवरराइड करता है",
       agent: "एजेंट",
       loading_agents: "एजेंट लोड हो रहे हैं...",
-      no_agents: "कोई एजेंट नहीं मिला"
+      no_agents: "कोई एजेंट नहीं मिला",
     },
     quality_gates: {
       title: "गुणवत्ता गेट",
@@ -6953,12 +6263,11 @@ export const hi = {
       rules_count_plural: "{count} नियम",
       reset_defaults: "डिफ़ॉल्ट पर रीसेट करें",
       confirm_reset: "रीसेट की पुष्टि करें?",
-      rules_hint: "नियम प्रत्येक डिस्पैच पर डेटाबेस से लोड होते हैं। बदलाव तुरंत प्रभावी होते हैं।"
-    }
+      rules_hint: "नियम प्रत्येक डिस्पैच पर डेटाबेस से लोड होते हैं। बदलाव तुरंत प्रभावी होते हैं।",
+    },
   },
   design: {
     no_persona: "कोई Persona चयनित नहीं",
-    conversation_truncated: "यह वार्तालाप संदेश सीमा तक पहुँच गया। पुराने संदेश हटा दिए गए हैं — context को सुरक्षित रखने के लिए नई वार्तालाप शुरू करने पर विचार करें।",
     stages: {
       assembling_label: "प्रॉम्प्ट असेंबल हो रहा है",
       assembling_desc: "Persona कॉन्फ़िगरेशन और निर्देश से LLM प्रॉम्प्ट बनाया जा रहा है",
@@ -6969,8 +6278,8 @@ export const hi = {
       checking_label: "व्यवहार्यता जाँची जा रही है",
       checking_desc: "सुझाए गए टूल और कनेक्टर की उपलब्धता सत्यापित की जा रही है",
       saving_label: "परिणाम सहेजा जा रहा है",
-      saving_desc: "संकलित डिज़ाइन डेटाबेस में लिखा जा रहा है"
-    }
+      saving_desc: "संकलित डिज़ाइन डेटाबेस में लिखा जा रहा है",
+    },
   },
   prompt_lab: {
     title: "प्रॉम्प्ट संस्करण",
@@ -7006,7 +6315,7 @@ export const hi = {
       running: "A/B परीक्षण चल रहा है...",
       run: "A/B परीक्षण चलाएँ",
       failed: "A/B परीक्षण विफल",
-      completed: "A/B परीक्षण सफलतापूर्वक पूर्ण"
+      completed: "A/B परीक्षण सफलतापूर्वक पूर्ण",
     },
     rollback: {
       title: "त्रुटि दर मॉनिटर",
@@ -7014,7 +6323,7 @@ export const hi = {
       rollback_hint: "यदि प्रॉम्प्ट बदलाव के बाद त्रुटि दर 50% से अधिक हो, तो ऊपर की संस्करण सूची से प्रोडक्शन संस्करण पर रोलबैक करें।",
       waiting: "निष्पादन डेटा की प्रतीक्षा",
       waiting_hint: "त्रुटि दर ट्रैक करना शुरू करने के लिए अपना एजेंट कुछ बार चलाएँ। मॉनिटर को स्वास्थ्य गणना के लिए कम से कम एक निष्पादन चाहिए।",
-      check_again: "फिर से जाँचें"
+      check_again: "फिर से जाँचें",
     },
     performance: {
       cost_per_execution: "प्रति निष्पादन लागत",
@@ -7023,8 +6332,8 @@ export const hi = {
       latency_distribution: "विलंबता वितरण",
       latency_delta: "विलंबता अंतर",
       error_rate_trend: "त्रुटि दर प्रवृत्ति",
-      error_delta: "त्रुटि अंतर"
-    }
+      error_delta: "त्रुटि अंतर",
+    },
   },
   tests: {
     title: "सैंडबॉक्स परीक्षण रनर",
@@ -7049,15 +6358,15 @@ export const hi = {
       rerun_tooltip: "यह सूट फिर चलाएँ",
       rename_tooltip: "नाम बदलें",
       delete_tooltip: "सूट हटाएँ",
-      no_scenarios: "इस सूट में कोई परिदृश्य नहीं"
+      no_scenarios: "इस सूट में कोई परिदृश्य नहीं",
     },
     progress: {
       generating: "परीक्षण परिदृश्य जनरेट हो रहे हैं...",
       testing: "{model} का परीक्षण -- {scenario}",
       tool_prefix: "टूल: ",
       output_prefix: "आउटपुट: ",
-      protocol_prefix: "प्रोटोकॉल: "
-    }
+      protocol_prefix: "प्रोटोकॉल: ",
+    },
   },
   onboarding: {
     title: "शुरू करें",
@@ -7181,7 +6490,7 @@ export const hi = {
     agent_promoted_hint: "आपका पहला एजेंट लाइव है। टूर लगभग पूर्ण है!",
     skip_build: "अभी निर्माण छोड़ें",
     dark_themes: "गहरी थीम",
-    light_themes: "हल्की थीम"
+    light_themes: "हल्की थीम",
   },
   system_health: {
     title: "सिस्टम जाँच",
@@ -7218,7 +6527,7 @@ export const hi = {
     official_page: "आधिकारिक पेज",
     edit_key: "कुंजी संपादित करें",
     edit_config: "कॉन्फ़िग संपादित करें",
-    signing_in: "साइन इन हो रहा है..."
+    signing_in: "साइन इन हो रहा है...",
   },
   command_palette: {
     placeholder: "एजेंट खोजें, नेविगेट करें... (कमांड के लिए \\\">\\\" टाइप करें)",
@@ -7231,7 +6540,7 @@ export const hi = {
     key_esc: "ESC",
     hint_navigate: "नेविगेट",
     hint_select: "चुनें",
-    hint_commands: "कमांड"
+    hint_commands: "कमांड",
   },
   errors: {
     boundary_title: "{name} में कुछ अप्रत्याशित हुआ",
@@ -7253,7 +6562,7 @@ export const hi = {
     database: "डेटाबेस त्रुटि -- कृपया ऐप पुनः आरंभ करें",
     internal: "एक अप्रत्याशित त्रुटि हुई",
     cloud_error: "क्लाउड सेवा त्रुटि: {detail}",
-    gitlab_error: "GitLab त्रुटि: {detail}"
+    gitlab_error: "GitLab त्रुटि: {detail}",
   },
   error_registry: {
     network_offline_message: "आप ऑफलाइन लगते हैं।",
@@ -7325,7 +6634,7 @@ export const hi = {
     severity_critical: "तत्काल ध्यान देना आवश्यक है",
     severity_high: "महत्वपूर्ण समस्या",
     severity_medium: "मामूली समस्या",
-    severity_low: "सूचनात्मक"
+    severity_low: "सूचनात्मक",
   },
   empty_states: {
     credentials_title: "आपके एजेंटों को चलने के लिए क्रेडेंशियल चाहिए",
@@ -7342,11 +6651,11 @@ export const hi = {
     tools_title: "कोई टूल या कनेक्टर कॉन्फ़िगर नहीं",
     tools_subtitle: "बाहरी सेवाएँ लिंक करें ताकि आपका एजेंट कार्य कर सके और डेटा एक्सेस कर सके।",
     use_cases_title: "अभी कोई उपयोग मामला परिभाषित नहीं",
-    use_cases_subtitle: "परिभाषित करें कि यह एजेंट क्या करे -- वर्कफ़्लो से आयात करें या सरल भाषा में बताएँ।"
+    use_cases_subtitle: "परिभाषित करें कि यह एजेंट क्या करे -- वर्कफ़्लो से आयात करें या सरल भाषा में बताएँ।",
   },
   cli: {
     idle: "अभी कोई CLI आउटपुट नहीं।",
-    waiting: "Claude CLI आउटपुट की प्रतीक्षा..."
+    waiting: "Claude CLI आउटपुट की प्रतीक्षा...",
   },
   validation: {
     required: "{field} आवश्यक है",
@@ -7357,7 +6666,7 @@ export const hi = {
     passphrase_min: "पासफ़्रेज़ कम से कम 8 अक्षर होना चाहिए",
     passphrase_prompt: "कृपया निर्यात के दौरान उपयोग किया गया पासफ़्रेज़ दर्ज करें",
     at_least_one: "कम से कम एक {field} आवश्यक है",
-    fill_one_field: "सहेजने के लिए कम से कम एक फ़ील्ड भरें"
+    fill_one_field: "सहेजने के लिए कम से कम एक फ़ील्ड भरें",
   },
   toasts: {
     copied: "क्लिपबोर्ड पर कॉपी किया गया",
@@ -7417,7 +6726,7 @@ export const hi = {
     scheduled_agents_failed: "शेड्यूल किए गए एजेंट लोड करने में विफल",
     design_start_failed: "डिज़ाइन वार्तालाप शुरू करने में विफल",
     recipe_save_failed: "रेसिपी सहेजने में विफल",
-    recipe_test_failed: "त्वरित परीक्षण विफल"
+    recipe_test_failed: "त्वरित परीक्षण विफल",
   },
   consent: {
     title: "Personas Desktop में आपका स्वागत है",
@@ -7484,7 +6793,7 @@ export const hi = {
     checkbox: "मैं समझता हूँ कि यह एप्लिकेशन AI प्रदाताओं को डेटा भेजता है, सिस्टम संसाधनों (क्लिपबोर्ड, फ़ाइल सिस्टम, नेटवर्क) तक पहुँचता है, और मेरी ओर से प्रक्रियाएँ निष्पादित करता है। मैं इसे कॉन्फ़िगर और उपयोग करने की ज़िम्मेदारी स्वीकार करता हूँ।",
     checkbox_telemetry: "गुमनाम क्रैश रिपोर्ट और उपयोग एनालिटिक्स भेजकर Personas को बेहतर बनाने में मदद करें। कोई व्यक्तिगत डेटा शामिल नहीं है। आप इसे बाद में Settings में बदल सकते हैं।",
     source_link: "स्रोत और लाइसेंस देखें",
-    accept_button: "मैं समझता हूँ, जारी रखें"
+    accept_button: "मैं समझता हूँ, जारी रखें",
   },
   schedules: {
     title: "शेड्यूल टाइमलाइन",
@@ -7524,26 +6833,17 @@ export const hi = {
     overlap_warning: "यह शेड्यूल अगले 7 दिनों में {count} अन्य निष्पादन के साथ ओवरलैप करता है।",
     agents_missed: "{count} एजेंट ने निष्पादन चूक गया",
     total_skipped: "ऐप ऑफलाइन रहने पर ~{count} कुल रन छोड़े गए",
-    missed_since: "{time} से {count} छूटे",
-    every_interval: "प्रत्येक {interval}",
     recover: "पुनर्प्राप्त करें",
-    mark_for_recovery: "recovery के लिए चिह्नित करें",
-    run_once_now: "अभी एक बार चलाएँ",
     run_1x: "1 बार चलाएं",
     skip: "छोड़ें",
-    skip_dont_recover: "छोड़ें -- recover न करें",
     dismiss_all: "सभी हटाएं",
     recover_selected: "{count} चयनित पुनर्प्राप्त करें",
-    overlaps_with: "ओवरलैप करता है",
-    refresh_schedules: "schedules रिफ़्रेश करें",
-    seed_mock_tooltip: "एक mock schedule seed करें (केवल dev)",
-    schedule_view_aria: "Schedule दृश्य",
     today: "आज",
     projected: "अनुमानित",
     success: "सफल",
     overlap: "ओवरलैप",
     week: "सप्ताह",
-    month: "माह"
+    month: "माह",
   },
   recipes: {
     no_match: "कोई मिलती रेसिपी नहीं",
@@ -7597,8 +6897,6 @@ export const hi = {
     saved_mock_values: "सहेजे गए मॉक मान",
     no_mock_values: "कोई मॉक मान सहेजे नहीं गए",
     free_input_placeholder: "इनपुट JSON या सामान्य टेक्स्ट दर्ज करें...",
-    recipe_label: "रेसिपी:",
-    executed_label: "निष्पादित:",
     rendered_prompt: "रेंडर किया गया प्रॉम्प्ट",
     execution_result: "निष्पादन परिणाम",
     rendering_prompt: "प्रॉम्प्ट रेंडर हो रहा है...",
@@ -7628,7 +6926,7 @@ export const hi = {
     no_matching: "कोई मेल खाती रेसिपी नहीं मिली।",
     loading_linked: "लिंक की गई रेसिपी लोड हो रही हैं...",
     no_linked: "अभी तक कोई रेसिपी लिंक नहीं। लाइब्रेरी से रेसिपी लिंक करने के लिए जोड़ें क्लिक करें।",
-    run: "चलाएं"
+    run: "चलाएं",
   },
   execution_status: {
     queued: "कतार में",
@@ -7636,7 +6934,7 @@ export const hi = {
     completed: "पूर्ण",
     failed: "विफल",
     cancelled: "रद्द",
-    error: "त्रुटि"
+    error: "त्रुटि",
   },
   status_tokens: {
     execution: {
@@ -7645,61 +6943,61 @@ export const hi = {
       completed: "पूर्ण",
       failed: "विफल",
       cancelled: "रद्द",
-      error: "त्रुटि"
+      error: "त्रुटि",
     },
     event: {
       pending: "लंबित",
       processing: "प्रक्रियाधीन",
       processed: "प्रसंस्कृत",
       failed: "विफल",
-      retrying: "पुनः प्रयास"
+      retrying: "पुनः प्रयास",
     },
     automation: {
       pending: "लंबित",
       running: "चल रहा है",
       completed: "पूर्ण",
       failed: "विफल",
-      timeout: "समय समाप्त"
+      timeout: "समय समाप्त",
     },
     severity: {
       info: "जानकारी",
       low: "कम",
       medium: "मध्यम",
       high: "उच्च",
-      critical: "गंभीर"
+      critical: "गंभीर",
     },
     priority: {
       low: "कम",
       normal: "सामान्य",
       high: "उच्च",
-      urgent: "अत्यावश्यक"
+      urgent: "अत्यावश्यक",
     },
     healing_status: {
       open: "खुला",
       auto_fixed: "स्वतः ठीक",
       acknowledged: "स्वीकृत",
-      resolved: "हल"
+      resolved: "हल",
     },
     healing_category: {
       config: "कॉन्फ़िगरेशन",
       auth: "प्रमाणीकरण",
       network: "नेटवर्क",
       timeout: "टाइमआउट",
-      quota: "कोटा"
+      quota: "कोटा",
     },
     connector_status: {
       ready: "तैयार",
       untested: "अपरीक्षित",
       failed: "विफल",
       no_credential: "क्रेडेंशियल नहीं",
-      testing: "परीक्षण हो रहा है"
+      testing: "परीक्षण हो रहा है",
     },
     test: {
       generating: "जेनरेट हो रहा है",
       running: "चल रहा है",
       completed: "पूर्ण",
       failed: "विफल",
-      pending: "लंबित"
+      pending: "लंबित",
     },
     dev: {
       open: "खुला",
@@ -7708,8 +7006,8 @@ export const hi = {
       blocked: "अवरुद्ध",
       queued: "प्रतीक्षा में",
       running: "चल रहा है",
-      failed: "विफल"
-    }
+      failed: "विफल",
+    },
   },
   project_overview: {
     codebase: "कोडबेस",
@@ -7739,7 +7037,7 @@ export const hi = {
     failed_to_load: "आंकड़े लोड करने में विफल",
     retry: "पुनः प्रयास करें",
     no_project_selected: "कोई प्रोजेक्ट चुना नहीं गया",
-    select_project_hint: "इसका अवलोकन देखने के लिए एक dev प्रोजेक्ट चुनें।"
+    select_project_hint: "इसका अवलोकन देखने के लिए एक dev प्रोजेक्ट चुनें।",
   },
   plugins: {
     title: "प्लगइन",
@@ -7748,98 +7046,12 @@ export const hi = {
     artist_desc: "Blender से 3D मॉडल बनाएं, Leonardo AI से छवियां बनाएं, और क्रिएटिव संपत्तियां प्रबंधित करें।",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "प्रोजेक्ट प्रबंधन, संदर्भ मैपिंग, आइडिया स्कैनिंग, ट्राइएज, और टास्क रनर उपयोगिताएं।",
+    doc_signing_label: "दस्तावेज़ हस्ताक्षर",
+    doc_signing_desc: "अपने कार्यक्षेत्र से सीधे डिजिटल हस्ताक्षर के साथ दस्तावेज़ हस्ताक्षर करें और सत्यापित करें।",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
-    drive_label: "Drive",
-    drive_desc: "प्रबंधित स्थानीय फ़ाइलसिस्टम जहाँ एजेंट exports सहेजते हैं। Finder-शैली UI में फ़ाइलें ब्राउज़ करें; ऐप upgrade में बचा रहता है।",
-    drive: {
-      title: "Drive",
-      subtitle: "एजेंट exports के लिए प्रबंधित स्थानीय फ़ाइलसिस्टम",
-      root_label: "Drive root",
-      dev_badge: "Dev",
-      back: "वापस",
-      forward: "आगे",
-      up: "ऊपर",
-      refresh: "रिफ़्रेश",
-      search_placeholder: "इस फ़ोल्डर में खोजें...",
-      view_list: "सूची",
-      view_icons: "आइकन",
-      view_columns: "कॉलम",
-      new_folder: "नया फ़ोल्डर",
-      new_file: "नई फ़ाइल",
-      reveal_in_os: "फ़ाइल मैनेजर में दिखाएँ",
-      open_in_os: "खोलें",
-      sidebar_root: "Drive",
-      sidebar_recent: "हाल का",
-      sidebar_storage: "संग्रहण",
-      storage_used: "{used} उपयोग किया गया • {count} आइटम",
-      empty_folder: "यह फ़ोल्डर खाली है",
-      empty_hint: "Local Drive पर export करने वाले एजेंट यहाँ फ़ाइलें सहेजेंगे।",
-      empty_cta: "फ़ोल्डर बनाएँ",
-      col_name: "नाम",
-      col_size: "आकार",
-      col_kind: "प्रकार",
-      col_modified: "संशोधित",
-      folder_kind: "फ़ोल्डर",
-      ctx_open: "खोलें",
-      ctx_rename: "नाम बदलें",
-      ctx_duplicate: "डुप्लिकेट",
-      ctx_delete: "हटाएँ",
-      ctx_copy: "कॉपी",
-      ctx_cut: "काटें",
-      ctx_paste: "पेस्ट करें",
-      ctx_new_folder: "नया फ़ोल्डर",
-      ctx_new_file: "नई फ़ाइल",
-      ctx_reveal: "फ़ाइल मैनेजर में दिखाएँ",
-      ctx_copy_path: "पथ कॉपी करें",
-      rename_title: "नाम बदलें",
-      rename_placeholder: "नया नाम",
-      new_folder_title: "नया फ़ोल्डर",
-      new_folder_placeholder: "फ़ोल्डर नाम",
-      new_file_title: "नई फ़ाइल",
-      new_file_placeholder: "filename.txt",
-      delete_confirm_title: "{count} आइटम हटाएँ?",
-      delete_confirm_body: "यह क्रिया पूर्ववत नहीं की जा सकती। हटाई गई फ़ाइलें स्थायी रूप से चली जाती हैं।",
-      confirm: "पुष्टि करें",
-      cancel: "रद्द करें",
-      details_title: "विवरण",
-      details_path: "पथ",
-      details_size: "आकार",
-      details_kind: "प्रकार",
-      details_modified: "संशोधित",
-      details_items: "आइटम",
-      details_preview: "पूर्वावलोकन",
-      preview_unavailable: "पूर्वावलोकन अनुपलब्ध",
-      preview_binary: "Binary फ़ाइल — inspect करने के लिए OS फ़ाइल मैनेजर में खोलें।",
-      preview_too_large: "फ़ाइल inline पूर्वावलोकन के लिए बहुत बड़ी है।",
-      loading: "लोड हो रहा है...",
-      error_prefix: "त्रुटि:",
-      items_selected: "{count} चयनित",
-      items_total: "{count} आइटम",
-      signatures_button: "हस्ताक्षर",
-      ctx_sign_file: "फ़ाइल पर हस्ताक्षर करें…",
-      ctx_verify_file: "हस्ताक्षर सत्यापित करें…",
-      ctx_extract_text: "टेक्स्ट निकालें (OCR)…",
-      ctx_extract_text_no_gemini: "टेक्स्ट निकालें — सक्षम करने के लिए Gemini कनेक्ट करें",
-      ocr_title: "Gemini के साथ टेक्स्ट निकालें",
-      ocr_subtitle: "Google Gemini 3 Flash Preview के माध्यम से Vision OCR",
-      ocr_model_label: "मॉडल",
-      ocr_connector_ready: "Gemini कनेक्टर तैयार",
-      ocr_connector_missing: "vault में कोई Gemini क्रेडेंशियल नहीं मिला। OCR सक्षम करने के लिए Google Gemini कनेक्ट करें।",
-      ocr_prompt_label: "वैकल्पिक prompt",
-      ocr_prompt_placeholder: "उदा. केवल invoice total और line items निकालें",
-      ocr_extract: "टेक्स्ट निकालें",
-      ocr_running: "निकाला जा रहा है…",
-      ocr_done: "निष्कर्षण पूर्ण",
-      ocr_save: ".ocr.txt के रूप में सहेजें",
-      ocr_saved: "सहेजा गया",
-      ocr_saved_to: "यहाँ सहेजा गया",
-      ocr_copied: "क्लिपबोर्ड पर कॉपी किया गया",
-      select_file_or_folder: "विवरण देखने के लिए एक फ़ाइल या फ़ोल्डर चुनें।",
-      download_aria: "डाउनलोड",
-      download_title: "डाउनलोड",
-      sign_reason_placeholder: "हस्ताक्षर करने का कारण…"
-    },
+    ocr_label: "OCR",
+    ocr_desc: "Gemini Vision या Claude मल्टीमॉडल का उपयोग करके छवियों और PDFs से टेक्स्ट निकालें।",
     artist: {
       title: "आर्टिस्ट",
       subtitle: "3D मॉडल जेनरेट करें, छवियां बनाएं, और क्रिएटिव संपत्तियां प्रबंधित करें",
@@ -7901,31 +7113,6 @@ export const hi = {
       viewer_3d: "3D व्यूअर",
       viewer_3d_hint: "इंटरैक्टिव 3D पूर्वावलोकन सक्षम करने के लिए @react-three/fiber और @react-three/drei इंस्टॉल करें।",
       tags_label: "टैग:",
-      status_partial: "आंशिक",
-      status_not_checked: "जाँच नहीं की गई",
-      blender_label: "Blender",
-      blender_mcp_label: "Blender MCP",
-      session_cancelled: "सत्र रद्द किया गया।",
-      imported_assets_one: "gallery में 1 नया asset आयात किया।",
-      imported_assets_other: "gallery में {count} नए assets आयात किए।",
-      scan_result_one: "{scanned} assets मिले, 1 नया आयात किया।",
-      scan_result_other: "{scanned} assets मिले, {imported} नए आयात किए।",
-      tool_blender: "Blender",
-      tool_leonardo: "Leonardo",
-      tool_gemini: "Gemini",
-      tag_editor_hint: "जोड़ने के लिए Enter या comma, अंतिम tag हटाने के लिए Backspace।",
-      tag_editor_placeholder: "tag, another-tag",
-      send_to_media_studio: "Media Studio पर भेजें",
-      sent_to_media_studio: "Media Studio के लिए कतारबद्ध",
-      session_history: "इतिहास",
-      session_history_empty: "आपके द्वारा चलाए गए सत्र यहाँ दिखाई देंगे।",
-      session_tools_label: "Tools:",
-      session_status_running: "चल रहा है",
-      session_status_completed: "पूर्ण",
-      session_status_failed: "विफल",
-      session_status_cancelled: "रद्द किया गया",
-      replay_session: "फिर से चलाएँ",
-      delete_session: "सत्र हटाएँ"
     },
     dev_tools: {
       no_project_configured: "कोई dev प्रोजेक्ट कॉन्फ़िगर नहीं",
@@ -7967,8 +7154,6 @@ export const hi = {
       task: "टास्क",
       pick_winner: "विजेता चुनें",
       winner: "विजेता",
-      disqualified_label: "अयोग्य",
-      elapsed_label: "बीता",
       cancel_competition: "प्रतियोगिता रद्द करें",
       no_goals_constellation: "अभी तक कोई लक्ष्य नहीं। नक्षत्र देखने के लिए प्रोजेक्ट टैब में लक्ष्य बनाएं।",
       your_turn: "आपकी बारी",
@@ -8073,8 +7258,6 @@ export const hi = {
       task_depth: "टास्क गहराई",
       goal_link: "लक्ष्य लिंक",
       create_task: "टास्क बनाएं",
-      partial_context: "आंशिक context",
-      context_warnings_title: "Context चेतावनियाँ — कार्य गायब जानकारी के साथ चला",
       campaign: "अभियान",
       deep_build: "गहरा निर्माण",
       idea_evolution: "आइडिया विकास",
@@ -8089,8 +7272,6 @@ export const hi = {
       edit: "संपादित करें",
       save: "सहेजें",
       file_empty: "फ़ाइल खाली है या लोड नहीं हो सकी।",
-      file_load_failed: "फ़ाइल लोड नहीं की जा सकी। डेटा हानि से बचाव के लिए संपादन अक्षम है।",
-      file_load_failed_hint: "रिफ़्रेश करने या skill पुनः चुनने का प्रयास करें।",
       effort: "प्रयास",
       risk: "जोखिम",
       quick_wins: "त्वरित सफलताएं",
@@ -8105,155 +7286,6 @@ export const hi = {
       add_condition: "+ शर्त जोड़ें",
       accept: "स्वीकार करें",
       reject: "अस्वीकार करें",
-      triage_title: "Idea Triage",
-      triage_subtitle: "उत्पन्न ideas का मूल्यांकन और प्राथमिकीकरण करें",
-      accepted_badge: "{count} स्वीकृत",
-      rejected_badge: "{count} अस्वीकृत",
-      pending_badge: "{count} लंबित",
-      sidebar_category: "श्रेणी",
-      sidebar_scan_type: "स्कैन प्रकार",
-      sidebar_all: "सभी ({count})",
-      remaining_count: "{count} शेष",
-      reviewed_count: "{done} / {total} समीक्षित",
-      empty_no_ideas: "triage के लिए कोई ideas नहीं",
-      empty_no_ideas_hint: "ideas उत्पन्न करने के लिए पहले Idea Scanner चलाएँ।",
-      empty_all_reviewed: "सभी ideas की समीक्षा हो गई!",
-      empty_all_reviewed_summary: "{accepted} स्वीकृत, {rejected} अस्वीकृत",
-      swipe_reject: "अस्वीकार करें",
-      swipe_accept: "स्वीकार करें",
-      reasoning_label: "तर्क",
-      hint_reject: "अस्वीकार करें",
-      hint_accept: "स्वीकार करें",
-      shortcuts_title: "कीबोर्ड शॉर्टकट",
-      shortcuts_reject: "idea अस्वीकार करें",
-      shortcuts_accept: "idea स्वीकार करें",
-      shortcuts_toggle: "यह overlay toggle करें",
-      shortcuts_close: "overlay बंद करें",
-      shortcuts_dismiss_hint: "बंद करने के लिए ? या Esc दबाएँ",
-      shortcuts_open_title: "कीबोर्ड शॉर्टकट (?)",
-      shortcuts_btn_reject_title: "अस्वीकार करें (Left Arrow / A)",
-      shortcuts_btn_accept_title: "स्वीकार करें (Right Arrow / Z)",
-      shortcuts_btn_delete_title: "हटाएँ",
-      pr_bridge_title: "Draft PR के रूप में Ship करें",
-      pr_bridge_subtitle: "Branch, commit, और पूर्व-भरा PR — एजेंट तर्क विवरण में शामिल।",
-      pr_bridge_branch: "Branch",
-      pr_bridge_commit_msg: "Commit संदेश",
-      pr_bridge_pr_title: "PR शीर्षक",
-      pr_bridge_pr_body: "PR body",
-      pr_bridge_agent_citation: "{label} {emoji} द्वारा प्रस्तावित",
-      pr_bridge_no_github: "PR workflows सक्षम करने के लिए इस प्रोजेक्ट पर GitHub repo link करें।",
-      pr_bridge_link_project: "प्रोजेक्ट सेटिंग्स खोलें",
-      pr_bridge_unsupported_host: "Auto-fill अभी केवल GitHub के साथ काम करता है। PR body कॉपी करें और मैन्युअल रूप से खोलें।",
-      pr_bridge_copy_body: "PR body कॉपी करें",
-      pr_bridge_copy_all: "सभी कॉपी करें",
-      pr_bridge_prepare: "Branch और commit तैयार करें",
-      pr_bridge_open_github: "GitHub पर draft PR खोलें",
-      pr_bridge_expand: "PR पूर्वावलोकन दिखाएँ",
-      pr_bridge_collapse: "PR पूर्वावलोकन छिपाएँ",
-      pr_bridge_copied: "PR body क्लिपबोर्ड पर कॉपी किया गया",
-      pr_bridge_copy_failed: "क्लिपबोर्ड पर कॉपी नहीं किया जा सका",
-      pr_bridge_branch_prepared: "Branch तैयार: {branch}",
-      pr_bridge_branch_failed: "Branch तैयारी विफल: {message}",
-      pr_bridge_opening: "GitHub खोला जा रहा है...",
-      pr_bridge_open_failed: "बाहरी URL नहीं खोला जा सका",
-      pr_bridge_draft_hint: "सुझाव: GitHub पेज पर, \"Create pull request\" के बगल में dropdown का उपयोग करके इसे draft के रूप में चिह्नित करें।",
-      scoreboard_title: "एजेंट प्रदर्शन",
-      scoreboard_subtitle: "इस प्रोजेक्ट के लिए प्रति scan एजेंट स्वीकृति और कार्यान्वयन दर।",
-      scoreboard_toggle_show: "scoreboard दिखाएँ",
-      scoreboard_toggle_hide: "scoreboard छिपाएँ",
-      scoreboard_empty: "अभी तक कोई डेटा नहीं — board populate करने के लिए एक scan चलाएँ और कुछ ideas triage करें।",
-      scoreboard_col_agent: "एजेंट",
-      scoreboard_col_ideas: "Ideas",
-      scoreboard_col_accept_rate: "स्वीकृति %",
-      scoreboard_col_impl_rate: "कार्यान्वयन %",
-      scoreboard_col_avg_impact: "औसत प्रभाव",
-      scoreboard_col_avg_effort: "औसत प्रयास",
-      scoreboard_tip_ideas: "इस एजेंट ने सभी scans में उत्पन्न किए कुल ideas।",
-      scoreboard_tip_accept_rate: "स्वीकृत / (स्वीकृत + अस्वीकृत)। लंबित ideas denominator से बाहर हैं।",
-      scoreboard_tip_impl_rate: "पूर्ण कार्य / इस एजेंट के ideas से बनाए गए कार्य।",
-      scoreboard_tip_avg_impact: "इस एजेंट द्वारा उत्पन्न सभी ideas का औसत प्रभाव स्कोर (1-10)।",
-      scoreboard_tip_avg_effort: "इस एजेंट द्वारा उत्पन्न सभी ideas का औसत प्रयास स्कोर (1-10)।",
-      scoreboard_no_signal: "—",
-      scoreboard_n_pending: "{n} लंबित",
-      scoreboard_top_performer: "शीर्ष प्रदर्शक",
-      zoom_in: "ज़ूम इन",
-      zoom_out: "ज़ूम आउट",
-      reset_view: "व्यू रीसेट करें",
-      goals_label: "goals,",
-      connections_label: "कनेक्शन",
-      legend_parent: "━━ parent",
-      legend_dependency: "┄┄ dependency",
-      competitors_dot: "प्रतियोगी ·",
-      of_4_selected: "/4 चयनित",
-      status_label: "स्थिति:",
-      wt_label: "wt:",
-      winning_insight: "विजयी अंतर्दृष्टि",
-      completed_in: "पूर्ण हुआ",
-      achievements_label: "उपलब्धियाँ:",
-      output_lines: "output पंक्तियाँ",
-      loading_diff: "diff लोड हो रहा है...",
-      first_slot_bias: "पहला slot पिछले विजेता के दृष्टिकोण की ओर biased है।",
-      start_competition_prefix: "प्रतियोगिता शुरू करें (",
-      slots_suffix: "slots)",
-      strategy_leaderboard: "Strategy Leaderboard",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "हल की गई प्रतियोगिताओं में aggregated। अधिक जीतता है।",
-      capture_winning_insight: "विजयी अंतर्दृष्टि capture करें",
-      capture_insight_desc: "इस दृष्टिकोण को जीत क्या दिलाई? यह नोट विजेता के साथ संग्रहीत है और भविष्य की प्रतियोगिताओं को seed करने के लिए उपयोग होता है।",
-      insight_placeholder: "वर्णन करें कि इस दृष्टिकोण को क्या सफल बनाया…",
-      confirm_winner: "विजेता की पुष्टि करें",
-      github_required_title: "GitHub repository आवश्यक",
-      folder_required_title: "प्रोजेक्ट फ़ोल्डर आवश्यक",
-      requirements_met_title: "सभी आवश्यकताएँ पूरी",
-      can_still_adopt: "आप अभी भी अपना सकते हैं — बाद में प्रोजेक्ट सेटिंग्स में GitHub URL और प्रोजेक्ट फ़ोल्डर जोड़ें।",
-      active_triggers_prefix: "सक्रिय Triggers (",
-      lifecycle_readiness: "Lifecycle तैयारी —",
-      goals_tab_no_goals: "अभी तक कोई goals नहीं। Project Manager में goals बनाएँ।",
-      goal_constellation_prefix: "Goal Constellation (",
-      sync_to_obsidian: "Obsidian पर Sync करें",
-      select_or_create: "नीचे एक प्रोजेक्ट चुनें या एक नया बनाएँ।",
-      all_projects_prefix: "सभी प्रोजेक्ट (",
-      percent_overall: "% समग्र",
-      task_queue_prefix: "कार्य कतार (",
-      project_created_title: "प्रोजेक्ट बनाया गया",
-      generate_context_map_desc: "business logic, entry points, और डेटा structures पहचानने के लिए आपके codebase को स्कैन करता है।",
-      source_label: "स्रोत:",
-      auto_filled_hint: "(फ़ोल्डर से स्वतः भरा)",
-      project_type_optional: "(वैकल्पिक, केवल दृश्य)",
-      optional_label: "(वैकल्पिक)",
-      implementation_log_label: "Implementation लॉग",
-      cross_project_desc_btn: "मौजूदा context maps से aggregated। विस्तार करने के लिए किसी भी प्रोजेक्ट पर क्लिक करें।",
-      generate_metadata_prompt: "सभी प्रोजेक्ट्स के context maps का विश्लेषण करने और साझा patterns निकालने के लिए।",
-      projects_count_prefix: "प्रोजेक्ट (",
-      entry_points_header: "Entry Points",
-      db_tables_header: "Database Tables",
-      entry_points_count: "entry points",
-      db_tables_count: "DB tables",
-      run_context_map_scan: "metadata populate करने के लिए इस प्रोजेक्ट के लिए Context Map scan चलाएँ।",
-      active_goals_label: "सक्रिय goals",
-      no_goals_add_below: "अभी तक कोई goals नहीं। नीचे एक जोड़ें।",
-      goal_title_placeholder: "Goal शीर्षक…",
-      loading_repos: "repositories लोड हो रहे हैं...",
-      github_url_label: "GitHub URL",
-      github_repo_label: "GitHub Repository",
-      idea_evolution_title: "Idea Evolution",
-      fitness_ranking_label: "Fitness Ranking",
-      similar_to_rejected: "अस्वीकृत के समान:",
-      percent_similar: "% समान",
-      scanning_with: "के साथ Scan हो रहा है",
-      scanning_subtitle: "codebase patterns का विश्लेषण और context groups उत्पन्न…",
-      no_previous_scans: "कोई पिछले scans नहीं।",
-      run_scan_prefix: "Scan चलाएँ (",
-      automated_context_scan: "स्वचालित Context Scan",
-      results_prefix: "परिणाम (",
-      scan_history_prefix: "Scan इतिहास (",
-      action_label: "कार्य:",
-      self_healing_title: "Self-Healing",
-      heal_all_prefix: "सभी Heal करें (",
-      task_title_placeholder: "कार्य शीर्षक…",
-      task_details_placeholder: "कार्य विवरण या एक spec paste करें…",
-      goal_link_placeholder: "एक goal चुनें…",
-      no_tasks_queued_sub: "कार्यों को मैन्युअल रूप से बनाएँ या स्वीकृत ideas से batch करें।"
     },
     doc_signing: {
       title: "दस्तावेज़ हस्ताक्षर",
@@ -8292,7 +7324,7 @@ export const hi = {
       no_signatures: "अभी तक कोई हस्ताक्षर नहीं",
       no_signatures_hint: "दस्तावेज़ पर हस्ताक्षर करें तो यहां दिखेगा।",
       export_sig: ".sig.json एक्सपोर्ट करें",
-      delete_signature: "हस्ताक्षर हटाएं"
+      delete_signature: "हस्ताक्षर हटाएं",
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -8300,7 +7332,6 @@ export const hi = {
       tab_setup: "सेटअप",
       tab_sync: "सिंक",
       tab_browse: "Vault ब्राउज़ करें",
-      tab_graph: "ग्राफ़",
       tab_cloud: "क्लाउड",
       filter_notes: "नोट्स फ़िल्टर करें...",
       vault_empty: "Vault खाली है",
@@ -8370,7 +7401,7 @@ export const hi = {
       sync_log: "सिंक लॉग",
       no_sync_activity: "अभी तक कोई सिंक गतिविधि नहीं। शुरू करने के लिए पुश या पुल करें।",
       select_note: "एक नोट चुनें",
-      select_note_hint: "इसकी सामग्री का पूर्वावलोकन करने के लिए बाईं ओर के ट्री से एक नोट चुनें।"
+      select_note_hint: "इसकी सामग्री का पूर्वावलोकन करने के लिए बाईं ओर के ट्री से एक नोट चुनें।",
     },
     ocr: {
       title: "OCR",
@@ -8397,292 +7428,8 @@ export const hi = {
       comparison_stats: "तुलना आंकड़े",
       history_heading: "OCR इतिहास",
       no_results: "अभी तक कोई OCR परिणाम नहीं",
-      no_results_hint: "परिणाम यहां देखने के लिए एक दस्तावेज़ से टेक्स्ट निकालें।"
+      no_results_hint: "परिणाम यहां देखने के लिए एक दस्तावेज़ से टेक्स्ट निकालें।",
     },
-    artist_gallery: {
-      loading_viewer: "viewer लोड हो रहा है…",
-      loading_model: "मॉडल लोड हो रहा है...",
-      could_not_load_model: "मॉडल लोड नहीं कर सका"
-    },
-    artist_media_studio: {
-      drag_drop_hint: "— फ़ाइलें कहीं भी drag & drop करें",
-      keyboard_shortcuts: "Space / Del / Arrows",
-      px_per_second: "px/s",
-      running_loudnorm: "ffmpeg loudnorm dry-run चल रहा है…"
-    },
-    dev_context: {
-      files_header: "फ़ाइलें (",
-      filter_groups_placeholder: "groups फ़िल्टर करें…",
-      rescan_title: "पुनः-scan करें",
-      scanning_with: "के साथ Scan हो रहा है",
-      scanning_subtitle: "codebase patterns का विश्लेषण और context groups उत्पन्न…",
-      no_previous_scans: "कोई पिछले scans नहीं।",
-      run_scan: "Scan चलाएँ (",
-      auto_scan: "Auto-Scan",
-      automated_context_scan: "स्वचालित Context Scan",
-      results: "परिणाम (",
-      scan_history: "Scan इतिहास ("
-    },
-    dev_lifecycle: {
-      start_a_competition: "प्रतियोगिता शुरू करें",
-      start_a_competition_desc: "समान कार्य को हल करने के लिए विभिन्न strategies के साथ 2–4 प्रतियोगी spawn करें। विजेता का दृष्टिकोण प्रोमोट होता है।",
-      task_title: "कार्य शीर्षक",
-      task_title_placeholder: "उदा. auth module refactor",
-      task_description: "कार्य विवरण (वैकल्पिक)",
-      task_description_placeholder: "वर्णन करें कि सफलता कैसी दिखती है…",
-      strategy_slots: "Strategy slots (2–4 चुनें)",
-      of_4_selected: "/4 चयनित",
-      cost_warning: "लागत चेतावनी:",
-      cost_warning_desc: "प्रत्येक प्रतियोगी स्वतंत्र रूप से पूर्ण कार्य चलाता है — यह {count}× अधिक tokens का उपयोग करता है।",
-      start_competition: "प्रतियोगिता शुरू करें",
-      competitors_dot: "प्रतियोगी ·",
-      loading_competitors: "प्रतियोगी लोड हो रहे हैं...",
-      failed_to_load_detail: "विवरण लोड करने में विफल।",
-      status_label: "स्थिति:",
-      weight_label: "wt:",
-      pick_winner: "विजेता चुनें",
-      cancel_competition: "प्रतियोगिता रद्द करें",
-      select_project_for_competitions: "प्रतियोगिताएँ देखने के लिए एक प्रोजेक्ट चुनें।",
-      new_competition: "नई प्रतियोगिता",
-      no_competitions_yet: "अभी तक कोई प्रतियोगिताएँ नहीं। एक कार्य को हल करने के लिए 2–4 strategies की दौड़ कराने हेतु एक शुरू करें।",
-      no_goals_yet_project: "अभी तक कोई goals नहीं। प्रगति ट्रैक करने के लिए Project Manager में goals बनाएँ।",
-      zoom_in_title: "ज़ूम इन",
-      zoom_out_title: "ज़ूम आउट",
-      reset_view_title: "व्यू रीसेट करें",
-      goals_label: "goals,",
-      legend_parent: "━━ parent",
-      legend_dependency: "┄┄ dependency",
-      no_goals_kanban: "अभी तक कोई goals नहीं। यहाँ देखने के लिए goals बनाएँ।",
-      no_goals_here: "यहाँ कोई goals नहीं",
-      auto_setup_title: "स्वचालित lifecycle setup चलाएँ",
-      auto_setup: "Auto-Setup",
-      loading_lifecycle: "Lifecycle स्थिति लोड हो रही है...",
-      no_project_click_to_create: "कोई प्रोजेक्ट नहीं — बनाने के लिए क्लिक करें",
-      no_repo: "कोई repo नहीं",
-      baseline_label: "Baseline:",
-      ts_errors_label: "TS त्रुटियाँ:",
-      cargo_errors_label: "Cargo त्रुटियाँ:",
-      tests_label: "परीक्षण:",
-      git_label: "Git:",
-      winning_insight: "विजयी अंतर्दृष्टि",
-      completed_in: "पूर्ण हुआ",
-      achievements_label: "उपलब्धियाँ:",
-      output_lines: "output पंक्तियाँ",
-      expand_slot_title: "slot विस्तृत करें",
-      collapse_slot_title: "slot संकुचित करें",
-      copy_diff_title: "diff कॉपी करें",
-      loading_diff: "diff लोड हो रहा है...",
-      new_competition_modal_title: "प्रतियोगिता शुरू करें",
-      first_slot_bias: "पहला slot पिछले विजेता के दृष्टिकोण की ओर biased है।",
-      start_competition_slots: "प्रतियोगिता शुरू करें (",
-      slots_suffix: "slots)",
-      strategy_leaderboard: "Strategy Leaderboard",
-      dq_title: "अयोग्य",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "हल की गई प्रतियोगिताओं में aggregated। अधिक जीतता है।",
-      capture_winning_insight: "विजयी अंतर्दृष्टि capture करें",
-      capture_insight_desc: "इस दृष्टिकोण को जीत क्या दिलाई? यह नोट विजेता के साथ संग्रहीत है और भविष्य की प्रतियोगिताओं को seed करने के लिए उपयोग होता है।",
-      insight_placeholder: "वर्णन करें कि इस दृष्टिकोण को क्या सफल बनाया…",
-      confirm_winner: "विजेता की पुष्टि करें",
-      competition_title_placeholder: "उदा. /api/auth/login पर rate limiting जोड़ें",
-      competition_desc_placeholder: "स्वीकृति criteria, target फ़ाइलें, constraints...",
-      regenerate_strategies_title: "strategies पुनः-उत्पन्न करें",
-      start_dev_server_title: "इस worktree में dev server शुरू करें",
-      stop_dev_server_title: "dev server रोकें",
-      open_worktree_title: "worktree डायरेक्टरी खोलें",
-      adopt_dev_clone: "Dev Clone अपनाएँ",
-      dev_clone_desc: "Dev Clone एक autonomous डेवलपर पर्सोना है जो आपके प्रोजेक्ट lifecycle का प्रबंधन करता है — strategies competing, errors healing, और code shipping।",
-      github_required_title: "GitHub repository आवश्यक",
-      folder_required_title: "प्रोजेक्ट फ़ोल्डर आवश्यक",
-      requirements_met_title: "सभी आवश्यकताएँ पूरी",
-      can_still_adopt: "आप अभी भी अपना सकते हैं — बाद में प्रोजेक्ट सेटिंग्स में GitHub URL और प्रोजेक्ट फ़ोल्डर जोड़ें।",
-      active_triggers: "सक्रिय Triggers (",
-      lifecycle_readiness: "Lifecycle तैयारी —",
-      goals_tab_no_goals: "अभी तक कोई goals नहीं। Project Manager में goals बनाएँ।",
-      goal_constellation: "Goal Constellation (",
-      sync_to_obsidian: "Obsidian पर Sync करें"
-    },
-    dev_projects: {
-      active_goals: "सक्रिय goals",
-      run_context_map_scan: "metadata populate करने के लिए इस प्रोजेक्ट के लिए Context Map scan चलाएँ।",
-      entry_points: "entry points",
-      db_tables: "db tables",
-      top_keywords: "शीर्ष Keywords",
-      entry_points_header: "Entry Points",
-      db_tables_header: "Database Tables",
-      api_surface: "API Surface",
-      hot_directories: "Hot डायरेक्टरीज़",
-      cross_project_map_title: "Cross-Project Metadata Map",
-      cross_project_map_subtitle: "मौजूदा context maps से aggregated। विस्तार करने के लिए किसी भी प्रोजेक्ट पर क्लिक करें।",
-      tech_distribution: "Tech वितरण",
-      shared_keywords: "साझा Keywords (",
-      shared_keywords_subtitle: "एकाधिक प्रोजेक्ट्स में मौजूद concepts — साझा architecture का संकेत दे सकते हैं।",
-      project_similarity: "प्रोजेक्ट समानता",
-      projects_header: "प्रोजेक्ट (",
-      cross_project_map_btn: "Cross-Project Map",
-      new_project: "नया प्रोजेक्ट",
-      select_or_create: "नीचे एक प्रोजेक्ट चुनें या एक नया बनाएँ।",
-      all_projects: "सभी प्रोजेक्ट (",
-      no_projects_yet: "अभी तक कोई प्रोजेक्ट नहीं",
-      create_first_project: "पहला प्रोजेक्ट बनाएँ",
-      tech_stack: "Tech Stack",
-      edit_project: "प्रोजेक्ट संपादित करें",
-      no_goals_add_below: "अभी तक कोई goals नहीं। नीचे एक जोड़ें।",
-      goal_title_placeholder: "Goal शीर्षक…",
-      project_folder: "प्रोजेक्ट फ़ोल्डर",
-      select_folder: "एक फ़ोल्डर चुनें...",
-      project_name: "प्रोजेक्ट नाम",
-      auto_filled_from_folder: "(फ़ोल्डर से स्वतः भरा)",
-      project_name_placeholder: "My Project",
-      project_type: "प्रोजेक्ट प्रकार",
-      project_type_optional: "(वैकल्पिक, केवल दृश्य)",
-      project_created: "प्रोजेक्ट बनाया गया",
-      project_ready_desc: "तैयार है। क्या आप अभी एक context map उत्पन्न करना चाहेंगे?",
-      generate_context_map: "Context Map उत्पन्न करें",
-      generate_context_map_desc: "business logic, entry points, और डेटा structures पहचानने के लिए आपके codebase को स्कैन करता है।",
-      skip_for_now: "अभी के लिए छोड़ें",
-      scan_codebase: "Codebase स्कैन करें",
-      loading_repositories: "repositories लोड हो रहे हैं...",
-      github_url_label: "GitHub URL",
-      optional: "(वैकल्पिक)",
-      github_url_placeholder: "https://github.com/owner/repo",
-      github_repository: "GitHub Repository",
-      select_repository: "एक repository चुनें...",
-      no_repositories_found: "कोई repositories नहीं मिले",
-      implementation_log: "Implementation लॉग",
-      loading_metadata: "लोड हो रहा है...",
-      no_metadata_yet: "अभी तक कोई metadata map उत्पन्न नहीं हुआ",
-      generate_metadata_prompt: "सभी प्रोजेक्ट्स के context maps का विश्लेषण करने और साझा patterns निकालने के लिए।"
-    },
-    dev_runner: {
-      self_healing: "Self-Healing",
-      auto_heal: "Auto-heal",
-      heal_all: "सभी Heal करें (",
-      task_title_placeholder: "कार्य शीर्षक…",
-      task_details_placeholder: "कार्य विवरण या एक spec paste करें…",
-      task_depth: "कार्य गहराई",
-      goal_link: "Goal Link",
-      optional: "(वैकल्पिक)",
-      goal_link_placeholder: "एक goal चुनें…",
-      create_task: "कार्य बनाएँ",
-      source_label: "स्रोत:",
-      new_task: "नया कार्य",
-      batch_from_accepted: "स्वीकृत से Batch",
-      start_batch: "Batch शुरू करें",
-      cancel_all: "सभी रद्द करें",
-      batch_progress: "Batch प्रगति",
-      percent_overall: "% समग्र",
-      task_queue: "कार्य कतार (",
-      no_tasks_queued: "कतार में कोई कार्य नहीं",
-      no_tasks_queued_sub: "कार्यों को मैन्युअल रूप से बनाएँ या स्वीकृत ideas से batch करें।"
-    },
-    dev_scanner: {
-      idea_evolution: "Idea Evolution",
-      fitness_ranking: "Fitness Ranking",
-      similar_to_rejected: "अस्वीकृत के समान:",
-      synthesis_suggestions: "Synthesis सुझाव",
-      percent_similar: "% समान",
-      potential_duplicates: "संभावित Duplicates",
-      scanning_with: "के साथ Scan हो रहा है",
-      analyzing_codebase: "codebase का विश्लेषण हो रहा है...",
-      no_previous_scans: "अभी तक कोई पिछले scans नहीं।",
-      auto_scan: "Auto-Scan",
-      automated_context_scan: "स्वचालित Context Scan",
-      run_scan_prefix: "चलाएँ:",
-      results_prefix: "परिणाम:",
-      scan_history_prefix: "Scan इतिहास",
-      idea_scanner_title: "Idea Scanner",
-      idea_scanner_subtitle: "सुधार ideas उत्पन्न करने के लिए विशेषीकृत एजेंट चलाएँ",
-      run_scan_btn: "Scan चलाएँ (",
-      results_header: "परिणाम (",
-      scan_history_header: "Scan इतिहास ("
-    },
-    dev_triage: {
-      auto_triage_rules: "Auto-Triage नियम",
-      add_condition: "+ शर्त जोड़ें",
-      action_label: "कार्य:",
-      new_rule: "नया नियम",
-      run_rules: "नियम चलाएँ"
-    },
-    obsidian: {
-      saved_vaults: "सहेजे गए Vaults",
-      remove_vault_title: "सहेजा गया vault हटाएँ",
-      vault_is_empty: "Vault खाली है",
-      failed_to_load: "लोड करने में विफल",
-      open_in_obsidian: "Obsidian में खोलें",
-      copy_path_title: "पथ कॉपी करें",
-      disconnect_title: "Google Drive डिसकनेक्ट करें",
-      sign_in_to_enable: "cloud sync सक्षम करने के लिए साइन इन करें",
-      sign_in_subtitle: "अपने vault को Google Drive पर बैकअप करने के लिए अपने Google खाते से साइन इन करें।",
-      refresh_title: "sync स्थिति रिफ़्रेश करें",
-      drive_connected: "Drive कनेक्ट हुआ",
-      files_synced: "फ़ाइलें Drive पर sync की गईं",
-      connect_drive_desc: "अपने vault को cloud पर बैकअप करने के लिए Google Drive कनेक्ट करें।",
-      step_connect_drive: "Google Drive कनेक्ट करें",
-      step_connect_drive_desc: "Personas को आपके Google Drive में फ़ाइलें बनाने का एक्सेस प्रदान करें।",
-      step_push_vault: "अपना vault push करें",
-      step_push_vault_desc: "Vault नोट्स markdown फ़ाइलों के रूप में Google Drive पर अपलोड होते हैं।",
-      step_sync_devices: "उपकरणों में sync करें",
-      step_sync_devices_desc: "डाउनलोड करने के लिए दूसरे उपकरण पर pull करें। आपका vault आपका डेटा है।",
-      push_title: "vault को Google Drive पर push करें",
-      push_desc: "Push स्थानीय vault परिवर्तनों को Google Drive पर अपलोड करता है।",
-      last_sync_result: "अंतिम Sync परिणाम",
-      pull_title: "Google Drive से vault pull करें",
-      connect_google_drive: "Google Drive कनेक्ट करें",
-      connect_drive_btn_desc: "Personas को आपके Google Drive में फ़ाइलें बनाने का एक्सेस प्रदान करें।",
-      no_stats_yet: "अभी तक कोई stats नहीं।",
-      search_title: "नोट्स खोजें",
-      search_placeholder: "नोट्स खोजें…",
-      no_matches: "कोई मिलान नहीं।",
-      no_orphan_notes: "कोई orphan नोट्स नहीं — हर नोट कम से कम एक अन्य नोट से link है।",
-      no_mocs: "कोई MOCs पहचाने नहीं गए — link threshold कम करने का प्रयास करें।",
-      quick_capture_title: "AI quick-capture",
-      note_search_placeholder: "नोट्स खोजें या प्रश्न पूछें…",
-      append_to_today: "आज में append करें",
-      append_content_placeholder: "append करने के लिए सामग्री…",
-      save_meeting_title: "बैठक नोट सहेजें",
-      meeting_attendees_placeholder: "उपस्थित लोग…",
-      meeting_summary_placeholder: "बैठक सारांश…",
-      meeting_action_items_placeholder: "कार्य items…",
-      meeting_decisions_placeholder: "निर्णय…",
-      save_meeting_note: "बैठक नोट सहेजें",
-      remove_vault_setup_title: "हटाएँ",
-      detected_vaults: "पहचाने गए vaults:",
-      connected_to: "\" से कनेक्ट",
-      notes_found: "नोट्स मिले",
-      scan_for_vaults_title: "vaults के लिए scan करें",
-      manual_path_title: "मैन्युअल रूप से पथ दर्ज करें",
-      preview_label: "पूर्वावलोकन:",
-      vault_path_agent_placeholder: "/AgentName/",
-      vault_path_note_example: "/fact/memory-title.md",
-      disconnect_sync_title: "डिसकनेक्ट करें",
-      active_vault: "सक्रिय vault:",
-      refresh_stats_title: "stats रिफ़्रेश करें",
-      select_personas: "push के लिए पर्सोना चुनें",
-      select_all: "सभी चुनें",
-      no_personas_found: "कोई पर्सोना नहीं मिला",
-      last_push_result: "अंतिम Push परिणाम",
-      app_version: "ऐप संस्करण",
-      vault_version: "Vault संस्करण",
-      keep_app: "ऐप रखें",
-      keep_vault: "Vault रखें",
-      clear_history_title: "इतिहास साफ़ करें",
-      no_sync_activity: "अभी तक कोई sync गतिविधि नहीं। शुरू करने के लिए push या pull करें।"
-    },
-    research_lab: {
-      review_before_saving: "सहेजने से पहले समीक्षा करें। जो आप नहीं जोड़ना चाहते उन्हें uncheck करें।",
-      re_run: "पुनः चलाएँ",
-      search_placeholder: "खोजें…",
-      filter_title: "फ़िल्टर",
-      query_placeholder: "एक query type करें और सभी panels में खोजने के लिए Enter दबाएँ…",
-      close_panel_title: "panel बंद करें",
-      md_extension: ".md",
-      edit_note_aria: "नोट संपादित करें"
-    },
-    doc_signing_label: "दस्तावेज़ हस्ताक्षर",
-    doc_signing_desc: "अपने कार्यक्षेत्र से सीधे डिजिटल हस्ताक्षर के साथ दस्तावेज़ हस्ताक्षर करें और सत्यापित करें।",
-    ocr_label: "OCR",
-    ocr_desc: "Gemini Vision या Claude मल्टीमॉडल का उपयोग करके छवियों और PDFs से टेक्स्ट निकालें।"
   },
   media_studio: {
     title: "मीडिया स्टूडियो",
@@ -8744,32 +7491,10 @@ export const hi = {
     empty_title: "कंपोज़ करना शुरू करें",
     empty_hint: "शुरू करने के लिए टाइमलाइन में वीडियो या ऑडियो क्लिप जोड़ें।",
     split: "प्लेहेड पर विभाजित करें",
-    undo: "पूर्ववत करें",
-    redo: "फिर से करें",
     import_media: "मीडिया आयात करें",
     supported_video: "वीडियो फ़ाइलें",
     supported_audio: "ऑडियो फ़ाइलें",
     supported_images: "छवि फ़ाइलें",
-    clip_actions: "Clip कार्य",
-    action_split: "playhead पर विभाजित करें",
-    action_extract_audio: "audio निकालें",
-    action_strip_audio: "audio strip करें",
-    action_keep_audio: "audio रखें",
-    action_save_thumbnail: "frame को image के रूप में सहेजें",
-    action_trim_to_file: "नई फ़ाइल में trim करें",
-    extracting_audio: "audio track निकाला जा रहा है...",
-    extract_audio_done: "Audio track निकाला गया",
-    saving_thumbnail: "frame सहेजा जा रहा है...",
-    thumbnail_saved: "Frame सहेजा गया",
-    trimming_file: "फ़ाइल trim हो रही है...",
-    trim_done: "Trim सहेजा गया",
-    effects: "प्रभाव",
-    speed: "गति",
-    fade_in: "Fade in",
-    fade_out: "Fade out",
-    normalize: "लाउडनेस सामान्य करें",
-    normalize_hint: "export पर EBU R128 लागू; पूर्वावलोकन एक अनुमान है",
-    strip_audio_hint: "export पर इस clip के audio को mute करता है"
   },
   research_lab: {
     dashboard: "डैशबोर्ड",
@@ -8779,29 +7504,20 @@ export const hi = {
     experiments: "प्रयोग",
     findings: "निष्कर्ष",
     reports: "रिपोर्ट",
-    graph: "ग्राफ़",
     active: "सक्रिय",
     sources: "स्रोत",
     sources_count: "स्रोत",
-    recent_projects: "हाल के प्रोजेक्ट",
-    view_all: "सभी देखें",
     no_projects: "अभी तक कोई शोध प्रोजेक्ट नहीं",
     no_projects_hint: "अपने साहित्य, परिकल्पनाओं और प्रयोगों को व्यवस्थित करना शुरू करने के लिए एक शोध प्रोजेक्ट बनाएं।",
     create_project: "नया प्रोजेक्ट",
-    edit_project: "प्रोजेक्ट संपादित करें",
-    save_changes: "परिवर्तन सहेजें",
     project_name: "प्रोजेक्ट नाम",
-    project_name_placeholder: "उदा. LLM reasoning chain-of-thought faithfulness",
     project_description: "विवरण",
-    project_description_placeholder: "इस प्रोजेक्ट में क्या investigate किया जा रहा है इसका संक्षिप्त सारांश",
     project_thesis: "शोध प्रश्न या थीसिस",
-    project_thesis_placeholder: "आप जिस केंद्रीय दावे या प्रश्न का परीक्षण कर रहे हैं",
     project_domain: "डोमेन",
     project_scope: "दायरा सीमाएं",
     obsidian_vault: "Obsidian vault",
     obsidian_vault_hint: "प्रयोग और निष्कर्ष सिंक करने के लिए Obsidian vault लिंक करें",
     select_vault: "vault चुनें",
-    clear_vault: "साफ़ करें",
     vault_connected: "Vault कनेक्टेड",
     sync_to_obsidian: "Obsidian पर सिंक करें",
     syncing: "सिंक हो रहा है...",
@@ -8817,42 +7533,13 @@ export const hi = {
     status_writing: "लेखन",
     status_review: "समीक्षा",
     status_complete: "पूर्ण",
-    domain_cs: "कंप्यूटर विज्ञान",
-    domain_biology: "जीव विज्ञान",
-    domain_chemistry: "रसायन विज्ञान",
-    domain_physics: "भौतिकी",
-    domain_mathematics: "गणित",
-    domain_business: "व्यवसाय",
-    domain_medicine: "चिकित्सा",
-    domain_general: "सामान्य",
     select_project_first: "पहले एक शोध प्रोजेक्ट चुनें",
     no_sources: "अभी तक कोई स्रोत नहीं",
     no_sources_hint: "प्रासंगिक पेपर खोजने के लिए arXiv, Semantic Scholar, या PubMed खोजें, या स्रोत मैन्युअल रूप से जोड़ें।",
-    no_matching_sources: "कोई स्रोत आपके फ़िल्टर से मेल नहीं खाता",
-    filter_sources_placeholder: "शीर्षक या लेखक के अनुसार फ़िल्टर करें…",
     relevance: "प्रासंगिकता",
     search_sources: "स्रोत खोजें",
     ingest: "इनजेस्ट करें",
     ingesting: "इनजेस्ट हो रहा है...",
-    source_title: "शीर्षक",
-    source_title_placeholder: "पेपर शीर्षक",
-    source_type: "स्रोत प्रकार",
-    source_year: "वर्ष",
-    source_year_placeholder: "उदा. 2024",
-    source_authors: "लेखक",
-    source_authors_placeholder: "लेखक 1, लेखक 2, …",
-    source_url: "URL",
-    source_url_placeholder: "https://arxiv.org/abs/…",
-    source_doi: "DOI",
-    source_doi_placeholder: "10.xxxx/…",
-    source_abstract: "सार",
-    source_abstract_placeholder: "पेपर सार…",
-    source_type_arxiv: "arXiv",
-    source_type_scholar: "Semantic Scholar",
-    source_type_pubmed: "PubMed",
-    source_type_web: "वेब पेज",
-    source_type_pdf: "PDF",
-    source_type_manual: "मैन्युअल प्रविष्टि",
     no_hypotheses: "अभी तक कोई परिकल्पना नहीं",
     no_hypotheses_hint: "मैन्युअल रूप से परिकल्पनाएं जोड़ें या AI एजेंट को आपके साहित्य कॉर्पस से जेनरेट करने दें।",
     add_hypothesis: "परिकल्पना जोड़ें",
@@ -8860,58 +7547,23 @@ export const hi = {
     confidence: "विश्वास",
     supporting: "समर्थन",
     counter: "खंडन",
-    hypothesis_statement: "कथन",
-    hypothesis_statement_placeholder: "एक परीक्षण योग्य दावा — उदा. Prompt X baseline से >5% अधिक सटीकता में सुधार करता है",
-    hypothesis_rationale: "तर्क",
-    hypothesis_rationale_placeholder: "यह परिकल्पना परीक्षण करने योग्य क्यों है",
     no_experiments: "अभी तक कोई प्रयोग नहीं",
     no_experiments_hint: "किसी परिकल्पना का परीक्षण करने के लिए एक प्रयोग डिज़ाइन करें।",
     create_experiment: "नया प्रयोग",
-    experiment_name: "प्रयोग नाम",
-    experiment_name_placeholder: "उदा. GSM8K पर baseline vs. fine-tuned तुलना करें",
     methodology: "पद्धति",
-    methodology_placeholder: "यह प्रयोग कैसे चलाया जाएगा?",
     success_criteria: "सफलता मानदंड",
-    success_criteria_placeholder: "कौन सा परिणाम परिकल्पना की पुष्टि करेगा?",
-    linked_hypothesis: "लिंक की गई परिकल्पना",
-    no_linked_hypothesis: "कोई परिकल्पना लिंक नहीं",
-    linked_persona: "लिंक किया गया पर्सोना",
-    no_linked_persona: "कोई पर्सोना लिंक नहीं",
-    run_input: "Run input (वैकल्पिक)",
-    run_input_placeholder: "Input text जो प्रत्येक run पर पर्सोना को पास किया जाएगा।",
-    pass_pattern: "Pass pattern (regex)",
-    pass_pattern_placeholder: "उदा. PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "चलाएं",
-    running_experiment: "चल रहा है…",
     run_count: "रन",
-    view_runs: "runs देखें",
-    no_runs_yet: "अभी तक कोई runs नहीं",
-    run_passed: "सफल",
-    run_failed: "विफल",
-    run_duration: "अवधि",
-    run_cost: "लागत",
-    run_number: "Run #",
-    runs_history: "Run इतिहास",
     no_findings: "अभी तक कोई निष्कर्ष नहीं",
     no_findings_hint: "निष्कर्ष विश्लेषण एजेंटों द्वारा प्रयोग परिणामों से निकाले जाते हैं।",
-    create_finding: "नई खोज",
-    finding_title: "शीर्षक",
-    finding_title_placeholder: "खोज के लिए संक्षिप्त शीर्षक",
-    finding_description: "विवरण",
-    finding_description_placeholder: "आपने क्या देखा और यह क्यों मायने रखता है?",
-    finding_category: "श्रेणी",
-    finding_category_placeholder: "उदा. performance, limitation, surprise",
     no_reports: "अभी तक कोई रिपोर्ट नहीं",
     no_reports_hint: "अपने निष्कर्षों को एक संरचित दस्तावेज़ में संकलित करने के लिए एक रिपोर्ट बनाएं।",
     create_report: "नई रिपोर्ट",
-    report_title: "शीर्षक",
-    report_title_placeholder: "उदा. Q2 Research सारांश",
     report_type: "रिपोर्ट प्रकार",
-    report_format: "फ़ॉर्मेट",
     literature_review: "साहित्य समीक्षा",
     experiment_report: "प्रयोग रिपोर्ट",
     full_paper: "पूर्ण पेपर",
-    executive_summary: "कार्यकारी सारांश"
+    executive_summary: "कार्यकारी सारांश",
   },
   event_types: {
     webhook_received_label: "Webhook प्राप्त",
@@ -8986,7 +7638,7 @@ export const hi = {
     source_filter_no_regex: "केवल अंत में * समर्थित है (कोई regex, कोई ? वाइल्डकार्ड नहीं)",
     source_filter_no_source_id: "यदि source_filter सेट है लेकिन इवेंट में source_id नहीं है, तो फ़िल्टर मेल नहीं खाएगा",
     source_filter_allowed_chars: "अनुमत वर्ण: अक्षर, संख्या, _, -, :, ., और *",
-    source_filter_max_length: "अधिकतम 120 वर्ण, अधिकतम 3 वाइल्डकार्ड वर्ण"
+    source_filter_max_length: "अधिकतम 120 वर्ण, अधिकतम 3 वाइल्डकार्ड वर्ण",
   },
   connector_roles: {
     chat_messaging: "चैट और मैसेजिंग",
@@ -9053,12 +7705,12 @@ export const hi = {
     purpose_ecommerce: "ई-कॉमर्स",
     purpose_scheduling: "शेड्यूलिंग",
     purpose_forms: "फ़ॉर्म",
-    purpose_ai: "AI"
+    purpose_ai: "AI",
   },
   connector_licensing: {
     personal: "व्यक्तिगत",
     paid: "भुगतान",
-    enterprise: "एंटरप्राइज़"
+    enterprise: "एंटरप्राइज़",
   },
   alerts: {
     metric_error_rate: "त्रुटि दर",
@@ -9074,7 +7726,7 @@ export const hi = {
     error_delete_rule: "अलर्ट नियम हटाने में विफल:",
     error_toggle_rule: "अलर्ट नियम टॉगल करने में विफल:",
     error_dismiss: "अलर्ट हटाने में विफल:",
-    error_clear_history: "अलर्ट इतिहास साफ़ करने में विफल:"
+    error_clear_history: "अलर्ट इतिहास साफ़ करने में विफल:",
   },
   deploy_errors: {
     not_reachable: "सर्वर तक नहीं पहुंचा जा सका। URL और अपना नेटवर्क कनेक्शन जांचें।",
@@ -9089,18 +7741,18 @@ export const hi = {
     oauth_expired: "OAuth टोकन समाप्त हो गया है। कृपया पुनः अधिकृत करें।",
     url_empty: "कृपया ऑर्केस्ट्रेटर URL दर्ज करें।",
     api_key_empty: "कृपया अपनी API की दर्ज करें।",
-    token_empty: "कृपया अपना GitLab personal access token दर्ज करें।"
+    token_empty: "कृपया अपना GitLab personal access token दर्ज करें।",
   },
   tiers: {
     starter_label: "सरल",
     starter_desc: "रोज़ाना उपयोग के लिए मुख्य फीचर",
     team_label: "पावर",
-    team_desc: "पूर्ण फीचर सेट"
+    team_desc: "पूर्ण फीचर सेट",
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus"
+    opus: "Opus",
   },
   error_explanation: {
     action_go_to_vault: "वॉल्ट पर जाएं",
@@ -9144,7 +7796,7 @@ export const hi = {
     guidance_import_invalid: "आयात फ़ाइल खाली या दूषित है। स्रोत से पुनः एक्सपोर्ट करने का प्रयास करें।",
     guidance_circular_chain: "इससे एक लूप बनेगा जहां एजेंट एक-दूसरे को अनंत रूप से ट्रिगर करते हैं। अपनी एजेंट चेन की समीक्षा करें।",
     guidance_parse_error: "प्रतिक्रिया अपेक्षित प्रारूप में नहीं थी। यह API परिवर्तन या विकृत डेटा का संकेत हो सकता है।",
-    guidance_process_exit: "अंतर्निहित प्रक्रिया ने विफलता की रिपोर्ट की। अधिक विवरण के लिए निष्पादन लॉग जांचें।"
+    guidance_process_exit: "अंतर्निहित प्रक्रिया ने विफलता की रिपोर्ट की। अधिक विवरण के लिए निष्पादन लॉग जांचें।",
   },
   process_labels: {
     n8n_transform: "n8n रूपांतरण",
@@ -9158,11 +7810,10 @@ export const hi = {
     lab_run: "लैब रन",
     connector_test: "कनेक्टर परीक्षण",
     creative_session: "क्रिएटिव सेशन",
-    feedback_chat: "फीडबैक चैट",
     complete_suffix: "पूर्ण",
     failed_suffix: "विफल",
     pending_reviews_one: "{count} लंबित समीक्षा अनुमोदन की प्रतीक्षा में",
-    pending_reviews_other: "{count} लंबित समीक्षाएं अनुमोदन की प्रतीक्षा में"
+    pending_reviews_other: "{count} लंबित समीक्षाएं अनुमोदन की प्रतीक्षा में",
   },
   eval_strategies: {
     keyword_match_label: "आउटपुट गुणवत्ता",
@@ -9174,7 +7825,7 @@ export const hi = {
     confusion_detect_label: "भ्रम पहचान",
     confusion_detect_description: "ज्ञात भ्रम/विफलता वाक्यांश जांचता है",
     composite_label: "कंपोज़िट",
-    composite_description: "सभी रणनीतियों का भारित संयोजन"
+    composite_description: "सभी रणनीतियों का भारित संयोजन",
   },
   drift_labels: {
     kind_error_pattern: "त्रुटि पैटर्न",
@@ -9202,7 +7853,7 @@ export const hi = {
     suggestion_error_handling: "errorHandling अनुभाग की समीक्षा करें और इस विफलता पैटर्न के लिए हैंडलिंग जोड़ें।",
     suggestion_near_timeout: "टाइमआउट बढ़ाने या instructions में एजेंट के टास्क दायरे को सरल करने पर विचार करें।",
     suggestion_high_cost: "टोकन उपयोग कम करने के लिए निर्देश कसें, या छोटे मॉडल का उपयोग करने पर विचार करें।",
-    suggestion_repeated_failure: "एजेंट कॉन्फ़िगरेशन पुनर्निर्माण के लिए नया डिज़ाइन विश्लेषण चलाने पर विचार करें।"
+    suggestion_repeated_failure: "एजेंट कॉन्फ़िगरेशन पुनर्निर्माण के लिए नया डिज़ाइन विश्लेषण चलाने पर विचार करें।",
   },
   feedback_labels: {
     accurate_prompt: "सटीक प्रॉम्प्ट",
@@ -9215,13 +7866,13 @@ export const hi = {
     over_engineered: "अत्यधिक जटिल",
     under_specified: "अपर्याप्त विशिष्ट",
     wrong_triggers: "गलत ट्रिगर",
-    credential_issues: "क्रेडेंशियल समस्याएं"
+    credential_issues: "क्रेडेंशियल समस्याएं",
   },
   protocol_labels: {
     manual_review: "मैन्युअल समीक्षा",
     user_message: "उपयोगकर्ता सूचनाएं",
     agent_memory: "एजेंट याद",
-    emit_event: "इवेंट उत्सर्जन"
+    emit_event: "इवेंट उत्सर्जन",
   },
   execution: {
     budget_exceeded: "इस एजेंट के लिए मासिक बजट पार हो गया। जारी रखने के लिए एजेंट सेटिंग्स में बजट पॉज़ ओवरराइड करें या बजट बढ़ाएं।",
@@ -9238,11 +7889,6 @@ export const hi = {
     waiting_for_output: "आउटपुट की प्रतीक्षा...",
     no_output: "कोई आउटपुट नहीं",
     background: "पृष्ठभूमि",
-    needs_credential: "क्रेडेंशियल आवश्यक",
-    run_preview: "Run पूर्वावलोकन",
-    close_preview: "पूर्वावलोकन बंद करें",
-    budget_limit: "बजट सीमा",
-    run_agent: "एजेंट चलाएँ"
   },
   gitlab: {
     integration_title: "GitLab इंटीग्रेशन",
@@ -9357,10 +8003,6 @@ export const hi = {
     play_sound: "ध्वनि बजाएं",
     cicd_agent_templates: "CI/CD एजेंट टेम्पलेट",
     your_tier: "(आपका)",
-    trigger_on: "पर:",
-    connecting_to_gitlab: "GitLab से कनेक्ट हो रहा है...",
-    deploying_to_gitlab: "पर्सोना को GitLab पर deploy किया जा रहा है...",
-    pipeline_hash: "Pipeline #"
   },
   pipeline: {
     agent_teams: "एजेंट टीम",
@@ -9508,11 +8150,6 @@ export const hi = {
     run_pipeline_or_add: "पाइपलाइन चलाएं या मैन्युअल रूप से जोड़ें",
     load_more: "और लोड करें",
     showing_count: "{total} में से {shown} दिख रहे हैं",
-    no_timeline_data: "कोई timeline डेटा नहीं",
-    clear_filter: "फ़िल्टर साफ़ करें",
-    filter_to_run: "इस run पर फ़िल्टर करें",
-    new_memories_one: "{count} नई memory",
-    new_memories_other: "{count} नई memories"
   },
   composition: {
     select_persona: "पर्सोना चुनें",
@@ -9561,10 +8198,10 @@ export const hi = {
     add_input_node: "इनपुट नोड जोड़ें",
     add_persona_node: "पर्सोना नोड जोड़ें",
     add_output_node: "आउटपुट नोड जोड़ें",
-    run: "चलाएं"
+    run: "चलाएं",
   },
   auth: {
-    login_timed_out: "लॉगिन का समय समाप्त हो गया। कृपया पुनः प्रयास करें।"
+    login_timed_out: "लॉगिन का समय समाप्त हो गया। कृपया पुनः प्रयास करें।",
   },
   shared: {
     blast_checking_impact: "प्रभाव जांचा जा रहा है...",
@@ -9699,15 +8336,6 @@ export const hi = {
     cmd_select: "चुनें",
     cmd_commands: "कमांड",
     draft_editor: {
-      edit_tabs_label: "Draft संपादन tabs",
-      request_ai_adjustments: "AI समायोजन का अनुरोध करें",
-      edit_raw_json_hint: "raw JSON संपादित करें। परिवर्तन form फ़ील्ड्स को override करते हैं।",
-      no_custom_sections: "अभी तक कोई कस्टम अनुभाग नहीं",
-      no_content_to_preview: "पूर्वावलोकन के लिए कोई सामग्री नहीं",
-      edit_raw: "Raw संपादित करें",
-      credential_links: "क्रेडेंशियल Links",
-      view_full_prompt: "पूर्ण Prompt देखें",
-      hide_full_prompt: "पूर्ण Prompt छिपाएँ",
       persona_name_placeholder: "पर्सोना नाम...",
       description_placeholder: "संक्षिप्त विवरण...",
       refine_placeholder: "उदाहरण: त्रुटि हैंडलिंग कड़ी करें, रिट्री लॉजिक जोड़ें...",
@@ -9728,108 +8356,55 @@ export const hi = {
       design_context_json: "डिज़ाइन संदर्भ JSON...",
       click_next: "रूपांतरण के साथ आगे बढ़ने के लिए next क्लिक करें।",
       configure_transform: "रूपांतरण कॉन्फ़िगर करें",
-      select: "चुनें..."
+      select: "चुनें...",
     },
     forms_extra: {
-      color_hex_placeholder: "#8b5cf6",
-      attach_file_title: "फ़ाइल संलग्न करें (API spec, schema, MCP config)",
-      add_references_title: "reference URLs या connection strings जोड़ें",
-      no_matches: "कोई मिलान नहीं",
-      all_prefix: "सभी (",
       references: "संदर्भ",
       references_placeholder: "URL, कनेक्शन स्ट्रिंग, API की, या कोई भी संदर्भ जानकारी पेस्ट करें (प्रति पंक्ति एक)",
       remove_file: "फ़ाइल हटाएं",
       choose_color: "रंग चुनें",
       choose_icon: "आइकन चुनें",
       filter_placeholder: "फ़िल्टर करें...",
-      reset_to_default: "डिफ़ॉल्ट पर रीसेट करें"
+      reset_to_default: "डिफ़ॉल्ट पर रीसेट करें",
     },
     reasoning_trace: {
-      heartbeat_silent: "s (silent",
-      waiting: "execution events की प्रतीक्षा...",
-      tool_call_label: "Tool Call:",
       system_init: "सिस्टम इनिट",
       reasoning: "तर्क",
       tool_call: "टूल कॉल: {name}",
       result: "परिणाम",
       complete: "पूर्ण",
-      error: "त्रुटि"
+      error: "त्रुटि",
     },
     sidebar_extra: {
-      clear_completed_title: "पूर्ण और कतारबद्ध items साफ़ करें",
-      no_credentials: "अभी तक कोई क्रेडेंशियल नहीं",
-      ai_setup_wizard: "AI सेटअप विज़ार्ड",
-      all_personas: "सभी पर्सोना",
-      no_scheduled_agents: "schedules वाले कोई एजेंट नहीं",
-      all_agents_label: "सभी एजेंट",
-      draft_builds: "Draft builds",
-      dev_tools_label: "Dev Tools",
-      obsidian_brain: "Obsidian Brain",
-      active_twin: "सक्रिय Twin",
-      research_lab: "Research Lab",
       agents: "एजेंट",
       schedules: "शेड्यूल",
       remove_favorites: "पसंदीदा से हटाएं",
       add_favorites: "पसंदीदा में जोड़ें",
-      active_project: "सक्रिय प्रोजेक्ट"
+      active_project: "सक्रिय प्रोजेक्ट",
     },
     execution_detail: {
-      running: "चल रहा है...",
-      rerun: "पुनः चलाएँ",
-      retry_prefix: "Retry #",
-      importance_prefix: "महत्व:",
-      confidence_suffix: "% विश्वास",
       copy: "कॉपी करें",
       suggested_actions: "सुझावित क्रियाएं",
       knowledge_insight: "ज्ञान अंतर्दृष्टि",
       outcome_assessment: "परिणाम मूल्यांकन",
-      blockers: "अवरोधक"
+      blockers: "अवरोधक",
     },
     progress_extra: {
-      continue_working: "आप काम करना जारी रख सकते हैं -- draft तैयार होने पर हम आपको सूचित करेंगे।",
-      draft_ready: "आपका पर्सोना draft समीक्षा और संपादन के लिए तैयार है।",
-      click_generate: "शुरू करने के लिए \"Generate Persona Draft\" क्लिक करें।",
-      skip_configuration: "कॉन्फ़िगरेशन छोड़ें",
-      no_config_questions: "कोई कॉन्फ़िगरेशन प्रश्न आवश्यक नहीं।",
-      answer_questions: "पर्सोना उत्पादन को कस्टमाइज़ करने के लिए इन प्रश्नों का उत्तर दें।",
-      no_output: "अभी तक कोई output नहीं...",
-      s_elapsed: "s बीता",
-      s_remaining: "s शेष",
-      show_cli_output: "CLI output दिखाएँ",
-      hide_cli_output: "CLI output छिपाएँ",
       taking_longer: "अपेक्षा से अधिक समय लग रहा है",
       complete: "पूर्ण",
       resuming: "पिछला रूपांतरण सेशन फिर शुरू हो रहा है...",
       cancel_transformation: "रूपांतरण रद्द करें",
       draft_generated: "ड्राफ्ट सफलतापूर्वक जेनरेट हुआ",
       transformation_failed: "रूपांतरण विफल",
-      waiting_to_start: "रूपांतरण शुरू होने की प्रतीक्षा..."
+      waiting_to_start: "रूपांतरण शुरू होने की प्रतीक्षा...",
     },
     terminal_extra: {
-      connecting: "provider से कनेक्ट हो रहा है",
-      queued_at: "स्थिति पर कतारबद्ध",
-      new_line: "नई पंक्ति",
-      new_lines: "नई पंक्तियाँ",
-      below: "नीचे",
-      lines_suffix: "पंक्तियाँ)",
-      search_and_filter: "खोज और फ़िल्टर",
       press_enter: "शुरू करने के लिए Enter दबाएं या Play क्लिक करें",
       connection_failed: "कनेक्शन विफल -- प्रदाता सेटिंग्स जांचें और पुनः प्रयास करें",
       search_output: "आउटपुट खोजें...",
-      dismiss: "हटाएं"
+      dismiss: "हटाएं",
     },
     use_cases_extra: {
-      input_placeholder: "इस use case को चलाने के लिए input type करें…",
-      model_placeholder: "उदा. claude-3-5-sonnet-latest",
-      use_case_singular: "use case",
-      window_prefix: "(window:",
-      loading_history: "इतिहास लोड हो रहा है...",
-      no_executions: "अभी तक कोई निष्पादन नहीं",
-      run_to_see_history: "निष्पादन इतिहास, timings, और लागत यहाँ देखने के लिए इस use case को चलाएँ।",
-      run_use_case: "इस use case को चलाएँ",
-      custom_model: "कस्टम मॉडल",
-      no_results: "कोई परिणाम नहीं मिला",
-      ctrl_enter: "Ctrl+Enter",
       example_output: "उदाहरण आउटपुट",
       input_data: "इनपुट डेटा",
       rerun_input: "इस इनपुट के साथ पुनः चलाएं",
@@ -9837,7 +8412,7 @@ export const hi = {
       error_prefix: "त्रुटि: ",
       output_prefix: "आउटपुट: ",
       toggle_history: "निष्पादन इतिहास टॉगल करें",
-      configure_model: "मॉडल, सूचनाएं और सदस्यताएं कॉन्फ़िगर करें"
+      configure_model: "मॉडल, सूचनाएं और सदस्यताएं कॉन्फ़िगर करें",
     },
     json_valid: "वैध JSON",
     json_invalid: "अमान्य JSON",
@@ -9845,85 +8420,6 @@ export const hi = {
     json_format_tooltip: "JSON फ़ॉर्मेट करें",
     agent_icon_label: "एजेंट आइकन",
     breadcrumb_label: "ब्रेडक्रम्ब",
-    breadcrumb_show_hidden: "छिपे हुए ब्रेडक्रम्ब दिखाएं"
+    breadcrumb_show_hidden: "छिपे हुए ब्रेडक्रम्ब दिखाएं",
   },
-  releases: {
-    whats_new: {
-      title: "नया क्या है",
-      subtitle_roadmap: "हम अभी क्या बना रहे हैं और आगे क्या आने वाला है।",
-      subtitle_changelog: "Personas के आपके संस्करण में क्या नया है।",
-      nav_bar_roadmap_label: "रोडमैप",
-      empty: "इस रिलीज़ के लिए अभी तक कुछ साझा करने को नहीं — जल्द ही फिर से देखें।",
-      status_released: "रिलीज़ किया गया",
-      status_active: "वर्तमान",
-      status_planned: "नियोजित",
-      status_roadmap: "रोडमैप",
-      type_feature: "नया",
-      type_fix: "ठीक किया गया",
-      type_security: "सुरक्षा",
-      type_docs: "दस्तावेज़",
-      type_chore: "रखरखाव",
-      type_breaking: "ब्रेकिंग",
-      item_status_in_progress: "प्रगति पर",
-      item_status_planned: "नियोजित",
-      item_status_completed: "पूर्ण",
-      priority_now: "अभी",
-      priority_next: "अगला",
-      priority_later: "बाद में",
-      summary_in_progress: "{count} प्रगति पर",
-      summary_next: "{count} अगला",
-      release_0_0_1_label: "Alpha 1",
-      release_0_0_1_summary: "Personas का पहला preview।",
-      release_0_0_1_item_1_title: "पहला सार्वजनिक preview",
-      release_0_0_1_item_1_description: "AI एजेंट डिज़ाइन करें, उन्हें schedule या trigger पर चलाएँ, और अपने डेस्कटॉप पर उनके काम को लाइव देखें।",
-      release_0_0_2_label: "Alpha 2",
-      release_0_0_2_summary: "Personas को अन्य AI tools से कनेक्ट करें और ऐप छोड़े बिना नया क्या है पढ़ें।",
-      release_0_0_2_item_1_title: "अपने एजेंटों को अन्य AI tools के लिए खोलें",
-      release_0_0_2_item_1_description: "Personas अब एक साझा protocol के माध्यम से अन्य AI tools से बात कर सकते हैं। ठीक वही एजेंट चुनें जिन्हें आप साझा करना चाहते हैं, और अपने नियंत्रण की access keys से उन्हें सुरक्षित करें — आपके निजी एजेंट डिफ़ॉल्ट रूप से निजी रहते हैं।",
-      release_0_0_2_item_2_title: "डेस्कटॉप ऐप के लिए सुरक्षित एक्सेस",
-      release_0_0_2_item_2_description: "डेस्कटॉप ऐप प्रत्येक launch पर अपनी खुद की अल्पकालिक access key बनाता है, ताकि यह अपनी background services से बात कर सके बिना कुछ भी उजागर किए जिसे आपने स्वीकृत नहीं किया है।",
-      release_0_0_2_item_3_title: "ऐप के अंदर रिलीज़ नोट्स",
-      release_0_0_2_item_3_description: "ऐप छोड़े बिना हर Personas रिलीज़ में नया क्या है देखें। पिछले संस्करणों, वर्तमान रिलीज़, और दीर्घकालिक रोडमैप के बीच एक स्थान से स्विच करें।",
-      release_0_0_2_item_4_title: "आपके एजेंट हर session से सीखते हैं",
-      release_0_0_2_item_4_description: "Personas अब प्रत्येक एजेंट session के सबक capture करता है, उन्हें पुन: प्रयोज्य ज्ञान में distill करता है, और अगले run के लिए आगे लाता है। जितना अधिक आप उपयोग करते हैं, आपके एजेंट उतने ही स्मार्ट हो जाते हैं — कोई मैन्युअल training की आवश्यकता नहीं।",
-      release_0_0_2_item_5_title: "किसी भी दस्तावेज़ को सुनने योग्य briefing में बदलें",
-      release_0_0_2_item_5_description: "एक नया टेम्पलेट जो research reports, बैठक transcripts, या लंबे लेखों को 5- से 15-मिनट की दो-host वाली audio बातचीत में बदलता है जिसे आप चलते-फिरते सुन सकते हैं। आप शैली चुनते हैं — casual, formal, news, या executive — और voices उत्पन्न होने से पहले script की समीक्षा करते हैं।",
-      release_0_0_2_item_6_title: "आपके लेखन के लिए Stanford-trained editor",
-      release_0_0_2_item_6_description: "एक नया टेम्पलेट जो Stanford \"Writing in the Sciences\" पद्धति का उपयोग करके आपके drafts की समीक्षा करता है। यह passive voice, dead-weight वाक्यांशों, और jargon को flag करता है — और ठीक समझाता है कि हर सुझाए गए परिवर्तन वाक्य को क्यों स्पष्ट करता है। यह आपके द्वारा स्वीकार या अस्वीकार किए गए edits से आपकी आवाज़ सीखता है।",
-      release_0_0_2_item_7_title: "20 घंटे के YouTube production को 3 में बदलें",
-      release_0_0_2_item_7_description: "एक नया टेम्पलेट filming के अलावा सब कुछ handle करके एक पूर्ण YouTube video cycle को लगभग तीन घंटे में compress करता है। यह जाँचता है कि आपका niche pursue करने लायक है, आपकी आवाज़ में एक hook-first script draft करता है, और approved script को ground truth के रूप में उपयोग करके raw footage से retakes स्वतः-हटाता है — ताकि आप स्वाभाविक रूप से film कर सकें, आराम से stumble कर सकें, और जारी रख सकें।",
-      release_0_0_2_item_8_title: "अपने एजेंटों से Apify scrapers चलाएँ",
-      release_0_0_2_item_8_description: "Apify platform से किसी भी actor को कनेक्ट करें — YouTube scrapers, Twitter scrapers, browser automation, और सैकड़ों अन्य — सीधे अपने एजेंटों से। research workflows को unlock करता है जिन्हें ऐसे डेटा की आवश्यकता है जो official APIs तक नहीं पहुँच सकते।",
-      release_0_0_2_item_9_title: "X (Twitter) अब एक connector है",
-      release_0_0_2_item_9_description: "हाल के tweets खोजें, trending topics track करें, और सीधे अपने एजेंटों से post करें। Personas छोड़े बिना content research, social listening, और marketing automation के लिए उपयोगी।",
-      release_0_0_2_item_10_title: "अपने एजेंटों से YouTube देखें",
-      release_0_0_2_item_10_description: "Personas में पहला video platform connector। videos खोजें, channel statistics fetch करें, trending content pull करें, और किसी भी एजेंट से सीधे competitors का विश्लेषण करें जिसे YouTube पर क्या हो रहा है समझने की आवश्यकता है।",
-      release_0_0_2_item_11_title: "Deepgram के साथ audio को text में बदलें",
-      release_0_0_2_item_11_description: "एक नया speech-to-text connector जो audio फ़ाइलों या URLs को word-level timing के साथ transcribe करता है। auto-editing के लिए YouTube creator assistant को power करता है, और किसी भी एजेंट को voice notes, बैठक recordings, या podcast content process करने की क्षमता देता है।",
-      release_0_0_2_item_12_title: "अन्य AI tools आपके एजेंटों को check और stop कर सकते हैं",
-      release_0_0_2_item_12_description: "जब कोई अन्य AI tool आपके साझा किए गए एजेंटों में से एक को call करता है, तो यह अब 'क्या यह अभी भी चल रहा है?' और 'कृपया अभी रोकें' mid-flight में पूछ सकता है। लंबे research jobs को अब पूरे समय connection खुला रखने की आवश्यकता नहीं है, और अटके हुए runs को calling side से साफ़ रद्द किया जा सकता है। प्रत्येक एजेंट केवल अपने स्वयं के runs देखता है, इसलिए एजेंटों के बीच कुछ भी leak नहीं होता।",
-      release_0_0_2_item_13_title: "नया connector: Humbalytics analytics",
-      release_0_0_2_item_13_description: "traffic track करें, A/B experiments चलाएँ, और अपने code को touch किए बिना landing-page copy स्वैप करें। Personas अब Humbalytics से heat maps और conversion डेटा pull कर सकते हैं और अपने experiments को guide करने के लिए उनका उपयोग कर सकते हैं।",
-      release_0_0_2_item_14_title: "नया connector: Firecrawl web scraping",
-      release_0_0_2_item_14_description: "एजेंट अब किसी भी website को पढ़ सकते हैं — यहाँ तक कि आधुनिक JavaScript-heavy को भी — साफ, संरचित सामग्री के रूप में। research, market intelligence, और content-monitoring एजेंटों के लिए उपयोगी।",
-      release_0_0_2_item_15_title: "एक marketing एजेंट जो वास्तव में आपके A/B परीक्षण चलाता है",
-      release_0_0_2_item_15_description: "एक नया टेम्पलेट जो headline variants प्रस्तावित करता है, उन्हें आपकी स्वीकृति से deploy करता है, statistical significance की प्रतीक्षा करता है, और विजेताओं को स्वचालित रूप से प्रोमोट करता है। हर परिवर्तन live होने से पहले human-gated होता है, और प्रत्येक experiment परिणामों के वास्तव में कुछ मायने रखने के लिए लंबे समय तक चलता है।",
-      release_0_0_2_item_16_title: "किसी भी एजेंट से अपनी team के BI dashboards पढ़ें",
-      release_0_0_2_item_16_description: "Personas अब सहेजे गए Redash queries और dashboards से परिणाम pull कर सकते हैं। यदि आपकी team पहले से साझा dashboards maintain करती है, तो आपके एजेंट वही numbers पढ़ते हैं जो humans देखते हैं — कोई SQL rewriting, कोई CSV exports, कोई copy-paste नहीं।",
-      release_0_0_2_item_17_title: "Metabase अब एक connector है",
-      release_0_0_2_item_17_description: "आपके एजेंट सहेजे गए Metabase questions चला सकते हैं और सीधे आपके workspace से dashboards पढ़ सकते हैं। Metabase Pro, Enterprise, और किसी भी self-hosted instance के साथ काम करता है।",
-      release_0_0_2_item_18_title: "दैनिक BI digest आप तक पहुँचाया गया",
-      release_0_0_2_item_18_description: "एक नया टेम्पलेट जो Redash या Metabase में आप पहले से maintain करते हैं वे सहेजे गए queries उठाता है, हर सुबह नवीनतम numbers सारांशित करता है, और week-over-week anomaly flags के साथ plain-English digest post करता है। आपके dashboards तब भी उपयोगी रहते हैं जब कोई उन्हें नहीं खोलता।",
-      release_roadmap_label: "रोडमैप",
-      release_roadmap_summary: "हम अभी क्या बना रहे हैं और आगे क्या आने वाला है।",
-      release_roadmap_item_2_title: "Cloud एकीकरण",
-      release_roadmap_item_2_description: "अपने एजेंटों को cloud में 24/7 चलाएँ और उनके काम को real-time में अपने डेस्कटॉप पर वापस stream करें।",
-      release_roadmap_item_3_title: "वेब ऐप",
-      release_roadmap_item_3_description: "खातों, billing, और किसी भी browser से एजेंटों का प्रबंधन करने के लिए एक web companion।",
-      release_roadmap_item_4_title: "अपनी भाषा में Personas उपयोग करें",
-      release_roadmap_item_4_description: "पूर्ण multi-language समर्थन, right-to-left layouts और language-specific fonts सहित।",
-      release_roadmap_item_6_title: "टीम Workspaces",
-      release_roadmap_item_6_description: "अपनी team के साथ मिलकर एजेंट बनाएँ — साझा spaces, role permissions, और live dashboards।"
-    }
-  }
 };

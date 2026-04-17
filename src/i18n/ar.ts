@@ -1,4 +1,5 @@
 export const ar = {
+
   common: {
     loading: "جارٍ التحميل...",
     saving: "جارٍ الحفظ...",
@@ -47,6 +48,7 @@ export const ar = {
     error: "خطأ",
     success: "نجاح",
     required: "مطلوب",
+    // @llm-translated 2026-04-17
     optional: "اختياري",
     select: "-- اختر --",
     no_results: "لا توجد نتائج",
@@ -191,7 +193,7 @@ export const ar = {
     adoption_count_zero: "{count} اعتماد",
     adoption_count_two: "اعتمادان",
     adoption_count_few: "{count} اعتمادات",
-    adoption_count_many: "{count} اعتمادًا"
+    adoption_count_many: "{count} اعتمادًا",
   },
   chrome: {
     app_title: "Personas",
@@ -211,7 +213,7 @@ export const ar = {
     sign_in_google: "تسجيل الدخول بـ Google",
     signed_in: "تم تسجيل الدخول",
     sign_out: "تسجيل الخروج",
-    offline: "غير متصل بالإنترنت"
+    offline: "غير متصل بالإنترنت",
   },
   sidebar: {
     home: "الرئيسية",
@@ -257,7 +259,9 @@ export const ar = {
     engine: "المحرك",
     byom: "BYOM",
     data: "البيانات",
+    // @llm-translated 2026-04-17
     quality_gates: "فلاتر المحتوى",
+    // @llm-translated 2026-04-17
     config_resolution: "إعداد الوكيل",
     admin: "المسؤول",
     create: "إنشاء",
@@ -282,7 +286,7 @@ export const ar = {
     unread_messages_sr: "{count} رسالة غير مقروءة",
     unread_messages_sr_other: "{count} رسائل غير مقروءة",
     pending_events_sr: "{count} حدث معلّق",
-    pending_events_sr_other: "{count} أحداث معلّقة"
+    pending_events_sr_other: "{count} أحداث معلّقة",
   },
   home: {
     welcome: "مرحبًا",
@@ -307,7 +311,7 @@ export const ar = {
       priority_next: "التالي",
       priority_later: "لاحقاً",
       in_progress_count: "{count} قيد التنفيذ",
-      next_count: "{count} التالية"
+      next_count: "{count} التالية",
     },
     setup: {
       choose_role: "اختر دورك",
@@ -335,45 +339,45 @@ export const ar = {
       role_manager_hint: "التخطيط والتنسيق",
       role: "الدور",
       tool: "الأداة",
-      goal: "الهدف"
+      goal: "الهدف",
     },
     nav: {
       overview: {
         label: "نظرة عامة",
-        description: "تحليلات لوحة المعلومات وسجلّ التنفيذ ومراقبة النظام في الوقت الفعلي لجميع الوكلاء"
+        description: "تحليلات لوحة المعلومات وسجلّ التنفيذ ومراقبة النظام في الوقت الفعلي لجميع الوكلاء",
       },
       personas: {
         label: "الوكلاء",
-        description: "إنشاء وإعداد وإدارة وكلاء الذكاء الاصطناعي بسلوكيات وقدرات مخصصة"
+        description: "إنشاء وإعداد وإدارة وكلاء الذكاء الاصطناعي بسلوكيات وقدرات مخصصة",
       },
       events: {
         label: "الأحداث",
-        description: "إعداد مُشغّلات الأحداث ومستمعي webhook والأتمتة المجدولة"
+        description: "إعداد مُشغّلات الأحداث ومستمعي webhook والأتمتة المجدولة",
       },
       credentials: {
         label: "المفاتيح",
-        description: "إدارة بيانات اعتماد API واتصالات قواعد البيانات ورموز OAuth والأسرار المشفّرة"
+        description: "إدارة بيانات اعتماد API واتصالات قواعد البيانات ورموز OAuth والأسرار المشفّرة",
       },
       "design-reviews": {
         label: "القوالب",
-        description: "استيراد سير عمل n8n وتصفح معرض القوالب وتوليد مخططات الوكلاء"
+        description: "استيراد سير عمل n8n وتصفح معرض القوالب وتوليد مخططات الوكلاء",
       },
       team: {
         label: "الفِرَق",
-        description: "بناء خطوط أنابيب فِرَق الوكلاء المتعددة بالسحب والإفلات والتوجيه"
+        description: "بناء خطوط أنابيب فِرَق الوكلاء المتعددة بالسحب والإفلات والتوجيه",
       },
       cloud: {
         label: "السحابة",
-        description: "نشر الوكلاء على البنية التحتية السحابية وإدارة الجداول ودمج GitLab CI"
+        description: "نشر الوكلاء على البنية التحتية السحابية وإدارة الجداول ودمج GitLab CI",
       },
       settings: {
         label: "الإعدادات",
-        description: "تفضيلات الحساب وسمات المظهر وقواعد الإشعارات وإعدادات المحرك"
+        description: "تفضيلات الحساب وسمات المظهر وقواعد الإشعارات وإعدادات المحرك",
       },
       plugins: {
         label: "الإضافات",
-        description: "وسّع وكلاءك بإضافات طرف ثالث وامتدادات مخصصة"
-      }
+        description: "وسّع وكلاءك بإضافات طرف ثالث وامتدادات مخصصة",
+      },
     },
     learning: {
       title: "مركز التعلم",
@@ -390,7 +394,7 @@ export const ar = {
       pro_tip: "نصيحة احترافية: ",
       cat_agent_craft: "بناء الوكلاء",
       cat_observability: "المراقبة والأحداث",
-      cat_platform: "المنصة والإعداد"
+      cat_platform: "المنصة والإعداد",
     },
     setup_stepper: {
       your_profile: "ملفك الشخصي",
@@ -406,18 +410,18 @@ export const ar = {
       ready_to_save: "جاهز للحفظ",
       back: "رجوع",
       next: "التالي",
-      finish: "إنهاء"
+      finish: "إنهاء",
     },
     welcome_layout: {
       get_started: "ابدأ",
-      language: "اللغة"
+      language: "اللغة",
     },
     icon_showcase: {
       lucide_tab: "Lucide (مكتبة)",
       personas_tab: "Personas (متحركة)",
       lucide_footer: "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
-      personas_footer: "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
-    }
+      personas_footer: "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر",
+    },
   },
   agents: {
     title: "Personas",
@@ -428,12 +432,12 @@ export const ar = {
       subtitle_other: "{count} وكيل -- مرتّب حسب الصلة",
       needs_attention: "يحتاج انتباهًا",
       active: "نشط",
-      idle: "خامل"
+      idle: "خامل",
     },
     sidebar: {
       no_match: "لا يوجد وكلاء تطابق عوامل التصفية",
       clear_filters: "مسح جميع عوامل التصفية",
-      empty: "لا يوجد وكلاء بعد"
+      empty: "لا يوجد وكلاء بعد",
     },
     preview: {
       sensitive_hidden: "المعاينة الحساسة مخفية",
@@ -448,7 +452,7 @@ export const ar = {
       triggers_active_one: "مُشغّل واحد نشط",
       triggers_active_other: "{count} مُشغّلات نشطة",
       no_triggers: "لا توجد مُشغّلات",
-      custom_model: "مخصّص"
+      custom_model: "مخصّص",
     },
     creation: {
       heading: "وكيل جديد",
@@ -465,7 +469,7 @@ export const ar = {
       no_group: "بدون مجموعة",
       create_button: "إنشاء وكيل",
       creating_button: "جارٍ الإنشاء...",
-      name_required: "أدخل اسمًا للمتابعة"
+      name_required: "أدخل اسمًا للمتابعة",
     },
     editor: {
       tabs: {
@@ -476,7 +480,7 @@ export const ar = {
         design: "التصميم",
         health: "الصحة",
         settings: "الإعدادات",
-        model: "النموذج"
+        model: "النموذج",
       },
       no_persona: "لم يتم اختيار وكيل",
       save_failed: "فشل حفظ {tabs}",
@@ -490,13 +494,13 @@ export const ar = {
       cloud_banner_connect: "اربط منسّق سحابي لتشغيل الوكلاء عن بُعد",
       cloud_banner_signin: "سجّل الدخول لفتح ميزات السحابة والتنفيذ عن بُعد",
       sign_in: "تسجيل الدخول",
-      set_up_cloud: "إعداد السحابة"
+      set_up_cloud: "إعداد السحابة",
     },
     header: {
       no_triggers_warning: "لم يتم إعداد مُشغّلات أو اشتراكات أحداث",
       missing_credentials: "بيانات اعتماد مفقودة: {credentials}",
       toggle_failed: "فشل تبديل حالة الوكيل -- تحقق من اتصالك",
-      cannot_enable: "لا يمكن تفعيل الوكيل"
+      cannot_enable: "لا يمكن تفعيل الوكيل",
     },
     sr_card: "{name}، {status}",
     filters: {
@@ -517,7 +521,7 @@ export const ar = {
       selected: "{count} محدد",
       remove_from_favorites: "إزالة من المفضلة",
       add_to_favorites: "إضافة إلى المفضلة",
-      filter_by: "تصفية بـ {label}"
+      filter_by: "تصفية بـ {label}",
     },
     status: {
       draft: "مسودة",
@@ -525,7 +529,7 @@ export const ar = {
       healthy: "سليم",
       degraded: "متدهور",
       failing: "فاشل",
-      building: "قيد البناء"
+      building: "قيد البناء",
     },
     executions: {
       no_persona_selected: "لم يُحدد وكيل",
@@ -766,10 +770,6 @@ export const ar = {
       loading_dream_replay: "جارٍ تحميل إعادة الحلم...",
       no_dream_trace: "لا بيانات تتبع لإعادة الحلم",
       frame_count: "الإطار {index}/{total}",
-      depth_label: "العمق:",
-      active_count_label: "نشط ({count})",
-      completed_count_label: "مكتمل ({count})",
-      metadata_section: "البيانات الوصفية",
       phase_initializing: "جارٍ التهيئة",
       phase_thinking: "جارٍ التفكير",
       phase_calling_tools: "تشغيل الأدوات",
@@ -797,15 +797,32 @@ export const ar = {
       offset_prefix: "إزاحة:",
       step_tooltip: "الخطوة {step}: {name}",
       ms_into_stage: "{ms} مللي ثانية في المرحلة",
+      // @llm-translated 2026-04-17
+      depth_label: "العمق:",
+      // @llm-translated 2026-04-17
+      active_count_label: "نشط ({count})",
+      // @llm-translated 2026-04-17
+      completed_count_label: "مكتمل ({count})",
+      // @llm-translated 2026-04-17
+      metadata_section: "البيانات الوصفية",
+      // @llm-translated 2026-04-17
       chain_id_prefix: "السلسلة: {id}",
+      // @llm-translated 2026-04-17
       chain_total_duration: "الإجمالي: {duration}",
+      // @llm-translated 2026-04-17
       zero_ms: "0 مللي ثانية",
+      // @llm-translated 2026-04-17
       tool_calls_count: "استدعاء أداة واحد",
+      // @llm-translated 2026-04-17
       tool_calls_count_other: "{count} استدعاء أداة",
+      // @llm-translated 2026-04-17
       unique_tools_count: "({count} فريد)",
+      // @llm-translated 2026-04-17
       prev_error_nav: "الخطأ السابق (Shift+E)",
+      // @llm-translated 2026-04-17
       next_error_nav: "الخطأ التالي (E)",
-      runner_input_placeholder: "{\"key\": \"value\"}"
+      // @llm-translated 2026-04-17
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
     lab: {
       mode_arena: "الساحة",
@@ -939,8 +956,6 @@ export const ar = {
       quality_label: "الجودة",
       speed_label: "السرعة",
       cost_label: "التكلفة",
-      objective_warning: "مشكلة في هدف اللياقة",
-      objective_fallback_toast: "استخدم التطور أوزان لياقة افتراضية — تحقق من إعدادات الهدف",
       genome_breeding: "تهجين الجينوم",
       genome_breeding_subtitle: "هجّن أفضل الشخصيات أداءً لاكتشاف إعدادات جديدة",
       select_parents: "اختر الأصول (2-5 شخصيات)",
@@ -1057,7 +1072,11 @@ export const ar = {
       quality_score_inline: "النتيجة: {score} | {coverage} سيناريو",
       cancel_default: "إلغاء",
       hide_impact: "إخفاء التأثير",
-      show_impact: "إظهار التأثير"
+      show_impact: "إظهار التأثير",
+      // @llm-translated 2026-04-17
+      objective_warning: "مشكلة في هدف اللياقة",
+      // @llm-translated 2026-04-17
+      objective_fallback_toast: "استخدم التطور أوزان لياقة افتراضية — تحقق من إعدادات الهدف",
     },
     design: {
       select_agent: "اختر وكيلاً لبدء تحليل التصميم",
@@ -1123,7 +1142,6 @@ export const ar = {
       msg_count_one: "{count} رسالة",
       msg_count_other: "{count} رسائل",
       resume: "استئناف",
-      conv_controls_aria: "عناصر التحكم في محادثة التصميم",
       design_drift: "انجراف التصميم",
       design_sessions: "جلسات التصميم",
       example_n: "مثال {index}",
@@ -1142,7 +1160,7 @@ export const ar = {
       next: "التالي",
       go_back_hint: "ارجع وأجب على الأسئلة لإعداد وكيلك.",
       additional_instructions: "تعليمات أو سياق إضافي (اختياري)",
-      additional_instructions_placeholder: "أضف أي متطلبات محددة أو معرفة متخصصة أو قيوداً..."
+      additional_instructions_placeholder: "أضف أي متطلبات محددة أو معرفة متخصصة أو قيوداً...",
     },
     connectors: {
       connectors_label: "الموصِّلات",
@@ -1228,9 +1246,6 @@ export const ar = {
       auto_event_type: "نوع الحدث: {eventType}",
       auto_zapier_hint: "سيُتحقق من catch hook ويُربط.",
       auto_custom_hint: "الإعداد اليدوي مطلوب. ستُحفظ الأتمتة كمسودة.",
-      auto_input_schema_placeholder: "نص",
-      auto_github_token_needs: "يحتاج رمزك إلى نطاق/نطاقات {scopes}. حدّث رمزك على github.com/settings/tokens.",
-      auto_fallback_title: "يعود تلقائياً إلى الموصّل المباشر عند الفشل",
       ch_title: "قنوات الإشعارات",
       ch_add: "إضافة قناة",
       ch_all_added: "جميع أنواع القنوات مضافة",
@@ -1306,7 +1321,7 @@ export const ar = {
       sub_confirm: "تأكيد؟",
       sub_triggers_title: "المُشغّلات والاشتراكات",
       sub_suggested: "{count} مقترح",
-      sub_filter: "تصفية: {filter}"
+      sub_filter: "تصفية: {filter}",
     },
     editor_chrome: {
       tab_activity: "النشاط",
@@ -1339,7 +1354,7 @@ export const ar = {
       latency_label: "الكمون",
       cost_run_label: "تكلفة/تشغيل",
       last_run_label: "آخر تشغيل",
-      rank: "الترتيب"
+      rank: "الترتيب",
     },
     model_config: {
       model_provider: "النموذج والمزوّد",
@@ -1402,7 +1417,6 @@ export const ar = {
       model_name_placeholder_litellm: "مثلاً anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "مثلاً llama3.1:8b",
       model_name_placeholder_custom: "معرّف النموذج",
-      model_name_placeholder_override: "مثال: claude-sonnet-4-20250514",
       base_url_hint: "نقطة API لمزوّد النموذج. يجب تضمين البروتوكول (http/https) والمنفذ إذا كان غير قياسي.",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "رمز المصادقة لـ API المزوّد. لـ Ollama المحلي استخدم 'ollama'. لـ LiteLLM استخدم مفتاحك الرئيسي.",
@@ -1443,7 +1457,7 @@ export const ar = {
       latency: "الكمون",
       cost: "التكلفة",
       output_previews: "معاينات الإخراج",
-      no_output: "لا إخراج"
+      no_output: "لا إخراج",
     },
     use_cases: {
       no_persona: "لم يتم اختيار وكيل",
@@ -1538,7 +1552,7 @@ export const ar = {
       cron_field_hour: "س",
       cron_field_day: "ي",
       cron_field_month: "ش",
-      cron_field_weekday: "أ"
+      cron_field_weekday: "أ",
     },
     tools: {
       no_persona: "لم يتم اختيار وكيل",
@@ -1577,11 +1591,11 @@ export const ar = {
       credential: "بيانات الاعتماد",
       linked: "-- مرتبط",
       cred_missing: "-- مفقود",
-      often_used: "كثيراً ما يُستخدم مع"
+      often_used: "كثيراً ما يُستخدم مع",
     },
     chat_thread: {
       welcome: "أخبرني بما تحتاج هذا الوكيل أن يفعله. سأبني الإعداد الكامل -- الموجّه والأدوات والمشغّلات -- من وصفك.",
-      welcome_example: "راقب طلبات السحب في GitHub وانشر ملخصاً في Slack كل صباح"
+      welcome_example: "راقب طلبات السحب في GitHub وانشر ملخصاً في Slack كل صباح",
     },
     assign: {
       assign_to: "إسناد إلى {role}",
@@ -1592,50 +1606,50 @@ export const ar = {
       no_saved_credentials: "لا توجد بيانات اعتماد محفوظة بعد",
       no_credentials_match: "لا توجد بيانات اعتماد مطابقة لبحثك",
       vault_hint: "احفظ بيانات الاعتماد في الخزنة أو استخدم تبويب الموصّلات",
-      no_connectors_match: "لا توجد موصّلات مطابقة لبحثك"
+      no_connectors_match: "لا توجد موصّلات مطابقة لبحثك",
     },
     credential_coverage: "{matched}/{total} بيانات اعتماد",
     role_card: {
       no_credential: "لا توجد بيانات اعتماد",
       edit_tables: "تعديل",
       select_tables: "اختر الجداول",
-      assign: "إسناد"
+      assign: "إسناد",
     },
     channel_picker: {
       in_app_messaging: "المراسلة داخل التطبيق",
-      vault_hint: "احفظ بيانات اعتماد التواصل (Slack، البريد الإلكتروني، إلخ) في الخزنة لعرضها هنا."
+      vault_hint: "احفظ بيانات اعتماد التواصل (Slack، البريد الإلكتروني، إلخ) في الخزنة لعرضها هنا.",
     },
     connector_picker: {
       no_connectors: "لا توجد موصّلات متاحة",
       search: "بحث في الموصّلات...",
-      no_match: "لا توجد موصّلات مطابقة لـ\"{search}\""
+      no_match: "لا توجد موصّلات مطابقة لـ\"{search}\"",
     },
     policy_picker: {
       error_handling: "معالجة الأخطاء",
-      manual_review: "مراجعة يدوية"
+      manual_review: "مراجعة يدوية",
     },
     table_selector: {
       title: "اختر الجداول",
       subtitle: "{label} -- اختر الجداول للمراقبة",
       tables_selected_one: "{count} جدول مختار",
       tables_selected_other: "{count} جداول مختارة",
-      no_tables_selected: "لم تُختَر جداول -- الوكيل يراقب الكل"
+      no_tables_selected: "لم تُختَر جداول -- الوكيل يراقب الكل",
     },
     trigger_popover: {
       trigger: "مُشغّل",
-      clear_override: "مسح التجاوز"
+      clear_override: "مسح التجاوز",
     },
     use_case: {
       add: "إضافة حالة استخدام",
       title_placeholder: "عنوان حالة الاستخدام -- مثال: معالجة طلبات الاسترداد، تلخيص التذاكر اليومية",
-      description_placeholder: "صف الخطوات -- مثال: عند وصول طلب استرداد، تحقق من الطلب والسياسة وأرسل الموافقة أو الرفض"
+      description_placeholder: "صف الخطوات -- مثال: عند وصول طلب استرداد، تحقق من الطلب والسياسة وأرسل الموافقة أو الرفض",
     },
     builder_action: {
       processing: "جارٍ المعالجة...",
       error_retry: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
       enhancing: "جارٍ التحسين...",
       enhance_with_ai: "تحسين بالذكاء الاصطناعي",
-      describe_agent: "صف ما يجب أن يفعله وكيلك"
+      describe_agent: "صف ما يجب أن يفعله وكيلك",
     },
     builder_preview: {
       title: "معاينة",
@@ -1649,7 +1663,7 @@ export const ar = {
       schedule: "الجدول الزمني",
       manual_only: "يدوي فقط",
       errors: "الأخطاء",
-      review: "مراجعة"
+      review: "مراجعة",
     },
     dry_run: {
       ready: "جاهز",
@@ -1661,7 +1675,7 @@ export const ar = {
       issues: "المشاكل",
       apply_fix: "تطبيق الإصلاح: {label}",
       manual_action_needed: "مطلوب إجراء يدوي",
-      no_issues: "لم تُعثَر على مشاكل. يبدو إعداد الوكيل جيداً."
+      no_issues: "لم تُعثَر على مشاكل. يبدو إعداد الوكيل جيداً.",
     },
     identity_preview: {
       title: "معاينة",
@@ -1672,7 +1686,7 @@ export const ar = {
       components: "المكونات",
       schedule_label: "الجدول:",
       errors_label: "الأخطاء:",
-      review_label: "المراجعة:"
+      review_label: "المراجعة:",
     },
     build_review: {
       agent_name: "اسم الوكيل",
@@ -1681,7 +1695,7 @@ export const ar = {
       connectors_ready: "الموصّلات جاهزة",
       promote_agent: "ترقية الوكيل",
       testing: "جارٍ الاختبار...",
-      test_agent: "اختبار الوكيل"
+      test_agent: "اختبار الوكيل",
     },
     connectors_cell: {
       add_in_keys: "إضافة في المفاتيح",
@@ -1691,7 +1705,7 @@ export const ar = {
       swap_to: "التبديل إلى:",
       recalculating: "جارٍ إعادة الحساب...",
       recalculate_dimensions: "إعادة حساب الأبعاد",
-      rebuilding: "جارٍ إعادة البناء بالموصّل الجديد..."
+      rebuilding: "جارٍ إعادة البناء بالموصّل الجديد...",
     },
     dimension_edit: {
       add_item: "إضافة عنصر...",
@@ -1717,7 +1731,7 @@ export const ar = {
       fully_automated: "مؤتمت بالكامل",
       cron_label: "Cron:",
       every_label: "كل:",
-      done: "تم"
+      done: "تم",
     },
     quick_config: {
       title: "الإعداد السريع",
@@ -1731,7 +1745,7 @@ export const ar = {
       monthly: "شهرياً",
       days: "الأيام",
       day_of_month: "يوم من الشهر",
-      time: "الوقت"
+      time: "الوقت",
     },
     events_panel: {
       source_agent: "الوكيل المصدر",
@@ -1740,23 +1754,23 @@ export const ar = {
       select_agent: "اختر وكيلاً",
       loading_events: "جارٍ تحميل الأحداث...",
       no_subscriptions: "لم تُعثَر على اشتراكات أحداث",
-      choose_agent: "اختر وكيلاً لعرض أحداثه"
+      choose_agent: "اختر وكيلاً لعرض أحداثه",
     },
     matrix_cred_picker: {
       no_stored: "لا توجد بيانات اعتماد مخزنة",
       best_match: "الأنسب",
-      other: "أخرى"
+      other: "أخرى",
     },
     services_panel: {
       no_connectors: "لم يُعثَر على موصّلات بمفاتيح API سليمة. أضف بيانات اعتماد في الخزنة أولاً.",
-      select_table: "اختر جدولاً"
+      select_table: "اختر جدولاً",
     },
     spatial_question: {
       agent_configuration: "إعداد الوكيل",
       or_custom_answer: "أو اكتب إجابة مخصصة",
       type_answer: "اكتب إجابتك...",
       submit: "إرسال",
-      press_to_select: "اضغط 1-{count} للاختيار الفوري"
+      press_to_select: "اضغط 1-{count} للاختيار الفوري",
     },
     table_picker: {
       title: "اختر جدولاً",
@@ -1764,12 +1778,12 @@ export const ar = {
       loading: "جارٍ تحميل الجداول...",
       no_tables: "لم تُعثَر على جداول لهذا الموصّل",
       clear_selection: "مسح الاختيار",
-      no_match: "لا توجد جداول مطابقة لـ\"{search}\""
+      no_match: "لا توجد جداول مطابقة لـ\"{search}\"",
     },
     matrix_entry: {
       new_agent: "وكيل جديد",
       failed_to_create: "فشل إنشاء مسودة الوكيل.",
-      build_failed: "فشل بدء البناء. تحقق من إعداد CLI."
+      build_failed: "فشل بدء البناء. تحقق من إعداد CLI.",
     },
     workflow_upload: {
       build_hint: "اضغط بناء لتحويل هذا السير إلى وكيل.",
@@ -1777,22 +1791,22 @@ export const ar = {
       parse: "تحليل",
       drop_file: "أسقط ملف السير هنا",
       file_types: "n8n أو Zapier أو Make أو GitHub Actions (.json, .yaml)",
-      paste_json: "أو الصق JSON مباشرة"
+      paste_json: "أو الصق JSON مباشرة",
     },
     config_popup: {
       load_error: "تعذّر تحميل القيم المحفوظة -- قد تحتاج إلى إعادة إدخالها.",
       fill_hint: "املأ حقلاً واحداً على الأقل للحفظ",
-      failed_to_save: "فشل حفظ الإعداد"
+      failed_to_save: "فشل حفظ الإعداد",
     },
     onboarding: {
       setup_complete: "اكتمل الإعداد {score}%",
       steps_done: "{completed}/{total} خطوات مكتملة",
-      dismiss_checklist: "إخفاء قائمة المهام"
+      dismiss_checklist: "إخفاء قائمة المهام",
     },
     template_picker: {
       title: "اختر قالباً",
       subtitle: "اختر قالباً لملء بيانات الوكيل مسبقاً، أو ابدأ من الصفر.",
-      start_from_scratch: "البدء من الصفر"
+      start_from_scratch: "البدء من الصفر",
     },
     persona_overview: {
       no_match: "لا توجد وكلاء مطابقون",
@@ -1801,26 +1815,26 @@ export const ar = {
       description_copied: "تم نسخ الوصف إلى الحافظة",
       failed_copy: "فشل نسخ الوصف",
       no_connectors_configured: "لا توجد موصّلات مضبوطة",
-      click_to_copy: "انقر للنسخ"
+      click_to_copy: "انقر للنسخ",
     },
     overview_empty: {
       title: "لا توجد وكلاء مطابقون لهذه الفلاتر",
       subtitle: "جرب تعديل البحث أو شرائح الفلتر، أو أعد ضبط العرض لرؤية جميع الوكلاء.",
-      clear_all_filters: "مسح جميع الفلاتر"
+      clear_all_filters: "مسح جميع الفلاتر",
     },
     overview_batch: {
-      selected: "{count} محدد"
+      selected: "{count} محدد",
     },
     overview_menu: {
       more_actions: "إجراءات أخرى",
-      settings: "الإعدادات"
+      settings: "الإعدادات",
     },
     overview_toolbar: {
       search_placeholder: "بحث في الوكلاء...",
       show_all: "عرض جميع الوكلاء",
       show_favorites: "عرض المفضلة فقط",
       favorites: "المفضلة",
-      clear_search: "مسح البحث"
+      clear_search: "مسح البحث",
     },
     overview_columns: {
       persona: "الوكيل",
@@ -1835,10 +1849,10 @@ export const ar = {
       building_drafts: "قيد البناء / مسودات",
       all_health: "جميع حالات الصحة",
       all_connectors: "جميع الموصّلات",
-      active_triggers: "{count} مشغّل نشط"
+      active_triggers: "{count} مشغّل نشط",
     },
     health_indicator: {
-      last: "آخر {count}"
+      last: "آخر {count}",
     },
     view_presets: {
       views: "العروض",
@@ -1855,7 +1869,7 @@ export const ar = {
       needs_attention: "يحتاج انتباهاً",
       failing_agents: "الوكلاء الفاشلون",
       my_favorites: "مفضلتي",
-      recently_active: "نشط مؤخراً"
+      recently_active: "نشط مؤخراً",
     },
     activity: {
       title: "النشاط",
@@ -1878,7 +1892,7 @@ export const ar = {
       modal_execution_title: "{name} - تنفيذ",
       modal_execution_subtitle: "المعرّف: {id}",
       modal_review_title: "مراجعة: {title}",
-      modal_review_subtitle: "الخطورة: {severity} · الحالة: {status}"
+      modal_review_subtitle: "الخطورة: {severity} · الحالة: {status}",
     },
     chat: {
       select_persona: "اختر وكيلاً لبدء المحادثة",
@@ -1897,7 +1911,7 @@ export const ar = {
       confirm_delete: "حذف؟",
       processing: "جارٍ المعالجة...",
       delete_conversation: "حذف المحادثة",
-      confirm_delete_conversation: "تأكيد حذف المحادثة"
+      confirm_delete_conversation: "تأكيد حذف المحادثة",
     },
     advisory: {
       how_can_improve: "كيف يمكن لهذا الوكيل أن يعمل بشكل أفضل؟",
@@ -1912,7 +1926,7 @@ export const ar = {
       analyze_desc: "مراجعة اتجاهات الأداء والأنماط",
       test_run: "تشغيل تجريبي",
       test_run_desc: "شغّل الوكيل وقيّم النتيجة",
-      test_input_label: "مدخل الاختبار (اختياري)"
+      test_input_label: "مدخل الاختبار (اختياري)",
     },
     ops: {
       sessions: "الجلسات",
@@ -1940,21 +1954,21 @@ export const ar = {
       reviews: "المراجعات",
       reviews_desc: "الموافقات والقرارات المعلّقة",
       versions: "الإصدارات",
-      versions_desc: "سجل إصدارات الموجّه والتراجع"
+      versions_desc: "سجل إصدارات الموجّه والتراجع",
     },
     ops_run: {
       execute_agent: "تنفيذ الوكيل",
       running: "جارٍ التشغيل...",
       recent: "الأخيرة",
       no_executions: "لا توجد تنفيذات بعد",
-      refresh_executions: "تحديث التنفيذات"
+      refresh_executions: "تحديث التنفيذات",
     },
     ops_lab: {
       history: "السجل",
       no_lab_runs: "لا توجد تشغيلات في المختبر بعد",
       refresh_lab: "تحديث سجل المختبر",
       arena: "الساحة",
-      improve: "تحسين"
+      improve: "تحسين",
     },
     ops_health: {
       no_health_data: "لا توجد بيانات صحة",
@@ -1966,22 +1980,22 @@ export const ar = {
       run_check_aria: "تشغيل فحص الصحة",
       healthy: "سليم",
       degraded: "متدهور",
-      unhealthy: "غير سليم"
+      unhealthy: "غير سليم",
     },
     ops_assertions: {
       active_count: "{enabled}/{total} نشط",
       no_assertions: "لا توجد تأكيدات مضبوطة",
       refresh_assertions: "تحديث التأكيدات",
       enable_assertion: "تفعيل {name}",
-      disable_assertion: "تعطيل {name}"
+      disable_assertion: "تعطيل {name}",
     },
     health_tab: {
       title: "فحص الصحة",
-      description: "تشغيل تحليل جاف على إعداد الوكيل الحالي للكشف عن بيانات الاعتماد المفقودة والموصّلات المنقطعة وتركيبات الأدوات غير المتوافقة وحالات الاستخدام غير المحددة بدقة. تُعرض المشاكل كبطاقات قابلة للتنفيذ مع إصلاحات بنقرة واحدة."
+      description: "تشغيل تحليل جاف على إعداد الوكيل الحالي للكشف عن بيانات الاعتماد المفقودة والموصّلات المنقطعة وتركيبات الأدوات غير المتوافقة وحالات الاستخدام غير المحددة بدقة. تُعرض المشاكل كبطاقات قابلة للتنفيذ مع إصلاحات بنقرة واحدة.",
     },
     matrix_tab: {
       loading: "جارٍ تحميل المصفوفة",
-      no_data: "لا تتوفر بيانات مصفوفة. ابنِ أو أعد بناء هذا الوكيل لإنشاء الأبعاد."
+      no_data: "لا تتوفر بيانات مصفوفة. ابنِ أو أعد بناء هذا الوكيل لإنشاء الأبعاد.",
     },
     settings_status: {
       saving: "جارٍ حفظ {sections}...",
@@ -2005,9 +2019,6 @@ export const ar = {
       health_watch: "مراقبة الصحة",
       health_watch_active: "مراقبة الصحة نشطة (كل 6 ساعات)",
       health_watch_enable: "تفعيل المراقبة المستمرة للصحة",
-      speak_as: "التحدث باسم",
-      no_twins_configured: "لا توجد توائم مُهيّأة. افتح المكوّن الإضافي Twin لإنشاء واحد — ستتمكن هذه الشخصية عندئذٍ من تبنّيه.",
-      twin_profile_aria: "ملف التوأم الذي تتحدث هذه الشخصية باسمه"
     },
     tool_runner: {
       no_tools: "لم تُسنَد أدوات لهذا الوكيل.",
@@ -2017,7 +2028,6 @@ export const ar = {
       success: "نجاح",
       failed: "فشل",
       error: "خطأ",
-      input_json_placeholder: "قيمة"
     },
     health_check: {
       title: "فحص صحة الوكيل",
@@ -2034,7 +2044,7 @@ export const ar = {
       rerun: "إعادة التشغيل",
       capabilities: "القدرات",
       all_healthy: "جميع الأنظمة سليمة",
-      all_healthy_detail: "لم تُكتشَف مشاكل في إعداد الوكيل"
+      all_healthy_detail: "لم تُكتشَف مشاكل في إعداد الوكيل",
     },
     health_digest: {
       title: "ملخص صحة الوكلاء",
@@ -2049,16 +2059,16 @@ export const ar = {
       agents_checked_other: "تم فحص {count} وكلاء",
       issues_one: "{count} مشكلة",
       issues_other: "{count} مشاكل",
-      last_run: "آخر تشغيل: {time}"
+      last_run: "آخر تشغيل: {time}",
     },
     health_issue: {
       apply_fix: "تطبيق الإصلاح: {label}",
-      manual_action: "مطلوب إجراء يدوي"
+      manual_action: "مطلوب إجراء يدوي",
     },
     health_score: {
       healthy: "سليم",
       degraded: "متدهور",
-      unhealthy: "غير سليم"
+      unhealthy: "غير سليم",
     },
     prompt_editor: {
       no_persona: "لم يتم اختيار وكيل",
@@ -2066,7 +2076,6 @@ export const ar = {
       new_section: "قسم جديد",
       saved: "تم الحفظ",
       sections: "أقسام",
-      sections_aria: "أقسام موجِّه الطلب"
     },
     custom_sections: {
       title: "الأقسام المخصصة",
@@ -2076,7 +2085,7 @@ export const ar = {
       remove_section: "حذف القسم",
       title_placeholder: "عنوان القسم...",
       content_placeholder: "محتوى القسم...",
-      custom_section: "قسم مخصص"
+      custom_section: "قسم مخصص",
     },
     activity_filters: {
       all: "الكل",
@@ -2084,7 +2093,7 @@ export const ar = {
       events: "الأحداث",
       memories: "الذكريات",
       reviews: "المراجعات",
-      messages: "الرسائل"
+      messages: "الرسائل",
     },
     overview_actions: {
       delete_agent: "حذف الوكيل",
@@ -2092,7 +2101,7 @@ export const ar = {
       delete_agents: "حذف {count} وكيل/وكلاء",
       delete_agents_message: "سيُزال {count} وكيل/وكلاء وجميع إعداداتهم نهائياً.",
       delete_drafts: "حذف {count} مسودة/مسودات",
-      delete_drafts_message: "سيُزال {count} مسودة وكيل نهائياً."
+      delete_drafts_message: "سيُزال {count} مسودة وكيل نهائياً.",
     },
     persona_list: {
       all_personas: "جميع الوكلاء",
@@ -2120,7 +2129,7 @@ export const ar = {
       show_only_favorites: "عرض المفضلة فقط",
       clear_search: "مسح البحث",
       col_persona: "الوكيل",
-      no_connectors_configured: "لا توجد موصّلات مضبوطة"
+      no_connectors_configured: "لا توجد موصّلات مضبوطة",
     },
     design_preview: {
       preview: "معاينة",
@@ -2134,7 +2143,7 @@ export const ar = {
       activating: "جارٍ التفعيل...",
       activate_agent: "تفعيل الوكيل",
       create_agent: "إنشاء الوكيل",
-      min_completeness: "أضف مزيداً من التفاصيل للوصول إلى اكتمال 40%"
+      min_completeness: "أضف مزيداً من التفاصيل للوصول إلى اكتمال 40%",
     },
     editor_ui: {
       max_budget_label: "الحد الأقصى للميزانية (دولار)",
@@ -2258,8 +2267,8 @@ export const ar = {
       cost_per_run: "التكلفة/تشغيل",
       last_run: "آخر تشغيل",
       rank: "الترتيب",
-      view_in_leaderboard: "عرض في لوحة المتصدرين"
-    }
+      view_in_leaderboard: "عرض في لوحة المتصدرين",
+    },
   },
   vault: {
     title: "الخزنة",
@@ -2271,7 +2280,7 @@ export const ar = {
     health: {
       healthy: "سليم",
       needs_attention: "يحتاج انتباهًا",
-      untested: "غير مُختبَر"
+      untested: "غير مُختبَر",
     },
     list: {
       no_credentials: "لم يتم اكتشاف خدمات مصادق عليها. اختر يدويًا أدناه.",
@@ -2280,7 +2289,6 @@ export const ar = {
       no_dependencies: "لا يعتمد أي وكيل على بيانات الاعتماد هذه. آمن للتعديل أو الحذف.",
       affected_agents: "الوكلاء المتأثرون",
       affected_events: "الأحداث المتأثرة",
-      sort_label: "ترتيب:"
     },
     import: {
       title: "مصدر الاستيراد",
@@ -2295,16 +2303,8 @@ export const ar = {
         min30: "30 دقيقة",
         hour1: "ساعة واحدة",
         hour6: "6 ساعات",
-        day1: "24 ساعة"
+        day1: "24 ساعة",
       },
-      parse_secrets: "تحليل الأسرار",
-      selected_for_import: "محدد للاستيراد",
-      auto_detected: "تم اكتشافه تلقائياً",
-      sync_supported: "المزامنة مدعومة",
-      secrets_found_one: "تم العثور على {count} سر",
-      secrets_found_other: "تم العثور على {count} أسرار",
-      import_secrets_one: "استيراد {count} سر",
-      import_secrets_other: "استيراد {count} أسرار"
     },
     features: {
       anomaly_detected: "تم اكتشاف خلل: بيانات الاعتماد تفشل فجأة بعد نجاح سابق. قد يكون إلغاءً.",
@@ -2328,7 +2328,7 @@ export const ar = {
         remove_failed: "فشل إزالة السياسة: {error}",
         update_failed: "فشل تحديث فترة التدوير: {error}",
         enable_failed: "فشل تفعيل التدوير: {error}",
-        last_rotated: "آخر تدوير {time}"
+        last_rotated: "آخر تدوير {time}",
       },
       anomaly: {
         healthy: "سليم",
@@ -2340,13 +2340,13 @@ export const ar = {
         samples: "{count} فحص",
         permanent: "مستمر: {rate}",
         transient: "مؤقت: {rate}",
-        tolerance: "التسامح: {rate}"
+        tolerance: "التسامح: {rate}",
       },
       rotation_badge: {
         disabled: "معطّل",
         perm_errors: "أخطاء مستمرة",
         degrading: "يتدهور",
-        backoff: "في انتظار إعادة المحاولة"
+        backoff: "في انتظار إعادة المحاولة",
       },
       audit: {
         empty: "لا توجد إدخالات تدقيق بعد. ستُسجَّل العمليات عند حدوثها.",
@@ -2355,13 +2355,13 @@ export const ar = {
         op_updated: "تم التحديث",
         op_deleted: "تم الحذف",
         op_healthcheck: "اختبار الاتصال",
-        filter_all: "الكل"
+        filter_all: "الكل",
       },
       intelligence: {
         operation: "العملية",
         detail: "التفاصيل",
-        time: "الوقت"
-      }
+        time: "الوقت",
+      },
     },
     negotiator: {
       title: "مفاوض بيانات الاعتماد بالذكاء الاصطناعي",
@@ -2389,14 +2389,13 @@ export const ar = {
       open_in_browser: "فتح في المتصفح",
       step_complete_captured: "اكتملت الخطوة -- تم التقاط القيم",
       mark_complete: "وضع علامة مكتمل",
-      completed: "مكتمل"
+      completed: "مكتمل",
     },
     card: {
       scope_mismatch: "عدم تطابق النطاق",
       scope_missing_one: "{count} نطاق مطلوب غير ممنوح: ",
       scope_missing_other: "{count} نطاقات مطلوبة غير ممنوحة: ",
       reauthorize: "إعادة التفويض",
-      reauthorize_scopes: "إعادة التصريح بنطاقات إضافية"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2414,18 +2413,6 @@ export const ar = {
       configure_fields: "إعداد حقول بيانات الاعتماد",
       detect: "كشف",
       auto_add: "إضافة تلقائية",
-      connection_test_heading: "اختبار الاتصال",
-      test_connection_btn: "اختبار الاتصال",
-      credential_fields_heading: "حقول بيانات الاعتماد",
-      how_to_get_connector: "كيفية الحصول على بيانات اعتماد {connectorLabel}",
-      authorization_complete: "اكتمل التصريح",
-      copied_to_clipboard: "تم النسخ إلى الحافظة",
-      credential_name: "اسم بيانات الاعتماد",
-      credential_name_placeholder: "أضف تسمية لبيانات الاعتماد هذه — مثال: حسابي على {label}، إنتاج {label}",
-      authorizing_with: "جارٍ التصريح عبر {label}...",
-      authorize_with: "التصريح عبر {label}",
-      oauth_consent_hint: "يفتح {label} في متصفحك. امنح الوصول ثم عُد إلى هنا.",
-      oauth_connected_at: "تم الاتصال بـ {label} في {time}"
     },
     type_picker: {
       title: "إضافة بيانات اعتماد",
@@ -2454,7 +2441,7 @@ export const ar = {
       workspace_connect: "ربط مساحة العمل",
       workspace_connect_hint: "تسجيل دخول Google واحد ينشئ بيانات اعتماد Gmail وCalendar وDrive وSheets تلقائياً",
       auto_discover: "الاكتشاف التلقائي لبيانات الاعتماد",
-      auto_discover_hint: "مسح نظام الملفات بحثاً عن مفاتيح API وملفات AWS وتغيّرات البيئة والمزيد"
+      auto_discover_hint: "مسح نظام الملفات بحثاً عن مفاتيح API وملفات AWS وتغيّرات البيئة والمزيد",
     },
     body: {
       authorizing: "جارٍ التفويض مع {name}...",
@@ -2462,12 +2449,12 @@ export const ar = {
       authorize_hint: "يفتح صفحة تسجيل الدخول إلى {name} ويحفظ وصولك بعد موافقتك.",
       consent_completed: "اكتمل موافقة {name} في {time}",
       update_failed: "فشل تحديث بيانات الاعتماد",
-      delete_credential: "حذف بيانات الاعتماد"
+      delete_credential: "حذف بيانات الاعتماد",
     },
     connector: {
       filter_all: "الكل",
       filter_connected: "المتصلة",
-      filter_available: "المتاحة"
+      filter_available: "المتاحة",
     },
     auto_cred: {
       guided_setup: "الإعداد الموجَّه",
@@ -2499,14 +2486,6 @@ export const ar = {
       open_in_browser: "فتح في المتصفح",
       completed_step: "أكملت هذه الخطوة",
       input_requested: "مدخل مطلوب",
-      cancel_session: "إلغاء الجلسة",
-      test_connection: "اختبار الاتصال",
-      testing: "جارٍ الاختبار...",
-      re_run_browser: "إعادة تشغيل المتصفح",
-      discard: "تجاهل",
-      save_credential: "حفظ بيانات الاعتماد",
-      save_procedure: "حفظ الإجراء",
-      procedure_saved: "تم حفظ الإجراء"
     },
     vector: {
       documents_tab: "المستندات",
@@ -2538,7 +2517,7 @@ export const ar = {
       documents: "المستندات",
       chunks: "الأقسام",
       local_embedding: "بحث محلي",
-      local_embedding_hint: "يعمل فهرسة البحث محلياً باستخدام {model} ({dims}-بُعد). لا تغادر البيانات جهازك. يُحمَّل النموذج (~23 ميغابايت) عند الاستخدام الأول ويُحفَظ محلياً."
+      local_embedding_hint: "يعمل فهرسة البحث محلياً باستخدام {model} ({dims}-بُعد). لا تغادر البيانات جهازك. يُحمَّل النموذج (~23 ميغابايت) عند الاستخدام الأول ويُحفَظ محلياً.",
     },
     design_modal: {
       title: "تصميم بيانات الاعتماد",
@@ -2553,12 +2532,12 @@ export const ar = {
       how_to_fix: "كيفية الإصلاح",
       original_request: "طلبك الأصلي (محفوظ):",
       start_over: "البدء من جديد",
-      try_again_with: "المحاولة مجدداً بطلبك"
+      try_again_with: "المحاولة مجدداً بطلبك",
     },
     desktop: {
       installed: "مثبّت",
       running: "يعمل",
-      not_installed: "غير مثبّت"
+      not_installed: "غير مثبّت",
     },
     graph: {
       no_dependencies: "لا توجد تبعيات",
@@ -2568,7 +2547,7 @@ export const ar = {
       dep_count_other: "{count} تبعيات",
       not_tested: "غير مختبر",
       healthy: "سليم",
-      unhealthy: "غير سليم"
+      unhealthy: "غير سليم",
     },
     wizard: {
       detected: "مكتشف ({count})",
@@ -2578,7 +2557,7 @@ export const ar = {
       already_added_badge: "تمت الإضافة",
       local: "محلي",
       cli_auth: "مصادقة CLI",
-      session: "الجلسة"
+      session: "الجلسة",
     },
     playground: {
       tab_overview: "نظرة عامة",
@@ -2608,7 +2587,7 @@ export const ar = {
       query_parameters: "معاملات الاستعلام",
       headers: "الترويسات",
       body: "المحتوى",
-      empty_response: "(استجابة فارغة)"
+      empty_response: "(استجابة فارغة)",
     },
     playground_extra: {
       add_tag: "إضافة وسم...",
@@ -2629,11 +2608,11 @@ export const ar = {
       query_parameters: "معاملات الاستعلام",
       recipes_title: "الوصفات المحفوظة",
       truncated_warning: "الاستجابة مقطوعة للعرض",
-      value_col: "القيمة"
+      value_col: "القيمة",
     },
     ingest: {
       save_name: "حفظ الاسم",
-      rename_credential: "إعادة تسمية بيانات الاعتماد"
+      rename_credential: "إعادة تسمية بيانات الاعتماد",
     },
     databases: {
       col_database: "قاعدة البيانات",
@@ -2747,8 +2726,6 @@ export const ar = {
       filter_tables: "تصفية الجداول...",
       refresh: "تحديث",
       introspection_unavailable: "فحص الجداول غير متاح لهذا النوع من الموصّلات.",
-      not_null: "NOT NULL",
-      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "محاكاة الإبطال",
@@ -2794,14 +2771,9 @@ export const ar = {
       daily_execs_lost: "تنفيذات يومية مفقودة",
       daily_cost_impact: "تأثير التكلفة اليومية",
       sim_low: "لا يعتمد أي وكيل أو سير عمل على بيانات الاعتماد هذه. آمن للإبطال.",
-      sim_critical: "إلغاء {credentialName} سيُعطّل {workflows} من سير العمل{workflowPlural} ويوقف {personas} شخصية{personaPlural}.",
-      sim_high: "إلغاء {credentialName} سيؤثر على {personas} شخصية{personaPlural} عبر مساحة عملك.",
-      sim_medium: "إلغاء {credentialName} له نطاق تأثير محدود.",
-      per_day: "/يوم"
     },
     shared: {
       add: "إضافة",
-      copied: "تم النسخ",
       no_connector_available: "لا يتوفر تعريف موصّل لهذا النوع من بيانات الاعتماد.",
       request_builder: "منشئ الطلبات",
       close: "إغلاق",
@@ -2928,21 +2900,6 @@ export const ar = {
       no_documents_description: "أسقط الملفات هنا أو الصق نصاً أو امسح مجلداً لبدء بناء قاعدة المعرفة.",
       delete_document: "حذف المستند",
       chunks_label: "{count} قسم",
-      kb_count_summary: "-- {docs} مستنداً، {chunks} مقطعاً",
-      default_patterns: "الافتراضي:",
-      add_pattern_placeholder: "*.pdf",
-      distance_label: "المسافة:",
-      chunk_label: "المقطع:",
-      copy_credential_id: "نسخ معرّف بيانات الاعتماد",
-      request_body: "جسم الطلب",
-      add_tag_title: "إضافة وسم",
-      local_embedding_hint: "تُولَّد التضمينات محلياً باستخدام {model} ({dims}-بُعد). لا تغادر أي بيانات جهازك. يُنزَّل النموذج (~23 ميغابايت) عند أول استخدام ويُخزَّن محلياً.",
-      api_path_placeholder: "/api/v1/resource",
-      json_body_placeholder: "قيمة",
-      sending: "جارٍ الإرسال...",
-      send: "إرسال",
-      search_results_one: "نتيجة {count} لـ \"{query}\"",
-      search_results_other: "{count} نتيجة لـ \"{query}\""
     },
     manager: {
       title: "بيانات الاعتماد",
@@ -2962,23 +2919,20 @@ export const ar = {
       test_all_credentials: "اختبار جميع بيانات الاعتماد",
       test_all: "اختبار الكل",
       daily_progress: "يومي {done}/{total}",
-      testing_progress: "جارٍ الاختبار {done}/{total}"
+      testing_progress: "جارٍ الاختبار {done}/{total}",
     },
     bulk_healthcheck: {
       title: "نتائج فحص الصحة",
       needs_attention: "يحتاج انتباهاً",
       slowest_responses: "أبطأ الاستجابات",
-      passed_count: "{count} ناجح",
-      failed_count: "{count} فاشل",
-      total_count: "{count} الإجمالي"
     },
     health_bar: {
       healthy: "سليم",
       needs_attention: "يحتاج انتباهاً",
-      untested: "غير مختبر"
+      untested: "غير مختبر",
     },
     breadcrumb: {
-      aria_label: "مسار التنقل في الخزنة"
+      aria_label: "مسار التنقل في الخزنة",
     },
     credential_card: {
       deleting: "جارٍ حذف {name}...",
@@ -2994,7 +2948,7 @@ export const ar = {
       remove_tag: "إزالة الوسم \"{tag}\"",
       copy_credential_id: "نسخ معرّف بيانات الاعتماد",
       refresh_oauth: "تحديث رمز OAuth الآن",
-      refresh: "تحديث"
+      refresh: "تحديث",
     },
     vault_badge: {
       needs_attention: "يحتاج انتباهاً",
@@ -3017,21 +2971,21 @@ export const ar = {
       encrypt_now_other: "تشفير {count} بيانات اعتماد غير مشفّرة الآن",
       encrypt_done_one: "تم -- تم تشفير {migrated} بيانات اعتماد.",
       encrypt_done_other: "تم -- تم تشفير {migrated} بيانات اعتماد.",
-      encrypt_partial: "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق."
+      encrypt_partial: "تم تشفير {migrated}، فشل {failed}. حاول مجدداً أو أعد تشغيل التطبيق.",
     },
     delete_dialog: {
       title: "حذف بيانات الاعتماد",
       cannot_undo: "لا يمكن التراجع عن هذا الإجراء.",
       label_name: "الاسم",
       label_type: "النوع",
-      unverified_warning: "تعذّر التحقق من جميع التبعيات. قد لا تظهر بعض الوكلاء أو الأتمتة المتصلة."
+      unverified_warning: "تعذّر التحقق من جميع التبعيات. قد لا تظهر بعض الوكلاء أو الأتمتة المتصلة.",
     },
     card_body: {
       failed_update: "فشل تحديث بيانات الاعتماد",
       authorizing_with: "جارٍ التفويض مع {name}...",
       authorize_with: "التفويض مع {name}",
       authorize_hint: "يطلق موافقة {name} المُدارة من التطبيق ويُحدّث رمز التحديث بعد الموافقة.",
-      consent_completed: "اكتملت موافقة {name} في {time}"
+      consent_completed: "اكتملت موافقة {name} في {time}",
     },
     card_details: {
       tab_intelligence: "الذكاء",
@@ -3039,7 +2993,7 @@ export const ar = {
       tab_token_lifetime: "عمر الرمز",
       tab_services: "الخدمات ({count})",
       tab_events: "الأحداث ({count})",
-      tab_audit: "التدقيق"
+      tab_audit: "التدقيق",
     },
     intelligence_tab: {
       loading: "جارٍ تحميل بيانات الذكاء",
@@ -3060,7 +3014,7 @@ export const ar = {
       dependents_warning_other: "تغيير أو حذف بيانات الاعتماد هذه سيؤثر على {count} وكلاء:",
       link_structural: "هيكلي",
       link_observed: "ملاحَظ",
-      via_connector: "عبر {connector}"
+      via_connector: "عبر {connector}",
     },
     token_metrics: {
       loading: "جارٍ تحميل المقاييس...",
@@ -3072,11 +3026,6 @@ export const ar = {
       avg_drift: "متوسط الانحراف",
       recent_ttls: "مدد TTL الأخيرة (الأحدث أولاً)",
       recent_refreshes: "التحديثات الأخيرة",
-      fallback_used: "استُخدم البديل ({fallback}ث) في {rate}% من عمليات التحديث ({count}/{total}) — المزوّد يحذف"
-    },
-    reauth_banner: {
-      access_revoked: ") -- تم إلغاء الوصول. يرجى إعادة التصريح لاستئناف الأتمتة.",
-      reconnect: "إعادة الاتصال"
     },
     rotation_section: {
       corrupted_warning: "بيانات الفحص الصحي تالفة. درجات الشذوذ غير متاحة حتى الفحص الناجح التالي.",
@@ -3097,7 +3046,6 @@ export const ar = {
       enabling: "جارٍ التفعيل...",
       enable_rotation: "تفعيل التدوير",
       enable_failed: "فشل تفعيل التدوير: {error}",
-      last_rotated: "آخر تدوير {time}"
     },
     event_config: {
       event_triggers: "مشغّلات الأحداث",
@@ -3124,7 +3072,6 @@ export const ar = {
       minutes_10: "10 دقائق",
       healthcheck_auto_rotate: "سيُشغَّل التدوير تلقائياً عندما تبدأ بيانات اعتماد كانت سليمة بالفشل في الفحص الصحي.",
       last_evaluated: "آخر تقييم: {time}",
-      loading: "جارٍ تحميل الأحداث..."
     },
     credential_forms: {
       encrypted_keychain: "مشفّر بسلسلة مفاتيح نظام التشغيل",
@@ -3138,10 +3085,6 @@ export const ar = {
       new_credential: "بيانات اعتماد {label} جديدة",
       configure_fields: "ضبط حقول بيانات الاعتماد",
       oauth_required: "استخدم زر التفويض أدناه لربط بيانات الاعتماد هذه.",
-      open_to_generate: "افتح {label} لإنشاء مفتاح API أو رمز",
-      already_configured: "بيانات الاعتماد مُهيّأة بالفعل -- حدّث أدناه للاستبدال",
-      setup_instructions_label: "تعليمات الإعداد",
-      no_fields_defined: "لا توجد حقول بيانات اعتماد مُعرَّفة لهذا الموصّل."
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3162,21 +3105,12 @@ export const ar = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI"
+      save_failed: "Failed to capture credential from CLI",
     },
     audit_log: {
       empty: "لا توجد إدخالات تدقيق بعد",
       empty_hint: "ستُسجَّل العمليات عند حدوثها.",
       access_events_hint: "ستظهر أحداث الوصول هنا.",
-      loading: "جارٍ تحميل الخط الزمني للتدقيق...",
-      total_accesses: "{count} الإجمالي",
-      personas_one: "{count} شخصية",
-      personas_other: "{count} شخصيات",
-      accesses_24h: "{count} خلال 24 ساعة",
-      anomalies_one: "{count} حالة شاذة",
-      anomalies_other: "{count} حالات شاذة",
-      no_anomalies: "لا توجد حالات شاذة",
-      show_all: "عرض جميع المدخلات الـ {count}"
     },
     credential_import: {
       import_from: "استيراد من {source}",
@@ -3185,12 +3119,6 @@ export const ar = {
       enable_sync: "تفعيل وضع المزامنة",
       source_ref: "مرجع المصدر",
       poll_interval: "فترة الاستطلاع",
-      sync_hint: "يراقب الخزنة الخارجية للتغييرات ويحدّث بيانات الاعتماد تلقائياً باستخدام الاستطلاع.",
-      interval_15min: "15 دقيقة",
-      interval_30min: "30 دقيقة",
-      interval_1hr: "ساعة واحدة",
-      interval_6hr: "6 ساعات",
-      interval_24hr: "24 ساعة"
     },
     empty_state: {
       heading: "ربط خدمتك الأولى",
@@ -3199,11 +3127,11 @@ export const ar = {
       catalog_description: "اختر خدمة معروفة كـ Slack أو GitHub أو OpenAI. حقول وفحوصات صحية مُعدّة مسبقاً.",
       ai_heading: "بيانات اعتماد مصمَّمة بالذكاء الاصطناعي",
       ai_description: "صف أي خدمة والذكاء الاصطناعي سيُعدّ الحقول ونوع المصادقة والفحص الصحي.",
-      works_with_any: "يعمل مع أي API"
+      works_with_any: "يعمل مع أي API",
     },
     credential_list: {
       no_match: "لا توجد بيانات اعتماد مطابقة",
-      no_match_hint: "جرب تعديل الفلاتر أو مصطلح البحث"
+      no_match_hint: "جرب تعديل الفلاتر أو مصطلح البحث",
     },
     wizard_detect: {
       no_services: "لا توجد خدمات مطابقة لـ\"{search}\"",
@@ -3215,15 +3143,6 @@ export const ar = {
       batch_complete: "اكتمل الإعداد الدفعي",
       skip_service: "تخطي هذه الخدمة",
       no_filter_match: "جرب مصطلح بحث مختلفاً أو امسح الفلتر.",
-      set_up_credentials: "إعداد بيانات الاعتماد",
-      clear_selection: "مسح التحديد",
-      set_up_services: "إعداد {count} خدمة{plural}",
-      setting_up: "جارٍ إعداد {current} من {total}",
-      wizard_title: "معالج إعداد بيانات الاعتماد",
-      choose_service: "اختر خدمة للإعداد",
-      ai_walk_description: "سيرشدك الذكاء الاصطناعي خطوة بخطوة للحصول على بيانات اعتماد API.",
-      wizard_subtitle: "إعداد بيانات اعتماد موجَّه بالذكاء الاصطناعي",
-      wizard_subtitle_batch: "جارٍ إعداد {count} خدمة{plural}"
     },
     autopilot: {
       title: "API Autopilot",
@@ -3247,23 +3166,6 @@ export const ar = {
       query_parameters: "معاملات الاستعلام",
       param_name_placeholder: "اسم المعامل",
       request_body: "جسم الطلب (JSON)",
-      from_url: "من URL",
-      paste_content: "لصق المحتوى",
-      openapi_spec_url: "URL لمواصفة OpenAPI",
-      openapi_format_hint: "يدعم مواصفات OpenAPI 3.x و Swagger 2.x بصيغة JSON أو YAML",
-      parsing_spec: "جارٍ تحليل المواصفة...",
-      parse_analyze: "تحليل وفحص",
-      connector_in_catalog: "أصبح {connectorLabel} متاحاً الآن في فهرس الموصّلات مع {toolCount} من تعريفات الأدوات.",
-      generated_tools: "الأدوات المُولَّدة ({count})",
-      credential_fields: "حقول بيانات الاعتماد",
-      open_playground: "فتح ساحة التجربة",
-      copy_connector_id: "نسخ معرّف الموصّل",
-      go_to_catalog: "الذهاب إلى الفهرس",
-      response_headers: "رؤوس الاستجابة ({count})",
-      base_url_placeholder: "https://api.example.com",
-      openapi_url_placeholder: "https://api.example.com/openapi.json",
-      auth_schemes: "مخططات المصادقة",
-      body_placeholder: "قيمة"
     },
     foraging: {
       no_credentials_found: "لم تُعثَر على بيانات اعتماد",
@@ -3280,44 +3182,10 @@ export const ar = {
       step_done: "تم",
       step_completed: "(مكتمل)",
       step_current: "(الحالي)",
-      start_scan: "بدء الفحص",
-      checking_env: "جارٍ فحص متغيرات البيئة وملفات الإعدادات وبيانات اعتماد أدوات التطوير",
-      importing: "جارٍ استيراد بيانات الاعتماد إلى الخزنة...",
-      scan_again: "فحص مرة أخرى",
-      back_to_vault: "العودة إلى الخزنة",
-      already_in_vault: "موجود في الخزنة بالفعل",
-      imported: "تم الاستيراد",
-      to_vault: "إلى الخزنة",
-      credentials_found_one: "تم العثور على {count} بيانات اعتماد",
-      credentials_found_other: "تم العثور على {count} بيانات اعتماد",
-      selected: "محدد",
-      import_to_vault_one: "استيراد {count} بيانات اعتماد إلى الخزنة",
-      import_to_vault_other: "استيراد {count} بيانات اعتماد إلى الخزنة",
-      env_var_one: "{count} متغير بيئة",
-      env_var_other: "{count} متغيرات بيئة",
-      import_server: "استيراد",
-      sources_in: "المصادر في",
-      progress_aria: "تقدم البحث",
-      scanned_sources: "تم فحص {count} مصدراً في {ms} مللي ثانية"
     },
     desktop_discovery: {
       title: "تطبيقات سطح المكتب",
       allowed_binaries: "الملفات التنفيذية المسموح بها: ",
-      connect_description: "اربط التطبيقات المحلية أو استورد خوادم MCP من Claude Desktop",
-      detected_apps_tab: "التطبيقات المكتشفة ({count})",
-      claude_mcp_tab: "Claude MCP ({count})",
-      scanning: "جارٍ البحث عن تطبيقات سطح المكتب...",
-      detected_on_system: "تم اكتشافه على جهازك",
-      not_detected: "لم يُكتشف",
-      no_apps: "لم يُكتشف أي تطبيق سطح مكتب. جرّب التحديث.",
-      reading_config: "جارٍ قراءة إعدادات Claude Desktop...",
-      mcp_servers_found_one: "تم العثور على {count} خادم MCP في إعدادات Claude Desktop. استوردها كبيانات اعتماد لاستخدامها مع وكلائك.",
-      mcp_servers_found_other: "تم العثور على {count} خوادم MCP في إعدادات Claude Desktop. استوردها كبيانات اعتماد لاستخدامها مع وكلائك.",
-      no_mcp_config: "لم يتم العثور على إعدادات MCP لـ Claude Desktop.",
-      mcp_config_hint: "إذا كان Claude Desktop مُثبَّتاً، تأكد من تهيئة خوادم MCP في إعداداته.",
-      permission_required: "الإذن مطلوب",
-      approve_description: "يطلب القدرات التالية. راجع ووافق لتمكين هذا الموصّل.",
-      approve_connect: "الموافقة والاتصال"
     },
     picker_section: {
       no_connectors: "لم تُعثَر على موصّلات",
@@ -3328,29 +3196,10 @@ export const ar = {
       filter_purpose: "الغرض",
       filter_category: "الفئة",
       filter_license: "الترخيص",
-      credential_name: "اسم بيانات الاعتماد",
-      add_project_first: "أضف مشروعاً في أدوات التطوير أولاً لربط قاعدة كود بوكلائك.",
-      go_to_dev_tools: "الذهاب إلى أدوات التطوير",
-      workspace_connect_description: "تسجيل دخول Google واحد ينشئ بيانات اعتماد Gmail و Calendar و Drive و Sheets تلقائياً",
-      foraging_description: "افحص نظام ملفاتك بحثاً عن مفاتيح API الموجودة، وملفات AWS، ومتغيرات البيئة، والمزيد",
-      no_setup_guide: "لا يتوفر دليل إعداد لهذا الموصّل. تفضل بزيارة رابط الوثائق أدناه للتعليمات.",
-      open_setup_page: "فتح صفحة إعداد {label}"
-    },
-    cli_capture: {
-      cta: "استيراد من CLI المحلي",
-      hint: "استخدم CLI محلياً مُسجَّل الدخول بدلاً من لصق مفتاح API.",
-      running: "جارٍ تشغيل CLI المحلي...",
-      success: "تم التقاط بيانات الاعتماد من CLI",
-      token_ttl_notice: "ينتهي هذا الرمز خلال {seconds} ث وسيتم تحديثه تلقائياً.",
-      source_label: "CLI",
-      missing_binary: "`{binary}` غير مُثبَّت أو ليس في موقع مسموح به.",
-      unauthenticated: "أنت غير مُسجَّل الدخول في {binary}. {instruction}",
-      capture_failed: "فشل التقاط CLI: {detail}",
-      timeout: "انتهت مهلة التقاط CLI. جرّب تشغيل الأمر يدوياً أولاً."
     },
     schemas: {
       none_configured: "لا شيء مضبوط.",
-      required_badge: "مطلوب"
+      required_badge: "مطلوب",
     },
     design_phases: {
       saving: "جارٍ حفظ بيانات الاعتماد...",
@@ -3383,32 +3232,8 @@ export const ar = {
       mark_done: "وضع علامة كمكتمل",
       mark_step_complete: "وضع علامة على الخطوة كمكتملة",
       copy_to_clipboard: "نسخ إلى الحافظة",
-      credential_saved_message: "تم حفظ بيانات اعتماد {label} بشكل آمن.",
-      revision_count: "(مراجعة {count})",
-      connector_added_to_catalog: "تمت إضافة الموصّل إلى فهرسك -- أصبح الآن متاحاً لشخصيات أخرى وتبنّي القوالب.",
-      view_credential: "عرض بيانات الاعتماد",
-      refine_hint: "تحتاج إلى تعديل النطاقات، أو إضافة حقول، أو ضبط الإعدادات؟",
-      refine_placeholder: "مثال: إضافة نطاقات كتابة، إضافة بيئة تجريبية...",
-      refine: "تحسين",
-      linked_to_existing: "سيتم ربط بيانات اعتمادك بتعريف الموصّل الموجود.",
-      no_existing_connector: "-- لم يُعثر على موصّل {name} موجود في فهرسك.",
-      new_connector_will_be_registered: "عند حفظ بيانات الاعتماد هذه، سيتم تسجيل تعريف الموصّل المُولَّد بالذكاء الاصطناعي تلقائياً في فهرس الموصّلات الخاص بك -- مما يجعله قابلاً لإعادة الاستخدام لشخصيات أخرى وتبنّي القوالب.",
-      refine_request: "ليس بالضبط ما تريد؟ حسّن طلبك",
-      auto_provision_hint: "-- دع الذكاء الاصطناعي يرشدك للحصول على بيانات اعتماد {label} خطوة بخطوة.",
-      credential_name_label: "اسم بيانات الاعتماد",
-      credentials_secure_notice: "تُخزَّن بيانات الاعتماد بأمان في خزنة التطبيق وتكون متاحة لتنفيذ أدوات الوكيل.",
-      tested_successfully_at: "تم الاختبار بنجاح في {time}",
-      setup_instructions: "تعليمات الإعداد",
-      all_steps_complete: "اكتملت جميع الخطوات -- املأ الحقول أدناه واختبر اتصالك.",
-      use_template: "استخدام",
-      recipe_used_one: "-- مُستخدم {count} مرة",
-      recipe_used_other: "-- مُستخدم {count} مرات",
-      instruction_placeholder: "مثال: Slack، OpenAI، GitHub، Stripe..."
     },
     auto_cred_extra: {
-      browser_automation_warning: "أتمتة المتصفح قيد التشغيل. لا تتفاعل مع النافذة — ستستأنف عند الاكتمال.",
-      desktop_bridge_title: "{{label}} يتطلب تطبيق سطح المكتب",
-      desktop_bridge_hint: "يشغّل هذا الموصّل جلسة متصفح أصلية تعمل فقط في تطبيق Personas لسطح المكتب.",
       preparing_guided: "جارٍ الإعداد لتعليمات الإعداد الموجَّه...",
       starting_browser: "جارٍ بدء جلسة المتصفح...",
       no_log_output: "لم يُلتقَط أي مخرج من السجل.",
@@ -3439,26 +3264,8 @@ export const ar = {
       step_browser_review: "العودة هنا للمراجعة قبل الحفظ",
       step_guided_review: "مراجعة وحفظ بيانات الاعتماد",
       setup_context: "سياق الإعداد من تحليل التصميم:",
-      review_extracted: "مراجعة بيانات الاعتماد المستخرجة",
-      review_extracted_hint: "قيم مستخرجة من المتصفح -- تحقق منها قبل الحفظ",
-      completeness_partial: "{filled} من {total} حقلاً مطلوباً مملوء. أكمل الحقول الناقصة قبل الحفظ.",
-      universal_auto_setup: "الإعداد التلقائي الشامل",
-      universal_auto_setup_hint: "قدّم URL ووصفاً، وسيتنقّل الذكاء الاصطناعي في الموقع لاكتشاف وإنشاء بيانات اعتماد API تلقائياً.",
-      service_url_label: "URL الخدمة",
-      service_url_placeholder: "https://app.example.com أو https://developer.example.com",
-      what_do_you_need: "ما الذي تحتاجه؟",
-      description_placeholder: "مثال: أحتاج إلى مفتاح API لواجهة REST API الخاصة بهم لقراءة وكتابة البيانات. بوابة المطوّر بها قسم مفاتيح API ضمن الإعدادات.",
-      discover_credentials: "اكتشاف بيانات الاعتماد",
-      discovered_label: "تم اكتشافه: {label}",
-      fields_discovered_one: "تم اكتشاف {count} حقل",
-      fields_discovered_other: "تم اكتشاف {count} حقول",
-      extracted_values_label: "القيم المستخرجة",
-      no_fields_discovered: "لم يُكتشف أي حقل. حاول مرة أخرى بوصف أكثر تحديداً.",
-      fields_captured_partial: "{filled}/{total} من الحقول تم التقاطها",
-      credential_stored: "تم تخزين بيانات اعتماد {label} بشكل آمن."
     },
     negotiator_extra: {
-      panel_title: "مُفاوِض بيانات الاعتماد بالذكاء الاصطناعي",
       checking_auth: "جارٍ التحقق من المصادقات الموجودة...",
       auto_provisioning: "توفير مفتاح API تلقائي",
       generating_plan: "جارٍ إنشاء خطة التوفير...",
@@ -3467,7 +3274,6 @@ export const ar = {
       need_help: "تحتاج مساعدة في هذه الخطوة؟",
       hide_help: "إخفاء المساعدة",
       ask_question: "اطرح سؤالاً عن هذه الخطوة...",
-      planning_description: "يحلل الذكاء الاصطناعي بوابة المطوّر ويُولِّد خطة توفير خطوة بخطوة..."
     },
     workspace_panel: {
       select_services: "اختر الخدمات للاتصال",
@@ -3475,15 +3281,6 @@ export const ar = {
       creating_credentials: "جارٍ إنشاء بيانات الاعتماد...",
       all_created: "تم إنشاء جميع بيانات الاعتماد",
       some_failed: "فشل إنشاء بعض بيانات الاعتماد",
-      selected_count: "{selected} من {total} محدد",
-      select_all: "تحديد الكل",
-      connect_services_one: "اربط {count} خدمة بتسجيل دخول واحد",
-      connect_services_other: "اربط {count} خدمات بتسجيل دخول واحد",
-      granting_access_one: "سيمنح هذا الوصول إلى {count} خدمة",
-      granting_access_other: "سيمنح هذا الوصول إلى {count} خدمات",
-      credentials_created_one: "تم إنشاء {count} بيانات اعتماد من تسجيل دخول واحد.",
-      credentials_created_other: "تم إنشاء {count} بيانات اعتماد من تسجيل دخول واحد.",
-      sign_in_browser: "سجّل الدخول بحساب Google في نافذة المتصفح."
     },
     gateway: {
       gateway_members: "{name} — أعضاء البوابة",
@@ -3500,7 +3297,7 @@ export const ar = {
       display_name: "اسم العرض (بادئة الأداة)",
       display_name_placeholder: "مثال: arcade، research_tools، docs",
       adding: "جارٍ الإضافة...",
-      add_member: "إضافة عضو"
+      add_member: "إضافة عضو",
     },
     pending_auth: {
       title: "التفويض مطلوب",
@@ -3514,13 +3311,13 @@ export const ar = {
       open_first: "افتح الرابط وامنح الموافقة أولاً",
       retrying: "جارٍ إعادة المحاولة...",
       retry_authorized: "لقد فوّضت -- إعادة المحاولة",
-      retry_failed: "فشلت إعادة المحاولة"
+      retry_failed: "فشلت إعادة المحاولة",
     },
     rotation_insight: {
       perm_errors: "أخطاء دائمة مكتشفة -- تم محاولة التدوير، جارٍ التنبيه.",
       degrading: "تدهور مستمر -- تم تشغيل التدوير الاستباقي.",
-      backoff: "إخفاقات مؤقتة -- التراجع الأسي نشط."
-    }
+      backoff: "إخفاقات مؤقتة -- التراجع الأسي نشط.",
+    },
   },
   deployment: {
     title: "النشر",
@@ -3538,7 +3335,7 @@ export const ar = {
       token_available: "الرمز متوفر",
       no_token: "لم يتم إعداد رمز",
       no_token_configured: "لم يتم تكوين رمز",
-      no_status: "لا تتوفر بيانات حالة."
+      no_status: "لا تتوفر بيانات حالة.",
     },
     api_playground: {
       title: "ملعب API",
@@ -3548,12 +3345,10 @@ export const ar = {
       sending: "جارٍ الإرسال...",
       empty_response: "(استجابة فارغة)",
       snippets: "مقاطع الكود",
-      request_body_placeholder: "موجِّه الطلب هنا..."
     },
     connection: {
       orchestrator_url_label: "عنوان URL للخادم السحابي",
       orchestrator_prefix: "https://",
-      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "أدخل مفتاح API",
       connect: "اتصال",
       connected: "متصل",
@@ -3563,28 +3358,16 @@ export const ar = {
       diagnostics_title: "التشخيصات",
       url_protocol_error: "يجب أن يستخدم العنوان http أو https",
       url_hostname_error: "العنوان يفتقر إلى اسم المضيف",
-      url_invalid: "عنوان URL غير صالح"
+      url_invalid: "عنوان URL غير صالح",
     },
     deployments_panel: {
       deploy_persona: "نشر وكيل",
       select_persona: "اختر وكيلاً للنشر",
       all_deployed: "جميع الوكلاء منشورون بالفعل",
-      no_deployments_yet: "لا توجد عمليات نشر بعد. اختر شخصية أعلاه لنشرها كنقطة نهاية API سحابية.",
-      active_deployments: "عمليات النشر النشطة"
     },
     exec_detail: {
       fetching_output: "جارٍ جلب الناتج...",
       no_output: "لا يوجد ناتج",
-      label_status: "الحالة:",
-      label_duration: "المدة:",
-      label_cost: "التكلفة:",
-      label_tokens: "الرموز:",
-      label_started: "بدأ:",
-      label_completed: "اكتمل:",
-      label_input: "الإدخال:",
-      view_output: "عرض الإخراج",
-      output_prefix: "الإخراج (",
-      output_lines_suffix: "أسطر)"
     },
     oauth_panel: {
       connect_anthropic: "ربط حساب Anthropic",
@@ -3596,13 +3379,6 @@ export const ar = {
       token_unknown: "حالة الرمز غير معروفة",
       expires: "تنتهي الصلاحية",
       scopes: "النطاقات",
-      open_auth_window: "فتح نافذة التصريح",
-      complete_authorization: "إكمال التصريح",
-      refresh_token: "تحديث الرمز",
-      open_authorization_window: "فتح نافذة التصريح",
-      token_unknown_msg: "تعذّر التحقق من صلاحية الرمز. حدّث الرمز للتأكد من أنه لا يزال نشطاً.",
-      connect_anthropic_msg: "اربط حسابك في Anthropic لتمكين المصادقة القائمة على OAuth للتنفيذات السحابية.",
-      token_expired_msg_prefix: "انتهت صلاحية رمز OAuth هذا"
     },
     trigger_form: {
       new_cloud_trigger: "مُشغّل سحابي جديد",
@@ -3612,15 +3388,9 @@ export const ar = {
       schedule_cron: "الجدول الزمني (cron)",
       create_trigger: "إنشاء مُشغّل",
       creating: "جارٍ الإنشاء...",
-      cron_expression: "تعبير cron",
-      utc_suffix: "(UTC)",
-      webhook_info: "سيتم إنشاء نقطة نهاية webhook لهذا المُشغِّل. يمكنك تهيئة تصفية الحمولة بعد الإنشاء."
     },
     chart: {
       daily_executions: "التنفيذات اليومية",
-      tooltip_runs: "التشغيلات:",
-      tooltip_cost: "التكلفة:",
-      tooltip_success: "النجاح:"
     },
     deploy_card: {
       test_deployment: "اختبار النشر",
@@ -3629,10 +3399,6 @@ export const ar = {
       remove_deployment: "إزالة النشر",
       copy_endpoint: "نسخ نقطة النهاية",
       open_endpoint: "فتح نقطة النهاية",
-      budget_label: "الميزانية:",
-      label_invocations: "الاستدعاءات:",
-      label_last_called: "آخر استدعاء:",
-      label_created: "تم الإنشاء:"
     },
     tabs: {
       connection: "الاتصال",
@@ -3640,7 +3406,7 @@ export const ar = {
       oauth: "OAuth",
       deployments: "عمليات النشر",
       schedules: "الجداول الزمنية",
-      history: "السجلّ"
+      history: "السجلّ",
     },
     cloud_execution: "التنفيذ السحابي",
     cloud_status: {
@@ -3652,7 +3418,7 @@ export const ar = {
       queue_length: "طول قائمة الانتظار",
       active_executions: "عمليات التنفيذ النشطة",
       active_execution: "تنفيذ نشط",
-      claude_token: "رمز Claude"
+      claude_token: "رمز Claude",
     },
     history: {
       just_now: "الآن",
@@ -3672,8 +3438,6 @@ export const ar = {
       last_30_days: "آخر 30 يومًا",
       last_90_days: "آخر 90 يومًا",
       top_errors: "أكثر الأخطاء شيوعًا",
-      clear_filters: "مسح عوامل التصفية",
-      execution_history: "سجل التنفيذ"
     },
     schedules: {
       header: "مُشغّلات السحابة ({count})",
@@ -3683,12 +3447,6 @@ export const ar = {
       empty: "لا توجد مُشغّلات سحابية بعد. أنشئ واحدًا لجدولة تشغيلات تلقائية.",
       recent_firings: "الإطلاقات الأخيرة",
       no_firings: "لا توجد إطلاقات حديثة",
-      label_type: "النوع:",
-      label_status: "الحالة:",
-      label_last_triggered: "آخر تشغيل:",
-      label_next_trigger: "التشغيل التالي:",
-      label_cron: "Cron:",
-      loading_firings: "جارٍ التحميل..."
     },
     dashboard: {
       title: "النشرات",
@@ -3743,7 +3501,7 @@ export const ar = {
       stage_generating: "توليد",
       stage_completed: "مكتمل",
       stage_failed: "فشل",
-      tool_calls: "{count} استدعاء أداة"
+      tool_calls: "{count} استدعاء أداة",
     },
     cloud_trigger_schedule: "مجدوَل (Cron)",
     cloud_trigger_polling: "استطلاع",
@@ -3758,7 +3516,7 @@ export const ar = {
     cron_daily_midnight: "يومياً عند منتصف الليل UTC",
     cron_daily_9am: "يومياً في الساعة 9 صباحاً UTC",
     cron_weekdays_9am: "أيام الأسبوع في الساعة 9 صباحاً UTC",
-    cron_weekly_sun: "أسبوعياً (الأحد منتصف الليل UTC)"
+    cron_weekly_sun: "أسبوعياً (الأحد منتصف الليل UTC)",
   },
   sharing: {
     export_title: "تصدير الحزمة",
@@ -3836,7 +3594,6 @@ export const ar = {
     persistence_denied: "مرفوض",
     capabilities_label: "القدرات:",
     capabilities_none: "لا شيء",
-    enclave_hash_label: "التجزئة:",
     network_sharing_title: "الشبكة والمشاركة",
     network_sharing_subtitle: "إدارة هويتك والمستخدمين الموثوقين والموارد المشتركة",
     exposed_resources: "الموارد المكشوفة",
@@ -3900,17 +3657,8 @@ export const ar = {
     no_shared_resources: "لا توجد موارد مشتركة. امزج المانيفست للتحقق.",
     discovered_peers: "المستخدمون المكتشفون",
     refresh: "تحديث",
-    refresh_peer_list: "تحديث قائمة الأقران",
     scanning_network: "جارٍ مسح الشبكة المحلية...",
     lan_hint: "ستظهر هنا تلقائياً نسخ Personas الأخرى على نفس الشبكة المحلية.",
-    peer_list_stale: "قد تكون قائمة الأقران قديمة —",
-    network_data_stale: "قد تكون بيانات الشبكة قديمة —",
-    peer_id_footer: "معرّف القرين",
-    remove_exposure: "إزالة التعريض",
-    revoke_trust: "إلغاء الثقة",
-    remove_peer: "إزالة القرين",
-    share_link_tooltip: "إنشاء رابط مشاركة لمرة واحدة (تنتهي صلاحيته خلال 24 ساعة)",
-    copy_clipboard_tooltip: "نسخ الحزمة بتنسيق base64 إلى الحافظة (بحد أقصى 256 كيلوبايت)",
     message_throughput: "إنتاجية الرسائل",
     sent: "مُرسَل",
     received: "مُستلَم",
@@ -3926,7 +3674,7 @@ export const ar = {
     sync_rounds: "جولات المزامنة",
     success_fail: "نجاح / فشل",
     avg_sync_duration: "متوسط مدة المزامنة",
-    entries_received: "المدخلات المستلمة"
+    entries_received: "المدخلات المستلمة",
   },
   overview: {
     title: "نظرة عامة",
@@ -3936,7 +3684,7 @@ export const ar = {
     filters: {
       start_date: "تاريخ البداية",
       end_date: "تاريخ النهاية",
-      all_personas: "جميع الوكلاء"
+      all_personas: "جميع الوكلاء",
     },
     messages: {
       loading: "جارٍ تحميل الرسائل...",
@@ -3947,7 +3695,7 @@ export const ar = {
         title: "العنوان",
         priority: "الأولوية",
         status: "الحالة",
-        created: "تاريخ الإنشاء"
+        created: "تاريخ الإنشاء",
       },
       content_header: "المحتوى",
       priority_high: "عالية",
@@ -3964,9 +3712,6 @@ export const ar = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "سطح المكتب",
-      id_label: "المعرّف:",
-      confirm_delete_title: "تأكيد الحذف",
-      close_message: "إغلاق تفاصيل الرسالة"
     },
     realtime: {
       idle: "خامل -- انقر على {action} لمحاكاة حركة المرور",
@@ -3974,7 +3719,7 @@ export const ar = {
       events_per_min: "أحداث/دقيقة",
       pending: "معلّق",
       success: "ناجح",
-      in_window: "في النافذة"
+      in_window: "في النافذة",
     },
     observability: {
       title: "المراقبة",
@@ -3987,18 +3732,12 @@ export const ar = {
       manual_fix: "(تم تطبيق إصلاح يدوي)",
       metrics_unavailable: "المقاييس غير متوفرة -- البيانات المعروضة قد تكون قديمة",
       no_open_issues: "لا توجد مشاكل مفتوحة",
-      run_analysis: "شغّل التحليل للتحقق من المشاكل."
+      run_analysis: "شغّل التحليل للتحقق من المشاكل.",
     },
     memories: {
       title: "الذكريات",
       created_success: "تم إنشاء الذكرى بنجاح",
       no_memories: "لا توجد ذكريات بعد",
-      no_memories_hint: "عندما يعمل الوكلاء، يمكنهم تخزين ملاحظات ودروس قيّمة هنا.",
-      no_memories_match: "لا توجد ذكريات تطابق عوامل التصفية الحالية",
-      list_aria_label: "قائمة الذاكرة",
-      add_memory_btn: "إضافة ذاكرة",
-      search_placeholder: "البحث في الذكريات...",
-      no_filter_match: "لا توجد ذكريات تطابق عوامل تصفيتك. جرّب تعديل بحثك.",
       form: {
         agent: "الوكيل",
         category: "الفئة",
@@ -4006,13 +3745,8 @@ export const ar = {
         content: "المحتوى",
         importance: "الأهمية",
         tags: "الوسوم",
-        tags_hint: "(مفصولة بفواصل)"
-      }
-    },
-    memory_review: {
-      all_conflicts_resolved: "تم حل جميع التعارضات",
-      keep_prefix: "الاحتفاظ بـ “",
-      keep_suffix: "”"
+        tags_hint: "(مفصولة بفواصل)",
+      },
     },
     executions: {
       title: "عمليات التنفيذ",
@@ -4020,7 +3754,7 @@ export const ar = {
       no_agents: "لم يتم إنشاء وكلاء بعد",
       create_first: "أنشئ أول وكيل لعرض نشاط التنفيذ هنا",
       no_executions: "لا توجد عمليات تنفيذ بعد",
-      run_agent: "شغّل وكيلًا لعرض نشاط التنفيذ هنا"
+      run_agent: "شغّل وكيلًا لعرض نشاط التنفيذ هنا",
     },
     workflows: {
       loading: "جارٍ تحميل سير العمل...",
@@ -4031,7 +3765,7 @@ export const ar = {
       all_types: "جميع الأنواع",
       no_filter_match: "لا توجد وظائف تطابق المرشحات الحالية",
       auto_refreshing: "تحديث تلقائي أثناء تشغيل الوظائف",
-      cancel_failed: "فشل إلغاء وظيفة سير العمل"
+      cancel_failed: "فشل إلغاء وظيفة سير العمل",
     },
     schedules: {
       title: "الجدول الزمني",
@@ -4062,7 +3796,7 @@ export const ar = {
       change_frequency: "تغيير التردد",
       pause_schedule: "إيقاف الجدول مؤقتًا",
       resume_schedule: "استئناف الجدول",
-      headless_badge: "بدون واجهة"
+      headless_badge: "بدون واجهة",
     },
     frequency_editor: {
       title: "تغيير التردد",
@@ -4072,7 +3806,7 @@ export const ar = {
       interval_seconds: "الفترة (بالثواني)",
       previewing: "جارٍ المعاينة...",
       next_runs: "التشغيلات التالية",
-      invalid_cron: "تعبير cron غير صالح"
+      invalid_cron: "تعبير cron غير صالح",
     },
     recovery: {
       agents_missed_one: "وكيل واحد فاته عمليات تنفيذ",
@@ -4086,7 +3820,7 @@ export const ar = {
       run_once_tooltip: "تشغيل مرة واحدة الآن",
       skip_tooltip: "تخطّي -- عدم الاسترداد",
       dismiss_all: "تجاهل الكل",
-      recover_selected: "استرداد {count} محدد"
+      recover_selected: "استرداد {count} محدد",
     },
     sla: {
       title: "موثوقية الوكلاء SLA",
@@ -4111,7 +3845,7 @@ export const ar = {
       metric_cost: "التكلفة",
       metric_mtbf: "MTBF",
       metric_auto_healed: "إصلاح تلقائي",
-      metric_cancelled: "ملغى"
+      metric_cancelled: "ملغى",
     },
     knowledge: {
       title: "رسم المعرفة البياني",
@@ -4136,14 +3870,14 @@ export const ar = {
       failures: "إخفاقات",
       avg_cost: "متوسط التكلفة",
       avg_duration: "متوسط المدة",
-      pattern_data: "بيانات النمط"
+      pattern_data: "بيانات النمط",
     },
     conflicts: {
       dismissed: "تم تجاهل التعارض",
       resolved: "تم حل التعارض",
       resolve_failed: "فشل حل التعارض",
       conflict_count_one: "تعارض واحد",
-      conflict_count_other: "{count} تعارضات"
+      conflict_count_other: "{count} تعارضات",
     },
     dashboard: {
       title: "لوحة التحكم",
@@ -4159,7 +3893,7 @@ export const ar = {
       empty_title: "مرحباً بك في Personas",
       empty_subtitle: "أنشئ وكيلك الأول لبدء رؤية مقاييس التنفيذ ومخططات الزيارات والنشاط هنا.",
       create_persona: "إنشاء وكيل",
-      from_templates: "من القوالب"
+      from_templates: "من القوالب",
     },
     execution_metrics: {
       title: "مقاييس التنفيذ",
@@ -4177,7 +3911,7 @@ export const ar = {
       cost_spike: "ارتفاع في التكلفة",
       above_avg: "فوق المتوسط",
       top_executions: "أعلى التنفيذات:",
-      executions_label: "{count} تنفيذ"
+      executions_label: "{count} تنفيذ",
     },
     execution_list: {
       recorded: "{count} تنفيذ مسجّل",
@@ -4202,7 +3936,7 @@ export const ar = {
       no_agents: "لم يتم إنشاء وكلاء بعد",
       no_agents_hint: "أنشئ وكيلك الأول لرؤية نشاط التنفيذ هنا.",
       unknown_persona: "غير معروف",
-      healing_retry: "إعادة محاولة الإصلاح #{count}"
+      healing_retry: "إعادة محاولة الإصلاح #{count}",
     },
     review: {
       title: "المراجعات اليدوية",
@@ -4266,7 +4000,7 @@ export const ar = {
       table_tooltip: "الجدول فقط",
       review_detail: "تفاصيل المراجعة",
       select_review: "اختر مراجعة للعرض",
-      technical_context: "السياق التقني"
+      technical_context: "السياق التقني",
     },
     messages_view: {
       title: "الرسائل",
@@ -4314,7 +4048,7 @@ export const ar = {
       improve_placeholder: "صف كيف يمكن تحسين هذا الناتج...",
       submit_improvement: "إرسال التحسين",
       starting: "جارٍ البدء...",
-      unknown_persona: "غير معروف"
+      unknown_persona: "غير معروف",
     },
     events: {
       title: "الأحداث",
@@ -4352,7 +4086,7 @@ export const ar = {
       source: "المصدر",
       processed: "تمت المعالجة",
       event_data: "بيانات الحدث",
-      error: "خطأ"
+      error: "خطأ",
     },
     health: {
       title: "صحة الوكلاء",
@@ -4382,26 +4116,18 @@ export const ar = {
       status_page: "صفحة الحالة",
       operational: "تشغيلي",
       degraded: "متدهور",
-      outage: "عطل"
+      outage: "عطل",
     },
     leaderboard: {
       title: "لوحة قيادة الوكلاء",
       subtitle: "تصنيفات الأداء عبر جميع الوكلاء",
       no_data: "لا توجد بيانات لوحة القيادة",
       no_data_hint: "شغّل وكلاءك لبدء بناء تصنيفات الأداء",
-      fleet_avg: "متوسط الأسطول:",
-      refresh_label: "تحديث لوحة الصدارة",
-      computing_scores: "جارٍ حساب درجات الوكلاء...",
-      single_agent_has_data: "لديه بيانات.",
-      add_more_agents: "أضف المزيد من الوكلاء لرؤية الترتيب. حالياً فقط {name}",
-      open_agent: "فتح الوكيل",
-      no_agent_data_title: "لا توجد بيانات وكلاء بعد",
-      no_agent_data_hint: "قم بتشغيل بعض الوكلاء لرؤية ترتيب الأداء. تحتاج لوحة الصدارة إلى سجل تنفيذ وبيانات صحة لحساب الدرجات.",
       reliability: "الموثوقية",
       speed: "السرعة",
       efficiency: "الكفاءة",
       cost_effectiveness: "جدوى التكلفة",
-      overall: "الإجمالي"
+      overall: "الإجمالي",
     },
     analytics: {
       title: "التحليلات",
@@ -4418,25 +4144,25 @@ export const ar = {
       saved_views: "العروض المحفوظة",
       create_view: "إنشاء عرض",
       health_issues: "مشاكل الصحة",
-      rotation_overview: "نظرة عامة على التدوير"
+      rotation_overview: "نظرة عامة على التدوير",
     },
     usage: {
       title: "الاستخدام",
       subtitle: "التكلفة واستهلاك الموارد",
       chart_error: "فشل تحميل المخطط",
       chart_error_hint: "حدث خطأ أثناء عرض هذا المخطط",
-      try_again: "حاول مرة أخرى"
+      try_again: "حاول مرة أخرى",
     },
     cron_agents: {
       title: "الوكلاء المجدوَلة",
       subtitle: "الوكلاء التي تعمل وفق جداول تلقائية",
       no_agents: "لا توجد وكلاء مجدوَلة",
-      no_agents_hint: "أضف مُشغّل cron لأي وكيل لرؤيته هنا"
+      no_agents_hint: "أضف مُشغّل cron لأي وكيل لرؤيته هنا",
     },
     timeline: {
       title: "الجدول الزمني للنشاط",
       subtitle: "عرض موحّد لجميع نشاطات الوكلاء",
-      no_activity: "لا يوجد نشاط حديث"
+      no_activity: "لا يوجد نشاط حديث",
     },
     realtime_viz: {
       title: "ناقل الأحداث",
@@ -4453,7 +4179,7 @@ export const ar = {
       timestamp: "الطابع الزمني",
       payload: "الحمولة",
       saved_views: "العروض المحفوظة",
-      save_current: "حفظ الحالي"
+      save_current: "حفظ الحالي",
     },
     observability_extra: {
       auto_refresh_on: "التحديث التلقائي مفعّل",
@@ -4479,7 +4205,7 @@ export const ar = {
       ipc_channel: "قناة IPC",
       avg_duration: "متوسط المدة",
       call_count: "عدد الاستدعاءات",
-      error_rate: "معدل الأخطاء"
+      error_rate: "معدل الأخطاء",
     },
     widgets: {
       recent_activity: "النشاط الأخير",
@@ -4496,7 +4222,7 @@ export const ar = {
       executions_badge: "التنفيذات",
       success_badge: "النجاح",
       alerts_badge: "التنبيهات",
-      agents_badge: "الوكلاء"
+      agents_badge: "الوكلاء",
     },
     cards: {
       fleet_optimization: "تحسين الأسطول",
@@ -4505,7 +4231,7 @@ export const ar = {
       remote_subtitle: "إجراءات سريعة لإدارة الوكلاء",
       resume_setup: "متابعة الإعداد",
       resume_subtitle: "تابع من حيث توقفت",
-      knowledge_hub: "مركز المعرفة"
+      knowledge_hub: "مركز المعرفة",
     },
     activity: {
       title: "النشاط",
@@ -4551,7 +4277,7 @@ export const ar = {
       create_persona: "إنشاء وكيل",
       from_templates: "من القوالب",
       execution_label: "التنفيذ",
-      unknown: "غير معروف"
+      unknown: "غير معروف",
     },
     analytics_dashboard: {
       title: "التحليلات",
@@ -4610,7 +4336,7 @@ export const ar = {
       issues_count: "{count} مشكلة",
       issues_count_one: "{count} مشكلة",
       never: "أبداً",
-      fail_count: "{count}x فشل"
+      fail_count: "{count}x فشل",
     },
     cron: {
       title: "وكلاء Cron",
@@ -4629,7 +4355,7 @@ export const ar = {
       no_schedule: "بلا جدول",
       every_interval: "كل {interval}",
       next: "التالي",
-      last: "الأخير"
+      last: "الأخير",
     },
     activity_timeline: {
       title: "الجدول الزمني للنشاط",
@@ -4638,7 +4364,7 @@ export const ar = {
       events: "الأحداث",
       messages: "الرسائل",
       no_activity: "لا يوجد نشاط بعد",
-      high: "مرتفع"
+      high: "مرتفع",
     },
     sla_card: {
       successful: "ناجح",
@@ -4650,7 +4376,7 @@ export const ar = {
       auto_healed: "إصلاح تلقائي",
       cancelled: "ملغى",
       failing: "{count} يفشل",
-      healed: "{count} مُصلَح"
+      healed: "{count} مُصلَح",
     },
     realtime_page: {
       title: "مراقب ناقل الأحداث",
@@ -4704,7 +4430,7 @@ export const ar = {
       galaxy: "مجرّة",
       galaxy_desc: "كوكبة مدارية مع مسارات المذنبات",
       lanes: "مسارات",
-      lanes_desc: "مخطط تدفق أفقي بمسارات السباحة"
+      lanes_desc: "مخطط تدفق أفقي بمسارات السباحة",
     },
     memory_form: {
       agent: "الوكيل",
@@ -4721,25 +4447,25 @@ export const ar = {
       saving: "جارٍ الحفظ...",
       created_success: "تم إنشاء الذاكرة بنجاح",
       fill_required: "أكمل جميع الحقول المطلوبة للحفظ",
-      saving_memory: "جارٍ حفظ الذاكرة..."
+      saving_memory: "جارٍ حفظ الذاكرة...",
     },
     memory_filter: {
       search_placeholder: "بحث في الذاكرة...",
       all_agents: "جميع الوكلاء",
-      all_categories: "جميع الفئات"
+      all_categories: "جميع الفئات",
     },
     memory_actions: {
       dismiss_suggestion: "رفض الاقتراح",
       memory_insights: "رؤى الذاكرة",
       suggestions: "{count} اقتراح",
-      suggestions_one: "{count} اقتراح"
+      suggestions_one: "{count} اقتراح",
     },
     memory_conflict: {
       memory_a: "الذاكرة أ",
       memory_b: "الذاكرة ب",
       merge: "دمج",
       keep: "إبقاء",
-      vs: "مقابل"
+      vs: "مقابل",
     },
     observability_charts: {
       cost_over_time: "التكلفة بمرور الوقت",
@@ -4751,7 +4477,7 @@ export const ar = {
       anomaly_detected: "تم اكتشاف {count} شذوذ في التكلفة",
       anomaly_click_hint: "انقر على علامة الماسة في المخطط للتحقيق",
       clear_traces: "مسح التتبعات المكتملة",
-      all_operations: "جميع العمليات"
+      all_operations: "جميع العمليات",
     },
     health_extra: {
       success: "نجاح",
@@ -4767,11 +4493,6 @@ export const ar = {
       predicted_failure: "ارتفاع الفشل المتوقع في",
       loading_status: "جارٍ تحميل بيانات صفحة الحالة...",
       no_personas: "لا توجد وكلاء للعرض.",
-      score_prefix: "الدرجة:",
-      uptime_30d_prefix: "وقت التشغيل خلال 30 يوماً:",
-      updated_prefix: "تم التحديث",
-      consecutive_failures_one: "{count} فشل متتالي",
-      consecutive_failures_other: "{count} حالات فشل متتالية",
       score_label: "النتيجة",
       uptime_30d: "وقت التشغيل 30 يوم",
       updated: "محدَّث {time}",
@@ -4788,7 +4509,7 @@ export const ar = {
       open: "{count} مفتوح",
       sla_compliance: "امتثال SLA",
       consecutive_failures: "{count} فشل متتالٍ",
-      consecutive_failure: "{count} فشل متتالٍ"
+      consecutive_failure: "{count} فشل متتالٍ",
     },
     system_health: {
       title: "فحوصات النظام",
@@ -4802,7 +4523,7 @@ export const ar = {
       save_configuration: "حفظ الإعداد",
       litellm_footer: "تُحفظ هذه الإعدادات محلياً وتُشارك عبر جميع الوكلاء المكوَّنة لاستخدام موفّر LiteLLM.",
       ipc_error: "جسر التطبيق لا يستجيب. حاول إعادة تشغيل التطبيق. يمكنك الاستمرار في استكشاف الواجهة.",
-      issues_warning: "أبلغت بعض الفحوصات عن مشاكل. يمكنك الاستمرار، لكن قد لا تعمل بعض الميزات بشكل صحيح."
+      issues_warning: "أبلغت بعض الفحوصات عن مشاكل. يمكنك الاستمرار، لكن قد لا تعمل بعض الميزات بشكل صحيح.",
     },
     review_extra: {
       add_note: "إضافة ملاحظة (اختياري)...",
@@ -4814,7 +4535,7 @@ export const ar = {
       quick_actions: "إجراءات سريعة",
       accepted: "{count} مقبول",
       rejected: "{count} مرفوض",
-      undecided: "{count} غير محدد"
+      undecided: "{count} غير محدد",
     },
     widgets_extra: {
       execution_health_chart: "صحة التنفيذ",
@@ -4823,147 +4544,29 @@ export const ar = {
       failed: "فاشل",
       close: "إغلاق",
       dismiss_help: "رفض المساعدة",
-      skip_tour: "تخطي الجولة بالكامل"
-    },
-    burn_rate_extra: {
-      active_personas_subtitle: "{count} شخصية نشطة · حدود الشهر المحلية",
-      title: "توقعات معدل الاستهلاك",
-      daily_burn: "الاستهلاك اليومي",
-      projected_monthly: "التوقع الشهري",
-      at_risk: "في خطر",
-      top_cost_drivers: "أهم محركات التكلفة",
-      budget_exhaustion_warnings: "تحذيرات استنفاد الميزانية",
-      exhausted: "مستنفد",
-      days_left: "متبقي {days} يوم"
-    },
-    predictive_alerts_extra: {
-      per_month: "/شهر",
-      confidence_pct: "% ثقة",
-      title: "التنبيهات التنبؤية",
-      all_nominal: "جميع الأنظمة طبيعية",
-      no_alerts: "لا توجد تنبيهات تنبؤية — جميع الوكلاء ضمن المعاملات الصحية.",
-      budget_exhausted: "الميزانية مستنفدة",
-      budget_exhaustion_in: "استنفاد الميزانية في {days} يوم",
-      failure_spike_predicted: "ارتفاع متوقع في معدل الفشل خلال {days} يوم",
-      excessive_healing: "نشاط إصلاح ذاتي مفرط",
-      critical_health: "حالة صحية حرجة",
-      byom_recommendations: "توصيات توجيه BYOM"
-    },
-    annotate_modal: {
-      annotation_placeholder: "مثال: يتطلب تحقق webhook الخاص بـ Stripe جسم الطلب الخام، وليس JSON المُحلَّل",
-      title: "إضافة تعليق على المعرفة",
-      persona_label: "وكيل الإسناد",
-      scope_label: "النطاق",
-      tool_name: "اسم الأداة",
-      connector_type: "نوع الموصّل / الخدمة",
-      annotation_label: "التعليق",
-      cancel: "إلغاء",
-      saving: "جارٍ الحفظ...",
-      save_annotation: "حفظ التعليق"
-    },
-    knowledge_row: {
-      execution_trend_label: "اتجاه التنفيذ",
-      annotation: "التعليق",
-      successes: "النجاحات",
-      failures: "الإخفاقات",
-      avg_cost: "متوسط التكلفة",
-      avg_duration: "متوسط المدة",
-      pattern_data: "بيانات النمط",
-      collapse_details: "طيّ التفاصيل",
-      expand_details: "توسيع التفاصيل",
-      verify_annotation: "التحقق من التعليق",
-      dismiss_annotation: "رفض التعليق"
-    },
-    knowledge_graph: {
-      mock_pattern: "نمط وهمي",
-      seed_tooltip: "بذر نمط وهمي (للمطورين فقط)",
-      all_types: "جميع الأنواع",
-      all_scopes: "جميع النطاقات",
-      failure_drilldown_prefix: "تفصيل الفشل:",
-      failure_date_filter: "عرض أنماط الفشل النشطة في أو بعد {date}",
-      data_unavailable: "بيانات المعرفة غير متاحة",
-      loading_patterns: "جارٍ تحميل أنماط المعرفة...",
-      drilldown_toggle_title: "إظهار/إخفاء تفصيل الفشل",
-      no_patterns_yet: "لا توجد أنماط معرفة بعد",
-      no_patterns_yet_hint: "قم بتشغيل تنفيذات الوكلاء لبناء أنماط معرفة. يصبح الوكلاء أكثر ذكاءً بمرور الوقت.",
-      no_patterns_match: "لا توجد أنماط تطابق عوامل التصفية الحالية",
-      recent_learnings: "الدروس الأخيرة",
-      curating_manually: "تنسيق المستندات يدوياً؟",
-      obsidian_tip: "لأقل من ~1000 ملاحظة، يمكن لموصّل Obsidian مزامنة خزنتك مباشرة."
-    },
-    focused_decision: {
-      video_not_supported: "متصفحك لا يدعم تشغيل الفيديو.",
-      reject_this: "رفض هذا",
-      accept_this: "قبول هذا",
-      accept: "قبول",
-      reject: "رفض",
-      media_unavailable: "الوسائط غير متاحة"
-    },
-    review_focus: {
-      video_not_supported: "متصفحك لا يدعم تشغيل الفيديو.",
-      all_caught_up: "أحسنت",
-      no_pending: "لا توجد مراجعات معلّقة للمعالجة.",
-      queue: "قائمة الانتظار",
-      clear: "مسح",
-      clear_all_verdicts: "مسح جميع الأحكام",
-      quick_actions: "إجراءات سريعة",
-      reject_all: "رفض الكل",
-      accept_all: "قبول الكل",
-      retry_with_changes: "إعادة المحاولة مع تغييرات"
-    },
-    bulk_action_bar: {
-      pending_reviews_selected_one: "{count} مراجعة معلقة محددة",
-      pending_reviews_selected_other: "{count} مراجعات معلقة محددة"
-    },
-    review_inbox: {
-      drag_to_resize: "اسحب لتغيير الحجم"
-    },
-    healing_issues_panel: {
-      ai_healing_title: "المعالجة بالذكاء الاصطناعي",
-      diagnosis_label: "التشخيص:",
-      fixes_applied: "الإصلاحات المطبقة",
-      alert_history_title: "سجل التنبيهات",
-      all_agents_global: "جميع الوكلاء (شامل)",
-      add_rule: "إضافة قاعدة",
-      no_rules_configured: "لا توجد قواعد تنبيه مُهيّأة. أضف قاعدة لبدء المراقبة.",
-      confidence_pct_suffix: "% ثقة",
-      spike_on: "ارتفاع مفاجئ في",
-      correlated_events_prefix: "الأحداث المترابطة (",
-      circuit_breaker_label: "قاطع الدائرة",
-      auto_disabled_message: "تم تعطيل هذه الشخصية تلقائياً كاستجابة قاطع دائرة لحالات فشل متكررة.",
-      execution_label: "التنفيذ:",
-      issue_marked_as: "تم وسم هذه المشكلة كـ",
-      retry_in_progress: "إعادة المحاولة قيد التنفيذ — ستُحدَّث الحالة عند الاكتمال.",
-      resolve_issue_title: "وسم المشكلة كمحلولة",
-      title: "مشاكل الصحة",
-      analyzing: "جارٍ التحليل...",
-      run_analysis: "تشغيل التحليل",
-      no_open_issues: "لا توجد مشاكل مفتوحة",
-      run_analysis_hint: "شغّل التحليل للتحقق من المشاكل.",
-      healing_audit_log: "سجل مراجعة الإصلاح",
-      no_silent_failures: "لم يتم تسجيل إخفاقات صامتة."
+      skip_tour: "تخطي الجولة بالكامل",
     },
     remote_control_card: {
       connect_to_desktop: "الاتصال بسطح المكتب",
       connect_description: "شغّل الوكلاء باستخدام CLI سطح المكتب عبر التحكم عن بعد. شغّل {command} على جهازك، ثم اتصل هنا.",
-      requires_subscription: "يتطلب اشتراك Claude Pro أو Max"
+      requires_subscription: "يتطلب اشتراك Claude Pro أو Max",
     },
     resume_setup_card: {
       resume_tour: "استئناف الجولة",
       left_off_at: "توقفت عند",
       steps_completed: "{completed}/{total} خطوات مكتملة",
       skip_tour: "تخطي الجولة بالكامل",
-      continue_label: "متابعة"
+      continue_label: "متابعة",
     },
     detail_modal: {
-      close: "إغلاق"
+      close: "إغلاق",
     },
     metric_help_popover: {
       help_for: "مساعدة لـ {label}",
       dismiss_help: "رفض المساعدة",
       healthy: "سليم:",
       click: "انقر:",
-      got_it: "فهمت، لا تُظهر مجدداً"
+      got_it: "فهمت، لا تُظهر مجدداً",
     },
     install_button: {
       install_node: "تثبيت Node.js",
@@ -4974,7 +4577,7 @@ export const ar = {
       installation_failed: "فشل التثبيت",
       try_manually: "حاول التشغيل يدوياً:",
       retry: "إعادة المحاولة",
-      official_page: "الصفحة الرسمية"
+      official_page: "الصفحة الرسمية",
     },
     section_card: {
       checking: "جارٍ فحص {section}...",
@@ -4985,12 +4588,12 @@ export const ar = {
       sign_in_google: "تسجيل الدخول بـ Google",
       working: "جارٍ العمل...",
       connect_claude: "الاتصال بـ Claude Desktop",
-      disconnect: "قطع الاتصال"
+      disconnect: "قطع الاتصال",
     },
     metrics_cards: {
       cost_spike: "ارتفاع في التكلفة",
       above_avg: "فوق المتوسط",
-      top_executions: "أعلى التنفيذات:"
+      top_executions: "أعلى التنفيذات:",
     },
     event_log_item: {
       event_id: "معرّف الحدث",
@@ -5002,15 +4605,75 @@ export const ar = {
       copied: "تم النسخ",
       copy: "نسخ",
       error: "خطأ",
-      system: "النظام"
+      system: "النظام",
+    },
+    burn_rate_extra: {
+      title: "توقعات معدل الاستهلاك",
+      daily_burn: "الاستهلاك اليومي",
+      projected_monthly: "التوقع الشهري",
+      at_risk: "في خطر",
+      top_cost_drivers: "أهم محركات التكلفة",
+      budget_exhaustion_warnings: "تحذيرات استنفاد الميزانية",
+      exhausted: "مستنفد",
+      days_left: "متبقي {days} يوم",
     },
     cascade: {
       title: "خريطة التسلسل المتتالي",
-      no_chains: "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية"
+      no_chains: "لم يتم اكتشاف سلاسل — جميع الوكلاء تعمل باستقلالية",
+    },
+    predictive_alerts_extra: {
+      title: "التنبيهات التنبؤية",
+      all_nominal: "جميع الأنظمة طبيعية",
+      no_alerts: "لا توجد تنبيهات تنبؤية — جميع الوكلاء ضمن المعاملات الصحية.",
+      budget_exhausted: "الميزانية مستنفدة",
+      budget_exhaustion_in: "استنفاد الميزانية في {days} يوم",
+      failure_spike_predicted: "ارتفاع متوقع في معدل الفشل خلال {days} يوم",
+      excessive_healing: "نشاط إصلاح ذاتي مفرط",
+      critical_health: "حالة صحية حرجة",
+      byom_recommendations: "توصيات توجيه BYOM",
+    },
+    annotate_modal: {
+      title: "إضافة تعليق على المعرفة",
+      persona_label: "وكيل الإسناد",
+      scope_label: "النطاق",
+      tool_name: "اسم الأداة",
+      connector_type: "نوع الموصّل / الخدمة",
+      annotation_label: "التعليق",
+      cancel: "إلغاء",
+      saving: "جارٍ الحفظ...",
+      save_annotation: "حفظ التعليق",
+    },
+    knowledge_row: {
+      annotation: "التعليق",
+      successes: "النجاحات",
+      failures: "الإخفاقات",
+      avg_cost: "متوسط التكلفة",
+      avg_duration: "متوسط المدة",
+      pattern_data: "بيانات النمط",
+      collapse_details: "طيّ التفاصيل",
+      expand_details: "توسيع التفاصيل",
+      verify_annotation: "التحقق من التعليق",
+      dismiss_annotation: "رفض التعليق",
+    },
+    focused_decision: {
+      accept: "قبول",
+      reject: "رفض",
+      media_unavailable: "الوسائط غير متاحة",
+    },
+    review_focus: {
+      all_caught_up: "أحسنت",
+      no_pending: "لا توجد مراجعات معلّقة للمعالجة.",
+      queue: "قائمة الانتظار",
+      clear: "مسح",
+      clear_all_verdicts: "مسح جميع الأحكام",
+      quick_actions: "إجراءات سريعة",
+      reject_all: "رفض الكل",
+      accept_all: "قبول الكل",
+      retry_with_changes: "إعادة المحاولة مع تغييرات",
     },
     memory_card: {
       confirm: "تأكيد",
-      cancel: "إلغاء"
+      cancel: "إلغاء",
     },
     memory_detail: {
       title_label: "العنوان",
@@ -5020,7 +4683,7 @@ export const ar = {
       tags_label: "الوسوم",
       view_source_execution: "عرض التنفيذ المصدر",
       delete_memory: "حذف الذاكرة",
-      close: "إغلاق"
+      close: "إغلاق",
     },
     memory_table: {
       agent: "الوكيل",
@@ -5028,11 +4691,11 @@ export const ar = {
       category: "الفئة",
       priority: "الأولوية",
       tags: "الوسوم",
-      created: "تاريخ الإنشاء"
+      created: "تاريخ الإنشاء",
     },
     review_results: {
       title: "مراجعة الذاكرة بالذكاء الاصطناعي",
-      review_failed: "فشلت المراجعة"
+      review_failed: "فشلت المراجعة",
     },
     anomaly_drilldown_extra: {
       title: "التعمق في الشذوذ",
@@ -5041,7 +4704,7 @@ export const ar = {
       correlating: "جارٍ الربط بالأحداث...",
       likely_root_causes: "الأسباب الجذرية المحتملة",
       correlated_events: "الأحداث المترابطة",
-      no_correlated: "لم يتم العثور على أحداث مترابطة في نافذة ±24 ساعة."
+      no_correlated: "لم يتم العثور على أحداث مترابطة في نافذة ±24 ساعة.",
     },
     healing_issue_modal: {
       issue_resolved: "تم حل المشكلة",
@@ -5056,14 +4719,23 @@ export const ar = {
       auto_resolved: "تم حل هذه المشكلة تلقائياً",
       close: "إغلاق",
       resolving: "جارٍ الحل…",
-      mark_resolved: "وسم كمحلول"
+      mark_resolved: "وسم كمحلول",
+    },
+    healing_issues_panel: {
+      title: "مشاكل الصحة",
+      analyzing: "جارٍ التحليل...",
+      run_analysis: "تشغيل التحليل",
+      no_open_issues: "لا توجد مشاكل مفتوحة",
+      run_analysis_hint: "شغّل التحليل للتحقق من المشاكل.",
+      healing_audit_log: "سجل مراجعة الإصلاح",
+      no_silent_failures: "لم يتم تسجيل إخفاقات صامتة.",
     },
     healing_timeline: {
       loading: "جارٍ تحميل الجدول الزمني...",
       no_events: "لا توجد أحداث إصلاح",
       no_events_hint: "شغّل التحليل لبناء الجدول الزمني للمرونة.",
       knowledge_base: "قاعدة المعرفة",
-      patterns_hint: "الأنماط المؤثرة في قرارات الإصلاح"
+      patterns_hint: "الأنماط المؤثرة في قرارات الإصلاح",
     },
     ipc_panel: {
       title: "أداء IPC",
@@ -5072,29 +4744,29 @@ export const ar = {
       command: "الأمر",
       calls_header: "الاستدعاءات",
       duration_header: "المدة",
-      when_header: "الوقت"
+      when_header: "الوقت",
     },
     system_trace_extra: {
       no_traces: "لم يتم تسجيل تتبعات النظام",
       no_traces_hint: "تظهر التتبعات عند تشغيل عمليات التصميم أو بيانات الاعتماد أو القوالب",
       all_operations: "جميع العمليات",
       clear_completed: "مسح التتبعات المكتملة",
-      span: "المدة"
+      span: "المدة",
     },
     event_log_sidebar: {
       title: "سجل الأحداث",
       no_events: "لا توجد أحداث بعد",
-      open_detail_drawer: "فتح في درج التفاصيل"
+      open_detail_drawer: "فتح في درج التفاصيل",
     },
     chart_error: {
-      chart_unavailable: "المخطط غير متاح"
+      chart_unavailable: "المخطط غير متاح",
     },
     realtime_idle: {
-      idle: "خامل"
+      idle: "خامل",
     },
     day_range: {
-      apply: "تطبيق"
-    }
+      apply: "تطبيق",
+    },
   },
   templates: {
     gallery: {
@@ -5110,14 +4782,13 @@ export const ar = {
       triggers: "المُشغّلات",
       no_flows: "لا توجد تدفقات",
       readiness_tooltip: "{percent}% من الموصّلات جاهزة",
-      template_details_tabs_aria: "تفاصيل القالب"
     },
     actions: {
       view_details: "عرض التفاصيل",
       adopt: "اعتماد",
       try_it: "تجربة",
       adopt_as_persona: "اعتماد كوكيل",
-      delete: "حذف"
+      delete: "حذف",
     },
     detail: {
       tab_overview: "نظرة عامة",
@@ -5129,14 +4800,14 @@ export const ar = {
       review_error: "خطأ",
       used_references: "استخدم أنماطًا مرجعية",
       no_design_data: "لا تتوفر بيانات تصميم",
-      no_design_data_hint: "بيانات التصميم غير متوفرة لهذا القالب."
+      no_design_data_hint: "بيانات التصميم غير متوفرة لهذا القالب.",
     },
     detail_overview: {
       use_case_flows: "تدفقات حالات الاستخدام",
       suggested_adjustment: "تعديل مقترح",
       adjustment_attempt: "(محاولة {attempt}/3)",
       dimension_completion: "اكتمال الأبعاد",
-      dimensions_score: "({score}/9 أبعاد)"
+      dimensions_score: "({score}/9 أبعاد)",
     },
     adoption: {
       title: "اعتماد قالب",
@@ -5145,7 +4816,7 @@ export const ar = {
       step_credentials: "ربط بيانات الاعتماد",
       step_preferences: "ضبط التفضيلات",
       step_generate: "توليد وكيل",
-      step_review: "مراجعة وحفظ"
+      step_review: "مراجعة وحفظ",
     },
     choose: {
       select_use_cases: "اختر حالات الاستخدام",
@@ -5155,7 +4826,7 @@ export const ar = {
       components: "المكونات",
       examples: "أمثلة",
       tools: "الأدوات",
-      none_selected: "لم يتم تحديد حالات استخدام -- حدد واحدة على الأقل للمتابعة"
+      none_selected: "لم يتم تحديد حالات استخدام -- حدد واحدة على الأقل للمتابعة",
     },
     connect: {
       all_set: "لا حاجة لموصّلات -- كل شيء جاهز!",
@@ -5168,7 +4839,7 @@ export const ar = {
       select_credential: "اختر بيانات اعتماد...",
       create_new: "+ إنشاء بيانات اعتماد جديدة",
       design_custom: "+ تصميم موصّل مخصّص",
-      add_credential: "إضافة بيانات اعتماد"
+      add_credential: "إضافة بيانات اعتماد",
     },
     build: {
       title: "بناء الوكيل",
@@ -5185,7 +4856,7 @@ export const ar = {
       close_hint: "يمكنك إغلاق هذا الحوار -- المعالجة مستمرة في الخلفية.",
       adjustments_label: "طلب تعديلات (اختياري)",
       adjustments_placeholder: "مثال: غيّر الجدول ليعمل في الساعة 9 صباحًا، أزل تكامل ClickUp، أضف إشعارات Slack",
-      discard_draft: "تجاهل المسودة والبدء من جديد"
+      discard_draft: "تجاهل المسودة والبدء من جديد",
     },
     quick_adopt: {
       all_matched: "تم مطابقة جميع الموصّلات",
@@ -5193,7 +4864,7 @@ export const ar = {
       missing_prefix: "مفقود: ",
       add_in_catalog: "إضافة في كتالوج المفاتيح",
       build_persona: "بناء وكيل",
-      full_wizard: "المعالج الكامل"
+      full_wizard: "المعالج الكامل",
     },
     data: {
       title: "إعداد البيانات",
@@ -5202,7 +4873,7 @@ export const ar = {
       tables_found: "{tables} موجودة في قاعدة البيانات المدمجة.",
       create_new: "إنشاء جداول جديدة",
       use_existing: "استخدام جداول موجودة",
-      complete: "اكتمل إعداد البيانات"
+      complete: "اكتمل إعداد البيانات",
     },
     tune: {
       title: "إعداد الوكيل",
@@ -5221,7 +4892,7 @@ export const ar = {
       check_interval: "فترة الفحص",
       check_interval_placeholder: "كل 5 دقائق",
       manual_hint: "يتم تشغيله يدويًا -- لا حاجة لإعداد",
-      system_hint: "يتم تشغيله بأحداث النظام -- لا حاجة لإعداد"
+      system_hint: "يتم تشغيله بأحداث النظام -- لا حاجة لإعداد",
     },
     review_policy: {
       title: "المراجعة البشرية",
@@ -5238,7 +4909,7 @@ export const ar = {
       timeout_1h: "ساعة واحدة",
       timeout_4h: "4 ساعات",
       timeout_24h: "24 ساعة",
-      timeout_none: "بلا مهلة"
+      timeout_none: "بلا مهلة",
     },
     memory: {
       title: "الذاكرة",
@@ -5251,7 +4922,7 @@ export const ar = {
       scope_patterns: "أنماط التنفيذ",
       scope_errors: "حلول الأخطاء",
       scope_custom: "نطاق مخصّص...",
-      scope_custom_placeholder: "صِف ما يجب تذكّره..."
+      scope_custom_placeholder: "صِف ما يجب تذكّره...",
     },
     create: {
       use_cases: "حالات الاستخدام",
@@ -5276,12 +4947,12 @@ export const ar = {
       safety_issues: "مشاكل السلامة",
       safety_acknowledge_one: "أقرّ بوجود مشكلة سلامة حرجة واحدة وأتحمل المخاطر",
       safety_acknowledge_other: "أقرّ بوجود {count} مشاكل سلامة حرجة وأتحمل المخاطر",
-      edit_details: "تعديل التفاصيل"
+      edit_details: "تعديل التفاصيل",
     },
     review: {
       use_cases_header: "حالات الاستخدام ({count})",
       tools_header: "الأدوات ({count})",
-      triggers_header: "المُشغّلات ({count})"
+      triggers_header: "المُشغّلات ({count})",
     },
     matrix: {
       preparing: "جارٍ التحضير...",
@@ -5321,19 +4992,6 @@ export const ar = {
       build_complete: "اكتمل البناء",
       adjust_placeholder: "اضبط أي شيء...",
       answer_placeholder: "إجابتك...",
-      answer_cell: "إجابة: {cell}",
-      working_on: "العمل على: {cells}",
-      draft_ready_label: "المسودة جاهزة",
-      editing_cell: "تعديل: {cell}",
-      protocol_active: "البروتوكول نشط",
-      matrix_unavailable: "بيانات المصفوفة غير متاحة.",
-      persona_matrix_title: "مصفوفة الشخصية",
-      cell_status_analyzing: "جارٍ التحليل",
-      cell_status_answered: "تمت الإجابة",
-      cell_status_resolved: "تم الحل",
-      cell_status_input_needed: "إدخال مطلوب",
-      cell_status_missing_credential: "بيانات الاعتماد مفقودة",
-      cell_status_error: "خطأ"
     },
     sandbox: {
       restriction_events: "إرسال الأحداث مُعطَّل",
@@ -5349,12 +5007,12 @@ export const ar = {
       desc_unverified: "هذا القالب من مصدر غير معروف ولم يتم التحقق منه. سيعمل بقدرات مقيدة لحماية نظامك.",
       desc_community: "هذا القالب المجتمعي لم يتم التحقق منه رسميًا. سيعمل في وضع بيئة الاختبار بقدرات مقيدة.",
       badge_unverified: "غير موثّق",
-      badge_sandbox: "وضع بيئة الاختبار"
+      badge_sandbox: "وضع بيئة الاختبار",
     },
     page: {
       title: "قوالب الوكلاء",
       subtitle_one: "{count} قالب متاح",
-      subtitle_other: "{count} قالب متاح"
+      subtitle_other: "{count} قالب متاح",
     },
     explore: {
       ready_to_deploy: "جاهز للنشر",
@@ -5375,7 +5033,7 @@ export const ar = {
       role_templates: "قوالب {role}",
       by_role: "حسب الدور",
       by_need: "حسب الحاجة",
-      classic: "كلاسيكي"
+      classic: "كلاسيكي",
     },
     opportunities: {
       title: "فرص الأتمتة",
@@ -5383,15 +5041,15 @@ export const ar = {
       ready_now: "جاهز الآن",
       add_connector: "إضافة",
       unlock_more: "لفتح {count} أكثر",
-      explore_templates: "استكشاف قوالب {label}"
+      explore_templates: "استكشاف قوالب {label}",
     },
     recommended: {
       title: "موصى به لك",
       subtitle: "بناءً على موصّلاتك",
-      no_recommendations: "لا توجد توصيات متاحة بعد."
+      no_recommendations: "لا توجد توصيات متاحة بعد.",
     },
     trending: {
-      title: "الأكثر اعتماداً هذا الأسبوع"
+      title: "الأكثر اعتماداً هذا الأسبوع",
     },
     empty: {
       no_templates: "لا توجد قوالب مولّدة بعد",
@@ -5400,7 +5058,7 @@ export const ar = {
       no_search_results_hint: "جرّب تعديل مصطلحات البحث أو المرشحات للعثور على ما تبحث عنه.",
       clear_search: "مسح البحث",
       waiting_for_draft: "في انتظار مسودة الوكيل",
-      waiting_for_draft_hint: "يولّد الذكاء الاصطناعي مسودة بناءً على اختياراتك. يستغرق هذا عادةً بضع ثوانٍ."
+      waiting_for_draft_hint: "يولّد الذكاء الاصطناعي مسودة بناءً على اختياراتك. يستغرق هذا عادةً بضع ثوانٍ.",
     },
     banners: {
       draft_prefix: "مسودة: ",
@@ -5413,7 +5071,7 @@ export const ar = {
       status_completed: "مكتمل",
       status_failed: "فاشل",
       click_to_view_result: "انقر لعرض النتيجة",
-      click_to_view_output: "انقر لعرض الناتج"
+      click_to_view_output: "انقر لعرض الناتج",
     },
     search: {
       switch_to_keyword: "التبديل إلى البحث بالكلمات المفتاحية",
@@ -5453,21 +5111,17 @@ export const ar = {
       autocomplete_difficulty: "الصعوبة",
       autocomplete_setup_time: "وقت الإعداد",
       autocomplete_suggestions: "الاقتراحات",
-      coverage_filter_aria: "عامل تصفية التغطية",
-      search_suggestions_aria: "اقتراحات البحث",
-      clear_search_aria: "مسح البحث",
-      search_with_ai_aria: "البحث بالذكاء الاصطناعي"
     },
     list: {
       template_name: "اسم القالب",
       components: "المكوّنات",
-      adoptions: "الاعتمادات"
+      adoptions: "الاعتمادات",
     },
     row_actions: {
       row_actions_label: "إجراءات الصف",
       view_details: "عرض التفاصيل",
       rebuild: "إعادة البناء",
-      delete_template: "حذف القالب"
+      delete_template: "حذف القالب",
     },
     connector_readiness: {
       click_to_add: "انقر لإضافة بيانات اعتماد",
@@ -5477,14 +5131,14 @@ export const ar = {
       needs_setup: "يحتاج إعداداً",
       not_ready: "غير جاهز",
       needs_credential: "يحتاج بيانات اعتماد",
-      not_installed: "غير مثبّت"
+      not_installed: "غير مثبّت",
     },
     detail_modal: {
       adopted: "{count} اعتماد",
       reference_patterns: "أنماط مرجعية",
       adopt_as_persona: "اعتماد كوكيل",
       try_it: "جرّبه",
-      design_unavailable: "بيانات التصميم غير متاحة لهذا القالب."
+      design_unavailable: "بيانات التصميم غير متاحة لهذا القالب.",
     },
     overview_tab: {
       loading_metrics: "جارٍ تحميل مقاييس الأداء...",
@@ -5504,7 +5158,7 @@ export const ar = {
       suggested_adjustment: "التعديل المقترح",
       adjustment_attempt: "(محاولة {attempt}/3)",
       dimension_completion: "اكتمال الأبعاد",
-      dimensions_score: "({score}/9 أبعاد)"
+      dimensions_score: "({score}/9 أبعاد)",
     },
     review_detail: {
       design_unavailable: "بيانات التصميم غير متاحة لهذا القالب.",
@@ -5514,7 +5168,7 @@ export const ar = {
       adopt_as_new_persona: "اعتماد كوكيل جديد",
       view_raw_json: "عرض JSON الخام",
       hide_raw_json: "إخفاء JSON الخام",
-      used_references: "استخدم هذا القالب أنماطاً مرجعية من مراجعات سابقة ناجحة"
+      used_references: "استخدم هذا القالب أنماطاً مرجعية من مراجعات سابقة ناجحة",
     },
     rebuild_modal: {
       title: "إعادة بناء القالب",
@@ -5531,7 +5185,7 @@ export const ar = {
       unknown_error: "حدث خطأ غير معروف أثناء إعادة البناء.",
       start_rebuild: "بدء إعادة البناء",
       cancel_rebuild: "إلغاء إعادة البناء",
-      run_in_background: "تشغيل في الخلفية"
+      run_in_background: "تشغيل في الخلفية",
     },
     preview_modal: {
       preview_title: "معاينة: {name}",
@@ -5545,7 +5199,7 @@ export const ar = {
       completed: "مكتمل",
       execution_failed: "فشل التنفيذ",
       run_again: "تشغيل مرة أخرى",
-      close_test_continues: "يمكنك الإغلاق — سيستمر الاختبار في الخلفية"
+      close_test_continues: "يمكنك الإغلاق — سيستمر الاختبار في الخلفية",
     },
     expanded: {
       adopt: "اعتماد",
@@ -5555,7 +5209,7 @@ export const ar = {
       architecture: "البنية",
       events: "الأحداث",
       reviews_label: "المراجعات",
-      notifications: "الإشعارات"
+      notifications: "الإشعارات",
     },
     matrix_cmd: {
       identity: "الهوية",
@@ -5574,7 +5228,7 @@ export const ar = {
       build_label: "بناء",
       adjust_placeholder: "اضبط أي شيء...",
       test_agent: "اختبار الوكيل",
-      save_version: "حفظ النسخة"
+      save_version: "حفظ النسخة",
     },
     questionnaire: {
       header: "{label} — السؤال {current} من {total}",
@@ -5591,11 +5245,6 @@ export const ar = {
       answer_remaining: "أجب على المتبقي ({count})",
       next: "التالي",
       setup: "إعداد",
-      previous_question: "السؤال السابق",
-      next_question: "السؤال التالي",
-      go_to_question: "الذهاب إلى السؤال {number}",
-      question_answered_suffix: " (تمت الإجابة)",
-      question_unanswered_suffix: " (بلا إجابة)"
     },
     sandbox_banner: {
       community_sandbox: "قالب مجتمعي — وضع البيئة المعزولة",
@@ -5606,7 +5255,7 @@ export const ar = {
       human_review_required: "المراجعة البشرية مطلوبة",
       budget_cap_enforced: "حد الميزانية مفروض",
       max_concurrent_one: "حد أقصى {max} تشغيل متزامن",
-      max_concurrent_other: "حد أقصى {max} تشغيل متزامن"
+      max_concurrent_other: "حد أقصى {max} تشغيل متزامن",
     },
     n8n: {
       credential_label: "بيانات الاعتماد: {name}",
@@ -5693,26 +5342,18 @@ export const ar = {
       drop_file_here: "أسقط ملف سير العمل هنا",
       import_from_any_platform: "استيراد سير عمل من أي منصة",
       click_to_browse: "انقر للتصفح أو اسحب وأسقط سير العمل المُصدَّر",
-      dropzone_aria: "أسقط ملف سير العمل أو انقر للاستعراض",
       continue_btn: "متابعة",
       press_enter_or_click: "اضغط Enter أو انقر للمتابعة",
       paste_workflow_json: "لصق JSON سير العمل",
       paste_placeholder: "الصق JSON سير العمل المُصدَّر هنا...",
-      paste_aria: "محتوى سير العمل بصيغة JSON",
       import_btn: "استيراد",
       import_from_url: "استيراد من URL",
       url_description: "الصق URL لملف JSON خام لسير العمل. يدعم روابط GitHub الخام وروابط Gist ونقاط نهاية JSON المباشرة.",
       fetching: "جارٍ الجلب",
       fetch: "جلب",
       accepts_label: "يقبل:",
-      url_aria: "URL سير العمل",
-      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
-      url_format_github: "github.com/*/blob/*",
-      url_format_gist: "gist.github.com/*",
-      url_format_raw: "نقطة نهاية JSON خام",
       customize_persona: "بعض الأسئلة لتخصيص وكيلك",
       answer_then_generate: "أجب أدناه، ثم انقر توليد",
-      question_view_mode_aria: "وضع عرض الأسئلة",
       list_view: "قائمة",
       focus_view: "تركيز",
       no_config_needed: "لا حاجة لتكوين",
@@ -5733,16 +5374,13 @@ export const ar = {
       analyzing_btn: "جارٍ التحليل...",
       upload_step: "رفع",
       analyze_step: "تحليل",
-      wizard_progress_aria: "تقدم معالج الاستيراد",
-      wizard_steps_aria: "خطوات المعالج",
       streaming_sections: "بث الأقسام",
       awaiting_next_section: "في انتظار القسم التالي...",
-      transform_progress_aria: "تقدم التحويل",
       analyze_phase: "تحليل",
       questions_phase: "أسئلة",
       generate_phase: "توليد",
       type_your_answer: "اكتب إجابتك...",
-      navigate_hint: "استخدم مفاتيح الأسهم للتنقل"
+      navigate_hint: "استخدم مفاتيح الأسهم للتنقل",
     },
     diagram: {
       no_flow_data: "لا توجد بيانات تدفق",
@@ -5752,7 +5390,7 @@ export const ar = {
       decisions_count: "{count} قرار",
       error_label: "خطأ",
       request_label: "طلب",
-      response_label: "استجابة"
+      response_label: "استجابة",
     },
     design: {
       connectors_and_tools: "الموصّلات والأدوات",
@@ -5769,7 +5407,7 @@ export const ar = {
       feasibility_assessment: "تقييم الجدوى",
       confirmed_capabilities: "القدرات المؤكدة",
       issues_label: "المشاكل",
-      suggested_next_steps: "الخطوات التالية المقترحة"
+      suggested_next_steps: "الخطوات التالية المقترحة",
     },
     card: {
       use_cases_label: "حالات الاستخدام",
@@ -5778,7 +5416,7 @@ export const ar = {
       no_flows: "لا تدفقات",
       none_label: "لا شيء",
       more_count: "+{count} أكثر",
-      system_prompt: "الموجّه النظامي"
+      system_prompt: "الموجّه النظامي",
     },
     matrix_grid: {
       prerequisites: "المتطلبات الأساسية",
@@ -5788,7 +5426,7 @@ export const ar = {
       credential_configured: "بيانات الاعتماد مكوَّنة",
       connector_not_installed: "الموصّل غير مثبّت",
       needs_credential: "يحتاج بيانات اعتماد",
-      setup_btn: "إعداد"
+      setup_btn: "إعداد",
     },
     adopt_modal: {
       adopt_template: "اعتماد القالب",
@@ -5803,49 +5441,6 @@ export const ar = {
       credential_required: "لم يتم العثور على بيانات اعتماد {category} في خزنتك. أضف واحدة للمتابعة.",
       add_credential: "إضافة بيانات اعتماد",
       blocked_blocking_submit: "{count} سؤال يحتاج بيانات اعتماد قبل المتابعة",
-      credentials_required_title: "بيانات الاعتماد مطلوبة",
-      credentials_required_body: "يحتاج هذا القالب إلى بيانات اعتماد واحدة على الأقل من كل فئة أدناه قبل متابعة التبنّي. انقر على \"إضافة بيانات اعتماد\" — ستعود إلى هنا تلقائياً عند اكتمال الإعداد.",
-      answered_of_total: "{answered} / {total} تمت إجابته",
-      blocked_count: "{count} محجوب",
-      question_number_of: "السؤال {current} من {total}",
-      question_number_aria: "السؤال {number}",
-      navigate_hint: "للتنقل",
-      enter_to_advance: "للتقدم",
-      previous: "السابق",
-      next: "التالي",
-      live_preview: "معاينة مباشرة",
-      persona_label: "الشخصية",
-      untitled_agent: "وكيل بلا عنوان",
-      not_yet_set: "لم يُحدَّد بعد",
-      auto_badge: "تلقائي",
-      jump_to_question_hint: "انقر على أي صف أعلاه للانتقال إلى ذلك السؤال. القيم المكتشفة تلقائياً مستنتجة من بيانات اعتمادك المتصلة.",
-      hide_explanation: "إخفاء الشرح",
-      show_explanation: "إظهار الشرح",
-      all_option: "الكل",
-      add_custom: "إضافة",
-      custom_prefix: "+ مخصص…",
-      custom_plain: "مخصص…",
-      type_your_answer: "اكتب إجابتك...",
-      describe_in_detail: "اوصف بالتفصيل...",
-      select_directory: "اختر مجلداً...",
-      type_a_value: "اكتب قيمة…",
-      preparing: "جارٍ التحضير…",
-      waiting_for_parent: "انتظار إجابة سابقة…",
-      loading_from_service: "جارٍ تحميل الخيارات من {service}…",
-      loaded_live_from: "تم التحميل مباشرة من {service}",
-      no_items_found: "لم يُعثر على أي {item}. أنشئ واحداً في {service} أولاً.",
-      retry: "إعادة المحاولة",
-      source_local: "ملف أو مجلد محلي",
-      source_codebase: "قاعدة الكود",
-      source_database: "قاعدة بيانات",
-      source_local_hint: "الصق مساراً محلياً كاملاً إلى ملف أو مجلد.",
-      source_codebase_hint: "اختر مشروعاً مسجلاً في أدوات التطوير.",
-      source_database_hint: "اختر بيانات اعتماد قاعدة بيانات من خزنتك.",
-      source_local_placeholder: "/Users/me/project/design.md",
-      source_no_codebases: "لم يُعثر على مشاريع أدوات التطوير. سجّل واحداً في أدوات التطوير أولاً.",
-      source_no_databases: "لم يُعثر على بيانات اعتماد قواعد بيانات. أضف واحدة في الخزنة أولاً.",
-      source_pick_codebase: "اختر قاعدة كود…",
-      source_pick_database: "اختر قاعدة بيانات…"
     },
     scan: {
       scanning_draft: "جارٍ مسح مسودة الوكيل...",
@@ -5859,7 +5454,7 @@ export const ar = {
       critical_label: "حرج",
       warnings_label: "تحذيرات",
       informational_label: "معلوماتي",
-      source_label: "المصدر:"
+      source_label: "المصدر:",
     },
     team_synthesis: {
       title: "تجميع الفريق",
@@ -5871,7 +5466,7 @@ export const ar = {
       synthesizing: "جارٍ التجميع...",
       synthesize_team: "تجميع الفريق",
       personas_created: "تم إنشاء وتوصيل {count} وكيل",
-      done: "تم"
+      done: "تم",
     },
     matrix_variants: {
       processing: "جارٍ المعالجة...",
@@ -5885,17 +5480,6 @@ export const ar = {
       testing_agent: "جارٍ اختبار الوكيل...",
       approve_and_promote: "موافقة وترقية",
       view_agent_btn: "عرض الوكيل",
-      command_center_header: "COMMAND CENTER // BUILD v1.0",
-      phase_label: "[المرحلة: {phase}]",
-      your_answer_placeholder: "إجابتك...",
-      testing_background_hint: "قد يستغرق ذلك بضع دقائق. يمكنك مغادرة هذه الصفحة والعودة لاحقاً — يستمر الاختبار في الخلفية.",
-      cancel_test: "إلغاء الاختبار",
-      missing_keys: "مفاتيح مفقودة:",
-      approve_anyway: "الموافقة على أي حال",
-      delete_draft_title: "تجاهل مسودة الشخصية هذه والإغلاق",
-      delete_draft: "حذف المسودة",
-      agent_promoted: "تمت ترقية الوكيل",
-      view_agent: "عرض الوكيل"
     },
     diagrams: {
       no_flow_data: "لا توجد بيانات تدفق",
@@ -5903,7 +5487,6 @@ export const ar = {
       edges_count: "{count} حافة",
       connectors_count: "{count} موصّل",
       decisions_count: "{count} قرار",
-      close_dialog: "إغلاق الحوار"
     },
     generation: {
       create_template: "إنشاء قالب",
@@ -5926,51 +5509,6 @@ export const ar = {
       start_review_custom: "بدء المراجعة ({count} حالة)",
       copy_log: "نسخ السجل",
       copied_log: "تم النسخ!",
-      back: "رجوع",
-      generate_template: "توليد قالب",
-      view_draft: "عرض المسودة",
-      saving: "جارٍ الحفظ...",
-      save_template: "حفظ القالب",
-      template_saved: "تم حفظ القالب",
-      template_name_label_step: "اسم القالب",
-      template_name_placeholder: "اسم القالب...",
-      description_label: "الوصف",
-      description_placeholder: "اوصف ما يجب أن تفعله هذه الشخصية، وبأي خدمات تتصل، وكيف يجب أن تتصرف. كن محدداً بشأن الأدوات والمُشغِّلات والتكاملات المطلوبة.\n\nمثال: شخصية تراقب صندوق Gmail للرسائل المهمة، تصنّفها حسب الأولوية، ترسل إشعارات Slack للرسائل العاجلة، وتنشئ ملخصاً يومياً.",
-      description_hint: "سيولّد الذكاء الاصطناعي قالب شخصية كاملاً يشمل موجّه النظام، الأدوات، المُشغِّلات، الموصّلات، ومتغيرات القالب.",
-      terminal_aria_label: "إخراج مراجعة التصميم",
-      terminal_placeholder: "سيظهر الإخراج هنا عندما تبدأ المراجعة",
-      terminal_running: "جارٍ التشغيل...",
-      result_passed: "{count} ناجح",
-      result_failed: "{count} فاشل",
-      result_errored: "{count} أخطاء",
-      result_total: "{count} اختبارات إجمالية",
-      mode_predefined: "مُعرَّف مسبقاً (5)",
-      mode_custom: "مخصص",
-      mode_batch: "دفعة",
-      mode_batch_count: "دفعة ({count})",
-      batch_upload_hint: "ارفع ملف list.md يحتوي على مدخلات قوالب مرقّمة لتوليد القوالب بالدفعة عبر Claude CLI.",
-      batch_upload_btn: "رفع list.md",
-      batch_format_hint: "التنسيق المتوقع:",
-      batch_all: "الكل ({count})",
-      batch_count: "سيتم توليد {count} قالب{plural} عبر Claude CLI (~45 ث لكل منها)",
-      batch_clear: "مسح",
-      batch_format_example: "**1. اسم القالب**",
-      custom_count: "حدّد حالات استخدام القالب ({count} جاهز)",
-      custom_load_file_title: "تحميل من ملف .txt أو .md",
-      custom_load_file: "تحميل ملف",
-      custom_add: "إضافة",
-      custom_case_name_placeholder: "اسم القالب (مثل: فلتر Gmail الذكي)",
-      custom_instruction_placeholder: "اوصف ما يجب أن تفعله هذه الشخصية، وأي الخدمات يجب تكاملها، وأي المُشغِّلات يجب أن تنشّطها...",
-      custom_short_instruction: "{current}/{min} حرفاً كحد أدنى",
-      custom_category_default: "الفئة...",
-      custom_trigger_default: "المُشغِّل...",
-      custom_connectors_placeholder: "الموصّلات (مثل: gmail، slack)",
-      custom_detail_hint: "مزيد من التفاصيل = نتائج أفضل. أدرج الخدمات والمُشغِّلات والسلوك المتوقع.",
-      custom_show_example: "إظهار مثال",
-      custom_hide_example: "إخفاء المثال",
-      custom_example_title: "مثال: فلتر Gmail الذكي",
-      custom_example_body: "\"أنشئ وكيلاً يراقب Gmail للرسائل المهمة، يصنّفها حسب المُرسِل والإلحاح، يطبّق التصنيفات، ويوجّه العاجلة منها إلى Slack. استخدم مُشغِّل استطلاع مع موصّلات gmail و slack.\"",
-      predefined_intro: "يشغّل {count} حالات استخدام مُعرَّفة مسبقاً عبر محرّك التصميم:"
     },
     connector_edit: {
       credential: "بيانات الاعتماد",
@@ -5986,24 +5524,22 @@ export const ar = {
       existing_table_label: "الجدول الموجود",
       schema: "المخطط",
       table_name: "اسم الجدول",
-      table_name_placeholder: "مثال: persona_data",
       in_app_messages: "رسائل داخل التطبيق",
       not_connected: "غير متصل",
       no_connectors: "لا موصّلات مطلوبة",
       linked: "مرتبط",
       set_up: "إعداد",
-      more_connectors: "+{count} أكثر"
+      more_connectors: "+{count} أكثر",
     },
     trigger_edit: {
       schedule: "الجدول",
       schedule_placeholder: "كل يوم عمل في الساعة 9 صباحاً",
       schedule_hint: "لغة طبيعية أو cron (مثل \"0 9 * * 1-5\")",
       webhook_url: "عنوان Webhook",
-      webhook_url_placeholder: "https://...",
       check_interval: "فترة الفحص",
       check_interval_placeholder: "كل 5 دقائق",
       no_config_needed: "لا حاجة لتكوين",
-      manual_only: "تنفيذ يدوي فقط"
+      manual_only: "تنفيذ يدوي فقط",
     },
     preset_edit: {
       select_review: "اختر سياسة المراجعة...",
@@ -6015,7 +5551,7 @@ export const ar = {
       retry_once: "إعادة مرة واحدة",
       retry_3x: "إعادة 3 مرات",
       notify_continue: "إشعار والمتابعة",
-      skip_failed: "تخطي الخطوة الفاشلة"
+      skip_failed: "تخطي الخطوة الفاشلة",
     },
     test_report: {
       title: "تقرير الاختبار",
@@ -6041,8 +5577,8 @@ export const ar = {
       response_preview: "معاينة الاستجابة",
       error_detail: "تفاصيل الخطأ",
       copy: "نسخ",
-      copied: "تم النسخ"
-    }
+      copied: "تم النسخ",
+    },
   },
   triggers: {
     title: "المُشغّلات والسلاسل",
@@ -6084,7 +5620,7 @@ export const ar = {
       show_sidebar: "إظهار الشريط الجانبي",
       source: "المصدر",
       source_personas: "الوكلاء المصدر",
-      use_template: "استخدام قالب"
+      use_template: "استخدام قالب",
     },
     studio: {
       building_blocks: "اللبنات الأساسية",
@@ -6100,7 +5636,7 @@ export const ar = {
       remove_from_chain: "إزالة من السلسلة",
       studio_title: "استوديو المُشغّلات",
       trigger_sources: "مصادر المُشغّلات",
-      unsaved_changes: "تغييرات غير محفوظة"
+      unsaved_changes: "تغييرات غير محفوظة",
     },
     subscription_list: {
       active: "نشط",
@@ -6114,10 +5650,10 @@ export const ar = {
       error: "خطأ",
       never: "أبداً",
       no_active_subs: "لا اشتراكات نشطة",
-      unsubscribe: "إلغاء الاشتراك"
+      unsubscribe: "إلغاء الاشتراك",
     },
     type_selector: {
-      trigger_type: "نوع المُشغّل"
+      trigger_type: "نوع المُشغّل",
     },
     tab_triggers: "المُشغّلات",
     tab_chains: "السلاسل",
@@ -6193,11 +5729,11 @@ export const ar = {
       cron_daily_midnight: "يومياً منتصف الليل",
       cron_weekly_monday: "أسبوعياً الاثنين",
       next_runs: "التشغيلات التالية",
-      invalid_cron: "تعبير جدول غير صالح"
+      invalid_cron: "تعبير جدول غير صالح",
     },
     add: {
       create_trigger: "إنشاء مُشغّل",
-      creating: "جارٍ الإنشاء..."
+      creating: "جارٍ الإنشاء...",
     },
     detail: {
       test_fire: "اختبار الإطلاق",
@@ -6220,7 +5756,7 @@ export const ar = {
       last_fired: "آخر إطلاق",
       never_fired: "لم يُطلَق قط",
       fire_count_one: "أُطلق {count} مرة",
-      fire_count_other: "أُطلق {count} مرة"
+      fire_count_other: "أُطلق {count} مرة",
     },
     list: {
       empty_title: "لم يتم تكوين مُشغّلات بعد",
@@ -6230,28 +5766,28 @@ export const ar = {
       budget_unavailable: "بيانات الميزانية غير متاحة",
       unknown_budget: "ميزانية غير معروفة",
       budget_exceeded: "تجاوزت الميزانية الشهرية — المُشغّل متوقف",
-      budget: "الميزانية"
+      budget: "الميزانية",
     },
     config: {
       no_persona: "لم يتم تحديد وكيل",
       title: "المُشغّلات",
       add_trigger: "إضافة مُشغّل",
-      empty: "لا مُشغّلات مكوَّنة. أضف واحداً لأتمتة هذا الوكيل."
+      empty: "لا مُشغّلات مكوَّنة. أضف واحداً لأتمتة هذا الوكيل.",
     },
     countdown: {
       due_now: "حان الوقت",
-      fires_in: "يُطلَق في {time}"
+      fires_in: "يُطلَق في {time}",
     },
     polling: {
       endpoint_label: "عنوان URL للفحص",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "فحص كل {interval}",
-      content_hash: "اكتشاف التغييرات فقط"
+      content_hash: "اكتشاف التغييرات فقط",
     },
     webhook: {
       url_label: "عنوان Webhook",
       secret_label: "مفتاح الأمان (اختياري)",
-      secret_placeholder: "مفتاح سري للتحقق من البيانات الواردة"
+      secret_placeholder: "مفتاح سري للتحقق من البيانات الواردة",
     },
     file_watcher: {
       paths_label: "مسارات المراقبة",
@@ -6263,7 +5799,7 @@ export const ar = {
       event_delete: "حذف",
       recursive: "متكرر",
       glob_filter: "نمط الملف",
-      glob_placeholder: "*.json"
+      glob_placeholder: "*.json",
     },
     clipboard: {
       content_type: "نوع المحتوى",
@@ -6271,7 +5807,7 @@ export const ar = {
       type_image: "صورة",
       pattern_label: "نمط المطابقة",
       pattern_placeholder: "مثال: https?://.*",
-      interval_label: "فترة الفحص (ثانية)"
+      interval_label: "فترة الفحص (ثانية)",
     },
     app_focus: {
       app_names_label: "أسماء التطبيقات",
@@ -6279,20 +5815,20 @@ export const ar = {
       add_app: "إضافة تطبيق",
       title_pattern: "نمط عنوان النافذة",
       title_placeholder: "مثال: .*GitHub.*",
-      interval_label: "فترة الفحص (ثانية)"
+      interval_label: "فترة الفحص (ثانية)",
     },
     event_listener: {
       event_type_label: "نوع الحدث",
       event_type_placeholder: "مثال: persona.execution.completed",
       source_filter_label: "مرشح المصدر",
-      source_filter_placeholder: "مثال: persona:abc123"
+      source_filter_placeholder: "مثال: persona:abc123",
     },
     composite: {
       conditions_label: "الشروط",
       add_condition: "إضافة شرط",
       operator_all: "يجب أن تتطابق جميع الشروط",
       operator_any: "يمكن أن يتطابق أي شرط",
-      window_label: "النافذة الزمنية (ثانية)"
+      window_label: "النافذة الزمنية (ثانية)",
     },
     rate_limit: {
       title: "حدود السرعة",
@@ -6301,14 +5837,14 @@ export const ar = {
       window_seconds: "{seconds} ث",
       window_minutes: "{minutes} د",
       window_hours: "{hours} س",
-      currently_limited: "متوقف حالياً (تم الوصول للحد)"
+      currently_limited: "متوقف حالياً (تم الوصول للحد)",
     },
     dry_run: {
       title: "نتيجة التشغيل التجريبي",
       would_fire: "سيُطلَق",
       would_not_fire: "لن يُطلَق",
       matched_conditions: "الشروط المستوفاة",
-      payload_preview: "معاينة البيانات"
+      payload_preview: "معاينة البيانات",
     },
     tab_live_stream: "بث مباشر",
     tab_live_stream_subtitle: "مركز الأحداث في الوقت الفعلي — ينشر الوكلاء ويشتركون في الأحداث عبر هذا الناقل المشترك",
@@ -6472,186 +6008,6 @@ export const ar = {
     loading_catalog: "جارٍ تحميل الكتالوج...",
     no_feeds: "لا تغذيات أحداث مشتركة متاحة بعد",
     no_feeds_hint: "انقر تحديث لجلب أحدث التغذيات من السحابة",
-    cron_colon: "Cron:",
-    interval_colon: "الفاصل:",
-    event_colon: "الحدث:",
-    endpoint_colon: "نقطة النهاية:",
-    listens_for_colon: "يستمع لـ:",
-    source_filter_colon: "تصفية المصدر:",
-    hmac_colon: "HMAC:",
-    paths_colon: "المسارات:",
-    events_colon: "الأحداث:",
-    recursive_yes: "متداخل: نعم",
-    filter_colon: "التصفية:",
-    watches_colon: "يراقب:",
-    pattern_colon: "النمط:",
-    poll_every: "استطلاع: كل",
-    apps_colon: "التطبيقات:",
-    title_colon: "العنوان:",
-    operator_colon: "المُشغِّل:",
-    window_colon: "النافذة:",
-    id_colon: "المعرّف:",
-    type_colon: "النوع:",
-    status_colon: "الحالة:",
-    target_colon: "الهدف:",
-    retry_hash: "إعادة المحاولة #",
-    model_colon: "النموذج:",
-    next_run_colon: "التشغيل التالي:",
-    local_label: "(محلي)",
-    then_every: "، ثم كل",
-    source_colon: "المصدر:",
-    dry_run_target_colon: "الهدف:",
-    matched_subscriptions_count: "الاشتراكات المتطابقة ({count})",
-    last_label: "الأخير:",
-    loading_history: "جارٍ التحميل...",
-    zero_unlimited: "0 = غير محدود",
-    category_section_label: "فئة المُشغِّل",
-    no_persona_selected: "لم يتم تحديد شخصية",
-    quick_templates_label: "قوالب سريعة",
-    quick_presets_label: "إعدادات مسبقة سريعة",
-    cron_expression_label: "تعبير cron",
-    this_persona_will: "ستقوم هذه الشخصية بـ",
-    starting_from: "، ابتداءً من تفعيلها.",
-    per_day: "في اليوم.",
-    last_poll_label: "آخر استطلاع:",
-    deployed_persona_label: "الشخصية المنشورة",
-    fired_at_label: "تم التشغيل في",
-    webhook_last_label: "الأخير:",
-    relay_last_label: "الأخير:",
-    optional_label: "(اختياري)",
-    optional_comma_separated: "(اختياري، مفصولة بفواصل)",
-    get_channel_url_from: "احصل على URL قناة من",
-    setup_step1: "تفضّل بزيارة smee.io/new لإنشاء قناة ترحيل مجانية",
-    setup_step2: "أضف الترحيل هنا مع تسمية و URL القناة",
-    setup_step3: "الصق URL القناة كـ webhook في GitHub / Stripe / أي خدمة",
-    setup_step4: "تظهر الأحداث في البث المباشر وتوجَّه إلى وكلائك تلقائياً",
-    studio_empty_desc: "قم بتأليف تدفقات أحداث تفاعلية عبر شخصياتك. استخدم أنواع المُشغِّلات كلبنات بناء، أضف تفرّعاً شرطياً وتوزيعاً متوازياً لإنشاء سلاسل أتمتة ذكية.",
-    studio_step1: "1. أضف مصادر مُشغِّلات من الشريط الجانبي (جدول، webhook، ...)",
-    studio_step2: "2. أضف خطوات الشخصية لمعالجة الأحداث",
-    studio_step3: "3. اربطها لبناء سلاسل تفاعلية",
-    studio_step4: "4. استخدم بوابات شرطية لمنطق التوجيه",
-    gate_if_else: "إذا / وإلا",
-    gate_if_else_desc: "فرع شرطي ثنائي",
-    gate_classifier_desc: "توجيه متعدد الاتجاهات (الدعم، المبيعات، ...)",
-    gate_fan_out: "توزيع (متوازٍ)",
-    gate_fan_out_desc: "تشغيل فروع متعددة بالتوازي",
-    palette_help: "اربط مصادر المُشغِّلات بخطوات الشخصية لبناء سلاسل تفاعلية. أضف بوابات شرطية لمنطق التفرّع والتوزيع المتوازي.",
-    toolbar_title_auto_layout: "تخطيط تلقائي",
-    toolbar_title_add_note: "إضافة ملاحظة لاصقة",
-    toolbar_title_start_dry_run: "بدء التشغيل التجريبي",
-    toolbar_title_stop_dry_run: "إيقاف التشغيل التجريبي",
-    toolbar_title_assistant: "مساعد اللوحة",
-    toolbar_dry_run: "تشغيل تجريبي",
-    canvas_assistant_title: "مساعد اللوحة",
-    try_asking_hint: "جرّب السؤال",
-    assistant_placeholder: "اوصف طوبولوجيا الأحداث...",
-    disconnect_persona_title: "فصل الشخصية؟",
-    disconnect_will_no_longer: "لن يتفاعل بعد الآن مع",
-    disconnect_events_reconnect: "الأحداث. يمكنك إعادة الربط لاحقاً.",
-    rename_also_updates: "يُحدِّث أيضاً الأحداث التاريخية، ومعالجات أحداث الشخصية، وبيانات التدقيق الوصفية للمُشغِّل.",
-    delete_connection_label: "حذف الاتصال",
-    search_personas_placeholder: "البحث في الشخصيات...",
-    no_matching_personas_found: "لم يُعثر على شخصيات مطابقة",
-    clear_search_label: "مسح البحث",
-    dead_letter_source: "المصدر:",
-    dead_letter_id: "المعرّف:",
-    event_data_label: "بيانات الحدث",
-    shared_prefix: "مُشترك:",
-    nl_type_colon: "النوع:",
-    nl_cron_colon: "· Cron:",
-    nl_interval_colon: "· الفاصل:",
-    nl_filter_colon: "· التصفية:",
-    nl_could_not_parse: "تعذّر تحليل مُشغِّل من هذا الوصف. جرّب شيئاً مثل",
-    active_hours_every_day: "كل يوم",
-    event_type_to_listen: "نوع الحدث للاستماع إليه",
-    event_type_input_placeholder: "مثال: file_changed، execution_completed",
-    event_type_helper: "اكتب للبحث في أنواع الأحداث المسجلة، أو أدخل نوعاً مخصصاً.",
-    source_filter_optional_label: "(اختياري)",
-    wildcard_hint: "— يدعم نمط بادئة النجمة * في النهاية",
-    window_title_pattern_label: "نمط عنوان النافذة",
-    optional_regex_label: "(تعبير منتظم اختياري)",
-    text_pattern_label: "نمط النص",
-    credential_event_label: "حدث بيانات الاعتماد",
-    refresh_label: "تحديث",
-    copy_webhook_url_title: "نسخ URL webhook",
-    copy_webhook_secret_title: "نسخ سر webhook",
-    delete_webhook_title: "حذف مُشغِّل webhook",
-    status_col_label: "الحالة",
-    duration_col_label: "المدة",
-    cost_col_label: "التكلفة",
-    dead_letter_refresh: "تحديث",
-    dead_letter_loading: "جارٍ التحميل...",
-    dead_letter_retry: "إعادة المحاولة",
-    dead_letter_discard: "تجاهل",
-    dead_letter_payload: "الحمولة",
-    event_data_section_label: "بيانات الحدث",
-    copy_event_data_title: "نسخ بيانات الحدث",
-    copied_label: "تم النسخ",
-    error_section_label: "خطأ",
-    meta_event_id: "معرّف الحدث",
-    meta_project: "المشروع",
-    meta_processed: "تمت المعالجة",
-    clear_stream: "مسح",
-    clear_stream_title: "مسح ذاكرة البث المؤقتة",
-    col_type: "النوع",
-    col_source: "المصدر",
-    col_target_agent: "الوكيل الهدف",
-    col_status: "الحالة",
-    col_time: "الوقت",
-    queued_bare: "في قائمة الانتظار",
-    pause_tooltip: "إيقاف الأحداث الواردة مؤقتاً",
-    resume_tooltip: "استئناف التحديثات المباشرة",
-    relay_label_field: "التسمية",
-    relay_channel_url_field: "URL القناة",
-    relay_route_to_agent: "التوجيه إلى وكيل",
-    optional_suffix: "(اختياري)",
-    relay_event_filter_field: "تصفية الأحداث",
-    relay_event_filter_note: "(اختياري، مفصولة بفواصل)",
-    relay_confirm_delete: "تأكيد",
-    setup_guide_step2: "أضف الترحيل هنا مع تسمية و URL القناة",
-    setup_guide_step3: "الصق URL القناة كـ webhook في GitHub / Stripe / أي خدمة",
-    setup_guide_step4: "تظهر الأحداث في البث المباشر وتوجَّه إلى وكلائك تلقائياً",
-    get_channel_url_prompt: "احصل على URL قناة من",
-    gate_if_else_label: "إذا / وإلا",
-    gate_if_else_description: "فرع شرطي ثنائي",
-    gate_classifier_label: "مُصنِّف",
-    gate_classifier_description: "توجيه متعدد الاتجاهات (الدعم، المبيعات، ...)",
-    gate_fan_out_label: "توزيع (متوازٍ)",
-    gate_fan_out_description: "تشغيل فروع متعددة بالتوازي",
-    palette_help_text: "اربط مصادر المُشغِّلات بخطوات الشخصية لبناء سلاسل تفاعلية. أضف بوابات شرطية لمنطق التفرّع والتوزيع المتوازي.",
-    test_event_type_placeholder: "مثال: build_complete، deploy، file_changed",
-    result_id_prefix: "المعرّف:",
-    result_type_prefix: "النوع:",
-    result_status_prefix: "الحالة:",
-    result_target_prefix: "الهدف:",
-    tab_loading: "جارٍ التحميل...",
-    smee_open_new_title: "افتح smee.io/new لإنشاء قناة",
-    relay_label_placeholder: "مثال: GitHub — my-repo",
-    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
-    relay_filter_placeholder: "github_push، github_pull_request",
-    dead_letter_retry_exhausted_title: "حد إعادة المحاولة مستنفد — تجاهل أو افحص السبب الجذري",
-    dead_letter_discard_title: "تجاهل هذا الحدث نهائياً",
-    dead_letter_retry_title: "إعادة محاولة هذا الحدث",
-    replay_button_title: "إعادة التشغيل بنفس حمولة الإدخال",
-    interval_seconds_placeholder: "ثوانٍ (الحد الأدنى 60)",
-    cron_expression_placeholder: "* * * * *  (دقيقة ساعة يوم_شهر شهر يوم_أسبوع)",
-    app_focus_window_placeholder: "مثال: .*.rs$ أو Project - Visual Studio",
-    app_focus_process_placeholder: "مثال: Code.exe أو firefox",
-    field_optional: "(اختياري)",
-    source_filter_input_placeholder: "مثال: watcher-* أو exact-source-id",
-    meta_source: "المصدر",
-    relay_last_event: "الأخير:",
-    relay_delete_title: "حذف الترحيل",
-    setup_guide_step1: "أنشئ قناة على smee.io/new",
-    clipboard_pattern_placeholder: "مثال: https?://.* أو error|exception",
-    composite_event_type_placeholder: "نوع الحدث (مثل: file_changed)",
-    composite_debounce_placeholder: "300",
-    file_watcher_path_placeholder: "C:/Users/me/projects أو /home/me/src",
-    file_watcher_pattern_placeholder: "مثال: *.py، *.{ts,tsx}، Dockerfile",
-    polling_endpoint_placeholder: "https://api.example.com/poll",
-    more_tools_title: "أدوات إضافية",
-    validate_and_fire_title: "تحقق من إعدادات المُشغِّل، ثم شغّل",
-    simulate_trigger_title: "محاكاة المُشغِّل دون تنفيذ"
   },
   teams: {
     title: "فِرَق الوكلاء",
@@ -6659,11 +6015,10 @@ export const ar = {
     auto_team: "فريق تلقائي",
     new_team: "فريق جديد",
     starter_templates: "قوالب البداية",
-    use_template: "استخدام القالب"
+    use_template: "استخدام القالب",
   },
   settings: {
     title: "الإعدادات",
-    settings_saved: "تم الحفظ",
     account: {
       title: "الحساب",
       subtitle: "إدارة تسجيل الدخول والملف الشخصي",
@@ -6681,7 +6036,6 @@ export const ar = {
       telemetry_on: "تقارير الأعطال وتحليلات الاستخدام نشطة.",
       telemetry_off: "بيانات الاستكشاف معطّلة. لا يتم إرسال بيانات إلى Sentry.",
       telemetry_restart: "أعد تشغيل التطبيق لتفعيل هذا التغيير",
-      telemetry_toggle_aria: "تبديل قياس الأداء عن بُعد"
     },
     appearance_extra: {
       simple: "بسيط",
@@ -6689,7 +6043,7 @@ export const ar = {
       full: "كامل",
       full_hint: "إظهار الواجهة الكاملة",
       dev: "مطوّر",
-      dev_hint: "فتح أدوات المطوّرين"
+      dev_hint: "فتح أدوات المطوّرين",
     },
     appearance: {
       title: "المظهر",
@@ -6720,7 +6074,6 @@ export const ar = {
       applied: "تم التطبيق",
       reset: "إعادة تعيين",
       enter_theme_name: "أدخل اسم السمة",
-      reset_to_auto: "إعادة الضبط إلى تلقائي",
       preview_dashboard: "لوحة التحكم",
       preview_action: "إجراء",
       preview_card_title: "عنوان البطاقة",
@@ -6735,7 +6088,7 @@ export const ar = {
       coverage_hint: "تغطية الترجمة — انقر للتصدير",
       contribute_title: "المساهمة في الترجمات",
       contribute_hint: "ساعد في ترجمة Personas إلى لغتك. صدّر ملف لغة أعلاه، ترجم القيم، وأرسل عبر GitHub.",
-      contribute_github: "المساهمة على GitHub"
+      contribute_github: "المساهمة على GitHub",
     },
     notifications: {
       title: "الإشعارات",
@@ -6753,7 +6106,7 @@ export const ar = {
       digest_description: "إشعار أسبوعي يلخّص مشاكل الصحة عبر جميع الوكلاء مع درجة صحة إجمالية",
       healing_alerts_hint: "تحكّم في تنبيهات الإصلاح التي تُطلق إشعارات",
       healing_severity: "شدة تنبيه الإصلاح",
-      notification_hint: "تستخدم إشعارات سطح المكتب نظام الإشعارات الأصلي. تظهر الإشعارات داخل التطبيق للمشاكل الحرجة والعالية بغض النظر عن هذه الإعدادات."
+      notification_hint: "تستخدم إشعارات سطح المكتب نظام الإشعارات الأصلي. تظهر الإشعارات داخل التطبيق للمشاكل الحرجة والعالية بغض النظر عن هذه الإعدادات.",
     },
     engine: {
       title: "المحرّك",
@@ -6771,7 +6124,6 @@ export const ar = {
       legend_not_installed: "غير مُثبَّت",
       defaults_heading: "الافتراضيات من اختبارات التكامل",
       defaults_description: "خريطة الافتراضيات مستمدة من اختبارات التكامل في الجولة 9 التي تتحقق من كل موفّر مقابل مخططات JSON الدقيقة التي يحللها الخادم الخلفي. تفعيل موفّر لعملية فشل فيها قد يسبب استجابات غير قابلة للتحليل. Claude Code هو الموفّر الوحيد الذي نجح في جميع العمليات بنسبة 100%.",
-      engine_not_capable: "{provider} لم يجتز اختبارات التكامل لهذه العملية. قد تكون النتائج غير قابلة للتحليل."
     },
     ambient: {
       title: "دمج السياق المحيطي",
@@ -6807,7 +6159,7 @@ export const ar = {
       cancel: "إلغاء",
       create_rule: "إنشاء قاعدة",
       no_rules: "لا قواعد سياق محددة",
-      all_sources: "جميع المصادر"
+      all_sources: "جميع المصادر",
     },
     byom: {
       title: "نموذجك الخاص",
@@ -6859,7 +6211,6 @@ export const ar = {
       complexity: "التعقيد",
       provider: "الموفّر",
       model_optional: "النموذج (اختياري)",
-      model_placeholder: "مثال: claude-haiku-4-5-20251001",
       compliance_title: "القيود المدفوعة بالامتثال",
       compliance_hint: "تقييد الموفّرين لأنواع سير عمل محددة (مثال: HIPAA، SOC2)",
       compliance_empty: "لم يتم تكوين قواعد امتثال. أضف قواعد لتقييد الموفّرين لسير العمل الحساسة.",
@@ -6876,7 +6227,7 @@ export const ar = {
       audit_status: "الحالة",
       audit_cost: "التكلفة",
       audit_time: "الوقت",
-      failover: "تحويل تلقائي"
+      failover: "تحويل تلقائي",
     },
     admin: {
       title: "المدير",
@@ -6902,7 +6253,7 @@ export const ar = {
       consent_not_accepted: "غير مقبول",
       storage_key: "مفتاح التخزين",
       reset_consent: "إعادة تعيين الموافقة",
-      reload_modal: "إعادة التحميل لإظهار النافذة"
+      reload_modal: "إعادة التحميل لإظهار النافذة",
     },
     portability: {
       title: "نقل البيانات",
@@ -6930,17 +6281,12 @@ export const ar = {
       passphrase_optional: "عبارة مرور (اختياري)",
       import_complete: "اكتمل الاستيراد",
       warnings: "تحذيرات:",
-      import_personas: "{count} شخصية",
-      import_teams: "{count} فريق",
-      import_tools: "{count} أداة",
-      import_groups: "{count} مجموعة",
-      import_credentials_count: "{count} بيانات اعتماد",
       export_title: "تصدير مساحة العمل",
       export_subtitle: "اختر ما تريد تضمينه في التصدير",
       close: "إغلاق",
       loading_data: "جارٍ تحميل بيانات مساحة العمل...",
-      deselect_all: "إلغاء تحديد الكل",
       select_all: "تحديد الكل",
+      deselect_all: "إلغاء تحديد الكل",
       items_selected: "{selected} من {total} عنصر محدد",
       of_selected: "{count} من {total} محدد",
       encrypt_passphrase: "تشفير بيانات الاعتماد بعبارة مرور",
@@ -6970,7 +6316,7 @@ export const ar = {
       cred_import_complete: "اكتمل استيراد بيانات الاعتماد",
       cred_imported: "{count} مستورد",
       cred_skipped: "، {count} متخطى",
-      cred_replaced: "، {count} مستبدَل"
+      cred_replaced: "، {count} مستبدَل",
     },
     config: {
       title: "حل الإعداد",
@@ -6983,7 +6329,7 @@ export const ar = {
       overrides_inherited: "يتجاوز الموروث",
       agent: "الوكيل",
       loading_agents: "جارٍ تحميل الوكلاء...",
-      no_agents: "لم يتم العثور على وكلاء"
+      no_agents: "لم يتم العثور على وكلاء",
     },
     quality_gates: {
       title: "بوابات الجودة",
@@ -7001,12 +6347,11 @@ export const ar = {
       rules_count_plural: "{count} قاعدة",
       reset_defaults: "إعادة تعيين الافتراضيات",
       confirm_reset: "تأكيد إعادة التعيين؟",
-      rules_hint: "تُحمَّل القواعد من قاعدة البيانات عند كل إرسال. تسري التغييرات فوراً."
-    }
+      rules_hint: "تُحمَّل القواعد من قاعدة البيانات عند كل إرسال. تسري التغييرات فوراً.",
+    },
   },
   design: {
     no_persona: "لم يتم اختيار وكيل",
-    conversation_truncated: "وصلت هذه المحادثة إلى حد الرسائل. تمت إزالة الرسائل الأقدم — فكّر في بدء محادثة جديدة للحفاظ على السياق.",
     stages: {
       assembling_label: "تجميع الأمر",
       assembling_desc: "بناء أمر LLM من إعدادات الوكيل والتعليمات",
@@ -7017,8 +6362,8 @@ export const ar = {
       checking_label: "التحقق من الجدوى",
       checking_desc: "التحقق من توفر الأدوات والموصّلات المقترحة",
       saving_label: "حفظ النتيجة",
-      saving_desc: "كتابة التصميم المُجمَّع في قاعدة البيانات"
-    }
+      saving_desc: "كتابة التصميم المُجمَّع في قاعدة البيانات",
+    },
   },
   prompt_lab: {
     title: "إصدارات الأمر",
@@ -7054,7 +6399,7 @@ export const ar = {
       running: "جارٍ تشغيل اختبار A/B...",
       run: "تشغيل اختبار A/B",
       failed: "فشل اختبار A/B",
-      completed: "اكتمل اختبار A/B بنجاح"
+      completed: "اكتمل اختبار A/B بنجاح",
     },
     rollback: {
       title: "مراقب معدل الأخطاء",
@@ -7062,7 +6407,7 @@ export const ar = {
       rollback_hint: "إذا تجاوز معدل الأخطاء 50% بعد تغيير الأمر، ارجع إلى إصدار الإنتاج باستخدام قائمة الإصدارات أعلاه.",
       waiting: "في انتظار بيانات التنفيذ",
       waiting_hint: "شغّل وكيلك عدة مرات لبدء تتبع معدلات الأخطاء. يحتاج المراقب إلى تنفيذ واحد على الأقل لحساب الصحة.",
-      check_again: "تحقّق مرة أخرى"
+      check_again: "تحقّق مرة أخرى",
     },
     performance: {
       cost_per_execution: "التكلفة لكل تنفيذ",
@@ -7071,8 +6416,8 @@ export const ar = {
       latency_distribution: "توزيع زمن الاستجابة",
       latency_delta: "فرق زمن الاستجابة",
       error_rate_trend: "اتجاه معدل الأخطاء",
-      error_delta: "فرق الأخطاء"
-    }
+      error_delta: "فرق الأخطاء",
+    },
   },
   tests: {
     title: "مشغّل اختبار بيئة الاختبار",
@@ -7097,15 +6442,15 @@ export const ar = {
       rerun_tooltip: "إعادة تشغيل هذه المجموعة",
       rename_tooltip: "إعادة تسمية",
       delete_tooltip: "حذف المجموعة",
-      no_scenarios: "لا توجد سيناريوهات في هذه المجموعة"
+      no_scenarios: "لا توجد سيناريوهات في هذه المجموعة",
     },
     progress: {
       generating: "جارٍ توليد سيناريوهات الاختبار...",
       testing: "جارٍ اختبار {model} -- {scenario}",
       tool_prefix: "أداة: ",
       output_prefix: "مخرجات: ",
-      protocol_prefix: "بروتوكول: "
-    }
+      protocol_prefix: "بروتوكول: ",
+    },
   },
   onboarding: {
     title: "ابدأ",
@@ -7229,7 +6574,7 @@ export const ar = {
     agent_promoted_hint: "وكيلك الأول نشط الآن. الجولة تقترب من الاكتمال!",
     skip_build: "تخطي البناء في الوقت الحالي",
     dark_themes: "السمات الداكنة",
-    light_themes: "السمات الفاتحة"
+    light_themes: "السمات الفاتحة",
   },
   system_health: {
     title: "فحوصات النظام",
@@ -7266,7 +6611,7 @@ export const ar = {
     official_page: "الصفحة الرسمية",
     edit_key: "تعديل المفتاح",
     edit_config: "تعديل الإعدادات",
-    signing_in: "جارٍ تسجيل الدخول..."
+    signing_in: "جارٍ تسجيل الدخول...",
   },
   command_palette: {
     placeholder: "ابحث عن وكلاء، تنقّل... (اكتب \\\\\\\">\\\\\\\" للأوامر)",
@@ -7279,7 +6624,7 @@ export const ar = {
     key_esc: "ESC",
     hint_navigate: "تنقّل",
     hint_select: "اختر",
-    hint_commands: "أوامر"
+    hint_commands: "أوامر",
   },
   errors: {
     boundary_title: "حدث شيء غير متوقع في {name}",
@@ -7301,7 +6646,7 @@ export const ar = {
     database: "خطأ في قاعدة البيانات -- يرجى إعادة تشغيل التطبيق",
     internal: "حدث خطأ غير متوقع",
     cloud_error: "خطأ في الخدمة السحابية: {detail}",
-    gitlab_error: "خطأ GitLab: {detail}"
+    gitlab_error: "خطأ GitLab: {detail}",
   },
   error_registry: {
     network_offline_message: "يبدو أنك غير متصل.",
@@ -7373,7 +6718,7 @@ export const ar = {
     severity_critical: "يحتاج اهتماماً فورياً",
     severity_high: "مشكلة مهمة",
     severity_medium: "مشكلة بسيطة",
-    severity_low: "معلوماتي"
+    severity_low: "معلوماتي",
   },
   empty_states: {
     credentials_title: "وكلاؤك يحتاجون بيانات اعتماد للعمل",
@@ -7390,11 +6735,11 @@ export const ar = {
     tools_title: "لم يتم إعداد أدوات أو موصّلات",
     tools_subtitle: "اربط الخدمات الخارجية حتى يتمكن وكيلك من اتخاذ إجراءات والوصول إلى البيانات.",
     use_cases_title: "لم يتم تعريف حالات استخدام بعد",
-    use_cases_subtitle: "حدّد ما يجب أن يفعله هذا الوكيل -- استورد من سير عمل أو صِفه بلغة طبيعية."
+    use_cases_subtitle: "حدّد ما يجب أن يفعله هذا الوكيل -- استورد من سير عمل أو صِفه بلغة طبيعية.",
   },
   cli: {
     idle: "لا توجد مخرجات CLI بعد.",
-    waiting: "في انتظار مخرجات Claude CLI..."
+    waiting: "في انتظار مخرجات Claude CLI...",
   },
   validation: {
     required: "{field} مطلوب",
@@ -7405,7 +6750,7 @@ export const ar = {
     passphrase_min: "عبارة المرور يجب أن تكون 8 أحرف على الأقل",
     passphrase_prompt: "يرجى إدخال عبارة المرور المستخدمة أثناء التصدير",
     at_least_one: "مطلوب {field} واحد على الأقل",
-    fill_one_field: "املأ حقلًا واحدًا على الأقل للحفظ"
+    fill_one_field: "املأ حقلًا واحدًا على الأقل للحفظ",
   },
   toasts: {
     copied: "تم النسخ إلى الحافظة",
@@ -7465,7 +6810,7 @@ export const ar = {
     scheduled_agents_failed: "فشل تحميل الوكلاء المجدولين",
     design_start_failed: "فشل بدء محادثة التصميم",
     recipe_save_failed: "فشل حفظ الوصفة",
-    recipe_test_failed: "فشل الاختبار السريع"
+    recipe_test_failed: "فشل الاختبار السريع",
   },
   consent: {
     title: "مرحبًا بك في Personas Desktop",
@@ -7532,7 +6877,7 @@ export const ar = {
     checkbox: "أفهم أن هذا التطبيق يرسل بيانات إلى موفّري الذكاء الاصطناعي، ويصل إلى موارد النظام (الحافظة، نظام الملفات، الشبكة)، وينفّذ عمليات نيابةً عني. أتحمل مسؤولية كيفية إعداده واستخدامه.",
     checkbox_telemetry: "ساعد في تحسين Personas بإرسال تقارير أعطال مجهولة وتحليلات استخدام. لا تُضمَّن بيانات شخصية. يمكنك تغيير هذا لاحقاً في الإعدادات.",
     source_link: "عرض المصدر والترخيص",
-    accept_button: "أفهم، متابعة"
+    accept_button: "أفهم، متابعة",
   },
   schedules: {
     title: "الجدول الزمني للجداول",
@@ -7572,26 +6917,17 @@ export const ar = {
     overlap_warning: "يتداخل هذا الجدول مع {count} تنفيذ آخر خلال 7 أيام. يتنافس الوكلاء المتزامنون على حصة API وموارد النظام.",
     agents_missed: "{count} وكيل فاته تنفيذات",
     total_skipped: "~{count} تشغيل إجمالي متخطى بينما كان التطبيق غير متصل",
-    missed_since: "{count} فائت منذ {time}",
-    every_interval: "كل {interval}",
     recover: "استعادة",
-    mark_for_recovery: "وسم للاستعادة",
-    run_once_now: "تشغيل مرة واحدة الآن",
     run_1x: "تشغيل مرة",
     skip: "تخطي",
-    skip_dont_recover: "تخطّي -- لا تسترجع",
     dismiss_all: "رفض الكل",
     recover_selected: "استعادة {count} محدد",
-    overlaps_with: "يتداخل مع",
-    refresh_schedules: "تحديث الجداول",
-    seed_mock_tooltip: "بذر جدول وهمي (للمطورين فقط)",
-    schedule_view_aria: "عرض الجدول",
     today: "اليوم",
     projected: "متوقع",
     success: "نجاح",
     overlap: "تداخل",
     week: "أسبوع",
-    month: "شهر"
+    month: "شهر",
   },
   recipes: {
     no_match: "لا توجد وصفات مطابقة",
@@ -7645,8 +6981,6 @@ export const ar = {
     saved_mock_values: "قيم وهمية محفوظة",
     no_mock_values: "لا قيم وهمية محفوظة",
     free_input_placeholder: "أدخل JSON أو نصاً عادياً...",
-    recipe_label: "الوصفة:",
-    executed_label: "تم التنفيذ:",
     rendered_prompt: "الموجّه المعروض",
     execution_result: "نتيجة التنفيذ",
     rendering_prompt: "جارٍ عرض الموجّه...",
@@ -7676,7 +7010,7 @@ export const ar = {
     no_matching: "لا وصفات مطابقة.",
     loading_linked: "جارٍ تحميل الوصفات المرتبطة...",
     no_linked: "لا وصفات مرتبطة بعد. انقر \"إضافة\" لربط وصفات من المكتبة.",
-    run: "تشغيل"
+    run: "تشغيل",
   },
   execution_status: {
     queued: "في قائمة الانتظار",
@@ -7684,7 +7018,7 @@ export const ar = {
     completed: "مكتمل",
     failed: "فشل",
     cancelled: "ملغى",
-    error: "خطأ"
+    error: "خطأ",
   },
   status_tokens: {
     execution: {
@@ -7693,61 +7027,61 @@ export const ar = {
       completed: "مكتمل",
       failed: "فاشل",
       cancelled: "ملغى",
-      error: "خطأ"
+      error: "خطأ",
     },
     event: {
       pending: "معلّق",
       processing: "جارٍ المعالجة",
       processed: "تمت المعالجة",
       failed: "فاشل",
-      retrying: "إعادة المحاولة"
+      retrying: "إعادة المحاولة",
     },
     automation: {
       pending: "معلّق",
       running: "جارٍ",
       completed: "مكتمل",
       failed: "فاشل",
-      timeout: "انتهت المهلة"
+      timeout: "انتهت المهلة",
     },
     severity: {
       info: "معلوماتي",
       low: "منخفض",
       medium: "متوسط",
       high: "مرتفع",
-      critical: "حرج"
+      critical: "حرج",
     },
     priority: {
       low: "منخفض",
       normal: "طبيعي",
       high: "مرتفع",
-      urgent: "عاجل"
+      urgent: "عاجل",
     },
     healing_status: {
       open: "مفتوح",
       auto_fixed: "إصلاح تلقائي",
       acknowledged: "مؤكَّد",
-      resolved: "محلول"
+      resolved: "محلول",
     },
     healing_category: {
       config: "الإعداد",
       auth: "المصادقة",
       network: "الشبكة",
       timeout: "انتهاء المهلة",
-      quota: "الحصة"
+      quota: "الحصة",
     },
     connector_status: {
       ready: "جاهز",
       untested: "لم يُختبَر",
       failed: "فاشل",
       no_credential: "لا بيانات اعتماد",
-      testing: "جارٍ الاختبار"
+      testing: "جارٍ الاختبار",
     },
     test: {
       generating: "جارٍ التوليد",
       running: "جارٍ التشغيل",
       completed: "مكتمل",
       failed: "فاشل",
-      pending: "معلّق"
+      pending: "معلّق",
     },
     dev: {
       open: "مفتوح",
@@ -7756,8 +7090,8 @@ export const ar = {
       blocked: "محجوب",
       queued: "في قائمة الانتظار",
       running: "جارٍ",
-      failed: "فاشل"
-    }
+      failed: "فاشل",
+    },
   },
   project_overview: {
     codebase: "قاعدة الكود",
@@ -7787,7 +7121,7 @@ export const ar = {
     failed_to_load: "فشل تحميل الإحصائيات",
     retry: "إعادة المحاولة",
     no_project_selected: "لم يتم تحديد مشروع",
-    select_project_hint: "اختر مشروع تطوير لرؤية نظرته العامة."
+    select_project_hint: "اختر مشروع تطوير لرؤية نظرته العامة.",
   },
   plugins: {
     title: "الإضافات",
@@ -7796,98 +7130,12 @@ export const ar = {
     artist_desc: "توليد نماذج ثلاثية الأبعاد مع Blender، وإنشاء صور مع Leonardo AI، وإدارة الأصول الإبداعية.",
     dev_tools_label: "أدوات المطوّر",
     dev_tools_desc: "إدارة المشاريع، ومخطط السياق، ومسح الأفكار، والفرز، وأدوات مشغّل المهام.",
+    doc_signing_label: "توقيع المستندات",
+    doc_signing_desc: "توقيع والتحقق من المستندات بالتوقيعات الرقمية مباشرة من مساحة عملك.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
-    drive_label: "Drive",
-    drive_desc: "نظام ملفات محلي مُدار يحفظ الوكلاء فيه الصادرات. استعرض الملفات بواجهة شبيهة بـ Finder؛ يبقى بعد تحديثات التطبيق.",
-    drive: {
-      title: "Drive",
-      subtitle: "نظام ملفات محلي مُدار لصادرات الوكلاء",
-      root_label: "جذر Drive",
-      dev_badge: "مطوّر",
-      back: "رجوع",
-      forward: "تقدم",
-      up: "أعلى",
-      refresh: "تحديث",
-      search_placeholder: "البحث في هذا المجلد...",
-      view_list: "قائمة",
-      view_icons: "أيقونات",
-      view_columns: "أعمدة",
-      new_folder: "مجلد جديد",
-      new_file: "ملف جديد",
-      reveal_in_os: "إظهار في مدير الملفات",
-      open_in_os: "فتح",
-      sidebar_root: "Drive",
-      sidebar_recent: "الأحدث",
-      sidebar_storage: "التخزين",
-      storage_used: "{used} مستخدم • {count} عنصر",
-      empty_folder: "هذا المجلد فارغ",
-      empty_hint: "الوكلاء الذين يصدّرون إلى Local Drive سيحفظون ملفاتهم هنا.",
-      empty_cta: "إنشاء مجلد",
-      col_name: "الاسم",
-      col_size: "الحجم",
-      col_kind: "النوع",
-      col_modified: "تم التعديل",
-      folder_kind: "مجلد",
-      ctx_open: "فتح",
-      ctx_rename: "إعادة تسمية",
-      ctx_duplicate: "تكرار",
-      ctx_delete: "حذف",
-      ctx_copy: "نسخ",
-      ctx_cut: "قص",
-      ctx_paste: "لصق",
-      ctx_new_folder: "مجلد جديد",
-      ctx_new_file: "ملف جديد",
-      ctx_reveal: "إظهار في مدير الملفات",
-      ctx_copy_path: "نسخ المسار",
-      rename_title: "إعادة تسمية",
-      rename_placeholder: "اسم جديد",
-      new_folder_title: "مجلد جديد",
-      new_folder_placeholder: "اسم المجلد",
-      new_file_title: "ملف جديد",
-      new_file_placeholder: "filename.txt",
-      delete_confirm_title: "حذف {count} عنصر/عناصر؟",
-      delete_confirm_body: "لا يمكن التراجع عن هذا الإجراء. الملفات المحذوفة تذهب نهائياً.",
-      confirm: "تأكيد",
-      cancel: "إلغاء",
-      details_title: "التفاصيل",
-      details_path: "المسار",
-      details_size: "الحجم",
-      details_kind: "النوع",
-      details_modified: "تم التعديل",
-      details_items: "العناصر",
-      details_preview: "معاينة",
-      preview_unavailable: "المعاينة غير متاحة",
-      preview_binary: "ملف ثنائي — افتحه في مدير ملفات نظام التشغيل للفحص.",
-      preview_too_large: "الملف كبير جداً للمعاينة داخل السطر.",
-      loading: "جارٍ التحميل...",
-      error_prefix: "خطأ:",
-      items_selected: "{count} محدد",
-      items_total: "{count} عنصر",
-      signatures_button: "التوقيعات",
-      ctx_sign_file: "توقيع الملف…",
-      ctx_verify_file: "التحقق من التوقيع…",
-      ctx_extract_text: "استخراج النص (OCR)…",
-      ctx_extract_text_no_gemini: "استخراج النص — اربط Gemini للتمكين",
-      ocr_title: "استخراج النص باستخدام Gemini",
-      ocr_subtitle: "رؤية OCR عبر Google Gemini 3 Flash Preview",
-      ocr_model_label: "النموذج",
-      ocr_connector_ready: "موصّل Gemini جاهز",
-      ocr_connector_missing: "لم يُعثر على بيانات اعتماد Gemini في الخزنة. اربط Google Gemini لتمكين OCR.",
-      ocr_prompt_label: "موجِّه اختياري",
-      ocr_prompt_placeholder: "مثال: استخرج فقط إجمالي الفاتورة وبنود الفاتورة",
-      ocr_extract: "استخراج النص",
-      ocr_running: "جارٍ الاستخراج…",
-      ocr_done: "اكتمل الاستخراج",
-      ocr_save: "حفظ كـ .ocr.txt",
-      ocr_saved: "تم الحفظ",
-      ocr_saved_to: "تم الحفظ في",
-      ocr_copied: "تم النسخ إلى الحافظة",
-      select_file_or_folder: "اختر ملفاً أو مجلداً لرؤية تفاصيله.",
-      download_aria: "تنزيل",
-      download_title: "تنزيل",
-      sign_reason_placeholder: "سبب التوقيع…"
-    },
+    ocr_label: "OCR",
+    ocr_desc: "استخراج النصوص من الصور وملفات PDF باستخدام Gemini Vision أو Claude متعدد الوسائط.",
     artist: {
       title: "الفنان",
       subtitle: "توليد نماذج ثلاثية الأبعاد وإنشاء صور وإدارة الأصول الإبداعية",
@@ -7949,31 +7197,6 @@ export const ar = {
       viewer_3d: "عارض ثلاثي الأبعاد",
       viewer_3d_hint: "ثبّت @react-three/fiber و @react-three/drei لتفعيل المعاينات التفاعلية ثلاثية الأبعاد مع عناصر تحكم المدار.",
       tags_label: "الوسوم:",
-      status_partial: "جزئي",
-      status_not_checked: "لم يُفحص",
-      blender_label: "Blender",
-      blender_mcp_label: "Blender MCP",
-      session_cancelled: "تم إلغاء الجلسة.",
-      imported_assets_one: "تم استيراد أصل جديد واحد إلى المعرض.",
-      imported_assets_other: "تم استيراد {count} أصول جديدة إلى المعرض.",
-      scan_result_one: "تم العثور على {scanned} أصول، مستورد 1 جديد.",
-      scan_result_other: "تم العثور على {scanned} أصول، مستورد {imported} جديد.",
-      tool_blender: "Blender",
-      tool_leonardo: "Leonardo",
-      tool_gemini: "Gemini",
-      tag_editor_hint: "Enter أو فاصلة للإضافة، Backspace لإزالة الوسم الأخير.",
-      tag_editor_placeholder: "وسم، وسم-آخر",
-      send_to_media_studio: "إرسال إلى استوديو الوسائط",
-      sent_to_media_studio: "في قائمة الانتظار لاستوديو الوسائط",
-      session_history: "السجل",
-      session_history_empty: "ستظهر الجلسات التي تُشغّلها هنا.",
-      session_tools_label: "الأدوات:",
-      session_status_running: "قيد التشغيل",
-      session_status_completed: "اكتمل",
-      session_status_failed: "فشل",
-      session_status_cancelled: "تم الإلغاء",
-      replay_session: "إعادة تشغيل",
-      delete_session: "حذف الجلسة"
     },
     dev_tools: {
       no_project_configured: "لم يتم تكوين مشروع تطوير",
@@ -8015,8 +7238,6 @@ export const ar = {
       task: "المهمة",
       pick_winner: "اختيار الفائز",
       winner: "الفائز",
-      disqualified_label: "غير مؤهل",
-      elapsed_label: "منقضٍ",
       cancel_competition: "إلغاء المنافسة",
       no_goals_constellation: "لا أهداف بعد. أنشئ أهدافاً في تبويب المشاريع لرؤية الكوكبة.",
       your_turn: "دورك",
@@ -8121,8 +7342,6 @@ export const ar = {
       task_depth: "عمق المهمة",
       goal_link: "ربط الهدف",
       create_task: "إنشاء مهمة",
-      partial_context: "سياق جزئي",
-      context_warnings_title: "تحذيرات السياق — شُغّلت المهمة بمعلومات ناقصة",
       campaign: "حملة",
       deep_build: "بناء عميق",
       idea_evolution: "تطور الأفكار",
@@ -8137,8 +7356,6 @@ export const ar = {
       edit: "تعديل",
       save: "حفظ",
       file_empty: "الملف فارغ أو تعذّر تحميله.",
-      file_load_failed: "تعذّر تحميل الملف. تم تعطيل التحرير لمنع فقدان البيانات.",
-      file_load_failed_hint: "جرّب التحديث أو إعادة اختيار المهارة.",
       effort: "الجهد",
       risk: "الخطر",
       quick_wins: "مكاسب سريعة",
@@ -8153,155 +7370,6 @@ export const ar = {
       add_condition: "+ إضافة شرط",
       accept: "قبول",
       reject: "رفض",
-      triage_title: "فرز الأفكار",
-      triage_subtitle: "تقييم وترتيب الأفكار المُولَّدة",
-      accepted_badge: "{count} مقبول",
-      rejected_badge: "{count} مرفوض",
-      pending_badge: "{count} معلق",
-      sidebar_category: "الفئة",
-      sidebar_scan_type: "نوع الفحص",
-      sidebar_all: "الكل ({count})",
-      remaining_count: "{count} متبقٍ",
-      reviewed_count: "{done} / {total} تمت مراجعته",
-      empty_no_ideas: "لا توجد أفكار للفرز",
-      empty_no_ideas_hint: "شغّل Idea Scanner أولاً لتوليد الأفكار.",
-      empty_all_reviewed: "تمت مراجعة جميع الأفكار!",
-      empty_all_reviewed_summary: "{accepted} مقبول، {rejected} مرفوض",
-      swipe_reject: "رفض",
-      swipe_accept: "قبول",
-      reasoning_label: "المنطق",
-      hint_reject: "رفض",
-      hint_accept: "قبول",
-      shortcuts_title: "اختصارات لوحة المفاتيح",
-      shortcuts_reject: "رفض الفكرة",
-      shortcuts_accept: "قبول الفكرة",
-      shortcuts_toggle: "تبديل هذه الطبقة",
-      shortcuts_close: "إغلاق الطبقة",
-      shortcuts_dismiss_hint: "اضغط ؟ أو Esc للإغلاق",
-      shortcuts_open_title: "اختصارات لوحة المفاتيح (؟)",
-      shortcuts_btn_reject_title: "رفض (السهم الأيسر / A)",
-      shortcuts_btn_accept_title: "قبول (السهم الأيمن / Z)",
-      shortcuts_btn_delete_title: "حذف",
-      pr_bridge_title: "الشحن كـ PR مسودة",
-      pr_bridge_subtitle: "فرع وتثبيت و PR مملوء مسبقاً — منطق الوكيل مدمج في الوصف.",
-      pr_bridge_branch: "الفرع",
-      pr_bridge_commit_msg: "رسالة التثبيت",
-      pr_bridge_pr_title: "عنوان PR",
-      pr_bridge_pr_body: "جسم PR",
-      pr_bridge_agent_citation: "مقترح من {label} {emoji}",
-      pr_bridge_no_github: "اربط مستودع GitHub بهذا المشروع لتمكين سير عمل PR.",
-      pr_bridge_link_project: "فتح إعدادات المشروع",
-      pr_bridge_unsupported_host: "الملء التلقائي يعمل فقط مع GitHub حالياً. انسخ جسم PR وافتحه يدوياً.",
-      pr_bridge_copy_body: "نسخ جسم PR",
-      pr_bridge_copy_all: "نسخ الكل",
-      pr_bridge_prepare: "إعداد الفرع والتثبيت",
-      pr_bridge_open_github: "فتح PR المسودة على GitHub",
-      pr_bridge_expand: "إظهار معاينة PR",
-      pr_bridge_collapse: "إخفاء معاينة PR",
-      pr_bridge_copied: "تم نسخ جسم PR إلى الحافظة",
-      pr_bridge_copy_failed: "تعذّر النسخ إلى الحافظة",
-      pr_bridge_branch_prepared: "تم إعداد الفرع: {branch}",
-      pr_bridge_branch_failed: "فشل إعداد الفرع: {message}",
-      pr_bridge_opening: "جارٍ فتح GitHub...",
-      pr_bridge_open_failed: "تعذّر فتح URL خارجي",
-      pr_bridge_draft_hint: "تلميح: في صفحة GitHub، استخدم القائمة المنسدلة بجوار \"Create pull request\" لوسمه كمسودة.",
-      scoreboard_title: "أداء الوكيل",
-      scoreboard_subtitle: "معدلات القبول والتنفيذ لكل وكيل فحص في هذا المشروع.",
-      scoreboard_toggle_show: "إظهار لوحة النتائج",
-      scoreboard_toggle_hide: "إخفاء لوحة النتائج",
-      scoreboard_empty: "لا توجد بيانات بعد — شغّل فحصاً وافرز بعض الأفكار لملء اللوحة.",
-      scoreboard_col_agent: "الوكيل",
-      scoreboard_col_ideas: "الأفكار",
-      scoreboard_col_accept_rate: "% القبول",
-      scoreboard_col_impl_rate: "% التنفيذ",
-      scoreboard_col_avg_impact: "متوسط التأثير",
-      scoreboard_col_avg_effort: "متوسط الجهد",
-      scoreboard_tip_ideas: "إجمالي الأفكار التي ولّدها هذا الوكيل عبر جميع الفحوص.",
-      scoreboard_tip_accept_rate: "المقبول / (المقبول + المرفوض). الأفكار المعلقة مستثناة من المقام.",
-      scoreboard_tip_impl_rate: "المهام المكتملة / المهام المُنشأة من أفكار هذا الوكيل.",
-      scoreboard_tip_avg_impact: "متوسط درجة التأثير (1-10) لجميع الأفكار التي ولّدها هذا الوكيل.",
-      scoreboard_tip_avg_effort: "متوسط درجة الجهد (1-10) لجميع الأفكار التي ولّدها هذا الوكيل.",
-      scoreboard_no_signal: "—",
-      scoreboard_n_pending: "{n} معلق",
-      scoreboard_top_performer: "الأفضل أداءً",
-      zoom_in: "تكبير",
-      zoom_out: "تصغير",
-      reset_view: "إعادة ضبط العرض",
-      goals_label: "الأهداف،",
-      connections_label: "الاتصالات",
-      legend_parent: "━━ أب",
-      legend_dependency: "┄┄ اعتمادية",
-      competitors_dot: "المتنافسون ·",
-      of_4_selected: "/4 محدد",
-      status_label: "الحالة:",
-      wt_label: "وزن:",
-      winning_insight: "الرؤية الفائزة",
-      completed_in: "اكتمل في",
-      achievements_label: "الإنجازات:",
-      output_lines: "أسطر الإخراج",
-      loading_diff: "جارٍ تحميل الفرق...",
-      first_slot_bias: "الفتحة الأولى مُحاباة نحو نهج الفائز السابق.",
-      start_competition_prefix: "بدء المنافسة (",
-      slots_suffix: "فتحات)",
-      strategy_leaderboard: "لوحة صدارة الاستراتيجيات",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "مُجمَّع عبر المنافسات المحلولة. الأعلى يفوز.",
-      capture_winning_insight: "التقط الرؤية الفائزة",
-      capture_insight_desc: "ما الذي جعل هذا النهج يفوز؟ تُحفظ هذه الملاحظة مع الفائز وتُستخدم لبذر منافسات مستقبلية.",
-      insight_placeholder: "اوصف ما الذي جعل هذا النهج ناجحاً…",
-      confirm_winner: "تأكيد الفائز",
-      github_required_title: "مستودع GitHub مطلوب",
-      folder_required_title: "مجلد المشروع مطلوب",
-      requirements_met_title: "تم استيفاء جميع المتطلبات",
-      can_still_adopt: "لا يزال بإمكانك التبنّي الآن — أضف URL GitHub ومجلد المشروع لاحقاً في إعدادات المشروع.",
-      active_triggers_prefix: "المُشغِّلات النشطة (",
-      lifecycle_readiness: "جاهزية دورة الحياة —",
-      goals_tab_no_goals: "لا توجد أهداف بعد. أنشئ أهدافاً في مدير المشروع.",
-      goal_constellation_prefix: "كوكبة الأهداف (",
-      sync_to_obsidian: "مزامنة إلى Obsidian",
-      select_or_create: "اختر مشروعاً أدناه أو أنشئ واحداً جديداً.",
-      all_projects_prefix: "جميع المشاريع (",
-      percent_overall: "% إجمالي",
-      task_queue_prefix: "قائمة المهام (",
-      project_created_title: "تم إنشاء المشروع",
-      generate_context_map_desc: "يفحص قاعدة الكود الخاصة بك لتحديد منطق الأعمال ونقاط الدخول وهياكل البيانات.",
-      source_label: "المصدر:",
-      auto_filled_hint: "(مُعبّأ تلقائياً من المجلد)",
-      project_type_optional: "(اختياري، للعرض فقط)",
-      optional_label: "(اختياري)",
-      implementation_log_label: "سجل التنفيذ",
-      cross_project_desc_btn: "مُجمَّع من خرائط السياق الموجودة. انقر على أي مشروع لتوسيعه.",
-      generate_metadata_prompt: "لتحليل خرائط سياق جميع المشاريع واستخراج أنماط مشتركة.",
-      projects_count_prefix: "المشاريع (",
-      entry_points_header: "نقاط الدخول",
-      db_tables_header: "جداول قاعدة البيانات",
-      entry_points_count: "نقاط الدخول",
-      db_tables_count: "جداول قاعدة البيانات",
-      run_context_map_scan: "شغّل فحص Context Map لهذا المشروع لملء البيانات الوصفية.",
-      active_goals_label: "الأهداف النشطة",
-      no_goals_add_below: "لا توجد أهداف بعد. أضف واحداً أدناه.",
-      goal_title_placeholder: "عنوان الهدف…",
-      loading_repos: "جارٍ تحميل المستودعات...",
-      github_url_label: "URL GitHub",
-      github_repo_label: "مستودع GitHub",
-      idea_evolution_title: "تطور الأفكار",
-      fitness_ranking_label: "ترتيب الملاءمة",
-      similar_to_rejected: "مشابه للمرفوض:",
-      percent_similar: "% متشابه",
-      scanning_with: "جارٍ الفحص بـ",
-      scanning_subtitle: "جارٍ تحليل أنماط قاعدة الكود وتوليد مجموعات السياق…",
-      no_previous_scans: "لا توجد فحوص سابقة.",
-      run_scan_prefix: "تشغيل الفحص (",
-      automated_context_scan: "فحص سياق تلقائي",
-      results_prefix: "النتائج (",
-      scan_history_prefix: "سجل الفحص (",
-      action_label: "الإجراء:",
-      self_healing_title: "المعالجة الذاتية",
-      heal_all_prefix: "معالجة الكل (",
-      task_title_placeholder: "عنوان المهمة…",
-      task_details_placeholder: "تفاصيل المهمة أو الصق مواصفة…",
-      goal_link_placeholder: "اختر هدفاً…",
-      no_tasks_queued_sub: "أنشئ المهام يدوياً أو بدفعة من الأفكار المقبولة."
     },
     doc_signing: {
       title: "توقيع المستندات",
@@ -8340,7 +7408,7 @@ export const ar = {
       no_signatures: "لا توقيعات بعد",
       no_signatures_hint: "وقّع مستنداً لرؤيته هنا.",
       export_sig: "تصدير .sig.json",
-      delete_signature: "حذف التوقيع"
+      delete_signature: "حذف التوقيع",
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -8348,7 +7416,6 @@ export const ar = {
       tab_setup: "إعداد",
       tab_sync: "مزامنة",
       tab_browse: "تصفح الخزنة",
-      tab_graph: "الرسم البياني",
       tab_cloud: "السحابة",
       filter_notes: "تصفية الملاحظات...",
       vault_empty: "الخزنة فارغة",
@@ -8418,7 +7485,7 @@ export const ar = {
       sync_log: "سجل المزامنة",
       no_sync_activity: "لا نشاط مزامنة بعد. ارفع أو اسحب للبدء.",
       select_note: "اختر ملاحظة",
-      select_note_hint: "اختر ملاحظة من الشجرة على اليسار لمعاينة محتواها."
+      select_note_hint: "اختر ملاحظة من الشجرة على اليسار لمعاينة محتواها.",
     },
     ocr: {
       title: "OCR",
@@ -8445,292 +7512,8 @@ export const ar = {
       comparison_stats: "إحصائيات المقارنة",
       history_heading: "سجل OCR",
       no_results: "لا نتائج OCR بعد",
-      no_results_hint: "استخرج نصاً من مستند لرؤيته هنا."
+      no_results_hint: "استخرج نصاً من مستند لرؤيته هنا.",
     },
-    artist_gallery: {
-      loading_viewer: "جارٍ تحميل العارض…",
-      loading_model: "جارٍ تحميل النموذج...",
-      could_not_load_model: "تعذّر تحميل النموذج"
-    },
-    artist_media_studio: {
-      drag_drop_hint: "— اسحب وأفلت الملفات في أي مكان",
-      keyboard_shortcuts: "Space / Del / الأسهم",
-      px_per_second: "بكسل/ث",
-      running_loudnorm: "جارٍ تشغيل ffmpeg loudnorm تجريبياً…"
-    },
-    dev_context: {
-      files_header: "الملفات (",
-      filter_groups_placeholder: "تصفية المجموعات…",
-      rescan_title: "إعادة الفحص",
-      scanning_with: "جارٍ الفحص بـ",
-      scanning_subtitle: "جارٍ تحليل أنماط قاعدة الكود وتوليد مجموعات السياق…",
-      no_previous_scans: "لا توجد فحوص سابقة.",
-      run_scan: "تشغيل الفحص (",
-      auto_scan: "فحص تلقائي",
-      automated_context_scan: "فحص سياق تلقائي",
-      results: "النتائج (",
-      scan_history: "سجل الفحص ("
-    },
-    dev_lifecycle: {
-      start_a_competition: "بدء منافسة",
-      start_a_competition_desc: "أطلق 2-4 متنافسين باستراتيجيات مختلفة لمعالجة نفس المهمة. يُرقّى نهج الفائز.",
-      task_title: "عنوان المهمة",
-      task_title_placeholder: "مثال: إعادة هيكلة وحدة المصادقة",
-      task_description: "وصف المهمة (اختياري)",
-      task_description_placeholder: "اوصف كيف يبدو النجاح…",
-      strategy_slots: "فتحات الاستراتيجية (اختر 2-4)",
-      of_4_selected: "/4 محدد",
-      cost_warning: "تحذير التكلفة:",
-      cost_warning_desc: "يشغّل كل متنافس المهمة الكاملة باستقلالية — يستخدم هذا {count}× أضعاف الرموز.",
-      start_competition: "بدء المنافسة",
-      competitors_dot: "المتنافسون ·",
-      loading_competitors: "جارٍ تحميل المتنافسين...",
-      failed_to_load_detail: "فشل تحميل التفاصيل.",
-      status_label: "الحالة:",
-      weight_label: "وزن:",
-      pick_winner: "اختر الفائز",
-      cancel_competition: "إلغاء المنافسة",
-      select_project_for_competitions: "اختر مشروعاً لرؤية المنافسات.",
-      new_competition: "منافسة جديدة",
-      no_competitions_yet: "لا توجد منافسات بعد. ابدأ واحدة لتتسابق 2-4 استراتيجيات على حل مهمة.",
-      no_goals_yet_project: "لا توجد أهداف بعد. أنشئ أهدافاً في مدير المشروع لتتبع التقدم.",
-      zoom_in_title: "تكبير",
-      zoom_out_title: "تصغير",
-      reset_view_title: "إعادة ضبط العرض",
-      goals_label: "الأهداف،",
-      legend_parent: "━━ أب",
-      legend_dependency: "┄┄ اعتمادية",
-      no_goals_kanban: "لا توجد أهداف بعد. أنشئ أهدافاً لرؤيتها هنا.",
-      no_goals_here: "لا توجد أهداف هنا",
-      auto_setup_title: "تشغيل إعداد دورة الحياة التلقائي",
-      auto_setup: "إعداد تلقائي",
-      loading_lifecycle: "جارٍ تحميل حالة دورة الحياة...",
-      no_project_click_to_create: "لا يوجد مشروع — انقر للإنشاء",
-      no_repo: "لا يوجد مستودع",
-      baseline_label: "خط الأساس:",
-      ts_errors_label: "أخطاء TS:",
-      cargo_errors_label: "أخطاء Cargo:",
-      tests_label: "الاختبارات:",
-      git_label: "Git:",
-      winning_insight: "الرؤية الفائزة",
-      completed_in: "اكتمل في",
-      achievements_label: "الإنجازات:",
-      output_lines: "أسطر الإخراج",
-      expand_slot_title: "توسيع الفتحة",
-      collapse_slot_title: "طي الفتحة",
-      copy_diff_title: "نسخ الفرق",
-      loading_diff: "جارٍ تحميل الفرق...",
-      new_competition_modal_title: "بدء منافسة",
-      first_slot_bias: "الفتحة الأولى مُحاباة نحو نهج الفائز السابق.",
-      start_competition_slots: "بدء المنافسة (",
-      slots_suffix: "فتحات)",
-      strategy_leaderboard: "لوحة صدارة الاستراتيجيات",
-      dq_title: "غير مؤهل",
-      dq_label: "DQ x",
-      leaderboard_subtitle: "مُجمَّع عبر المنافسات المحلولة. الأعلى يفوز.",
-      capture_winning_insight: "التقط الرؤية الفائزة",
-      capture_insight_desc: "ما الذي جعل هذا النهج يفوز؟ تُحفظ هذه الملاحظة مع الفائز وتُستخدم لبذر منافسات مستقبلية.",
-      insight_placeholder: "اوصف ما الذي جعل هذا النهج ناجحاً…",
-      confirm_winner: "تأكيد الفائز",
-      competition_title_placeholder: "مثال: إضافة حد معدل إلى /api/auth/login",
-      competition_desc_placeholder: "معايير القبول، الملفات المستهدفة، القيود...",
-      regenerate_strategies_title: "إعادة توليد الاستراتيجيات",
-      start_dev_server_title: "بدء خادم التطوير في شجرة العمل هذه",
-      stop_dev_server_title: "إيقاف خادم التطوير",
-      open_worktree_title: "فتح دليل شجرة العمل",
-      adopt_dev_clone: "تبنّي Dev Clone",
-      dev_clone_desc: "Dev Clone هو شخصية مطوّر مستقلة تدير دورة حياة مشروعك — تنافس الاستراتيجيات، يعالج الأخطاء، ويشحن الكود.",
-      github_required_title: "مستودع GitHub مطلوب",
-      folder_required_title: "مجلد المشروع مطلوب",
-      requirements_met_title: "تم استيفاء جميع المتطلبات",
-      can_still_adopt: "لا يزال بإمكانك التبنّي الآن — أضف URL GitHub ومجلد المشروع لاحقاً في إعدادات المشروع.",
-      active_triggers: "المُشغِّلات النشطة (",
-      lifecycle_readiness: "جاهزية دورة الحياة —",
-      goals_tab_no_goals: "لا توجد أهداف بعد. أنشئ أهدافاً في مدير المشروع.",
-      goal_constellation: "كوكبة الأهداف (",
-      sync_to_obsidian: "مزامنة إلى Obsidian"
-    },
-    dev_projects: {
-      active_goals: "الأهداف النشطة",
-      run_context_map_scan: "شغّل فحص Context Map لهذا المشروع لملء البيانات الوصفية.",
-      entry_points: "نقاط الدخول",
-      db_tables: "جداول قاعدة البيانات",
-      top_keywords: "أهم الكلمات المفتاحية",
-      entry_points_header: "نقاط الدخول",
-      db_tables_header: "جداول قاعدة البيانات",
-      api_surface: "سطح API",
-      hot_directories: "المجلدات الساخنة",
-      cross_project_map_title: "خريطة بيانات وصفية عبر المشاريع",
-      cross_project_map_subtitle: "مُجمَّع من خرائط السياق الموجودة. انقر على أي مشروع لتوسيعه.",
-      tech_distribution: "توزيع التقنيات",
-      shared_keywords: "الكلمات المفتاحية المشتركة (",
-      shared_keywords_subtitle: "مفاهيم موجودة في مشاريع متعددة — قد تشير إلى معمارية مشتركة.",
-      project_similarity: "تشابه المشاريع",
-      projects_header: "المشاريع (",
-      cross_project_map_btn: "خريطة عبر المشاريع",
-      new_project: "مشروع جديد",
-      select_or_create: "اختر مشروعاً أدناه أو أنشئ واحداً جديداً.",
-      all_projects: "جميع المشاريع (",
-      no_projects_yet: "لا توجد مشاريع بعد",
-      create_first_project: "إنشاء أول مشروع",
-      tech_stack: "مكدس التقنيات",
-      edit_project: "تعديل المشروع",
-      no_goals_add_below: "لا توجد أهداف بعد. أضف واحداً أدناه.",
-      goal_title_placeholder: "عنوان الهدف…",
-      project_folder: "مجلد المشروع",
-      select_folder: "اختر مجلداً...",
-      project_name: "اسم المشروع",
-      auto_filled_from_folder: "(مُعبّأ تلقائياً من المجلد)",
-      project_name_placeholder: "مشروعي",
-      project_type: "نوع المشروع",
-      project_type_optional: "(اختياري، للعرض فقط)",
-      project_created: "تم إنشاء المشروع",
-      project_ready_desc: "جاهز. هل تود توليد خريطة سياق الآن؟",
-      generate_context_map: "توليد خريطة السياق",
-      generate_context_map_desc: "يفحص قاعدة الكود الخاصة بك لتحديد منطق الأعمال ونقاط الدخول وهياكل البيانات.",
-      skip_for_now: "تخطّي في الوقت الحالي",
-      scan_codebase: "فحص قاعدة الكود",
-      loading_repositories: "جارٍ تحميل المستودعات...",
-      github_url_label: "URL GitHub",
-      optional: "(اختياري)",
-      github_url_placeholder: "https://github.com/owner/repo",
-      github_repository: "مستودع GitHub",
-      select_repository: "اختر مستودعاً...",
-      no_repositories_found: "لم يُعثر على مستودعات",
-      implementation_log: "سجل التنفيذ",
-      loading_metadata: "جارٍ التحميل...",
-      no_metadata_yet: "لم يتم توليد خريطة بيانات وصفية بعد",
-      generate_metadata_prompt: "لتحليل خرائط سياق جميع المشاريع واستخراج أنماط مشتركة."
-    },
-    dev_runner: {
-      self_healing: "المعالجة الذاتية",
-      auto_heal: "معالجة تلقائية",
-      heal_all: "معالجة الكل (",
-      task_title_placeholder: "عنوان المهمة…",
-      task_details_placeholder: "تفاصيل المهمة أو الصق مواصفة…",
-      task_depth: "عمق المهمة",
-      goal_link: "رابط الهدف",
-      optional: "(اختياري)",
-      goal_link_placeholder: "اختر هدفاً…",
-      create_task: "إنشاء مهمة",
-      source_label: "المصدر:",
-      new_task: "مهمة جديدة",
-      batch_from_accepted: "دفعة من المقبولة",
-      start_batch: "بدء الدفعة",
-      cancel_all: "إلغاء الكل",
-      batch_progress: "تقدم الدفعة",
-      percent_overall: "% إجمالي",
-      task_queue: "قائمة المهام (",
-      no_tasks_queued: "لا توجد مهام في قائمة الانتظار",
-      no_tasks_queued_sub: "أنشئ المهام يدوياً أو بدفعة من الأفكار المقبولة."
-    },
-    dev_scanner: {
-      idea_evolution: "تطور الأفكار",
-      fitness_ranking: "ترتيب الملاءمة",
-      similar_to_rejected: "مشابه للمرفوض:",
-      synthesis_suggestions: "اقتراحات التركيب",
-      percent_similar: "% متشابه",
-      potential_duplicates: "مكررات محتملة",
-      scanning_with: "جارٍ الفحص بـ",
-      analyzing_codebase: "جارٍ تحليل قاعدة الكود...",
-      no_previous_scans: "لا توجد فحوص سابقة بعد.",
-      auto_scan: "فحص تلقائي",
-      automated_context_scan: "فحص سياق تلقائي",
-      run_scan_prefix: "تشغيل:",
-      results_prefix: "النتائج:",
-      scan_history_prefix: "سجل الفحص",
-      idea_scanner_title: "ماسح الأفكار",
-      idea_scanner_subtitle: "شغّل وكلاء متخصصين لتوليد أفكار التحسين",
-      run_scan_btn: "تشغيل الفحص (",
-      results_header: "النتائج (",
-      scan_history_header: "سجل الفحص ("
-    },
-    dev_triage: {
-      auto_triage_rules: "قواعد الفرز التلقائي",
-      add_condition: "+ إضافة شرط",
-      action_label: "الإجراء:",
-      new_rule: "قاعدة جديدة",
-      run_rules: "تشغيل القواعد"
-    },
-    obsidian: {
-      saved_vaults: "الخزائن المحفوظة",
-      remove_vault_title: "إزالة الخزنة المحفوظة",
-      vault_is_empty: "الخزنة فارغة",
-      failed_to_load: "فشل التحميل",
-      open_in_obsidian: "فتح في Obsidian",
-      copy_path_title: "نسخ المسار",
-      disconnect_title: "فصل Google Drive",
-      sign_in_to_enable: "سجّل الدخول لتمكين المزامنة السحابية",
-      sign_in_subtitle: "سجّل الدخول بحساب Google لعمل نسخة احتياطية من خزنتك على Google Drive.",
-      refresh_title: "تحديث حالة المزامنة",
-      drive_connected: "Drive متصل",
-      files_synced: "ملفات متزامنة إلى Drive",
-      connect_drive_desc: "اربط Google Drive لعمل نسخة احتياطية من خزنتك إلى السحابة.",
-      step_connect_drive: "ربط Google Drive",
-      step_connect_drive_desc: "امنح Personas إذن إنشاء ملفات في Google Drive الخاص بك.",
-      step_push_vault: "ادفع خزنتك",
-      step_push_vault_desc: "تُرفع ملاحظات الخزنة كملفات markdown إلى Google Drive.",
-      step_sync_devices: "المزامنة عبر الأجهزة",
-      step_sync_devices_desc: "اسحب على جهاز آخر للتنزيل. خزنتك هي بياناتك.",
-      push_title: "دفع الخزنة إلى Google Drive",
-      push_desc: "يرفع الدفع تغييرات الخزنة المحلية إلى Google Drive.",
-      last_sync_result: "نتيجة آخر مزامنة",
-      pull_title: "سحب الخزنة من Google Drive",
-      connect_google_drive: "ربط Google Drive",
-      connect_drive_btn_desc: "امنح Personas إذن إنشاء ملفات في Google Drive الخاص بك.",
-      no_stats_yet: "لا توجد إحصائيات بعد.",
-      search_title: "البحث في الملاحظات",
-      search_placeholder: "البحث في الملاحظات…",
-      no_matches: "لا توجد تطابقات.",
-      no_orphan_notes: "لا توجد ملاحظات يتيمة — كل ملاحظة مرتبطة من ملاحظة أخرى واحدة على الأقل.",
-      no_mocs: "لم تُكتشف خرائط محتوى — جرّب خفض عتبة الروابط.",
-      quick_capture_title: "التقاط سريع بالذكاء الاصطناعي",
-      note_search_placeholder: "ابحث في الملاحظات أو اطرح سؤالاً…",
-      append_to_today: "إلحاق بـ Today",
-      append_content_placeholder: "المحتوى للإلحاق…",
-      save_meeting_title: "حفظ ملاحظة اجتماع",
-      meeting_attendees_placeholder: "الحاضرون…",
-      meeting_summary_placeholder: "ملخص الاجتماع…",
-      meeting_action_items_placeholder: "بنود العمل…",
-      meeting_decisions_placeholder: "القرارات…",
-      save_meeting_note: "حفظ ملاحظة الاجتماع",
-      remove_vault_setup_title: "إزالة",
-      detected_vaults: "الخزائن المكتشفة:",
-      connected_to: "متصل بـ \"",
-      notes_found: "ملاحظات موجودة",
-      scan_for_vaults_title: "البحث عن خزائن",
-      manual_path_title: "أدخل المسار يدوياً",
-      preview_label: "معاينة:",
-      vault_path_agent_placeholder: "/AgentName/",
-      vault_path_note_example: "/fact/memory-title.md",
-      disconnect_sync_title: "قطع الاتصال",
-      active_vault: "الخزنة النشطة:",
-      refresh_stats_title: "تحديث الإحصائيات",
-      select_personas: "اختر الشخصيات للدفع",
-      select_all: "تحديد الكل",
-      no_personas_found: "لم يُعثر على شخصيات",
-      last_push_result: "نتيجة آخر دفع",
-      app_version: "إصدار التطبيق",
-      vault_version: "إصدار الخزنة",
-      keep_app: "الاحتفاظ بالتطبيق",
-      keep_vault: "الاحتفاظ بالخزنة",
-      clear_history_title: "مسح السجل",
-      no_sync_activity: "لا يوجد نشاط مزامنة بعد. ادفع أو اسحب للبدء."
-    },
-    research_lab: {
-      review_before_saving: "راجع قبل الحفظ. ألغِ التحديد عن أي بند لا تريد إضافته.",
-      re_run: "إعادة تشغيل",
-      search_placeholder: "البحث…",
-      filter_title: "تصفية",
-      query_placeholder: "اكتب استعلاماً واضغط Enter للبحث عبر جميع اللوحات…",
-      close_panel_title: "إغلاق اللوحة",
-      md_extension: ".md",
-      edit_note_aria: "تعديل الملاحظة"
-    },
-    doc_signing_label: "توقيع المستندات",
-    doc_signing_desc: "توقيع والتحقق من المستندات بالتوقيعات الرقمية مباشرة من مساحة عملك.",
-    ocr_label: "OCR",
-    ocr_desc: "استخراج النصوص من الصور وملفات PDF باستخدام Gemini Vision أو Claude متعدد الوسائط."
   },
   media_studio: {
     title: "استوديو الوسائط",
@@ -8792,32 +7575,10 @@ export const ar = {
     empty_title: "ابدأ التأليف",
     empty_hint: "أضف مقاطع فيديو أو صوت إلى الجدول الزمني للبدء.",
     split: "تقسيم عند رأس التشغيل",
-    undo: "تراجع",
-    redo: "إعادة",
     import_media: "استيراد وسائط",
     supported_video: "ملفات الفيديو",
     supported_audio: "ملفات الصوت",
     supported_images: "ملفات الصور",
-    clip_actions: "إجراءات المقطع",
-    action_split: "تقسيم عند مؤشر التشغيل",
-    action_extract_audio: "استخراج الصوت",
-    action_strip_audio: "إزالة الصوت",
-    action_keep_audio: "الاحتفاظ بالصوت",
-    action_save_thumbnail: "حفظ الإطار كصورة",
-    action_trim_to_file: "اقتصاص إلى ملف جديد",
-    extracting_audio: "جارٍ استخراج مسار الصوت...",
-    extract_audio_done: "تم استخراج مسار الصوت",
-    saving_thumbnail: "جارٍ حفظ الإطار...",
-    thumbnail_saved: "تم حفظ الإطار",
-    trimming_file: "جارٍ اقتصاص الملف...",
-    trim_done: "تم حفظ الاقتصاص",
-    effects: "تأثيرات",
-    speed: "السرعة",
-    fade_in: "تلاشٍ إلى الداخل",
-    fade_out: "تلاشٍ إلى الخارج",
-    normalize: "تسوية الصوت",
-    normalize_hint: "EBU R128 يُطبَّق عند التصدير؛ المعاينة تقريبية",
-    strip_audio_hint: "يكتم صوت هذا المقطع عند التصدير"
   },
   research_lab: {
     dashboard: "لوحة التحكم",
@@ -8827,29 +7588,20 @@ export const ar = {
     experiments: "التجارب",
     findings: "النتائج",
     reports: "التقارير",
-    graph: "الرسم البياني",
     active: "نشط",
     sources: "المصادر",
     sources_count: "مصادر",
-    recent_projects: "المشاريع الأخيرة",
-    view_all: "عرض الكل",
     no_projects: "لا مشاريع بحثية بعد",
     no_projects_hint: "أنشئ مشروع بحثياً لبدء تنظيم أدبياتك وفرضياتك وتجاربك.",
     create_project: "مشروع جديد",
-    edit_project: "تعديل المشروع",
-    save_changes: "حفظ التغييرات",
     project_name: "اسم المشروع",
-    project_name_placeholder: "مثال: أمانة سلسلة الاستدلال في LLM",
     project_description: "الوصف",
-    project_description_placeholder: "ملخص قصير لما يدرسه هذا المشروع",
     project_thesis: "السؤال البحثي أو الأطروحة",
-    project_thesis_placeholder: "الادعاء أو السؤال المركزي الذي تختبره",
     project_domain: "المجال",
     project_scope: "قيود النطاق",
     obsidian_vault: "خزنة Obsidian",
     obsidian_vault_hint: "اربط خزنة Obsidian لمزامنة التجارب والنتائج",
     select_vault: "اختر خزنة",
-    clear_vault: "مسح",
     vault_connected: "الخزنة متصلة",
     sync_to_obsidian: "مزامنة مع Obsidian",
     syncing: "جارٍ المزامنة...",
@@ -8865,42 +7617,13 @@ export const ar = {
     status_writing: "كتابة",
     status_review: "مراجعة",
     status_complete: "مكتمل",
-    domain_cs: "علوم الحاسوب",
-    domain_biology: "الأحياء",
-    domain_chemistry: "الكيمياء",
-    domain_physics: "الفيزياء",
-    domain_mathematics: "الرياضيات",
-    domain_business: "الأعمال",
-    domain_medicine: "الطب",
-    domain_general: "عام",
     select_project_first: "اختر مشروعاً بحثياً أولاً",
     no_sources: "لا مصادر بعد",
     no_sources_hint: "ابحث في arXiv أو Semantic Scholar أو PubMed للعثور على أوراق بحثية ذات صلة، أو أضف مصادر يدوياً.",
-    no_matching_sources: "لا توجد مصادر تطابق تصفيتك",
-    filter_sources_placeholder: "تصفية حسب العنوان أو المؤلف…",
     relevance: "الصلة",
     search_sources: "بحث في المصادر",
     ingest: "استيعاب",
     ingesting: "جارٍ الاستيعاب...",
-    source_title: "العنوان",
-    source_title_placeholder: "عنوان الورقة",
-    source_type: "نوع المصدر",
-    source_year: "السنة",
-    source_year_placeholder: "مثال: 2024",
-    source_authors: "المؤلفون",
-    source_authors_placeholder: "المؤلف 1، المؤلف 2، …",
-    source_url: "URL",
-    source_url_placeholder: "https://arxiv.org/abs/…",
-    source_doi: "DOI",
-    source_doi_placeholder: "10.xxxx/…",
-    source_abstract: "الملخص",
-    source_abstract_placeholder: "ملخص الورقة…",
-    source_type_arxiv: "arXiv",
-    source_type_scholar: "Semantic Scholar",
-    source_type_pubmed: "PubMed",
-    source_type_web: "صفحة ويب",
-    source_type_pdf: "PDF",
-    source_type_manual: "إدخال يدوي",
     no_hypotheses: "لا فرضيات بعد",
     no_hypotheses_hint: "أضف فرضيات يدوياً أو دع وكيل الذكاء الاصطناعي يولّدها من مجموعة أدبياتك.",
     add_hypothesis: "إضافة فرضية",
@@ -8908,58 +7631,23 @@ export const ar = {
     confidence: "الثقة",
     supporting: "داعم",
     counter: "معارض",
-    hypothesis_statement: "التصريح",
-    hypothesis_statement_placeholder: "ادعاء قابل للاختبار — مثال: الموجّه X يُحسّن الدقة عن خط الأساس بأكثر من 5%",
-    hypothesis_rationale: "المبرر",
-    hypothesis_rationale_placeholder: "لماذا هذه الفرضية تستحق الاختبار",
     no_experiments: "لا تجارب بعد",
     no_experiments_hint: "صمّم تجربة لاختبار فرضية.",
     create_experiment: "تجربة جديدة",
-    experiment_name: "اسم التجربة",
-    experiment_name_placeholder: "مثال: مقارنة خط الأساس مقابل المُدرَّب الدقيق على GSM8K",
     methodology: "المنهجية",
-    methodology_placeholder: "كيف ستُشغَّل هذه التجربة؟",
     success_criteria: "معايير النجاح",
-    success_criteria_placeholder: "أي نتيجة ستؤكد الفرضية؟",
-    linked_hypothesis: "الفرضية المرتبطة",
-    no_linked_hypothesis: "لا توجد فرضية مرتبطة",
-    linked_persona: "الشخصية المرتبطة",
-    no_linked_persona: "لا توجد شخصية مرتبطة",
-    run_input: "إدخال التشغيل (اختياري)",
-    run_input_placeholder: "نص الإدخال الذي سيُمرَّر للشخصية في كل تشغيل.",
-    pass_pattern: "نمط النجاح (تعبير منتظم)",
-    pass_pattern_placeholder: "مثال: PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "تشغيل",
-    running_experiment: "جارٍ التشغيل…",
     run_count: "تشغيلات",
-    view_runs: "عرض التشغيلات",
-    no_runs_yet: "لا توجد تشغيلات بعد",
-    run_passed: "ناجح",
-    run_failed: "فاشل",
-    run_duration: "المدة",
-    run_cost: "التكلفة",
-    run_number: "تشغيل #",
-    runs_history: "سجل التشغيلات",
     no_findings: "لا نتائج بعد",
     no_findings_hint: "تُستخرج النتائج من نتائج التجارب بواسطة وكلاء التحليل.",
-    create_finding: "نتيجة جديدة",
-    finding_title: "العنوان",
-    finding_title_placeholder: "عنوان قصير للنتيجة",
-    finding_description: "الوصف",
-    finding_description_placeholder: "ماذا لاحظت ولماذا يهم ذلك؟",
-    finding_category: "الفئة",
-    finding_category_placeholder: "مثال: الأداء، القيود، المفاجأة",
     no_reports: "لا تقارير بعد",
     no_reports_hint: "أنشئ تقريراً لتجميع نتائجك في مستند منظّم.",
     create_report: "تقرير جديد",
-    report_title: "العنوان",
-    report_title_placeholder: "مثال: ملخص الأبحاث للربع الثاني",
     report_type: "نوع التقرير",
-    report_format: "التنسيق",
     literature_review: "مراجعة الأدبيات",
     experiment_report: "تقرير تجربة",
     full_paper: "ورقة بحثية كاملة",
-    executive_summary: "ملخص تنفيذي"
+    executive_summary: "ملخص تنفيذي",
   },
   event_types: {
     webhook_received_label: "Webhook مستلَم",
@@ -9034,7 +7722,7 @@ export const ar = {
     source_filter_no_regex: "مدعوم * النهائي فقط (لا regex، لا ? حروف بدل)",
     source_filter_no_source_id: "إذا كان source_filter مضبوطاً لكن الحدث ليس له source_id، لن يتطابق المرشح",
     source_filter_allowed_chars: "الحروف المسموح بها: أحرف، أرقام، _، -، :، .، و*",
-    source_filter_max_length: "الحد الأقصى 120 حرفاً، و3 حروف بدل"
+    source_filter_max_length: "الحد الأقصى 120 حرفاً، و3 حروف بدل",
   },
   connector_roles: {
     chat_messaging: "الدردشة والمراسلة",
@@ -9101,12 +7789,12 @@ export const ar = {
     purpose_ecommerce: "التجارة الإلكترونية",
     purpose_scheduling: "الجدولة",
     purpose_forms: "النماذج",
-    purpose_ai: "الذكاء الاصطناعي"
+    purpose_ai: "الذكاء الاصطناعي",
   },
   connector_licensing: {
     personal: "شخصي",
     paid: "مدفوع",
-    enterprise: "مؤسسي"
+    enterprise: "مؤسسي",
   },
   alerts: {
     metric_error_rate: "معدل الأخطاء",
@@ -9122,7 +7810,7 @@ export const ar = {
     error_delete_rule: "فشل حذف قاعدة التنبيه:",
     error_toggle_rule: "فشل تبديل قاعدة التنبيه:",
     error_dismiss: "فشل رفض التنبيه:",
-    error_clear_history: "فشل مسح سجل التنبيهات:"
+    error_clear_history: "فشل مسح سجل التنبيهات:",
   },
   deploy_errors: {
     not_reachable: "تعذّر الوصول إلى الخادم. تحقق من العنوان واتصالك بالشبكة.",
@@ -9137,18 +7825,18 @@ export const ar = {
     oauth_expired: "انتهت صلاحية رمز OAuth. يرجى إعادة التفويض.",
     url_empty: "يرجى إدخال عنوان URL للمنسّق.",
     api_key_empty: "يرجى إدخال مفتاح API الخاص بك.",
-    token_empty: "يرجى إدخال رمز الوصول الشخصي لـ GitLab."
+    token_empty: "يرجى إدخال رمز الوصول الشخصي لـ GitLab.",
   },
   tiers: {
     starter_label: "بسيط",
     starter_desc: "الميزات الأساسية للاستخدام اليومي",
     team_label: "طاقة",
-    team_desc: "مجموعة الميزات الكاملة"
+    team_desc: "مجموعة الميزات الكاملة",
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus"
+    opus: "Opus",
   },
   error_explanation: {
     action_go_to_vault: "الذهاب إلى الخزنة",
@@ -9192,7 +7880,7 @@ export const ar = {
     guidance_import_invalid: "ملف الاستيراد فارغ أو تالف. حاول إعادة التصدير من المصدر والاستيراد مجدداً.",
     guidance_circular_chain: "سيُنشئ هذا حلقة يُشغّل فيها الوكلاء بعضهم باستمرار. راجع سلسلة الوكلاء وأزِل المرجع الدائري.",
     guidance_parse_error: "لم تكن الاستجابة بالتنسيق المتوقع. قد يشير هذا إلى تغيير API أو بيانات مشوّهة.",
-    guidance_process_exit: "أبلغت العملية الأساسية عن إخفاق. تحقق من سجل التنفيذ لمزيد من التفاصيل."
+    guidance_process_exit: "أبلغت العملية الأساسية عن إخفاق. تحقق من سجل التنفيذ لمزيد من التفاصيل.",
   },
   process_labels: {
     n8n_transform: "تحويل n8n",
@@ -9206,11 +7894,10 @@ export const ar = {
     lab_run: "تشغيل المختبر",
     connector_test: "اختبار الموصّل",
     creative_session: "جلسة إبداعية",
-    feedback_chat: "محادثة الملاحظات",
     complete_suffix: "مكتمل",
     failed_suffix: "فاشل",
     pending_reviews_one: "{count} مراجعة معلّقة تنتظر الموافقة",
-    pending_reviews_other: "{count} مراجعة معلّقة تنتظر الموافقة"
+    pending_reviews_other: "{count} مراجعة معلّقة تنتظر الموافقة",
   },
   eval_strategies: {
     keyword_match_label: "جودة الناتج",
@@ -9222,7 +7909,7 @@ export const ar = {
     confusion_detect_label: "اكتشاف الالتباس",
     confusion_detect_description: "يتحقق من عبارات الالتباس / الإخفاق المعروفة",
     composite_label: "مركّب",
-    composite_description: "مجموعة موزونة من جميع الاستراتيجيات"
+    composite_description: "مجموعة موزونة من جميع الاستراتيجيات",
   },
   drift_labels: {
     kind_error_pattern: "نمط الخطأ",
@@ -9250,7 +7937,7 @@ export const ar = {
     suggestion_error_handling: "راجع قسم errorHandling وأضف معالجة لنمط الإخفاق هذا.",
     suggestion_near_timeout: "فكّر في رفع المهلة أو تبسيط نطاق مهمة الوكيل في التعليمات.",
     suggestion_high_cost: "اجعل التعليمات أكثر دقة لتقليل استخدام الرموز، أو فكّر في استخدام نموذج أصغر.",
-    suggestion_repeated_failure: "فكّر في تشغيل تحليل تصميم جديد لإعادة بناء إعداد الوكيل."
+    suggestion_repeated_failure: "فكّر في تشغيل تحليل تصميم جديد لإعادة بناء إعداد الوكيل.",
   },
   feedback_labels: {
     accurate_prompt: "موجّه دقيق",
@@ -9263,13 +7950,13 @@ export const ar = {
     over_engineered: "معقّد بشكل مفرط",
     under_specified: "غير محدد بما فيه الكفاية",
     wrong_triggers: "مُشغّلات خاطئة",
-    credential_issues: "مشاكل بيانات الاعتماد"
+    credential_issues: "مشاكل بيانات الاعتماد",
   },
   protocol_labels: {
     manual_review: "المراجعة اليدوية",
     user_message: "إشعارات المستخدم",
     agent_memory: "ذاكرة الوكيل",
-    emit_event: "إصدار الأحداث"
+    emit_event: "إصدار الأحداث",
   },
   execution: {
     budget_exceeded: "تجاوزت الميزانية الشهرية لهذا الوكيل. تجاوز إيقاف الميزانية في إعدادات الوكيل أو ارفع الميزانية للمتابعة.",
@@ -9286,11 +7973,6 @@ export const ar = {
     waiting_for_output: "في انتظار الناتج...",
     no_output: "لا يوجد ناتج",
     background: "الخلفية",
-    needs_credential: "يحتاج إلى بيانات اعتماد",
-    run_preview: "معاينة التشغيل",
-    close_preview: "إغلاق المعاينة",
-    budget_limit: "حد الميزانية",
-    run_agent: "تشغيل الوكيل"
   },
   gitlab: {
     integration_title: "تكامل GitLab",
@@ -9405,10 +8087,6 @@ export const ar = {
     play_sound: "تشغيل صوت",
     cicd_agent_templates: "قوالب وكلاء CI/CD",
     your_tier: "(مستواك)",
-    trigger_on: "تشغيل عند:",
-    connecting_to_gitlab: "جارٍ الاتصال بـ GitLab...",
-    deploying_to_gitlab: "جارٍ نشر الشخصية إلى GitLab...",
-    pipeline_hash: "خط الأنابيب #"
   },
   pipeline: {
     agent_teams: "فرق الوكلاء",
@@ -9556,11 +8234,6 @@ export const ar = {
     run_pipeline_or_add: "شغّل خط أنابيب أو أضف ذاكرة يدوياً",
     load_more: "تحميل المزيد",
     showing_count: "عرض {shown} من {total}",
-    no_timeline_data: "لا توجد بيانات خط زمني",
-    clear_filter: "مسح التصفية",
-    filter_to_run: "تصفية إلى هذا التشغيل",
-    new_memories_one: "{count} ذاكرة جديدة",
-    new_memories_other: "{count} ذكريات جديدة"
   },
   composition: {
     select_persona: "اختر الشخصية",
@@ -9609,10 +8282,10 @@ export const ar = {
     add_input_node: "إضافة عقدة مدخل",
     add_persona_node: "إضافة عقدة شخصية",
     add_output_node: "إضافة عقدة مخرج",
-    run: "تشغيل"
+    run: "تشغيل",
   },
   auth: {
-    login_timed_out: "انتهت مهلة تسجيل الدخول. يرجى المحاولة مجدداً."
+    login_timed_out: "انتهت مهلة تسجيل الدخول. يرجى المحاولة مجدداً.",
   },
   shared: {
     blast_checking_impact: "جارٍ التحقق من التأثير...",
@@ -9747,15 +8420,6 @@ export const ar = {
     cmd_select: "اختر",
     cmd_commands: "أوامر",
     draft_editor: {
-      edit_tabs_label: "علامات تبويب تعديل المسودة",
-      request_ai_adjustments: "طلب تعديلات بالذكاء الاصطناعي",
-      edit_raw_json_hint: "تحرير JSON الخام. التغييرات تتجاوز حقول النموذج.",
-      no_custom_sections: "لا توجد أقسام مخصصة بعد",
-      no_content_to_preview: "لا يوجد محتوى للمعاينة",
-      edit_raw: "تعديل الخام",
-      credential_links: "روابط بيانات الاعتماد",
-      view_full_prompt: "عرض الموجِّه الكامل",
-      hide_full_prompt: "إخفاء الموجِّه الكامل",
       persona_name_placeholder: "اسم الشخصية...",
       description_placeholder: "وصف موجز...",
       refine_placeholder: "مثال: اجعل معالجة الأخطاء أكثر صرامة، أضف منطق إعادة المحاولة...",
@@ -9776,108 +8440,55 @@ export const ar = {
       design_context_json: "JSON سياق التصميم...",
       click_next: "انقر على التالي للمتابعة مع التحويل.",
       configure_transform: "ضبط التحويل",
-      select: "اختر..."
+      select: "اختر...",
     },
     forms_extra: {
-      color_hex_placeholder: "#8b5cf6",
-      attach_file_title: "إرفاق ملف (مواصفة API، مخطط، إعدادات MCP)",
-      add_references_title: "إضافة URL مراجع أو سلاسل اتصال",
-      no_matches: "لا توجد تطابقات",
-      all_prefix: "الكل (",
       references: "المراجع",
       references_placeholder: "الصق روابط URL أو سلاسل اتصال أو مفاتيح API أو أي معلومات مرجعية (واحد في كل سطر)",
       remove_file: "إزالة الملف",
       choose_color: "اختر لوناً",
       choose_icon: "اختر أيقونة",
       filter_placeholder: "تصفية...",
-      reset_to_default: "إعادة إلى الافتراضي"
+      reset_to_default: "إعادة إلى الافتراضي",
     },
     reasoning_trace: {
-      heartbeat_silent: "ث (صامت",
-      waiting: "في انتظار أحداث التنفيذ...",
-      tool_call_label: "استدعاء أداة:",
       system_init: "تهيئة النظام",
       reasoning: "التفكير",
       tool_call: "استدعاء أداة: {name}",
       result: "النتيجة",
       complete: "مكتمل",
-      error: "خطأ"
+      error: "خطأ",
     },
     sidebar_extra: {
-      clear_completed_title: "مسح العناصر المكتملة والمنتظرة",
-      no_credentials: "لا توجد بيانات اعتماد بعد",
-      ai_setup_wizard: "معالج الإعداد بالذكاء الاصطناعي",
-      all_personas: "جميع الشخصيات",
-      no_scheduled_agents: "لا توجد وكلاء لها جداول",
-      all_agents_label: "جميع الوكلاء",
-      draft_builds: "إصدارات المسودة",
-      dev_tools_label: "أدوات التطوير",
-      obsidian_brain: "Obsidian Brain",
-      active_twin: "التوأم النشط",
-      research_lab: "Research Lab",
       agents: "الوكلاء",
       schedules: "الجداول الزمنية",
       remove_favorites: "إزالة من المفضلة",
       add_favorites: "إضافة إلى المفضلة",
-      active_project: "المشروع النشط"
+      active_project: "المشروع النشط",
     },
     execution_detail: {
-      running: "جارٍ التشغيل...",
-      rerun: "إعادة التشغيل",
-      retry_prefix: "إعادة المحاولة #",
-      importance_prefix: "الأهمية:",
-      confidence_suffix: "% ثقة",
       copy: "نسخ",
       suggested_actions: "الإجراءات المقترحة",
       knowledge_insight: "رؤية المعرفة",
       outcome_assessment: "تقييم النتيجة",
-      blockers: "العوائق"
+      blockers: "العوائق",
     },
     progress_extra: {
-      continue_working: "يمكنك متابعة العمل -- سنُعلمك عندما تكون المسودة جاهزة.",
-      draft_ready: "مسودة شخصيتك جاهزة للمراجعة والتعديل.",
-      click_generate: "انقر على “توليد مسودة الشخصية” للبدء.",
-      skip_configuration: "تخطّي الإعداد",
-      no_config_questions: "لا توجد أسئلة إعداد مطلوبة.",
-      answer_questions: "أجب على هذه الأسئلة لتخصيص توليد الشخصية.",
-      no_output: "لا يوجد إخراج بعد...",
-      s_elapsed: "ث منقضٍ",
-      s_remaining: "ث متبقٍ",
-      show_cli_output: "إظهار إخراج CLI",
-      hide_cli_output: "إخفاء إخراج CLI",
       taking_longer: "يستغرق وقتاً أطول من المتوقع",
       complete: "مكتمل",
       resuming: "استئناف جلسة التحويل السابقة...",
       cancel_transformation: "إلغاء التحويل",
       draft_generated: "تم إنشاء المسودة بنجاح",
       transformation_failed: "فشل التحويل",
-      waiting_to_start: "في انتظار بدء التحويل..."
+      waiting_to_start: "في انتظار بدء التحويل...",
     },
     terminal_extra: {
-      connecting: "جارٍ الاتصال بالمزوّد",
-      queued_at: "في قائمة الانتظار عند الموضع",
-      new_line: "سطر جديد",
-      new_lines: "أسطر جديدة",
-      below: "أدناه",
-      lines_suffix: "أسطر)",
-      search_and_filter: "البحث والتصفية",
       press_enter: "اضغط Enter أو انقر على تشغيل للبدء",
       connection_failed: "فشل الاتصال -- تحقق من إعدادات المزوّد وأعد المحاولة",
       search_output: "البحث في المخرج...",
-      dismiss: "رفض"
+      dismiss: "رفض",
     },
     use_cases_extra: {
-      input_placeholder: "اكتب الإدخال لتشغيل حالة الاستخدام هذه…",
-      model_placeholder: "مثال: claude-3-5-sonnet-latest",
-      use_case_singular: "حالة استخدام",
-      window_prefix: "(النافذة:",
-      loading_history: "جارٍ تحميل السجل...",
-      no_executions: "لا توجد تنفيذات بعد",
-      run_to_see_history: "شغّل حالة الاستخدام هذه لرؤية سجل التنفيذ والتوقيتات والتكاليف هنا.",
-      run_use_case: "تشغيل حالة الاستخدام هذه",
-      custom_model: "نموذج مخصص",
-      no_results: "لم يُعثر على نتائج",
-      ctrl_enter: "Ctrl+Enter",
       example_output: "مثال على المخرج",
       input_data: "بيانات المدخل",
       rerun_input: "إعادة التشغيل بهذا المدخل",
@@ -9885,7 +8496,7 @@ export const ar = {
       error_prefix: "الخطأ: ",
       output_prefix: "المخرج: ",
       toggle_history: "تبديل سجل التنفيذ",
-      configure_model: "ضبط النموذج والإشعارات والاشتراكات"
+      configure_model: "ضبط النموذج والإشعارات والاشتراكات",
     },
     json_valid: "JSON صالح",
     json_invalid: "JSON غير صالح",
@@ -9893,85 +8504,6 @@ export const ar = {
     json_format_tooltip: "تنسيق JSON",
     agent_icon_label: "أيقونة الوكيل",
     breadcrumb_label: "مسار التنقل",
-    breadcrumb_show_hidden: "إظهار مسارات التنقل المخفية"
+    breadcrumb_show_hidden: "إظهار مسارات التنقل المخفية",
   },
-  releases: {
-    whats_new: {
-      title: "ما الجديد",
-      subtitle_roadmap: "ما نبنيه الآن وما سيأتي لاحقاً.",
-      subtitle_changelog: "الجديد في إصدارك من Personas.",
-      nav_bar_roadmap_label: "خارطة الطريق",
-      empty: "لا شيء للمشاركة لهذا الإصدار بعد — عُد قريباً.",
-      status_released: "تم الإصدار",
-      status_active: "الحالي",
-      status_planned: "مُخطَّط",
-      status_roadmap: "خارطة الطريق",
-      type_feature: "جديد",
-      type_fix: "تم الإصلاح",
-      type_security: "أمان",
-      type_docs: "وثائق",
-      type_chore: "مهمة",
-      type_breaking: "كسر توافق",
-      item_status_in_progress: "قيد التنفيذ",
-      item_status_planned: "مُخطَّط",
-      item_status_completed: "تم",
-      priority_now: "الآن",
-      priority_next: "التالي",
-      priority_later: "لاحقاً",
-      summary_in_progress: "{count} قيد التنفيذ",
-      summary_next: "{count} التالي",
-      release_0_0_1_label: "Alpha 1",
-      release_0_0_1_summary: "أول معاينة لـ Personas.",
-      release_0_0_1_item_1_title: "أول معاينة عامة",
-      release_0_0_1_item_1_description: "صمّم وكلاء ذكاء اصطناعي، شغّلهم على جدول أو بمُشغّل، وشاهد عملهم حياً على سطح مكتبك.",
-      release_0_0_2_label: "Alpha 2",
-      release_0_0_2_summary: "اربط Personas بأدوات ذكاء اصطناعي أخرى واقرأ الجديد دون مغادرة التطبيق.",
-      release_0_0_2_item_1_title: "افتح وكلاءك لأدوات ذكاء اصطناعي أخرى",
-      release_0_0_2_item_1_description: "يمكن لـ Personas الآن التحدث إلى أدوات ذكاء اصطناعي أخرى عبر بروتوكول مشترك. اختر بدقة أي وكلاء تريد مشاركتهم، واحمِهم بمفاتيح وصول تتحكم فيها — وكلاؤك الخاصون يبقون خاصين افتراضياً.",
-      release_0_0_2_item_2_title: "وصول أكثر أماناً لتطبيق سطح المكتب",
-      release_0_0_2_item_2_description: "ينشئ تطبيق سطح المكتب مفتاح وصول خاصاً به قصير العمر في كل تشغيل، لذا يمكنه التحدث إلى خدماته الخلفية دون كشف أي شيء لم توافق عليه.",
-      release_0_0_2_item_3_title: "ملاحظات الإصدار داخل التطبيق",
-      release_0_0_2_item_3_description: "اطلع على الجديد في كل إصدار من Personas دون مغادرة التطبيق. تبديل بين الإصدارات السابقة والإصدار الحالي وخارطة الطريق طويلة المدى من مكان واحد.",
-      release_0_0_2_item_4_title: "وكلاؤك يتعلمون من كل جلسة",
-      release_0_0_2_item_4_description: "يلتقط Personas الآن الدروس من كل جلسة وكيل، ويُستخلصها إلى معرفة قابلة لإعادة الاستخدام، ويحضرها للتشغيل التالي. يصبح وكلاؤك أكثر ذكاءً كلما استخدمتهم لفترة أطول — لا حاجة لتدريب يدوي.",
-      release_0_0_2_item_5_title: "حوّل أي مستند إلى إحاطة قابلة للاستماع",
-      release_0_0_2_item_5_description: "قالب جديد يحوّل التقارير البحثية أو نسخ الاجتماعات أو المقالات الطويلة إلى محادثة صوتية بمضيفَين مدتها 5-15 دقيقة يمكنك الاستماع إليها أثناء التنقل. تختار الأسلوب — غير رسمي أو رسمي أو إخباري أو تنفيذي — وتراجع النص قبل توليد الأصوات.",
-      release_0_0_2_item_6_title: "محرر مُدرَّب في Stanford لكتابتك",
-      release_0_0_2_item_6_description: "قالب جديد يراجع مسوداتك بطريقة Stanford \"Writing in the Sciences\". يُبرز المبني للمجهول والعبارات الحشوية والمصطلحات — ويشرح بالضبط لماذا يجعل كل تغيير مقترح الجملة أوضح. يتعلّم صوتك من التعديلات التي تقبلها أو ترفضها.",
-      release_0_0_2_item_7_title: "حوّل 20 ساعة من إنتاج YouTube إلى 3",
-      release_0_0_2_item_7_description: "قالب جديد يضغط دورة فيديو YouTube كاملة إلى حوالي ثلاث ساعات بمعالجة كل شيء باستثناء التصوير. يتحقق من جدوى موضوعك، يكتب نصاً يبدأ بخطاف بصوتك، ويُزيل اللقطات المعادة تلقائياً من اللقطات الخام باستخدام النص المعتمد كأرضية مرجعية — لتصور بطبيعتك، وتتعثر بحرية، وتستمر.",
-      release_0_0_2_item_8_title: "شغّل ماسحات Apify من وكلائك",
-      release_0_0_2_item_8_description: "اربط أي فاعل من منصة Apify — ماسحات YouTube، ماسحات Twitter، أتمتة المتصفح، ومئات غيرها — مباشرة بوكلائك. يفتح سير عمل بحثياً يحتاج إلى بيانات لا تستطيع واجهات API الرسمية الوصول إليها.",
-      release_0_0_2_item_9_title: "X (Twitter) أصبح الآن موصّلاً",
-      release_0_0_2_item_9_description: "ابحث في التغريدات الأخيرة، تتبّع المواضيع الرائجة، وانشر مباشرة من وكلائك. مفيد لبحوث المحتوى والاستماع الاجتماعي وأتمتة التسويق دون مغادرة Personas.",
-      release_0_0_2_item_10_title: "شاهد YouTube من وكلائك",
-      release_0_0_2_item_10_description: "أول موصّل منصة فيديو في Personas. ابحث في مقاطع الفيديو، اجلب إحصائيات القناة، استخرج المحتوى الرائج، وحلّل المنافسين مباشرة من أي وكيل يحتاج إلى فهم ما يحدث على YouTube.",
-      release_0_0_2_item_11_title: "حوّل الصوت إلى نص مع Deepgram",
-      release_0_0_2_item_11_description: "موصّل جديد لتحويل الصوت إلى نص يُفرّغ ملفات الصوت أو URL مع توقيت على مستوى الكلمة. يُشغّل مساعد مُنشئ YouTube للتحرير التلقائي، ويمنح أي وكيل القدرة على معالجة الملاحظات الصوتية أو تسجيلات الاجتماعات أو محتوى البودكاست.",
-      release_0_0_2_item_12_title: "يمكن لأدوات ذكاء اصطناعي أخرى التحقق من وكلائك وإيقافهم",
-      release_0_0_2_item_12_description: "عندما تستدعي أداة ذكاء اصطناعي أخرى أحد وكلائك المشتركين، يمكنها الآن السؤال 'هل لا يزال يعمل؟' و 'يرجى التوقف الآن' في منتصف التنفيذ. لم تعد مهام البحث الطويلة تحتاج للحفاظ على الاتصال مفتوحاً طوال الوقت، ويمكن إلغاء التشغيلات العالقة بشكل نظيف من الجانب المستدعي. كل وكيل يرى فقط تشغيلاته الخاصة، لذا لا شيء يتسرّب عبر الوكلاء.",
-      release_0_0_2_item_13_title: "موصّل جديد: تحليلات Humbalytics",
-      release_0_0_2_item_13_description: "تتبّع حركة المرور، شغّل تجارب A/B، وبدّل نصوص صفحات الهبوط دون لمس الكود الخاص بك. يمكن لـ Personas الآن سحب خرائط الحرارة وبيانات التحويل من Humbalytics واستخدامها لتوجيه تجاربك.",
-      release_0_0_2_item_14_title: "موصّل جديد: استخراج الويب Firecrawl",
-      release_0_0_2_item_14_description: "يمكن للوكلاء الآن قراءة أي موقع ويب — حتى المواقع الحديثة الكثيفة JavaScript — كمحتوى نظيف ومُنظّم. مفيد لوكلاء البحث والذكاء التسويقي ومراقبة المحتوى.",
-      release_0_0_2_item_15_title: "وكيل تسويق يُشغّل فعلياً اختبارات A/B الخاصة بك",
-      release_0_0_2_item_15_description: "قالب جديد يقترح متغيّرات عناوين، ينشرها بموافقتك، ينتظر الأهمية الإحصائية، ويُرقّي الفائزين تلقائياً. كل تغيير مُقيَّد ببوابة بشرية قبل التفعيل، وكل تجربة تعمل لفترة كافية لتكون النتائج ذات مغزى فعلي.",
-      release_0_0_2_item_16_title: "اقرأ لوحات BI لفريقك من أي وكيل",
-      release_0_0_2_item_16_description: "يمكن لـ Personas الآن سحب النتائج من استعلامات Redash ولوحات معلوماتها المحفوظة. إذا كان فريقك يحافظ بالفعل على لوحات معلومات مشتركة، فوكلاؤك يقرؤون نفس الأرقام التي يراها البشر — لا إعادة كتابة SQL، ولا صادرات CSV، ولا نسخ ولصق.",
-      release_0_0_2_item_17_title: "Metabase أصبح الآن موصّلاً",
-      release_0_0_2_item_17_description: "يمكن لوكلائك تشغيل أسئلة Metabase المحفوظة وقراءة لوحات المعلومات مباشرة من مساحة عملك. يعمل مع Metabase Pro و Enterprise وأي مثيل مستضاف ذاتياً.",
-      release_0_0_2_item_18_title: "ملخص BI يومي يُرسَل إليك",
-      release_0_0_2_item_18_description: "قالب جديد يلتقط الاستعلامات المحفوظة التي تحتفظ بها بالفعل في Redash أو Metabase، يلخّص أحدث الأرقام كل صباح، ويرسل ملخصاً بلغة واضحة مع إشارات شذوذ أسبوعية. تبقى لوحات معلوماتك مفيدة حتى عندما لا يفتحها أحد.",
-      release_roadmap_label: "خارطة الطريق",
-      release_roadmap_summary: "ما نبنيه الآن وما سيأتي لاحقاً.",
-      release_roadmap_item_2_title: "التكامل السحابي",
-      release_roadmap_item_2_description: "شغّل وكلاءك 24/7 في السحابة وابث عملهم مرة أخرى إلى سطح مكتبك في الوقت الفعلي.",
-      release_roadmap_item_3_title: "تطبيق ويب",
-      release_roadmap_item_3_description: "رفيق ويب للحسابات والفوترة وإدارة الوكلاء من أي متصفح.",
-      release_roadmap_item_4_title: "استخدم Personas بلغتك",
-      release_roadmap_item_4_description: "دعم كامل متعدد اللغات، بما في ذلك التخطيطات من اليمين إلى اليسار والخطوط الخاصة باللغة.",
-      release_roadmap_item_6_title: "مساحات عمل الفرق",
-      release_roadmap_item_6_description: "ابنِ وكلاء مع فريقك — مساحات مشتركة وأذونات أدوار ولوحات معلومات مباشرة."
-    }
-  }
 };
