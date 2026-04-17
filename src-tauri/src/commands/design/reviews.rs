@@ -1376,7 +1376,7 @@ async fn run_cli_for_template(
     // Read stdout line by line, emit output events
     let mut reader = driver
         .take_stdout_reader()
-        .expect("stdout was piped")
+        .ok_or_else(|| "Failed to capture stdout from CLI process".to_string())?
         .lines();
     let mut full_output = String::new();
 
