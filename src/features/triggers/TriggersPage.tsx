@@ -36,8 +36,9 @@ interface TabHeaderConfig {
 }
 
 function LazyWrap({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-foreground typo-body">Loading...</div>}>
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-foreground typo-body">{t.triggers.tab_loading}</div>}>
       {children}
     </Suspense>
   );

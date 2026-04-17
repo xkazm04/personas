@@ -175,7 +175,7 @@ export function CloudWebhooksTab() {
           <div className="flex items-center gap-2">
             {relay.last_poll_at && (
               <span className="text-xs text-foreground">
-                Last poll: {formatRelativeTime(relay.last_poll_at)}
+                {t.triggers.last_poll_label} {formatRelativeTime(relay.last_poll_at)}
               </span>
             )}
             <button

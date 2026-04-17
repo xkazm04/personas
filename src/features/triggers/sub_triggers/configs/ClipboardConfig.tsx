@@ -44,7 +44,7 @@ export function ClipboardConfig({
           type="text"
           value={clipboardPattern}
           onChange={(e) => setClipboardPattern(e.target.value)}
-          placeholder="e.g. https?://.* or error|exception"
+          placeholder={t.triggers.clipboard_pattern_placeholder}
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>

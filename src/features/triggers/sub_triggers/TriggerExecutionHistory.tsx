@@ -112,7 +112,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
                   className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Re-fire with the same input payload"
+                  title={t.triggers.replay_button_title}
                 >
                   {isReplaying
                     ? <LoadingSpinner size="xs" />

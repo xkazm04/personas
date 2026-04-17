@@ -55,7 +55,7 @@ export function TestTab() {
               type="text"
               value={testEventType}
               onChange={(e) => setTestEventType(e.target.value)}
-              placeholder="e.g. build_complete, deploy, file_changed"
+              placeholder={t.triggers.test_event_type_placeholder}
               className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
           </div>
@@ -82,11 +82,11 @@ export function TestTab() {
           <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
             <p className="typo-body font-medium text-emerald-400">{t.triggers.event_published}</p>
             <div className="typo-code text-foreground space-y-1 font-mono">
-              <p>ID: {testResult.id}</p>
-              <p>Type: {testResult.event_type}</p>
-              <p>Status: {testResult.status}</p>
+              <p>{t.triggers.result_id_prefix} {testResult.id}</p>
+              <p>{t.triggers.result_type_prefix} {testResult.event_type}</p>
+              <p>{t.triggers.result_status_prefix} {testResult.status}</p>
               {testResult.target_persona_id && (
-                <p>Target: {getPersona(testResult.target_persona_id)?.name ?? testResult.target_persona_id}</p>
+                <p>{t.triggers.result_target_prefix} {getPersona(testResult.target_persona_id)?.name ?? testResult.target_persona_id}</p>
               )}
             </div>
           </div>

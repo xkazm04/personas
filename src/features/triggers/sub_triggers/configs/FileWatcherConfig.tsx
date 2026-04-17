@@ -35,7 +35,7 @@ export function FileWatcherConfig({
                 setWatchPaths(updated);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="C:\Users\me\projects or /home/me/src"
+              placeholder={t.triggers.file_watcher_path_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'watch-paths-error' : undefined}
               className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
@@ -82,7 +82,7 @@ export function FileWatcherConfig({
           type="text"
           value={globFilter}
           onChange={(e) => setGlobFilter(e.target.value)}
-          placeholder="e.g. *.py, *.{ts,tsx}, Dockerfile"
+          placeholder={t.triggers.file_watcher_pattern_placeholder}
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>

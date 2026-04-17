@@ -176,7 +176,7 @@ export function EventCanvasToolbar({
             <button
               onClick={() => setMoreOpen(v => !v)}
               className={`p-1.5 rounded-input border transition-colors ${moreOpen ? 'bg-secondary/80 border-primary/20' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-              title="More tools"
+              title={t.triggers.more_tools_title}
             >
               <MoreHorizontal className="w-3.5 h-3.5 text-foreground" />
             </button>

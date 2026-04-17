@@ -81,7 +81,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
               onClick={detail.handleTestFire}
               disabled={detail.testing}
               className="flex items-center gap-1.5 px-3 py-2 typo-body text-primary/70 hover:text-primary hover:bg-primary/10 rounded-card transition-colors disabled:opacity-50"
-              title="Validate trigger config, then fire"
+              title={t.triggers.validate_and_fire_title}
             >
               {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
               {detail.testing ? t.triggers.detail.validating : t.triggers.test_fire_label}
@@ -91,7 +91,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
               onClick={detail.handleDryRun}
               disabled={detail.dryRunning || detail.testing}
               className="flex items-center gap-1.5 px-3 py-2 typo-body text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-card transition-colors disabled:opacity-50"
-              title="Simulate trigger without executing"
+              title={t.triggers.simulate_trigger_title}
             >
               {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
               {detail.dryRunning ? t.triggers.detail.simulating : t.triggers.dry_run_label}

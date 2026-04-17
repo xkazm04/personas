@@ -531,14 +531,13 @@ function TriggerStudioInner() {
             <div className="text-center max-w-md px-8 py-6 rounded-modal bg-card/80 border border-primary/10">
               <h3 className="typo-heading font-semibold text-foreground mb-2">{t.triggers.studio.studio_title}</h3>
               <p className="typo-caption text-foreground mb-3">
-                Compose reactive event flows across your personas. Use trigger types as building blocks,
-                add conditional branching and parallel fan-out to create intelligent automation chains.
+                {t.triggers.studio_empty_desc}
               </p>
               <div className="flex flex-col gap-1.5 text-[11px] text-foreground">
-                <span>1. Add trigger sources from the sidebar (Schedule, Webhook, ...)</span>
-                <span>2. Add persona steps to process events</span>
-                <span>3. Connect them to build reactive chains</span>
-                <span>4. Use condition gates for routing logic</span>
+                <span>{t.triggers.studio_step1}</span>
+                <span>{t.triggers.studio_step2}</span>
+                <span>{t.triggers.studio_step3}</span>
+                <span>{t.triggers.studio_step4}</span>
               </div>
             </div>
           </div>

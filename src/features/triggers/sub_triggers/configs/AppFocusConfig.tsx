@@ -33,7 +33,7 @@ export function AppFocusConfig({
                 updated[i] = e.target.value;
                 setAppNames(updated);
               }}
-              placeholder="e.g. Code.exe, chrome.exe, Figma.exe"
+              placeholder={t.triggers.app_focus_process_placeholder}
               className="flex-1 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
             />
             {appNames.length > 1 && (
@@ -54,7 +54,7 @@ export function AppFocusConfig({
           type="text"
           value={titlePattern}
           onChange={(e) => setTitlePattern(e.target.value)}
-          placeholder="e.g. .*\\.rs$ or Project - Visual Studio"
+          placeholder={t.triggers.app_focus_window_placeholder}
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>

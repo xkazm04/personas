@@ -168,7 +168,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <button
               onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              title="Open smee.io/new to create a channel"
+              title={t.triggers.smee_open_new_title}
             >
               <ExternalLink className="w-3 h-3" />
               smee.io/new
@@ -204,7 +204,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
-                  Label
+                  {t.triggers.relay_label_field}
                 </label>
                 <div className="relative">
                   <input
@@ -212,7 +212,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     value={addLabel}
                     onChange={(e) => setAddLabel(e.target.value)}
                     onBlur={() => markTouched('label')}
-                    placeholder="e.g. GitHub — my-repo"
+                    placeholder={t.triggers.relay_label_placeholder}
                     className={`w-full px-3 py-2 pr-8 typo-body rounded-card border bg-secondary/30 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
                       labelError
                         ? 'border-red-500/40 focus:ring-red-500/40'
@@ -234,7 +234,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               </div>
               <div>
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
-                  Channel URL
+                  {t.triggers.relay_channel_url_field}
                 </label>
                 <div className="relative">
                   <input
@@ -242,7 +242,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     value={addUrl}
                     onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
                     onBlur={() => markTouched('url')}
-                    placeholder="https://smee.io/your-channel-id"
+                    placeholder={t.triggers.relay_channel_url_placeholder}
                     className={`w-full px-3 py-2 pr-8 typo-code rounded-card border bg-secondary/30 text-foreground font-mono placeholder:text-foreground focus:outline-none focus:ring-1 transition-colors ${
                       urlError
                         ? 'border-red-500/40 focus:ring-red-500/40'
@@ -264,7 +264,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               </div>
               <div>
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
-                  Route to Agent <span className="text-foreground">(optional)</span>
+                  {t.triggers.relay_route_to_agent} <span className="text-foreground">{t.triggers.optional_suffix}</span>
                 </label>
                 <select
                   value={addPersonaId}
@@ -279,13 +279,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
               </div>
               <div>
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
-                  Event Filter <span className="text-foreground">(optional, comma-separated)</span>
+                  {t.triggers.relay_event_filter_field} <span className="text-foreground">{t.triggers.relay_event_filter_note}</span>
                 </label>
                 <input
                   type="text"
                   value={addFilter}
                   onChange={(e) => setAddFilter(e.target.value)}
-                  placeholder="github_push, github_pull_request"
+                  placeholder={t.triggers.relay_filter_placeholder}
                   className="w-full px-3 py-2 typo-code rounded-card border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/40"
                 />
               </div>
@@ -308,7 +308,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 {t.triggers.create_relay}
               </button>
               <p className="typo-caption text-foreground">
-                Get a channel URL from <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
+                {t.triggers.get_channel_url_prompt} <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline">smee.io/new</button>
               </p>
             </div>
           </div>
@@ -402,7 +402,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         )}
                         {relay.lastEventAt && (
                           <span className="typo-caption text-foreground">
-                            Last: {formatRelativeTime(relay.lastEventAt)}
+                            {t.triggers.relay_last_event} {formatRelativeTime(relay.lastEventAt)}
                           </span>
                         )}
                         {persona && (
@@ -461,7 +461,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         <button
                           onClick={() => setConfirmDeleteId(relay.id)}
                           className="p-1.5 rounded-card text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          title="Delete relay"
+                          title={t.triggers.relay_delete_title}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -498,19 +498,19 @@ function SetupGuide() {
       <div className="space-y-2 typo-body text-foreground">
         <div className="flex items-start gap-2.5">
           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">1</span>
-          <p>Visit <span className="font-mono text-purple-400/60">smee.io/new</span> to create a free relay channel</p>
+          <p>{t.triggers.setup_guide_step1}</p>
         </div>
         <div className="flex items-start gap-2.5">
           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">2</span>
-          <p>Add the relay here with a label and the channel URL</p>
+          <p>{t.triggers.setup_guide_step2}</p>
         </div>
         <div className="flex items-start gap-2.5">
           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">3</span>
-          <p>Paste the channel URL as a webhook in GitHub / Stripe / any service</p>
+          <p>{t.triggers.setup_guide_step3}</p>
         </div>
         <div className="flex items-start gap-2.5">
           <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">4</span>
-          <p>Events appear in Live Stream and route to your agents automatically</p>
+          <p>{t.triggers.setup_guide_step4}</p>
         </div>
       </div>
     </div>

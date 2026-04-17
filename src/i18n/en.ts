@@ -6956,6 +6956,8 @@ export const en = {
       description_hint: "The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables.",
 
       // -- DesignReviewTerminal --
+      // aria-label on the terminal output log region
+      terminal_aria_label: "Design review output",
       // Placeholder shown in terminal area before review starts
       terminal_placeholder: "Output will appear here when the review starts",
       // Running indicator shown at bottom of terminal while review is active
@@ -6992,6 +6994,8 @@ export const en = {
       batch_count: "{count} template{plural} will be generated via Claude CLI (~45s each)",
       // Clear button to remove all loaded batch templates
       batch_clear: "Clear",
+      // The technical format example shown after the format hint (markdown heading syntax)
+      batch_format_example: "**1. Template Name**",
 
       // -- CustomSourceView --
       // Header describing how many cases are ready
@@ -7980,6 +7984,8 @@ export const en = {
       applied: "Applied",
       reset: "Reset",
       enter_theme_name: "Enter a theme name",
+      // Title for the reset-to-auto button on individual color overrides in CustomThemeCreator
+      reset_to_auto: "Reset to auto",
       // ThemePreview -- mock UI labels inside the miniature preview
       preview_dashboard: "Dashboard",
       preview_action: "Action",
@@ -8044,6 +8050,8 @@ export const en = {
       // Explanation of how defaults were determined
       defaults_heading: "Defaults from Integration Tests",
       defaults_description: "The default map is derived from Round 9 business-level integration tests that validate each provider against the exact JSON schemas the backend parses. Enabling a provider for an operation it failed may cause unparseable responses. Claude Code is the only provider that passed all operations at 100%.",
+      // Warning shown when the active engine hasn't passed integration tests for the operation; {provider} = engine short label
+      engine_not_capable: "{provider} has not passed integration tests for this operation. Results may be unparseable.",
     },
 
     // -- Ambient Context --------------------------------------------------
@@ -8221,6 +8229,12 @@ export const en = {
       passphrase_optional: "Passphrase (optional)",
       import_complete: "Import Complete",
       warnings: "Warnings:",
+      // Import result count labels — {count} is replaced with the number
+      import_personas: "{count} persona(s)",
+      import_teams: "{count} team(s)",
+      import_tools: "{count} tool(s)",
+      import_groups: "{count} group(s)",
+      import_credentials: "{count} credential(s)",
       // Export selection modal
       export_title: "Export Workspace",
       export_subtitle: "Choose what to include in your export",
@@ -12017,6 +12031,18 @@ export const en = {
       insight_placeholder: "Describe what made this approach succeed…",
       // Confirmation button in the winner insight dialog
       confirm_winner: "Confirm winner",
+      // Placeholder for the competition task title input
+      competition_title_placeholder: "e.g. Add rate limiting to /api/auth/login",
+      // Placeholder for the competition task description input
+      competition_desc_placeholder: "Acceptance criteria, target files, constraints...",
+      // Tooltip on the regenerate-strategies button in competition form
+      regenerate_strategies_title: "Regenerate strategies",
+      // Tooltip on the "Start dev server in this worktree" button
+      start_dev_server_title: "Start dev server in this worktree",
+      // Tooltip on the "Stop dev server" button
+      stop_dev_server_title: "Stop dev server",
+      // Tooltip on the "Browse worktree" button
+      open_worktree_title: "Open worktree directory",
       // Title for the DevClone adoption card
       adopt_dev_clone: "Adopt Dev Clone",
       // Description for the DevClone adoption card

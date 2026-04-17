@@ -114,20 +114,20 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
         {expandedSections.logic && (
           <div className="px-2 pb-2 space-y-0.5">
             <button
-              onClick={() => onAddConditionGate('If / Else', DEFAULT_CONDITION_BRANCHES)}
+              onClick={() => onAddConditionGate(t.triggers.gate_if_else_label, DEFAULT_CONDITION_BRANCHES)}
               className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
             >
               <div className="w-6 h-6 rounded flex items-center justify-center bg-violet-500/10">
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground group-hover:text-foreground">If / Else</span>
-                <span className="text-[9px] text-foreground">Binary conditional branch</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">{t.triggers.gate_if_else_label}</span>
+                <span className="text-[9px] text-foreground">{t.triggers.gate_if_else_description}</span>
               </div>
             </button>
 
             <button
-              onClick={() => onAddConditionGate('Classifier', [
+              onClick={() => onAddConditionGate(t.triggers.gate_classifier_label, [
                 { id: 'support', label: 'Support', color: '#3b82f6' },
                 { id: 'sales', label: 'Sales', color: '#10b981' },
                 { id: 'other', label: 'Other', color: '#6b7280' },
@@ -138,13 +138,13 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground group-hover:text-foreground">Classifier</span>
-                <span className="text-[9px] text-foreground">Multi-way routing (support, sales, ...)</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">{t.triggers.gate_classifier_label}</span>
+                <span className="text-[9px] text-foreground">{t.triggers.gate_classifier_description}</span>
               </div>
             </button>
 
             <button
-              onClick={() => onAddConditionGate('Fan-Out', [
+              onClick={() => onAddConditionGate(t.triggers.gate_fan_out_label, [
                 { id: 'parallel-1', label: 'Branch A', color: '#6366f1' },
                 { id: 'parallel-2', label: 'Branch B', color: '#8b5cf6' },
                 { id: 'parallel-3', label: 'Branch C', color: '#a855f7' },
@@ -155,8 +155,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <GitBranch className="w-3 h-3 text-violet-400" />
               </div>
               <div className="flex flex-col items-start min-w-0">
-                <span className="text-[11px] text-foreground group-hover:text-foreground">Fan-Out (Parallel)</span>
-                <span className="text-[9px] text-foreground">Run multiple branches in parallel</span>
+                <span className="text-[11px] text-foreground group-hover:text-foreground">{t.triggers.gate_fan_out_label}</span>
+                <span className="text-[9px] text-foreground">{t.triggers.gate_fan_out_description}</span>
               </div>
             </button>
           </div>
@@ -166,8 +166,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
       {/* Help text */}
       <div className="px-3 py-3 mt-auto">
         <p className="text-[10px] text-foreground leading-relaxed">
-          Connect trigger sources to persona steps to build reactive chains.
-          Add condition gates for branching logic and parallel fan-out.
+          {t.triggers.palette_help_text}
         </p>
       </div>
     </div>

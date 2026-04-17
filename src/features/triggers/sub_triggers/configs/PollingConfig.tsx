@@ -42,7 +42,7 @@ export function PollingConfig({
             type="text"
             value={endpoint}
             onChange={(e) => setEndpoint(e.target.value)}
-            placeholder="https://api.example.com/poll"
+            placeholder={t.triggers.polling_endpoint_placeholder}
             className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </TriggerFieldGroup>

@@ -165,7 +165,7 @@ export function DeadLetterTab() {
                     {evt.retry_count >= MAX_MANUAL_RETRIES ? (
                       <span
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-orange-500/10 text-orange-400 cursor-not-allowed"
-                        title="Retry limit exhausted — discard or investigate the root cause"
+                        title={t.triggers.dead_letter_retry_exhausted_title}
                       >
                         <Ban className="w-3 h-3" />
                         {t.triggers.exhausted_label}
@@ -175,7 +175,7 @@ export function DeadLetterTab() {
                         onClick={() => void handleRetry(evt.id)}
                         disabled={actionsInProgress.has(evt.id)}
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
-                        title={`Retry this event (${evt.retry_count}/${MAX_MANUAL_RETRIES} attempts used)`}
+                        title={t.triggers.dead_letter_retry_title}
                       >
                         <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
                         {t.triggers.dead_letter_retry}
@@ -185,7 +185,7 @@ export function DeadLetterTab() {
                       onClick={() => handleDiscard(evt)}
                       disabled={actionsInProgress.has(evt.id)}
                       className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
-                      title="Discard this event permanently"
+                      title={t.triggers.dead_letter_discard_title}
                     >
                       <Trash2 className="w-3 h-3" />
                       {t.triggers.dead_letter_discard}

@@ -70,7 +70,7 @@ export function IntervalConfig({
               if (validationError) setValidationError(null);
             }}
             min="60"
-            placeholder="Seconds (min 60)"
+            placeholder={t.triggers.interval_seconds_placeholder}
             aria-invalid={!!validationError}
             aria-describedby={validationError ? 'interval-error' : undefined}
             className={`w-full px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code focus-ring transition-all ${
@@ -177,7 +177,7 @@ export function CronConfig({
             type="text"
             value={cronExpression}
             onChange={(e) => setCronExpression(e.target.value)}
-            placeholder="* * * * *  (min hour dom mon dow)"
+            placeholder={t.triggers.cron_expression_placeholder}
             aria-invalid={!!(hasError || validationError)}
             aria-describedby={validationError ? 'cron-validation-error' : hasError ? 'cron-preview-error' : undefined}
             className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${

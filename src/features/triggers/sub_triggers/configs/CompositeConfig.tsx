@@ -35,7 +35,7 @@ export function CompositeConfig({
                 setCompositeConditions(updated);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="Event type (e.g. file_changed)"
+              placeholder={t.triggers.composite_event_type_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'composite-conditions-error' : undefined}
               className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring transition-all ${
@@ -97,7 +97,7 @@ export function CompositeConfig({
           value={windowSeconds}
           onChange={(e) => { setWindowSeconds(e.target.value); if (validationError) setValidationError(null); }}
           min="5"
-          placeholder="300"
+          placeholder={t.triggers.composite_debounce_placeholder}
           className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code focus-ring transition-all"
         />
       </TriggerFieldGroup>
