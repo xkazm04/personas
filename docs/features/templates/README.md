@@ -156,7 +156,23 @@ mechanics including body + headers support (Notion, GraphQL, etc.).
    This is why `dynamic_source` / `vault_category` / `allow_custom`
    survive unchanged.
 
-## Related docs
+## Related pillars
+
+The three pillars of the persona platform:
+
+```
+1. Templates (this pillar)  →  2. Persona  →  3. Execution
+```
+
+- [../personas/README.md](../personas/README.md) — What a persona is
+  once adopted: data model, capabilities (tools, triggers, events,
+  memory, notifications), trust and governance.
+- [../execution/README.md](../execution/README.md) — How a persona
+  runs: entry points (manual, schedule, webhook, …), lifecycle
+  (validate → spawn → stream → finalize), chaining + human approval,
+  observability.
+
+## Historical handoffs
 
 - `docs/HANDOFF-templates-adoption.md` — multi-session handoff for the
   April 12–13 UX overhaul (close button, blocking callout, adoption

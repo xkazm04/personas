@@ -144,6 +144,8 @@ export const fr = {
     command_palette_select: "sélectionner",
     command_palette_commands: "commandes",
     loading_label: "Chargement",
+    // @llm-translated 2026-04-17
+    optional: "facultatif",
   },
   chrome: {
     app_title: "Personas",
@@ -233,6 +235,10 @@ export const fr = {
     unread_messages_sr_other: "{count} messages non lus",
     pending_events_sr: "{count} événement en attente",
     pending_events_sr_other: "{count} événements en attente",
+    // @llm-translated 2026-04-17
+    quality_gates: "Filtres de contenu",
+    // @llm-translated 2026-04-17
+    config_resolution: "Configuration de l'agent",
   },
   home: {
     welcome: "Bienvenue",
@@ -743,6 +749,32 @@ export const fr = {
       offset_prefix: "décalage :",
       step_tooltip: "Étape {step} : {name}",
       ms_into_stage: "{ms}ms dans l'étape",
+      // @llm-translated 2026-04-17
+      depth_label: "Profondeur :",
+      // @llm-translated 2026-04-17
+      active_count_label: "Actif ({count})",
+      // @llm-translated 2026-04-17
+      completed_count_label: "Terminé ({count})",
+      // @llm-translated 2026-04-17
+      metadata_section: "Métadonnées",
+      // @llm-translated 2026-04-17
+      chain_id_prefix: "Chaîne : {id}",
+      // @llm-translated 2026-04-17
+      chain_total_duration: "Total : {duration}",
+      // @llm-translated 2026-04-17
+      zero_ms: "0ms",
+      // @llm-translated 2026-04-17
+      tool_calls_count: "{count} appel d'outil",
+      // @llm-translated 2026-04-17
+      tool_calls_count_other: "{count} appels d'outils",
+      // @llm-translated 2026-04-17
+      unique_tools_count: "({count} unique)",
+      // @llm-translated 2026-04-17
+      prev_error_nav: "Erreur précédente (Maj+E)",
+      // @llm-translated 2026-04-17
+      next_error_nav: "Erreur suivante (E)",
+      // @llm-translated 2026-04-17
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
     lab: {
       mode_arena: "Arène",
@@ -993,6 +1025,10 @@ export const fr = {
       cancel_default: "Annuler",
       hide_impact: "Masquer l'impact",
       show_impact: "Afficher l'impact",
+      // @llm-translated 2026-04-17
+      objective_warning: "Problème avec l'objectif de fitness",
+      // @llm-translated 2026-04-17
+      objective_fallback_toast: "L'évolution a utilisé les poids de fitness par défaut — vérifiez les paramètres de l'objectif",
     },
     design: {
       select_agent: "Sélectionnez un agent pour démarrer l'analyse de conception",
@@ -1077,6 +1113,8 @@ export const fr = {
       go_back_hint: "Revenez en arrière et répondez aux questions pour configurer votre agent.",
       additional_instructions: "Instructions ou contexte supplémentaires (optionnel)",
       additional_instructions_placeholder: "Ajoutez des exigences spécifiques, des connaissances du domaine ou des contraintes...",
+      // @llm-translated 2026-04-17
+      conv_controls_aria: "Contrôles de la conversation de conception",
     },
     connectors: {
       connectors_label: "Connecteurs",
@@ -1238,6 +1276,12 @@ export const fr = {
       sub_triggers_title: "Déclencheurs & abonnements",
       sub_suggested: "{count} suggéré(s)",
       sub_filter: "filtre : {filter}",
+      // @llm-translated 2026-04-17
+      auto_input_schema_placeholder: "string",
+      // @llm-translated 2026-04-17
+      auto_github_token_needs: "Votre token nécessite les portées {scopes}. Mettez à jour votre token sur github.com/settings/tokens.",
+      // @llm-translated 2026-04-17
+      auto_fallback_title: "Bascule vers le connecteur direct en cas d'échec",
     },
     editor_chrome: {
       tab_activity: "Activité",
@@ -1374,6 +1418,8 @@ export const fr = {
       cost: "Coût",
       output_previews: "Aperçus de sortie",
       no_output: "Aucune sortie",
+      // @llm-translated 2026-04-17
+      model_name_placeholder_override: "ex. claude-sonnet-4-20250514",
     },
     use_cases: {
       no_persona: "Aucun agent sélectionné",
@@ -1935,6 +1981,12 @@ export const fr = {
       health_watch: "Surveillance de santé",
       health_watch_active: "Surveillance de santé active (toutes les 6h)",
       health_watch_enable: "Activer la surveillance continue de la santé",
+      // @llm-translated 2026-04-17
+      speak_as: "Parler en tant que",
+      // @llm-translated 2026-04-17
+      no_twins_configured: "Aucun jumeau configuré. Ouvrez le plugin Jumeau pour en créer un — cet agent pourra alors l'adopter.",
+      // @llm-translated 2026-04-17
+      twin_profile_aria: "Profil de jumeau adopté par cet agent",
     },
     tool_runner: {
       no_tools: "Aucun outil assigné à cet agent.",
@@ -1944,6 +1996,8 @@ export const fr = {
       success: "Succès",
       failed: "Échec",
       error: "Erreur",
+      // @llm-translated 2026-04-17
+      input_json_placeholder: "valeur",
     },
     health_check: {
       title: "Bilan de santé de l'agent",
@@ -1992,6 +2046,8 @@ export const fr = {
       new_section: "Nouvelle section",
       saved: "Enregistré",
       sections: "sections",
+      // @llm-translated 2026-04-17
+      sections_aria: "Sections du prompt",
     },
     custom_sections: {
       title: "Sections personnalisées",
@@ -2205,6 +2261,8 @@ export const fr = {
       no_dependencies: "Aucun agent ne dépend de cet identifiant. Modification ou suppression sans risque.",
       affected_agents: "Agents affectés",
       affected_events: "Événements affectés",
+      // @llm-translated 2026-04-17
+      sort_label: "Trier :",
     },
     import: {
       title: "Source d'import",
@@ -2221,6 +2279,22 @@ export const fr = {
         hour6: "6 heures",
         day1: "24 heures",
       },
+      // @llm-translated 2026-04-17
+      parse_secrets: "Analyser les secrets",
+      // @llm-translated 2026-04-17
+      selected_for_import: "sélectionné(s) pour import",
+      // @llm-translated 2026-04-17
+      auto_detected: "Détecté automatiquement",
+      // @llm-translated 2026-04-17
+      sync_supported: "Synchronisation supportée",
+      // @llm-translated 2026-04-17
+      secrets_found_one: "{count} secret trouvé",
+      // @llm-translated 2026-04-17
+      secrets_found_other: "{count} secrets trouvés",
+      // @llm-translated 2026-04-17
+      import_secrets_one: "Importer {count} secret",
+      // @llm-translated 2026-04-17
+      import_secrets_other: "Importer {count} secrets",
     },
     features: {
       anomaly_detected: "Anomalie détectée : l'identifiant échoue soudainement après un succès précédent. Révocation possible.",
@@ -2312,6 +2386,8 @@ export const fr = {
       scope_missing_one: "{count} portée demandée non accordée : ",
       scope_missing_other: "{count} portées demandées non accordées : ",
       reauthorize: "Réautoriser",
+      // @llm-translated 2026-04-17
+      reauthorize_scopes: "Ré-autoriser avec des portées supplémentaires",
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2329,6 +2405,30 @@ export const fr = {
       configure_fields: "Configurer les champs de l'identifiant",
       detect: "Détecter",
       auto_add: "Ajout automatique",
+      // @llm-translated 2026-04-17
+      connection_test_heading: "Test de connexion",
+      // @llm-translated 2026-04-17
+      test_connection_btn: "Tester la connexion",
+      // @llm-translated 2026-04-17
+      credential_fields_heading: "Champs d'identifiants",
+      // @llm-translated 2026-04-17
+      how_to_get_connector: "Comment obtenir les identifiants {connectorLabel}",
+      // @llm-translated 2026-04-17
+      authorization_complete: "Autorisation terminée",
+      // @llm-translated 2026-04-17
+      copied_to_clipboard: "Copié dans le presse-papiers",
+      // @llm-translated 2026-04-17
+      credential_name: "Nom de l'identifiant",
+      // @llm-translated 2026-04-17
+      credential_name_placeholder: "Nommez cet identifiant — ex. Mon compte {label}, {label} Production",
+      // @llm-translated 2026-04-17
+      authorizing_with: "Autorisation avec {label}...",
+      // @llm-translated 2026-04-17
+      authorize_with: "Autoriser avec {label}",
+      // @llm-translated 2026-04-17
+      oauth_consent_hint: "Ouvre {label} dans votre navigateur. Accordez l'accès, puis revenez ici.",
+      // @llm-translated 2026-04-17
+      oauth_connected_at: "{label} connecté à {time}",
     },
     type_picker: {
       title: "Ajouter un identifiant",
@@ -2402,6 +2502,22 @@ export const fr = {
       open_in_browser: "Ouvrir dans le navigateur",
       completed_step: "J'ai terminé cette étape",
       input_requested: "Saisie demandée",
+      // @llm-translated 2026-04-17
+      cancel_session: "Annuler la session",
+      // @llm-translated 2026-04-17
+      test_connection: "Tester la connexion",
+      // @llm-translated 2026-04-17
+      testing: "Test en cours...",
+      // @llm-translated 2026-04-17
+      re_run_browser: "Relancer le navigateur",
+      // @llm-translated 2026-04-17
+      discard: "Ignorer",
+      // @llm-translated 2026-04-17
+      save_credential: "Enregistrer l'identifiant",
+      // @llm-translated 2026-04-17
+      save_procedure: "Enregistrer la procédure",
+      // @llm-translated 2026-04-17
+      procedure_saved: "Procédure enregistrée",
     },
     vector: {
       documents_tab: "Documents",
@@ -2642,6 +2758,10 @@ export const fr = {
       filter_tables: "Filtrer les tables",
       refresh: "Actualiser",
       introspection_unavailable: "Introspection non disponible",
+      // @llm-translated 2026-04-17
+      not_null: "NON NULL",
+      // @llm-translated 2026-04-17
+      ctrl_enter: "Ctrl+Entrée",
     },
     dependencies: {
       simulate_revocation: "Simuler la révocation",
@@ -2687,6 +2807,14 @@ export const fr = {
       daily_execs_lost: "Exécutions quotidiennes perdues",
       daily_cost_impact: "Impact sur le coût quotidien",
       sim_low: "Faible",
+      // @llm-translated 2026-04-17
+      sim_critical: "La révocation de {credentialName} casserait {workflows} workflow{workflowPlural} et stopperait {personas} persona{personaPlural}.",
+      // @llm-translated 2026-04-17
+      sim_high: "La révocation de {credentialName} impacterait {personas} persona{personaPlural} dans votre espace de travail.",
+      // @llm-translated 2026-04-17
+      sim_medium: "La révocation de {credentialName} a un rayon d'impact limité.",
+      // @llm-translated 2026-04-17
+      per_day: "/jour",
     },
     shared: {
       add: "Ajouter",
@@ -2816,6 +2944,38 @@ export const fr = {
       no_documents_description: "Déposez des fichiers, collez du texte ou analysez un répertoire pour commencer.",
       delete_document: "Supprimer le document",
       chunks_label: "Sections",
+      // @llm-translated 2026-04-17
+      copied: "Copié",
+      // @llm-translated 2026-04-17
+      kb_count_summary: "-- {docs} docs, {chunks} fragments",
+      // @llm-translated 2026-04-17
+      default_patterns: "Par défaut :",
+      // @llm-translated 2026-04-17
+      add_pattern_placeholder: "*.pdf",
+      // @llm-translated 2026-04-17
+      distance_label: "distance :",
+      // @llm-translated 2026-04-17
+      chunk_label: "fragment :",
+      // @llm-translated 2026-04-17
+      copy_credential_id: "Copier l'ID de l'identifiant",
+      // @llm-translated 2026-04-17
+      request_body: "Corps de la requête",
+      // @llm-translated 2026-04-17
+      add_tag_title: "Ajouter un tag",
+      // @llm-translated 2026-04-17
+      local_embedding_hint: "Les embeddings sont générés localement avec {model} ({dims}-dim). Aucune donnée ne quitte votre machine. Le modèle (~23Mo) est téléchargé au premier usage et mis en cache localement.",
+      // @llm-translated 2026-04-17
+      api_path_placeholder: "/api/v1/resource",
+      // @llm-translated 2026-04-17
+      json_body_placeholder: "valeur",
+      // @llm-translated 2026-04-17
+      sending: "Envoi...",
+      // @llm-translated 2026-04-17
+      send: "Envoyer",
+      // @llm-translated 2026-04-17
+      search_results_one: "{count} résultat pour \"{query}\"",
+      // @llm-translated 2026-04-17
+      search_results_other: "{count} résultats pour \"{query}\"",
     },
     manager: {
       title: "Coffre-fort",
@@ -2841,6 +3001,12 @@ export const fr = {
       title: "Test de santé en masse",
       needs_attention: "Nécessite une attention",
       slowest_responses: "Réponses les plus lentes",
+      // @llm-translated 2026-04-17
+      passed_count: "{count} réussi(s)",
+      // @llm-translated 2026-04-17
+      failed_count: "{count} échoué(s)",
+      // @llm-translated 2026-04-17
+      total_count: "{count} total",
     },
     health_bar: {
       healthy: "Sain",
@@ -2942,6 +3108,8 @@ export const fr = {
       avg_drift: "Dérive moyenne",
       recent_ttls: "TTL récents",
       recent_refreshes: "Actualisations récentes",
+      // @llm-translated 2026-04-17
+      fallback_used: "Secours ({fallback}s) utilisé dans {rate}% des actualisations ({count}/{total}) — le fournisseur omet",
     },
     rotation_section: {
       corrupted_warning: "Avertissement de corruption",
@@ -2962,6 +3130,8 @@ export const fr = {
       enabling: "Activation...",
       enable_rotation: "Activer la rotation",
       enable_failed: "Échec de l'activation",
+      // @llm-translated 2026-04-17
+      last_rotated: "Dernière rotation {time}",
     },
     event_config: {
       event_triggers: "Déclencheurs d'événements",
@@ -2988,6 +3158,8 @@ export const fr = {
       minutes_10: "10 minutes",
       healthcheck_auto_rotate: "Rotation automatique en cas d'échec",
       last_evaluated: "Dernière évaluation",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des événements...",
     },
     credential_forms: {
       encrypted_keychain: "Chiffré via le trousseau système",
@@ -3001,6 +3173,14 @@ export const fr = {
       new_credential: "Nouvel identifiant",
       configure_fields: "Configurer les champs",
       oauth_required: "Utilisez le bouton d'autorisation ci-dessous pour connecter cet identifiant.",
+      // @llm-translated 2026-04-17
+      open_to_generate: "Ouvrez {label} pour générer une clé API ou un token",
+      // @llm-translated 2026-04-17
+      already_configured: "Identifiant déjà configuré -- mettez à jour ci-dessous pour remplacer",
+      // @llm-translated 2026-04-17
+      setup_instructions_label: "Instructions de configuration",
+      // @llm-translated 2026-04-17
+      no_fields_defined: "Aucun champ d'identifiant défini pour ce connecteur.",
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3027,6 +3207,24 @@ export const fr = {
       empty: "Aucune entrée d'audit",
       empty_hint: "Les opérations seront enregistrées au fur et à mesure.",
       access_events_hint: "Les événements d'accès apparaîtront ici.",
+      // @llm-translated 2026-04-17
+      loading: "Chargement de la chronologie d'audit...",
+      // @llm-translated 2026-04-17
+      total_accesses: "{count} total",
+      // @llm-translated 2026-04-17
+      personas_one: "{count} persona",
+      // @llm-translated 2026-04-17
+      personas_other: "{count} personas",
+      // @llm-translated 2026-04-17
+      accesses_24h: "{count} en 24h",
+      // @llm-translated 2026-04-17
+      anomalies_one: "{count} anomalie",
+      // @llm-translated 2026-04-17
+      anomalies_other: "{count} anomalies",
+      // @llm-translated 2026-04-17
+      no_anomalies: "Aucune anomalie",
+      // @llm-translated 2026-04-17
+      show_all: "Afficher les {count} entrées",
     },
     credential_import: {
       import_from: "Importer depuis {source}",
@@ -3035,6 +3233,18 @@ export const fr = {
       enable_sync: "Activer le mode synchronisation",
       source_ref: "Référence source",
       poll_interval: "Intervalle d'interrogation",
+      // @llm-translated 2026-04-17
+      sync_hint: "Surveille le coffre externe pour les changements et met à jour les identifiants automatiquement via interrogation.",
+      // @llm-translated 2026-04-17
+      interval_15min: "15 min",
+      // @llm-translated 2026-04-17
+      interval_30min: "30 min",
+      // @llm-translated 2026-04-17
+      interval_1hr: "1 heure",
+      // @llm-translated 2026-04-17
+      interval_6hr: "6 heures",
+      // @llm-translated 2026-04-17
+      interval_24hr: "24 heures",
     },
     empty_state: {
       heading: "Connectez votre premier service",
@@ -3059,6 +3269,24 @@ export const fr = {
       batch_complete: "Configuration en lot terminée",
       skip_service: "Ignorer ce service",
       no_filter_match: "Essayez un autre terme de recherche ou effacez votre filtre.",
+      // @llm-translated 2026-04-17
+      set_up_credentials: "Configurer les identifiants",
+      // @llm-translated 2026-04-17
+      clear_selection: "Effacer la sélection",
+      // @llm-translated 2026-04-17
+      set_up_services: "Configurer {count} service{plural}",
+      // @llm-translated 2026-04-17
+      setting_up: "Configuration {current} sur {total}",
+      // @llm-translated 2026-04-17
+      wizard_title: "Assistant de configuration des identifiants",
+      // @llm-translated 2026-04-17
+      choose_service: "Choisissez un service à configurer",
+      // @llm-translated 2026-04-17
+      ai_walk_description: "L'IA vous guidera étape par étape pour obtenir les identifiants API.",
+      // @llm-translated 2026-04-17
+      wizard_subtitle: "Configuration guidée par IA",
+      // @llm-translated 2026-04-17
+      wizard_subtitle_batch: "Configuration de {count} service{plural}",
     },
     autopilot: {
       title: "Pilote automatique API",
@@ -3082,6 +3310,40 @@ export const fr = {
       query_parameters: "Paramètres de requête",
       param_name_placeholder: "Nom du paramètre",
       request_body: "Corps de la requête (JSON)",
+      // @llm-translated 2026-04-17
+      from_url: "Depuis une URL",
+      // @llm-translated 2026-04-17
+      paste_content: "Coller le contenu",
+      // @llm-translated 2026-04-17
+      openapi_spec_url: "URL de la spec OpenAPI",
+      // @llm-translated 2026-04-17
+      openapi_format_hint: "Supporte les specs OpenAPI 3.x et Swagger 2.x en format JSON ou YAML",
+      // @llm-translated 2026-04-17
+      parsing_spec: "Analyse de la spec...",
+      // @llm-translated 2026-04-17
+      parse_analyze: "Analyser",
+      // @llm-translated 2026-04-17
+      connector_in_catalog: "{connectorLabel} est maintenant disponible dans votre catalogue de connecteurs avec {toolCount} définitions d'outils.",
+      // @llm-translated 2026-04-17
+      generated_tools: "Outils générés ({count})",
+      // @llm-translated 2026-04-17
+      credential_fields: "Champs d'identifiants",
+      // @llm-translated 2026-04-17
+      open_playground: "Ouvrir le playground",
+      // @llm-translated 2026-04-17
+      copy_connector_id: "Copier l'ID du connecteur",
+      // @llm-translated 2026-04-17
+      go_to_catalog: "Aller au catalogue",
+      // @llm-translated 2026-04-17
+      response_headers: "En-têtes de réponse ({count})",
+      // @llm-translated 2026-04-17
+      base_url_placeholder: "https://api.example.com",
+      // @llm-translated 2026-04-17
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      // @llm-translated 2026-04-17
+      auth_schemes: "schémas d'auth.",
+      // @llm-translated 2026-04-17
+      body_placeholder: "valeur",
     },
     foraging: {
       no_credentials_found: "Aucun identifiant trouvé",
@@ -3098,10 +3360,78 @@ export const fr = {
       step_done: "Terminé",
       step_completed: "(terminé)",
       step_current: "(en cours)",
+      // @llm-translated 2026-04-17
+      start_scan: "Lancer l'analyse",
+      // @llm-translated 2026-04-17
+      checking_env: "Vérification des variables d'environnement, fichiers de config et identifiants des outils dev",
+      // @llm-translated 2026-04-17
+      importing: "Import des identifiants dans le coffre...",
+      // @llm-translated 2026-04-17
+      scan_again: "Relancer l'analyse",
+      // @llm-translated 2026-04-17
+      back_to_vault: "Retour au coffre",
+      // @llm-translated 2026-04-17
+      already_in_vault: "Déjà dans le coffre",
+      // @llm-translated 2026-04-17
+      imported: "Importé",
+      // @llm-translated 2026-04-17
+      to_vault: "dans le coffre",
+      // @llm-translated 2026-04-17
+      credentials_found_one: "{count} identifiant trouvé",
+      // @llm-translated 2026-04-17
+      credentials_found_other: "{count} identifiants trouvés",
+      // @llm-translated 2026-04-17
+      selected: "sélectionné(s)",
+      // @llm-translated 2026-04-17
+      import_to_vault_one: "Importer {count} identifiant dans le coffre",
+      // @llm-translated 2026-04-17
+      import_to_vault_other: "Importer {count} identifiants dans le coffre",
+      // @llm-translated 2026-04-17
+      env_var_one: "{count} var. d'env.",
+      // @llm-translated 2026-04-17
+      env_var_other: "{count} vars. d'env.",
+      // @llm-translated 2026-04-17
+      import_server: "Importer",
+      // @llm-translated 2026-04-17
+      sources_in: "sources dans",
+      // @llm-translated 2026-04-17
+      progress_aria: "Progression de la collecte",
+      // @llm-translated 2026-04-17
+      scanned_sources: "{count} sources analysées en {ms}ms",
     },
     desktop_discovery: {
       title: "Applications de bureau",
       allowed_binaries: "Binaires autorisés : ",
+      // @llm-translated 2026-04-17
+      connect_description: "Connectez des applications locales ou importez des serveurs MCP Claude Desktop",
+      // @llm-translated 2026-04-17
+      detected_apps_tab: "Apps détectées ({count})",
+      // @llm-translated 2026-04-17
+      claude_mcp_tab: "Claude MCP ({count})",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse des apps desktop...",
+      // @llm-translated 2026-04-17
+      detected_on_system: "Détecté sur votre système",
+      // @llm-translated 2026-04-17
+      not_detected: "Non détecté",
+      // @llm-translated 2026-04-17
+      no_apps: "Aucune app desktop détectée. Essayez d'actualiser.",
+      // @llm-translated 2026-04-17
+      reading_config: "Lecture de la configuration Claude Desktop...",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_one: "{count} serveur MCP trouvé dans la configuration Claude Desktop. Importez-les comme identifiants pour les utiliser avec vos agents.",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_other: "{count} serveurs MCP trouvés dans la configuration Claude Desktop. Importez-les comme identifiants pour les utiliser avec vos agents.",
+      // @llm-translated 2026-04-17
+      no_mcp_config: "Aucune configuration MCP Claude Desktop trouvée.",
+      // @llm-translated 2026-04-17
+      mcp_config_hint: "Si vous avez Claude Desktop installé, assurez-vous que des serveurs MCP y sont configurés dans les paramètres.",
+      // @llm-translated 2026-04-17
+      permission_required: "Permission requise",
+      // @llm-translated 2026-04-17
+      approve_description: "demande les capacités suivantes. Révisez et approuvez pour activer ce connecteur.",
+      // @llm-translated 2026-04-17
+      approve_connect: "Approuver et connecter",
     },
     picker_section: {
       no_connectors: "Aucun connecteur trouvé",
@@ -3112,6 +3442,20 @@ export const fr = {
       filter_purpose: "Objectif",
       filter_category: "Catégorie",
       filter_license: "Licence",
+      // @llm-translated 2026-04-17
+      credential_name: "Nom de l'identifiant",
+      // @llm-translated 2026-04-17
+      add_project_first: "Ajoutez d'abord un projet dans Dev Tools pour connecter une base de code à vos agents.",
+      // @llm-translated 2026-04-17
+      go_to_dev_tools: "Accéder à Dev Tools",
+      // @llm-translated 2026-04-17
+      workspace_connect_description: "Une connexion Google crée automatiquement les identifiants Gmail, Calendar, Drive et Sheets",
+      // @llm-translated 2026-04-17
+      foraging_description: "Analysez votre système de fichiers pour trouver les clés API, profils AWS, variables d'env. et plus encore",
+      // @llm-translated 2026-04-17
+      no_setup_guide: "Aucun guide de configuration disponible pour ce connecteur. Consultez la documentation ci-dessous.",
+      // @llm-translated 2026-04-17
+      open_setup_page: "Ouvrir la page de configuration {label}",
     },
     schemas: {
       none_configured: "Aucun configuré.",
@@ -3148,6 +3492,48 @@ export const fr = {
       mark_done: "Marquer comme terminé",
       mark_step_complete: "Marquer l'étape comme terminée",
       copy_to_clipboard: "Copier dans le presse-papier",
+      // @llm-translated 2026-04-17
+      credential_saved_message: "L'identifiant {label} a été enregistré de manière sécurisée.",
+      // @llm-translated 2026-04-17
+      revision_count: "(révision {count})",
+      // @llm-translated 2026-04-17
+      connector_added_to_catalog: "connecteur ajouté à votre catalogue -- maintenant disponible pour d'autres personas et l'adoption de modèles.",
+      // @llm-translated 2026-04-17
+      view_credential: "Voir l'identifiant",
+      // @llm-translated 2026-04-17
+      refine_hint: "Besoin d'ajuster les portées, d'ajouter des champs ou de modifier la configuration ?",
+      // @llm-translated 2026-04-17
+      refine_placeholder: "ex. ajouter des portées d'écriture, ajouter un environnement de staging...",
+      // @llm-translated 2026-04-17
+      refine: "Affiner",
+      // @llm-translated 2026-04-17
+      linked_to_existing: "Votre identifiant sera lié à la définition de connecteur existante.",
+      // @llm-translated 2026-04-17
+      no_existing_connector: "-- aucun connecteur {name} existant n'a été trouvé dans votre catalogue.",
+      // @llm-translated 2026-04-17
+      new_connector_will_be_registered: "Lorsque vous enregistrez cet identifiant, la définition de connecteur générée par IA sera automatiquement enregistrée dans votre catalogue de connecteurs -- la rendant réutilisable pour d'autres personas et l'adoption de modèles.",
+      // @llm-translated 2026-04-17
+      refine_request: "Pas tout à fait ? Affinez votre demande",
+      // @llm-translated 2026-04-17
+      auto_provision_hint: "-- laissez l'IA vous guider étape par étape pour obtenir vos identifiants {label}.",
+      // @llm-translated 2026-04-17
+      credential_name_label: "Nom de l'identifiant",
+      // @llm-translated 2026-04-17
+      credentials_secure_notice: "Les identifiants sont stockés de manière sécurisée dans le coffre et sont disponibles pour l'exécution des outils des agents.",
+      // @llm-translated 2026-04-17
+      tested_successfully_at: "Testé avec succès à {time}",
+      // @llm-translated 2026-04-17
+      setup_instructions: "Instructions de configuration",
+      // @llm-translated 2026-04-17
+      all_steps_complete: "Toutes les étapes terminées -- remplissez les champs ci-dessous et testez votre connexion.",
+      // @llm-translated 2026-04-17
+      use_template: "Utiliser",
+      // @llm-translated 2026-04-17
+      recipe_used_one: "-- utilisé {count} fois",
+      // @llm-translated 2026-04-17
+      recipe_used_other: "-- utilisé {count} fois",
+      // @llm-translated 2026-04-17
+      instruction_placeholder: "ex. Slack, OpenAI, GitHub, Stripe...",
     },
     auto_cred_extra: {
       preparing_guided: "Préparation des instructions de configuration guidée...",
@@ -3180,6 +3566,82 @@ export const fr = {
       step_browser_review: "Revenez ici pour vérifier avant d'enregistrer",
       step_guided_review: "Vérifiez et enregistrez l'identifiant",
       setup_context: "Contexte de configuration issus de l'analyse de conception :",
+      // @llm-translated 2026-04-17
+      auto_credential_title: "Identifiant automatique",
+      // @llm-translated 2026-04-17
+      starting_browser: "Démarrage du navigateur automatisé...",
+      // @llm-translated 2026-04-17
+      open_browser: "Ouvrir le navigateur automatisé",
+      // @llm-translated 2026-04-17
+      browser_opened: "Navigateur ouvert",
+      // @llm-translated 2026-04-17
+      waiting_for_credentials: "En attente des identifiants...",
+      // @llm-translated 2026-04-17
+      credentials_captured: "Identifiants capturés",
+      // @llm-translated 2026-04-17
+      browser_failed: "Échec du navigateur",
+      // @llm-translated 2026-04-17
+      close_browser: "Fermer le navigateur",
+      // @llm-translated 2026-04-17
+      instructions: "Instructions",
+      // @llm-translated 2026-04-17
+      step_open: "Cliquez sur « Ouvrir le navigateur automatisé »",
+      // @llm-translated 2026-04-17
+      step_login: "Connectez-vous ou naviguez vers votre tableau de bord {label}",
+      // @llm-translated 2026-04-17
+      step_generate: "Générez ou copiez votre clé API",
+      // @llm-translated 2026-04-17
+      step_capture: "Les identifiants seront capturés automatiquement",
+      // @llm-translated 2026-04-17
+      step_return: "Revenez ici pour enregistrer",
+      // @llm-translated 2026-04-17
+      detected_fields: "Champs détectés",
+      // @llm-translated 2026-04-17
+      no_fields_detected: "Aucun champ détecté pour l'instant",
+      // @llm-translated 2026-04-17
+      session_timeout: "La session a expiré",
+      // @llm-translated 2026-04-17
+      session_timeout_desc: "La session du navigateur a expiré. Relancez pour réessayer.",
+      // @llm-translated 2026-04-17
+      browser_automation_warning: "L'automatisation du navigateur est en cours. N'interagissez pas avec la fenêtre — elle reprendra quand c'est terminé.",
+      // @llm-translated 2026-04-17
+      desktop_bridge_title: "{{label}} nécessite l'application desktop",
+      // @llm-translated 2026-04-17
+      desktop_bridge_hint: "Ce connecteur pilote une session navigateur native qui ne fonctionne que dans l'application desktop Personas.",
+      // @llm-translated 2026-04-17
+      review_extracted: "Réviser les identifiants extraits",
+      // @llm-translated 2026-04-17
+      review_extracted_hint: "Valeurs extraites du navigateur -- vérifiez avant d'enregistrer",
+      // @llm-translated 2026-04-17
+      completeness_partial: "{filled} sur {total} champs requis remplis. Complétez les champs manquants avant d'enregistrer.",
+      // @llm-translated 2026-04-17
+      universal_auto_setup: "Configuration automatique universelle",
+      // @llm-translated 2026-04-17
+      universal_auto_setup_hint: "Fournissez une URL et une description, et l'IA naviguera sur le site pour découvrir et créer les identifiants API automatiquement.",
+      // @llm-translated 2026-04-17
+      service_url_label: "URL du service",
+      // @llm-translated 2026-04-17
+      service_url_placeholder: "https://app.example.com ou https://developer.example.com",
+      // @llm-translated 2026-04-17
+      what_do_you_need: "De quoi avez-vous besoin ?",
+      // @llm-translated 2026-04-17
+      description_placeholder: "ex. J'ai besoin d'une clé API pour leur API REST pour lire et écrire des données. Le portail développeur dispose d'une section Clés API dans les Paramètres.",
+      // @llm-translated 2026-04-17
+      discover_credentials: "Découvrir les identifiants",
+      // @llm-translated 2026-04-17
+      discovered_label: "Découvert : {label}",
+      // @llm-translated 2026-04-17
+      fields_discovered_one: "{count} champ découvert",
+      // @llm-translated 2026-04-17
+      fields_discovered_other: "{count} champs découverts",
+      // @llm-translated 2026-04-17
+      extracted_values_label: "Valeurs extraites",
+      // @llm-translated 2026-04-17
+      no_fields_discovered: "Aucun champ découvert. Réessayez avec une description plus précise.",
+      // @llm-translated 2026-04-17
+      fields_captured_partial: "{filled}/{total} champs capturés",
+      // @llm-translated 2026-04-17
+      credential_stored: "L'identifiant {label} a été enregistré de manière sécurisée.",
     },
     negotiator_extra: {
       checking_auth: "Vérification des authentifications existantes...",
@@ -3190,6 +3652,14 @@ export const fr = {
       need_help: "Besoin d'aide pour cette étape ?",
       hide_help: "Masquer l'aide",
       ask_question: "Posez une question sur cette étape...",
+      // @llm-translated 2026-04-17
+      browser_closed: "Navigateur fermé",
+      // @llm-translated 2026-04-17
+      capture_timeout: "Délai de capture dépassé",
+      // @llm-translated 2026-04-17
+      panel_title: "Négociateur d'identifiants IA",
+      // @llm-translated 2026-04-17
+      planning_description: "L'IA analyse le portail développeur et génère un plan de provisionnement étape par étape...",
     },
     workspace_panel: {
       select_services: "Sélectionnez les services à connecter",
@@ -3197,6 +3667,44 @@ export const fr = {
       creating_credentials: "Création des identifiants...",
       all_created: "Tous les identifiants créés",
       some_failed: "Certains identifiants ont échoué",
+      // @llm-translated 2026-04-17
+      title: "Connexion à l'espace de travail",
+      // @llm-translated 2026-04-17
+      subtitle: "Connectez votre compte Google pour accéder à Gmail, Calendar, Drive et Sheets",
+      // @llm-translated 2026-04-17
+      connect_google: "Connecter Google Workspace",
+      // @llm-translated 2026-04-17
+      connected_as: "Connecté en tant que {email}",
+      // @llm-translated 2026-04-17
+      disconnect: "Déconnecter",
+      // @llm-translated 2026-04-17
+      gmail: "Gmail",
+      // @llm-translated 2026-04-17
+      calendar: "Calendar",
+      // @llm-translated 2026-04-17
+      drive: "Drive",
+      // @llm-translated 2026-04-17
+      sheets: "Sheets",
+      // @llm-translated 2026-04-17
+      scopes_granted: "Portées accordées",
+      // @llm-translated 2026-04-17
+      selected_count: "{selected} sur {total} sélectionné(s)",
+      // @llm-translated 2026-04-17
+      select_all: "Tout sélectionner",
+      // @llm-translated 2026-04-17
+      connect_services_one: "Connecter {count} service avec un seul compte",
+      // @llm-translated 2026-04-17
+      connect_services_other: "Connecter {count} services avec un seul compte",
+      // @llm-translated 2026-04-17
+      granting_access_one: "Cela accordera l'accès à {count} service",
+      // @llm-translated 2026-04-17
+      granting_access_other: "Cela accordera l'accès à {count} services",
+      // @llm-translated 2026-04-17
+      credentials_created_one: "{count} identifiant créé depuis un seul compte.",
+      // @llm-translated 2026-04-17
+      credentials_created_other: "{count} identifiants créés depuis un seul compte.",
+      // @llm-translated 2026-04-17
+      sign_in_browser: "Connectez-vous avec votre compte Google dans la fenêtre du navigateur.",
     },
     gateway: {
       gateway_members: "{name} — membres de la passerelle",
@@ -3234,6 +3742,36 @@ export const fr = {
       degrading: "Dégradation soutenue — rotation préventive déclenchée.",
       backoff: "Échecs temporaires — backoff exponentiel actif.",
     },
+    // @llm-translated 2026-04-17
+    cli_capture: {
+      // @llm-translated 2026-04-17
+      cta: "Importer depuis la CLI locale",
+      // @llm-translated 2026-04-17
+      hint: "Utilisez une CLI locale déjà connectée plutôt que de coller une clé API.",
+      // @llm-translated 2026-04-17
+      running: "Exécution de la CLI locale...",
+      // @llm-translated 2026-04-17
+      success: "Identifiants capturés depuis la CLI",
+      // @llm-translated 2026-04-17
+      token_ttl_notice: "Ce token expire dans {seconds}s et sera actualisé automatiquement.",
+      // @llm-translated 2026-04-17
+      source_label: "CLI",
+      // @llm-translated 2026-04-17
+      missing_binary: "`{binary}` n'est pas installé ou ne se trouve pas dans un emplacement autorisé.",
+      // @llm-translated 2026-04-17
+      unauthenticated: "Vous n'êtes pas connecté à {binary}. {instruction}",
+      // @llm-translated 2026-04-17
+      capture_failed: "Capture CLI échouée : {detail}",
+      // @llm-translated 2026-04-17
+      timeout: "La capture CLI a expiré. Essayez d'exécuter la commande manuellement d'abord.",
+    },
+    // @llm-translated 2026-04-17
+    reauth_banner: {
+      // @llm-translated 2026-04-17
+      access_revoked: ") -- l'accès a été révoqué. Veuillez ré-autoriser pour reprendre les automatisations.",
+      // @llm-translated 2026-04-17
+      reconnect: "Reconnecter",
+    },
   },
   deployment: {
     title: "Déploiement",
@@ -3261,6 +3799,10 @@ export const fr = {
       sending: "Envoi...",
       empty_response: "(réponse vide)",
       snippets: "Extraits",
+      // @llm-translated 2026-04-17
+      title: "Playground API",
+      // @llm-translated 2026-04-17
+      request_body_placeholder: "Votre prompt ici...",
     },
     connection: {
       orchestrator_url_label: "URL du serveur cloud",
@@ -3275,15 +3817,69 @@ export const fr = {
       url_protocol_error: "L'URL doit utiliser http ou https",
       url_hostname_error: "L'URL ne contient pas de nom d'hôte",
       url_invalid: "URL invalide",
+      // @llm-translated 2026-04-17
+      connected: "Connecté",
+      // @llm-translated 2026-04-17
+      orchestrator_url_placeholder: "https://votre-orchestrateur.example.com",
     },
     deployments_panel: {
       deploy_persona: "Déployer le persona",
       select_persona: "Sélectionnez un persona à déployer",
       all_deployed: "Tous les personas sont déjà déployés",
+      // @llm-translated 2026-04-17
+      no_deployments: "Aucun déploiement",
+      // @llm-translated 2026-04-17
+      refresh: "Actualiser",
+      // @llm-translated 2026-04-17
+      no_deployments_yet: "Aucun déploiement pour l'instant. Sélectionnez un persona ci-dessus pour le déployer comme point de terminaison API cloud.",
+      // @llm-translated 2026-04-17
+      active_deployments: "Déploiements actifs",
     },
     exec_detail: {
       fetching_output: "Récupération de la sortie...",
       no_output: "Aucune sortie",
+      // @llm-translated 2026-04-17
+      title: "Détail de l'exécution",
+      // @llm-translated 2026-04-17
+      agent: "Agent",
+      // @llm-translated 2026-04-17
+      status: "Statut",
+      // @llm-translated 2026-04-17
+      started: "Démarré",
+      // @llm-translated 2026-04-17
+      duration: "Durée",
+      // @llm-translated 2026-04-17
+      cost: "Coût",
+      // @llm-translated 2026-04-17
+      model: "Modèle",
+      // @llm-translated 2026-04-17
+      input: "Entrée",
+      // @llm-translated 2026-04-17
+      output: "Sortie",
+      // @llm-translated 2026-04-17
+      error: "Erreur",
+      // @llm-translated 2026-04-17
+      close: "Fermer",
+      // @llm-translated 2026-04-17
+      label_status: "Statut :",
+      // @llm-translated 2026-04-17
+      label_duration: "Durée :",
+      // @llm-translated 2026-04-17
+      label_cost: "Coût :",
+      // @llm-translated 2026-04-17
+      label_tokens: "Tokens :",
+      // @llm-translated 2026-04-17
+      label_started: "Démarré :",
+      // @llm-translated 2026-04-17
+      label_completed: "Terminé :",
+      // @llm-translated 2026-04-17
+      label_input: "Entrée :",
+      // @llm-translated 2026-04-17
+      view_output: "Voir la sortie",
+      // @llm-translated 2026-04-17
+      output_prefix: "Sortie (",
+      // @llm-translated 2026-04-17
+      output_lines_suffix: "lignes)",
     },
     oauth_panel: {
       connect_anthropic: "Connecter le compte Anthropic",
@@ -3295,6 +3891,36 @@ export const fr = {
       token_unknown: "Statut du jeton inconnu",
       expires: "Expire",
       scopes: "Portées",
+      // @llm-translated 2026-04-17
+      title: "Autorisation OAuth",
+      // @llm-translated 2026-04-17
+      connect: "Connecter",
+      // @llm-translated 2026-04-17
+      connected: "Connecté",
+      // @llm-translated 2026-04-17
+      disconnect: "Déconnecter",
+      // @llm-translated 2026-04-17
+      authorizing: "Autorisation en cours...",
+      // @llm-translated 2026-04-17
+      error: "Erreur d'autorisation",
+      // @llm-translated 2026-04-17
+      retry: "Réessayer",
+      // @llm-translated 2026-04-17
+      scopes_label: "Portées requises",
+      // @llm-translated 2026-04-17
+      open_auth_window: "Ouvrir la fenêtre d'autorisation",
+      // @llm-translated 2026-04-17
+      complete_authorization: "Terminer l'autorisation",
+      // @llm-translated 2026-04-17
+      refresh_token: "Actualiser le token",
+      // @llm-translated 2026-04-17
+      open_authorization_window: "Ouvrir la fenêtre d'autorisation",
+      // @llm-translated 2026-04-17
+      token_unknown_msg: "La validité du token n'a pas pu être vérifiée. Actualisez le token pour confirmer qu'il est toujours actif.",
+      // @llm-translated 2026-04-17
+      connect_anthropic_msg: "Connectez votre compte Anthropic pour activer l'authentification OAuth pour les exécutions cloud.",
+      // @llm-translated 2026-04-17
+      token_expired_msg_prefix: "Ce token OAuth a expiré",
     },
     trigger_form: {
       new_cloud_trigger: "Nouveau déclencheur cloud",
@@ -3304,9 +3930,33 @@ export const fr = {
       schedule_cron: "Planification (cron)",
       create_trigger: "Créer le déclencheur",
       creating: "Création...",
+      // @llm-translated 2026-04-17
+      title: "Formulaire de déclencheur",
+      // @llm-translated 2026-04-17
+      save: "Enregistrer le déclencheur",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      cron_expression: "Expression cron",
+      // @llm-translated 2026-04-17
+      utc_suffix: "(UTC)",
+      // @llm-translated 2026-04-17
+      webhook_info: "Un point de terminaison webhook sera créé pour ce déclencheur. Vous pouvez configurer le filtrage de charge utile après la création.",
     },
     chart: {
       daily_executions: "Exécutions quotidiennes",
+      // @llm-translated 2026-04-17
+      no_data: "Aucune donnée",
+      // @llm-translated 2026-04-17
+      loading: "Chargement du graphique...",
+      // @llm-translated 2026-04-17
+      executions: "Exécutions",
+      // @llm-translated 2026-04-17
+      tooltip_runs: "Exécutions :",
+      // @llm-translated 2026-04-17
+      tooltip_cost: "Coût :",
+      // @llm-translated 2026-04-17
+      tooltip_success: "Succès :",
     },
     deploy_card: {
       test_deployment: "Tester le déploiement",
@@ -3315,6 +3965,22 @@ export const fr = {
       remove_deployment: "Supprimer le déploiement",
       copy_endpoint: "Copier le point de terminaison",
       open_endpoint: "Ouvrir le point de terminaison",
+      // @llm-translated 2026-04-17
+      deploy: "Déployer",
+      // @llm-translated 2026-04-17
+      deploying: "Déploiement...",
+      // @llm-translated 2026-04-17
+      deployed: "Déployé",
+      // @llm-translated 2026-04-17
+      failed: "Échec du déploiement",
+      // @llm-translated 2026-04-17
+      budget_label: "Budget :",
+      // @llm-translated 2026-04-17
+      label_invocations: "Invocations :",
+      // @llm-translated 2026-04-17
+      label_last_called: "Dernier appel :",
+      // @llm-translated 2026-04-17
+      label_created: "Créé :",
     },
     tabs: {
       connection: "Connexion",
@@ -3354,6 +4020,14 @@ export const fr = {
       last_30_days: "30 derniers jours",
       last_90_days: "90 derniers jours",
       top_errors: "Erreurs fréquentes",
+      // @llm-translated 2026-04-17
+      title: "Historique",
+      // @llm-translated 2026-04-17
+      no_history: "Aucun historique disponible",
+      // @llm-translated 2026-04-17
+      clear_filters: "Effacer les filtres",
+      // @llm-translated 2026-04-17
+      execution_history: "Historique des exécutions",
     },
     schedules: {
       header: "Déclencheurs cloud ({count})",
@@ -3363,6 +4037,32 @@ export const fr = {
       empty: "Aucun déclencheur cloud pour le moment. Créez-en un pour planifier des exécutions automatisées.",
       recent_firings: "Déclenchements récents",
       no_firings: "Aucun déclenchement récent",
+      // @llm-translated 2026-04-17
+      title: "Planifications",
+      // @llm-translated 2026-04-17
+      no_schedules: "Aucune planification configurée",
+      // @llm-translated 2026-04-17
+      add_schedule: "Ajouter une planification",
+      // @llm-translated 2026-04-17
+      next_run: "Prochain lancement : {time}",
+      // @llm-translated 2026-04-17
+      last_run: "Dernier lancement : {time}",
+      // @llm-translated 2026-04-17
+      enabled: "Activée",
+      // @llm-translated 2026-04-17
+      disabled: "Désactivée",
+      // @llm-translated 2026-04-17
+      label_type: "Type :",
+      // @llm-translated 2026-04-17
+      label_status: "Statut :",
+      // @llm-translated 2026-04-17
+      label_last_triggered: "Dernier déclenchement :",
+      // @llm-translated 2026-04-17
+      label_next_trigger: "Prochain déclenchement :",
+      // @llm-translated 2026-04-17
+      label_cron: "Cron :",
+      // @llm-translated 2026-04-17
+      loading_firings: "Chargement...",
     },
     dashboard: {
       title: "Déploiements",
@@ -3591,6 +4291,26 @@ export const fr = {
     success_fail: "Succès / Échec",
     avg_sync_duration: "Durée de synchronisation moyenne",
     entries_received: "Entrées reçues",
+    // @llm-translated 2026-04-17
+    enclave_hash_label: "Hachage de l'enclave",
+    // @llm-translated 2026-04-17
+    refresh_peer_list: "Actualiser la liste des pairs",
+    // @llm-translated 2026-04-17
+    peer_list_stale: "Liste des pairs obsolète",
+    // @llm-translated 2026-04-17
+    network_data_stale: "Données réseau obsolètes",
+    // @llm-translated 2026-04-17
+    peer_id_footer: "ID du pair",
+    // @llm-translated 2026-04-17
+    remove_exposure: "Supprimer l'exposition",
+    // @llm-translated 2026-04-17
+    revoke_trust: "Révoquer la confiance",
+    // @llm-translated 2026-04-17
+    remove_peer: "Supprimer le pair",
+    // @llm-translated 2026-04-17
+    share_link_tooltip: "Partager le lien",
+    // @llm-translated 2026-04-17
+    copy_clipboard_tooltip: "Copier dans le presse-papiers",
   },
   overview: {
     title: "Vue d'ensemble",
@@ -3628,6 +4348,20 @@ export const fr = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "Bureau",
+      // @llm-translated 2026-04-17
+      title: "Messages",
+      // @llm-translated 2026-04-17
+      no_messages: "Aucun message pour l'instant",
+      // @llm-translated 2026-04-17
+      mark_read: "Marquer comme lu",
+      // @llm-translated 2026-04-17
+      mark_all_read: "Tout marquer comme lu",
+      // @llm-translated 2026-04-17
+      id_label: "ID :",
+      // @llm-translated 2026-04-17
+      confirm_delete_title: "Confirmer la suppression",
+      // @llm-translated 2026-04-17
+      close_message: "Fermer le détail du message",
     },
     realtime: {
       idle: "Inactif -- cliquez sur {action} pour simuler du trafic",
@@ -3663,6 +4397,30 @@ export const fr = {
         tags: "Tags",
         tags_hint: "(séparés par des virgules)",
       },
+      // @llm-translated 2026-04-17
+      title: "Mémorisations",
+      // @llm-translated 2026-04-17
+      no_memories: "Aucune mémorisation pour l'instant",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des mémorisations...",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher les mémorisations...",
+      // @llm-translated 2026-04-17
+      memory_count_one: "{count} mémorisation",
+      // @llm-translated 2026-04-17
+      memory_count_other: "{count} mémorisations",
+      // @llm-translated 2026-04-17
+      delete_memory: "Supprimer la mémorisation",
+      // @llm-translated 2026-04-17
+      no_memories_hint: "Lorsque les agents s'exécutent, ils peuvent stocker des notes et apprentissages utiles ici.",
+      // @llm-translated 2026-04-17
+      no_memories_match: "Aucune mémorisation ne correspond aux filtres actuels",
+      // @llm-translated 2026-04-17
+      list_aria_label: "Liste des mémorisations",
+      // @llm-translated 2026-04-17
+      add_memory_btn: "Ajouter une mémorisation",
+      // @llm-translated 2026-04-17
+      no_filter_match: "Aucune mémorisation ne correspond à vos filtres. Essayez d'ajuster votre recherche.",
     },
     executions: {
       title: "Exécutions",
@@ -4044,6 +4802,42 @@ export const fr = {
       efficiency: "Efficacité",
       cost_effectiveness: "Rapport coût-efficacité",
       overall: "Général",
+      // @llm-translated 2026-04-17
+      title: "Classement des agents",
+      // @llm-translated 2026-04-17
+      no_data: "Aucune donnée de classement",
+      // @llm-translated 2026-04-17
+      rank: "Rang",
+      // @llm-translated 2026-04-17
+      agent: "Agent",
+      // @llm-translated 2026-04-17
+      score: "Score",
+      // @llm-translated 2026-04-17
+      executions: "Exécutions",
+      // @llm-translated 2026-04-17
+      success_rate: "Taux de succès",
+      // @llm-translated 2026-04-17
+      avg_cost: "Coût moy.",
+      // @llm-translated 2026-04-17
+      trend: "Tendance",
+      // @llm-translated 2026-04-17
+      loading: "Chargement du classement...",
+      // @llm-translated 2026-04-17
+      fleet_avg: "Moy. flotte :",
+      // @llm-translated 2026-04-17
+      refresh_label: "Actualiser le classement",
+      // @llm-translated 2026-04-17
+      computing_scores: "Calcul des scores des agents...",
+      // @llm-translated 2026-04-17
+      single_agent_has_data: "dispose de données.",
+      // @llm-translated 2026-04-17
+      add_more_agents: "Ajoutez d'autres agents pour voir les classements. Actuellement seulement {name}",
+      // @llm-translated 2026-04-17
+      open_agent: "Ouvrir l'agent",
+      // @llm-translated 2026-04-17
+      no_agent_data_title: "Aucune donnée d'agent pour l'instant",
+      // @llm-translated 2026-04-17
+      no_agent_data_hint: "Exécutez des agents pour voir les classements de performance. Le classement nécessite un historique d'exécution et des données de santé pour calculer les scores.",
     },
     analytics: {
       title: "Analyses",
@@ -4426,6 +5220,28 @@ export const fr = {
       sla_compliance: "Conformité SLA",
       consecutive_failures: "{count} échecs consécutifs",
       consecutive_failure: "{count} échec consécutif",
+      // @llm-translated 2026-04-17
+      overall_health: "Santé globale",
+      // @llm-translated 2026-04-17
+      agents_healthy: "{count} agent(s) sain(s)",
+      // @llm-translated 2026-04-17
+      agents_degraded: "{count} agent(s) dégradé(s)",
+      // @llm-translated 2026-04-17
+      agents_failing: "{count} agent(s) en échec",
+      // @llm-translated 2026-04-17
+      run_full_check: "Lancer une vérification complète",
+      // @llm-translated 2026-04-17
+      last_checked: "Dernière vérification : {time}",
+      // @llm-translated 2026-04-17
+      score_prefix: "Score :",
+      // @llm-translated 2026-04-17
+      uptime_30d_prefix: "Disponibilité 30j :",
+      // @llm-translated 2026-04-17
+      updated_prefix: "Mis à jour",
+      // @llm-translated 2026-04-17
+      consecutive_failures_one: "{count} échec consécutif",
+      // @llm-translated 2026-04-17
+      consecutive_failures_other: "{count} échecs consécutifs",
     },
     system_health: {
       title: "Vérifications du système",
@@ -4532,6 +5348,10 @@ export const fr = {
       budget_exhaustion_warnings: "Avertissements d'épuisement du budget",
       exhausted: "Épuisé",
       days_left: "{days}j restants",
+      // @llm-translated 2026-04-17
+      daily_rate: "Taux journalier",
+      // @llm-translated 2026-04-17
+      active_personas_subtitle: "{count} personas actifs · limite mensuelle locale",
     },
     cascade: {
       title: "Carte de cascade en chaîne",
@@ -4547,6 +5367,14 @@ export const fr = {
       excessive_healing: "Activité d'auto-guérison excessive",
       critical_health: "Statut de santé critique",
       byom_recommendations: "Recommandations de routage BYOM",
+      // @llm-translated 2026-04-17
+      predicted_failure: "Échec prédit",
+      // @llm-translated 2026-04-17
+      confidence: "Confiance : {percent}%",
+      // @llm-translated 2026-04-17
+      per_month: "/mois",
+      // @llm-translated 2026-04-17
+      confidence_pct: "% conf.",
     },
     annotate_modal: {
       title: "Ajouter une annotation de connaissance",
@@ -4558,6 +5386,10 @@ export const fr = {
       cancel: "Annuler",
       saving: "Enregistrement...",
       save_annotation: "Enregistrer l'annotation",
+      // @llm-translated 2026-04-17
+      title: "Annoter",
+      // @llm-translated 2026-04-17
+      annotation_placeholder: "ex. La vérification webhook Stripe nécessite le corps de la requête brut, pas le JSON analysé",
     },
     knowledge_row: {
       annotation: "Annotation",
@@ -4570,11 +5402,29 @@ export const fr = {
       expand_details: "Développer les détails",
       verify_annotation: "Vérifier l'annotation",
       dismiss_annotation: "Ignorer l'annotation",
+      // @llm-translated 2026-04-17
+      view_details: "Voir les détails",
+      // @llm-translated 2026-04-17
+      execution_trend_label: "Tendance des exécutions",
     },
     focused_decision: {
       accept: "Accepter",
       reject: "Rejeter",
       media_unavailable: "Média non disponible",
+      // @llm-translated 2026-04-17
+      title: "Décision ciblée",
+      // @llm-translated 2026-04-17
+      approve: "Approuver",
+      // @llm-translated 2026-04-17
+      reject: "Rejeter",
+      // @llm-translated 2026-04-17
+      no_items: "Aucun élément en attente",
+      // @llm-translated 2026-04-17
+      video_not_supported: "Votre navigateur ne prend pas en charge la lecture vidéo.",
+      // @llm-translated 2026-04-17
+      reject_this: "Rejeter ceci",
+      // @llm-translated 2026-04-17
+      accept_this: "Accepter ceci",
     },
     review_focus: {
       all_caught_up: "Tout est à jour",
@@ -4586,6 +5436,10 @@ export const fr = {
       reject_all: "Tout rejeter",
       accept_all: "Tout accepter",
       retry_with_changes: "Réessayer avec des modifications",
+      // @llm-translated 2026-04-17
+      title: "Focus révision",
+      // @llm-translated 2026-04-17
+      video_not_supported: "Votre navigateur ne prend pas en charge la lecture vidéo.",
     },
     memory_card: {
       confirm: "Confirmer",
@@ -4645,6 +5499,72 @@ export const fr = {
       run_analysis_hint: "Lancez l'analyse pour vérifier les problèmes.",
       healing_audit_log: "Journal d'audit de guérison",
       no_silent_failures: "Aucun échec silencieux enregistré.",
+      // @llm-translated 2026-04-17
+      title: "Problèmes de guérison",
+      // @llm-translated 2026-04-17
+      no_issues: "Aucun problème de guérison actif",
+      // @llm-translated 2026-04-17
+      all_resolved: "Tous les problèmes résolus",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des problèmes...",
+      // @llm-translated 2026-04-17
+      issue_count_one: "{count} problème",
+      // @llm-translated 2026-04-17
+      issue_count_other: "{count} problèmes",
+      // @llm-translated 2026-04-17
+      auto_fixed: "Corrigé automatiquement",
+      // @llm-translated 2026-04-17
+      manual_required: "Action manuelle requise",
+      // @llm-translated 2026-04-17
+      view_execution: "Voir l'exécution",
+      // @llm-translated 2026-04-17
+      apply_fix: "Appliquer le correctif",
+      // @llm-translated 2026-04-17
+      dismiss: "Ignorer",
+      // @llm-translated 2026-04-17
+      agent_label: "Agent :",
+      // @llm-translated 2026-04-17
+      error_label: "Erreur :",
+      // @llm-translated 2026-04-17
+      fix_label: "Correctif :",
+      // @llm-translated 2026-04-17
+      occurred_label: "Survenu :",
+      // @llm-translated 2026-04-17
+      category_label: "Catégorie :",
+      // @llm-translated 2026-04-17
+      no_fix_available: "Aucun correctif automatique disponible",
+      // @llm-translated 2026-04-17
+      ai_healing_title: "Guérison IA",
+      // @llm-translated 2026-04-17
+      diagnosis_label: "Diagnostic :",
+      // @llm-translated 2026-04-17
+      fixes_applied: "Correctifs appliqués",
+      // @llm-translated 2026-04-17
+      alert_history_title: "Historique des alertes",
+      // @llm-translated 2026-04-17
+      all_agents_global: "Tous les agents (global)",
+      // @llm-translated 2026-04-17
+      add_rule: "Ajouter une règle",
+      // @llm-translated 2026-04-17
+      no_rules_configured: "Aucune règle d'alerte configurée. Ajoutez une règle pour commencer à surveiller.",
+      // @llm-translated 2026-04-17
+      confidence_pct_suffix: "% de confiance",
+      // @llm-translated 2026-04-17
+      spike_on: "pic sur",
+      // @llm-translated 2026-04-17
+      correlated_events_prefix: "Événements corrélés (",
+      // @llm-translated 2026-04-17
+      circuit_breaker_label: "disjoncteur",
+      // @llm-translated 2026-04-17
+      auto_disabled_message: "Ce persona a été automatiquement désactivé comme réponse disjoncteur aux échecs répétés.",
+      // @llm-translated 2026-04-17
+      execution_label: "Exécution :",
+      // @llm-translated 2026-04-17
+      issue_marked_as: "Ce problème est marqué comme",
+      // @llm-translated 2026-04-17
+      retry_in_progress: "Tentative en cours — le statut sera mis à jour quand c'est terminé.",
+      // @llm-translated 2026-04-17
+      resolve_issue_title: "Marquer le problème comme résolu",
     },
     healing_timeline: {
       loading: "Chargement de la chronologie...",
@@ -4683,6 +5603,60 @@ export const fr = {
     day_range: {
       apply: "Appliquer",
     },
+    // @llm-translated 2026-04-17
+    bulk_action_bar: {
+      // @llm-translated 2026-04-17
+      pending_reviews_selected_one: "{count} révision en attente sélectionnée",
+      // @llm-translated 2026-04-17
+      pending_reviews_selected_other: "{count} révisions en attente sélectionnées",
+    },
+    // @llm-translated 2026-04-17
+    knowledge_graph: {
+      // @llm-translated 2026-04-17
+      mock_pattern: "Schéma fictif",
+      // @llm-translated 2026-04-17
+      seed_tooltip: "Générer un schéma fictif (dev uniquement)",
+      // @llm-translated 2026-04-17
+      all_types: "Tous les types",
+      // @llm-translated 2026-04-17
+      all_scopes: "Toutes les portées",
+      // @llm-translated 2026-04-17
+      failure_drilldown_prefix: "Analyse des échecs :",
+      // @llm-translated 2026-04-17
+      failure_date_filter: "Affichage des schémas d'échec actifs à partir du {date}",
+      // @llm-translated 2026-04-17
+      data_unavailable: "Données de connaissances indisponibles",
+      // @llm-translated 2026-04-17
+      loading_patterns: "Chargement des schémas de connaissances...",
+      // @llm-translated 2026-04-17
+      drilldown_toggle_title: "Afficher/masquer l'analyse des échecs",
+      // @llm-translated 2026-04-17
+      no_patterns_yet: "Aucun schéma de connaissances pour l'instant",
+      // @llm-translated 2026-04-17
+      no_patterns_yet_hint: "Exécutez des agents pour constituer des schémas de connaissances. Les agents s'améliorent au fil du temps.",
+      // @llm-translated 2026-04-17
+      no_patterns_match: "Aucun schéma ne correspond aux filtres actuels",
+      // @llm-translated 2026-04-17
+      recent_learnings: "Apprentissages récents",
+      // @llm-translated 2026-04-17
+      curating_manually: "Vous organisez des documents manuellement ?",
+      // @llm-translated 2026-04-17
+      obsidian_tip: "Pour moins de ~1000 notes, un connecteur Obsidian peut synchroniser votre coffre directement.",
+    },
+    // @llm-translated 2026-04-17
+    memory_review: {
+      // @llm-translated 2026-04-17
+      all_conflicts_resolved: "Tous les conflits résolus",
+      // @llm-translated 2026-04-17
+      keep_prefix: "Conserver «",
+      // @llm-translated 2026-04-17
+      keep_suffix: "»",
+    },
+    // @llm-translated 2026-04-17
+    review_inbox: {
+      // @llm-translated 2026-04-17
+      drag_to_resize: "Glisser pour redimensionner",
+    },
   },
   templates: {
     gallery: {
@@ -4698,6 +5672,10 @@ export const fr = {
       triggers: "Déclencheurs",
       no_flows: "Aucun flux",
       readiness_tooltip: "{percent}% des connecteurs prêts",
+      // @llm-translated 2026-04-17
+      title: "Galerie de modèles",
+      // @llm-translated 2026-04-17
+      template_details_tabs_aria: "Détails du modèle",
     },
     actions: {
       view_details: "Voir les détails",
@@ -4908,6 +5886,60 @@ export const fr = {
       build_complete: "Construction terminée",
       adjust_placeholder: "Ajustez quoi que ce soit...",
       answer_placeholder: "Votre réponse...",
+      // @llm-translated 2026-04-17
+      title: "Matrice de modèles",
+      // @llm-translated 2026-04-17
+      no_templates: "Aucun modèle disponible",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des modèles...",
+      // @llm-translated 2026-04-17
+      filter_all: "Tous",
+      // @llm-translated 2026-04-17
+      filter_by_category: "Filtrer par catégorie",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher des modèles...",
+      // @llm-translated 2026-04-17
+      adopted_badge: "Adopté",
+      // @llm-translated 2026-04-17
+      adopt_btn: "Adopter",
+      // @llm-translated 2026-04-17
+      preview_btn: "Aperçu",
+      // @llm-translated 2026-04-17
+      complexity_simple: "Simple",
+      // @llm-translated 2026-04-17
+      complexity_intermediate: "Intermédiaire",
+      // @llm-translated 2026-04-17
+      complexity_advanced: "Avancé",
+      // @llm-translated 2026-04-17
+      tools_count: "{count} outil(s)",
+      // @llm-translated 2026-04-17
+      connectors_count: "{count} connecteur(s)",
+      // @llm-translated 2026-04-17
+      answer_cell: "Réponse : {cell}",
+      // @llm-translated 2026-04-17
+      working_on: "En cours : {cells}",
+      // @llm-translated 2026-04-17
+      draft_ready_label: "Brouillon prêt",
+      // @llm-translated 2026-04-17
+      editing_cell: "Modification : {cell}",
+      // @llm-translated 2026-04-17
+      protocol_active: "Protocole actif",
+      // @llm-translated 2026-04-17
+      matrix_unavailable: "Données de matrice indisponibles.",
+      // @llm-translated 2026-04-17
+      persona_matrix_title: "Matrice de persona",
+      // @llm-translated 2026-04-17
+      cell_status_analyzing: "Analyse",
+      // @llm-translated 2026-04-17
+      cell_status_answered: "Répondu",
+      // @llm-translated 2026-04-17
+      cell_status_resolved: "Résolu",
+      // @llm-translated 2026-04-17
+      cell_status_input_needed: "Entrée requise",
+      // @llm-translated 2026-04-17
+      cell_status_missing_credential: "Identifiant manquant",
+      // @llm-translated 2026-04-17
+      cell_status_error: "Erreur",
     },
     sandbox: {
       restriction_events: "Émission d'événements désactivée",
@@ -5027,6 +6059,22 @@ export const fr = {
       autocomplete_difficulty: "Difficulté",
       autocomplete_setup_time: "Temps d'installation",
       autocomplete_suggestions: "Suggestions",
+      // @llm-translated 2026-04-17
+      placeholder: "Rechercher des modèles...",
+      // @llm-translated 2026-04-17
+      no_results: "Aucun modèle trouvé",
+      // @llm-translated 2026-04-17
+      clear: "Effacer",
+      // @llm-translated 2026-04-17
+      results_count: "{count} résultat(s)",
+      // @llm-translated 2026-04-17
+      coverage_filter_aria: "Filtre de couverture",
+      // @llm-translated 2026-04-17
+      search_suggestions_aria: "Suggestions de recherche",
+      // @llm-translated 2026-04-17
+      clear_search_aria: "Effacer la recherche",
+      // @llm-translated 2026-04-17
+      search_with_ai_aria: "Rechercher avec l'IA",
     },
     list: {
       template_name: "Nom du modèle",
@@ -5161,6 +6209,26 @@ export const fr = {
       answer_remaining: "Répondre aux restantes ({count})",
       next: "Suivant",
       setup: "Configuration",
+      // @llm-translated 2026-04-17
+      title: "Questionnaire",
+      // @llm-translated 2026-04-17
+      next: "Suivant",
+      // @llm-translated 2026-04-17
+      back: "Retour",
+      // @llm-translated 2026-04-17
+      finish: "Terminer",
+      // @llm-translated 2026-04-17
+      skip: "Passer",
+      // @llm-translated 2026-04-17
+      previous_question: "Question précédente",
+      // @llm-translated 2026-04-17
+      next_question: "Question suivante",
+      // @llm-translated 2026-04-17
+      go_to_question: "Aller à la question {number}",
+      // @llm-translated 2026-04-17
+      question_answered_suffix: " (répondue)",
+      // @llm-translated 2026-04-17
+      question_unanswered_suffix: " (sans réponse)",
     },
     sandbox_banner: {
       community_sandbox: "Modèle communautaire — Mode bac à sable",
@@ -5297,6 +6365,52 @@ export const fr = {
       generate_phase: "Générer",
       type_your_answer: "Saisissez votre réponse...",
       navigate_hint: "Utilisez les touches fléchées pour naviguer",
+      // @llm-translated 2026-04-17
+      title: "Import n8n",
+      // @llm-translated 2026-04-17
+      subtitle: "Importez un workflow n8n pour créer un agent",
+      // @llm-translated 2026-04-17
+      upload_label: "Déposer le fichier de workflow n8n",
+      // @llm-translated 2026-04-17
+      or_paste: "Ou coller le JSON du workflow",
+      // @llm-translated 2026-04-17
+      paste_placeholder: "Collez votre JSON de workflow n8n ici...",
+      // @llm-translated 2026-04-17
+      parse_btn: "Analyser le workflow",
+      // @llm-translated 2026-04-17
+      parsing: "Analyse en cours...",
+      // @llm-translated 2026-04-17
+      import_btn: "Importer comme agent",
+      // @llm-translated 2026-04-17
+      importing: "Import en cours...",
+      // @llm-translated 2026-04-17
+      imported: "Importé avec succès",
+      // @llm-translated 2026-04-17
+      parse_error: "Erreur d'analyse : fichier de workflow invalide",
+      // @llm-translated 2026-04-17
+      nodes_found: "{count} nœud(s) trouvé(s)",
+      // @llm-translated 2026-04-17
+      dropzone_aria: "Déposer le fichier de workflow ou cliquer pour parcourir",
+      // @llm-translated 2026-04-17
+      paste_aria: "Contenu JSON du workflow",
+      // @llm-translated 2026-04-17
+      url_aria: "URL du workflow",
+      // @llm-translated 2026-04-17
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      // @llm-translated 2026-04-17
+      url_format_github: "github.com/*/blob/*",
+      // @llm-translated 2026-04-17
+      url_format_gist: "gist.github.com/*",
+      // @llm-translated 2026-04-17
+      url_format_raw: "point de terminaison JSON brut",
+      // @llm-translated 2026-04-17
+      question_view_mode_aria: "Mode d'affichage des questions",
+      // @llm-translated 2026-04-17
+      wizard_progress_aria: "Progression de l'assistant d'import",
+      // @llm-translated 2026-04-17
+      wizard_steps_aria: "Étapes de l'assistant",
+      // @llm-translated 2026-04-17
+      transform_progress_aria: "Progression de la transformation",
     },
     diagram: {
       no_flow_data: "Aucune donnée de flux disponible",
@@ -5357,6 +6471,92 @@ export const fr = {
       credential_required: "Aucun identifiant {category} trouvé dans votre coffre-fort. Ajoutez-en un pour continuer.",
       add_credential: "Ajouter un identifiant",
       blocked_blocking_submit: "{count} question(s) nécessitent des identifiants avant de continuer",
+      // @llm-translated 2026-04-17
+      title: "Adopter le modèle",
+      // @llm-translated 2026-04-17
+      subtitle: "Configurer l'agent depuis ce modèle",
+      // @llm-translated 2026-04-17
+      agent_name_label: "Nom de l'agent",
+      // @llm-translated 2026-04-17
+      agent_name_placeholder: "Donnez un nom à votre agent...",
+      // @llm-translated 2026-04-17
+      description_label: "Description",
+      // @llm-translated 2026-04-17
+      customize_label: "Personnaliser",
+      // @llm-translated 2026-04-17
+      review_label: "Réviser",
+      // @llm-translated 2026-04-17
+      adopt_btn: "Adopter",
+      // @llm-translated 2026-04-17
+      adopting: "Adoption en cours...",
+      // @llm-translated 2026-04-17
+      adopted: "Adopté avec succès",
+      // @llm-translated 2026-04-17
+      failed: "Adoption échouée",
+      // @llm-translated 2026-04-17
+      view_agent: "Voir l'agent",
+      // @llm-translated 2026-04-17
+      credentials_section: "Identifiants requis",
+      // @llm-translated 2026-04-17
+      no_credentials_needed: "Aucun identifiant requis",
+      // @llm-translated 2026-04-17
+      set_up_credentials: "Configurer les identifiants",
+      // @llm-translated 2026-04-17
+      tools_section: "Outils inclus",
+      // @llm-translated 2026-04-17
+      triggers_section: "Déclencheurs inclus",
+      // @llm-translated 2026-04-17
+      use_cases_section: "Cas d'usage",
+      // @llm-translated 2026-04-17
+      prompt_section: "Prompt de l'agent",
+      // @llm-translated 2026-04-17
+      model_section: "Modèle",
+      // @llm-translated 2026-04-17
+      identity_section: "Identité",
+      // @llm-translated 2026-04-17
+      icon_label: "Icône",
+      // @llm-translated 2026-04-17
+      color_label: "Couleur",
+      // @llm-translated 2026-04-17
+      group_label: "Groupe",
+      // @llm-translated 2026-04-17
+      step_configure: "Configurer",
+      // @llm-translated 2026-04-17
+      step_review: "Réviser",
+      // @llm-translated 2026-04-17
+      step_adopt: "Adopter",
+      // @llm-translated 2026-04-17
+      back: "Retour",
+      // @llm-translated 2026-04-17
+      next: "Suivant",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      template_label: "Modèle :",
+      // @llm-translated 2026-04-17
+      complexity_label: "Complexité :",
+      // @llm-translated 2026-04-17
+      est_time_label: "Temps est. :",
+      // @llm-translated 2026-04-17
+      credentials_required_title: "Identifiants requis",
+      // @llm-translated 2026-04-17
+      credentials_required_body: "Ce modèle nécessite au moins un identifiant de chaque catégorie ci-dessous avant que l'adoption puisse continuer. Cliquez sur « Ajouter un identifiant » — vous reviendrez ici automatiquement une fois la configuration terminée.",
+      // @llm-translated 2026-04-17
+      answered_of_total: "{answered} / {total} répondu(es)",
+      // @llm-translated 2026-04-17
+      blocked_count: "{count} bloqué(s)",
+      // @llm-translated 2026-04-17
+      question_number_of: "Question {current} sur {total}",
+      // @llm-translated 2026-04-17
+      question_number_aria: "Question {number}",
+      // @llm-translated 2026-04-17
+      navigate_hint: "pour naviguer",
+      // @llm-translated 2026-04-17
+      enter_to_advance: "pour avancer",
+      // @llm-translated 2026-04-17
+      previous: "Précédent",
+      // @llm-translated 2026-04-17
+      live_preview: "Aperçu en direct",
     },
     scan: {
       scanning_draft: "Analyse du persona en cours...",
@@ -5396,6 +6596,28 @@ export const fr = {
       testing_agent: "Test de l'agent...",
       approve_and_promote: "Approuver & Promouvoir",
       view_agent_btn: "Voir l'agent",
+      // @llm-translated 2026-04-17
+      title: "Variantes",
+      // @llm-translated 2026-04-17
+      no_variants: "Aucune variante disponible",
+      // @llm-translated 2026-04-17
+      base_template: "Modèle de base",
+      // @llm-translated 2026-04-17
+      variant_label: "Variante {index}",
+      // @llm-translated 2026-04-17
+      diff_label: "Différences",
+      // @llm-translated 2026-04-17
+      adopt_variant: "Adopter cette variante",
+      // @llm-translated 2026-04-17
+      compare_label: "Comparer",
+      // @llm-translated 2026-04-17
+      tags_label: "Tags",
+      // @llm-translated 2026-04-17
+      best_for: "Idéal pour",
+      // @llm-translated 2026-04-17
+      no_diff: "Identique au modèle de base",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des variantes...",
     },
     diagrams: {
       no_flow_data: "Aucune donnée de flux disponible",
@@ -5403,6 +6625,8 @@ export const fr = {
       edges_count: "{count} connexions",
       connectors_count: "{count} connecteur(s)",
       decisions_count: "{count} décision(s)",
+      // @llm-translated 2026-04-17
+      title: "Diagrammes",
     },
     generation: {
       create_template: "Créer un modèle",
@@ -5425,6 +6649,80 @@ export const fr = {
       start_review_custom: "Démarrer la revue ({count} cas{plural})",
       copy_log: "Copier le journal",
       copied_log: "Copié !",
+      // @llm-translated 2026-04-17
+      title: "Génération de modèle",
+      // @llm-translated 2026-04-17
+      generating: "Génération en cours...",
+      // @llm-translated 2026-04-17
+      generated: "Modèle généré",
+      // @llm-translated 2026-04-17
+      failed: "Génération échouée",
+      // @llm-translated 2026-04-17
+      describe_placeholder: "Décrivez le modèle d'agent que vous souhaitez générer...",
+      // @llm-translated 2026-04-17
+      generate_btn: "Générer",
+      // @llm-translated 2026-04-17
+      name_label: "Nom du modèle",
+      // @llm-translated 2026-04-17
+      category_label: "Catégorie",
+      // @llm-translated 2026-04-17
+      use_cases_label: "Cas d'usage",
+      // @llm-translated 2026-04-17
+      tools_label: "Outils recommandés",
+      // @llm-translated 2026-04-17
+      connectors_label: "Connecteurs",
+      // @llm-translated 2026-04-17
+      adopt_this: "Adopter ce modèle",
+      // @llm-translated 2026-04-17
+      preview_label: "Aperçu",
+      // @llm-translated 2026-04-17
+      complexity_label: "Complexité",
+      // @llm-translated 2026-04-17
+      est_setup_label: "Configuration est.",
+      // @llm-translated 2026-04-17
+      save_to_catalog: "Enregistrer dans le catalogue",
+      // @llm-translated 2026-04-17
+      saved: "Enregistré dans le catalogue",
+      // @llm-translated 2026-04-17
+      edit_before_save: "Modifier avant d'enregistrer",
+      // @llm-translated 2026-04-17
+      similar_templates: "Modèles similaires",
+      // @llm-translated 2026-04-17
+      generate_another: "Générer un autre",
+      // @llm-translated 2026-04-17
+      generation_hint: "L'IA créera une configuration d'agent complète : prompt, outils, déclencheurs et cas d'usage.",
+      // @llm-translated 2026-04-17
+      tags_label: "Tags",
+      // @llm-translated 2026-04-17
+      domain_label: "Domaine",
+      // @llm-translated 2026-04-17
+      triggers_label: "Déclencheurs",
+      // @llm-translated 2026-04-17
+      prompt_preview: "Aperçu du prompt",
+      // @llm-translated 2026-04-17
+      no_prompt: "Aucun prompt généré",
+      // @llm-translated 2026-04-17
+      refine_prompt: "Affiner le modèle",
+      // @llm-translated 2026-04-17
+      regenerate: "Régénérer",
+      // @llm-translated 2026-04-17
+      copy_prompt: "Copier le prompt",
+      // @llm-translated 2026-04-17
+      prompt_copied: "Prompt copié",
+      // @llm-translated 2026-04-17
+      section_identity: "Identité",
+      // @llm-translated 2026-04-17
+      section_behavior: "Comportement",
+      // @llm-translated 2026-04-17
+      section_integration: "Intégration",
+      // @llm-translated 2026-04-17
+      error_empty_description: "Veuillez décrire le modèle souhaité",
+      // @llm-translated 2026-04-17
+      error_generation_failed: "La génération du modèle a échoué. Veuillez réessayer.",
+      // @llm-translated 2026-04-17
+      back_to_catalog: "Retour au catalogue",
+      // @llm-translated 2026-04-17
+      create_agent_from_template: "Créer un agent depuis ce modèle",
     },
     connector_edit: {
       credential: "Identifiant",
@@ -5446,6 +6744,8 @@ export const fr = {
       linked: "Lié",
       set_up: "Configurer",
       more_connectors: "+{count} autres",
+      // @llm-translated 2026-04-17
+      title: "Modifier le connecteur",
     },
     trigger_edit: {
       schedule: "Planification",
@@ -5456,6 +6756,8 @@ export const fr = {
       check_interval_placeholder: "Toutes les 5 minutes",
       no_config_needed: "Aucune configuration requise",
       manual_only: "Exécution manuelle uniquement",
+      // @llm-translated 2026-04-17
+      title: "Modifier le déclencheur",
     },
     preset_edit: {
       select_review: "Sélectionner une politique de révision...",
@@ -5924,6 +7226,366 @@ export const fr = {
     loading_catalog: "Chargement du catalogue...",
     no_feeds: "Aucun flux d'événements partagé disponible",
     no_feeds_hint: "Cliquez sur Actualiser pour récupérer les derniers flux depuis le cloud",
+    // @llm-translated 2026-04-17
+    cron_colon: "Cron :",
+    // @llm-translated 2026-04-17
+    interval_colon: "Intervalle :",
+    // @llm-translated 2026-04-17
+    event_colon: "Événement :",
+    // @llm-translated 2026-04-17
+    endpoint_colon: "Point de terminaison :",
+    // @llm-translated 2026-04-17
+    listens_for_colon: "Écoute :",
+    // @llm-translated 2026-04-17
+    source_filter_colon: "Filtre source :",
+    // @llm-translated 2026-04-17
+    hmac_colon: "HMAC :",
+    // @llm-translated 2026-04-17
+    paths_colon: "Chemins :",
+    // @llm-translated 2026-04-17
+    events_colon: "Événements :",
+    // @llm-translated 2026-04-17
+    recursive_yes: "Oui",
+    // @llm-translated 2026-04-17
+    filter_colon: "Filtre :",
+    // @llm-translated 2026-04-17
+    watches_colon: "Surveille :",
+    // @llm-translated 2026-04-17
+    pattern_colon: "Schéma :",
+    // @llm-translated 2026-04-17
+    poll_every: "Interrogation toutes les {interval}",
+    // @llm-translated 2026-04-17
+    apps_colon: "Applications :",
+    // @llm-translated 2026-04-17
+    title_colon: "Titre :",
+    // @llm-translated 2026-04-17
+    operator_colon: "Opérateur :",
+    // @llm-translated 2026-04-17
+    window_colon: "Fenêtre :",
+    // @llm-translated 2026-04-17
+    id_colon: "ID :",
+    // @llm-translated 2026-04-17
+    type_colon: "Type :",
+    // @llm-translated 2026-04-17
+    status_colon: "Statut :",
+    // @llm-translated 2026-04-17
+    target_colon: "Cible :",
+    // @llm-translated 2026-04-17
+    retry_hash: "Tentative #{count}",
+    // @llm-translated 2026-04-17
+    model_colon: "Modèle :",
+    // @llm-translated 2026-04-17
+    next_run_colon: "Prochain lancement :",
+    // @llm-translated 2026-04-17
+    local_label: "local",
+    // @llm-translated 2026-04-17
+    then_every: "puis toutes les {interval}",
+    // @llm-translated 2026-04-17
+    source_colon: "Source :",
+    // @llm-translated 2026-04-17
+    dry_run_target_colon: "Cible de test :",
+    // @llm-translated 2026-04-17
+    matched_subscriptions_count: "{count} abonnement(s) correspondant(s)",
+    // @llm-translated 2026-04-17
+    last_label: "Dernier :",
+    // @llm-translated 2026-04-17
+    loading_history: "Chargement de l'historique...",
+    // @llm-translated 2026-04-17
+    zero_unlimited: "0 = illimité",
+    // @llm-translated 2026-04-17
+    category_section_label: "Catégorie : {category}",
+    // @llm-translated 2026-04-17
+    no_persona_selected: "Aucun agent sélectionné",
+    // @llm-translated 2026-04-17
+    quick_templates_label: "Modèles rapides",
+    // @llm-translated 2026-04-17
+    quick_presets_label: "Préréglages rapides",
+    // @llm-translated 2026-04-17
+    cron_expression_label: "Expression cron",
+    // @llm-translated 2026-04-17
+    this_persona_will: "Cet agent va",
+    // @llm-translated 2026-04-17
+    starting_from: "À partir de {time}",
+    // @llm-translated 2026-04-17
+    per_day: "par jour",
+    // @llm-translated 2026-04-17
+    last_poll_label: "Dernière interrogation :",
+    // @llm-translated 2026-04-17
+    deployed_persona_label: "Agent déployé :",
+    // @llm-translated 2026-04-17
+    fired_at_label: "Déclenché à :",
+    // @llm-translated 2026-04-17
+    webhook_last_label: "Dernier webhook :",
+    // @llm-translated 2026-04-17
+    relay_last_label: "Dernier relais :",
+    // @llm-translated 2026-04-17
+    optional_label: "facultatif",
+    // @llm-translated 2026-04-17
+    optional_comma_separated: "facultatif — séparé par des virgules",
+    // @llm-translated 2026-04-17
+    get_channel_url_from: "Obtenez l'URL du canal depuis {source}",
+    // @llm-translated 2026-04-17
+    setup_step1: "Créez un webhook entrant dans votre espace de travail {platform}",
+    // @llm-translated 2026-04-17
+    setup_step2: "Copiez l'URL du webhook",
+    // @llm-translated 2026-04-17
+    setup_step3: "Collez-la dans le champ URL du canal ci-dessus",
+    // @llm-translated 2026-04-17
+    setup_step4: "Testez la connexion",
+    // @llm-translated 2026-04-17
+    studio_empty_desc: "Faites glisser des agents sur le canevas ou cliquez sur Ajouter pour commencer",
+    // @llm-translated 2026-04-17
+    studio_step1: "Faites glisser des agents depuis la barre latérale vers le canevas",
+    // @llm-translated 2026-04-17
+    studio_step2: "Connectez les agents en faisant glisser entre les ports",
+    // @llm-translated 2026-04-17
+    studio_step3: "Configurez les déclencheurs pour chaque agent",
+    // @llm-translated 2026-04-17
+    studio_step4: "Activez le flux pour mettre en production",
+    // @llm-translated 2026-04-17
+    gate_if_else: "Si/Sinon",
+    // @llm-translated 2026-04-17
+    gate_if_else_desc: "Acheminez les événements selon une condition",
+    // @llm-translated 2026-04-17
+    gate_classifier_desc: "Classez et acheminez les événements par type",
+    // @llm-translated 2026-04-17
+    gate_fan_out: "Diffusion",
+    // @llm-translated 2026-04-17
+    gate_fan_out_desc: "Envoyez les événements vers plusieurs agents",
+    // @llm-translated 2026-04-17
+    palette_help: "Aide de la palette",
+    // @llm-translated 2026-04-17
+    toolbar_title_auto_layout: "Mise en page automatique",
+    // @llm-translated 2026-04-17
+    toolbar_title_add_note: "Ajouter une note",
+    // @llm-translated 2026-04-17
+    toolbar_title_start_dry_run: "Démarrer le test",
+    // @llm-translated 2026-04-17
+    toolbar_title_stop_dry_run: "Arrêter le test",
+    // @llm-translated 2026-04-17
+    toolbar_title_assistant: "Assistant",
+    // @llm-translated 2026-04-17
+    toolbar_dry_run: "Test",
+    // @llm-translated 2026-04-17
+    canvas_assistant_title: "Assistant de canevas",
+    // @llm-translated 2026-04-17
+    try_asking_hint: "Essayez de demander :",
+    // @llm-translated 2026-04-17
+    assistant_placeholder: "Posez une question sur votre flux...",
+    // @llm-translated 2026-04-17
+    disconnect_persona_title: "Déconnecter l'agent",
+    // @llm-translated 2026-04-17
+    disconnect_will_no_longer: "ne recevra plus les événements de ce déclencheur.",
+    // @llm-translated 2026-04-17
+    disconnect_events_reconnect: "Vous pouvez reconnecter l'agent ultérieurement.",
+    // @llm-translated 2026-04-17
+    rename_also_updates: "Renommer mettra également à jour toutes les références.",
+    // @llm-translated 2026-04-17
+    delete_connection_label: "Supprimer la connexion",
+    // @llm-translated 2026-04-17
+    search_personas_placeholder: "Rechercher des agents...",
+    // @llm-translated 2026-04-17
+    no_matching_personas_found: "Aucun agent correspondant trouvé",
+    // @llm-translated 2026-04-17
+    clear_search_label: "Effacer la recherche",
+    // @llm-translated 2026-04-17
+    dead_letter_source: "Source :",
+    // @llm-translated 2026-04-17
+    dead_letter_id: "ID :",
+    // @llm-translated 2026-04-17
+    event_data_label: "Données de l'événement",
+    // @llm-translated 2026-04-17
+    shared_prefix: "Partagé",
+    // @llm-translated 2026-04-17
+    nl_type_colon: "Type :",
+    // @llm-translated 2026-04-17
+    nl_cron_colon: "Cron :",
+    // @llm-translated 2026-04-17
+    nl_interval_colon: "Intervalle :",
+    // @llm-translated 2026-04-17
+    nl_filter_colon: "Filtre :",
+    // @llm-translated 2026-04-17
+    nl_could_not_parse: "Impossible d'analyser l'expression de déclencheur",
+    // @llm-translated 2026-04-17
+    active_hours_every_day: "Heures actives chaque jour",
+    // @llm-translated 2026-04-17
+    event_type_to_listen: "Type d'événement à écouter",
+    // @llm-translated 2026-04-17
+    event_type_input_placeholder: "ex. order.placed, user.signup",
+    // @llm-translated 2026-04-17
+    event_type_helper: "Entrez un type d'événement personnalisé ou choisissez parmi les types courants",
+    // @llm-translated 2026-04-17
+    source_filter_optional_label: "Filtre source (facultatif)",
+    // @llm-translated 2026-04-17
+    wildcard_hint: "Utilisez * comme joker — ex. « order.* » correspond à tous les événements de commande",
+    // @llm-translated 2026-04-17
+    window_title_pattern_label: "Schéma de titre de fenêtre",
+    // @llm-translated 2026-04-17
+    optional_regex_label: "Expression régulière facultative",
+    // @llm-translated 2026-04-17
+    text_pattern_label: "Schéma de texte",
+    // @llm-translated 2026-04-17
+    credential_event_label: "Événement d'identifiant",
+    // @llm-translated 2026-04-17
+    refresh_label: "Actualiser",
+    // @llm-translated 2026-04-17
+    copy_webhook_url_title: "Copier l'URL du webhook",
+    // @llm-translated 2026-04-17
+    copy_webhook_secret_title: "Copier le secret du webhook",
+    // @llm-translated 2026-04-17
+    delete_webhook_title: "Supprimer le webhook",
+    // @llm-translated 2026-04-17
+    status_col_label: "Statut",
+    // @llm-translated 2026-04-17
+    duration_col_label: "Durée",
+    // @llm-translated 2026-04-17
+    cost_col_label: "Coût",
+    // @llm-translated 2026-04-17
+    dead_letter_refresh: "Actualiser",
+    // @llm-translated 2026-04-17
+    dead_letter_loading: "Chargement...",
+    // @llm-translated 2026-04-17
+    dead_letter_retry: "Réessayer",
+    // @llm-translated 2026-04-17
+    dead_letter_discard: "Ignorer",
+    // @llm-translated 2026-04-17
+    dead_letter_payload: "Charge utile",
+    // @llm-translated 2026-04-17
+    event_data_section_label: "Données de l'événement",
+    // @llm-translated 2026-04-17
+    copy_event_data_title: "Copier les données de l'événement",
+    // @llm-translated 2026-04-17
+    copied_label: "Copié",
+    // @llm-translated 2026-04-17
+    error_section_label: "Erreur",
+    // @llm-translated 2026-04-17
+    meta_event_id: "ID de l'événement",
+    // @llm-translated 2026-04-17
+    meta_project: "Projet",
+    // @llm-translated 2026-04-17
+    meta_processed: "Traité",
+    // @llm-translated 2026-04-17
+    clear_stream: "Effacer le flux",
+    // @llm-translated 2026-04-17
+    clear_stream_title: "Effacer le flux d'événements",
+    // @llm-translated 2026-04-17
+    col_type: "Type",
+    // @llm-translated 2026-04-17
+    col_source: "Source",
+    // @llm-translated 2026-04-17
+    col_target_agent: "Agent cible",
+    // @llm-translated 2026-04-17
+    col_status: "Statut",
+    // @llm-translated 2026-04-17
+    col_time: "Heure",
+    // @llm-translated 2026-04-17
+    queued_bare: "En attente",
+    // @llm-translated 2026-04-17
+    pause_tooltip: "Suspendre le déclencheur",
+    // @llm-translated 2026-04-17
+    resume_tooltip: "Reprendre le déclencheur",
+    // @llm-translated 2026-04-17
+    relay_label_field: "Libellé",
+    // @llm-translated 2026-04-17
+    relay_channel_url_field: "URL du canal",
+    // @llm-translated 2026-04-17
+    relay_route_to_agent: "Acheminer vers l'agent",
+    // @llm-translated 2026-04-17
+    optional_suffix: "(facultatif)",
+    // @llm-translated 2026-04-17
+    relay_event_filter_field: "Filtre d'événements",
+    // @llm-translated 2026-04-17
+    relay_event_filter_note: "Filtrez les événements entrants par type ou schéma",
+    // @llm-translated 2026-04-17
+    relay_confirm_delete: "Supprimer ce relais ?",
+    // @llm-translated 2026-04-17
+    setup_guide_step2: "Copiez l'URL du webhook",
+    // @llm-translated 2026-04-17
+    setup_guide_step3: "Configurez votre service pour envoyer des événements à cette URL",
+    // @llm-translated 2026-04-17
+    setup_guide_step4: "Testez en envoyant un événement test",
+    // @llm-translated 2026-04-17
+    get_channel_url_prompt: "Obtenez l'URL du canal depuis votre service",
+    // @llm-translated 2026-04-17
+    gate_if_else_label: "Si/Sinon",
+    // @llm-translated 2026-04-17
+    gate_if_else_description: "Acheminez les événements selon une condition booléenne",
+    // @llm-translated 2026-04-17
+    gate_classifier_label: "Classifieur",
+    // @llm-translated 2026-04-17
+    gate_classifier_description: "Classifiez et acheminez les événements par catégorie détectée",
+    // @llm-translated 2026-04-17
+    gate_fan_out_label: "Diffusion",
+    // @llm-translated 2026-04-17
+    gate_fan_out_description: "Diffusez les événements vers plusieurs agents simultanément",
+    // @llm-translated 2026-04-17
+    palette_help_text: "Faites glisser les éléments de la palette vers le canevas pour construire votre flux d'événements",
+    // @llm-translated 2026-04-17
+    test_event_type_placeholder: "ex. order.placed",
+    // @llm-translated 2026-04-17
+    result_id_prefix: "ID :",
+    // @llm-translated 2026-04-17
+    result_type_prefix: "Type :",
+    // @llm-translated 2026-04-17
+    result_status_prefix: "Statut :",
+    // @llm-translated 2026-04-17
+    result_target_prefix: "Cible :",
+    // @llm-translated 2026-04-17
+    tab_loading: "Chargement...",
+    // @llm-translated 2026-04-17
+    smee_open_new_title: "Ouvrir dans un nouvel onglet",
+    // @llm-translated 2026-04-17
+    relay_label_placeholder: "ex. Mon relais",
+    // @llm-translated 2026-04-17
+    relay_channel_url_placeholder: "https://smee.io/...",
+    // @llm-translated 2026-04-17
+    relay_filter_placeholder: "ex. order.*, user.signup",
+    // @llm-translated 2026-04-17
+    dead_letter_retry_exhausted_title: "Tentatives épuisées",
+    // @llm-translated 2026-04-17
+    dead_letter_discard_title: "Ignorer l'événement",
+    // @llm-translated 2026-04-17
+    dead_letter_retry_title: "Ré-essayer l'événement",
+    // @llm-translated 2026-04-17
+    replay_button_title: "Rejouer l'événement",
+    // @llm-translated 2026-04-17
+    interval_seconds_placeholder: "ex. 3600",
+    // @llm-translated 2026-04-17
+    cron_expression_placeholder: "ex. 0 9 * * 1-5",
+    // @llm-translated 2026-04-17
+    app_focus_window_placeholder: "ex. Visual Studio Code",
+    // @llm-translated 2026-04-17
+    app_focus_process_placeholder: "ex. code",
+    // @llm-translated 2026-04-17
+    field_optional: "(facultatif)",
+    // @llm-translated 2026-04-17
+    source_filter_input_placeholder: "ex. agent-id ou motif glob",
+    // @llm-translated 2026-04-17
+    meta_source: "Source",
+    // @llm-translated 2026-04-17
+    relay_last_event: "Dernier événement :",
+    // @llm-translated 2026-04-17
+    relay_delete_title: "Supprimer le relais",
+    // @llm-translated 2026-04-17
+    setup_guide_step1: "Créez un nouveau webhook entrant dans {platform}",
+    // @llm-translated 2026-04-17
+    clipboard_pattern_placeholder: "ex. montant total :",
+    // @llm-translated 2026-04-17
+    composite_event_type_placeholder: "ex. order.placed",
+    // @llm-translated 2026-04-17
+    composite_debounce_placeholder: "ex. 5000",
+    // @llm-translated 2026-04-17
+    file_watcher_path_placeholder: "ex. /chemin/vers/dossier",
+    // @llm-translated 2026-04-17
+    file_watcher_pattern_placeholder: "ex. *.json",
+    // @llm-translated 2026-04-17
+    polling_endpoint_placeholder: "ex. https://api.example.com/status",
+    // @llm-translated 2026-04-17
+    more_tools_title: "Plus d'outils",
+    // @llm-translated 2026-04-17
+    validate_and_fire_title: "Valider et déclencher",
+    // @llm-translated 2026-04-17
+    simulate_trigger_title: "Simuler le déclencheur",
   },
   teams: {
     title: "Équipes d'agents",
@@ -6233,6 +7895,30 @@ export const fr = {
       cred_imported: "{count} importé(s)",
       cred_skipped: ", {count} ignoré(s)",
       cred_replaced: ", {count} remplacé(s)",
+      // @llm-translated 2026-04-17
+      export_all: "Tout exporter",
+      // @llm-translated 2026-04-17
+      import_backup: "Importer une sauvegarde",
+      // @llm-translated 2026-04-17
+      exporting: "Export en cours...",
+      // @llm-translated 2026-04-17
+      importing: "Import en cours...",
+      // @llm-translated 2026-04-17
+      export_complete: "Export terminé",
+      // @llm-translated 2026-04-17
+      import_complete: "Import terminé",
+      // @llm-translated 2026-04-17
+      export_all: "Tout exporter",
+      // @llm-translated 2026-04-17
+      import_backup: "Importer une sauvegarde",
+      // @llm-translated 2026-04-17
+      exporting: "Export en cours...",
+      // @llm-translated 2026-04-17
+      importing: "Import en cours...",
+      // @llm-translated 2026-04-17
+      export_complete: "Export terminé",
+      // @llm-translated 2026-04-17
+      import_complete: "Import terminé",
     },
     config: {
       title: "Résolution de la configuration",
@@ -6265,6 +7951,24 @@ export const fr = {
       confirm_reset: "Confirmer la réinitialisation ?",
       rules_hint: "Les règles sont chargées depuis la base de données à chaque expédition. Les changements prennent effet immédiatement.",
     },
+    // @llm-translated 2026-04-17
+    settings_saved: "Paramètres enregistrés",
+    // @llm-translated 2026-04-17
+    account: "Compte",
+    // @llm-translated 2026-04-17
+    appearance: "Apparence",
+    // @llm-translated 2026-04-17
+    engine: "Moteur",
+    // @llm-translated 2026-04-17
+    byom: "BYOM",
+    // @llm-translated 2026-04-17
+    account: "Compte",
+    // @llm-translated 2026-04-17
+    appearance: "Apparence",
+    // @llm-translated 2026-04-17
+    engine: "Moteur",
+    // @llm-translated 2026-04-17
+    byom: "BYOM",
   },
   design: {
     no_persona: "Aucun agent sélectionné",
@@ -6280,6 +7984,8 @@ export const fr = {
       saving_label: "Enregistrement du résultat",
       saving_desc: "Écriture de la conception compilée dans la base de données",
     },
+    // @llm-translated 2026-04-17
+    conversation_truncated: "Conversation tronquée pour des raisons de performance",
   },
   prompt_lab: {
     title: "Versions du prompt",
@@ -6844,6 +8550,24 @@ export const fr = {
     overlap: "Chevauchement",
     week: "Semaine",
     month: "Mois",
+    // @llm-translated 2026-04-17
+    missed_since: "Manqué depuis {time}",
+    // @llm-translated 2026-04-17
+    every_interval: "Toutes les {interval}",
+    // @llm-translated 2026-04-17
+    mark_for_recovery: "Marquer pour récupération",
+    // @llm-translated 2026-04-17
+    run_once_now: "Exécuter une fois maintenant",
+    // @llm-translated 2026-04-17
+    skip_dont_recover: "Passer (ne pas récupérer)",
+    // @llm-translated 2026-04-17
+    overlaps_with: "Chevauchement avec {name}",
+    // @llm-translated 2026-04-17
+    refresh_schedules: "Actualiser les planifications",
+    // @llm-translated 2026-04-17
+    seed_mock_tooltip: "Générer des données de test",
+    // @llm-translated 2026-04-17
+    schedule_view_aria: "Vue des planifications",
   },
   recipes: {
     no_match: "Aucune recette correspondante",
@@ -6927,6 +8651,10 @@ export const fr = {
     loading_linked: "Chargement des recettes liées...",
     no_linked: "Aucune recette liée. Cliquez sur \\\"Ajouter\\\" pour lier des recettes depuis la bibliothèque.",
     run: "Exécuter",
+    // @llm-translated 2026-04-17
+    recipe_label: "Recette",
+    // @llm-translated 2026-04-17
+    executed_label: "Exécutée",
   },
   execution_status: {
     queued: "En file d'attente",
@@ -7113,6 +8841,174 @@ export const fr = {
       viewer_3d: "Visionneuse 3D",
       viewer_3d_hint: "Installez @react-three/fiber et @react-three/drei pour activer les aperçus 3D interactifs avec contrôles orbitaux.",
       tags_label: "Tags :",
+      // @llm-translated 2026-04-17
+      title: "Studio artistique",
+      // @llm-translated 2026-04-17
+      blender_tab: "Blender",
+      // @llm-translated 2026-04-17
+      gallery_tab: "Galerie",
+      // @llm-translated 2026-04-17
+      media_studio_tab: "Studio média",
+      // @llm-translated 2026-04-17
+      loading: "Chargement...",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      new_session: "Nouvelle session",
+      // @llm-translated 2026-04-17
+      session_name: "Nom de la session",
+      // @llm-translated 2026-04-17
+      session_placeholder: "Nom de la session créative...",
+      // @llm-translated 2026-04-17
+      save_session: "Enregistrer la session",
+      // @llm-translated 2026-04-17
+      delete_session: "Supprimer la session",
+      // @llm-translated 2026-04-17
+      sessions_label: "Sessions",
+      // @llm-translated 2026-04-17
+      no_sessions: "Aucune session pour l'instant",
+      // @llm-translated 2026-04-17
+      start_creating: "Commencez à créer",
+      // @llm-translated 2026-04-17
+      generate: "Générer",
+      // @llm-translated 2026-04-17
+      generating: "Génération...",
+      // @llm-translated 2026-04-17
+      prompt_placeholder: "Décrivez ce que vous souhaitez créer...",
+      // @llm-translated 2026-04-17
+      style_label: "Style",
+      // @llm-translated 2026-04-17
+      model_label: "Modèle",
+      // @llm-translated 2026-04-17
+      size_label: "Taille",
+      // @llm-translated 2026-04-17
+      quality_label: "Qualité",
+      // @llm-translated 2026-04-17
+      save_to_gallery: "Enregistrer dans la galerie",
+      // @llm-translated 2026-04-17
+      download: "Télécharger",
+      // @llm-translated 2026-04-17
+      copy_prompt: "Copier le prompt",
+      // @llm-translated 2026-04-17
+      prompt_copied: "Prompt copié",
+      // @llm-translated 2026-04-17
+      clear: "Effacer",
+      // @llm-translated 2026-04-17
+      history_label: "Historique",
+      // @llm-translated 2026-04-17
+      no_history: "Aucun historique pour l'instant",
+      // @llm-translated 2026-04-17
+      generation_failed: "Génération échouée",
+      // @llm-translated 2026-04-17
+      view_full: "Vue plein écran",
+      // @llm-translated 2026-04-17
+      close_preview: "Fermer l'aperçu",
+      // @llm-translated 2026-04-17
+      add_to_canvas: "Ajouter au canevas",
+      // @llm-translated 2026-04-17
+      canvas_label: "Canevas",
+      // @llm-translated 2026-04-17
+      clear_canvas: "Effacer le canevas",
+      // @llm-translated 2026-04-17
+      export_canvas: "Exporter le canevas",
+      // @llm-translated 2026-04-17
+      zoom_in: "Zoom avant",
+      // @llm-translated 2026-04-17
+      zoom_out: "Zoom arrière",
+      // @llm-translated 2026-04-17
+      fit_to_screen: "Ajuster à l'écran",
+      // @llm-translated 2026-04-17
+      grid_toggle: "Afficher/masquer la grille",
+      // @llm-translated 2026-04-17
+      snap_to_grid: "Aligner sur la grille",
+      // @llm-translated 2026-04-17
+      undo: "Annuler",
+      // @llm-translated 2026-04-17
+      redo: "Rétablir",
+      // @llm-translated 2026-04-17
+      title: "Studio artistique",
+      // @llm-translated 2026-04-17
+      blender_tab: "Blender",
+      // @llm-translated 2026-04-17
+      gallery_tab: "Galerie",
+      // @llm-translated 2026-04-17
+      media_studio_tab: "Studio média",
+      // @llm-translated 2026-04-17
+      loading: "Chargement...",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      new_session: "Nouvelle session",
+      // @llm-translated 2026-04-17
+      session_name: "Nom de la session",
+      // @llm-translated 2026-04-17
+      session_placeholder: "Nom de la session créative...",
+      // @llm-translated 2026-04-17
+      save_session: "Enregistrer la session",
+      // @llm-translated 2026-04-17
+      delete_session: "Supprimer la session",
+      // @llm-translated 2026-04-17
+      sessions_label: "Sessions",
+      // @llm-translated 2026-04-17
+      no_sessions: "Aucune session pour l'instant",
+      // @llm-translated 2026-04-17
+      start_creating: "Commencez à créer",
+      // @llm-translated 2026-04-17
+      generate: "Générer",
+      // @llm-translated 2026-04-17
+      generating: "Génération...",
+      // @llm-translated 2026-04-17
+      prompt_placeholder: "Décrivez ce que vous souhaitez créer...",
+      // @llm-translated 2026-04-17
+      style_label: "Style",
+      // @llm-translated 2026-04-17
+      model_label: "Modèle",
+      // @llm-translated 2026-04-17
+      size_label: "Taille",
+      // @llm-translated 2026-04-17
+      quality_label: "Qualité",
+      // @llm-translated 2026-04-17
+      save_to_gallery: "Enregistrer dans la galerie",
+      // @llm-translated 2026-04-17
+      download: "Télécharger",
+      // @llm-translated 2026-04-17
+      copy_prompt: "Copier le prompt",
+      // @llm-translated 2026-04-17
+      prompt_copied: "Prompt copié",
+      // @llm-translated 2026-04-17
+      clear: "Effacer",
+      // @llm-translated 2026-04-17
+      history_label: "Historique",
+      // @llm-translated 2026-04-17
+      no_history: "Aucun historique pour l'instant",
+      // @llm-translated 2026-04-17
+      generation_failed: "Génération échouée",
+      // @llm-translated 2026-04-17
+      view_full: "Vue plein écran",
+      // @llm-translated 2026-04-17
+      close_preview: "Fermer l'aperçu",
+      // @llm-translated 2026-04-17
+      add_to_canvas: "Ajouter au canevas",
+      // @llm-translated 2026-04-17
+      canvas_label: "Canevas",
+      // @llm-translated 2026-04-17
+      clear_canvas: "Effacer le canevas",
+      // @llm-translated 2026-04-17
+      export_canvas: "Exporter le canevas",
+      // @llm-translated 2026-04-17
+      zoom_in: "Zoom avant",
+      // @llm-translated 2026-04-17
+      zoom_out: "Zoom arrière",
+      // @llm-translated 2026-04-17
+      fit_to_screen: "Ajuster à l'écran",
+      // @llm-translated 2026-04-17
+      grid_toggle: "Afficher/masquer la grille",
+      // @llm-translated 2026-04-17
+      snap_to_grid: "Aligner sur la grille",
+      // @llm-translated 2026-04-17
+      undo: "Annuler",
+      // @llm-translated 2026-04-17
+      redo: "Rétablir",
     },
     dev_tools: {
       no_project_configured: "Aucun projet dev configuré",
@@ -7286,6 +9182,386 @@ export const fr = {
       add_condition: "+ Ajouter une condition",
       accept: "Accepter",
       reject: "Rejeter",
+      // @llm-translated 2026-04-17
+      title: "Dev Tools",
+      // @llm-translated 2026-04-17
+      projects_tab: "Projets",
+      // @llm-translated 2026-04-17
+      context_tab: "Contexte",
+      // @llm-translated 2026-04-17
+      scanner_tab: "Analyseur",
+      // @llm-translated 2026-04-17
+      runner_tab: "Exécuteur",
+      // @llm-translated 2026-04-17
+      lifecycle_tab: "Cycle de vie",
+      // @llm-translated 2026-04-17
+      triage_tab: "Tri",
+      // @llm-translated 2026-04-17
+      no_project_selected: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      select_project: "Sélectionner un projet",
+      // @llm-translated 2026-04-17
+      add_project: "Ajouter un projet",
+      // @llm-translated 2026-04-17
+      project_name: "Nom du projet",
+      // @llm-translated 2026-04-17
+      project_path: "Chemin du projet",
+      // @llm-translated 2026-04-17
+      browse_path: "Parcourir...",
+      // @llm-translated 2026-04-17
+      save_project: "Enregistrer le projet",
+      // @llm-translated 2026-04-17
+      delete_project: "Supprimer le projet",
+      // @llm-translated 2026-04-17
+      no_projects: "Aucun projet configuré",
+      // @llm-translated 2026-04-17
+      add_first_project: "Ajoutez votre premier projet de base de code",
+      // @llm-translated 2026-04-17
+      project_saved: "Projet enregistré",
+      // @llm-translated 2026-04-17
+      project_deleted: "Projet supprimé",
+      // @llm-translated 2026-04-17
+      loading_projects: "Chargement des projets...",
+      // @llm-translated 2026-04-17
+      project_name_placeholder: "ex. Mon application",
+      // @llm-translated 2026-04-17
+      project_path_placeholder: "/chemin/vers/votre/projet",
+      // @llm-translated 2026-04-17
+      invalid_path: "Chemin de répertoire invalide",
+      // @llm-translated 2026-04-17
+      path_required: "Le chemin est requis",
+      // @llm-translated 2026-04-17
+      name_required: "Le nom est requis",
+      // @llm-translated 2026-04-17
+      scan_codebase: "Analyser la base de code",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse en cours...",
+      // @llm-translated 2026-04-17
+      scan_complete: "Analyse terminée",
+      // @llm-translated 2026-04-17
+      scan_failed: "Analyse échouée",
+      // @llm-translated 2026-04-17
+      files_found: "{count} fichier(s) trouvé(s)",
+      // @llm-translated 2026-04-17
+      context_generated: "Contexte généré",
+      // @llm-translated 2026-04-17
+      copy_context: "Copier le contexte",
+      // @llm-translated 2026-04-17
+      context_copied: "Contexte copié",
+      // @llm-translated 2026-04-17
+      no_context: "Aucun contexte disponible",
+      // @llm-translated 2026-04-17
+      generate_context: "Générer le contexte",
+      // @llm-translated 2026-04-17
+      generating_context: "Génération du contexte...",
+      // @llm-translated 2026-04-17
+      context_size: "{size} caractères",
+      // @llm-translated 2026-04-17
+      files_scanned: "{count} fichier(s) analysé(s)",
+      // @llm-translated 2026-04-17
+      last_scanned: "Dernière analyse : {time}",
+      // @llm-translated 2026-04-17
+      rescan: "Ré-analyser",
+      // @llm-translated 2026-04-17
+      exclude_patterns: "Patterns d'exclusion",
+      // @llm-translated 2026-04-17
+      add_exclude_pattern: "Ajouter un pattern d'exclusion",
+      // @llm-translated 2026-04-17
+      exclude_placeholder: "ex. node_modules, *.log",
+      // @llm-translated 2026-04-17
+      include_patterns: "Patterns d'inclusion",
+      // @llm-translated 2026-04-17
+      max_file_size: "Taille max. de fichier",
+      // @llm-translated 2026-04-17
+      max_depth: "Profondeur max.",
+      // @llm-translated 2026-04-17
+      settings_saved: "Paramètres enregistrés",
+      // @llm-translated 2026-04-17
+      run_command: "Exécuter la commande",
+      // @llm-translated 2026-04-17
+      command_placeholder: "Entrez une commande...",
+      // @llm-translated 2026-04-17
+      command_output: "Sortie de la commande",
+      // @llm-translated 2026-04-17
+      clear_output: "Effacer la sortie",
+      // @llm-translated 2026-04-17
+      running_command: "Exécution de la commande...",
+      // @llm-translated 2026-04-17
+      command_failed: "Commande échouée",
+      // @llm-translated 2026-04-17
+      exit_code: "Code de sortie : {code}",
+      // @llm-translated 2026-04-17
+      connected_agents: "Agents connectés",
+      // @llm-translated 2026-04-17
+      no_connected_agents: "Aucun agent connecté",
+      // @llm-translated 2026-04-17
+      connect_agent: "Connecter un agent",
+      // @llm-translated 2026-04-17
+      disconnect_agent: "Déconnecter l'agent",
+      // @llm-translated 2026-04-17
+      agent_connected: "Agent connecté",
+      // @llm-translated 2026-04-17
+      agent_disconnected: "Agent déconnecté",
+      // @llm-translated 2026-04-17
+      workspace_label: "Espace de travail",
+      // @llm-translated 2026-04-17
+      branch_label: "Branche",
+      // @llm-translated 2026-04-17
+      commit_label: "Commit",
+      // @llm-translated 2026-04-17
+      language_label: "Langage",
+      // @llm-translated 2026-04-17
+      framework_label: "Framework",
+      // @llm-translated 2026-04-17
+      dependencies_count: "{count} dépendance(s)",
+      // @llm-translated 2026-04-17
+      open_in_ide: "Ouvrir dans l'IDE",
+      // @llm-translated 2026-04-17
+      copy_path: "Copier le chemin",
+      // @llm-translated 2026-04-17
+      path_copied: "Chemin copié",
+      // @llm-translated 2026-04-17
+      project_settings: "Paramètres du projet",
+      // @llm-translated 2026-04-17
+      edit_project: "Modifier le projet",
+      // @llm-translated 2026-04-17
+      confirm_delete: "Supprimer ce projet ?",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      confirm: "Confirmer",
+      // @llm-translated 2026-04-17
+      file_tree: "Arborescence",
+      // @llm-translated 2026-04-17
+      search_files: "Rechercher des fichiers...",
+      // @llm-translated 2026-04-17
+      no_files: "Aucun fichier trouvé",
+      // @llm-translated 2026-04-17
+      loading_tree: "Chargement de l'arborescence...",
+      // @llm-translated 2026-04-17
+      collapse_all: "Tout réduire",
+      // @llm-translated 2026-04-17
+      expand_all: "Tout développer",
+      // @llm-translated 2026-04-17
+      file_count: "{count} fichier(s)",
+      // @llm-translated 2026-04-17
+      directory_count: "{count} dossier(s)",
+      // @llm-translated 2026-04-17
+      total_size: "Taille totale : {size}",
+      // @llm-translated 2026-04-17
+      attach_to_agent: "Joindre à l'agent",
+      // @llm-translated 2026-04-17
+      detach_from_agent: "Détacher de l'agent",
+      // @llm-translated 2026-04-17
+      context_attached: "Contexte joint à l'agent",
+      // @llm-translated 2026-04-17
+      context_detached: "Contexte détaché de l'agent",
+      // @llm-translated 2026-04-17
+      view_context: "Voir le contexte",
+      // @llm-translated 2026-04-17
+      edit_context: "Modifier le contexte",
+      // @llm-translated 2026-04-17
+      save_context: "Enregistrer le contexte",
+      // @llm-translated 2026-04-17
+      context_saved: "Contexte enregistré",
+      // @llm-translated 2026-04-17
+      context_placeholder: "Contexte de la base de code pour votre agent...",
+      // @llm-translated 2026-04-17
+      auto_refresh: "Actualisation auto.",
+      // @llm-translated 2026-04-17
+      manual_refresh: "Actualisation manuelle",
+      // @llm-translated 2026-04-17
+      refresh_interval: "Intervalle d'actualisation",
+      // @llm-translated 2026-04-17
+      title: "Dev Tools",
+      // @llm-translated 2026-04-17
+      projects_tab: "Projets",
+      // @llm-translated 2026-04-17
+      context_tab: "Contexte",
+      // @llm-translated 2026-04-17
+      scanner_tab: "Analyseur",
+      // @llm-translated 2026-04-17
+      runner_tab: "Exécuteur",
+      // @llm-translated 2026-04-17
+      lifecycle_tab: "Cycle de vie",
+      // @llm-translated 2026-04-17
+      triage_tab: "Tri",
+      // @llm-translated 2026-04-17
+      no_project_selected: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      select_project: "Sélectionner un projet",
+      // @llm-translated 2026-04-17
+      add_project: "Ajouter un projet",
+      // @llm-translated 2026-04-17
+      project_name: "Nom du projet",
+      // @llm-translated 2026-04-17
+      project_path: "Chemin du projet",
+      // @llm-translated 2026-04-17
+      browse_path: "Parcourir...",
+      // @llm-translated 2026-04-17
+      save_project: "Enregistrer le projet",
+      // @llm-translated 2026-04-17
+      delete_project: "Supprimer le projet",
+      // @llm-translated 2026-04-17
+      no_projects: "Aucun projet configuré",
+      // @llm-translated 2026-04-17
+      add_first_project: "Ajoutez votre premier projet de base de code",
+      // @llm-translated 2026-04-17
+      project_saved: "Projet enregistré",
+      // @llm-translated 2026-04-17
+      project_deleted: "Projet supprimé",
+      // @llm-translated 2026-04-17
+      loading_projects: "Chargement des projets...",
+      // @llm-translated 2026-04-17
+      project_name_placeholder: "ex. Mon application",
+      // @llm-translated 2026-04-17
+      project_path_placeholder: "/chemin/vers/votre/projet",
+      // @llm-translated 2026-04-17
+      invalid_path: "Chemin de répertoire invalide",
+      // @llm-translated 2026-04-17
+      path_required: "Le chemin est requis",
+      // @llm-translated 2026-04-17
+      name_required: "Le nom est requis",
+      // @llm-translated 2026-04-17
+      scan_codebase: "Analyser la base de code",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse en cours...",
+      // @llm-translated 2026-04-17
+      scan_complete: "Analyse terminée",
+      // @llm-translated 2026-04-17
+      scan_failed: "Analyse échouée",
+      // @llm-translated 2026-04-17
+      files_found: "{count} fichier(s) trouvé(s)",
+      // @llm-translated 2026-04-17
+      context_generated: "Contexte généré",
+      // @llm-translated 2026-04-17
+      copy_context: "Copier le contexte",
+      // @llm-translated 2026-04-17
+      context_copied: "Contexte copié",
+      // @llm-translated 2026-04-17
+      no_context: "Aucun contexte disponible",
+      // @llm-translated 2026-04-17
+      generate_context: "Générer le contexte",
+      // @llm-translated 2026-04-17
+      generating_context: "Génération du contexte...",
+      // @llm-translated 2026-04-17
+      context_size: "{size} caractères",
+      // @llm-translated 2026-04-17
+      files_scanned: "{count} fichier(s) analysé(s)",
+      // @llm-translated 2026-04-17
+      last_scanned: "Dernière analyse : {time}",
+      // @llm-translated 2026-04-17
+      rescan: "Ré-analyser",
+      // @llm-translated 2026-04-17
+      exclude_patterns: "Patterns d'exclusion",
+      // @llm-translated 2026-04-17
+      add_exclude_pattern: "Ajouter un pattern d'exclusion",
+      // @llm-translated 2026-04-17
+      exclude_placeholder: "ex. node_modules, *.log",
+      // @llm-translated 2026-04-17
+      include_patterns: "Patterns d'inclusion",
+      // @llm-translated 2026-04-17
+      max_file_size: "Taille max. de fichier",
+      // @llm-translated 2026-04-17
+      max_depth: "Profondeur max.",
+      // @llm-translated 2026-04-17
+      settings_saved: "Paramètres enregistrés",
+      // @llm-translated 2026-04-17
+      run_command: "Exécuter la commande",
+      // @llm-translated 2026-04-17
+      command_placeholder: "Entrez une commande...",
+      // @llm-translated 2026-04-17
+      command_output: "Sortie de la commande",
+      // @llm-translated 2026-04-17
+      clear_output: "Effacer la sortie",
+      // @llm-translated 2026-04-17
+      running_command: "Exécution de la commande...",
+      // @llm-translated 2026-04-17
+      command_failed: "Commande échouée",
+      // @llm-translated 2026-04-17
+      exit_code: "Code de sortie : {code}",
+      // @llm-translated 2026-04-17
+      connected_agents: "Agents connectés",
+      // @llm-translated 2026-04-17
+      no_connected_agents: "Aucun agent connecté",
+      // @llm-translated 2026-04-17
+      connect_agent: "Connecter un agent",
+      // @llm-translated 2026-04-17
+      disconnect_agent: "Déconnecter l'agent",
+      // @llm-translated 2026-04-17
+      agent_connected: "Agent connecté",
+      // @llm-translated 2026-04-17
+      agent_disconnected: "Agent déconnecté",
+      // @llm-translated 2026-04-17
+      workspace_label: "Espace de travail",
+      // @llm-translated 2026-04-17
+      branch_label: "Branche",
+      // @llm-translated 2026-04-17
+      commit_label: "Commit",
+      // @llm-translated 2026-04-17
+      language_label: "Langage",
+      // @llm-translated 2026-04-17
+      framework_label: "Framework",
+      // @llm-translated 2026-04-17
+      dependencies_count: "{count} dépendance(s)",
+      // @llm-translated 2026-04-17
+      open_in_ide: "Ouvrir dans l'IDE",
+      // @llm-translated 2026-04-17
+      copy_path: "Copier le chemin",
+      // @llm-translated 2026-04-17
+      path_copied: "Chemin copié",
+      // @llm-translated 2026-04-17
+      project_settings: "Paramètres du projet",
+      // @llm-translated 2026-04-17
+      edit_project: "Modifier le projet",
+      // @llm-translated 2026-04-17
+      confirm_delete: "Supprimer ce projet ?",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      confirm: "Confirmer",
+      // @llm-translated 2026-04-17
+      file_tree: "Arborescence",
+      // @llm-translated 2026-04-17
+      search_files: "Rechercher des fichiers...",
+      // @llm-translated 2026-04-17
+      no_files: "Aucun fichier trouvé",
+      // @llm-translated 2026-04-17
+      loading_tree: "Chargement de l'arborescence...",
+      // @llm-translated 2026-04-17
+      collapse_all: "Tout réduire",
+      // @llm-translated 2026-04-17
+      expand_all: "Tout développer",
+      // @llm-translated 2026-04-17
+      file_count: "{count} fichier(s)",
+      // @llm-translated 2026-04-17
+      directory_count: "{count} dossier(s)",
+      // @llm-translated 2026-04-17
+      total_size: "Taille totale : {size}",
+      // @llm-translated 2026-04-17
+      attach_to_agent: "Joindre à l'agent",
+      // @llm-translated 2026-04-17
+      detach_from_agent: "Détacher de l'agent",
+      // @llm-translated 2026-04-17
+      context_attached: "Contexte joint à l'agent",
+      // @llm-translated 2026-04-17
+      context_detached: "Contexte détaché de l'agent",
+      // @llm-translated 2026-04-17
+      view_context: "Voir le contexte",
+      // @llm-translated 2026-04-17
+      edit_context: "Modifier le contexte",
+      // @llm-translated 2026-04-17
+      save_context: "Enregistrer le contexte",
+      // @llm-translated 2026-04-17
+      context_saved: "Contexte enregistré",
+      // @llm-translated 2026-04-17
+      context_placeholder: "Contexte de la base de code pour votre agent...",
+      // @llm-translated 2026-04-17
+      auto_refresh: "Actualisation auto.",
+      // @llm-translated 2026-04-17
+      manual_refresh: "Actualisation manuelle",
+      // @llm-translated 2026-04-17
+      refresh_interval: "Intervalle d'actualisation",
     },
     doc_signing: {
       title: "Signature de documents",
@@ -7430,6 +9706,609 @@ export const fr = {
       no_results: "Aucun résultat OCR",
       no_results_hint: "Extrayez du texte depuis un document pour le voir ici.",
     },
+    // @llm-translated 2026-04-17
+    obsidian_brain: "Cerveau Obsidian",
+    // @llm-translated 2026-04-17
+    drive_label: "Google Drive",
+    // @llm-translated 2026-04-17
+    drive_desc: "Accédez à vos fichiers Google Drive depuis vos agents",
+    // @llm-translated 2026-04-17
+    obsidian_brain: "Cerveau Obsidian",
+    // @llm-translated 2026-04-17
+    artist_gallery: {
+      // @llm-translated 2026-04-17
+      all_assets: "Toutes les ressources",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher des ressources...",
+      // @llm-translated 2026-04-17
+      no_assets: "Aucune ressource pour l'instant",
+      // @llm-translated 2026-04-17
+      upload: "Téléverser",
+      // @llm-translated 2026-04-17
+      filter_type: "Filtrer par type",
+      // @llm-translated 2026-04-17
+      sort_label: "Trier",
+      // @llm-translated 2026-04-17
+      delete_asset: "Supprimer la ressource",
+      // @llm-translated 2026-04-17
+      asset_details: "Détails de la ressource",
+      // @llm-translated 2026-04-17
+      copy_url: "Copier l'URL",
+      // @llm-translated 2026-04-17
+      url_copied: "URL copiée",
+      // @llm-translated 2026-04-17
+      tags_label: "Tags",
+      // @llm-translated 2026-04-17
+      add_tag: "Ajouter un tag",
+    },
+    // @llm-translated 2026-04-17
+    artist_media_studio: {
+      // @llm-translated 2026-04-17
+      new_composition: "Nouvelle composition",
+      // @llm-translated 2026-04-17
+      save_composition: "Enregistrer la composition",
+      // @llm-translated 2026-04-17
+      export_composition: "Exporter la composition",
+      // @llm-translated 2026-04-17
+      composition_name: "Nom de la composition",
+      // @llm-translated 2026-04-17
+      no_compositions: "Aucune composition pour l'instant",
+    },
+    // @llm-translated 2026-04-17
+    dev_context: {
+      // @llm-translated 2026-04-17
+      title: "Contexte",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      loading: "Chargement du contexte...",
+      // @llm-translated 2026-04-17
+      generate: "Générer le contexte",
+      // @llm-translated 2026-04-17
+      generating: "Génération...",
+      // @llm-translated 2026-04-17
+      copy: "Copier",
+      // @llm-translated 2026-04-17
+      copied: "Copié",
+      // @llm-translated 2026-04-17
+      size_label: "Taille : {size}",
+      // @llm-translated 2026-04-17
+      files_label: "Fichiers : {count}",
+      // @llm-translated 2026-04-17
+      last_generated: "Généré {time}",
+      // @llm-translated 2026-04-17
+      regenerate: "Régénérer",
+      // @llm-translated 2026-04-17
+      attach_to_agent: "Joindre à l'agent",
+    },
+    // @llm-translated 2026-04-17
+    dev_lifecycle: {
+      // @llm-translated 2026-04-17
+      title: "Cycle de vie",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      pipeline_label: "Pipeline",
+      // @llm-translated 2026-04-17
+      stage_label: "Étape",
+      // @llm-translated 2026-04-17
+      run_pipeline: "Exécuter le pipeline",
+      // @llm-translated 2026-04-17
+      running: "En cours...",
+      // @llm-translated 2026-04-17
+      pipeline_complete: "Pipeline terminé",
+      // @llm-translated 2026-04-17
+      pipeline_failed: "Échec du pipeline",
+      // @llm-translated 2026-04-17
+      stage_passed: "Étape réussie",
+      // @llm-translated 2026-04-17
+      stage_failed: "Étape échouée",
+      // @llm-translated 2026-04-17
+      stage_skipped: "Étape ignorée",
+      // @llm-translated 2026-04-17
+      no_pipelines: "Aucun pipeline configuré",
+      // @llm-translated 2026-04-17
+      add_pipeline: "Ajouter un pipeline",
+      // @llm-translated 2026-04-17
+      pipeline_name: "Nom du pipeline",
+      // @llm-translated 2026-04-17
+      pipeline_stages: "Étapes",
+      // @llm-translated 2026-04-17
+      add_stage: "Ajouter une étape",
+      // @llm-translated 2026-04-17
+      stage_name: "Nom de l'étape",
+      // @llm-translated 2026-04-17
+      stage_command: "Commande",
+      // @llm-translated 2026-04-17
+      stage_required: "Requise",
+      // @llm-translated 2026-04-17
+      delete_stage: "Supprimer l'étape",
+      // @llm-translated 2026-04-17
+      save_pipeline: "Enregistrer le pipeline",
+      // @llm-translated 2026-04-17
+      delete_pipeline: "Supprimer le pipeline",
+      // @llm-translated 2026-04-17
+      confirm_delete: "Supprimer ce pipeline ?",
+      // @llm-translated 2026-04-17
+      history_label: "Historique",
+      // @llm-translated 2026-04-17
+      no_history: "Aucun historique disponible",
+      // @llm-translated 2026-04-17
+      duration_label: "Durée : {duration}",
+      // @llm-translated 2026-04-17
+      triggered_by: "Déclenché par : {trigger}",
+      // @llm-translated 2026-04-17
+      view_logs: "Voir les journaux",
+      // @llm-translated 2026-04-17
+      rerun: "Ré-exécuter",
+      // @llm-translated 2026-04-17
+      status_label: "Statut",
+      // @llm-translated 2026-04-17
+      trigger_on_push: "Déclencher au push",
+      // @llm-translated 2026-04-17
+      trigger_on_pr: "Déclencher sur PR",
+      // @llm-translated 2026-04-17
+      trigger_manual: "Manuel uniquement",
+      // @llm-translated 2026-04-17
+      environment_label: "Environnement",
+      // @llm-translated 2026-04-17
+      production: "Production",
+      // @llm-translated 2026-04-17
+      staging: "Staging",
+      // @llm-translated 2026-04-17
+      development: "Développement",
+      // @llm-translated 2026-04-17
+      notifications_label: "Notifications",
+      // @llm-translated 2026-04-17
+      notify_on_failure: "Notifier en cas d'échec",
+      // @llm-translated 2026-04-17
+      notify_on_success: "Notifier en cas de succès",
+    },
+    // @llm-translated 2026-04-17
+    dev_projects: {
+      // @llm-translated 2026-04-17
+      title: "Projets",
+      // @llm-translated 2026-04-17
+      add_project: "Ajouter un projet",
+      // @llm-translated 2026-04-17
+      no_projects: "Aucun projet pour l'instant",
+      // @llm-translated 2026-04-17
+      project_name: "Nom du projet",
+      // @llm-translated 2026-04-17
+      project_path: "Chemin",
+      // @llm-translated 2026-04-17
+      save: "Enregistrer",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      delete: "Supprimer",
+      // @llm-translated 2026-04-17
+      edit: "Modifier",
+      // @llm-translated 2026-04-17
+      confirm_delete: "Supprimer ce projet ?",
+      // @llm-translated 2026-04-17
+      name_placeholder: "ex. Backend API",
+      // @llm-translated 2026-04-17
+      path_placeholder: "/chemin/vers/le/projet",
+      // @llm-translated 2026-04-17
+      browse: "Parcourir",
+      // @llm-translated 2026-04-17
+      last_scanned: "Dernière analyse : {time}",
+      // @llm-translated 2026-04-17
+      never_scanned: "Jamais analysé",
+      // @llm-translated 2026-04-17
+      scan_now: "Analyser maintenant",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse...",
+      // @llm-translated 2026-04-17
+      files_count: "{count} fichier(s)",
+      // @llm-translated 2026-04-17
+      open_folder: "Ouvrir le dossier",
+      // @llm-translated 2026-04-17
+      copy_path: "Copier le chemin",
+      // @llm-translated 2026-04-17
+      connected_agents_count: "{count} agent(s) connecté(s)",
+      // @llm-translated 2026-04-17
+      no_connected_agents: "Aucun agent connecté",
+      // @llm-translated 2026-04-17
+      project_settings: "Paramètres",
+      // @llm-translated 2026-04-17
+      branch: "Branche : {branch}",
+      // @llm-translated 2026-04-17
+      language_detected: "Langage : {lang}",
+      // @llm-translated 2026-04-17
+      framework_detected: "Framework : {fw}",
+      // @llm-translated 2026-04-17
+      type_label: "Type",
+      // @llm-translated 2026-04-17
+      description_label: "Description",
+      // @llm-translated 2026-04-17
+      description_placeholder: "Description courte du projet...",
+      // @llm-translated 2026-04-17
+      tags_label: "Tags",
+      // @llm-translated 2026-04-17
+      add_tag: "Ajouter un tag",
+      // @llm-translated 2026-04-17
+      tag_placeholder: "ex. backend, api, python",
+      // @llm-translated 2026-04-17
+      auto_scan_label: "Analyse automatique",
+      // @llm-translated 2026-04-17
+      auto_scan_hint: "Ré-analyser automatiquement lors des changements de fichiers",
+      // @llm-translated 2026-04-17
+      exclude_patterns_label: "Patterns d'exclusion",
+      // @llm-translated 2026-04-17
+      add_pattern: "Ajouter un pattern",
+      // @llm-translated 2026-04-17
+      pattern_placeholder: "ex. node_modules/**",
+      // @llm-translated 2026-04-17
+      max_depth_label: "Profondeur maximale",
+      // @llm-translated 2026-04-17
+      max_file_size_label: "Taille max. de fichier",
+      // @llm-translated 2026-04-17
+      save_settings: "Enregistrer les paramètres",
+    },
+    // @llm-translated 2026-04-17
+    dev_runner: {
+      // @llm-translated 2026-04-17
+      title: "Exécuteur",
+      // @llm-translated 2026-04-17
+      run: "Exécuter",
+      // @llm-translated 2026-04-17
+      running: "En cours...",
+      // @llm-translated 2026-04-17
+      stop: "Arrêter",
+      // @llm-translated 2026-04-17
+      clear: "Effacer",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      command_placeholder: "Entrez une commande à exécuter...",
+      // @llm-translated 2026-04-17
+      output_label: "Sortie",
+      // @llm-translated 2026-04-17
+      no_output: "Aucune sortie pour l'instant",
+      // @llm-translated 2026-04-17
+      exit_code: "Code de sortie : {code}",
+      // @llm-translated 2026-04-17
+      duration: "Durée : {duration}",
+      // @llm-translated 2026-04-17
+      saved_commands: "Commandes enregistrées",
+      // @llm-translated 2026-04-17
+      save_command: "Enregistrer la commande",
+      // @llm-translated 2026-04-17
+      command_name_placeholder: "Nom de la commande...",
+      // @llm-translated 2026-04-17
+      delete_command: "Supprimer",
+      // @llm-translated 2026-04-17
+      no_saved_commands: "Aucune commande enregistrée",
+      // @llm-translated 2026-04-17
+      environment_label: "Variables d'environnement",
+      // @llm-translated 2026-04-17
+      add_env_var: "Ajouter une variable",
+      // @llm-translated 2026-04-17
+      working_dir_label: "Répertoire de travail",
+      // @llm-translated 2026-04-17
+      shell_label: "Shell",
+      // @llm-translated 2026-04-17
+      timeout_label: "Délai d'expiration (s)",
+    },
+    // @llm-translated 2026-04-17
+    dev_scanner: {
+      // @llm-translated 2026-04-17
+      title: "Analyseur de code",
+      // @llm-translated 2026-04-17
+      scan: "Analyser",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse en cours...",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      results_title: "Résultats de l'analyse",
+      // @llm-translated 2026-04-17
+      no_issues: "Aucun problème trouvé",
+      // @llm-translated 2026-04-17
+      issues_count: "{count} problème(s) trouvé(s)",
+      // @llm-translated 2026-04-17
+      severity_error: "Erreur",
+      // @llm-translated 2026-04-17
+      severity_warning: "Avertissement",
+      // @llm-translated 2026-04-17
+      severity_info: "Info",
+      // @llm-translated 2026-04-17
+      file_label: "Fichier",
+      // @llm-translated 2026-04-17
+      line_label: "Ligne",
+      // @llm-translated 2026-04-17
+      message_label: "Message",
+      // @llm-translated 2026-04-17
+      fix_with_ai: "Corriger avec l'IA",
+      // @llm-translated 2026-04-17
+      view_file: "Voir le fichier",
+      // @llm-translated 2026-04-17
+      filter_severity: "Filtrer par sévérité",
+      // @llm-translated 2026-04-17
+      filter_file: "Filtrer par fichier",
+      // @llm-translated 2026-04-17
+      last_scan: "Dernière analyse : {time}",
+    },
+    // @llm-translated 2026-04-17
+    dev_triage: {
+      // @llm-translated 2026-04-17
+      title: "Tri",
+      // @llm-translated 2026-04-17
+      no_project: "Aucun projet sélectionné",
+      // @llm-translated 2026-04-17
+      scan_issues: "Analyser les problèmes",
+      // @llm-translated 2026-04-17
+      scanning: "Analyse en cours...",
+      // @llm-translated 2026-04-17
+      no_issues: "Aucun problème trouvé",
+      // @llm-translated 2026-04-17
+      issues_count: "{count} problème(s)",
+      // @llm-translated 2026-04-17
+      priority_high: "Haute",
+      // @llm-translated 2026-04-17
+      priority_medium: "Moyenne",
+      // @llm-translated 2026-04-17
+      priority_low: "Faible",
+    },
+    // @llm-translated 2026-04-17
+    drive: {
+      // @llm-translated 2026-04-17
+      title: "Drive",
+      // @llm-translated 2026-04-17
+      connect: "Connecter Google Drive",
+      // @llm-translated 2026-04-17
+      connected_as: "Connecté en tant que {email}",
+      // @llm-translated 2026-04-17
+      disconnect: "Déconnecter",
+      // @llm-translated 2026-04-17
+      browse: "Parcourir les fichiers",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher dans Drive...",
+      // @llm-translated 2026-04-17
+      loading: "Chargement...",
+      // @llm-translated 2026-04-17
+      no_files: "Aucun fichier trouvé",
+      // @llm-translated 2026-04-17
+      upload: "Téléverser",
+      // @llm-translated 2026-04-17
+      create_folder: "Créer un dossier",
+      // @llm-translated 2026-04-17
+      folder_name_placeholder: "Nom du dossier...",
+      // @llm-translated 2026-04-17
+      download: "Télécharger",
+      // @llm-translated 2026-04-17
+      delete: "Supprimer",
+      // @llm-translated 2026-04-17
+      rename: "Renommer",
+      // @llm-translated 2026-04-17
+      share: "Partager",
+      // @llm-translated 2026-04-17
+      copy_link: "Copier le lien",
+      // @llm-translated 2026-04-17
+      link_copied: "Lien copié",
+      // @llm-translated 2026-04-17
+      file_size: "Taille : {size}",
+      // @llm-translated 2026-04-17
+      modified_at: "Modifié : {time}",
+      // @llm-translated 2026-04-17
+      owner: "Propriétaire : {owner}",
+      // @llm-translated 2026-04-17
+      type_label: "Type",
+      // @llm-translated 2026-04-17
+      select_file: "Sélectionner ce fichier",
+      // @llm-translated 2026-04-17
+      selected_files: "{count} fichier(s) sélectionné(s)",
+      // @llm-translated 2026-04-17
+      attach_to_agent: "Joindre à l'agent",
+      // @llm-translated 2026-04-17
+      files_attached: "Fichiers joints à l'agent",
+      // @llm-translated 2026-04-17
+      root_label: "Mon Drive",
+      // @llm-translated 2026-04-17
+      shared_label: "Partagé avec moi",
+      // @llm-translated 2026-04-17
+      recent_label: "Récents",
+      // @llm-translated 2026-04-17
+      starred_label: "Suivis",
+      // @llm-translated 2026-04-17
+      trash_label: "Corbeille",
+      // @llm-translated 2026-04-17
+      quota_used: "{used} utilisé(s) sur {total}",
+      // @llm-translated 2026-04-17
+      sync_status: "Statut de synchronisation",
+      // @llm-translated 2026-04-17
+      last_sync: "Dernière sync. : {time}",
+      // @llm-translated 2026-04-17
+      sync_now: "Synchroniser maintenant",
+      // @llm-translated 2026-04-17
+      syncing: "Synchronisation...",
+      // @llm-translated 2026-04-17
+      sort_by_name: "Trier par nom",
+      // @llm-translated 2026-04-17
+      sort_by_date: "Trier par date",
+      // @llm-translated 2026-04-17
+      sort_by_size: "Trier par taille",
+      // @llm-translated 2026-04-17
+      view_list: "Vue liste",
+      // @llm-translated 2026-04-17
+      view_grid: "Vue grille",
+      // @llm-translated 2026-04-17
+      filter_type: "Filtrer par type",
+      // @llm-translated 2026-04-17
+      all_types: "Tous les types",
+      // @llm-translated 2026-04-17
+      documents: "Documents",
+      // @llm-translated 2026-04-17
+      spreadsheets: "Tableurs",
+      // @llm-translated 2026-04-17
+      presentations: "Présentations",
+      // @llm-translated 2026-04-17
+      images: "Images",
+      // @llm-translated 2026-04-17
+      videos: "Vidéos",
+      // @llm-translated 2026-04-17
+      audio: "Audio",
+      // @llm-translated 2026-04-17
+      pdfs: "PDF",
+      // @llm-translated 2026-04-17
+      folders: "Dossiers",
+      // @llm-translated 2026-04-17
+      upload_progress: "Téléversement : {percent}%",
+      // @llm-translated 2026-04-17
+      upload_complete: "Téléversement terminé",
+      // @llm-translated 2026-04-17
+      upload_failed: "Échec du téléversement",
+      // @llm-translated 2026-04-17
+      delete_confirm: "Supprimer ce fichier ?",
+      // @llm-translated 2026-04-17
+      move_to_trash: "Déplacer vers la corbeille",
+      // @llm-translated 2026-04-17
+      restore: "Restaurer",
+      // @llm-translated 2026-04-17
+      permanent_delete: "Supprimer définitivement",
+      // @llm-translated 2026-04-17
+      preview: "Aperçu",
+      // @llm-translated 2026-04-17
+      open_in_drive: "Ouvrir dans Drive",
+      // @llm-translated 2026-04-17
+      not_connected: "Drive non connecté",
+      // @llm-translated 2026-04-17
+      connect_hint: "Connectez Google Drive pour accéder à vos fichiers depuis vos agents",
+    },
+    // @llm-translated 2026-04-17
+    obsidian: {
+      // @llm-translated 2026-04-17
+      title: "Obsidian",
+      // @llm-translated 2026-04-17
+      connect_vault: "Connecter le coffre Obsidian",
+      // @llm-translated 2026-04-17
+      vault_path: "Chemin du coffre",
+      // @llm-translated 2026-04-17
+      browse_vault: "Parcourir...",
+      // @llm-translated 2026-04-17
+      connected_vault: "Coffre connecté : {path}",
+      // @llm-translated 2026-04-17
+      disconnect: "Déconnecter",
+      // @llm-translated 2026-04-17
+      search_notes: "Rechercher des notes...",
+      // @llm-translated 2026-04-17
+      loading: "Chargement...",
+      // @llm-translated 2026-04-17
+      no_notes: "Aucune note trouvée",
+      // @llm-translated 2026-04-17
+      notes_count: "{count} note(s)",
+      // @llm-translated 2026-04-17
+      attach_note: "Joindre la note",
+      // @llm-translated 2026-04-17
+      open_note: "Ouvrir dans Obsidian",
+      // @llm-translated 2026-04-17
+      view_note: "Voir la note",
+      // @llm-translated 2026-04-17
+      note_title: "Titre",
+      // @llm-translated 2026-04-17
+      note_tags: "Tags",
+      // @llm-translated 2026-04-17
+      note_modified: "Modifié : {time}",
+      // @llm-translated 2026-04-17
+      note_size: "Taille : {size}",
+      // @llm-translated 2026-04-17
+      filter_tag: "Filtrer par tag",
+      // @llm-translated 2026-04-17
+      all_tags: "Tous les tags",
+      // @llm-translated 2026-04-17
+      filter_folder: "Filtrer par dossier",
+      // @llm-translated 2026-04-17
+      all_folders: "Tous les dossiers",
+      // @llm-translated 2026-04-17
+      sort_by_name: "Trier par nom",
+      // @llm-translated 2026-04-17
+      sort_by_date: "Trier par date",
+      // @llm-translated 2026-04-17
+      sync_vault: "Synchroniser le coffre",
+      // @llm-translated 2026-04-17
+      syncing: "Synchronisation...",
+      // @llm-translated 2026-04-17
+      last_sync: "Dernière sync. : {time}",
+      // @llm-translated 2026-04-17
+      never_synced: "Jamais synchronisé",
+      // @llm-translated 2026-04-17
+      vault_not_found: "Coffre introuvable au chemin indiqué",
+      // @llm-translated 2026-04-17
+      select_notes: "Sélectionner les notes",
+      // @llm-translated 2026-04-17
+      selected_count: "{count} sélectionnée(s)",
+      // @llm-translated 2026-04-17
+      attach_selected: "Joindre les sélectionnées",
+      // @llm-translated 2026-04-17
+      notes_attached: "Notes jointes à l'agent",
+      // @llm-translated 2026-04-17
+      graph_view: "Vue graphe",
+      // @llm-translated 2026-04-17
+      list_view: "Vue liste",
+      // @llm-translated 2026-04-17
+      no_vault_connected: "Aucun coffre Obsidian connecté",
+      // @llm-translated 2026-04-17
+      connect_hint: "Connectez votre coffre Obsidian pour accéder à vos notes depuis vos agents",
+      // @llm-translated 2026-04-17
+      invalid_path: "Chemin de coffre invalide",
+      // @llm-translated 2026-04-17
+      path_required: "Le chemin du coffre est requis",
+      // @llm-translated 2026-04-17
+      save: "Enregistrer",
+      // @llm-translated 2026-04-17
+      cancel: "Annuler",
+      // @llm-translated 2026-04-17
+      recent_notes: "Notes récentes",
+      // @llm-translated 2026-04-17
+      pinned_notes: "Notes épinglées",
+      // @llm-translated 2026-04-17
+      pin_note: "Épingler la note",
+      // @llm-translated 2026-04-17
+      unpin_note: "Désépingler la note",
+      // @llm-translated 2026-04-17
+      copy_link: "Copier le lien",
+      // @llm-translated 2026-04-17
+      link_copied: "Lien copié",
+      // @llm-translated 2026-04-17
+      preview_note: "Aperçu de la note",
+      // @llm-translated 2026-04-17
+      note_content: "Contenu de la note",
+      // @llm-translated 2026-04-17
+      word_count: "{count} mot(s)",
+      // @llm-translated 2026-04-17
+      char_count: "{count} caractère(s)",
+    },
+    // @llm-translated 2026-04-17
+    research_lab: {
+      // @llm-translated 2026-04-17
+      title: "Laboratoire de recherche",
+      // @llm-translated 2026-04-17
+      new_project: "Nouveau projet",
+      // @llm-translated 2026-04-17
+      no_projects: "Aucun projet de recherche",
+      // @llm-translated 2026-04-17
+      loading: "Chargement...",
+      // @llm-translated 2026-04-17
+      sources_tab: "Sources",
+      // @llm-translated 2026-04-17
+      hypotheses_tab: "Hypothèses",
+      // @llm-translated 2026-04-17
+      experiments_tab: "Expériences",
+      // @llm-translated 2026-04-17
+      findings_tab: "Résultats",
+      // @llm-translated 2026-04-17
+      report_tab: "Rapport",
+      // @llm-translated 2026-04-17
+      add_source: "Ajouter une source",
+      // @llm-translated 2026-04-17
+      add_hypothesis: "Ajouter une hypothèse",
+      // @llm-translated 2026-04-17
+      add_experiment: "Ajouter une expérience",
+      // @llm-translated 2026-04-17
+      add_finding: "Ajouter un résultat",
+    },
   },
   media_studio: {
     title: "Studio média",
@@ -7495,6 +10374,50 @@ export const fr = {
     supported_video: "Fichiers vidéo",
     supported_audio: "Fichiers audio",
     supported_images: "Fichiers image",
+    // @llm-translated 2026-04-17
+    undo: "Annuler",
+    // @llm-translated 2026-04-17
+    redo: "Rétablir",
+    // @llm-translated 2026-04-17
+    clip_actions: "Actions sur le clip",
+    // @llm-translated 2026-04-17
+    action_split: "Couper",
+    // @llm-translated 2026-04-17
+    action_extract_audio: "Extraire l'audio",
+    // @llm-translated 2026-04-17
+    action_strip_audio: "Supprimer l'audio",
+    // @llm-translated 2026-04-17
+    action_keep_audio: "Conserver l'audio",
+    // @llm-translated 2026-04-17
+    action_save_thumbnail: "Enregistrer la miniature",
+    // @llm-translated 2026-04-17
+    action_trim_to_file: "Rogner vers fichier",
+    // @llm-translated 2026-04-17
+    extracting_audio: "Extraction de l'audio...",
+    // @llm-translated 2026-04-17
+    extract_audio_done: "Audio extrait",
+    // @llm-translated 2026-04-17
+    saving_thumbnail: "Enregistrement de la miniature...",
+    // @llm-translated 2026-04-17
+    thumbnail_saved: "Miniature enregistrée",
+    // @llm-translated 2026-04-17
+    trimming_file: "Rognage du fichier...",
+    // @llm-translated 2026-04-17
+    trim_done: "Rognage terminé",
+    // @llm-translated 2026-04-17
+    effects: "Effets",
+    // @llm-translated 2026-04-17
+    speed: "Vitesse",
+    // @llm-translated 2026-04-17
+    fade_in: "Fondu entrant",
+    // @llm-translated 2026-04-17
+    fade_out: "Fondu sortant",
+    // @llm-translated 2026-04-17
+    normalize: "Normaliser",
+    // @llm-translated 2026-04-17
+    normalize_hint: "Normaliser le volume audio de ce clip",
+    // @llm-translated 2026-04-17
+    strip_audio_hint: "Supprimer la piste audio de ce clip",
   },
   research_lab: {
     dashboard: "Tableau de bord",
@@ -7564,6 +10487,152 @@ export const fr = {
     experiment_report: "Rapport d'expérience",
     full_paper: "Article complet",
     executive_summary: "Résumé exécutif",
+    // @llm-translated 2026-04-17
+    graph: "Graphe",
+    // @llm-translated 2026-04-17
+    recent_projects: "Projets récents",
+    // @llm-translated 2026-04-17
+    view_all: "Tout afficher",
+    // @llm-translated 2026-04-17
+    edit_project: "Modifier le projet",
+    // @llm-translated 2026-04-17
+    save_changes: "Enregistrer les modifications",
+    // @llm-translated 2026-04-17
+    project_name_placeholder: "Titre du projet...",
+    // @llm-translated 2026-04-17
+    project_description_placeholder: "Description du projet...",
+    // @llm-translated 2026-04-17
+    project_thesis_placeholder: "Thèse ou question de recherche principale...",
+    // @llm-translated 2026-04-17
+    clear_vault: "Vider le coffre",
+    // @llm-translated 2026-04-17
+    domain_cs: "Informatique",
+    // @llm-translated 2026-04-17
+    domain_biology: "Biologie",
+    // @llm-translated 2026-04-17
+    domain_chemistry: "Chimie",
+    // @llm-translated 2026-04-17
+    domain_physics: "Physique",
+    // @llm-translated 2026-04-17
+    domain_mathematics: "Mathématiques",
+    // @llm-translated 2026-04-17
+    domain_business: "Commerce",
+    // @llm-translated 2026-04-17
+    domain_medicine: "Médecine",
+    // @llm-translated 2026-04-17
+    domain_general: "Général",
+    // @llm-translated 2026-04-17
+    no_matching_sources: "Aucune source correspondante",
+    // @llm-translated 2026-04-17
+    filter_sources_placeholder: "Filtrer les sources...",
+    // @llm-translated 2026-04-17
+    source_title: "Titre",
+    // @llm-translated 2026-04-17
+    source_title_placeholder: "Titre de la source...",
+    // @llm-translated 2026-04-17
+    source_type: "Type",
+    // @llm-translated 2026-04-17
+    source_year: "Année",
+    // @llm-translated 2026-04-17
+    source_year_placeholder: "ex. 2024",
+    // @llm-translated 2026-04-17
+    source_authors: "Auteurs",
+    // @llm-translated 2026-04-17
+    source_authors_placeholder: "ex. Dupont, J., Martin, M.",
+    // @llm-translated 2026-04-17
+    source_url: "URL",
+    // @llm-translated 2026-04-17
+    source_url_placeholder: "https://...",
+    // @llm-translated 2026-04-17
+    source_doi: "DOI",
+    // @llm-translated 2026-04-17
+    source_doi_placeholder: "10.xxxx/xxxxx",
+    // @llm-translated 2026-04-17
+    source_abstract: "Résumé",
+    // @llm-translated 2026-04-17
+    source_abstract_placeholder: "Résumé ou notes sur cette source...",
+    // @llm-translated 2026-04-17
+    source_type_arxiv: "arXiv",
+    // @llm-translated 2026-04-17
+    source_type_scholar: "Google Scholar",
+    // @llm-translated 2026-04-17
+    source_type_pubmed: "PubMed",
+    // @llm-translated 2026-04-17
+    source_type_web: "Web",
+    // @llm-translated 2026-04-17
+    source_type_pdf: "PDF",
+    // @llm-translated 2026-04-17
+    source_type_manual: "Manuel",
+    // @llm-translated 2026-04-17
+    hypothesis_statement: "Énoncé de l'hypothèse",
+    // @llm-translated 2026-04-17
+    hypothesis_statement_placeholder: "Énoncez clairement votre hypothèse...",
+    // @llm-translated 2026-04-17
+    hypothesis_rationale: "Justification",
+    // @llm-translated 2026-04-17
+    hypothesis_rationale_placeholder: "Pourquoi cette hypothèse est-elle plausible ?",
+    // @llm-translated 2026-04-17
+    experiment_name: "Nom de l'expérience",
+    // @llm-translated 2026-04-17
+    experiment_name_placeholder: "Nom descriptif de l'expérience...",
+    // @llm-translated 2026-04-17
+    methodology_placeholder: "Décrivez la méthodologie...",
+    // @llm-translated 2026-04-17
+    success_criteria_placeholder: "Définissez les critères de succès...",
+    // @llm-translated 2026-04-17
+    linked_hypothesis: "Hypothèse liée",
+    // @llm-translated 2026-04-17
+    no_linked_hypothesis: "Aucune hypothèse liée",
+    // @llm-translated 2026-04-17
+    linked_persona: "Agent lié",
+    // @llm-translated 2026-04-17
+    no_linked_persona: "Aucun agent lié",
+    // @llm-translated 2026-04-17
+    run_input: "Entrée d'exécution",
+    // @llm-translated 2026-04-17
+    run_input_placeholder: "Données d'entrée optionnelles pour cette exécution...",
+    // @llm-translated 2026-04-17
+    pass_pattern: "Schéma de réussite",
+    // @llm-translated 2026-04-17
+    pass_pattern_placeholder: "Regex ou texte à rechercher dans la sortie...",
+    // @llm-translated 2026-04-17
+    running_experiment: "Exécution de l'expérience...",
+    // @llm-translated 2026-04-17
+    view_runs: "Voir les exécutions",
+    // @llm-translated 2026-04-17
+    no_runs_yet: "Aucune exécution pour l'instant",
+    // @llm-translated 2026-04-17
+    run_passed: "Réussie",
+    // @llm-translated 2026-04-17
+    run_failed: "Échouée",
+    // @llm-translated 2026-04-17
+    run_duration: "Durée : {duration}",
+    // @llm-translated 2026-04-17
+    run_cost: "Coût : {cost}",
+    // @llm-translated 2026-04-17
+    run_number: "Exécution #{n}",
+    // @llm-translated 2026-04-17
+    runs_history: "Historique des exécutions",
+    // @llm-translated 2026-04-17
+    create_finding: "Créer un résultat",
+    // @llm-translated 2026-04-17
+    finding_title: "Titre du résultat",
+    // @llm-translated 2026-04-17
+    finding_title_placeholder: "Résumez votre résultat...",
+    // @llm-translated 2026-04-17
+    finding_description: "Description",
+    // @llm-translated 2026-04-17
+    finding_description_placeholder: "Décrivez le résultat en détail...",
+    // @llm-translated 2026-04-17
+    finding_category: "Catégorie",
+    // @llm-translated 2026-04-17
+    finding_category_placeholder: "ex. Résultat positif, Anomalie, Question ouverte",
+    // @llm-translated 2026-04-17
+    report_title: "Titre du rapport",
+    // @llm-translated 2026-04-17
+    report_title_placeholder: "Titre du rapport de recherche...",
+    // @llm-translated 2026-04-17
+    report_format: "Format du rapport",
   },
   event_types: {
     webhook_received_label: "Webhook reçu",
@@ -7814,6 +10883,8 @@ export const fr = {
     failed_suffix: "Échoué",
     pending_reviews_one: "{count} révision en attente d'approbation",
     pending_reviews_other: "{count} révisions en attente d'approbation",
+    // @llm-translated 2026-04-17
+    feedback_chat: "Conversation de retour",
   },
   eval_strategies: {
     keyword_match_label: "Qualité de la sortie",
@@ -7889,6 +10960,16 @@ export const fr = {
     waiting_for_output: "En attente de la sortie...",
     no_output: "Aucune sortie",
     background: "Arrière-plan",
+    // @llm-translated 2026-04-17
+    needs_credential: "Identifiant requis",
+    // @llm-translated 2026-04-17
+    run_preview: "Aperçu avant exécution",
+    // @llm-translated 2026-04-17
+    close_preview: "Fermer l'aperçu",
+    // @llm-translated 2026-04-17
+    budget_limit: "Limite budgétaire",
+    // @llm-translated 2026-04-17
+    run_agent: "Exécuter l'agent",
   },
   gitlab: {
     integration_title: "Intégration GitLab",
@@ -8003,6 +11084,14 @@ export const fr = {
     play_sound: "Jouer un son",
     cicd_agent_templates: "Modèles d’agents CI/CD",
     your_tier: "(le vôtre)",
+    // @llm-translated 2026-04-17
+    trigger_on: "Déclencher sur",
+    // @llm-translated 2026-04-17
+    connecting_to_gitlab: "Connexion à GitLab...",
+    // @llm-translated 2026-04-17
+    deploying_to_gitlab: "Déploiement sur GitLab...",
+    // @llm-translated 2026-04-17
+    pipeline_hash: "Pipeline #{id}",
   },
   pipeline: {
     agent_teams: "Équipes d’agents",
@@ -8150,6 +11239,16 @@ export const fr = {
     run_pipeline_or_add: "Exécutez un pipeline ou ajoutez-en une manuellement",
     load_more: "Charger plus",
     showing_count: "Affichage de {shown} sur {total}",
+    // @llm-translated 2026-04-17
+    no_timeline_data: "Aucune donnée de chronologie disponible",
+    // @llm-translated 2026-04-17
+    clear_filter: "Effacer le filtre",
+    // @llm-translated 2026-04-17
+    filter_to_run: "Filtrer par exécution",
+    // @llm-translated 2026-04-17
+    new_memories_one: "{count} nouvelle mémorisation",
+    // @llm-translated 2026-04-17
+    new_memories_other: "{count} nouvelles mémorisations",
   },
   composition: {
     select_persona: "Sélectionner un agent",
@@ -8357,6 +11456,56 @@ export const fr = {
       click_next: "Cliquez sur Suivant pour procéder à la transformation.",
       configure_transform: "Configurer la transformation",
       select: "Sélectionner...",
+      // @llm-translated 2026-04-17
+      system_prompt_label: "Prompt système",
+      // @llm-translated 2026-04-17
+      use_cases_label: "Cas d'usage",
+      // @llm-translated 2026-04-17
+      add_use_case: "Ajouter un cas d'usage",
+      // @llm-translated 2026-04-17
+      use_case_title_placeholder: "Titre du cas d'usage...",
+      // @llm-translated 2026-04-17
+      use_case_description_placeholder: "Description du cas d'usage...",
+      // @llm-translated 2026-04-17
+      remove_use_case: "Supprimer le cas d'usage",
+      // @llm-translated 2026-04-17
+      tools_label: "Outils",
+      // @llm-translated 2026-04-17
+      no_tools: "Aucun outil assigné",
+      // @llm-translated 2026-04-17
+      triggers_label: "Déclencheurs",
+      // @llm-translated 2026-04-17
+      no_triggers: "Aucun déclencheur configuré",
+      // @llm-translated 2026-04-17
+      system_prompt_label: "Prompt système",
+      // @llm-translated 2026-04-17
+      use_cases_label: "Cas d'usage",
+      // @llm-translated 2026-04-17
+      add_use_case: "Ajouter un cas d'usage",
+      // @llm-translated 2026-04-17
+      use_case_title_placeholder: "Titre du cas d'usage...",
+      // @llm-translated 2026-04-17
+      use_case_description_placeholder: "Description du cas d'usage...",
+      // @llm-translated 2026-04-17
+      remove_use_case: "Supprimer le cas d'usage",
+      // @llm-translated 2026-04-17
+      tools_label: "Outils",
+      // @llm-translated 2026-04-17
+      no_tools: "Aucun outil assigné",
+      // @llm-translated 2026-04-17
+      triggers_label: "Déclencheurs",
+      // @llm-translated 2026-04-17
+      no_triggers: "Aucun déclencheur configuré",
+      // @llm-translated 2026-04-17
+      edit_tabs_label: "Onglets de modification",
+      // @llm-translated 2026-04-17
+      request_ai_adjustments: "Demander des ajustements IA",
+      // @llm-translated 2026-04-17
+      edit_raw_json_hint: "Modifier le JSON brut",
+      // @llm-translated 2026-04-17
+      no_custom_sections: "Aucune section personnalisée",
+      // @llm-translated 2026-04-17
+      no_content_to_preview: "Aucun contenu à afficher en aperçu",
     },
     forms_extra: {
       references: "Références",
@@ -8366,6 +11515,26 @@ export const fr = {
       choose_icon: "Choisir une icône",
       filter_placeholder: "Filtrer...",
       reset_to_default: "Réinitialiser par défaut",
+      // @llm-translated 2026-04-17
+      char_count: "{count}/{max} caractères",
+      // @llm-translated 2026-04-17
+      optional_label: "(facultatif)",
+      // @llm-translated 2026-04-17
+      required_label: "(requis)",
+      // @llm-translated 2026-04-17
+      field_hint: "Astuce : {hint}",
+      // @llm-translated 2026-04-17
+      validation_error: "Erreur de validation : {message}",
+      // @llm-translated 2026-04-17
+      char_count: "{count}/{max} caractères",
+      // @llm-translated 2026-04-17
+      optional_label: "(facultatif)",
+      // @llm-translated 2026-04-17
+      required_label: "(requis)",
+      // @llm-translated 2026-04-17
+      field_hint: "Astuce : {hint}",
+      // @llm-translated 2026-04-17
+      validation_error: "Erreur de validation : {message}",
     },
     reasoning_trace: {
       system_init: "Initialisation système",
@@ -8374,6 +11543,18 @@ export const fr = {
       result: "Résultat",
       complete: "Terminé",
       error: "Erreur",
+      // @llm-translated 2026-04-17
+      thinking_label: "Réflexion",
+      // @llm-translated 2026-04-17
+      step_label: "Étape {n}",
+      // @llm-translated 2026-04-17
+      conclusion_label: "Conclusion",
+      // @llm-translated 2026-04-17
+      thinking_label: "Réflexion",
+      // @llm-translated 2026-04-17
+      step_label: "Étape {n}",
+      // @llm-translated 2026-04-17
+      conclusion_label: "Conclusion",
     },
     sidebar_extra: {
       agents: "Agents",
@@ -8381,6 +11562,50 @@ export const fr = {
       remove_favorites: "Retirer des favoris",
       add_favorites: "Ajouter aux favoris",
       active_project: "Projet actif",
+      // @llm-translated 2026-04-17
+      schedules_label: "Planifications",
+      // @llm-translated 2026-04-17
+      quality_gates: "Filtres de contenu",
+      // @llm-translated 2026-04-17
+      config_resolution: "Configuration de l'agent",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher...",
+      // @llm-translated 2026-04-17
+      new_agent: "Nouvel agent",
+      // @llm-translated 2026-04-17
+      all_agents: "Tous les agents",
+      // @llm-translated 2026-04-17
+      recent_label: "Récents",
+      // @llm-translated 2026-04-17
+      favorites_label: "Favoris",
+      // @llm-translated 2026-04-17
+      no_recent: "Aucun agent récent",
+      // @llm-translated 2026-04-17
+      no_favorites: "Aucun favori",
+      // @llm-translated 2026-04-17
+      pinned_label: "Épinglés",
+      // @llm-translated 2026-04-17
+      schedules_label: "Planifications",
+      // @llm-translated 2026-04-17
+      quality_gates: "Filtres de contenu",
+      // @llm-translated 2026-04-17
+      config_resolution: "Configuration de l'agent",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Rechercher...",
+      // @llm-translated 2026-04-17
+      new_agent: "Nouvel agent",
+      // @llm-translated 2026-04-17
+      all_agents: "Tous les agents",
+      // @llm-translated 2026-04-17
+      recent_label: "Récents",
+      // @llm-translated 2026-04-17
+      favorites_label: "Favoris",
+      // @llm-translated 2026-04-17
+      no_recent: "Aucun agent récent",
+      // @llm-translated 2026-04-17
+      no_favorites: "Aucun favori",
+      // @llm-translated 2026-04-17
+      pinned_label: "Épinglés",
     },
     execution_detail: {
       copy: "Copier",
@@ -8388,6 +11613,26 @@ export const fr = {
       knowledge_insight: "Aperçu de connaissance",
       outcome_assessment: "Évaluation du résultat",
       blockers: "Bloquants",
+      // @llm-translated 2026-04-17
+      input_section: "Entrée",
+      // @llm-translated 2026-04-17
+      output_section: "Sortie",
+      // @llm-translated 2026-04-17
+      metadata_section: "Métadonnées",
+      // @llm-translated 2026-04-17
+      timeline_section: "Chronologie",
+      // @llm-translated 2026-04-17
+      ai_analysis: "Analyse IA",
+      // @llm-translated 2026-04-17
+      input_section: "Entrée",
+      // @llm-translated 2026-04-17
+      output_section: "Sortie",
+      // @llm-translated 2026-04-17
+      metadata_section: "Métadonnées",
+      // @llm-translated 2026-04-17
+      timeline_section: "Chronologie",
+      // @llm-translated 2026-04-17
+      ai_analysis: "Analyse IA",
     },
     progress_extra: {
       taking_longer: "Plus long que prévu",
@@ -8397,12 +11642,84 @@ export const fr = {
       draft_generated: "Brouillon généré avec succès",
       transformation_failed: "Échec de la transformation",
       waiting_to_start: "En attente du démarrage de la transformation...",
+      // @llm-translated 2026-04-17
+      step_label: "Étape {current}/{total}",
+      // @llm-translated 2026-04-17
+      elapsed_label: "Temps écoulé : {elapsed}",
+      // @llm-translated 2026-04-17
+      remaining_label: "Temps restant : {remaining}",
+      // @llm-translated 2026-04-17
+      overall_progress: "Progression globale",
+      // @llm-translated 2026-04-17
+      phase_label: "Phase : {phase}",
+      // @llm-translated 2026-04-17
+      operation_label: "Opération : {operation}",
+      // @llm-translated 2026-04-17
+      retry_label: "Tentative {count}",
+      // @llm-translated 2026-04-17
+      success_label: "Succès",
+      // @llm-translated 2026-04-17
+      error_label: "Erreur",
+      // @llm-translated 2026-04-17
+      warning_label: "Avertissement",
+      // @llm-translated 2026-04-17
+      info_label: "Information",
+      // @llm-translated 2026-04-17
+      step_label: "Étape {current}/{total}",
+      // @llm-translated 2026-04-17
+      elapsed_label: "Temps écoulé : {elapsed}",
+      // @llm-translated 2026-04-17
+      remaining_label: "Temps restant : {remaining}",
+      // @llm-translated 2026-04-17
+      overall_progress: "Progression globale",
+      // @llm-translated 2026-04-17
+      phase_label: "Phase : {phase}",
+      // @llm-translated 2026-04-17
+      operation_label: "Opération : {operation}",
+      // @llm-translated 2026-04-17
+      retry_label: "Tentative {count}",
+      // @llm-translated 2026-04-17
+      success_label: "Succès",
+      // @llm-translated 2026-04-17
+      error_label: "Erreur",
+      // @llm-translated 2026-04-17
+      warning_label: "Avertissement",
+      // @llm-translated 2026-04-17
+      info_label: "Information",
     },
     terminal_extra: {
       press_enter: "Appuyez sur Entrée ou cliquez sur Lecture pour démarrer",
       connection_failed: "Connexion échouée -- vérifiez les paramètres du fournisseur et réessayez",
       search_output: "Rechercher dans la sortie...",
       dismiss: "Ignorer",
+      // @llm-translated 2026-04-17
+      copy_output: "Copier la sortie",
+      // @llm-translated 2026-04-17
+      download_log: "Télécharger le journal",
+      // @llm-translated 2026-04-17
+      wrap_lines: "Retour à la ligne",
+      // @llm-translated 2026-04-17
+      font_size_label: "Taille de police",
+      // @llm-translated 2026-04-17
+      theme_label: "Thème",
+      // @llm-translated 2026-04-17
+      clear_terminal: "Effacer le terminal",
+      // @llm-translated 2026-04-17
+      fullscreen: "Plein écran",
+      // @llm-translated 2026-04-17
+      copy_output: "Copier la sortie",
+      // @llm-translated 2026-04-17
+      download_log: "Télécharger le journal",
+      // @llm-translated 2026-04-17
+      wrap_lines: "Retour à la ligne",
+      // @llm-translated 2026-04-17
+      font_size_label: "Taille de police",
+      // @llm-translated 2026-04-17
+      theme_label: "Thème",
+      // @llm-translated 2026-04-17
+      clear_terminal: "Effacer le terminal",
+      // @llm-translated 2026-04-17
+      fullscreen: "Plein écran",
     },
     use_cases_extra: {
       example_output: "Exemple de sortie",
@@ -8413,6 +11730,46 @@ export const fr = {
       output_prefix: "Sortie : ",
       toggle_history: "Afficher/masquer l’historique d’exécution",
       configure_model: "Configurer le modèle, les notifications et les abonnements",
+      // @llm-translated 2026-04-17
+      trigger_type_label: "Type de déclencheur",
+      // @llm-translated 2026-04-17
+      trigger_active_label: "Déclencheur actif",
+      // @llm-translated 2026-04-17
+      subscription_label: "Abonnement",
+      // @llm-translated 2026-04-17
+      no_trigger_configured: "Aucun déclencheur configuré",
+      // @llm-translated 2026-04-17
+      run_count_label: "{count} exécution(s)",
+      // @llm-translated 2026-04-17
+      last_run_label: "Dernier lancement : {time}",
+      // @llm-translated 2026-04-17
+      success_rate_label: "Taux de succès : {rate}%",
+      // @llm-translated 2026-04-17
+      avg_duration_label: "Durée moy. : {duration}",
+      // @llm-translated 2026-04-17
+      avg_cost_label: "Coût moy. : {cost}",
+      // @llm-translated 2026-04-17
+      configure_notifications: "Configurer les notifications",
+      // @llm-translated 2026-04-17
+      trigger_type_label: "Type de déclencheur",
+      // @llm-translated 2026-04-17
+      trigger_active_label: "Déclencheur actif",
+      // @llm-translated 2026-04-17
+      subscription_label: "Abonnement",
+      // @llm-translated 2026-04-17
+      no_trigger_configured: "Aucun déclencheur configuré",
+      // @llm-translated 2026-04-17
+      run_count_label: "{count} exécution(s)",
+      // @llm-translated 2026-04-17
+      last_run_label: "Dernier lancement : {time}",
+      // @llm-translated 2026-04-17
+      success_rate_label: "Taux de succès : {rate}%",
+      // @llm-translated 2026-04-17
+      avg_duration_label: "Durée moy. : {duration}",
+      // @llm-translated 2026-04-17
+      avg_cost_label: "Coût moy. : {cost}",
+      // @llm-translated 2026-04-17
+      configure_notifications: "Configurer les notifications",
     },
     json_valid: "JSON valide",
     json_invalid: "JSON invalide",
@@ -8421,5 +11778,105 @@ export const fr = {
     agent_icon_label: "icône de l’agent",
     breadcrumb_label: "Fil d’Ariane",
     breadcrumb_show_hidden: "Afficher les éléments masqués du fil d’Ariane",
+  },
+  // @llm-translated 2026-04-17
+  releases: {
+    // @llm-translated 2026-04-17
+    whats_new: {
+      // @llm-translated 2026-04-17
+      title: "Nouveautés",
+      // @llm-translated 2026-04-17
+      loading: "Chargement des notes de version...",
+      // @llm-translated 2026-04-17
+      no_updates: "Aucune mise à jour disponible",
+      // @llm-translated 2026-04-17
+      version_label: "Version {version}",
+      // @llm-translated 2026-04-17
+      released_on: "Publié le {date}",
+      // @llm-translated 2026-04-17
+      new_features: "Nouvelles fonctionnalités",
+      // @llm-translated 2026-04-17
+      improvements: "Améliorations",
+      // @llm-translated 2026-04-17
+      bug_fixes: "Corrections de bugs",
+      // @llm-translated 2026-04-17
+      breaking_changes: "Changements majeurs",
+      // @llm-translated 2026-04-17
+      current_version: "Version actuelle : {version}",
+      // @llm-translated 2026-04-17
+      up_to_date: "Vous êtes à jour",
+      // @llm-translated 2026-04-17
+      update_available: "Mise à jour disponible",
+      // @llm-translated 2026-04-17
+      install_update: "Installer la mise à jour",
+      // @llm-translated 2026-04-17
+      view_changelog: "Voir le journal des modifications",
+      // @llm-translated 2026-04-17
+      dismiss: "Ignorer",
+      // @llm-translated 2026-04-17
+      close: "Fermer",
+      // @llm-translated 2026-04-17
+      read_more: "Lire plus",
+      // @llm-translated 2026-04-17
+      whats_new_badge: "Nouveau",
+      // @llm-translated 2026-04-17
+      previous_releases: "Versions précédentes",
+      // @llm-translated 2026-04-17
+      check_for_updates: "Vérifier les mises à jour",
+      // @llm-translated 2026-04-17
+      checking: "Vérification...",
+      // @llm-translated 2026-04-17
+      latest_version: "Dernière version",
+      // @llm-translated 2026-04-17
+      changelog_empty: "Aucune entrée de journal des modifications",
+      // @llm-translated 2026-04-17
+      install_restart: "Installer et redémarrer",
+      // @llm-translated 2026-04-17
+      downloading: "Téléchargement...",
+      // @llm-translated 2026-04-17
+      installed: "Installé",
+      // @llm-translated 2026-04-17
+      failed_to_check: "Échec de la vérification des mises à jour",
+      // @llm-translated 2026-04-17
+      failed_to_install: "Échec de l'installation",
+      // @llm-translated 2026-04-17
+      release_notes: "Notes de version",
+      // @llm-translated 2026-04-17
+      update_prompt: "Une nouvelle version de Personas est disponible. Installez maintenant pour bénéficier des dernières fonctionnalités et corrections.",
+      // @llm-translated 2026-04-17
+      skip_version: "Passer cette version",
+      // @llm-translated 2026-04-17
+      remind_later: "Me rappeler plus tard",
+      // @llm-translated 2026-04-17
+      changes_count: "{count} changement(s)",
+      // @llm-translated 2026-04-17
+      auto_update: "Mise à jour automatique",
+      // @llm-translated 2026-04-17
+      auto_update_hint: "Installer automatiquement les mises à jour au redémarrage",
+      // @llm-translated 2026-04-17
+      show_prerelease: "Afficher les versions préliminaires",
+      // @llm-translated 2026-04-17
+      stable_only: "Versions stables uniquement",
+      // @llm-translated 2026-04-17
+      build_info: "Info de build",
+      // @llm-translated 2026-04-17
+      platform: "Plateforme",
+      // @llm-translated 2026-04-17
+      commit: "Commit",
+      // @llm-translated 2026-04-17
+      channel: "Canal",
+      // @llm-translated 2026-04-17
+      channel_stable: "Stable",
+      // @llm-translated 2026-04-17
+      channel_beta: "Beta",
+      // @llm-translated 2026-04-17
+      channel_nightly: "Nightly",
+      // @llm-translated 2026-04-17
+      feature_flag_hint: "Certaines fonctionnalités peuvent nécessiter un redémarrage pour prendre effet",
+      // @llm-translated 2026-04-17
+      highlights: "Points forts",
+      // @llm-translated 2026-04-17
+      all_changes: "Tous les changements",
+    },
   },
 };

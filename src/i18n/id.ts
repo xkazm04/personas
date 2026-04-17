@@ -48,6 +48,8 @@ export const id = {
     error: "Kesalahan",
     success: "Berhasil",
     required: "wajib",
+    // @llm-translated 2026-04-17
+    optional: "opsional",
     select: "-- pilih --",
     no_results: "Tidak ada hasil ditemukan",
     active: "Aktif",
@@ -745,6 +747,32 @@ export const id = {
       offset_prefix: "offset:",
       step_tooltip: "Langkah {step}: {name}",
       ms_into_stage: "{ms}md ke tahap",
+      // @llm-translated 2026-04-17
+      depth_label: "Kedalaman:",
+      // @llm-translated 2026-04-17
+      active_count_label: "Aktif ({count})",
+      // @llm-translated 2026-04-17
+      completed_count_label: "Selesai ({count})",
+      // @llm-translated 2026-04-17
+      metadata_section: "Metadata",
+      // @llm-translated 2026-04-17
+      chain_id_prefix: "Rantai: {id}",
+      // @llm-translated 2026-04-17
+      chain_total_duration: "Total: {duration}",
+      // @llm-translated 2026-04-17
+      zero_ms: "0md",
+      // @llm-translated 2026-04-17
+      tool_calls_count: "{count} panggilan alat",
+      // @llm-translated 2026-04-17
+      tool_calls_count_other: "{count} panggilan alat",
+      // @llm-translated 2026-04-17
+      unique_tools_count: "({count} unik)",
+      // @llm-translated 2026-04-17
+      prev_error_nav: "Kesalahan sebelumnya (Shift+E)",
+      // @llm-translated 2026-04-17
+      next_error_nav: "Kesalahan berikutnya (E)",
+      // @llm-translated 2026-04-17
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
     lab: {
       mode_arena: "Arena",
@@ -995,6 +1023,10 @@ export const id = {
       cancel_default: "Batal",
       hide_impact: "Sembunyikan dampak",
       show_impact: "Tampilkan dampak",
+      // @llm-translated 2026-04-17
+      objective_warning: "Masalah tujuan kebugaran",
+      // @llm-translated 2026-04-17
+      objective_fallback_toast: "Evolusi menggunakan bobot kebugaran default — periksa pengaturan tujuan",
     },
     design: {
       select_agent: "Pilih agen untuk memulai analisis desain",
@@ -1079,6 +1111,8 @@ export const id = {
       go_back_hint: "Kembali dan jawab pertanyaan untuk mengonfigurasi agen Anda.",
       additional_instructions: "Instruksi atau konteks tambahan (opsional)",
       additional_instructions_placeholder: "Tambahkan persyaratan spesifik, pengetahuan domain, atau batasan...",
+      // @llm-translated 2026-04-17
+      conv_controls_aria: "Kontrol percakapan desain",
     },
     connectors: {
       connectors_label: "Konektor",
@@ -1143,6 +1177,12 @@ export const id = {
       auto_show_advanced: "Tampilkan pengaturan lanjutan",
       auto_hide_advanced: "Sembunyikan pengaturan lanjutan",
       auto_input_schema: "Skema Masukan",
+      // @llm-translated 2026-04-17
+      auto_input_schema_placeholder: '{ "file_url": "string" }',
+      // @llm-translated 2026-04-17
+      auto_github_token_needs: "Token Anda memerlukan cakupan {scopes}. Perbarui token di github.com/settings/tokens.",
+      // @llm-translated 2026-04-17
+      auto_fallback_title: "Kembali ke konektor langsung jika gagal",
       auto_on_failure: "Saat gagal",
       auto_timeout: "Waktu habis",
       auto_seconds: "detik",
@@ -1916,6 +1956,12 @@ export const id = {
       no_data: "Tidak ada data matriks tersedia. Bangun atau bangun ulang persona ini untuk menghasilkan dimensi.",
     },
     settings_status: {
+      // @llm-translated 2026-04-17
+      speak_as: "Bicara sebagai",
+      // @llm-translated 2026-04-17
+      no_twins_configured: "Tidak ada kembaran yang dikonfigurasi. Buka plugin Kembaran untuk membuat satu — persona ini kemudian dapat mengadopsinya.",
+      // @llm-translated 2026-04-17
+      twin_profile_aria: "Profil kembaran yang digunakan persona ini untuk berbicara",
       saving: "Menyimpan {sections}...",
       changed: "{sections} berubah",
       all_saved: "Semua perubahan tersimpan",
@@ -1939,6 +1985,8 @@ export const id = {
       health_watch_enable: "Aktifkan pemantauan kesehatan berkelanjutan",
     },
     tool_runner: {
+      // @llm-translated 2026-04-17
+      input_json_placeholder: '{ "key": "value" }',
       no_tools: "Tidak ada alat yang ditetapkan untuk persona ini.",
       input_json: "JSON Masukan",
       run: "Jalankan",
@@ -1989,6 +2037,8 @@ export const id = {
       unhealthy: "Tidak Sehat",
     },
     prompt_editor: {
+      // @llm-translated 2026-04-17
+      sections_aria: "Bagian prompt",
       no_persona: "Tidak ada persona dipilih",
       enter_content: "Masukkan konten {section}...",
       new_section: "Bagian Baru",
@@ -2201,6 +2251,8 @@ export const id = {
       untested: "belum diuji",
     },
     list: {
+      // @llm-translated 2026-04-17
+      sort_label: "Urutkan:",
       no_credentials: "Tidak ada layanan terotentikasi terdeteksi. Pilih secara manual di bawah.",
       delete_confirm: "Hapus kredensial ini?",
       blast_radius: "Radius Dampak",
@@ -2209,6 +2261,22 @@ export const id = {
       affected_events: "Peristiwa Terdampak",
     },
     import: {
+      // @llm-translated 2026-04-17
+      parse_secrets: "Urai Rahasia",
+      // @llm-translated 2026-04-17
+      selected_for_import: "dipilih untuk diimpor",
+      // @llm-translated 2026-04-17
+      auto_detected: "Terdeteksi otomatis",
+      // @llm-translated 2026-04-17
+      sync_supported: "Sinkronisasi didukung",
+      // @llm-translated 2026-04-17
+      secrets_found_one: "{count} rahasia ditemukan",
+      // @llm-translated 2026-04-17
+      secrets_found_other: "{count} rahasia ditemukan",
+      // @llm-translated 2026-04-17
+      import_secrets_one: "Impor {count} Rahasia",
+      // @llm-translated 2026-04-17
+      import_secrets_other: "Impor {count} Rahasia",
       title: "Sumber Impor",
       picker_subtitle: "Pilih sumber rahasia Anda",
       select_all: "Pilih semua",
@@ -2310,13 +2378,39 @@ export const id = {
       completed: "Selesai",
     },
     card: {
+      // @llm-translated 2026-04-17
+      reauthorize_scopes: "Otorisasi ulang dengan cakupan tambahan",
       scope_mismatch: "Ketidakcocokan cakupan",
       scope_missing_one: "{count} cakupan yang diminta tidak diberikan: ",
       scope_missing_other: "{count} cakupan yang diminta tidak diberikan: ",
       reauthorize: "Otorisasi Ulang",
     },
     forms: {
-      auth_oauth: "OAuth",
+      // @llm-translated 2026-04-17
+      connection_test_heading: "Uji Koneksi",      
+            // @llm-translated 2026-04-17
+      test_connection_btn: "Uji Koneksi",      
+            // @llm-translated 2026-04-17
+      credential_fields_heading: "Kolom Kredensial",      
+            // @llm-translated 2026-04-17
+      how_to_get_connector: "Cara mendapatkan kredensial {connectorLabel}",      
+            // @llm-translated 2026-04-17
+      authorization_complete: "Otorisasi selesai",      
+            // @llm-translated 2026-04-17
+      copied_to_clipboard: "Disalin ke papan klip",      
+            // @llm-translated 2026-04-17
+      credential_name: "Nama Kredensial",      
+            // @llm-translated 2026-04-17
+      credential_name_placeholder: "Beri label kredensial ini — mis. Akun {label} Saya, {label} Produksi",      
+            // @llm-translated 2026-04-17
+      authorizing_with: "Mengotorisasi dengan {label}...",      
+            // @llm-translated 2026-04-17
+      authorize_with: "Otorisasi dengan {label}",      
+            // @llm-translated 2026-04-17
+      oauth_consent_hint: "Membuka {label} di browser Anda. Berikan akses, lalu kembali ke sini.",      
+            // @llm-translated 2026-04-17
+      oauth_connected_at: "{label} terhubung pada {time}",      
+            auth_oauth: "OAuth",
       auth_api_key: "Kunci API",
       auth_mcp: "MCP",
       healthcheck_passed: "Uji koneksi berhasil",
@@ -2375,6 +2469,22 @@ export const id = {
       filter_available: "Tersedia",
     },
     auto_cred: {
+      // @llm-translated 2026-04-17
+      cancel_session: "Batalkan Sesi",
+      // @llm-translated 2026-04-17
+      test_connection: "Uji Koneksi",
+      // @llm-translated 2026-04-17
+      testing: "Menguji...",
+      // @llm-translated 2026-04-17
+      re_run_browser: "Jalankan ulang browser",
+      // @llm-translated 2026-04-17
+      discard: "Buang",
+      // @llm-translated 2026-04-17
+      save_credential: "Simpan Kredensial",
+      // @llm-translated 2026-04-17
+      save_procedure: "Simpan Prosedur",
+      // @llm-translated 2026-04-17
+      procedure_saved: "Prosedur disimpan",
       guided_setup: "Pengaturan Terpandu",
       auto_setup: "Pengaturan Otomatis",
       guided_consent_body: "Claude akan memandu Anda langkah demi langkah dalam membuat kredensial. URL akan terbuka di browser Anda secara otomatis.",
@@ -2533,6 +2643,10 @@ export const id = {
       rename_credential: "Ganti nama kredensial",
     },
     databases: {
+      // @llm-translated 2026-04-17
+      not_null: "NOT NULL",
+      // @llm-translated 2026-04-17
+      ctrl_enter: "Ctrl+Enter untuk menjalankan",
       col_database: "Basis Data",
       col_type: "Jenis",
       col_tables: "Tabel",
@@ -2646,6 +2760,14 @@ export const id = {
       introspection_unavailable: "Introspeksi tabel tidak tersedia untuk jenis konektor ini.",
     },
     dependencies: {
+      // @llm-translated 2026-04-17
+      sim_critical: "kritis",
+      // @llm-translated 2026-04-17
+      sim_high: "tinggi",
+      // @llm-translated 2026-04-17
+      sim_medium: "sedang",
+      // @llm-translated 2026-04-17
+      per_day: "per hari",
       simulate_revocation: "Simulasi Pencabutan",
       blast_radius: "Radius Dampak",
       impact_high: "Menghapus kredensial ini akan berdampak pada {count} agen. Pertimbangkan rotasi daripada penghapusan.",
@@ -2691,6 +2813,38 @@ export const id = {
       sim_low: "Tidak ada persona atau alur kerja yang bergantung pada kredensial ini. Aman untuk dicabut.",
     },
     shared: {
+      // @llm-translated 2026-04-17
+      copied: "Disalin",
+      // @llm-translated 2026-04-17
+      kb_count_summary: "{count} entri basis pengetahuan",
+      // @llm-translated 2026-04-17
+      default_patterns: "Pola default",
+      // @llm-translated 2026-04-17
+      add_pattern_placeholder: "Tambah pola...",
+      // @llm-translated 2026-04-17
+      distance_label: "Jarak:",
+      // @llm-translated 2026-04-17
+      chunk_label: "Potongan:",
+      // @llm-translated 2026-04-17
+      copy_credential_id: "Salin ID Kredensial",
+      // @llm-translated 2026-04-17
+      request_body: "Isi Permintaan",
+      // @llm-translated 2026-04-17
+      add_tag_title: "Tambah tag",
+      // @llm-translated 2026-04-17
+      local_embedding_hint: "Penyematan lokal tersedia — tidak diperlukan API eksternal",
+      // @llm-translated 2026-04-17
+      api_path_placeholder: "/v1/endpoint",
+      // @llm-translated 2026-04-17
+      json_body_placeholder: "{\"key\": \"value\"}",
+      // @llm-translated 2026-04-17
+      sending: "Mengirim...",
+      // @llm-translated 2026-04-17
+      send: "Kirim",
+      // @llm-translated 2026-04-17
+      search_results_one: "{count} hasil",
+      // @llm-translated 2026-04-17
+      search_results_other: "{count} hasil",
       add: "Tambah",
       no_connector_available: "Tidak ada definisi konektor yang tersedia untuk tipe kredensial ini.",
       request_builder: "Pembuat Permintaan",
@@ -2840,6 +2994,12 @@ export const id = {
       testing_progress: "Menguji {done}/{total}",
     },
     bulk_healthcheck: {
+      // @llm-translated 2026-04-17
+      passed_count: "{count} lulus",
+      // @llm-translated 2026-04-17
+      failed_count: "{count} gagal",
+      // @llm-translated 2026-04-17
+      total_count: "{count} total",
       title: "Hasil Pemeriksaan Kesehatan",
       needs_attention: "Perlu Perhatian",
       slowest_responses: "Respons Paling Lambat",
@@ -2935,6 +3095,8 @@ export const id = {
       via_connector: "melalui {connector}",
     },
     token_metrics: {
+      // @llm-translated 2026-04-17
+      fallback_used: "Cadangan digunakan",
       loading: "Memuat metrik...",
       no_metrics: "Belum ada metrik penyegaran token yang tercatat. Metrik akan muncul setelah penyegaran token OAuth pertama.",
       trend_warning: "Masa hidup token cenderung lebih pendek — kemungkinan throttling provider atau perubahan kebijakan.",
@@ -2945,7 +3107,15 @@ export const id = {
       recent_ttls: "TTL provider terbaru (terbaru pertama)",
       recent_refreshes: "Penyegaran terbaru",
     },
+    reauth_banner: {
+      // @llm-translated 2026-04-17
+      access_revoked: "Akses dicabut",
+      // @llm-translated 2026-04-17
+      reconnect: "Sambungkan ulang",
+    },
     rotation_section: {
+      // @llm-translated 2026-04-17
+      last_rotated: "Terakhir diputar:",
       corrupted_warning: "Metadata pemeriksaan kesehatan rusak. Skor anomali tidak tersedia sampai pemeriksaan kesehatan berikutnya yang berhasil menimpa data yang rusak.",
       anomaly_warning: "Anomali terdeteksi: kredensial tiba-tiba gagal setelah sebelumnya berhasil. Kemungkinan dicabut.",
       history: "Riwayat",
@@ -2966,6 +3136,8 @@ export const id = {
       enable_failed: "Gagal mengaktifkan rotasi: {error}",
     },
     event_config: {
+      // @llm-translated 2026-04-17
+      loading: "Memuat konfigurasi acara...",
       event_triggers: "Pemicu Peristiwa",
       scheduled_rotation: "Rotasi Terjadwal",
       scheduled_rotation_desc: "Rotasi kredensial berdasarkan jadwal cron (misal, harian, mingguan).",
@@ -2992,6 +3164,14 @@ export const id = {
       last_evaluated: "Terakhir dievaluasi: {time}",
     },
     credential_forms: {
+      // @llm-translated 2026-04-17
+      open_to_generate: "Buka untuk membuat",
+      // @llm-translated 2026-04-17
+      already_configured: "Sudah dikonfigurasi",
+      // @llm-translated 2026-04-17
+      setup_instructions_label: "Petunjuk Pengaturan",
+      // @llm-translated 2026-04-17
+      no_fields_defined: "Tidak ada kolom yang didefinisikan untuk konektor ini",
       encrypted_keychain: "Terenkripsi dengan OS Keychain",
       encrypted_at_rest: "Terenkripsi saat tidak aktif",
       copy_value: "Salin nilai",
@@ -3027,11 +3207,41 @@ export const id = {
     },
 
     audit_log: {
+      // @llm-translated 2026-04-17
+      loading: "Memuat log audit...",
+      // @llm-translated 2026-04-17
+      total_accesses: "Total akses:",
+      // @llm-translated 2026-04-17
+      personas_one: "{count} persona",
+      // @llm-translated 2026-04-17
+      personas_other: "{count} persona",
+      // @llm-translated 2026-04-17
+      accesses_24h: "Akses 24 jam:",
+      // @llm-translated 2026-04-17
+      anomalies_one: "{count} anomali",
+      // @llm-translated 2026-04-17
+      anomalies_other: "{count} anomali",
+      // @llm-translated 2026-04-17
+      no_anomalies: "Tidak ada anomali",
+      // @llm-translated 2026-04-17
+      show_all: "Tampilkan semua",
       empty: "Belum ada entri audit",
       empty_hint: "Operasi akan dicatat saat terjadi.",
       access_events_hint: "Peristiwa akses akan muncul di sini.",
     },
     credential_import: {
+      // @llm-translated 2026-04-17
+      sync_hint: "Sinkronisasi otomatis kredensial dari sumber ini",
+      // @llm-translated 2026-04-17
+      interval_15min: "Setiap 15 menit",
+      // @llm-translated 2026-04-17
+      interval_30min: "Setiap 30 menit",
+      // @llm-translated 2026-04-17
+      interval_1hr: "Setiap 1 jam",
+      // @llm-translated 2026-04-17
+      interval_6hr: "Setiap 6 jam",
+      // @llm-translated 2026-04-17
+      interval_24hr: "Setiap 24 jam",
       import_from: "Impor dari {source}",
       import_from_vault: "Impor dari Brankas Eksternal",
       import_subtitle: "Pilih sumber rahasia Anda",
@@ -3053,6 +3263,24 @@ export const id = {
       no_match_hint: "Coba sesuaikan filter atau kata kunci pencarian Anda",
     },
     wizard_detect: {
+      // @llm-translated 2026-04-17
+      set_up_credentials: "Siapkan Kredensial",
+      // @llm-translated 2026-04-17
+      clear_selection: "Hapus pilihan",
+      // @llm-translated 2026-04-17
+      set_up_services: "Siapkan Layanan",
+      // @llm-translated 2026-04-17
+      setting_up: "Menyiapkan...",
+      // @llm-translated 2026-04-17
+      wizard_title: "Wisaya Kredensial",
+      // @llm-translated 2026-04-17
+      choose_service: "Pilih layanan",
+      // @llm-translated 2026-04-17
+      ai_walk_description: "AI akan memandu Anda melalui pengaturan",
+      // @llm-translated 2026-04-17
+      wizard_subtitle: "Pilih layanan yang ingin Anda sambungkan",
+      // @llm-translated 2026-04-17
+      wizard_subtitle_batch: "Siapkan beberapa layanan sekaligus",
       no_services: "Tidak ada layanan yang cocok dengan \\\"{search}\\\"",
       select_services: "Pilih layanan untuk menambahkan kredensial, atau pindai untuk deteksi otomatis.",
       scanning: "Memindai alat CLI dan sesi browser...",
@@ -3064,6 +3292,40 @@ export const id = {
       no_filter_match: "Coba kata kunci pencarian yang berbeda atau hapus filter Anda.",
     },
     autopilot: {
+      // @llm-translated 2026-04-17
+      from_url: "Dari URL",
+      // @llm-translated 2026-04-17
+      paste_content: "Tempel Konten",
+      // @llm-translated 2026-04-17
+      openapi_spec_url: "URL Spesifikasi OpenAPI",
+      // @llm-translated 2026-04-17
+      openapi_format_hint: "Mendukung format JSON dan YAML",
+      // @llm-translated 2026-04-17
+      parsing_spec: "Mengurai spesifikasi...",
+      // @llm-translated 2026-04-17
+      parse_analyze: "Urai & Analisis",
+      // @llm-translated 2026-04-17
+      connector_in_catalog: "Konektor di Katalog",
+      // @llm-translated 2026-04-17
+      generated_tools: "Alat yang Dihasilkan",
+      // @llm-translated 2026-04-17
+      credential_fields: "Kolom Kredensial",
+      // @llm-translated 2026-04-17
+      open_playground: "Buka Playground",
+      // @llm-translated 2026-04-17
+      copy_connector_id: "Salin ID Konektor",
+      // @llm-translated 2026-04-17
+      go_to_catalog: "Ke Katalog",
+      // @llm-translated 2026-04-17
+      response_headers: "Header Respons",
+      // @llm-translated 2026-04-17
+      base_url_placeholder: "https://api.example.com",
+      // @llm-translated 2026-04-17
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      // @llm-translated 2026-04-17
+      auth_schemes: "Skema autentikasi",
+      // @llm-translated 2026-04-17
+      body_placeholder: "{\"key\": \"value\"}",
       title: "API Autopilot",
       input_hint: "Tempel URL spesifikasi OpenAPI atau kontennya untuk membuat konektor secara otomatis",
       preview_hint: "Tinjau API yang diurai dan pilih endpoint mana yang akan disertakan",
@@ -3087,6 +3349,44 @@ export const id = {
       request_body: "Isi Permintaan (JSON)",
     },
     foraging: {
+      // @llm-translated 2026-04-17
+      start_scan: "Mulai Pindai",
+      // @llm-translated 2026-04-17
+      checking_env: "Memeriksa variabel lingkungan...",
+      // @llm-translated 2026-04-17
+      importing: "Mengimpor...",
+      // @llm-translated 2026-04-17
+      scan_again: "Pindai lagi",
+      // @llm-translated 2026-04-17
+      back_to_vault: "Kembali ke Brankas",
+      // @llm-translated 2026-04-17
+      already_in_vault: "Sudah ada di brankas",
+      // @llm-translated 2026-04-17
+      imported: "Diimpor",
+      // @llm-translated 2026-04-17
+      to_vault: "ke brankas",
+      // @llm-translated 2026-04-17
+      credentials_found_one: "{count} kredensial ditemukan",
+      // @llm-translated 2026-04-17
+      credentials_found_other: "{count} kredensial ditemukan",
+      // @llm-translated 2026-04-17
+      selected: "dipilih",
+      // @llm-translated 2026-04-17
+      import_to_vault_one: "Impor {count} ke Brankas",
+      // @llm-translated 2026-04-17
+      import_to_vault_other: "Impor {count} ke Brankas",
+      // @llm-translated 2026-04-17
+      env_var_one: "{count} variabel lingkungan",
+      // @llm-translated 2026-04-17
+      env_var_other: "{count} variabel lingkungan",
+      // @llm-translated 2026-04-17
+      import_server: "Impor dari Server",
+      // @llm-translated 2026-04-17
+      sources_in: "sumber di",
+      // @llm-translated 2026-04-17
+      progress_aria: "Kemajuan pemindaian kredensial",
+      // @llm-translated 2026-04-17
+      scanned_sources: "Sumber yang dipindai",
       no_credentials_found: "Tidak ada kredensial ditemukan",
       no_credentials_hint: "Coba atur variabel lingkungan seperti OPENAI_API_KEY atau konfigurasikan ~/.aws/credentials.",
       scan_description: "Pindai filesystem Anda untuk kredensial yang ada -- profil AWS, variabel lingkungan, file .env, konfigurasi Docker, kunci SSH, dan lainnya. Kredensial yang ditemukan dapat diimpor ke brankas Anda dengan satu klik.",
@@ -3103,10 +3403,54 @@ export const id = {
       step_current: "(saat ini)",
     },
     desktop_discovery: {
+      // @llm-translated 2026-04-17
+      connect_description: "Sambungkan aplikasi desktop yang terdeteksi ke Personas",
+      // @llm-translated 2026-04-17
+      detected_apps_tab: "Aplikasi Terdeteksi",
+      // @llm-translated 2026-04-17
+      claude_mcp_tab: "Claude MCP",
+      // @llm-translated 2026-04-17
+      scanning: "Memindai...",
+      // @llm-translated 2026-04-17
+      detected_on_system: "Terdeteksi di sistem",
+      // @llm-translated 2026-04-17
+      not_detected: "Tidak terdeteksi",
+      // @llm-translated 2026-04-17
+      no_apps: "Tidak ada aplikasi terdeteksi",
+      // @llm-translated 2026-04-17
+      reading_config: "Membaca konfigurasi...",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_one: "{count} server MCP ditemukan",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_other: "{count} server MCP ditemukan",
+      // @llm-translated 2026-04-17
+      no_mcp_config: "Tidak ada konfigurasi MCP ditemukan",
+      // @llm-translated 2026-04-17
+      mcp_config_hint: "Claude Desktop harus dikonfigurasi dengan server MCP",
+      // @llm-translated 2026-04-17
+      permission_required: "Izin diperlukan",
+      // @llm-translated 2026-04-17
+      approve_description: "Izinkan Personas untuk membaca konfigurasi MCP dari Claude Desktop",
+      // @llm-translated 2026-04-17
+      approve_connect: "Izinkan & Sambungkan",
       title: "Aplikasi Desktop",
       allowed_binaries: "Biner yang diizinkan: ",
     },
     picker_section: {
+      // @llm-translated 2026-04-17
+      credential_name: "Nama kredensial",
+      // @llm-translated 2026-04-17
+      add_project_first: "Tambah proyek terlebih dahulu",
+      // @llm-translated 2026-04-17
+      go_to_dev_tools: "Ke Dev Tools",
+      // @llm-translated 2026-04-17
+      workspace_connect_description: "Sambungkan ruang kerja Anda untuk mengakses repositori dan kode",
+      // @llm-translated 2026-04-17
+      foraging_description: "Pindai variabel lingkungan dan file konfigurasi secara otomatis",
+      // @llm-translated 2026-04-17
+      no_setup_guide: "Tidak ada panduan pengaturan tersedia",
+      // @llm-translated 2026-04-17
+      open_setup_page: "Buka halaman pengaturan",
       no_connectors: "Tidak ada konektor ditemukan",
       no_connectors_hint: "Coba sesuaikan filter atau kata kunci pencarian Anda.",
       how_to_get: "Cara mendapatkan {label} {authLabel}",
@@ -3120,7 +3464,71 @@ export const id = {
       none_configured: "Tidak ada yang dikonfigurasi.",
       required_badge: "WAJIB",
     },
+    cli_capture: {
+      // @llm-translated 2026-04-17
+      cta: "Ambil via CLI",
+      // @llm-translated 2026-04-17
+      hint: "Jalankan perintah CLI untuk mengambil token secara otomatis",
+      // @llm-translated 2026-04-17
+      running: "Menjalankan...",
+      // @llm-translated 2026-04-17
+      success: "Berhasil diambil",
+      // @llm-translated 2026-04-17
+      token_ttl_notice: "Token berlaku selama {ttl}",
+      // @llm-translated 2026-04-17
+      source_label: "Sumber:",
+      // @llm-translated 2026-04-17
+      missing_binary: "Binary CLI tidak ditemukan",
+      // @llm-translated 2026-04-17
+      unauthenticated: "Tidak terautentikasi — jalankan login terlebih dahulu",
+      // @llm-translated 2026-04-17
+      capture_failed: "Pengambilan gagal",
+      // @llm-translated 2026-04-17
+      timeout: "Waktu habis",
+    },
     design_phases: {
+      // @llm-translated 2026-04-17
+      setup_instructions: "Petunjuk pengaturan",
+      // @llm-translated 2026-04-17
+      all_steps_complete: "Semua langkah selesai — isi kolom di bawah dan uji koneksi Anda.",
+      // @llm-translated 2026-04-17
+      use_template: "Gunakan",
+      // @llm-translated 2026-04-17
+      recipe_used_one: "— digunakan {count} kali",
+      // @llm-translated 2026-04-17
+      recipe_used_other: "— digunakan {count} kali",
+      // @llm-translated 2026-04-17
+      instruction_placeholder: "mis. Slack, OpenAI, GitHub, Stripe...",
+      // @llm-translated 2026-04-17
+      credential_saved_message: "Kredensial disimpan",
+      // @llm-translated 2026-04-17
+      revision_count: "Revisi {count}",
+      // @llm-translated 2026-04-17
+      connector_added_to_catalog: "Konektor ditambahkan ke katalog",
+      // @llm-translated 2026-04-17
+      view_credential: "Lihat Kredensial",
+      // @llm-translated 2026-04-17
+      refine_hint: "Jelaskan perbaikan yang diinginkan",
+      // @llm-translated 2026-04-17
+      refine_placeholder: "mis. Tambahkan autentikasi bearer...",
+      // @llm-translated 2026-04-17
+      refine: "Perbaiki",
+      // @llm-translated 2026-04-17
+      linked_to_existing: "Ditautkan ke yang sudah ada",
+      // @llm-translated 2026-04-17
+      no_existing_connector: "Tidak ada konektor yang sudah ada",
+      // @llm-translated 2026-04-17
+      new_connector_will_be_registered: "Konektor baru akan didaftarkan",
+      // @llm-translated 2026-04-17
+      refine_request: "Permintaan perbaikan",
+      // @llm-translated 2026-04-17
+      auto_provision_hint: "Provisi otomatis akan membuat kredensial jika memungkinkan",
+      // @llm-translated 2026-04-17
+      credential_name_label: "Nama Kredensial",
+      // @llm-translated 2026-04-17
+      credentials_secure_notice: "Kredensial disimpan dengan aman menggunakan enkripsi AES-256-GCM",
+      // @llm-translated 2026-04-17
+      tested_successfully_at: "Diuji berhasil pada {time}",
       saving: "Menyimpan kredensial...",
       credential_created: "Kredensial Dibuat",
       step_connecting: "Menghubungkan",
@@ -3153,6 +3561,46 @@ export const id = {
       copy_to_clipboard: "Salin ke clipboard",
     },
     auto_cred_extra: {
+      // @llm-translated 2026-04-17
+      browser_automation_warning: "Otomasi browser sedang berjalan. Jangan berinteraksi dengan jendela — akan dilanjutkan saat selesai.",
+      // @llm-translated 2026-04-17
+      desktop_bridge_title: "{{label}} memerlukan aplikasi desktop",
+      // @llm-translated 2026-04-17
+      desktop_bridge_hint: "Konektor ini menjalankan sesi browser native yang hanya berjalan di aplikasi desktop Personas.",
+      // @llm-translated 2026-04-17
+      review_extracted: "Tinjau Kredensial yang Diekstrak",
+      // @llm-translated 2026-04-17
+      review_extracted_hint: "Nilai diekstrak dari browser — verifikasi sebelum menyimpan",
+      // @llm-translated 2026-04-17
+      completeness_partial: "{filled} dari {total} kolom wajib diisi. Lengkapi kolom yang hilang sebelum menyimpan.",
+      // @llm-translated 2026-04-17
+      universal_auto_setup: "Pengaturan Otomatis Universal",
+      // @llm-translated 2026-04-17
+      universal_auto_setup_hint: "Berikan URL dan deskripsi, dan AI akan menavigasi situs untuk menemukan dan membuat kredensial API secara otomatis.",
+      // @llm-translated 2026-04-17
+      service_url_label: "URL Layanan",
+      // @llm-translated 2026-04-17
+      service_url_placeholder: "https://app.example.com atau https://developer.example.com",
+      // @llm-translated 2026-04-17
+      what_do_you_need: "Apa yang Anda butuhkan?",
+      // @llm-translated 2026-04-17
+      description_placeholder: "mis. Saya memerlukan kunci API untuk REST API mereka untuk membaca dan menulis data. Portal developer memiliki bagian API Keys di bawah Pengaturan.",
+      // @llm-translated 2026-04-17
+      discover_credentials: "Temukan Kredensial",
+      // @llm-translated 2026-04-17
+      discovered_label: "Ditemukan: {label}",
+      // @llm-translated 2026-04-17
+      fields_discovered_one: "{count} kolom ditemukan",
+      // @llm-translated 2026-04-17
+      fields_discovered_other: "{count} kolom ditemukan",
+      // @llm-translated 2026-04-17
+      extracted_values_label: "Nilai yang Diekstrak",
+      // @llm-translated 2026-04-17
+      no_fields_discovered: "Tidak ada kolom yang ditemukan. Coba lagi dengan deskripsi yang lebih spesifik.",
+      // @llm-translated 2026-04-17
+      fields_captured_partial: "{filled}/{total} kolom diambil",
+      // @llm-translated 2026-04-17
+      credential_stored: "Kredensial {label} telah disimpan dengan aman.",
       preparing_guided: "Mempersiapkan petunjuk pengaturan terpandu...",
       starting_browser: "Memulai sesi browser...",
       no_log_output: "Tidak ada output log yang ditangkap.",
@@ -3185,6 +3633,10 @@ export const id = {
       setup_context: "Konteks pengaturan dari analisis desain:",
     },
     negotiator_extra: {
+      // @llm-translated 2026-04-17
+      panel_title: "Negosiator Kredensial AI",
+      // @llm-translated 2026-04-17
+      planning_description: "AI sedang menganalisis portal developer dan membuat rencana provisi langkah demi langkah...",
       checking_auth: "Memeriksa autentikasi yang ada...",
       auto_provisioning: "Provisi kunci API otomatis",
       generating_plan: "Membuat rencana provisi...",
@@ -3195,6 +3647,24 @@ export const id = {
       ask_question: "Ajukan pertanyaan tentang langkah ini...",
     },
     workspace_panel: {
+      // @llm-translated 2026-04-17
+      selected_count: "{selected} dari {total} dipilih",
+      // @llm-translated 2026-04-17
+      select_all: "Pilih semua",
+      // @llm-translated 2026-04-17
+      connect_services_one: "Sambungkan {count} layanan dengan satu login",
+      // @llm-translated 2026-04-17
+      connect_services_other: "Sambungkan {count} layanan dengan satu login",
+      // @llm-translated 2026-04-17
+      granting_access_one: "Ini akan memberikan akses ke {count} layanan",
+      // @llm-translated 2026-04-17
+      granting_access_other: "Ini akan memberikan akses ke {count} layanan",
+      // @llm-translated 2026-04-17
+      credentials_created_one: "{count} kredensial dibuat dari satu login.",
+      // @llm-translated 2026-04-17
+      credentials_created_other: "{count} kredensial dibuat dari satu login.",
+      // @llm-translated 2026-04-17
+      sign_in_browser: "Masuk dengan akun Google Anda di jendela browser.",
       select_services: "Pilih layanan untuk dihubungkan",
       browser_sign_in: "Selesaikan masuk di browser Anda...",
       creating_credentials: "Membuat kredensial...",
@@ -3257,6 +3727,8 @@ export const id = {
       no_status: "Tidak ada data status tersedia.",
     },
     api_playground: {
+      // @llm-translated 2026-04-17
+      request_body_placeholder: "{\n  \"input\": \"Halo, dunia!\"\n}",
       title: "API Playground",
       request_body: "Isi Permintaan",
       response_label: "Respons",
@@ -3266,6 +3738,8 @@ export const id = {
       snippets: "Cuplikan",
     },
     connection: {
+      // @llm-translated 2026-04-17
+      orchestrator_url_placeholder: "https://api.example.com/orchestrate",
       orchestrator_url_label: "URL Server Cloud",
       orchestrator_prefix: "https://",
       enter_api_key: "Masukkan kunci API",
@@ -3280,15 +3754,53 @@ export const id = {
       url_invalid: "URL tidak valid",
     },
     deployments_panel: {
+      // @llm-translated 2026-04-17
+      no_deployments_yet: "Belum ada penerapan",
+      // @llm-translated 2026-04-17
+      active_deployments: "Penerapan Aktif",
       deploy_persona: "Deploy Persona",
       select_persona: "Pilih persona untuk di-deploy",
       all_deployed: "Semua persona sudah di-deploy",
     },
     exec_detail: {
+      // @llm-translated 2026-04-17
+      label_status: "Status:",
+      // @llm-translated 2026-04-17
+      label_duration: "Durasi:",
+      // @llm-translated 2026-04-17
+      label_cost: "Biaya:",
+      // @llm-translated 2026-04-17
+      label_tokens: "Token:",
+      // @llm-translated 2026-04-17
+      label_started: "Dimulai:",
+      // @llm-translated 2026-04-17
+      label_completed: "Selesai:",
+      // @llm-translated 2026-04-17
+      label_input: "Masukan:",
+      // @llm-translated 2026-04-17
+      view_output: "Lihat Keluaran",
+      // @llm-translated 2026-04-17
+      output_prefix: "Keluaran",
+      // @llm-translated 2026-04-17
+      output_lines_suffix: "baris",
       fetching_output: "Mengambil output...",
       no_output: "Tidak ada output",
     },
     oauth_panel: {
+      // @llm-translated 2026-04-17
+      open_auth_window: "Buka Jendela Otorisasi",
+      // @llm-translated 2026-04-17
+      complete_authorization: "Selesaikan otorisasi di browser Anda",
+      // @llm-translated 2026-04-17
+      refresh_token: "Segarkan Token",
+      // @llm-translated 2026-04-17
+      open_authorization_window: "Buka jendela otorisasi",
+      // @llm-translated 2026-04-17
+      token_unknown_msg: "Status token tidak diketahui",
+      // @llm-translated 2026-04-17
+      connect_anthropic_msg: "Sambungkan akun Anthropic Anda untuk mengaktifkan penerapan cloud",
+      // @llm-translated 2026-04-17
+      token_expired_msg_prefix: "Token kedaluwarsa",
       connect_anthropic: "Hubungkan Akun Anthropic",
       open_auth_instruction: "Buka halaman auth, masuk, dan tempel kode di bawah.",
       paste_code: "Tempel kode otorisasi",
@@ -3300,6 +3812,12 @@ export const id = {
       scopes: "Cakupan",
     },
     trigger_form: {
+      // @llm-translated 2026-04-17
+      cron_expression: "Ekspresi cron",
+      // @llm-translated 2026-04-17
+      utc_suffix: "(UTC)",
+      // @llm-translated 2026-04-17
+      webhook_info: "Webhook akan dikirim ke endpoint ini",
       new_cloud_trigger: "Pemicu Cloud Baru",
       persona_must_be_deployed: "Persona (harus sudah di-deploy)",
       select_persona: "Pilih persona",
@@ -3309,9 +3827,23 @@ export const id = {
       creating: "Membuat...",
     },
     chart: {
+      // @llm-translated 2026-04-17
+      tooltip_runs: "Dijalankan:",
+      // @llm-translated 2026-04-17
+      tooltip_cost: "Biaya:",
+      // @llm-translated 2026-04-17
+      tooltip_success: "Berhasil:",
       daily_executions: "Eksekusi harian",
     },
     deploy_card: {
+      // @llm-translated 2026-04-17
+      budget_label: "Anggaran:",
+      // @llm-translated 2026-04-17
+      label_invocations: "Pemanggilan:",
+      // @llm-translated 2026-04-17
+      label_last_called: "Terakhir dipanggil:",
+      // @llm-translated 2026-04-17
+      label_created: "Dibuat:",
       test_deployment: "Uji deployment",
       pause_deployment: "Jeda deployment",
       resume_deployment: "Lanjutkan deployment",
@@ -3340,6 +3872,10 @@ export const id = {
       claude_token: "Token Claude",
     },
     history: {
+      // @llm-translated 2026-04-17
+      clear_filters: "Hapus filter",
+      // @llm-translated 2026-04-17
+      execution_history: "Riwayat Eksekusi",
       just_now: "Baru saja",
       minutes_ago: "{minutes}m lalu",
       hours_ago: "{hours}j lalu",
@@ -3359,6 +3895,18 @@ export const id = {
       top_errors: "Kesalahan Teratas",
     },
     schedules: {
+      // @llm-translated 2026-04-17
+      label_type: "Jenis:",
+      // @llm-translated 2026-04-17
+      label_status: "Status:",
+      // @llm-translated 2026-04-17
+      label_last_triggered: "Terakhir dipicu:",
+      // @llm-translated 2026-04-17
+      label_next_trigger: "Pemicu berikutnya:",
+      // @llm-translated 2026-04-17
+      label_cron: "Cron:",
+      // @llm-translated 2026-04-17
+      loading_firings: "Memuat data pemicuan...",
       header: "Pemicu Cloud ({count})",
       add_trigger: "Tambah Pemicu",
       deploy_first: "Deploy persona terlebih dahulu untuk membuat pemicu cloud.",
@@ -3438,6 +3986,26 @@ export const id = {
     cron_weekly_sun: "Mingguan (Minggu tengah malam UTC)",
   },
   sharing: {
+      // @llm-translated 2026-04-17
+    enclave_hash_label: "Hash Enklave:",
+      // @llm-translated 2026-04-17
+    refresh_peer_list: "Segarkan daftar peer",
+      // @llm-translated 2026-04-17
+    peer_list_stale: "Daftar peer kedaluwarsa",
+      // @llm-translated 2026-04-17
+    network_data_stale: "Data jaringan kedaluwarsa",
+      // @llm-translated 2026-04-17
+    peer_id_footer: "ID Peer:",
+      // @llm-translated 2026-04-17
+    remove_exposure: "Hapus paparan",
+      // @llm-translated 2026-04-17
+    revoke_trust: "Cabut kepercayaan",
+      // @llm-translated 2026-04-17
+    remove_peer: "Hapus peer",
+      // @llm-translated 2026-04-17
+    share_link_tooltip: "Salin tautan berbagi",
+      // @llm-translated 2026-04-17
+    copy_clipboard_tooltip: "Salin ke papan klip",
     export_title: "Ekspor Bundle",
     export_subtitle: "Pilih sumber daya yang diekspos untuk disertakan dalam bundle .persona yang ditandatangani.",
     seal_enclave_title: "Segel Enklave",
@@ -3654,6 +4222,18 @@ export const id = {
       run_analysis: "Jalankan analisis untuk memeriksa masalah.",
     },
     memories: {
+      // @llm-translated 2026-04-17
+      no_memories_hint: "Memori akan muncul setelah agen dijalankan",
+      // @llm-translated 2026-04-17
+      no_memories_match: "Tidak ada memori yang cocok dengan pencarian Anda",
+      // @llm-translated 2026-04-17
+      list_aria_label: "Daftar memori agen",
+      // @llm-translated 2026-04-17
+      add_memory_btn: "Tambah Memori",
+      // @llm-translated 2026-04-17
+      search_placeholder: "Cari memori...",
+      // @llm-translated 2026-04-17
+      no_filter_match: "Tidak ada yang cocok dengan filter",
       title: "Memori",
       created_success: "Memori berhasil dibuat",
       no_memories: "Belum ada memori",
@@ -4038,6 +4618,22 @@ export const id = {
       outage: "Gangguan",
     },
     leaderboard: {
+      // @llm-translated 2026-04-17
+      fleet_avg: "Rata-rata armada",
+      // @llm-translated 2026-04-17
+      refresh_label: "Segarkan papan peringkat",
+      // @llm-translated 2026-04-17
+      computing_scores: "Menghitung skor...",
+      // @llm-translated 2026-04-17
+      single_agent_has_data: "Satu agen memiliki data",
+      // @llm-translated 2026-04-17
+      add_more_agents: "Tambah lebih banyak agen untuk membandingkan",
+      // @llm-translated 2026-04-17
+      open_agent: "Buka agen",
+      // @llm-translated 2026-04-17
+      no_agent_data_title: "Tidak Ada Data Agen",
+      // @llm-translated 2026-04-17
+      no_agent_data_hint: "Jalankan agen Anda untuk melihat data kinerja",
       title: "Papan Peringkat Agen",
       subtitle: "Peringkat kinerja di semua agen",
       no_data: "Tidak ada data papan peringkat yang tersedia",
@@ -4399,6 +4995,16 @@ export const id = {
       all_operations: "Semua operasi",
     },
     health_extra: {
+      // @llm-translated 2026-04-17
+      score_prefix: "Skor:",
+      // @llm-translated 2026-04-17
+      uptime_30d_prefix: "Uptime 30h:",
+      // @llm-translated 2026-04-17
+      updated_prefix: "Diperbarui:",
+      // @llm-translated 2026-04-17
+      consecutive_failures_one: "{count} kegagalan berturut-turut",
+      // @llm-translated 2026-04-17
+      consecutive_failures_other: "{count} kegagalan berturut-turut",
       success: "Berhasil",
       burn: "Pemakaian",
       healing: "Pemulihan",
@@ -4527,6 +5133,8 @@ export const id = {
       system: "Sistem",
     },
     burn_rate_extra: {
+      // @llm-translated 2026-04-17
+      active_personas_subtitle: "persona aktif",
       title: "Proyeksi Tingkat Pemakaian",
       daily_burn: "Pemakaian Harian",
       projected_monthly: "Proyeksi Bulanan",
@@ -4541,6 +5149,10 @@ export const id = {
       no_chains: "Tidak ada rantai terdeteksi -- semua persona beroperasi secara independen",
     },
     predictive_alerts_extra: {
+      // @llm-translated 2026-04-17
+      per_month: "per bulan",
+      // @llm-translated 2026-04-17
+      confidence_pct: "{pct}% keyakinan",
       title: "Peringatan Prediktif",
       all_nominal: "Semua sistem nominal",
       no_alerts: "Tidak ada peringatan prediktif -- semua persona dalam parameter yang sehat.",
@@ -4552,6 +5164,8 @@ export const id = {
       byom_recommendations: "Rekomendasi Perutean BYOM",
     },
     annotate_modal: {
+      // @llm-translated 2026-04-17
+      annotation_placeholder: "Tambahkan catatan atau anotasi...",
       title: "Tambah Anotasi Pengetahuan",
       persona_label: "Persona Atribusi",
       scope_label: "Cakupan",
@@ -4563,6 +5177,8 @@ export const id = {
       save_annotation: "Simpan Anotasi",
     },
     knowledge_row: {
+      // @llm-translated 2026-04-17
+      execution_trend_label: "Tren eksekusi",
       annotation: "Anotasi",
       successes: "Keberhasilan",
       failures: "Kegagalan",
@@ -4575,11 +5191,19 @@ export const id = {
       dismiss_annotation: "Abaikan anotasi",
     },
     focused_decision: {
+      // @llm-translated 2026-04-17
+      video_not_supported: "Video tidak didukung di browser ini",
+      // @llm-translated 2026-04-17
+      reject_this: "Tolak ini",
+      // @llm-translated 2026-04-17
+      accept_this: "Terima ini",
       accept: "Terima",
       reject: "Tolak",
       media_unavailable: "Media tidak tersedia",
     },
     review_focus: {
+      // @llm-translated 2026-04-17
+      video_not_supported: "Video tidak didukung di browser ini",
       all_caught_up: "Semua selesai",
       no_pending: "Tidak ada ulasan tertunda untuk diproses.",
       queue: "Antrean",
@@ -4641,6 +5265,38 @@ export const id = {
       mark_resolved: "Tandai sebagai Terselesaikan",
     },
     healing_issues_panel: {
+      // @llm-translated 2026-04-17
+      ai_healing_title: "Penyembuhan AI",
+      // @llm-translated 2026-04-17
+      diagnosis_label: "Diagnosis:",
+      // @llm-translated 2026-04-17
+      fixes_applied: "Perbaikan diterapkan:",
+      // @llm-translated 2026-04-17
+      alert_history_title: "Riwayat Peringatan",
+      // @llm-translated 2026-04-17
+      all_agents_global: "Semua agen (global)",
+      // @llm-translated 2026-04-17
+      add_rule: "Tambah Aturan",
+      // @llm-translated 2026-04-17
+      no_rules_configured: "Tidak ada aturan yang dikonfigurasi",
+      // @llm-translated 2026-04-17
+      confidence_pct_suffix: "% keyakinan",
+      // @llm-translated 2026-04-17
+      spike_on: "Lonjakan pada",
+      // @llm-translated 2026-04-17
+      correlated_events_prefix: "Acara berkorelasi:",
+      // @llm-translated 2026-04-17
+      circuit_breaker_label: "Pemutus Sirkuit:",
+      // @llm-translated 2026-04-17
+      auto_disabled_message: "Dinonaktifkan otomatis karena kegagalan berulang",
+      // @llm-translated 2026-04-17
+      execution_label: "Eksekusi:",
+      // @llm-translated 2026-04-17
+      issue_marked_as: "Masalah ditandai sebagai {status}",
+      // @llm-translated 2026-04-17
+      retry_in_progress: "Percobaan ulang sedang berlangsung",
+      // @llm-translated 2026-04-17
+      resolve_issue_title: "Selesaikan masalah",
       title: "Masalah Kesehatan",
       analyzing: "Menganalisis...",
       run_analysis: "Jalankan Analisis",

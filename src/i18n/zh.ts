@@ -48,6 +48,8 @@ export const zh = {
     error: "错误",
     success: "成功",
     required: "必填",
+    // @llm-translated 2026-04-17
+    optional: "可选",
     select: "-- 请选择 --",
     no_results: "未找到结果",
     active: "活跃",
@@ -209,6 +211,9 @@ export const zh = {
     engine: "引擎",
     byom: "BYOM",
     data: "数据",
+    // @llm-translated 2026-04-17
+    quality_gates: "内容过滤",
+    config_resolution: "代理配置",
     admin: "管理",
     create: "创建",
     all_agents: "所有代理",
@@ -742,6 +747,20 @@ export const zh = {
       input_preview_prefix: "输入：",
       offset_prefix: "偏移：",
       step_tooltip: "步骤 {step}：{name}",
+      // @llm-translated 2026-04-17
+      depth_label: "深度：",
+      active_count_label: "活跃（{count}）",
+      completed_count_label: "已完成（{count}）",
+      metadata_section: "元数据",
+      chain_id_prefix: "链：{id}",
+      chain_total_duration: "总计：{duration}",
+      zero_ms: "0ms",
+      tool_calls_count: "{count} 次工具调用",
+      tool_calls_count_other: "{count} 次工具调用",
+      unique_tools_count: "（{count} 个唯一）",
+      prev_error_nav: "上一个错误（Shift+E）",
+      next_error_nav: "下一个错误（E）",
+      runner_input_placeholder: '{"key": "value"}',
       ms_into_stage: "进入阶段 {ms}ms",
     },
     lab: {
@@ -937,6 +956,9 @@ export const zh = {
       no_structural_diff: "未检测到结构差异",
       no_changes_diff: "无变更",
       improvement_run_started: "改进运行已启动",
+      // @llm-translated 2026-04-17
+      objective_warning: "适应度目标问题",
+      objective_fallback_toast: "进化使用了默认适应度权重——请检查目标设置",
       analyzing_patching: "正在分析并修补提示词...",
       auto_improve: "自动改进提示词",
       no_prompt_changes: "提示词无变更",
@@ -995,6 +1017,8 @@ export const zh = {
       show_impact: "显示影响",
     },
     design: {
+    // @llm-translated 2026-04-17
+    conv_controls_aria: "设计对话控件",
       select_agent: "选择代理以开始设计分析",
       mode_design: "设计",
       mode_intent: "意图编译器",
@@ -1079,6 +1103,10 @@ export const zh = {
       additional_instructions_placeholder: "添加具体需求、领域知识或约束...",
     },
     connectors: {
+      // @llm-translated 2026-04-17
+      auto_input_schema_placeholder: '{ "file_url": "string" }',
+      auto_github_token_needs: "您的令牌需要 {scopes} 权限范围。请前往 github.com/settings/tokens 更新令牌。",
+      auto_fallback_title: "失败时回退到直接连接器",
       connectors_label: "连接器",
       list_view: "列表视图",
       graph_view: "依赖关系图",
@@ -1273,6 +1301,8 @@ export const zh = {
       rank: "排名",
     },
     model_config: {
+      // @llm-translated 2026-04-17
+      model_name_placeholder_override: "例如 claude-sonnet-4-20250514",
       model_provider: "模型与提供商",
       unsaved_changes: "有未保存的更改",
       max_budget: "最大预算（USD）",
@@ -1914,6 +1944,10 @@ export const zh = {
       no_data: "无矩阵数据。请构建或重建此代理以生成维度。",
     },
     settings_status: {
+      // @llm-translated 2026-04-17
+      speak_as: "以……身份发言",
+      no_twins_configured: "未配置孪生体。打开孪生插件创建一个——此代理即可采用它。",
+      twin_profile_aria: "此代理以哪个孪生配置文件发言",
       saving: "正在保存 {sections}...",
       changed: "{sections} 已更改",
       all_saved: "所有更改已保存",
@@ -1937,6 +1971,8 @@ export const zh = {
       health_watch_enable: "启用持续健康监控",
     },
     tool_runner: {
+      // @llm-translated 2026-04-17
+      input_json_placeholder: '{ "key": "value" }',
       no_tools: "此代理未分配工具。",
       input_json: "输入 JSON",
       run: "运行",
@@ -1987,6 +2023,8 @@ export const zh = {
       unhealthy: "不健康",
     },
     prompt_editor: {
+      // @llm-translated 2026-04-17
+      sections_aria: "提示词章节",
       no_persona: "未选择代理",
       enter_content: "输入 {section} 内容...",
       new_section: "新章节",

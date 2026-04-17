@@ -144,6 +144,8 @@ export const es = {
     command_palette_select: "seleccionar",
     command_palette_commands: "comandos",
     loading_label: "Cargando",
+    // @llm-translated 2026-04-17
+    optional: "opcional",
   },
   chrome: {
     app_title: "Personas",
@@ -233,6 +235,10 @@ export const es = {
     unread_messages_sr_other: "{count} mensajes sin leer",
     pending_events_sr: "{count} evento pendiente",
     pending_events_sr_other: "{count} eventos pendientes",
+    // @llm-translated 2026-04-17
+    quality_gates: "Filtros de contenido",
+    // @llm-translated 2026-04-17
+    config_resolution: "Configuración del agente",
   },
   home: {
     welcome: "Bienvenido",
@@ -743,6 +749,32 @@ export const es = {
       offset_prefix: "desp:",
       step_tooltip: "Paso {step}: {name}",
       ms_into_stage: "{ms}ms en la etapa",
+      // @llm-translated 2026-04-17
+      depth_label: "Profundidad:",
+      // @llm-translated 2026-04-17
+      active_count_label: "Activo ({count})",
+      // @llm-translated 2026-04-17
+      completed_count_label: "Completado ({count})",
+      // @llm-translated 2026-04-17
+      metadata_section: "Metadatos",
+      // @llm-translated 2026-04-17
+      chain_id_prefix: "Cadena: {id}",
+      // @llm-translated 2026-04-17
+      chain_total_duration: "Total: {duration}",
+      // @llm-translated 2026-04-17
+      zero_ms: "0ms",
+      // @llm-translated 2026-04-17
+      tool_calls_count: "{count} llamada a herramienta",
+      // @llm-translated 2026-04-17
+      tool_calls_count_other: "{count} llamadas a herramientas",
+      // @llm-translated 2026-04-17
+      unique_tools_count: "({count} únicas)",
+      // @llm-translated 2026-04-17
+      prev_error_nav: "Error anterior (Shift+E)",
+      // @llm-translated 2026-04-17
+      next_error_nav: "Siguiente error (E)",
+      // @llm-translated 2026-04-17
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
     lab: {
       mode_arena: "Arena",
@@ -876,6 +908,10 @@ export const es = {
       quality_label: "Calidad",
       speed_label: "Velocidad",
       cost_label: "Costo",
+      // @llm-translated 2026-04-17
+      objective_warning: "Problema con el objetivo de aptitud",
+      // @llm-translated 2026-04-17
+      objective_fallback_toast: "La evolución utilizó pesos de aptitud predeterminados — verifica la configuración del objetivo",
       genome_breeding: "Cruce de genomas",
       genome_breeding_subtitle: "Cruza personas de alto rendimiento para descubrir configuraciones novedosas",
       select_parents: "Seleccionar padres (2-5 personas)",
@@ -1077,6 +1113,8 @@ export const es = {
       go_back_hint: "Vuelve y responde las preguntas para configurar tu agente.",
       additional_instructions: "Instrucciones o contexto adicional (opcional)",
       additional_instructions_placeholder: "Agrega requisitos específicos, conocimiento del dominio o restricciones...",
+      // @llm-translated 2026-04-17
+      conv_controls_aria: "Controles de conversación de diseño",
     },
     connectors: {
       connectors_label: "Conectores",
@@ -1141,6 +1179,12 @@ export const es = {
       auto_show_advanced: "Mostrar configuración avanzada",
       auto_hide_advanced: "Ocultar configuración avanzada",
       auto_input_schema: "Esquema de entrada",
+      // @llm-translated 2026-04-17
+      auto_input_schema_placeholder: "{ \"file_url\": \"string\" }",
+      // @llm-translated 2026-04-17
+      auto_github_token_needs: "Tu token necesita el(los) alcance(s) {scopes}. Actualiza tu token en github.com/settings/tokens.",
+      // @llm-translated 2026-04-17
+      auto_fallback_title: "Recurre al conector directo en caso de fallo",
       auto_on_failure: "En caso de fallo",
       auto_timeout: "Tiempo de espera",
       auto_seconds: "segundos",
@@ -1333,6 +1377,8 @@ export const es = {
       model_name_placeholder_litellm: "p. ej. anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "p. ej. llama3.1:8b",
       model_name_placeholder_custom: "Identificador del modelo",
+      // @llm-translated 2026-04-17
+      model_name_placeholder_override: "p. ej. claude-sonnet-4-20250514",
       base_url_hint: "El endpoint API de tu proveedor de modelo. Debe incluir el protocolo (http/https) y el puerto si no es estándar.",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "Token de autenticación para la API del proveedor. Para Ollama local, usa 'ollama'. Para LiteLLM, usa tu clave maestra.",
@@ -1935,10 +1981,18 @@ export const es = {
       health_watch: "Monitoreo de salud",
       health_watch_active: "Monitoreo de salud activo (cada 6h)",
       health_watch_enable: "Habilitar monitoreo continuo de salud",
+      // @llm-translated 2026-04-17
+      speak_as: "Hablar como",
+      // @llm-translated 2026-04-17
+      no_twins_configured: "No hay gemelos configurados. Abre el plugin Gemelo para crear uno — esta persona podrá adoptarlo.",
+      // @llm-translated 2026-04-17
+      twin_profile_aria: "Perfil gemelo que esta persona adopta",
     },
     tool_runner: {
       no_tools: "No hay herramientas asignadas a esta persona.",
       input_json: "JSON de entrada",
+      // @llm-translated 2026-04-17
+      input_json_placeholder: "{ \"key\": \"value\" }",
       run: "Ejecutar",
       running: "Ejecutando...",
       success: "Éxito",
@@ -1992,6 +2046,8 @@ export const es = {
       new_section: "Nueva sección",
       saved: "Guardado",
       sections: "secciones",
+      // @llm-translated 2026-04-17
+      sections_aria: "Secciones del prompt",
     },
     custom_sections: {
       title: "Secciones personalizadas",
@@ -2205,6 +2261,8 @@ export const es = {
       no_dependencies: "Ningún agente depende de esta credencial. Se puede modificar o eliminar con seguridad.",
       affected_agents: "Agentes afectados",
       affected_events: "Eventos afectados",
+      // @llm-translated 2026-04-17
+      sort_label: "Ordenar:",
     },
     import: {
       title: "Origen de importación",
@@ -2221,6 +2279,22 @@ export const es = {
         hour6: "6 horas",
         day1: "24 horas",
       },
+      // @llm-translated 2026-04-17
+      parse_secrets: "Analizar secretos",
+      // @llm-translated 2026-04-17
+      selected_for_import: "seleccionados para importar",
+      // @llm-translated 2026-04-17
+      auto_detected: "Detectado automáticamente",
+      // @llm-translated 2026-04-17
+      sync_supported: "Sincronización compatible",
+      // @llm-translated 2026-04-17
+      secrets_found_one: "{count} secreto encontrado",
+      // @llm-translated 2026-04-17
+      secrets_found_other: "{count} secretos encontrados",
+      // @llm-translated 2026-04-17
+      import_secrets_one: "Importar {count} secreto",
+      // @llm-translated 2026-04-17
+      import_secrets_other: "Importar {count} secretos",
     },
     features: {
       anomaly_detected: "Anomalía detectada: la credencial está fallando repentinamente después de un éxito previo. Posible revocación.",
@@ -2312,6 +2386,8 @@ export const es = {
       scope_missing_one: "{count} alcance solicitado no concedido: ",
       scope_missing_other: "{count} alcances solicitados no concedidos: ",
       reauthorize: "Reautorizar",
+      // @llm-translated 2026-04-17
+      reauthorize_scopes: "Reautorizar con alcances adicionales",
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2329,6 +2405,30 @@ export const es = {
       configure_fields: "Configurar campos de credencial",
       detect: "Detectar",
       auto_add: "Agregar automáticamente",
+      // @llm-translated 2026-04-17
+      connection_test_heading: "Prueba de conexión",
+      // @llm-translated 2026-04-17
+      test_connection_btn: "Probar conexión",
+      // @llm-translated 2026-04-17
+      credential_fields_heading: "Campos de credencial",
+      // @llm-translated 2026-04-17
+      how_to_get_connector: "Cómo obtener credenciales de {connectorLabel}",
+      // @llm-translated 2026-04-17
+      authorization_complete: "Autorización completada",
+      // @llm-translated 2026-04-17
+      copied_to_clipboard: "Copiado al portapapeles",
+      // @llm-translated 2026-04-17
+      credential_name: "Nombre de credencial",
+      // @llm-translated 2026-04-17
+      credential_name_placeholder: "Etiqueta esta credencial — p. ej. Mi cuenta de {label}, {label} Producción",
+      // @llm-translated 2026-04-17
+      authorizing_with: "Autorizando con {label}...",
+      // @llm-translated 2026-04-17
+      authorize_with: "Autorizar con {label}",
+      // @llm-translated 2026-04-17
+      oauth_consent_hint: "Abre {label} en tu navegador. Concede acceso y regresa aquí.",
+      // @llm-translated 2026-04-17
+      oauth_connected_at: "{label} conectado a las {time}",
     },
     type_picker: {
       title: "Agregar credencial",
@@ -2402,6 +2502,22 @@ export const es = {
       open_in_browser: "Abrir en el navegador",
       completed_step: "He completado esto",
       input_requested: "Entrada requerida",
+      // @llm-translated 2026-04-17
+      cancel_session: "Cancelar sesión",
+      // @llm-translated 2026-04-17
+      test_connection: "Probar conexión",
+      // @llm-translated 2026-04-17
+      testing: "Probando...",
+      // @llm-translated 2026-04-17
+      re_run_browser: "Volver a ejecutar navegador",
+      // @llm-translated 2026-04-17
+      discard: "Descartar",
+      // @llm-translated 2026-04-17
+      save_credential: "Guardar credencial",
+      // @llm-translated 2026-04-17
+      save_procedure: "Guardar procedimiento",
+      // @llm-translated 2026-04-17
+      procedure_saved: "Procedimiento guardado",
     },
     vector: {
       documents_tab: "Documentos",
@@ -2642,6 +2758,10 @@ export const es = {
       filter_tables: "Filtrar tablas...",
       refresh: "Actualizar",
       introspection_unavailable: "La introspección de tablas no está disponible para este tipo de conector.",
+      // @llm-translated 2026-04-17
+      not_null: "NOT NULL",
+      // @llm-translated 2026-04-17
+      ctrl_enter: "Ctrl+Enter",
     },
     dependencies: {
       simulate_revocation: "Simular revocación",
@@ -2687,6 +2807,14 @@ export const es = {
       daily_execs_lost: "Ejecuciones diarias perdidas",
       daily_cost_impact: "Impacto diario en el costo",
       sim_low: "Ninguna persona ni flujo de trabajo depende de esta credencial. Es seguro revocarla.",
+      // @llm-translated 2026-04-17
+      sim_critical: "Revocar {credentialName} interrumpiría {workflows} flujo{workflowPlural} de trabajo y detendría {personas} persona{personaPlural}.",
+      // @llm-translated 2026-04-17
+      sim_high: "Revocar {credentialName} afectaría a {personas} persona{personaPlural} en tu espacio de trabajo.",
+      // @llm-translated 2026-04-17
+      sim_medium: "Revocar {credentialName} tiene un radio de impacto limitado.",
+      // @llm-translated 2026-04-17
+      per_day: "/día",
     },
     shared: {
       add: "Agregar",
@@ -2816,6 +2944,38 @@ export const es = {
       no_documents_description: "Suelta archivos aquí, pega texto o escanea un directorio para comenzar a construir tu base de conocimiento.",
       delete_document: "Eliminar documento",
       chunks_label: "{count} fragmentos",
+      // @llm-translated 2026-04-17
+      copied: "Copiado",
+      // @llm-translated 2026-04-17
+      kb_count_summary: "— {docs} docs, {chunks} fragmentos",
+      // @llm-translated 2026-04-17
+      default_patterns: "Predeterminado:",
+      // @llm-translated 2026-04-17
+      add_pattern_placeholder: "*.pdf",
+      // @llm-translated 2026-04-17
+      distance_label: "distancia:",
+      // @llm-translated 2026-04-17
+      chunk_label: "fragmento:",
+      // @llm-translated 2026-04-17
+      copy_credential_id: "Copiar ID de credencial",
+      // @llm-translated 2026-04-17
+      request_body: "Cuerpo de la solicitud",
+      // @llm-translated 2026-04-17
+      add_tag_title: "Agregar etiqueta",
+      // @llm-translated 2026-04-17
+      local_embedding_hint: "Los embeddings se generan localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23 MB) se descarga en el primer uso y se guarda en caché localmente.",
+      // @llm-translated 2026-04-17
+      api_path_placeholder: "/api/v1/resource",
+      // @llm-translated 2026-04-17
+      json_body_placeholder: "{\"key\": \"value\"}",
+      // @llm-translated 2026-04-17
+      sending: "Enviando...",
+      // @llm-translated 2026-04-17
+      send: "Enviar",
+      // @llm-translated 2026-04-17
+      search_results_one: "{count} resultado para \"{query}\"",
+      // @llm-translated 2026-04-17
+      search_results_other: "{count} resultados para \"{query}\"",
     },
     manager: {
       title: "Credenciales",
@@ -2841,6 +3001,12 @@ export const es = {
       title: "Resultados de verificación de salud",
       needs_attention: "Necesita atención",
       slowest_responses: "Respuestas más lentas",
+      // @llm-translated 2026-04-17
+      passed_count: "{count} aprobadas",
+      // @llm-translated 2026-04-17
+      failed_count: "{count} fallidas",
+      // @llm-translated 2026-04-17
+      total_count: "{count} total",
     },
     health_bar: {
       healthy: "saludable",
@@ -2942,6 +3108,8 @@ export const es = {
       avg_drift: "Deriva promedio",
       recent_ttls: "TTLs recientes del proveedor (más reciente primero)",
       recent_refreshes: "Actualizaciones recientes",
+      // @llm-translated 2026-04-17
+      fallback_used: "Reserva ({fallback}s) utilizada en el {rate}% de las actualizaciones ({count}/{total}) — el proveedor omite",
     },
     rotation_section: {
       corrupted_warning: "Los metadatos de verificación de salud están dañados. Las puntuaciones de anomalía no están disponibles hasta que la próxima verificación exitosa sobrescriba los datos incorrectos.",
@@ -2962,6 +3130,15 @@ export const es = {
       enabling: "Habilitando...",
       enable_rotation: "Habilitar rotación",
       enable_failed: "Error al habilitar la rotación: {error}",
+      // @llm-translated 2026-04-17
+      last_rotated: "Última rotación {time}",
+    },
+    // @llm-translated 2026-04-17
+    reauth_banner: {
+      // @llm-translated 2026-04-17
+      access_revoked: ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
+      // @llm-translated 2026-04-17
+      reconnect: "Reconectar",
     },
     event_config: {
       event_triggers: "Disparadores de eventos",
@@ -2988,6 +3165,8 @@ export const es = {
       minutes_10: "10 minutos",
       healthcheck_auto_rotate: "La rotación se activará automáticamente cuando una credencial previamente saludable comience a fallar en su verificación de salud.",
       last_evaluated: "Última evaluación: {time}",
+      // @llm-translated 2026-04-17
+      loading: "Cargando eventos...",
     },
     credential_forms: {
       encrypted_keychain: "Cifrado con llavero del SO",
@@ -3001,6 +3180,14 @@ export const es = {
       new_credential: "Nueva credencial de {label}",
       configure_fields: "Configurar campos de credencial",
       oauth_required: "Usa el botón de autorización de abajo para conectar esta credencial.",
+      // @llm-translated 2026-04-17
+      open_to_generate: "Abre {label} para generar una clave API o token",
+      // @llm-translated 2026-04-17
+      already_configured: "Credencial ya configurada — actualiza abajo para reemplazar",
+      // @llm-translated 2026-04-17
+      setup_instructions_label: "Instrucciones de configuración",
+      // @llm-translated 2026-04-17
+      no_fields_defined: "No hay campos de credencial definidos para este conector.",
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3027,6 +3214,24 @@ export const es = {
       empty: "Sin entradas de auditoría aún",
       empty_hint: "Las operaciones se registrarán conforme ocurran.",
       access_events_hint: "Los eventos de acceso aparecerán aquí.",
+      // @llm-translated 2026-04-17
+      loading: "Cargando historial de auditoría...",
+      // @llm-translated 2026-04-17
+      total_accesses: "{count} total",
+      // @llm-translated 2026-04-17
+      personas_one: "{count} persona",
+      // @llm-translated 2026-04-17
+      personas_other: "{count} personas",
+      // @llm-translated 2026-04-17
+      accesses_24h: "{count} en 24h",
+      // @llm-translated 2026-04-17
+      anomalies_one: "{count} anomalía",
+      // @llm-translated 2026-04-17
+      anomalies_other: "{count} anomalías",
+      // @llm-translated 2026-04-17
+      no_anomalies: "Sin anomalías",
+      // @llm-translated 2026-04-17
+      show_all: "Mostrar todas las {count} entradas",
     },
     credential_import: {
       import_from: "Importar desde {source}",
@@ -3035,6 +3240,18 @@ export const es = {
       enable_sync: "Habilitar modo de sincronización",
       source_ref: "Referencia de origen",
       poll_interval: "Intervalo de sondeo",
+      // @llm-translated 2026-04-17
+      sync_hint: "Monitorea la bóveda externa para detectar cambios y actualiza automáticamente las credenciales mediante sondeo.",
+      // @llm-translated 2026-04-17
+      interval_15min: "15 min",
+      // @llm-translated 2026-04-17
+      interval_30min: "30 min",
+      // @llm-translated 2026-04-17
+      interval_1hr: "1 hora",
+      // @llm-translated 2026-04-17
+      interval_6hr: "6 horas",
+      // @llm-translated 2026-04-17
+      interval_24hr: "24 horas",
     },
     empty_state: {
       heading: "Conecta tu primer servicio",
@@ -3059,6 +3276,24 @@ export const es = {
       batch_complete: "Configuración por lotes completa",
       skip_service: "Omitir este servicio",
       no_filter_match: "Intenta con un término de búsqueda diferente o limpia tu filtro.",
+      // @llm-translated 2026-04-17
+      set_up_credentials: "Configurar credenciales",
+      // @llm-translated 2026-04-17
+      clear_selection: "Limpiar selección",
+      // @llm-translated 2026-04-17
+      set_up_services: "Configurar {count} servicio{plural}",
+      // @llm-translated 2026-04-17
+      setting_up: "Configurando {current} de {total}",
+      // @llm-translated 2026-04-17
+      wizard_title: "Asistente de configuración de credenciales",
+      // @llm-translated 2026-04-17
+      choose_service: "Elige un servicio para configurar",
+      // @llm-translated 2026-04-17
+      ai_walk_description: "La IA te guiará paso a paso para obtener las credenciales de API.",
+      // @llm-translated 2026-04-17
+      wizard_subtitle: "Configuración de credenciales guiada por IA",
+      // @llm-translated 2026-04-17
+      wizard_subtitle_batch: "Configurando {count} servicio{plural}",
     },
     autopilot: {
       title: "Piloto automático API",
@@ -3082,6 +3317,40 @@ export const es = {
       query_parameters: "Parámetros de consulta",
       param_name_placeholder: "Nombre del parámetro",
       request_body: "Cuerpo de la solicitud (JSON)",
+      // @llm-translated 2026-04-17
+      from_url: "Desde URL",
+      // @llm-translated 2026-04-17
+      paste_content: "Pegar contenido",
+      // @llm-translated 2026-04-17
+      openapi_spec_url: "URL de especificación OpenAPI",
+      // @llm-translated 2026-04-17
+      openapi_format_hint: "Formato JSON o YAML",
+      // @llm-translated 2026-04-17
+      parsing_spec: "Analizando especificación...",
+      // @llm-translated 2026-04-17
+      parse_analyze: "Analizar y examinar",
+      // @llm-translated 2026-04-17
+      connector_in_catalog: "Conector en el catálogo",
+      // @llm-translated 2026-04-17
+      generated_tools: "Herramientas generadas",
+      // @llm-translated 2026-04-17
+      credential_fields: "Campos de credencial",
+      // @llm-translated 2026-04-17
+      open_playground: "Abrir área de pruebas",
+      // @llm-translated 2026-04-17
+      copy_connector_id: "Copiar ID del conector",
+      // @llm-translated 2026-04-17
+      go_to_catalog: "Ir al catálogo",
+      // @llm-translated 2026-04-17
+      response_headers: "Encabezados de respuesta",
+      // @llm-translated 2026-04-17
+      base_url_placeholder: "https://api.ejemplo.com",
+      // @llm-translated 2026-04-17
+      openapi_url_placeholder: "https://api.ejemplo.com/openapi.json",
+      // @llm-translated 2026-04-17
+      auth_schemes: "Esquemas de autenticación",
+      // @llm-translated 2026-04-17
+      body_placeholder: "{\"key\": \"value\"}",
     },
     foraging: {
       no_credentials_found: "No se encontraron credenciales",
@@ -3098,10 +3367,78 @@ export const es = {
       step_done: "Listo",
       step_completed: "(completado)",
       step_current: "(actual)",
+      // @llm-translated 2026-04-17
+      start_scan: "Iniciar escaneo",
+      // @llm-translated 2026-04-17
+      checking_env: "Verificando variables de entorno, archivos de configuración y credenciales de herramientas de desarrollo",
+      // @llm-translated 2026-04-17
+      importing: "Importando credenciales a la bóveda...",
+      // @llm-translated 2026-04-17
+      scan_again: "Escanear de nuevo",
+      // @llm-translated 2026-04-17
+      back_to_vault: "Volver a la bóveda",
+      // @llm-translated 2026-04-17
+      already_in_vault: "Ya está en la bóveda",
+      // @llm-translated 2026-04-17
+      imported: "Importado",
+      // @llm-translated 2026-04-17
+      to_vault: "a la bóveda",
+      // @llm-translated 2026-04-17
+      credentials_found_one: "{count} credencial encontrada",
+      // @llm-translated 2026-04-17
+      credentials_found_other: "{count} credenciales encontradas",
+      // @llm-translated 2026-04-17
+      selected: "seleccionadas",
+      // @llm-translated 2026-04-17
+      import_to_vault_one: "Importar {count} credencial a la bóveda",
+      // @llm-translated 2026-04-17
+      import_to_vault_other: "Importar {count} credenciales a la bóveda",
+      // @llm-translated 2026-04-17
+      env_var_one: "{count} var de entorno",
+      // @llm-translated 2026-04-17
+      env_var_other: "{count} vars de entorno",
+      // @llm-translated 2026-04-17
+      import_server: "Importar",
+      // @llm-translated 2026-04-17
+      sources_in: "fuentes en",
+      // @llm-translated 2026-04-17
+      progress_aria: "Progreso de búsqueda",
+      // @llm-translated 2026-04-17
+      scanned_sources: "Escaneadas {count} fuentes en {ms}ms",
     },
     desktop_discovery: {
       title: "Aplicaciones de escritorio",
       allowed_binaries: "Binarios permitidos: ",
+      // @llm-translated 2026-04-17
+      connect_description: "Conecta aplicaciones locales o importa servidores MCP de Claude Desktop",
+      // @llm-translated 2026-04-17
+      detected_apps_tab: "Apps detectadas ({count})",
+      // @llm-translated 2026-04-17
+      claude_mcp_tab: "Claude MCP ({count})",
+      // @llm-translated 2026-04-17
+      scanning: "Buscando apps de escritorio...",
+      // @llm-translated 2026-04-17
+      detected_on_system: "Detectado en tu sistema",
+      // @llm-translated 2026-04-17
+      not_detected: "No detectado",
+      // @llm-translated 2026-04-17
+      no_apps: "No se detectaron apps de escritorio. Intenta actualizar.",
+      // @llm-translated 2026-04-17
+      reading_config: "Leyendo configuración de Claude Desktop...",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_one: "Se encontró {count} servidor MCP en la configuración de Claude Desktop. Impórtalo como credencial para usarlo con tus agentes.",
+      // @llm-translated 2026-04-17
+      mcp_servers_found_other: "Se encontraron {count} servidores MCP en la configuración de Claude Desktop. Impórtalos como credenciales para usarlos con tus agentes.",
+      // @llm-translated 2026-04-17
+      no_mcp_config: "No se encontró configuración de MCP en Claude Desktop.",
+      // @llm-translated 2026-04-17
+      mcp_config_hint: "Si tienes Claude Desktop instalado, asegúrate de que tenga servidores MCP configurados en su configuración.",
+      // @llm-translated 2026-04-17
+      permission_required: "Permiso requerido",
+      // @llm-translated 2026-04-17
+      approve_description: "solicita las siguientes capacidades. Revisa y aprueba para habilitar este conector.",
+      // @llm-translated 2026-04-17
+      approve_connect: "Aprobar y conectar",
     },
     picker_section: {
       no_connectors: "No se encontraron conectores",
@@ -3112,6 +3449,42 @@ export const es = {
       filter_purpose: "Propósito",
       filter_category: "Categoría",
       filter_license: "Licencia",
+      // @llm-translated 2026-04-17
+      credential_name: "Nombre de la credencial",
+      // @llm-translated 2026-04-17
+      add_project_first: "Añade primero un proyecto en Herramientas de desarrollo para conectar una base de código a tus agentes.",
+      // @llm-translated 2026-04-17
+      go_to_dev_tools: "Ir a Herramientas de desarrollo",
+      // @llm-translated 2026-04-17
+      workspace_connect_description: "Un inicio de sesión de Google crea automáticamente credenciales para Gmail, Calendar, Drive y Sheets",
+      // @llm-translated 2026-04-17
+      foraging_description: "Escanea tu sistema de archivos en busca de claves API, perfiles AWS, variables de entorno y más",
+      // @llm-translated 2026-04-17
+      no_setup_guide: "No hay guía de configuración disponible para este conector. Visita el enlace de documentación a continuación para obtener instrucciones.",
+      // @llm-translated 2026-04-17
+      open_setup_page: "Abrir página de configuración de {label}",
+    },
+    cli_capture: {
+      // @llm-translated 2026-04-17
+      cta: "Importar desde CLI local",
+      // @llm-translated 2026-04-17
+      hint: "Usa un CLI local ya autenticado en lugar de pegar una clave API.",
+      // @llm-translated 2026-04-17
+      running: "Ejecutando CLI local...",
+      // @llm-translated 2026-04-17
+      success: "Credenciales capturadas desde CLI",
+      // @llm-translated 2026-04-17
+      token_ttl_notice: "Este token expira en {seconds}s y se renovará automáticamente.",
+      // @llm-translated 2026-04-17
+      source_label: "CLI",
+      // @llm-translated 2026-04-17
+      missing_binary: "`{binary}` no está instalado o no se encuentra en una ubicación permitida.",
+      // @llm-translated 2026-04-17
+      unauthenticated: "No has iniciado sesión en {binary}. {instruction}",
+      // @llm-translated 2026-04-17
+      capture_failed: "Error al capturar desde CLI: {detail}",
+      // @llm-translated 2026-04-17
+      timeout: "La captura desde CLI ha expirado. Intenta ejecutar el comando manualmente primero.",
     },
     schemas: {
       none_configured: "Ninguno configurado.",
@@ -3148,6 +3521,48 @@ export const es = {
       mark_done: "Marcar como completado",
       mark_step_complete: "Marcar paso como completado",
       copy_to_clipboard: "Copiar al portapapeles",
+      // @llm-translated 2026-04-17
+      credential_saved_message: "La credencial {label} ha sido guardada de forma segura.",
+      // @llm-translated 2026-04-17
+      revision_count: "(revisión {count})",
+      // @llm-translated 2026-04-17
+      connector_added_to_catalog: "conector añadido a tu catálogo -- ahora disponible para otras personas y adopción de plantillas.",
+      // @llm-translated 2026-04-17
+      view_credential: "Ver credencial",
+      // @llm-translated 2026-04-17
+      refine_hint: "¿Necesitas ajustar alcances, añadir campos o modificar la configuración?",
+      // @llm-translated 2026-04-17
+      refine_placeholder: "p. ej. añadir alcances de escritura, añadir entorno de pruebas...",
+      // @llm-translated 2026-04-17
+      refine: "Refinar",
+      // @llm-translated 2026-04-17
+      linked_to_existing: "Tu credencial se vinculará a la definición de conector existente.",
+      // @llm-translated 2026-04-17
+      no_existing_connector: "-- no se encontró ningún conector {name} en tu catálogo.",
+      // @llm-translated 2026-04-17
+      new_connector_will_be_registered: "Al guardar esta credencial, la definición de conector generada por IA se registrará automáticamente en tu catálogo de conectores -- haciéndola reutilizable para otras personas y adopción de plantillas.",
+      // @llm-translated 2026-04-17
+      refine_request: "¿No es del todo correcto? Refina tu solicitud",
+      // @llm-translated 2026-04-17
+      auto_provision_hint: "-- deja que la IA te guíe paso a paso para obtener tus credenciales de {label}.",
+      // @llm-translated 2026-04-17
+      credential_name_label: "Nombre de la credencial",
+      // @llm-translated 2026-04-17
+      credentials_secure_notice: "Las credenciales se almacenan de forma segura en la bóveda de la aplicación y están disponibles para la ejecución de herramientas del agente.",
+      // @llm-translated 2026-04-17
+      tested_successfully_at: "Probado con éxito a las {time}",
+      // @llm-translated 2026-04-17
+      setup_instructions: "Instrucciones de configuración",
+      // @llm-translated 2026-04-17
+      all_steps_complete: "Todos los pasos completados -- rellena los campos a continuación y prueba tu conexión.",
+      // @llm-translated 2026-04-17
+      use_template: "Usar",
+      // @llm-translated 2026-04-17
+      recipe_used_one: "-- usado {count} vez",
+      // @llm-translated 2026-04-17
+      recipe_used_other: "-- usado {count} veces",
+      // @llm-translated 2026-04-17
+      instruction_placeholder: "p. ej. Slack, OpenAI, GitHub, Stripe...",
     },
     auto_cred_extra: {
       preparing_guided: "Preparando instrucciones de configuración guiada...",
@@ -3180,6 +3595,46 @@ export const es = {
       step_browser_review: "Regresar aquí para tu revisión antes de guardar",
       step_guided_review: "Revisar y guardar la credencial",
       setup_context: "Contexto de configuración del análisis de diseño:",
+      // @llm-translated 2026-04-17
+      browser_automation_warning: "La automatización del navegador está en ejecución. No interactúes con la ventana — se reanudará al completarse.",
+      // @llm-translated 2026-04-17
+      desktop_bridge_title: "{{label}} requiere la aplicación de escritorio",
+      // @llm-translated 2026-04-17
+      desktop_bridge_hint: "Este conector utiliza una sesión nativa del navegador que solo funciona en la aplicación de escritorio Personas.",
+      // @llm-translated 2026-04-17
+      review_extracted: "Revisar credenciales extraídas",
+      // @llm-translated 2026-04-17
+      review_extracted_hint: "Valores extraídos del navegador -- verifica antes de guardar",
+      // @llm-translated 2026-04-17
+      completeness_partial: "{filled} de {total} campos obligatorios completados. Completa los campos faltantes antes de guardar.",
+      // @llm-translated 2026-04-17
+      universal_auto_setup: "Configuración automática universal",
+      // @llm-translated 2026-04-17
+      universal_auto_setup_hint: "Proporciona una URL y descripción, y la IA navegará el sitio para descubrir y crear credenciales API automáticamente.",
+      // @llm-translated 2026-04-17
+      service_url_label: "URL del servicio",
+      // @llm-translated 2026-04-17
+      service_url_placeholder: "https://app.ejemplo.com o https://developer.ejemplo.com",
+      // @llm-translated 2026-04-17
+      what_do_you_need: "¿Qué necesitas?",
+      // @llm-translated 2026-04-17
+      description_placeholder: "p. ej. Necesito una clave API para su API REST para leer y escribir datos. El portal del desarrollador tiene una sección de claves API en Configuración.",
+      // @llm-translated 2026-04-17
+      discover_credentials: "Descubrir credenciales",
+      // @llm-translated 2026-04-17
+      discovered_label: "Descubierto: {label}",
+      // @llm-translated 2026-04-17
+      fields_discovered_one: "{count} campo descubierto",
+      // @llm-translated 2026-04-17
+      fields_discovered_other: "{count} campos descubiertos",
+      // @llm-translated 2026-04-17
+      extracted_values_label: "Valores extraídos",
+      // @llm-translated 2026-04-17
+      no_fields_discovered: "No se descubrieron campos. Intenta de nuevo con una descripción más específica.",
+      // @llm-translated 2026-04-17
+      fields_captured_partial: "{filled}/{total} campos capturados",
+      // @llm-translated 2026-04-17
+      credential_stored: "La credencial {label} ha sido almacenada de forma segura.",
     },
     negotiator_extra: {
       checking_auth: "Verificando autenticaciones existentes...",
@@ -3190,6 +3645,10 @@ export const es = {
       need_help: "¿Necesitas ayuda con este paso?",
       hide_help: "Ocultar ayuda",
       ask_question: "Haz una pregunta sobre este paso...",
+      // @llm-translated 2026-04-17
+      panel_title: "Negociador de credenciales IA",
+      // @llm-translated 2026-04-17
+      planning_description: "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso...",
     },
     workspace_panel: {
       select_services: "Seleccionar servicios para conectar",
@@ -3197,6 +3656,24 @@ export const es = {
       creating_credentials: "Creando credenciales...",
       all_created: "Todas las credenciales creadas",
       some_failed: "Algunas credenciales fallaron",
+      // @llm-translated 2026-04-17
+      selected_count: "{selected} de {total} seleccionados",
+      // @llm-translated 2026-04-17
+      select_all: "Seleccionar todos",
+      // @llm-translated 2026-04-17
+      connect_services_one: "Conectar {count} servicio con un inicio de sesión",
+      // @llm-translated 2026-04-17
+      connect_services_other: "Conectar {count} servicios con un inicio de sesión",
+      // @llm-translated 2026-04-17
+      granting_access_one: "Esto otorgará acceso a {count} servicio",
+      // @llm-translated 2026-04-17
+      granting_access_other: "Esto otorgará acceso a {count} servicios",
+      // @llm-translated 2026-04-17
+      credentials_created_one: "{count} credencial creada con un solo inicio de sesión.",
+      // @llm-translated 2026-04-17
+      credentials_created_other: "{count} credenciales creadas con un solo inicio de sesión.",
+      // @llm-translated 2026-04-17
+      sign_in_browser: "Inicia sesión con tu cuenta de Google en la ventana del navegador.",
     },
     gateway: {
       gateway_members: "{name} — miembros del gateway",

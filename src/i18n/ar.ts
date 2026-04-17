@@ -48,6 +48,8 @@ export const ar = {
     error: "خطأ",
     success: "نجاح",
     required: "مطلوب",
+    // @llm-translated 2026-04-17
+    optional: "اختياري",
     select: "-- اختر --",
     no_results: "لا توجد نتائج",
     active: "نشط",
@@ -257,6 +259,10 @@ export const ar = {
     engine: "المحرك",
     byom: "BYOM",
     data: "البيانات",
+    // @llm-translated 2026-04-17
+    quality_gates: "فلاتر المحتوى",
+    // @llm-translated 2026-04-17
+    config_resolution: "إعداد الوكيل",
     admin: "المسؤول",
     create: "إنشاء",
     all_agents: "جميع الوكلاء",
@@ -791,6 +797,32 @@ export const ar = {
       offset_prefix: "إزاحة:",
       step_tooltip: "الخطوة {step}: {name}",
       ms_into_stage: "{ms} مللي ثانية في المرحلة",
+      // @llm-translated 2026-04-17
+      depth_label: "العمق:",
+      // @llm-translated 2026-04-17
+      active_count_label: "نشط ({count})",
+      // @llm-translated 2026-04-17
+      completed_count_label: "مكتمل ({count})",
+      // @llm-translated 2026-04-17
+      metadata_section: "البيانات الوصفية",
+      // @llm-translated 2026-04-17
+      chain_id_prefix: "السلسلة: {id}",
+      // @llm-translated 2026-04-17
+      chain_total_duration: "الإجمالي: {duration}",
+      // @llm-translated 2026-04-17
+      zero_ms: "0 مللي ثانية",
+      // @llm-translated 2026-04-17
+      tool_calls_count: "استدعاء أداة واحد",
+      // @llm-translated 2026-04-17
+      tool_calls_count_other: "{count} استدعاء أداة",
+      // @llm-translated 2026-04-17
+      unique_tools_count: "({count} فريد)",
+      // @llm-translated 2026-04-17
+      prev_error_nav: "الخطأ السابق (Shift+E)",
+      // @llm-translated 2026-04-17
+      next_error_nav: "الخطأ التالي (E)",
+      // @llm-translated 2026-04-17
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
     lab: {
       mode_arena: "الساحة",
@@ -1041,6 +1073,10 @@ export const ar = {
       cancel_default: "إلغاء",
       hide_impact: "إخفاء التأثير",
       show_impact: "إظهار التأثير",
+      // @llm-translated 2026-04-17
+      objective_warning: "مشكلة في هدف اللياقة",
+      // @llm-translated 2026-04-17
+      objective_fallback_toast: "استخدم التطور أوزان لياقة افتراضية — تحقق من إعدادات الهدف",
     },
     design: {
       select_agent: "اختر وكيلاً لبدء تحليل التصميم",
