@@ -94,14 +94,14 @@ export function N8nTransformChat({
                   </div>
                   <div>
                     <p className="typo-body font-medium text-foreground/85">
-                      A few questions to customize your persona
+                      {t.templates.n8n.customize_persona}
                     </p>
                     <p className="typo-body text-foreground mt-0.5">
-                      Answer below, then click Generate
+                      {t.templates.n8n.answer_then_generate}
                     </p>
                   </div>
                 </div>
-                <div role="tablist" aria-label="Question view mode" className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-primary/8">
+                <div role="tablist" aria-label={t.templates.n8n.question_view_mode_aria} className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-primary/8">
                   <button
                     type="button"
                     role="tab"
@@ -114,7 +114,7 @@ export function N8nTransformChat({
                     }`}
                   >
                     <LayoutList className="w-3 h-3" />
-                    List
+                    {t.templates.n8n.list_view}
                   </button>
                   <button
                     type="button"
@@ -128,7 +128,7 @@ export function N8nTransformChat({
                     }`}
                   >
                     <Layers className="w-3 h-3" />
-                    Focus
+                    {t.templates.n8n.focus_view}
                   </button>
                 </div>
               </div>
@@ -164,7 +164,7 @@ export function N8nTransformChat({
                 </div>
                 <div>
                   <p className="typo-body text-foreground/90">
-                    No configuration needed
+                    {t.templates.n8n.no_config_needed}
                   </p>
                   <p className="typo-body text-foreground mt-0.5">
                     {t.templates.n8n.click_generate_defaults}
@@ -185,7 +185,7 @@ export function N8nTransformChat({
               className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               <p className="typo-body font-medium text-foreground uppercase tracking-wider mb-2">
-                Your answers
+                {t.templates.n8n.your_answers}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {questions.map((q) => {

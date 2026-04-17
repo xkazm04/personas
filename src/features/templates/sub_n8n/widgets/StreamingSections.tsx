@@ -169,7 +169,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
           <span className="typo-heading font-semibold uppercase tracking-wider text-foreground">
-            Streaming Sections
+            {t.templates.n8n.streaming_sections}
           </span>
         </div>
         {sections.length > 0 && (

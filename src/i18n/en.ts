@@ -3140,6 +3140,7 @@ export const en = {
       scope_missing_one: "{count} requested scope not granted: ",
       scope_missing_other: "{count} requested scopes not granted: ",
       reauthorize: "Reauthorize",
+      reauthorize_scopes: "Re-authorize with additional scopes",
     },
     // Credential forms (auth method picker, healthcheck display, etc.)
     forms: {
@@ -3574,6 +3575,10 @@ export const en = {
       daily_execs_lost: "Daily Execs Lost",
       daily_cost_impact: "Daily Cost Impact",
       sim_low: "No personas or workflows depend on this credential. Safe to revoke.",
+      // Scenario description sentences — {credentialName}, {workflows}, {personas} = counts
+      sim_critical: "Revoking {credentialName} would break {workflows} workflow{workflowPlural} and halt {personas} persona{personaPlural}.",
+      sim_high: "Revoking {credentialName} would impact {personas} persona{personaPlural} across your workspace.",
+      sim_medium: "Revoking {credentialName} has limited blast radius.",
     },
     // -- Shared vault components (shared/) ----------------------------
     shared: {
@@ -3934,6 +3939,11 @@ export const en = {
       new_credential: "New {label} Credential",
       configure_fields: "Configure credential fields",
       oauth_required: "Use the authorize button below to connect this credential.",
+      // {label} = connector name
+      open_to_generate: "Open {label} to generate an API key or token",
+      already_configured: "Credential already configured -- update below to replace",
+      setup_instructions_label: "Setup Instructions",
+      no_fields_defined: "No credential fields defined for this connector.",
     },
     // CLI connection panel (install -> verify -> save flow)
     cli_panel: {
@@ -3962,6 +3972,20 @@ export const en = {
       empty: "No audit entries yet",
       empty_hint: "Operations will be logged as they occur.",
       access_events_hint: "Access events will appear here.",
+      loading: "Loading audit timeline...",
+      // {count} = total access count
+      total_accesses: "{count} total",
+      // {count} = distinct persona count
+      personas_one: "{count} persona",
+      personas_other: "{count} personas",
+      // {count} = accesses in last 24h
+      accesses_24h: "{count} in 24h",
+      // {count} = anomaly count
+      anomalies_one: "{count} anomaly",
+      anomalies_other: "{count} anomalies",
+      no_anomalies: "No anomalies",
+      // {count} = total entries
+      show_all: "Show all {count} entries",
     },
     // Import flow
     credential_import: {
@@ -3973,6 +3997,12 @@ export const en = {
       poll_interval: "Poll interval",
       // Hint shown below sync configuration
       sync_hint: "Watches the external vault for changes and auto-updates credentials using polling.",
+      // Interval option labels in the poll interval select
+      interval_15min: "15 min",
+      interval_30min: "30 min",
+      interval_1hr: "1 hour",
+      interval_6hr: "6 hours",
+      interval_24hr: "24 hours",
     },
     // Empty state
     empty_state: {
@@ -7396,6 +7426,8 @@ export const en = {
       existing_table_label: "Existing Table",
       schema: "Schema",
       table_name: "Table name",
+      // Placeholder for the table name input field in database connector setup
+      table_name_placeholder: "e.g. persona_data",
       in_app_messages: "In-App Messages",
       not_connected: "not connected",
       no_connectors: "No connectors required",
@@ -10731,6 +10763,8 @@ export const en = {
       project_type_optional: "(optional, visual only)",
       // Post-creation prompt title
       project_created: "Project Created",
+      // Description shown below the project name after creation; prompts context map
+      project_ready_desc: "is ready. Would you like to generate a context map now?",
       // Button to generate a context map for a new project
       generate_context_map: "Generate Context Map",
       // Description of the generate context map action
@@ -10844,7 +10878,13 @@ export const en = {
       // Title for the idea scanner page/header
       idea_scanner_title: "Idea Scanner",
       // Subtitle describing the idea scanner feature
-      idea_scanner_subtitle: "AI-powered idea analysis and evolution",
+      idea_scanner_subtitle: "Run specialized agents to generate improvement ideas",
+      // Button label for running a manual scan; selected agent count appended in JSX
+      run_scan_btn: "Run Scan (",
+      // Section header for scan results; idea count appended in JSX
+      results_header: "Results (",
+      // Section header for scan history; run count appended in JSX
+      scan_history_header: "Scan History (",
     },
 
     // ---------------------------------------------------------------

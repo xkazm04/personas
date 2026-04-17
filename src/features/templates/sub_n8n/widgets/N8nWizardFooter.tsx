@@ -87,7 +87,7 @@ export function N8nWizardFooter({
         className="flex items-center gap-2 px-3 py-2 typo-body font-medium rounded-modal text-foreground hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back
+        {t.templates.n8n.back}
       </button>
 
       {/* Separator */}
@@ -99,7 +99,7 @@ export function N8nWizardFooter({
         {step === 'edit' && connectorsMissing > 0 && (
           <span className="flex items-center gap-1.5 typo-body text-orange-400/80">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-            {connectorsMissing} connector{connectorsMissing !== 1 ? 's' : ''} need credentials
+            {t.templates.n8n.connectors_need_credentials.replace('{count}', String(connectorsMissing))}
           </span>
         )}
 
@@ -142,7 +142,7 @@ export function N8nWizardFooter({
             className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20 transition-colors"
           >
             <Wand2 className="w-4 h-4" />
-            Fix & Regenerate
+            {t.templates.n8n.fix_and_regenerate}
           </button>
         )}
 

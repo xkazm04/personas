@@ -201,7 +201,7 @@ export function N8nEditStep({
 
       {/* Test output panel -- below editor so user can see test CLI log */}
       {showTestPanel && (
-        <div className="flex-shrink-0 mt-4 border-t border-primary/10" role="region" aria-label="Test output" aria-busy={testPhase === 'running'}>
+        <div className="flex-shrink-0 mt-4 border-t border-primary/10" role="region" aria-label={t.templates.n8n.test_output} aria-busy={testPhase === 'running'}>
           <button
             onClick={() => setTestPanelOpen((p) => !p)}
             className="flex items-center justify-between w-full px-4 py-2 bg-primary/5 hover:bg-secondary/40 transition-colors cursor-pointer"
@@ -213,7 +213,7 @@ export function N8nEditStep({
                 <ChevronRight className="w-3.5 h-3.5 text-foreground" />
               )}
               <span className="text-sm font-mono text-foreground">
-                Test Output
+                {t.templates.n8n.test_output}
               </span>
               {testPhase === 'running' && (
                 <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />

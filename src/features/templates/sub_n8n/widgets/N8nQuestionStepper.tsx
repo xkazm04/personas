@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, KeyRound, Settings2, ShieldCheck, Brain, Bell } from 'lucide-react';
 import { N8nQuestionListbox } from './N8nQuestionListbox';
 import type { TransformQuestion } from '../hooks/useN8nImportReducer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const DIMENSION_LABELS: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
   credentials:       { label: 'Credentials',       Icon: KeyRound },
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: Props) {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -80,7 +82,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
               : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Previous question"
+          aria-label={t.templates.questionnaire.previous_question}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -181,7 +183,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
               : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Next question"
+          aria-label={t.templates.questionnaire.next_question}
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -205,7 +207,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
                     ? `w-2 h-2 ${dotTone.dot} opacity-50`
                     : 'w-2 h-2 bg-foreground/15'
               }`}
-              aria-label={`Go to question ${i + 1}`}
+              aria-label={t.templates.questionnaire.go_to_question.replace('{number}', String(i + 1))}
             />
           );
         })}
@@ -217,7 +219,7 @@ export function N8nQuestionStepper({ questions, userAnswers, onAnswerUpdated }: 
         <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&larr;</kbd>
         {' '}
         <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 typo-code font-mono">&rarr;</kbd>
-        {' '}to navigate
+        {' '}{t.templates.n8n.navigate_hint}
       </p>
     </div>
   );

@@ -92,7 +92,7 @@ export function N8nConfirmStep({
       {!created && (
         <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
           <p className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-3">
-            Persona Preview
+            {t.templates.n8n.persona_preview}
           </p>
 
           <div className="flex items-center gap-4 mb-4">
@@ -169,7 +169,7 @@ export function N8nConfirmStep({
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0 mt-0.5" />
               <div className="typo-body text-amber-400/70">
                 <p className="font-medium">
-                  {toolsNeedingCredentials.length} tool{toolsNeedingCredentials.length !== 1 ? 's' : ''} require credentials not yet configured:
+                  {t.templates.n8n.tools_require_credentials.replace('{count}', String(toolsNeedingCredentials.length))}
                 </p>
                 <p className="mt-0.5 font-mono">
                   {toolsNeedingCredentials.map((t) => `${t.name} (${t.requires_credential_type})`).join(', ')}
@@ -209,7 +209,7 @@ export function N8nConfirmStep({
       {/* Confirmation hint */}
       {!created && (
         <p className="typo-body text-amber-300/70 text-center">
-          Review the details above, then click "Confirm & Save Persona" to create.
+          {t.templates.n8n.confirm_hint}
         </p>
       )}
     </div>

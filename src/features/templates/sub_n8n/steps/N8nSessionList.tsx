@@ -260,10 +260,10 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="typo-body font-medium text-foreground/90 uppercase tracking-wider">
-          Previous Imports
+          {t.templates.n8n.previous_imports}
         </h3>
         <span className="typo-body text-foreground">
-          {activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''}
+          {t.templates.n8n.sessions_count.replace('{count}', String(activeSessions.length))}
         </span>
       </div>
 

@@ -77,10 +77,10 @@ export function N8nParserResults({
               </div>
               <div className="text-center">
                 <p className="typo-body font-medium text-foreground">
-                  Analyzing workflow and preparing transformation...
+                  {t.templates.n8n.analyzing_workflow}
                 </p>
                 <p className="typo-body text-foreground mt-1.5">
-                  Usually takes about 1 minute
+                  {t.templates.n8n.usually_one_minute}
                 </p>
                 <p className="typo-code font-mono text-foreground mt-1">
                   {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
@@ -117,7 +117,7 @@ export function N8nParserResults({
           onClick={onReset}
           className="rounded-modal border-primary/15 text-foreground"
         >
-          Import Another
+          {t.templates.n8n.import_another}
         </Button>
       </div>
 
@@ -128,7 +128,7 @@ export function N8nParserResults({
         >
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <p className="flex-1 typo-body text-amber-300/90">
-            This looks like a <strong>{PLATFORM_LABELS[platform]}</strong> workflow, but we're not 100% sure. Is that correct?
+            {t.templates.n8n.platform_confirm.replace('{platform}', PLATFORM_LABELS[platform])}
           </p>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button
@@ -137,7 +137,7 @@ export function N8nParserResults({
               onClick={onConfirmPlatform}
               className="rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
             >
-              Yes, that's right
+              {t.templates.n8n.yes_thats_right}
             </Button>
             <Button
               variant="ghost"
@@ -145,7 +145,7 @@ export function N8nParserResults({
               onClick={onReset}
               className="rounded-card border border-primary/15 text-foreground hover:bg-secondary/50"
             >
-              No, re-upload
+              {t.templates.n8n.no_reupload}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { CheckCircle2, RefreshCw, AlertTriangle, XCircle } from 'lucide-react';
 import type { ConfirmResult } from './n8nConfirmTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SuccessBannerProps {
   personaName: string | null;
@@ -8,6 +9,7 @@ interface SuccessBannerProps {
 }
 
 export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBannerProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in p-4 rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-center"
@@ -20,12 +22,12 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
       <p
         className="animate-fade-slide-in typo-heading font-semibold text-emerald-400 mb-1"
       >
-        Persona Created Successfully
+        {t.templates.n8n.persona_created}
       </p>
       <p
         className="animate-fade-slide-in typo-body text-emerald-400/60 mb-2"
       >
-        {personaName ?? 'Your persona'} is ready to use. Find it in the sidebar.
+        {t.templates.n8n.persona_ready.replace('{name}', personaName ?? 'Your persona')}
       </p>
       {confirmResult && (confirmResult.triggersCreated > 0 || confirmResult.toolsCreated > 0) && (
         <p
@@ -58,7 +60,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
           className="animate-fade-slide-in flex items-center gap-2 justify-center typo-body text-amber-400/60 mb-2"
         >
           <AlertTriangle className="w-3 h-3" />
-          Configure connector{confirmResult.connectorsNeedingSetup.length !== 1 ? 's' : ''}: {confirmResult.connectorsNeedingSetup.join(', ')}
+          {t.templates.n8n.configure_connectors.replace('{names}', confirmResult.connectorsNeedingSetup.join(', '))}
         </div>
       )}
       <div
@@ -69,7 +71,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
           className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Import Another
+          {t.templates.n8n.import_another}
         </button>
       </div>
     </div>

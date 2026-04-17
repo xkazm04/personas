@@ -67,7 +67,7 @@ export function N8nUseCasesTab({
             <div className="flex items-center gap-2 px-1">
               <ListChecks className="w-3.5 h-3.5 text-foreground" />
               <p className="typo-body text-foreground">
-                {useCases.length} use case{useCases.length !== 1 ? 's' : ''} identified
+                {t.templates.n8n.use_cases_identified.replace('{count}', String(useCases.length))}
               </p>
             </div>
 

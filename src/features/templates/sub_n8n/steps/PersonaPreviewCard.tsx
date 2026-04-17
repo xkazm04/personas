@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { ConnectorHealthRail } from './confirm/ConnectorHealthRail';
 import type { ConnectorRailItem } from '../edit/connectorHealth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProtocolCapability {
   type: string;
@@ -61,12 +62,13 @@ export function PersonaPreviewCard({
   capabilities,
   toolsNeedingCredentials,
 }: PersonaPreviewCardProps) {
+  const { t } = useTranslation();
   const [showPrompt, setShowPrompt] = useState(false);
 
   return (
     <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
       <p className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-3">
-        Persona Preview
+        {t.templates.n8n.persona_preview}
       </p>
 
       <div className="flex items-center gap-4 mb-4">
@@ -139,7 +141,7 @@ export function PersonaPreviewCard({
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
           <div className="typo-body text-amber-400/60">
             <p className="font-medium">
-              {toolsNeedingCredentials.length} tool{toolsNeedingCredentials.length !== 1 ? 's' : ''} require credentials not yet configured:
+              {t.templates.n8n.tools_require_credentials.replace('{count}', String(toolsNeedingCredentials.length))}
             </p>
             <p className="mt-0.5 font-mono">
               {toolsNeedingCredentials.map((t) => `${t.name} (${t.requires_credential_type})`).join(', ')}
@@ -158,7 +160,7 @@ export function PersonaPreviewCard({
             onClick={() => setShowPrompt(!showPrompt)}
             className="text-foreground hover:text-muted-foreground w-full justify-start"
           >
-            System Prompt Preview
+            {t.templates.n8n.system_prompt_preview}
           </Button>
           {showPrompt && (
             <div

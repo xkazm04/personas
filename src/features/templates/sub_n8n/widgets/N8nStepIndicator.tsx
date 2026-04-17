@@ -51,8 +51,8 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
   const showTimer = processing && !!STEP_DURATION_HINT[currentStep];
 
   return (
-    <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label="Import wizard progress">
-      <div className="flex items-center gap-1 w-full" role="list" aria-label="Wizard steps">
+    <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label={t.templates.n8n.wizard_progress_aria}>
+      <div className="flex items-center gap-1 w-full" role="list" aria-label={t.templates.n8n.wizard_steps_aria}>
       {VISIBLE_STEPS.map((step, i) => {
         const Icon = STEP_ICONS[step] ?? Hammer;
         const labelKey = STEP_LABEL_KEYS[step];

@@ -138,7 +138,7 @@ function FileUploadTab({
         onDrop={handleDrop}
         role="button"
         tabIndex={0}
-        aria-label="Drop workflow file or click to browse"
+        aria-label={t.templates.n8n.dropzone_aria}
         data-testid="n8n-upload-dropzone"
         className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-modal border-2 border-dashed cursor-pointer transition-all duration-200 ${
           isDragging
@@ -200,8 +200,8 @@ function PasteTab({
         <textarea
           value={pasteText}
           onChange={(e) => { setPasteText(e.target.value); validatePastedContent(e.target.value); }}
-          aria-label="Workflow JSON content"
-          placeholder='Paste your exported workflow JSON here...\n\nExample: {"nodes": [...], "connections": {...}}'
+          aria-label={t.templates.n8n.paste_aria}
+          placeholder={t.templates.n8n.paste_placeholder}
           className="w-full h-48 px-4 py-3 bg-transparent typo-code font-mono text-foreground placeholder:text-foreground resize-none outline-none"
           spellCheck={false}
           data-testid="paste-json-textarea"
@@ -248,7 +248,7 @@ function UrlTab({
           <span className="typo-body font-medium text-foreground">{t.templates.n8n.import_from_url}</span>
         </div>
         <p className="typo-body text-foreground">
-          Paste a URL to a raw workflow JSON file. Supports GitHub raw URLs, Gist links, and direct JSON endpoints.
+          {t.templates.n8n.url_description}
         </p>
         <div className="flex gap-2">
           <input
@@ -256,8 +256,8 @@ function UrlTab({
             value={urlValue}
             onChange={(e) => { setUrlValue(e.target.value); setUrlPreview(null); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
-            aria-label="Workflow URL"
-            placeholder="https://raw.githubusercontent.com/.../workflow.json"
+            aria-label={t.templates.n8n.url_aria}
+            placeholder={t.templates.n8n.url_placeholder}
             className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/15 typo-body text-foreground placeholder:text-foreground outline-none focus-visible:border-violet-500/40 transition-colors"
             data-testid="url-input"
           />
@@ -279,11 +279,11 @@ function UrlTab({
         </div>
         <div className="flex items-center gap-3 typo-body text-foreground">
           <span>{t.templates.n8n.accepts_label}</span>
-          <span className="font-mono typo-code">github.com/*/blob/*</span>
+          <span className="font-mono typo-code">{t.templates.n8n.url_format_github}</span>
           <span className="text-primary/20">|</span>
-          <span className="font-mono typo-code">gist.github.com/*</span>
+          <span className="font-mono typo-code">{t.templates.n8n.url_format_gist}</span>
           <span className="text-primary/20">|</span>
-          <span className="font-mono typo-code">raw JSON endpoint</span>
+          <span className="font-mono typo-code">{t.templates.n8n.url_format_raw}</span>
         </div>
       </div>
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />

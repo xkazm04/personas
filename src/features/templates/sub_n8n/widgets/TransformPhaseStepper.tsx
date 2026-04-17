@@ -36,7 +36,7 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
     <nav
       className="flex items-center justify-center gap-1 py-2 px-3"
       role="navigation"
-      aria-label="Transform progress"
+      aria-label={t.templates.n8n.transform_progress_aria}
     >
       {TRANSFORM_STEPS.map((step, i) => {
         const isCompleted = i < activeIdx;
