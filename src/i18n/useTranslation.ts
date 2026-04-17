@@ -25,40 +25,6 @@ function codeFromPath(path: string): string {
 const cache = new Map<Language, Translations>();
 cache.set('en', enBundle as Translations);
 
-/**
- * TEMPORARY: key-level English fallback for locales that aren't yet at
- * 100% coverage. `npm run check:i18n` reports drift per locale. Once every
- * locale ships a complete keyset, delete `deepMerge` + `mergeWithFallback`
- * below and store the raw bundle in `cache` directly. Tracking issue: i18n
- * full-coverage cleanup.
- */
-function deepMerge(
-  base: Record<string, unknown>,
-  overlay: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...base };
-  for (const key of Object.keys(overlay)) {
-    const bVal = base[key];
-    const oVal = overlay[key];
-    if (
-      oVal && typeof oVal === 'object' && !Array.isArray(oVal) &&
-      bVal && typeof bVal === 'object' && !Array.isArray(bVal)
-    ) {
-      out[key] = deepMerge(bVal as Record<string, unknown>, oVal as Record<string, unknown>);
-    } else if (oVal !== undefined) {
-      out[key] = oVal;
-    }
-  }
-  return out;
-}
-
-function mergeWithFallback(partial: Translations): Translations {
-  return deepMerge(
-    enBundle as unknown as Record<string, unknown>,
-    partial as unknown as Record<string, unknown>,
-  ) as Translations;
-}
-
 const loadingSet = new Set<Language>();
 
 /**
@@ -80,9 +46,9 @@ function preload(lang: Language) {
   const attempt = (isRetry: boolean): void => {
     loader()
       .then((mod) => {
-        // TEMPORARY merge-with-fallback while locales complete their coverage.
-        // Once `npm run check:i18n` reports 0 drift, replace with: `cache.set(lang, mod.default);`
-        cache.set(lang, lang === 'en' ? mod.default : mergeWithFallback(mod.default));
+        // Locales ship at 100% coverage (enforced by `npm run check:i18n`),
+        // so the raw bundle is cached as-is with no English fallback merge.
+        cache.set(lang, mod.default);
         bundleVersion++;
         listeners.forEach((fn) => fn());
       })

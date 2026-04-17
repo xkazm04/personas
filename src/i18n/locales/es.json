@@ -4893,7 +4893,8 @@
       "no_open_issues": "Sin problemas abiertos",
       "run_analysis_hint": "Ejecuta el análisis para verificar problemas.",
       "healing_audit_log": "Registro de Auditoría de Recuperación",
-      "no_silent_failures": "No se registraron fallos silenciosos."
+      "no_silent_failures": "No se registraron fallos silenciosos.",
+      "analysis_complete_prefix": "Análisis completado:"
     },
     "remote_control_card": {
       "connect_to_desktop": "Conectar al Escritorio",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "Este problema fue resuelto automáticamente",
       "close": "Cerrar",
       "resolving": "Resolviendo…",
-      "mark_resolved": "Marcar como Resuelto"
+      "mark_resolved": "Marcar como Resuelto",
+      "retrying_badge": "reintentando",
+      "auto_fixed_badge": "corregido automáticamente",
+      "retry_in_progress_badge": "reintento en curso",
+      "healed_via_retry_badge": "corregido mediante reintento",
+      "severity_suffix": "gravedad"
     },
     "healing_timeline": {
       "loading": "Cargando línea de tiempo...",
       "no_events": "Sin eventos de recuperación",
       "no_events_hint": "Ejecuta el análisis para construir la línea de tiempo de resiliencia.",
       "knowledge_base": "Base de Conocimiento",
-      "patterns_hint": "Patrones que influyen en las decisiones de recuperación"
+      "patterns_hint": "Patrones que influyen en las decisiones de recuperación",
+      "retry_badge": "reintento #{count}"
     },
     "ipc_panel": {
       "title": "Rendimiento IPC",
@@ -5024,19 +5031,25 @@
       "command": "Comando",
       "calls_header": "Llamadas",
       "duration_header": "Duración",
-      "when_header": "Cuándo"
+      "when_header": "Cuándo",
+      "commands_table_label": "Rendimiento de comandos IPC",
+      "slowest_table_label": "Llamadas IPC más lentas",
+      "error_rate": "Tasa de errores:",
+      "timeout_rate": "Tasa de tiempo agotado:"
     },
     "system_trace_extra": {
       "no_traces": "No se registraron trazas del sistema",
       "no_traces_hint": "Las trazas aparecen cuando se ejecutan operaciones de diseño, credenciales o plantillas",
       "all_operations": "Todas las operaciones",
       "clear_completed": "Limpiar trazas completadas",
-      "span": "Intervalo"
+      "span": "Intervalo",
+      "zero_ms": "0 ms"
     },
     "event_log_sidebar": {
       "title": "Registro de Eventos",
       "no_events": "Aún no hay eventos",
-      "open_detail_drawer": "Abrir en panel de detalles"
+      "open_detail_drawer": "Abrir en panel de detalles",
+      "filter_placeholder": "Filtrar eventos…"
     },
     "chart_error": {
       "chart_unavailable": "Gráfico no disponible"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "Aplicar"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID de evento",
+      "broadcast": "(difusión)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} evento anterior no mostrado",
+      "earlier_events_not_shown_other": "{count} eventos anteriores no mostrados"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Buscar eventos…"
+    },
+    "realtime_stats": {
+      "events_per_min": "eventos/min",
+      "pending": "pendiente",
+      "success": "éxito",
+      "in_window": "en ventana",
+      "test_flow": "Flujo de prueba",
+      "to_simulate_traffic": "para simular tráfico"
+    },
+    "bus_lane": {
+      "event_queue": "COLA DE EVENTOS"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Vista de latidos",
+      "status_page_view": "Vista de página de estado",
+      "reliability_view": "Vista de fiabilidad SLA",
+      "refresh_tooltip": "Actualizar datos de salud",
+      "persona_heartbeats": "Latidos de personas",
+      "system_health": "Salud del sistema:",
+      "computing": "Calculando señales de salud…",
+      "no_match": "Ninguna persona coincide con el filtro seleccionado.",
+      "loading_status_page": "Cargando página de estado…",
+      "loading_reliability": "Cargando datos de fiabilidad…",
+      "heartbeats_btn": "Latidos",
+      "reliability_btn": "Fiabilidad"
+    },
+    "crash_logs": {
+      "title": "Registros de fallos",
+      "no_logs": "No se han registrado fallos.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Regístrate gratis en",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", luego copia tu clave API desde Configuración. Esta clave se almacena localmente y se comparte entre todos los agentes."
+    },
+    "events_list": {
+      "save_view_tooltip": "Guardar filtros actuales como vista",
+      "clear_filters_tooltip": "Borrar todos los filtros"
+    },
+    "dashboard_home": {
+      "you_have": "Tienes"
+    },
+    "fleet_optimization_card": {
+      "title": "Optimización de flota"
+    },
+    "usage_filters": {
+      "time_range_label": "Intervalo de tiempo"
+    },
+    "day_range_picker": {
+      "start_date": "Fecha de inicio",
+      "end_date": "Fecha de fin"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "corregido automáticamente esta semana",
+      "issues_in_7d": "incidencias en 7 días"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "Cerrar panel",
       "md_extension": ".md",
       "edit_note_aria": "Editar nota"
-    },
-    "doc_signing_label": "Firma de Documentos",
-    "doc_signing_desc": "Firma y verifica documentos con firmas digitales directamente desde tu espacio de trabajo.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Extrae texto de imágenes y PDFs usando Gemini Vision o Claude multimodal."
+    }
   },
   "media_studio": {
     "title": "Estudio de Medios",

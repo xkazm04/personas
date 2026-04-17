@@ -3407,24 +3407,7 @@
       "extracted_values_label": "Valeurs extraites",
       "no_fields_discovered": "Aucun champ découvert. Réessayez avec une description plus précise.",
       "fields_captured_partial": "{filled}/{total} champs capturés",
-      "credential_stored": "L'identifiant {label} a été enregistré de manière sécurisée.",
-      "auto_credential_title": "Identifiant automatique",
-      "open_browser": "Ouvrir le navigateur automatisé",
-      "browser_opened": "Navigateur ouvert",
-      "waiting_for_credentials": "En attente des identifiants...",
-      "credentials_captured": "Identifiants capturés",
-      "browser_failed": "Échec du navigateur",
-      "close_browser": "Fermer le navigateur",
-      "instructions": "Instructions",
-      "step_open": "Cliquez sur « Ouvrir le navigateur automatisé »",
-      "step_login": "Connectez-vous ou naviguez vers votre tableau de bord {label}",
-      "step_generate": "Générez ou copiez votre clé API",
-      "step_capture": "Les identifiants seront capturés automatiquement",
-      "step_return": "Revenez ici pour enregistrer",
-      "detected_fields": "Champs détectés",
-      "no_fields_detected": "Aucun champ détecté pour l'instant",
-      "session_timeout": "La session a expiré",
-      "session_timeout_desc": "La session du navigateur a expiré. Relancez pour réessayer."
+      "credential_stored": "L'identifiant {label} a été enregistré de manière sécurisée."
     },
     "negotiator_extra": {
       "panel_title": "Négociateur d'identifiants IA",
@@ -3436,9 +3419,7 @@
       "need_help": "Besoin d'aide pour cette étape ?",
       "hide_help": "Masquer l'aide",
       "ask_question": "Posez une question sur cette étape...",
-      "planning_description": "L'IA analyse le portail développeur et génère un plan de provisionnement étape par étape...",
-      "browser_closed": "Navigateur fermé",
-      "capture_timeout": "Délai de capture dépassé"
+      "planning_description": "L'IA analyse le portail développeur et génère un plan de provisionnement étape par étape..."
     },
     "workspace_panel": {
       "select_services": "Sélectionnez les services à connecter",
@@ -3454,17 +3435,7 @@
       "granting_access_other": "Cela accordera l'accès à {count} services",
       "credentials_created_one": "{count} identifiant créé depuis un seul compte.",
       "credentials_created_other": "{count} identifiants créés depuis un seul compte.",
-      "sign_in_browser": "Connectez-vous avec votre compte Google dans la fenêtre du navigateur.",
-      "title": "Connexion à l'espace de travail",
-      "subtitle": "Connectez votre compte Google pour accéder à Gmail, Calendar, Drive et Sheets",
-      "connect_google": "Connecter Google Workspace",
-      "connected_as": "Connecté en tant que {email}",
-      "disconnect": "Déconnecter",
-      "gmail": "Gmail",
-      "calendar": "Calendar",
-      "drive": "Drive",
-      "sheets": "Sheets",
-      "scopes_granted": "Portées accordées"
+      "sign_in_browser": "Connectez-vous avec votre compte Google dans la fenêtre du navigateur."
     },
     "gateway": {
       "gateway_members": "{name} — membres de la passerelle",
@@ -3551,9 +3522,7 @@
       "select_persona": "Sélectionnez un persona à déployer",
       "all_deployed": "Tous les personas sont déjà déployés",
       "no_deployments_yet": "Aucun déploiement pour l'instant. Sélectionnez un persona ci-dessus pour le déployer comme point de terminaison API cloud.",
-      "active_deployments": "Déploiements actifs",
-      "no_deployments": "Aucun déploiement",
-      "refresh": "Actualiser"
+      "active_deployments": "Déploiements actifs"
     },
     "exec_detail": {
       "fetching_output": "Récupération de la sortie...",
@@ -3567,18 +3536,7 @@
       "label_input": "Entrée :",
       "view_output": "Voir la sortie",
       "output_prefix": "Sortie (",
-      "output_lines_suffix": "lignes)",
-      "title": "Détail de l'exécution",
-      "agent": "Agent",
-      "status": "Statut",
-      "started": "Démarré",
-      "duration": "Durée",
-      "cost": "Coût",
-      "model": "Modèle",
-      "input": "Entrée",
-      "output": "Sortie",
-      "error": "Erreur",
-      "close": "Fermer"
+      "output_lines_suffix": "lignes)"
     },
     "oauth_panel": {
       "connect_anthropic": "Connecter le compte Anthropic",
@@ -3596,15 +3554,7 @@
       "open_authorization_window": "Ouvrir la fenêtre d'autorisation",
       "token_unknown_msg": "La validité du token n'a pas pu être vérifiée. Actualisez le token pour confirmer qu'il est toujours actif.",
       "connect_anthropic_msg": "Connectez votre compte Anthropic pour activer l'authentification OAuth pour les exécutions cloud.",
-      "token_expired_msg_prefix": "Ce token OAuth a expiré",
-      "title": "Autorisation OAuth",
-      "connect": "Connecter",
-      "connected": "Connecté",
-      "disconnect": "Déconnecter",
-      "authorizing": "Autorisation en cours...",
-      "error": "Erreur d'autorisation",
-      "retry": "Réessayer",
-      "scopes_label": "Portées requises"
+      "token_expired_msg_prefix": "Ce token OAuth a expiré"
     },
     "trigger_form": {
       "new_cloud_trigger": "Nouveau déclencheur cloud",
@@ -3616,19 +3566,13 @@
       "creating": "Création...",
       "cron_expression": "Expression cron",
       "utc_suffix": "(UTC)",
-      "webhook_info": "Un point de terminaison webhook sera créé pour ce déclencheur. Vous pouvez configurer le filtrage de charge utile après la création.",
-      "title": "Formulaire de déclencheur",
-      "save": "Enregistrer le déclencheur",
-      "cancel": "Annuler"
+      "webhook_info": "Un point de terminaison webhook sera créé pour ce déclencheur. Vous pouvez configurer le filtrage de charge utile après la création."
     },
     "chart": {
       "daily_executions": "Exécutions quotidiennes",
       "tooltip_runs": "Exécutions :",
       "tooltip_cost": "Coût :",
-      "tooltip_success": "Succès :",
-      "no_data": "Aucune donnée",
-      "loading": "Chargement du graphique...",
-      "executions": "Exécutions"
+      "tooltip_success": "Succès :"
     },
     "deploy_card": {
       "test_deployment": "Tester le déploiement",
@@ -3640,11 +3584,7 @@
       "budget_label": "Budget :",
       "label_invocations": "Invocations :",
       "label_last_called": "Dernier appel :",
-      "label_created": "Créé :",
-      "deploy": "Déployer",
-      "deploying": "Déploiement...",
-      "deployed": "Déployé",
-      "failed": "Échec du déploiement"
+      "label_created": "Créé :"
     },
     "tabs": {
       "connection": "Connexion",
@@ -3685,9 +3625,7 @@
       "last_90_days": "90 derniers jours",
       "top_errors": "Erreurs fréquentes",
       "clear_filters": "Effacer les filtres",
-      "execution_history": "Historique des exécutions",
-      "title": "Historique",
-      "no_history": "Aucun historique disponible"
+      "execution_history": "Historique des exécutions"
     },
     "schedules": {
       "header": "Déclencheurs cloud ({count})",
@@ -3702,14 +3640,7 @@
       "label_last_triggered": "Dernier déclenchement :",
       "label_next_trigger": "Prochain déclenchement :",
       "label_cron": "Cron :",
-      "loading_firings": "Chargement...",
-      "title": "Planifications",
-      "no_schedules": "Aucune planification configurée",
-      "add_schedule": "Ajouter une planification",
-      "next_run": "Prochain lancement : {time}",
-      "last_run": "Dernier lancement : {time}",
-      "enabled": "Activée",
-      "disabled": "Désactivée"
+      "loading_firings": "Chargement..."
     },
     "dashboard": {
       "title": "Déploiements",
@@ -3987,10 +3918,7 @@
       "channel_desktop": "Bureau",
       "id_label": "ID :",
       "confirm_delete_title": "Confirmer la suppression",
-      "close_message": "Fermer le détail du message",
-      "title": "Messages",
-      "mark_read": "Marquer comme lu",
-      "mark_all_read": "Tout marquer comme lu"
+      "close_message": "Fermer le détail du message"
     },
     "realtime": {
       "idle": "Inactif -- cliquez sur {action} pour simuler du trafic",
@@ -4031,11 +3959,7 @@
         "importance": "Importance",
         "tags": "Tags",
         "tags_hint": "(séparés par des virgules)"
-      },
-      "loading": "Chargement des mémorisations...",
-      "memory_count_one": "{count} mémorisation",
-      "memory_count_other": "{count} mémorisations",
-      "delete_memory": "Supprimer la mémorisation"
+      }
     },
     "memory_review": {
       "all_conflicts_resolved": "Tous les conflits résolus",
@@ -4429,15 +4353,7 @@
       "speed": "Vitesse",
       "efficiency": "Efficacité",
       "cost_effectiveness": "Rapport coût-efficacité",
-      "overall": "Général",
-      "rank": "Rang",
-      "agent": "Agent",
-      "score": "Score",
-      "executions": "Exécutions",
-      "success_rate": "Taux de succès",
-      "avg_cost": "Coût moy.",
-      "trend": "Tendance",
-      "loading": "Chargement du classement..."
+      "overall": "Général"
     },
     "analytics": {
       "title": "Analyses",
@@ -4824,13 +4740,7 @@
       "open": "{count} ouvert(s)",
       "sla_compliance": "Conformité SLA",
       "consecutive_failures": "{count} échecs consécutifs",
-      "consecutive_failure": "{count} échec consécutif",
-      "overall_health": "Santé globale",
-      "agents_healthy": "{count} agent(s) sain(s)",
-      "agents_degraded": "{count} agent(s) dégradé(s)",
-      "agents_failing": "{count} agent(s) en échec",
-      "run_full_check": "Lancer une vérification complète",
-      "last_checked": "Dernière vérification : {time}"
+      "consecutive_failure": "{count} échec consécutif"
     },
     "system_health": {
       "title": "Vérifications du système",
@@ -4876,8 +4786,7 @@
       "top_cost_drivers": "Principaux facteurs de coût",
       "budget_exhaustion_warnings": "Avertissements d'épuisement du budget",
       "exhausted": "Épuisé",
-      "days_left": "{days}j restants",
-      "daily_rate": "Taux journalier"
+      "days_left": "{days}j restants"
     },
     "predictive_alerts_extra": {
       "per_month": "/mois",
@@ -4890,9 +4799,7 @@
       "failure_spike_predicted": "Pic de taux d'échec prédit dans {days}j",
       "excessive_healing": "Activité d'auto-guérison excessive",
       "critical_health": "Statut de santé critique",
-      "byom_recommendations": "Recommandations de routage BYOM",
-      "predicted_failure": "Échec prédit",
-      "confidence": "Confiance : {percent}%"
+      "byom_recommendations": "Recommandations de routage BYOM"
     },
     "annotate_modal": {
       "annotation_placeholder": "ex. La vérification webhook Stripe nécessite le corps de la requête brut, pas le JSON analysé",
@@ -4917,8 +4824,7 @@
       "collapse_details": "Réduire les détails",
       "expand_details": "Développer les détails",
       "verify_annotation": "Vérifier l'annotation",
-      "dismiss_annotation": "Ignorer l'annotation",
-      "view_details": "Voir les détails"
+      "dismiss_annotation": "Ignorer l'annotation"
     },
     "knowledge_graph": {
       "mock_pattern": "Schéma fictif",
@@ -4943,10 +4849,7 @@
       "accept_this": "Accepter ceci",
       "accept": "Accepter",
       "reject": "Rejeter",
-      "media_unavailable": "Média non disponible",
-      "title": "Décision ciblée",
-      "approve": "Approuver",
-      "no_items": "Aucun élément en attente"
+      "media_unavailable": "Média non disponible"
     },
     "review_focus": {
       "video_not_supported": "Votre navigateur ne prend pas en charge la lecture vidéo.",
@@ -4958,8 +4861,7 @@
       "quick_actions": "Actions rapides",
       "reject_all": "Tout rejeter",
       "accept_all": "Tout accepter",
-      "retry_with_changes": "Réessayer avec des modifications",
-      "title": "Focus révision"
+      "retry_with_changes": "Réessayer avec des modifications"
     },
     "bulk_action_bar": {
       "pending_reviews_selected_one": "{count} révision en attente sélectionnée",
@@ -4992,22 +4894,7 @@
       "run_analysis_hint": "Lancez l'analyse pour vérifier les problèmes.",
       "healing_audit_log": "Journal d'audit de guérison",
       "no_silent_failures": "Aucun échec silencieux enregistré.",
-      "no_issues": "Aucun problème de guérison actif",
-      "all_resolved": "Tous les problèmes résolus",
-      "loading": "Chargement des problèmes...",
-      "issue_count_one": "{count} problème",
-      "issue_count_other": "{count} problèmes",
-      "auto_fixed": "Corrigé automatiquement",
-      "manual_required": "Action manuelle requise",
-      "view_execution": "Voir l'exécution",
-      "apply_fix": "Appliquer le correctif",
-      "dismiss": "Ignorer",
-      "agent_label": "Agent :",
-      "error_label": "Erreur :",
-      "fix_label": "Correctif :",
-      "occurred_label": "Survenu :",
-      "category_label": "Catégorie :",
-      "no_fix_available": "Aucun correctif automatique disponible"
+      "analysis_complete_prefix": "Analyse terminée :"
     },
     "remote_control_card": {
       "connect_to_desktop": "Connecter au bureau",
@@ -5122,14 +5009,20 @@
       "auto_resolved": "Ce problème a été résolu automatiquement",
       "close": "Fermer",
       "resolving": "Résolution…",
-      "mark_resolved": "Marquer comme résolu"
+      "mark_resolved": "Marquer comme résolu",
+      "retrying_badge": "nouvelle tentative",
+      "auto_fixed_badge": "corrigé automatiquement",
+      "retry_in_progress_badge": "nouvelle tentative en cours",
+      "healed_via_retry_badge": "corrigé par nouvelle tentative",
+      "severity_suffix": "gravité"
     },
     "healing_timeline": {
       "loading": "Chargement de la chronologie...",
       "no_events": "Aucun événement de guérison",
       "no_events_hint": "Lancez l'analyse pour construire la chronologie de résilience.",
       "knowledge_base": "Base de connaissances",
-      "patterns_hint": "Schémas influençant les décisions de guérison"
+      "patterns_hint": "Schémas influençant les décisions de guérison",
+      "retry_badge": "tentative #{count}"
     },
     "ipc_panel": {
       "title": "Performance IPC",
@@ -5138,19 +5031,25 @@
       "command": "Commande",
       "calls_header": "Appels",
       "duration_header": "Durée",
-      "when_header": "Quand"
+      "when_header": "Quand",
+      "commands_table_label": "Performance des commandes IPC",
+      "slowest_table_label": "Appels IPC les plus lents",
+      "error_rate": "Taux d'erreur :",
+      "timeout_rate": "Taux d'expiration :"
     },
     "system_trace_extra": {
       "no_traces": "Aucune trace système enregistrée",
       "no_traces_hint": "Les traces apparaissent lors des opérations de conception, d'identifiant ou de modèle",
       "all_operations": "Toutes les opérations",
       "clear_completed": "Effacer les traces terminées",
-      "span": "Durée"
+      "span": "Durée",
+      "zero_ms": "0 ms"
     },
     "event_log_sidebar": {
       "title": "Journal des événements",
       "no_events": "Aucun événement",
-      "open_detail_drawer": "Ouvrir dans le volet de détails"
+      "open_detail_drawer": "Ouvrir dans le volet de détails",
+      "filter_placeholder": "Filtrer les événements…"
     },
     "chart_error": {
       "chart_unavailable": "Graphique non disponible"
@@ -5160,6 +5059,73 @@
     },
     "day_range": {
       "apply": "Appliquer"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID d'événement",
+      "broadcast": "(diffusion)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} événement antérieur non affiché",
+      "earlier_events_not_shown_other": "{count} événements antérieurs non affichés"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Rechercher des événements…"
+    },
+    "realtime_stats": {
+      "events_per_min": "événements/min",
+      "pending": "en attente",
+      "success": "succès",
+      "in_window": "dans la fenêtre",
+      "test_flow": "Flux de test",
+      "to_simulate_traffic": "pour simuler le trafic"
+    },
+    "bus_lane": {
+      "event_queue": "FILE D'ATTENTE"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Vue des battements",
+      "status_page_view": "Vue de la page de statut",
+      "reliability_view": "Vue de fiabilité SLA",
+      "refresh_tooltip": "Actualiser les données de santé",
+      "persona_heartbeats": "Battements des personas",
+      "system_health": "Santé du système :",
+      "computing": "Calcul des signaux de santé…",
+      "no_match": "Aucune persona ne correspond au filtre sélectionné.",
+      "loading_status_page": "Chargement de la page de statut…",
+      "loading_reliability": "Chargement des données de fiabilité…",
+      "heartbeats_btn": "Battements",
+      "reliability_btn": "Fiabilité"
+    },
+    "crash_logs": {
+      "title": "Journaux de plantage",
+      "no_logs": "Aucun journal de plantage enregistré.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Inscrivez-vous gratuitement sur",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", puis copiez votre clé API depuis les paramètres. Cette clé est stockée localement et partagée par tous les agents."
+    },
+    "events_list": {
+      "save_view_tooltip": "Enregistrer les filtres comme vue",
+      "clear_filters_tooltip": "Effacer tous les filtres"
+    },
+    "dashboard_home": {
+      "you_have": "Vous avez"
+    },
+    "fleet_optimization_card": {
+      "title": "Optimisation de flotte"
+    },
+    "usage_filters": {
+      "time_range_label": "Plage temporelle"
+    },
+    "day_range_picker": {
+      "start_date": "Date de début",
+      "end_date": "Date de fin"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "corrigé automatiquement cette semaine",
+      "issues_in_7d": "incidents en 7 jours"
     }
   },
   "templates": {
@@ -5176,8 +5142,7 @@
       "triggers": "Déclencheurs",
       "no_flows": "Aucun flux",
       "readiness_tooltip": "{percent}% des connecteurs prêts",
-      "template_details_tabs_aria": "Détails du modèle",
-      "title": "Galerie de modèles"
+      "template_details_tabs_aria": "Détails du modèle"
     },
     "actions": {
       "view_details": "Voir les détails",
@@ -5400,21 +5365,7 @@
       "cell_status_resolved": "Résolu",
       "cell_status_input_needed": "Entrée requise",
       "cell_status_missing_credential": "Identifiant manquant",
-      "cell_status_error": "Erreur",
-      "title": "Matrice de modèles",
-      "no_templates": "Aucun modèle disponible",
-      "loading": "Chargement des modèles...",
-      "filter_all": "Tous",
-      "filter_by_category": "Filtrer par catégorie",
-      "search_placeholder": "Rechercher des modèles...",
-      "adopted_badge": "Adopté",
-      "adopt_btn": "Adopter",
-      "preview_btn": "Aperçu",
-      "complexity_simple": "Simple",
-      "complexity_intermediate": "Intermédiaire",
-      "complexity_advanced": "Avancé",
-      "tools_count": "{count} outil(s)",
-      "connectors_count": "{count} connecteur(s)"
+      "cell_status_error": "Erreur"
     },
     "sandbox": {
       "restriction_events": "Émission d'événements désactivée",
@@ -5537,11 +5488,7 @@
       "coverage_filter_aria": "Filtre de couverture",
       "search_suggestions_aria": "Suggestions de recherche",
       "clear_search_aria": "Effacer la recherche",
-      "search_with_ai_aria": "Rechercher avec l'IA",
-      "placeholder": "Rechercher des modèles...",
-      "no_results": "Aucun modèle trouvé",
-      "clear": "Effacer",
-      "results_count": "{count} résultat(s)"
+      "search_with_ai_aria": "Rechercher avec l'IA"
     },
     "list": {
       "template_name": "Nom du modèle",
@@ -5680,11 +5627,7 @@
       "next_question": "Question suivante",
       "go_to_question": "Aller à la question {number}",
       "question_answered_suffix": " (répondue)",
-      "question_unanswered_suffix": " (sans réponse)",
-      "title": "Questionnaire",
-      "back": "Retour",
-      "finish": "Terminer",
-      "skip": "Passer"
+      "question_unanswered_suffix": " (sans réponse)"
     },
     "sandbox_banner": {
       "community_sandbox": "Modèle communautaire — Mode bac à sable",
@@ -5831,17 +5774,7 @@
       "questions_phase": "Questions",
       "generate_phase": "Générer",
       "type_your_answer": "Saisissez votre réponse...",
-      "navigate_hint": "Utilisez les touches fléchées pour naviguer",
-      "title": "Import n8n",
-      "subtitle": "Importez un workflow n8n pour créer un agent",
-      "upload_label": "Déposer le fichier de workflow n8n",
-      "or_paste": "Ou coller le JSON du workflow",
-      "parse_btn": "Analyser le workflow",
-      "parsing": "Analyse en cours...",
-      "importing": "Import en cours...",
-      "imported": "Importé avec succès",
-      "parse_error": "Erreur d'analyse : fichier de workflow invalide",
-      "nodes_found": "{count} nœud(s) trouvé(s)"
+      "navigate_hint": "Utilisez les touches fléchées pour naviguer"
     },
     "diagram": {
       "no_flow_data": "Aucune donnée de flux disponible",
@@ -5944,38 +5877,7 @@
       "source_no_codebases": "Aucun projet Dev Tools trouvé. Enregistrez-en un dans Dev Tools d'abord.",
       "source_no_databases": "Aucun identifiant de base de données trouvé. Ajoutez-en un dans le coffre d'abord.",
       "source_pick_codebase": "Sélectionner un code source…",
-      "source_pick_database": "Sélectionner une base de données…",
-      "title": "Adopter le modèle",
-      "subtitle": "Configurer l'agent depuis ce modèle",
-      "agent_name_label": "Nom de l'agent",
-      "agent_name_placeholder": "Donnez un nom à votre agent...",
-      "description_label": "Description",
-      "customize_label": "Personnaliser",
-      "review_label": "Réviser",
-      "adopt_btn": "Adopter",
-      "adopting": "Adoption en cours...",
-      "adopted": "Adopté avec succès",
-      "failed": "Adoption échouée",
-      "view_agent": "Voir l'agent",
-      "credentials_section": "Identifiants requis",
-      "no_credentials_needed": "Aucun identifiant requis",
-      "set_up_credentials": "Configurer les identifiants",
-      "tools_section": "Outils inclus",
-      "triggers_section": "Déclencheurs inclus",
-      "use_cases_section": "Cas d'usage",
-      "prompt_section": "Prompt de l'agent",
-      "model_section": "Modèle",
-      "identity_section": "Identité",
-      "icon_label": "Icône",
-      "color_label": "Couleur",
-      "group_label": "Groupe",
-      "step_configure": "Configurer",
-      "step_review": "Réviser",
-      "step_adopt": "Adopter",
-      "back": "Retour",
-      "template_label": "Modèle :",
-      "complexity_label": "Complexité :",
-      "est_time_label": "Temps est. :"
+      "source_pick_database": "Sélectionner une base de données…"
     },
     "scan": {
       "scanning_draft": "Analyse du persona en cours...",
@@ -6025,18 +5927,7 @@
       "delete_draft_title": "Ignorer ce brouillon de persona et fermer",
       "delete_draft": "Supprimer le brouillon",
       "agent_promoted": "Agent promu",
-      "view_agent": "Voir l'agent",
-      "title": "Variantes",
-      "no_variants": "Aucune variante disponible",
-      "base_template": "Modèle de base",
-      "variant_label": "Variante {index}",
-      "diff_label": "Différences",
-      "adopt_variant": "Adopter cette variante",
-      "compare_label": "Comparer",
-      "tags_label": "Tags",
-      "best_for": "Idéal pour",
-      "no_diff": "Identique au modèle de base",
-      "loading": "Chargement des variantes..."
+      "view_agent": "Voir l'agent"
     },
     "diagrams": {
       "no_flow_data": "Aucune donnée de flux disponible",
@@ -6044,8 +5935,7 @@
       "edges_count": "{count} connexions",
       "connectors_count": "{count} connecteur(s)",
       "decisions_count": "{count} décision(s)",
-      "close_dialog": "Fermer la boîte de dialogue",
-      "title": "Diagrammes"
+      "close_dialog": "Fermer la boîte de dialogue"
     },
     "generation": {
       "create_template": "Créer un modèle",
@@ -6112,43 +6002,7 @@
       "custom_hide_example": "Masquer l'exemple",
       "custom_example_title": "Exemple : Filtre intelligent Gmail",
       "custom_example_body": "\"Créer un agent qui surveille Gmail pour les e-mails importants, les catégorise par expéditeur et urgence, applique des libellés, et transfère les urgents vers Slack. Utiliser un déclencheur de sondage avec les connecteurs gmail et slack.\"",
-      "predefined_intro": "Exécute {count} cas d'utilisation prédéfinis via le moteur de conception :",
-      "title": "Génération de modèle",
-      "generated": "Modèle généré",
-      "failed": "Génération échouée",
-      "describe_placeholder": "Décrivez le modèle d'agent que vous souhaitez générer...",
-      "generate_btn": "Générer",
-      "name_label": "Nom du modèle",
-      "category_label": "Catégorie",
-      "use_cases_label": "Cas d'usage",
-      "tools_label": "Outils recommandés",
-      "connectors_label": "Connecteurs",
-      "adopt_this": "Adopter ce modèle",
-      "preview_label": "Aperçu",
-      "complexity_label": "Complexité",
-      "est_setup_label": "Configuration est.",
-      "save_to_catalog": "Enregistrer dans le catalogue",
-      "saved": "Enregistré dans le catalogue",
-      "edit_before_save": "Modifier avant d'enregistrer",
-      "similar_templates": "Modèles similaires",
-      "generate_another": "Générer un autre",
-      "generation_hint": "L'IA créera une configuration d'agent complète : prompt, outils, déclencheurs et cas d'usage.",
-      "tags_label": "Tags",
-      "domain_label": "Domaine",
-      "triggers_label": "Déclencheurs",
-      "prompt_preview": "Aperçu du prompt",
-      "no_prompt": "Aucun prompt généré",
-      "refine_prompt": "Affiner le modèle",
-      "regenerate": "Régénérer",
-      "copy_prompt": "Copier le prompt",
-      "prompt_copied": "Prompt copié",
-      "section_identity": "Identité",
-      "section_behavior": "Comportement",
-      "section_integration": "Intégration",
-      "error_empty_description": "Veuillez décrire le modèle souhaité",
-      "error_generation_failed": "La génération du modèle a échoué. Veuillez réessayer.",
-      "back_to_catalog": "Retour au catalogue",
-      "create_agent_from_template": "Créer un agent depuis ce modèle"
+      "predefined_intro": "Exécute {count} cas d'utilisation prédéfinis via le moteur de conception :"
     },
     "connector_edit": {
       "credential": "Identifiant",
@@ -6170,8 +6024,7 @@
       "no_connectors": "Aucun connecteur requis",
       "linked": "Lié",
       "set_up": "Configurer",
-      "more_connectors": "+{count} autres",
-      "title": "Modifier le connecteur"
+      "more_connectors": "+{count} autres"
     },
     "trigger_edit": {
       "schedule": "Planification",
@@ -6182,8 +6035,7 @@
       "check_interval": "Intervalle de vérification",
       "check_interval_placeholder": "Toutes les 5 minutes",
       "no_config_needed": "Aucune configuration requise",
-      "manual_only": "Exécution manuelle uniquement",
-      "title": "Modifier le déclencheur"
+      "manual_only": "Exécution manuelle uniquement"
     },
     "preset_edit": {
       "select_review": "Sélectionner une politique de révision...",
@@ -7150,10 +7002,7 @@
       "cred_import_complete": "Importation d'identifiants terminée",
       "cred_imported": "{count} importé(s)",
       "cred_skipped": ", {count} ignoré(s)",
-      "cred_replaced": ", {count} remplacé(s)",
-      "import_backup": "Importer une sauvegarde",
-      "importing": "Import en cours...",
-      "export_complete": "Export terminé"
+      "cred_replaced": ", {count} remplacé(s)"
     },
     "config": {
       "title": "Résolution de la configuration",
@@ -8069,63 +7918,7 @@
       "select_file_or_folder": "Sélectionnez un fichier ou dossier pour voir ses détails.",
       "download_aria": "Télécharger",
       "download_title": "Télécharger",
-      "sign_reason_placeholder": "Raison de la signature…",
-      "connect": "Connecter Google Drive",
-      "connected_as": "Connecté en tant que {email}",
-      "disconnect": "Déconnecter",
-      "browse": "Parcourir les fichiers",
-      "no_files": "Aucun fichier trouvé",
-      "upload": "Téléverser",
-      "create_folder": "Créer un dossier",
-      "folder_name_placeholder": "Nom du dossier...",
-      "download": "Télécharger",
-      "delete": "Supprimer",
-      "rename": "Renommer",
-      "share": "Partager",
-      "copy_link": "Copier le lien",
-      "link_copied": "Lien copié",
-      "file_size": "Taille : {size}",
-      "modified_at": "Modifié : {time}",
-      "owner": "Propriétaire : {owner}",
-      "type_label": "Type",
-      "select_file": "Sélectionner ce fichier",
-      "selected_files": "{count} fichier(s) sélectionné(s)",
-      "attach_to_agent": "Joindre à l'agent",
-      "files_attached": "Fichiers joints à l'agent",
-      "shared_label": "Partagé avec moi",
-      "recent_label": "Récents",
-      "starred_label": "Suivis",
-      "trash_label": "Corbeille",
-      "quota_used": "{used} utilisé(s) sur {total}",
-      "sync_status": "Statut de synchronisation",
-      "last_sync": "Dernière sync. : {time}",
-      "sync_now": "Synchroniser maintenant",
-      "syncing": "Synchronisation...",
-      "sort_by_name": "Trier par nom",
-      "sort_by_date": "Trier par date",
-      "sort_by_size": "Trier par taille",
-      "view_grid": "Vue grille",
-      "filter_type": "Filtrer par type",
-      "all_types": "Tous les types",
-      "documents": "Documents",
-      "spreadsheets": "Tableurs",
-      "presentations": "Présentations",
-      "images": "Images",
-      "videos": "Vidéos",
-      "audio": "Audio",
-      "pdfs": "PDF",
-      "folders": "Dossiers",
-      "upload_progress": "Téléversement : {percent}%",
-      "upload_complete": "Téléversement terminé",
-      "upload_failed": "Échec du téléversement",
-      "delete_confirm": "Supprimer ce fichier ?",
-      "move_to_trash": "Déplacer vers la corbeille",
-      "restore": "Restaurer",
-      "permanent_delete": "Supprimer définitivement",
-      "preview": "Aperçu",
-      "open_in_drive": "Ouvrir dans Drive",
-      "not_connected": "Drive non connecté",
-      "connect_hint": "Connectez Google Drive pour accéder à vos fichiers depuis vos agents"
+      "sign_reason_placeholder": "Raison de la signature…"
     },
     "artist": {
       "title": "Studio artistique",
@@ -8212,47 +8005,7 @@
       "session_status_failed": "Échoué",
       "session_status_cancelled": "Annulé",
       "replay_session": "Rejouer",
-      "delete_session": "Supprimer la session",
-      "blender_tab": "Blender",
-      "gallery_tab": "Galerie",
-      "media_studio_tab": "Studio média",
-      "loading": "Chargement...",
-      "no_project": "Aucun projet sélectionné",
-      "new_session": "Nouvelle session",
-      "session_name": "Nom de la session",
-      "session_placeholder": "Nom de la session créative...",
-      "save_session": "Enregistrer la session",
-      "sessions_label": "Sessions",
-      "no_sessions": "Aucune session pour l'instant",
-      "start_creating": "Commencez à créer",
-      "generate": "Générer",
-      "generating": "Génération...",
-      "prompt_placeholder": "Décrivez ce que vous souhaitez créer...",
-      "style_label": "Style",
-      "model_label": "Modèle",
-      "size_label": "Taille",
-      "quality_label": "Qualité",
-      "save_to_gallery": "Enregistrer dans la galerie",
-      "download": "Télécharger",
-      "copy_prompt": "Copier le prompt",
-      "prompt_copied": "Prompt copié",
-      "clear": "Effacer",
-      "history_label": "Historique",
-      "no_history": "Aucun historique pour l'instant",
-      "generation_failed": "Génération échouée",
-      "view_full": "Vue plein écran",
-      "close_preview": "Fermer l'aperçu",
-      "add_to_canvas": "Ajouter au canevas",
-      "canvas_label": "Canevas",
-      "clear_canvas": "Effacer le canevas",
-      "export_canvas": "Exporter le canevas",
-      "zoom_in": "Zoom avant",
-      "zoom_out": "Zoom arrière",
-      "fit_to_screen": "Ajuster à l'écran",
-      "grid_toggle": "Afficher/masquer la grille",
-      "snap_to_grid": "Aligner sur la grille",
-      "undo": "Annuler",
-      "redo": "Rétablir"
+      "delete_session": "Supprimer la session"
     },
     "dev_tools": {
       "no_project_configured": "Aucun projet dev configuré",
@@ -8580,97 +8333,7 @@
       "task_title_placeholder": "Titre de la tâche…",
       "task_details_placeholder": "Détails de la tâche ou coller une spécification…",
       "goal_link_placeholder": "Sélectionner un objectif…",
-      "no_tasks_queued_sub": "Créez des tâches manuellement ou par lot depuis les idées acceptées.",
-      "title": "Dev Tools",
-      "projects_tab": "Projets",
-      "context_tab": "Contexte",
-      "scanner_tab": "Analyseur",
-      "runner_tab": "Exécuteur",
-      "lifecycle_tab": "Cycle de vie",
-      "triage_tab": "Tri",
-      "no_project_selected": "Aucun projet sélectionné",
-      "add_project": "Ajouter un projet",
-      "project_path": "Chemin du projet",
-      "browse_path": "Parcourir...",
-      "save_project": "Enregistrer le projet",
-      "no_projects": "Aucun projet configuré",
-      "add_first_project": "Ajoutez votre premier projet de base de code",
-      "project_saved": "Projet enregistré",
-      "project_deleted": "Projet supprimé",
-      "loading_projects": "Chargement des projets...",
-      "project_name_placeholder": "ex. Mon application",
-      "project_path_placeholder": "/chemin/vers/votre/projet",
-      "invalid_path": "Chemin de répertoire invalide",
-      "path_required": "Le chemin est requis",
-      "name_required": "Le nom est requis",
-      "scanning": "Analyse en cours...",
-      "scan_complete": "Analyse terminée",
-      "scan_failed": "Analyse échouée",
-      "files_found": "{count} fichier(s) trouvé(s)",
-      "context_generated": "Contexte généré",
-      "copy_context": "Copier le contexte",
-      "context_copied": "Contexte copié",
-      "no_context": "Aucun contexte disponible",
-      "generate_context": "Générer le contexte",
-      "generating_context": "Génération du contexte...",
-      "context_size": "{size} caractères",
-      "files_scanned": "{count} fichier(s) analysé(s)",
-      "last_scanned": "Dernière analyse : {time}",
-      "rescan": "Ré-analyser",
-      "exclude_patterns": "Patterns d'exclusion",
-      "add_exclude_pattern": "Ajouter un pattern d'exclusion",
-      "exclude_placeholder": "ex. node_modules, *.log",
-      "include_patterns": "Patterns d'inclusion",
-      "max_file_size": "Taille max. de fichier",
-      "max_depth": "Profondeur max.",
-      "settings_saved": "Paramètres enregistrés",
-      "run_command": "Exécuter la commande",
-      "command_placeholder": "Entrez une commande...",
-      "command_output": "Sortie de la commande",
-      "clear_output": "Effacer la sortie",
-      "running_command": "Exécution de la commande...",
-      "command_failed": "Commande échouée",
-      "exit_code": "Code de sortie : {code}",
-      "connected_agents": "Agents connectés",
-      "no_connected_agents": "Aucun agent connecté",
-      "connect_agent": "Connecter un agent",
-      "disconnect_agent": "Déconnecter l'agent",
-      "agent_connected": "Agent connecté",
-      "agent_disconnected": "Agent déconnecté",
-      "workspace_label": "Espace de travail",
-      "branch_label": "Branche",
-      "commit_label": "Commit",
-      "language_label": "Langage",
-      "framework_label": "Framework",
-      "dependencies_count": "{count} dépendance(s)",
-      "open_in_ide": "Ouvrir dans l'IDE",
-      "copy_path": "Copier le chemin",
-      "path_copied": "Chemin copié",
-      "project_settings": "Paramètres du projet",
-      "confirm_delete": "Supprimer ce projet ?",
-      "cancel": "Annuler",
-      "confirm": "Confirmer",
-      "file_tree": "Arborescence",
-      "search_files": "Rechercher des fichiers...",
-      "no_files": "Aucun fichier trouvé",
-      "loading_tree": "Chargement de l'arborescence...",
-      "collapse_all": "Tout réduire",
-      "expand_all": "Tout développer",
-      "file_count": "{count} fichier(s)",
-      "directory_count": "{count} dossier(s)",
-      "total_size": "Taille totale : {size}",
-      "attach_to_agent": "Joindre à l'agent",
-      "detach_from_agent": "Détacher de l'agent",
-      "context_attached": "Contexte joint à l'agent",
-      "context_detached": "Contexte détaché de l'agent",
-      "view_context": "Voir le contexte",
-      "edit_context": "Modifier le contexte",
-      "save_context": "Enregistrer le contexte",
-      "context_saved": "Contexte enregistré",
-      "context_placeholder": "Contexte de la base de code pour votre agent...",
-      "auto_refresh": "Actualisation auto.",
-      "manual_refresh": "Actualisation manuelle",
-      "refresh_interval": "Intervalle d'actualisation"
+      "no_tasks_queued_sub": "Créez des tâches manuellement ou par lot depuis les idées acceptées."
     },
     "doc_signing": {
       "title": "Signature de documents",
@@ -8819,30 +8482,13 @@
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",
       "loading_model": "Chargement du modèle...",
-      "could_not_load_model": "Impossible de charger le modèle",
-      "all_assets": "Toutes les ressources",
-      "search_placeholder": "Rechercher des ressources...",
-      "no_assets": "Aucune ressource pour l'instant",
-      "upload": "Téléverser",
-      "filter_type": "Filtrer par type",
-      "sort_label": "Trier",
-      "delete_asset": "Supprimer la ressource",
-      "asset_details": "Détails de la ressource",
-      "copy_url": "Copier l'URL",
-      "url_copied": "URL copiée",
-      "tags_label": "Tags",
-      "add_tag": "Ajouter un tag"
+      "could_not_load_model": "Impossible de charger le modèle"
     },
     "artist_media_studio": {
       "drag_drop_hint": "— glissez-déposez des fichiers n'importe où",
       "keyboard_shortcuts": "Espace / Suppr / Flèches",
       "px_per_second": "px/s",
-      "running_loudnorm": "Exécution du dry-run ffmpeg loudnorm…",
-      "new_composition": "Nouvelle composition",
-      "save_composition": "Enregistrer la composition",
-      "export_composition": "Exporter la composition",
-      "composition_name": "Nom de la composition",
-      "no_compositions": "Aucune composition pour l'instant"
+      "running_loudnorm": "Exécution du dry-run ffmpeg loudnorm…"
     },
     "dev_context": {
       "files_header": "Fichiers (",
@@ -8855,19 +8501,7 @@
       "auto_scan": "Scan auto",
       "automated_context_scan": "Scan de contexte automatisé",
       "results": "Résultats (",
-      "scan_history": "Historique des scans (",
-      "title": "Contexte",
-      "no_project": "Aucun projet sélectionné",
-      "loading": "Chargement du contexte...",
-      "generate": "Générer le contexte",
-      "generating": "Génération...",
-      "copy": "Copier",
-      "copied": "Copié",
-      "size_label": "Taille : {size}",
-      "files_label": "Fichiers : {count}",
-      "last_generated": "Généré {time}",
-      "regenerate": "Régénérer",
-      "attach_to_agent": "Joindre à l'agent"
+      "scan_history": "Historique des scans ("
     },
     "dev_lifecycle": {
       "start_a_competition": "Démarrer une compétition",
@@ -8946,46 +8580,7 @@
       "lifecycle_readiness": "Préparation du cycle de vie —",
       "goals_tab_no_goals": "Aucun objectif. Créez des objectifs dans le gestionnaire de projet.",
       "goal_constellation": "Constellation d'objectifs (",
-      "sync_to_obsidian": "Synchroniser avec Obsidian",
-      "title": "Cycle de vie",
-      "no_project": "Aucun projet sélectionné",
-      "pipeline_label": "Pipeline",
-      "stage_label": "Étape",
-      "run_pipeline": "Exécuter le pipeline",
-      "running": "En cours...",
-      "pipeline_complete": "Pipeline terminé",
-      "pipeline_failed": "Échec du pipeline",
-      "stage_passed": "Étape réussie",
-      "stage_failed": "Étape échouée",
-      "stage_skipped": "Étape ignorée",
-      "no_pipelines": "Aucun pipeline configuré",
-      "add_pipeline": "Ajouter un pipeline",
-      "pipeline_name": "Nom du pipeline",
-      "pipeline_stages": "Étapes",
-      "add_stage": "Ajouter une étape",
-      "stage_name": "Nom de l'étape",
-      "stage_command": "Commande",
-      "stage_required": "Requise",
-      "delete_stage": "Supprimer l'étape",
-      "save_pipeline": "Enregistrer le pipeline",
-      "delete_pipeline": "Supprimer le pipeline",
-      "confirm_delete": "Supprimer ce pipeline ?",
-      "history_label": "Historique",
-      "no_history": "Aucun historique disponible",
-      "duration_label": "Durée : {duration}",
-      "triggered_by": "Déclenché par : {trigger}",
-      "view_logs": "Voir les journaux",
-      "rerun": "Ré-exécuter",
-      "trigger_on_push": "Déclencher au push",
-      "trigger_on_pr": "Déclencher sur PR",
-      "trigger_manual": "Manuel uniquement",
-      "environment_label": "Environnement",
-      "production": "Production",
-      "staging": "Staging",
-      "development": "Développement",
-      "notifications_label": "Notifications",
-      "notify_on_failure": "Notifier en cas d'échec",
-      "notify_on_success": "Notifier en cas de succès"
+      "sync_to_obsidian": "Synchroniser avec Obsidian"
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",
@@ -9037,46 +8632,7 @@
       "implementation_log": "Journal d'implémentation",
       "loading_metadata": "Chargement...",
       "no_metadata_yet": "Aucune carte de métadonnées générée pour l'instant",
-      "generate_metadata_prompt": "pour analyser les cartes de contexte de tous les projets et extraire les schémas partagés.",
-      "title": "Projets",
-      "add_project": "Ajouter un projet",
-      "no_projects": "Aucun projet pour l'instant",
-      "project_path": "Chemin",
-      "save": "Enregistrer",
-      "cancel": "Annuler",
-      "delete": "Supprimer",
-      "edit": "Modifier",
-      "confirm_delete": "Supprimer ce projet ?",
-      "name_placeholder": "ex. Backend API",
-      "path_placeholder": "/chemin/vers/le/projet",
-      "browse": "Parcourir",
-      "last_scanned": "Dernière analyse : {time}",
-      "never_scanned": "Jamais analysé",
-      "scan_now": "Analyser maintenant",
-      "scanning": "Analyse...",
-      "files_count": "{count} fichier(s)",
-      "open_folder": "Ouvrir le dossier",
-      "copy_path": "Copier le chemin",
-      "connected_agents_count": "{count} agent(s) connecté(s)",
-      "no_connected_agents": "Aucun agent connecté",
-      "project_settings": "Paramètres",
-      "branch": "Branche : {branch}",
-      "language_detected": "Langage : {lang}",
-      "framework_detected": "Framework : {fw}",
-      "type_label": "Type",
-      "description_label": "Description",
-      "description_placeholder": "Description courte du projet...",
-      "tags_label": "Tags",
-      "add_tag": "Ajouter un tag",
-      "tag_placeholder": "ex. backend, api, python",
-      "auto_scan_label": "Analyse automatique",
-      "auto_scan_hint": "Ré-analyser automatiquement lors des changements de fichiers",
-      "exclude_patterns_label": "Patterns d'exclusion",
-      "add_pattern": "Ajouter un pattern",
-      "pattern_placeholder": "ex. node_modules/**",
-      "max_depth_label": "Profondeur maximale",
-      "max_file_size_label": "Taille max. de fichier",
-      "save_settings": "Enregistrer les paramètres"
+      "generate_metadata_prompt": "pour analyser les cartes de contexte de tous les projets et extraire les schémas partagés."
     },
     "dev_runner": {
       "self_healing": "Auto-correction",
@@ -9098,28 +8654,7 @@
       "percent_overall": "% global",
       "task_queue": "File de tâches (",
       "no_tasks_queued": "Aucune tâche en file",
-      "no_tasks_queued_sub": "Créez des tâches manuellement ou par lot depuis les idées acceptées.",
-      "title": "Exécuteur",
-      "run": "Exécuter",
-      "running": "En cours...",
-      "stop": "Arrêter",
-      "clear": "Effacer",
-      "no_project": "Aucun projet sélectionné",
-      "command_placeholder": "Entrez une commande à exécuter...",
-      "output_label": "Sortie",
-      "no_output": "Aucune sortie pour l'instant",
-      "exit_code": "Code de sortie : {code}",
-      "duration": "Durée : {duration}",
-      "saved_commands": "Commandes enregistrées",
-      "save_command": "Enregistrer la commande",
-      "command_name_placeholder": "Nom de la commande...",
-      "delete_command": "Supprimer",
-      "no_saved_commands": "Aucune commande enregistrée",
-      "environment_label": "Variables d'environnement",
-      "add_env_var": "Ajouter une variable",
-      "working_dir_label": "Répertoire de travail",
-      "shell_label": "Shell",
-      "timeout_label": "Délai d'expiration (s)"
+      "no_tasks_queued_sub": "Créez des tâches manuellement ou par lot depuis les idées acceptées."
     },
     "dev_scanner": {
       "idea_evolution": "Évolution des idées",
@@ -9140,41 +8675,14 @@
       "idea_scanner_subtitle": "Exécuter des agents spécialisés pour générer des idées d'amélioration",
       "run_scan_btn": "Lancer le scan (",
       "results_header": "Résultats (",
-      "scan_history_header": "Historique des scans (",
-      "title": "Analyseur de code",
-      "scan": "Analyser",
-      "scanning": "Analyse en cours...",
-      "no_project": "Aucun projet sélectionné",
-      "results_title": "Résultats de l'analyse",
-      "no_issues": "Aucun problème trouvé",
-      "issues_count": "{count} problème(s) trouvé(s)",
-      "severity_error": "Erreur",
-      "severity_warning": "Avertissement",
-      "severity_info": "Info",
-      "file_label": "Fichier",
-      "line_label": "Ligne",
-      "message_label": "Message",
-      "fix_with_ai": "Corriger avec l'IA",
-      "view_file": "Voir le fichier",
-      "filter_severity": "Filtrer par sévérité",
-      "filter_file": "Filtrer par fichier",
-      "last_scan": "Dernière analyse : {time}"
+      "scan_history_header": "Historique des scans ("
     },
     "dev_triage": {
       "auto_triage_rules": "Règles de triage automatique",
       "add_condition": "+ Ajouter une condition",
       "action_label": "Action :",
       "new_rule": "Nouvelle règle",
-      "run_rules": "Exécuter les règles",
-      "title": "Tri",
-      "no_project": "Aucun projet sélectionné",
-      "scan_issues": "Analyser les problèmes",
-      "scanning": "Analyse en cours...",
-      "no_issues": "Aucun problème trouvé",
-      "issues_count": "{count} problème(s)",
-      "priority_high": "Haute",
-      "priority_medium": "Moyenne",
-      "priority_low": "Faible"
+      "run_rules": "Exécuter les règles"
     },
     "obsidian": {
       "saved_vaults": "Coffres enregistrés",
@@ -9239,57 +8747,7 @@
       "keep_app": "Conserver l'app",
       "keep_vault": "Conserver le coffre",
       "clear_history_title": "Effacer l'historique",
-      "no_sync_activity": "Aucune activité de synchronisation pour l'instant. Poussez ou tirez pour commencer.",
-      "title": "Obsidian",
-      "connect_vault": "Connecter le coffre Obsidian",
-      "vault_path": "Chemin du coffre",
-      "browse_vault": "Parcourir...",
-      "connected_vault": "Coffre connecté : {path}",
-      "disconnect": "Déconnecter",
-      "search_notes": "Rechercher des notes...",
-      "loading": "Chargement...",
-      "no_notes": "Aucune note trouvée",
-      "notes_count": "{count} note(s)",
-      "attach_note": "Joindre la note",
-      "open_note": "Ouvrir dans Obsidian",
-      "view_note": "Voir la note",
-      "note_title": "Titre",
-      "note_tags": "Tags",
-      "note_modified": "Modifié : {time}",
-      "note_size": "Taille : {size}",
-      "filter_tag": "Filtrer par tag",
-      "all_tags": "Tous les tags",
-      "filter_folder": "Filtrer par dossier",
-      "all_folders": "Tous les dossiers",
-      "sort_by_name": "Trier par nom",
-      "sort_by_date": "Trier par date",
-      "sync_vault": "Synchroniser le coffre",
-      "syncing": "Synchronisation...",
-      "last_sync": "Dernière sync. : {time}",
-      "never_synced": "Jamais synchronisé",
-      "vault_not_found": "Coffre introuvable au chemin indiqué",
-      "select_notes": "Sélectionner les notes",
-      "selected_count": "{count} sélectionnée(s)",
-      "attach_selected": "Joindre les sélectionnées",
-      "notes_attached": "Notes jointes à l'agent",
-      "graph_view": "Vue graphe",
-      "list_view": "Vue liste",
-      "no_vault_connected": "Aucun coffre Obsidian connecté",
-      "connect_hint": "Connectez votre coffre Obsidian pour accéder à vos notes depuis vos agents",
-      "invalid_path": "Chemin de coffre invalide",
-      "path_required": "Le chemin du coffre est requis",
-      "save": "Enregistrer",
-      "cancel": "Annuler",
-      "recent_notes": "Notes récentes",
-      "pinned_notes": "Notes épinglées",
-      "pin_note": "Épingler la note",
-      "unpin_note": "Désépingler la note",
-      "copy_link": "Copier le lien",
-      "link_copied": "Lien copié",
-      "preview_note": "Aperçu de la note",
-      "note_content": "Contenu de la note",
-      "word_count": "{count} mot(s)",
-      "char_count": "{count} caractère(s)"
+      "no_sync_activity": "Aucune activité de synchronisation pour l'instant. Poussez ou tirez pour commencer."
     },
     "research_lab": {
       "review_before_saving": "Vérifiez avant d'enregistrer. Décochez ceux que vous ne voulez pas ajouter.",
@@ -9299,25 +8757,8 @@
       "query_placeholder": "Tapez une requête et appuyez sur Entrée pour rechercher dans tous les panneaux…",
       "close_panel_title": "Fermer le panneau",
       "md_extension": ".md",
-      "edit_note_aria": "Modifier la note",
-      "title": "Laboratoire de recherche",
-      "new_project": "Nouveau projet",
-      "no_projects": "Aucun projet de recherche",
-      "loading": "Chargement...",
-      "sources_tab": "Sources",
-      "hypotheses_tab": "Hypothèses",
-      "experiments_tab": "Expériences",
-      "findings_tab": "Résultats",
-      "report_tab": "Rapport",
-      "add_source": "Ajouter une source",
-      "add_hypothesis": "Ajouter une hypothèse",
-      "add_experiment": "Ajouter une expérience",
-      "add_finding": "Ajouter un résultat"
-    },
-    "doc_signing_label": "Signature de documents",
-    "doc_signing_desc": "Signez et vérifiez des documents avec des signatures numériques directement depuis votre espace de travail.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Extrayez du texte depuis des images et des PDF en utilisant Gemini Vision ou Claude multimodal."
+      "edit_note_aria": "Modifier la note"
+    }
   },
   "media_studio": {
     "title": "Studio média",
@@ -10363,17 +9804,7 @@
       "design_context_json": "JSON du contexte de conception...",
       "click_next": "Cliquez sur Suivant pour procéder à la transformation.",
       "configure_transform": "Configurer la transformation",
-      "select": "Sélectionner...",
-      "system_prompt_label": "Prompt système",
-      "use_cases_label": "Cas d'usage",
-      "add_use_case": "Ajouter un cas d'usage",
-      "use_case_title_placeholder": "Titre du cas d'usage...",
-      "use_case_description_placeholder": "Description du cas d'usage...",
-      "remove_use_case": "Supprimer le cas d'usage",
-      "tools_label": "Outils",
-      "no_tools": "Aucun outil assigné",
-      "triggers_label": "Déclencheurs",
-      "no_triggers": "Aucun déclencheur configuré"
+      "select": "Sélectionner..."
     },
     "forms_extra": {
       "color_hex_placeholder": "#8b5cf6",
@@ -10387,12 +9818,7 @@
       "choose_color": "Choisir une couleur",
       "choose_icon": "Choisir une icône",
       "filter_placeholder": "Filtrer...",
-      "reset_to_default": "Réinitialiser par défaut",
-      "char_count": "{count}/{max} caractères",
-      "optional_label": "(facultatif)",
-      "required_label": "(requis)",
-      "field_hint": "Astuce : {hint}",
-      "validation_error": "Erreur de validation : {message}"
+      "reset_to_default": "Réinitialiser par défaut"
     },
     "reasoning_trace": {
       "heartbeat_silent": "s (silencieux",
@@ -10403,10 +9829,7 @@
       "tool_call": "Appel d’outil : {name}",
       "result": "Résultat",
       "complete": "Terminé",
-      "error": "Erreur",
-      "thinking_label": "Réflexion",
-      "step_label": "Étape {n}",
-      "conclusion_label": "Conclusion"
+      "error": "Erreur"
     },
     "sidebar_extra": {
       "clear_completed_title": "Effacer les éléments terminés et en file",
@@ -10424,18 +9847,7 @@
       "schedules": "Planifications",
       "remove_favorites": "Retirer des favoris",
       "add_favorites": "Ajouter aux favoris",
-      "active_project": "Projet actif",
-      "schedules_label": "Planifications",
-      "quality_gates": "Filtres de contenu",
-      "config_resolution": "Configuration de l'agent",
-      "search_placeholder": "Rechercher...",
-      "new_agent": "Nouvel agent",
-      "all_agents": "Tous les agents",
-      "recent_label": "Récents",
-      "favorites_label": "Favoris",
-      "no_recent": "Aucun agent récent",
-      "no_favorites": "Aucun favori",
-      "pinned_label": "Épinglés"
+      "active_project": "Projet actif"
     },
     "execution_detail": {
       "running": "En cours...",
@@ -10447,12 +9859,7 @@
       "suggested_actions": "Actions suggérées",
       "knowledge_insight": "Aperçu de connaissance",
       "outcome_assessment": "Évaluation du résultat",
-      "blockers": "Bloquants",
-      "input_section": "Entrée",
-      "output_section": "Sortie",
-      "metadata_section": "Métadonnées",
-      "timeline_section": "Chronologie",
-      "ai_analysis": "Analyse IA"
+      "blockers": "Bloquants"
     },
     "progress_extra": {
       "continue_working": "Vous pouvez continuer à travailler -- nous vous notifierons lorsque le brouillon sera prêt.",
@@ -10472,18 +9879,7 @@
       "cancel_transformation": "Annuler la transformation",
       "draft_generated": "Brouillon généré avec succès",
       "transformation_failed": "Échec de la transformation",
-      "waiting_to_start": "En attente du démarrage de la transformation...",
-      "step_label": "Étape {current}/{total}",
-      "elapsed_label": "Temps écoulé : {elapsed}",
-      "remaining_label": "Temps restant : {remaining}",
-      "overall_progress": "Progression globale",
-      "phase_label": "Phase : {phase}",
-      "operation_label": "Opération : {operation}",
-      "retry_label": "Tentative {count}",
-      "success_label": "Succès",
-      "error_label": "Erreur",
-      "warning_label": "Avertissement",
-      "info_label": "Information"
+      "waiting_to_start": "En attente du démarrage de la transformation..."
     },
     "terminal_extra": {
       "connecting": "Connexion au fournisseur",
@@ -10496,14 +9892,7 @@
       "press_enter": "Appuyez sur Entrée ou cliquez sur Lecture pour démarrer",
       "connection_failed": "Connexion échouée -- vérifiez les paramètres du fournisseur et réessayez",
       "search_output": "Rechercher dans la sortie...",
-      "dismiss": "Ignorer",
-      "copy_output": "Copier la sortie",
-      "download_log": "Télécharger le journal",
-      "wrap_lines": "Retour à la ligne",
-      "font_size_label": "Taille de police",
-      "theme_label": "Thème",
-      "clear_terminal": "Effacer le terminal",
-      "fullscreen": "Plein écran"
+      "dismiss": "Ignorer"
     },
     "use_cases_extra": {
       "input_placeholder": "Saisir une entrée pour exécuter ce cas d'utilisation…",
@@ -10524,17 +9913,7 @@
       "error_prefix": "Erreur : ",
       "output_prefix": "Sortie : ",
       "toggle_history": "Afficher/masquer l’historique d’exécution",
-      "configure_model": "Configurer le modèle, les notifications et les abonnements",
-      "trigger_type_label": "Type de déclencheur",
-      "trigger_active_label": "Déclencheur actif",
-      "subscription_label": "Abonnement",
-      "no_trigger_configured": "Aucun déclencheur configuré",
-      "run_count_label": "{count} exécution(s)",
-      "last_run_label": "Dernier lancement : {time}",
-      "success_rate_label": "Taux de succès : {rate}%",
-      "avg_duration_label": "Durée moy. : {duration}",
-      "avg_cost_label": "Coût moy. : {cost}",
-      "configure_notifications": "Configurer les notifications"
+      "configure_model": "Configurer le modèle, les notifications et les abonnements"
     },
     "json_valid": "JSON valide",
     "json_invalid": "JSON invalide",
@@ -10620,53 +9999,7 @@
       "release_roadmap_item_4_title": "Utilisez Personas dans votre langue",
       "release_roadmap_item_4_description": "Support multilingue complet, y compris les mises en page de droite à gauche et les polices spécifiques à chaque langue.",
       "release_roadmap_item_6_title": "Espaces de travail d'équipe",
-      "release_roadmap_item_6_description": "Construisez des agents avec votre équipe — espaces partagés, permissions de rôles et tableaux de bord en direct.",
-      "loading": "Chargement des notes de version...",
-      "no_updates": "Aucune mise à jour disponible",
-      "version_label": "Version {version}",
-      "released_on": "Publié le {date}",
-      "new_features": "Nouvelles fonctionnalités",
-      "improvements": "Améliorations",
-      "bug_fixes": "Corrections de bugs",
-      "breaking_changes": "Changements majeurs",
-      "current_version": "Version actuelle : {version}",
-      "up_to_date": "Vous êtes à jour",
-      "update_available": "Mise à jour disponible",
-      "install_update": "Installer la mise à jour",
-      "view_changelog": "Voir le journal des modifications",
-      "dismiss": "Ignorer",
-      "close": "Fermer",
-      "read_more": "Lire plus",
-      "whats_new_badge": "Nouveau",
-      "previous_releases": "Versions précédentes",
-      "check_for_updates": "Vérifier les mises à jour",
-      "checking": "Vérification...",
-      "latest_version": "Dernière version",
-      "changelog_empty": "Aucune entrée de journal des modifications",
-      "install_restart": "Installer et redémarrer",
-      "downloading": "Téléchargement...",
-      "installed": "Installé",
-      "failed_to_check": "Échec de la vérification des mises à jour",
-      "failed_to_install": "Échec de l'installation",
-      "release_notes": "Notes de version",
-      "update_prompt": "Une nouvelle version de Personas est disponible. Installez maintenant pour bénéficier des dernières fonctionnalités et corrections.",
-      "skip_version": "Passer cette version",
-      "remind_later": "Me rappeler plus tard",
-      "changes_count": "{count} changement(s)",
-      "auto_update": "Mise à jour automatique",
-      "auto_update_hint": "Installer automatiquement les mises à jour au redémarrage",
-      "show_prerelease": "Afficher les versions préliminaires",
-      "stable_only": "Versions stables uniquement",
-      "build_info": "Info de build",
-      "platform": "Plateforme",
-      "commit": "Commit",
-      "channel": "Canal",
-      "channel_stable": "Stable",
-      "channel_beta": "Beta",
-      "channel_nightly": "Nightly",
-      "feature_flag_hint": "Certaines fonctionnalités peuvent nécessiter un redémarrage pour prendre effet",
-      "highlights": "Points forts",
-      "all_changes": "Tous les changements"
+      "release_roadmap_item_6_description": "Construisez des agents avec votre équipe — espaces partagés, permissions de rôles et tableaux de bord en direct."
     }
   }
 }

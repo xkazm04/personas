@@ -1258,8 +1258,7 @@
       "sub_confirm": "Potvrdit?",
       "sub_triggers_title": "Spouštěče a odběry",
       "sub_suggested": "{count} navržených",
-      "sub_filter": "filtr: {filter}",
-      "auto_add_from platforms": "Přidat automatizaci z n8n, Zapier nebo GitHub Actions"
+      "sub_filter": "filtr: {filter}"
     },
     "editor_chrome": {
       "tab_activity": "Aktivita",
@@ -4779,17 +4778,53 @@
       "skip_tour": "Přeskočit celou prohlídku"
     },
     "burn_rate_extra": {
-      "active_personas_subtitle": "{count} aktivních person · hranice měsíce v místním čase"
+      "active_personas_subtitle": "{count} aktivních person · hranice měsíce v místním čase",
+      "title": "Projekce spotřeby",
+      "daily_burn": "Denní spotřeba",
+      "projected_monthly": "Odhad měsíční",
+      "at_risk": "V ohrožení",
+      "top_cost_drivers": "Hlavní zdroje nákladů",
+      "budget_exhaustion_warnings": "Varování vyčerpání rozpočtu",
+      "exhausted": "Vyčerpáno",
+      "days_left": "zbývá {days} d"
     },
     "predictive_alerts_extra": {
       "per_month": "/měs",
-      "confidence_pct": "% jist."
+      "confidence_pct": "% jist.",
+      "title": "Prediktivní upozornění",
+      "all_nominal": "Všechny systémy v normě",
+      "no_alerts": "Žádná prediktivní upozornění — všechny persony v bezpečném pásmu.",
+      "budget_exhausted": "Rozpočet vyčerpán",
+      "budget_exhaustion_in": "Vyčerpání rozpočtu za {days} d",
+      "failure_spike_predicted": "Předpokládaný nárůst chybovosti za {days} d",
+      "excessive_healing": "Nadměrná aktivita samoobnovy",
+      "critical_health": "Kritický stav zdraví",
+      "byom_recommendations": "Doporučení směrování BYOM"
     },
     "annotate_modal": {
-      "annotation_placeholder": "např. Stripe webhook verifikace vyžaduje surové tělo požadavku, ne parsovaný JSON"
+      "annotation_placeholder": "např. Stripe webhook verifikace vyžaduje surové tělo požadavku, ne parsovaný JSON",
+      "title": "Přidat anotaci znalosti",
+      "persona_label": "Přiřadit k personě",
+      "scope_label": "Rozsah",
+      "tool_name": "Název nástroje",
+      "connector_type": "Konektor / typ služby",
+      "annotation_label": "Anotace",
+      "cancel": "Zrušit",
+      "saving": "Ukládání...",
+      "save_annotation": "Uložit anotaci"
     },
     "knowledge_row": {
-      "execution_trend_label": "Trend spouštění"
+      "execution_trend_label": "Trend spouštění",
+      "annotation": "Anotace",
+      "successes": "Úspěchy",
+      "failures": "Selhání",
+      "avg_cost": "Prům. cena",
+      "avg_duration": "Prům. trvání",
+      "pattern_data": "Data vzoru",
+      "collapse_details": "Sbalit podrobnosti",
+      "expand_details": "Rozbalit podrobnosti",
+      "verify_annotation": "Ověřit anotaci",
+      "dismiss_annotation": "Zavrhnout anotaci"
     },
     "knowledge_graph": {
       "mock_pattern": "Ukázkový vzor",
@@ -4811,10 +4846,22 @@
     "focused_decision": {
       "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa.",
       "reject_this": "Zamítnout toto",
-      "accept_this": "Přijmout toto"
+      "accept_this": "Přijmout toto",
+      "accept": "Přijmout",
+      "reject": "Odmítnout",
+      "media_unavailable": "Média nedostupná"
     },
     "review_focus": {
-      "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa."
+      "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa.",
+      "all_caught_up": "Vše zpracováno",
+      "no_pending": "Žádné čekající kontroly ke zpracování.",
+      "queue": "Fronta",
+      "clear": "Vymazat",
+      "clear_all_verdicts": "Vymazat všechna rozhodnutí",
+      "quick_actions": "Rychlé akce",
+      "reject_all": "Odmítnout vše",
+      "accept_all": "Přijmout vše",
+      "retry_with_changes": "Opakovat se změnami"
     },
     "bulk_action_bar": {
       "pending_reviews_selected_one": "{count} čekající kontrola vybrána",
@@ -4839,7 +4886,246 @@
       "execution_label": "Spuštění:",
       "issue_marked_as": "Tento problém je označen jako",
       "retry_in_progress": "Probíhá opakování — stav se aktualizuje po dokončení.",
-      "resolve_issue_title": "Označit problém jako vyřešený"
+      "resolve_issue_title": "Označit problém jako vyřešený",
+      "analysis_complete_prefix": "Analýza dokončena:",
+      "title": "Zdravotní problémy",
+      "analyzing": "Analýza...",
+      "run_analysis": "Spustit analýzu",
+      "no_open_issues": "Žádné otevřené problémy",
+      "run_analysis_hint": "Spusťte analýzu pro kontrolu problémů.",
+      "healing_audit_log": "Audit log samoobnovy",
+      "no_silent_failures": "Nejsou zaznamenány žádné tichá selhání."
+    },
+    "healing_issue_modal": {
+      "retrying_badge": "opakuje se",
+      "auto_fixed_badge": "opraveno automaticky",
+      "retry_in_progress_badge": "opakování probíhá",
+      "healed_via_retry_badge": "opraveno opakováním",
+      "severity_suffix": "závažnost",
+      "issue_resolved": "Problém vyřešen",
+      "analysis": "Analýza",
+      "suggested_fix": "Navrhovaná oprava",
+      "copied": "Zkopírováno",
+      "copy_fix": "Kopírovat opravu",
+      "persona_auto_disabled": "Persona automaticky deaktivována",
+      "persona_auto_disabled_desc": "Tato persona byla automaticky deaktivována po 5 po sobě jdoucích selháních. Zkontrolujte vzor chyby níže a po vyřešení hlavní příčiny ji ručně znovu aktivujte.",
+      "marking_resolved_note": "Označení „vyřešeno“ znamená, že jste problém vyřešili mimo systém samoobnovy.",
+      "retry_in_progress": "Probíhá opakování — stav se aktualizuje po dokončení",
+      "auto_resolved": "Tento problém byl vyřešen automaticky",
+      "close": "Zavřít",
+      "resolving": "Řešení…",
+      "mark_resolved": "Označit jako vyřešené"
+    },
+    "healing_timeline": {
+      "retry_badge": "opakování #{count}",
+      "loading": "Načítání časové osy...",
+      "no_events": "Žádné události samoobnovy",
+      "no_events_hint": "Spusťte analýzu pro sestavení časové osy odolnosti.",
+      "knowledge_base": "Znalostní báze",
+      "patterns_hint": "Vzory ovlivňující rozhodnutí samoobnovy"
+    },
+    "ipc_panel": {
+      "commands_table_label": "Výkon příkazů IPC",
+      "slowest_table_label": "Nejpomalejší IPC volání",
+      "error_rate": "Míra chyb:",
+      "timeout_rate": "Míra časových limitů:",
+      "title": "Výkon IPC",
+      "by_command": "Podle příkazu",
+      "slowest_calls": "Nejpomalejší volání",
+      "command": "Příkaz",
+      "calls_header": "Volání",
+      "duration_header": "Doba",
+      "when_header": "Kdy"
+    },
+    "system_trace_extra": {
+      "zero_ms": "0 ms",
+      "no_traces": "Žádné systémové trasy nezaznamenány",
+      "no_traces_hint": "Trasy se zobrazí při běhu designu, kredenciálů nebo šablon",
+      "all_operations": "Všechny operace",
+      "clear_completed": "Vymazat dokončené trasy",
+      "span": "Rozsah"
+    },
+    "event_log_sidebar": {
+      "filter_placeholder": "Filtrovat události…",
+      "title": "Log událostí",
+      "no_events": "Zatím žádné události",
+      "open_detail_drawer": "Otevřít v detailním panelu"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID události",
+      "broadcast": "(všesměrové)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} dřívější událost nezobrazena",
+      "earlier_events_not_shown_other": "{count} dřívějších událostí nezobrazeno"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Hledat události…"
+    },
+    "realtime_stats": {
+      "events_per_min": "událostí/min",
+      "pending": "čeká",
+      "success": "úspěch",
+      "in_window": "v okně",
+      "test_flow": "Testovací tok",
+      "to_simulate_traffic": "pro simulaci provozu"
+    },
+    "bus_lane": {
+      "event_queue": "FRONTA UDÁLOSTÍ"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Zobrazení signálů",
+      "status_page_view": "Zobrazení stavové stránky",
+      "reliability_view": "Zobrazení spolehlivosti SLA",
+      "refresh_tooltip": "Obnovit zdravotní data",
+      "persona_heartbeats": "Tep person",
+      "system_health": "Stav systému:",
+      "computing": "Počítání zdravotních signálů…",
+      "no_match": "Žádné persony neodpovídají vybranému filtru.",
+      "loading_status_page": "Načítání stavové stránky…",
+      "loading_reliability": "Načítání dat spolehlivosti…",
+      "heartbeats_btn": "Signály",
+      "reliability_btn": "Spolehlivost"
+    },
+    "crash_logs": {
+      "title": "Protokoly pádů",
+      "no_logs": "Žádné protokoly pádů nejsou zaznamenány.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Zaregistrujte se zdarma na",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", poté zkopírujte svůj API klíč z Nastavení. Klíč je uložen lokálně a sdílen všemi agenty."
+    },
+    "events_list": {
+      "save_view_tooltip": "Uložit aktuální filtry jako zobrazení",
+      "clear_filters_tooltip": "Vymazat všechny filtry"
+    },
+    "dashboard_home": {
+      "you_have": "Máte"
+    },
+    "fleet_optimization_card": {
+      "title": "Optimalizace flotily"
+    },
+    "usage_filters": {
+      "time_range_label": "Časové rozmezí"
+    },
+    "day_range_picker": {
+      "start_date": "Datum začátku",
+      "end_date": "Datum konce"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "opraveno automaticky tento týden",
+      "issues_in_7d": "problémy za 7 dní"
+    },
+    "remote_control_card": {
+      "connect_to_desktop": "Připojit k desktopu",
+      "connect_description": "Spouštějte agenty pomocí desktopového CLI přes Remote Control. Spusťte {command} na svém počítači a poté se zde připojte.",
+      "requires_subscription": "Vyžaduje předplatné Claude Pro nebo Max"
+    },
+    "resume_setup_card": {
+      "resume_tour": "Pokračovat v prohlídce",
+      "left_off_at": "Skončili jste u",
+      "steps_completed": "{completed}/{total} kroků dokončeno",
+      "skip_tour": "Přeskočit prohlídku úplně",
+      "continue_label": "Pokračovat"
+    },
+    "detail_modal": {
+      "close": "Zavřít"
+    },
+    "metric_help_popover": {
+      "help_for": "Nápověda pro {label}",
+      "dismiss_help": "Zavřít nápovědu",
+      "healthy": "V pořádku:",
+      "click": "Klikněte:",
+      "got_it": "Rozumím, už nezobrazovat"
+    },
+    "install_button": {
+      "install_node": "Nainstalovat Node.js",
+      "install_cli": "Nainstalovat Claude CLI",
+      "downloading": "Stahování...",
+      "installing": "Instalace...",
+      "installed_success": "Úspěšně nainstalováno",
+      "installation_failed": "Instalace selhala",
+      "try_manually": "Zkuste spustit ručně:",
+      "retry": "Opakovat",
+      "official_page": "Oficiální stránka"
+    },
+    "section_card": {
+      "checking": "Kontrola {section}...",
+      "edit_key": "Upravit klíč",
+      "configure": "Konfigurovat",
+      "edit_config": "Upravit konfiguraci",
+      "signing_in": "Přihlašování...",
+      "sign_in_google": "Přihlásit se přes Google",
+      "working": "Pracuje...",
+      "connect_claude": "Připojit k Claude Desktop",
+      "disconnect": "Odpojit"
+    },
+    "metrics_cards": {
+      "cost_spike": "Skok nákladů",
+      "above_avg": "nad průměrem",
+      "top_executions": "Nejvyšší spuštění:"
+    },
+    "event_log_item": {
+      "event_id": "ID události",
+      "project": "Projekt",
+      "source": "Zdroj",
+      "processed": "Zpracováno",
+      "event_data": "Data události",
+      "copy_event_data": "Kopírovat data události",
+      "copied": "Zkopírováno",
+      "copy": "Kopírovat",
+      "error": "Chyba",
+      "system": "Systém"
+    },
+    "cascade": {
+      "title": "Mapa kaskády řetězců",
+      "no_chains": "Žádné řetězce nezjištěny — všechny persony pracují nezávisle"
+    },
+    "memory_card": {
+      "confirm": "Potvrdit",
+      "cancel": "Zrušit"
+    },
+    "memory_detail": {
+      "title_label": "Název",
+      "content_label": "Obsah",
+      "category_label": "Kategorie",
+      "importance_label": "Důležitost",
+      "tags_label": "Štítky",
+      "view_source_execution": "Zobrazit zdrojové spuštění",
+      "delete_memory": "Smazat paměť",
+      "close": "Zavřít"
+    },
+    "memory_table": {
+      "agent": "Agent",
+      "title": "Název",
+      "category": "Kategorie",
+      "priority": "Priorita",
+      "tags": "Štítky",
+      "created": "Vytvořeno"
+    },
+    "review_results": {
+      "title": "Kontrola paměti AI",
+      "review_failed": "Kontrola selhala"
+    },
+    "anomaly_drilldown_extra": {
+      "title": "Analýza anomálie",
+      "value_label": "Hodnota:",
+      "baseline_label": "Základ:",
+      "correlating": "Hledání souvislostí...",
+      "likely_root_causes": "Pravděpodobné příčiny",
+      "correlated_events": "Související události",
+      "no_correlated": "V okně ±24 h nebyly nalezeny žádné související události."
+    },
+    "chart_error": {
+      "chart_unavailable": "Graf nedostupný"
+    },
+    "realtime_idle": {
+      "idle": "Nečinný"
+    },
+    "day_range": {
+      "apply": "Použít"
     }
   },
   "templates": {
@@ -9497,19 +9783,53 @@
       "edit_raw": "Upravit surové",
       "credential_links": "Propojení přihlašovacích údajů",
       "view_full_prompt": "Zobrazit celý prompt",
-      "hide_full_prompt": "Skrýt celý prompt"
+      "hide_full_prompt": "Skrýt celý prompt",
+      "persona_name_placeholder": "Název persony...",
+      "description_placeholder": "Stručný popis...",
+      "refine_placeholder": "Příklad: Zpřísněte ošetření chyb, přidejte opakování...",
+      "name_label": "Název",
+      "name_input_placeholder": "Pojmenujte svou personu...",
+      "description_label": "Popis",
+      "description_input_placeholder": "Stručný popis toho, co tato persona dělá...",
+      "system_prompt_placeholder": "Základní instrukce pro tuto personu...",
+      "custom_sections": "Vlastní sekce",
+      "remove_section": "Odstranit sekci",
+      "key_placeholder": "klíč",
+      "label_placeholder": "popisek",
+      "content_placeholder": "Obsah sekce...",
+      "icon_label": "Ikona",
+      "color_label": "Barva",
+      "design_context": "Kontext návrhu",
+      "design_context_placeholder": "Další kontext o tom, jak byla tato persona navržena...",
+      "design_context_json": "JSON kontextu návrhu...",
+      "click_next": "Klikněte na „další“ pro pokračování transformace.",
+      "configure_transform": "Konfigurovat transformaci",
+      "select": "Vybrat..."
     },
     "forms_extra": {
       "color_hex_placeholder": "#8b5cf6",
       "attach_file_title": "Přiložit soubor (API spec, schéma, MCP config)",
       "add_references_title": "Přidat referenční URL nebo connection stringy",
       "no_matches": "Žádné shody",
-      "all_prefix": "Vše ("
+      "all_prefix": "Vše (",
+      "references": "Reference",
+      "references_placeholder": "Vložte URL, připojovací řetězce, API klíče nebo jakékoli referenční informace (jeden na řádek)",
+      "remove_file": "Odstranit soubor",
+      "choose_color": "Zvolit barvu",
+      "choose_icon": "Zvolit ikonu",
+      "filter_placeholder": "Filtrovat...",
+      "reset_to_default": "Obnovit výchozí"
     },
     "reasoning_trace": {
       "heartbeat_silent": "s (ticho",
       "waiting": "Čekání na události spouštění...",
-      "tool_call_label": "Volání nástroje:"
+      "tool_call_label": "Volání nástroje:",
+      "system_init": "Inicializace systému",
+      "reasoning": "Uvažování",
+      "tool_call": "Volání nástroje: {name}",
+      "result": "Výsledek",
+      "complete": "Dokončeno",
+      "error": "Chyba"
     },
     "sidebar_extra": {
       "clear_completed_title": "Vymazat dokončené a zařazené položky",
@@ -9522,14 +9842,24 @@
       "dev_tools_label": "Dev Tools",
       "obsidian_brain": "Obsidian Brain",
       "active_twin": "Aktivní Twin",
-      "research_lab": "Research Lab"
+      "research_lab": "Research Lab",
+      "agents": "Agenti",
+      "schedules": "Plány",
+      "remove_favorites": "Odebrat z oblíbených",
+      "add_favorites": "Přidat do oblíbených",
+      "active_project": "Aktivní projekt"
     },
     "execution_detail": {
       "running": "Běží...",
       "rerun": "Znovu spustit",
       "retry_prefix": "Pokus č. ",
       "importance_prefix": "důležitost:",
-      "confidence_suffix": "% jistota"
+      "confidence_suffix": "% jistota",
+      "copy": "Kopírovat",
+      "suggested_actions": "Navrhované akce",
+      "knowledge_insight": "Znalostní vhled",
+      "outcome_assessment": "Hodnocení výsledku",
+      "blockers": "Blokátory"
     },
     "progress_extra": {
       "continue_working": "Můžeš pokračovat v práci -- dáme ti vědět, až bude návrh připraven.",
@@ -9542,7 +9872,14 @@
       "s_elapsed": "s uplynulo",
       "s_remaining": "s zbývá",
       "show_cli_output": "Zobrazit CLI výstup",
-      "hide_cli_output": "Skrýt CLI výstup"
+      "hide_cli_output": "Skrýt CLI výstup",
+      "taking_longer": "Trvá déle než obvykle",
+      "complete": "Dokončeno",
+      "resuming": "Obnovování předchozí transformační relace...",
+      "cancel_transformation": "Zrušit transformaci",
+      "draft_generated": "Návrh úspěšně vygenerován",
+      "transformation_failed": "Transformace selhala",
+      "waiting_to_start": "Čekání na zahájení transformace..."
     },
     "terminal_extra": {
       "connecting": "Připojování k poskytovateli",
@@ -9551,7 +9888,11 @@
       "new_lines": "nových řádků",
       "below": "níže",
       "lines_suffix": "řádků)",
-      "search_and_filter": "Hledání a filtrování"
+      "search_and_filter": "Hledání a filtrování",
+      "press_enter": "Stiskněte Enter nebo klikněte na Play pro spuštění",
+      "connection_failed": "Připojení selhalo — zkontrolujte nastavení poskytovatele a opakujte",
+      "search_output": "Prohledat výstup...",
+      "dismiss": "Zavřít"
     },
     "use_cases_extra": {
       "input_placeholder": "Napiš vstup pro spuštění tohoto případu užití…",
@@ -9564,7 +9905,15 @@
       "run_use_case": "Spustit tento případ užití",
       "custom_model": "Vlastní model",
       "no_results": "Nenalezeny žádné výsledky",
-      "ctrl_enter": "Ctrl+Enter"
+      "ctrl_enter": "Ctrl+Enter",
+      "example_output": "Příklad výstupu",
+      "input_data": "Vstupní data",
+      "rerun_input": "Spustit znovu s tímto vstupem",
+      "input_prefix": "Vstup: ",
+      "error_prefix": "Chyba: ",
+      "output_prefix": "Výstup: ",
+      "toggle_history": "Přepnout historii spuštění",
+      "configure_model": "Konfigurovat model, oznámení a odběry"
     },
     "json_valid": "Platný JSON",
     "json_invalid": "Neplatný JSON",

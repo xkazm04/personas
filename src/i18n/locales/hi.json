@@ -4893,7 +4893,8 @@
       "no_open_issues": "कोई खुली समस्या नहीं",
       "run_analysis_hint": "समस्याओं की जाँच के लिए विश्लेषण चलाएं।",
       "healing_audit_log": "उपचार ऑडिट लॉग",
-      "no_silent_failures": "कोई मूक विफलता दर्ज नहीं।"
+      "no_silent_failures": "कोई मूक विफलता दर्ज नहीं।",
+      "analysis_complete_prefix": "विश्लेषण पूर्ण:"
     },
     "remote_control_card": {
       "connect_to_desktop": "डेस्कटॉप से कनेक्ट करें",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "यह समस्या स्वचालित रूप से हल हो गई",
       "close": "बंद करें",
       "resolving": "हल हो रहा है…",
-      "mark_resolved": "हल के रूप में चिह्नित करें"
+      "mark_resolved": "हल के रूप में चिह्नित करें",
+      "retrying_badge": "पुनः प्रयास",
+      "auto_fixed_badge": "स्वचालित रूप से ठीक किया गया",
+      "retry_in_progress_badge": "पुनः प्रयास जारी है",
+      "healed_via_retry_badge": "पुनः प्रयास से ठीक हुआ",
+      "severity_suffix": "गंभीरता"
     },
     "healing_timeline": {
       "loading": "टाइमलाइन लोड हो रही है...",
       "no_events": "कोई उपचार इवेंट नहीं",
       "no_events_hint": "प्रतिरोध टाइमलाइन बनाने के लिए विश्लेषण चलाएं।",
       "knowledge_base": "ज्ञान आधार",
-      "patterns_hint": "उपचार निर्णयों को प्रभावित करने वाले पैटर्न"
+      "patterns_hint": "उपचार निर्णयों को प्रभावित करने वाले पैटर्न",
+      "retry_badge": "पुनः प्रयास #{count}"
     },
     "ipc_panel": {
       "title": "IPC प्रदर्शन",
@@ -5024,19 +5031,25 @@
       "command": "कमांड",
       "calls_header": "कॉल",
       "duration_header": "अवधि",
-      "when_header": "कब"
+      "when_header": "कब",
+      "commands_table_label": "IPC कमांड प्रदर्शन",
+      "slowest_table_label": "सबसे धीमे IPC कॉल",
+      "error_rate": "त्रुटि दर:",
+      "timeout_rate": "टाइमआउट दर:"
     },
     "system_trace_extra": {
       "no_traces": "कोई सिस्टम ट्रेस दर्ज नहीं",
       "no_traces_hint": "डिज़ाइन, क्रेडेंशियल, या टेम्पलेट ऑपरेशन चलने पर ट्रेस दिखाई देते हैं",
       "all_operations": "सभी ऑपरेशन",
       "clear_completed": "पूर्ण ट्रेस साफ़ करें",
-      "span": "स्पैन"
+      "span": "स्पैन",
+      "zero_ms": "0 मि.से."
     },
     "event_log_sidebar": {
       "title": "इवेंट लॉग",
       "no_events": "अभी कोई इवेंट नहीं",
-      "open_detail_drawer": "विवरण ड्रॉअर में खोलें"
+      "open_detail_drawer": "विवरण ड्रॉअर में खोलें",
+      "filter_placeholder": "इवेंट फ़िल्टर करें…"
     },
     "chart_error": {
       "chart_unavailable": "चार्ट उपलब्ध नहीं"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "लागू करें"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "इवेंट आईडी",
+      "broadcast": "(ब्रॉडकास्ट)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} पहले की इवेंट नहीं दिखाई गई",
+      "earlier_events_not_shown_other": "{count} पहले की इवेंट नहीं दिखाई गईं"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "इवेंट खोजें..."
+    },
+    "realtime_stats": {
+      "events_per_min": "इवेंट/मिनट",
+      "pending": "लंबित",
+      "success": "सफल",
+      "in_window": "विंडो में",
+      "test_flow": "परीक्षण प्रवाह",
+      "to_simulate_traffic": "ट्रैफ़िक अनुकरण के लिए"
+    },
+    "bus_lane": {
+      "event_queue": "इवेंट कतार"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "हार्टबीट दृश्य",
+      "status_page_view": "स्थिति पृष्ठ दृश्य",
+      "reliability_view": "SLA विश्वसनीयता दृश्य",
+      "refresh_tooltip": "स्वास्थ्य डेटा ताज़ा करें",
+      "persona_heartbeats": "व्यक्तित्व हार्टबीट",
+      "system_health": "सिस्टम स्वास्थ्य:",
+      "computing": "स्वास्थ्य संकेत गणना की जा रही है...",
+      "no_match": "चयनित फ़िल्टर से मेल खाने वाला कोई व्यक्तित्व नहीं।",
+      "loading_status_page": "स्थिति पृष्ठ लोड हो रहा है...",
+      "loading_reliability": "विश्वसनीयता डेटा लोड हो रहा है...",
+      "heartbeats_btn": "हार्टबीट",
+      "reliability_btn": "विश्वसनीयता"
+    },
+    "crash_logs": {
+      "title": "क्रैश लॉग",
+      "no_logs": "कोई क्रैश लॉग दर्ज नहीं है।",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "मुफ़्त में साइन अप करें",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", फिर सेटिंग्स से अपनी API कुंजी कॉपी करें। यह कुंजी स्थानीय रूप से संग्रहीत है और सभी एजेंट्स में साझा की जाती है।"
+    },
+    "events_list": {
+      "save_view_tooltip": "वर्तमान फ़िल्टर को दृश्य के रूप में सहेजें",
+      "clear_filters_tooltip": "सभी फ़िल्टर साफ़ करें"
+    },
+    "dashboard_home": {
+      "you_have": "आपके पास"
+    },
+    "fleet_optimization_card": {
+      "title": "फ्लीट अनुकूलन"
+    },
+    "usage_filters": {
+      "time_range_label": "समय सीमा"
+    },
+    "day_range_picker": {
+      "start_date": "शुरू होने की तारीख",
+      "end_date": "समाप्ति तिथि"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "इस सप्ताह स्वचालित रूप से ठीक किया गया",
+      "issues_in_7d": "7 दिनों में समस्याएँ"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "panel बंद करें",
       "md_extension": ".md",
       "edit_note_aria": "नोट संपादित करें"
-    },
-    "doc_signing_label": "दस्तावेज़ हस्ताक्षर",
-    "doc_signing_desc": "अपने कार्यक्षेत्र से सीधे डिजिटल हस्ताक्षर के साथ दस्तावेज़ हस्ताक्षर करें और सत्यापित करें।",
-    "ocr_label": "OCR",
-    "ocr_desc": "Gemini Vision या Claude मल्टीमॉडल का उपयोग करके छवियों और PDFs से टेक्स्ट निकालें।"
+    }
   },
   "media_studio": {
     "title": "मीडिया स्टूडियो",

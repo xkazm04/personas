@@ -4893,7 +4893,8 @@
       "no_open_issues": "没有未处理的问题",
       "run_analysis_hint": "运行分析以检查问题。",
       "healing_audit_log": "自愈审计日志",
-      "no_silent_failures": "没有记录到静默失败。"
+      "no_silent_failures": "没有记录到静默失败。",
+      "analysis_complete_prefix": "分析完成："
     },
     "remote_control_card": {
       "connect_to_desktop": "连接到桌面",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "此问题已自动解决",
       "close": "关闭",
       "resolving": "解决中…",
-      "mark_resolved": "标记为已解决"
+      "mark_resolved": "标记为已解决",
+      "retrying_badge": "重试中",
+      "auto_fixed_badge": "已自动修复",
+      "retry_in_progress_badge": "重试进行中",
+      "healed_via_retry_badge": "通过重试修复",
+      "severity_suffix": "严重程度"
     },
     "healing_timeline": {
       "loading": "加载时间线中...",
       "no_events": "没有自愈事件",
       "no_events_hint": "运行分析以构建弹性时间线。",
       "knowledge_base": "知识库",
-      "patterns_hint": "影响自愈决策的模式"
+      "patterns_hint": "影响自愈决策的模式",
+      "retry_badge": "重试 #{count}"
     },
     "ipc_panel": {
       "title": "IPC 性能",
@@ -5024,19 +5031,25 @@
       "command": "命令",
       "calls_header": "调用次数",
       "duration_header": "持续时间",
-      "when_header": "时间"
+      "when_header": "时间",
+      "commands_table_label": "IPC 命令性能",
+      "slowest_table_label": "最慢的 IPC 调用",
+      "error_rate": "错误率：",
+      "timeout_rate": "超时率："
     },
     "system_trace_extra": {
       "no_traces": "没有记录到系统追踪",
       "no_traces_hint": "当设计、凭据或模板操作运行时，追踪会出现",
       "all_operations": "所有操作",
       "clear_completed": "清除已完成的追踪",
-      "span": "跨度"
+      "span": "跨度",
+      "zero_ms": "0 毫秒"
     },
     "event_log_sidebar": {
       "title": "事件日志",
       "no_events": "暂无事件",
-      "open_detail_drawer": "在详情抽屉中打开"
+      "open_detail_drawer": "在详情抽屉中打开",
+      "filter_placeholder": "筛选事件…"
     },
     "chart_error": {
       "chart_unavailable": "图表不可用"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "应用"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "事件 ID",
+      "broadcast": "（广播）"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} 条较早的事件未显示",
+      "earlier_events_not_shown_other": "{count} 条较早的事件未显示"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "搜索事件…"
+    },
+    "realtime_stats": {
+      "events_per_min": "事件/分钟",
+      "pending": "待处理",
+      "success": "成功",
+      "in_window": "窗口内",
+      "test_flow": "测试流",
+      "to_simulate_traffic": "以模拟流量"
+    },
+    "bus_lane": {
+      "event_queue": "事件队列"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "心跳视图",
+      "status_page_view": "状态页面视图",
+      "reliability_view": "SLA 可靠性视图",
+      "refresh_tooltip": "刷新健康数据",
+      "persona_heartbeats": "Persona 心跳",
+      "system_health": "系统健康：",
+      "computing": "正在计算健康信号…",
+      "no_match": "没有符合所选筛选条件的 Persona。",
+      "loading_status_page": "正在加载状态页面…",
+      "loading_reliability": "正在加载可靠性数据…",
+      "heartbeats_btn": "心跳",
+      "reliability_btn": "可靠性"
+    },
+    "crash_logs": {
+      "title": "崩溃日志",
+      "no_logs": "未记录崩溃日志。",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "免费注册于",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": "，然后从设置中复制您的 API 密钥。此密钥存储在本地，所有代理共享使用。"
+    },
+    "events_list": {
+      "save_view_tooltip": "将当前筛选条件保存为视图",
+      "clear_filters_tooltip": "清除所有筛选条件"
+    },
+    "dashboard_home": {
+      "you_have": "您有"
+    },
+    "fleet_optimization_card": {
+      "title": "群组优化"
+    },
+    "usage_filters": {
+      "time_range_label": "时间范围"
+    },
+    "day_range_picker": {
+      "start_date": "开始日期",
+      "end_date": "结束日期"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "本周自动修复",
+      "issues_in_7d": "7 天内的问题"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "关闭面板",
       "md_extension": ".md",
       "edit_note_aria": "编辑笔记"
-    },
-    "doc_signing_label": "Doc Signing",
-    "doc_signing_desc": "直接从工作区使用数字签名签署和验证文档。",
-    "ocr_label": "OCR",
-    "ocr_desc": "使用 Gemini Vision 或 Claude 多模态从图像和 PDF 中提取文本。"
+    }
   },
   "media_studio": {
     "title": "媒体工作室",

@@ -4893,7 +4893,8 @@
       "no_open_issues": "Tidak ada masalah terbuka",
       "run_analysis_hint": "Jalankan analisis untuk memeriksa masalah.",
       "healing_audit_log": "Log Audit Pemulihan",
-      "no_silent_failures": "Tidak ada kegagalan diam yang tercatat."
+      "no_silent_failures": "Tidak ada kegagalan diam yang tercatat.",
+      "analysis_complete_prefix": "Analisis selesai:"
     },
     "remote_control_card": {
       "connect_to_desktop": "Hubungkan ke Desktop",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "Masalah ini diselesaikan secara otomatis",
       "close": "Tutup",
       "resolving": "Menyelesaikan…",
-      "mark_resolved": "Tandai sebagai Terselesaikan"
+      "mark_resolved": "Tandai sebagai Terselesaikan",
+      "retrying_badge": "mencoba lagi",
+      "auto_fixed_badge": "diperbaiki otomatis",
+      "retry_in_progress_badge": "percobaan ulang berlangsung",
+      "healed_via_retry_badge": "diperbaiki lewat percobaan ulang",
+      "severity_suffix": "tingkat keparahan"
     },
     "healing_timeline": {
       "loading": "Memuat linimasa...",
       "no_events": "Tidak ada peristiwa pemulihan",
       "no_events_hint": "Jalankan analisis untuk membangun linimasa ketahanan.",
       "knowledge_base": "Basis Pengetahuan",
-      "patterns_hint": "Pola yang mempengaruhi keputusan pemulihan"
+      "patterns_hint": "Pola yang mempengaruhi keputusan pemulihan",
+      "retry_badge": "percobaan #{count}"
     },
     "ipc_panel": {
       "title": "Kinerja IPC",
@@ -5024,19 +5031,25 @@
       "command": "Perintah",
       "calls_header": "Panggilan",
       "duration_header": "Durasi",
-      "when_header": "Waktu"
+      "when_header": "Waktu",
+      "commands_table_label": "Kinerja perintah IPC",
+      "slowest_table_label": "Panggilan IPC terlambat",
+      "error_rate": "Tingkat kesalahan:",
+      "timeout_rate": "Tingkat waktu habis:"
     },
     "system_trace_extra": {
       "no_traces": "Tidak ada jejak sistem yang tercatat",
       "no_traces_hint": "Jejak muncul ketika operasi desain, kredensial, atau templat berjalan",
       "all_operations": "Semua operasi",
       "clear_completed": "Hapus jejak yang selesai",
-      "span": "Span"
+      "span": "Span",
+      "zero_ms": "0 ms"
     },
     "event_log_sidebar": {
       "title": "Log Peristiwa",
       "no_events": "Belum ada peristiwa",
-      "open_detail_drawer": "Buka di laci detail"
+      "open_detail_drawer": "Buka di laci detail",
+      "filter_placeholder": "Filter peristiwa…"
     },
     "chart_error": {
       "chart_unavailable": "Grafik tidak tersedia"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "Terapkan"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID peristiwa",
+      "broadcast": "(siaran)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} peristiwa sebelumnya tidak ditampilkan",
+      "earlier_events_not_shown_other": "{count} peristiwa sebelumnya tidak ditampilkan"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Cari peristiwa..."
+    },
+    "realtime_stats": {
+      "events_per_min": "peristiwa/menit",
+      "pending": "tertunda",
+      "success": "berhasil",
+      "in_window": "dalam jendela",
+      "test_flow": "Alur uji",
+      "to_simulate_traffic": "untuk mensimulasikan lalu lintas"
+    },
+    "bus_lane": {
+      "event_queue": "ANTREAN PERISTIWA"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Tampilan detak",
+      "status_page_view": "Tampilan halaman status",
+      "reliability_view": "Tampilan keandalan SLA",
+      "refresh_tooltip": "Segarkan data kesehatan",
+      "persona_heartbeats": "Detak persona",
+      "system_health": "Kesehatan sistem:",
+      "computing": "Menghitung sinyal kesehatan...",
+      "no_match": "Tidak ada persona yang cocok dengan filter yang dipilih.",
+      "loading_status_page": "Memuat halaman status...",
+      "loading_reliability": "Memuat data keandalan...",
+      "heartbeats_btn": "Detak",
+      "reliability_btn": "Keandalan"
+    },
+    "crash_logs": {
+      "title": "Log kerusakan",
+      "no_logs": "Tidak ada log kerusakan yang tercatat.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Daftar gratis di",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", lalu salin kunci API Anda dari Pengaturan. Kunci ini disimpan secara lokal dan dibagikan ke semua agen."
+    },
+    "events_list": {
+      "save_view_tooltip": "Simpan filter saat ini sebagai tampilan",
+      "clear_filters_tooltip": "Hapus semua filter"
+    },
+    "dashboard_home": {
+      "you_have": "Anda memiliki"
+    },
+    "fleet_optimization_card": {
+      "title": "Optimisasi armada"
+    },
+    "usage_filters": {
+      "time_range_label": "Rentang waktu"
+    },
+    "day_range_picker": {
+      "start_date": "Tanggal mulai",
+      "end_date": "Tanggal selesai"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "diperbaiki otomatis minggu ini",
+      "issues_in_7d": "masalah dalam 7 hari"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "Tutup panel",
       "md_extension": ".md",
       "edit_note_aria": "Sunting catatan"
-    },
-    "doc_signing_label": "Penandatanganan Dokumen",
-    "doc_signing_desc": "Tandatangani dan verifikasi dokumen dengan tanda tangan digital langsung dari ruang kerja Anda.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Ekstrak teks dari gambar dan PDF menggunakan Gemini Vision atau Claude multimodal."
+    }
   },
   "media_studio": {
     "title": "Media Studio",

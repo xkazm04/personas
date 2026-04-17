@@ -4893,7 +4893,8 @@
       "no_open_issues": "Không có vấn đề nào mở",
       "run_analysis_hint": "Chạy phân tích để kiểm tra vấn đề.",
       "healing_audit_log": "Nhật ký kiểm tra phục hồi",
-      "no_silent_failures": "Không có lỗi thầm lặng nào được ghi."
+      "no_silent_failures": "Không có lỗi thầm lặng nào được ghi.",
+      "analysis_complete_prefix": "Phân tích hoàn tất:"
     },
     "remote_control_card": {
       "connect_to_desktop": "Kết nối với máy tính",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "Vấn đề này đã tự động giải quyết",
       "close": "Đóng",
       "resolving": "Đang giải quyết…",
-      "mark_resolved": "Đánh dấu đã giải quyết"
+      "mark_resolved": "Đánh dấu đã giải quyết",
+      "retrying_badge": "đang thử lại",
+      "auto_fixed_badge": "đã tự động sửa",
+      "retry_in_progress_badge": "đang thử lại",
+      "healed_via_retry_badge": "đã sửa qua thử lại",
+      "severity_suffix": "mức độ"
     },
     "healing_timeline": {
       "loading": "Đang tải dòng thời gian...",
       "no_events": "Không có sự kiện phục hồi",
       "no_events_hint": "Chạy phân tích để xây dựng dòng thời gian khả năng phục hồi.",
       "knowledge_base": "Cơ sở kiến thức",
-      "patterns_hint": "Các mẫu ảnh hưởng đến quyết định phục hồi"
+      "patterns_hint": "Các mẫu ảnh hưởng đến quyết định phục hồi",
+      "retry_badge": "lần {count}"
     },
     "ipc_panel": {
       "title": "Hiệu suất IPC",
@@ -5024,19 +5031,25 @@
       "command": "Lệnh",
       "calls_header": "Số lần gọi",
       "duration_header": "Thời gian",
-      "when_header": "Khi nào"
+      "when_header": "Khi nào",
+      "commands_table_label": "Hiệu suất lệnh IPC",
+      "slowest_table_label": "Cuộc gọi IPC chậm nhất",
+      "error_rate": "Tỷ lệ lỗi:",
+      "timeout_rate": "Tỷ lệ hết thời gian:"
     },
     "system_trace_extra": {
       "no_traces": "Không có trace hệ thống nào được ghi",
       "no_traces_hint": "Trace xuất hiện khi các thao tác thiết kế, thông tin xác thực hoặc mẫu chạy",
       "all_operations": "Tất cả thao tác",
       "clear_completed": "Xóa trace đã hoàn thành",
-      "span": "Span"
+      "span": "Span",
+      "zero_ms": "0 ms"
     },
     "event_log_sidebar": {
       "title": "Nhật ký sự kiện",
       "no_events": "Chưa có sự kiện",
-      "open_detail_drawer": "Mở trong ngăn chi tiết"
+      "open_detail_drawer": "Mở trong ngăn chi tiết",
+      "filter_placeholder": "Lọc sự kiện…"
     },
     "chart_error": {
       "chart_unavailable": "Biểu đồ không khả dụng"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "Áp dụng"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID sự kiện",
+      "broadcast": "(phát rộng)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} sự kiện trước không hiển thị",
+      "earlier_events_not_shown_other": "{count} sự kiện trước không hiển thị"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Tìm sự kiện…"
+    },
+    "realtime_stats": {
+      "events_per_min": "sự kiện/phút",
+      "pending": "đang chờ",
+      "success": "thành công",
+      "in_window": "trong cửa sổ",
+      "test_flow": "Luồng kiểm thử",
+      "to_simulate_traffic": "để mô phỏng lưu lượng"
+    },
+    "bus_lane": {
+      "event_queue": "HÀNG ĐỢI SỰ KIỆN"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Xem nhịp tim",
+      "status_page_view": "Xem trang trạng thái",
+      "reliability_view": "Xem độ tin cậy SLA",
+      "refresh_tooltip": "Làm mới dữ liệu sức khỏe",
+      "persona_heartbeats": "Nhịp tim của Persona",
+      "system_health": "Tình trạng hệ thống:",
+      "computing": "Đang tính tín hiệu sức khỏe…",
+      "no_match": "Không có persona nào khớp với bộ lọc đã chọn.",
+      "loading_status_page": "Đang tải trang trạng thái…",
+      "loading_reliability": "Đang tải dữ liệu độ tin cậy…",
+      "heartbeats_btn": "Nhịp tim",
+      "reliability_btn": "Độ tin cậy"
+    },
+    "crash_logs": {
+      "title": "Nhật ký sự cố",
+      "no_logs": "Không có nhật ký sự cố nào.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Đăng ký miễn phí tại",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", sau đó sao chép khóa API của bạn từ Cài đặt. Khóa này được lưu cục bộ và dùng chung cho mọi agent."
+    },
+    "events_list": {
+      "save_view_tooltip": "Lưu bộ lọc hiện tại thành view",
+      "clear_filters_tooltip": "Xoá mọi bộ lọc"
+    },
+    "dashboard_home": {
+      "you_have": "Bạn có"
+    },
+    "fleet_optimization_card": {
+      "title": "Tối ưu hoá đội"
+    },
+    "usage_filters": {
+      "time_range_label": "Khoảng thời gian"
+    },
+    "day_range_picker": {
+      "start_date": "Ngày bắt đầu",
+      "end_date": "Ngày kết thúc"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "đã tự động sửa tuần này",
+      "issues_in_7d": "sự cố trong 7 ngày"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "Đóng bảng",
       "md_extension": ".md",
       "edit_note_aria": "Chỉnh sửa ghi chú"
-    },
-    "doc_signing_label": "Ký tài liệu",
-    "doc_signing_desc": "Ký và xác minh tài liệu bằng chữ ký số trực tiếp từ không gian làm việc.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Trích xuất văn bản từ hình ảnh và PDF bằng Gemini Vision hoặc Claude đa phương thức."
+    }
   },
   "media_studio": {
     "title": "Media Studio",

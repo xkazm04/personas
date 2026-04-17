@@ -4893,7 +4893,8 @@
       "no_open_issues": "কোনো খোলা সমস্যা নেই",
       "run_analysis_hint": "সমস্যা যাচাই করতে বিশ্লেষণ চালান।",
       "healing_audit_log": "হিলিং অডিট লগ",
-      "no_silent_failures": "কোনো নীরব ব্যর্থতা রেকর্ড নেই।"
+      "no_silent_failures": "কোনো নীরব ব্যর্থতা রেকর্ড নেই।",
+      "analysis_complete_prefix": "বিশ্লেষণ সম্পূর্ণ:"
     },
     "remote_control_card": {
       "connect_to_desktop": "ডেস্কটপে সংযুক্ত করুন",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "এই সমস্যা স্বয়ংক্রিয়ভাবে সমাধান হয়েছিল",
       "close": "বন্ধ করুন",
       "resolving": "সমাধান হচ্ছে…",
-      "mark_resolved": "সমাধান হয়েছে চিহ্নিত করুন"
+      "mark_resolved": "সমাধান হয়েছে চিহ্নিত করুন",
+      "retrying_badge": "পুনরায় চেষ্টা",
+      "auto_fixed_badge": "স্বয়ংক্রিয়ভাবে ঠিক করা হয়েছে",
+      "retry_in_progress_badge": "পুনরায় চেষ্টা চলছে",
+      "healed_via_retry_badge": "পুনরায় চেষ্টার মাধ্যমে ঠিক হয়েছে",
+      "severity_suffix": "গুরুত্ব"
     },
     "healing_timeline": {
       "loading": "টাইমলাইন লোড হচ্ছে...",
       "no_events": "কোনো হিলিং ইভেন্ট নেই",
       "no_events_hint": "রেজিলিয়েন্স টাইমলাইন তৈরি করতে বিশ্লেষণ চালান।",
       "knowledge_base": "জ্ঞানের ভান্ডার",
-      "patterns_hint": "হিলিং সিদ্ধান্তকে প্রভাবিত করা প্যাটার্ন"
+      "patterns_hint": "হিলিং সিদ্ধান্তকে প্রভাবিত করা প্যাটার্ন",
+      "retry_badge": "পুনঃপ্রয়াস #{count}"
     },
     "ipc_panel": {
       "title": "IPC পারফরম্যান্স",
@@ -5024,19 +5031,25 @@
       "command": "কমান্ড",
       "calls_header": "কল",
       "duration_header": "সময়কাল",
-      "when_header": "কখন"
+      "when_header": "কখন",
+      "commands_table_label": "IPC কমান্ড কর্মক্ষমতা",
+      "slowest_table_label": "সবচেয়ে ধীর IPC কল",
+      "error_rate": "ত্রুটির হার:",
+      "timeout_rate": "টাইমআউট হার:"
     },
     "system_trace_extra": {
       "no_traces": "কোনো সিস্টেম ট্রেস রেকর্ড হয়নি",
       "no_traces_hint": "ডিজাইন, ক্রেডেনশিয়াল বা টেমপ্লেট অপারেশন চললে ট্রেস দেখাবে",
       "all_operations": "সব অপারেশন",
       "clear_completed": "সম্পন্ন ট্রেস সাফ করুন",
-      "span": "স্প্যান"
+      "span": "স্প্যান",
+      "zero_ms": "0 ms"
     },
     "event_log_sidebar": {
       "title": "ইভেন্ট লগ",
       "no_events": "এখনও কোনো ইভেন্ট নেই",
-      "open_detail_drawer": "বিস্তারিত ড্রয়ারে খুলুন"
+      "open_detail_drawer": "বিস্তারিত ড্রয়ারে খুলুন",
+      "filter_placeholder": "ইভেন্ট ফিল্টার করুন…"
     },
     "chart_error": {
       "chart_unavailable": "চার্ট পাওয়া যাচ্ছে না"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "প্রয়োগ করুন"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ইভেন্ট আইডি",
+      "broadcast": "(ব্রডকাস্ট)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি",
+      "earlier_events_not_shown_other": "{count} পূর্ববর্তী ইভেন্ট দেখানো হয়নি"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "ইভেন্ট খুঁজুন..."
+    },
+    "realtime_stats": {
+      "events_per_min": "ইভেন্ট/মিনিট",
+      "pending": "মুলতুবি",
+      "success": "সফল",
+      "in_window": "উইন্ডোতে",
+      "test_flow": "পরীক্ষা প্রবাহ",
+      "to_simulate_traffic": "ট্রাফিক সিমুলেট করতে"
+    },
+    "bus_lane": {
+      "event_queue": "ইভেন্ট সারি"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "হার্টবিট ভিউ",
+      "status_page_view": "স্ট্যাটাস পেজ ভিউ",
+      "reliability_view": "SLA নির্ভরযোগ্যতা ভিউ",
+      "refresh_tooltip": "স্বাস্থ্য ডেটা রিফ্রেশ করুন",
+      "persona_heartbeats": "পার্সোনা হার্টবিট",
+      "system_health": "সিস্টেম স্বাস্থ্য:",
+      "computing": "স্বাস্থ্য সংকেত গণনা করা হচ্ছে...",
+      "no_match": "নির্বাচিত ফিল্টারের সাথে কোনো পার্সোনা মেলে না।",
+      "loading_status_page": "স্ট্যাটাস পেজ লোড হচ্ছে...",
+      "loading_reliability": "নির্ভরযোগ্যতার ডেটা লোড হচ্ছে...",
+      "heartbeats_btn": "হার্টবিট",
+      "reliability_btn": "নির্ভরযোগ্যতা"
+    },
+    "crash_logs": {
+      "title": "ক্র্যাশ লগ",
+      "no_logs": "কোনো ক্র্যাশ লগ রেকর্ড করা হয়নি।",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", তারপর সেটিংস থেকে আপনার API কী কপি করুন। এই কী স্থানীয়ভাবে সংরক্ষিত এবং সমস্ত এজেন্টের মধ্যে শেয়ার করা হয়।"
+    },
+    "events_list": {
+      "save_view_tooltip": "বর্তমান ফিল্টারকে ভিউ হিসাবে সংরক্ষণ করুন",
+      "clear_filters_tooltip": "সমস্ত ফিল্টার সাফ করুন"
+    },
+    "dashboard_home": {
+      "you_have": "আপনার আছে"
+    },
+    "fleet_optimization_card": {
+      "title": "ফ্লিট অপ্টিমাইজেশন"
+    },
+    "usage_filters": {
+      "time_range_label": "সময় পরিসীমা"
+    },
+    "day_range_picker": {
+      "start_date": "শুরুর তারিখ",
+      "end_date": "শেষের তারিখ"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "এই সপ্তাহে স্বয়ংক্রিয়ভাবে ঠিক হয়েছে",
+      "issues_in_7d": "7 দিনে সমস্যা"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "প্যানেল বন্ধ করুন",
       "md_extension": ".md",
       "edit_note_aria": "নোট সম্পাদনা"
-    },
-    "doc_signing_label": "Doc Signing",
-    "doc_signing_desc": "Sign and verify documents with digital signatures directly from your workspace.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Extract text from images and PDFs using Gemini Vision or Claude multimodal."
+    }
   },
   "media_studio": {
     "title": "Media Studio",

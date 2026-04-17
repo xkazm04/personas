@@ -4893,7 +4893,8 @@
       "no_open_issues": "未解決の問題はありません",
       "run_analysis_hint": "分析を実行して問題を確認してください。",
       "healing_audit_log": "ヒーリング監査ログ",
-      "no_silent_failures": "サイレント障害は記録されていません。"
+      "no_silent_failures": "サイレント障害は記録されていません。",
+      "analysis_complete_prefix": "分析完了:"
     },
     "remote_control_card": {
       "connect_to_desktop": "デスクトップに接続",
@@ -5008,14 +5009,20 @@
       "auto_resolved": "この問題は自動的に解決されました",
       "close": "閉じる",
       "resolving": "解決中…",
-      "mark_resolved": "解決済みとしてマーク"
+      "mark_resolved": "解決済みとしてマーク",
+      "retrying_badge": "再試行中",
+      "auto_fixed_badge": "自動修復済み",
+      "retry_in_progress_badge": "再試行実行中",
+      "healed_via_retry_badge": "再試行で修復",
+      "severity_suffix": "重大度"
     },
     "healing_timeline": {
       "loading": "タイムラインを読み込み中...",
       "no_events": "ヒーリングイベントなし",
       "no_events_hint": "分析を実行してレジリエンスタイムラインを構築してください。",
       "knowledge_base": "ナレッジベース",
-      "patterns_hint": "ヒーリング決定に影響するパターン"
+      "patterns_hint": "ヒーリング決定に影響するパターン",
+      "retry_badge": "再試行 #{count}"
     },
     "ipc_panel": {
       "title": "IPCパフォーマンス",
@@ -5024,19 +5031,25 @@
       "command": "コマンド",
       "calls_header": "呼び出し",
       "duration_header": "所要時間",
-      "when_header": "日時"
+      "when_header": "日時",
+      "commands_table_label": "IPCコマンドのパフォーマンス",
+      "slowest_table_label": "最も遅いIPC呼び出し",
+      "error_rate": "エラー率:",
+      "timeout_rate": "タイムアウト率:"
     },
     "system_trace_extra": {
       "no_traces": "システムトレースが記録されていません",
       "no_traces_hint": "設計、認証情報、またはテンプレート操作が実行されるとトレースが表示されます",
       "all_operations": "すべての操作",
       "clear_completed": "完了したトレースをクリア",
-      "span": "スパン"
+      "span": "スパン",
+      "zero_ms": "0ミリ秒"
     },
     "event_log_sidebar": {
       "title": "イベントログ",
       "no_events": "まだイベントはありません",
-      "open_detail_drawer": "詳細ドロワーで開く"
+      "open_detail_drawer": "詳細ドロワーで開く",
+      "filter_placeholder": "イベントをフィルター…"
     },
     "chart_error": {
       "chart_unavailable": "チャートが利用できません"
@@ -5046,6 +5059,73 @@
     },
     "day_range": {
       "apply": "適用"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "イベントID",
+      "broadcast": "(ブロードキャスト)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "以前のイベント {count} 件は表示されていません",
+      "earlier_events_not_shown_other": "以前のイベント {count} 件は表示されていません"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "イベントを検索…"
+    },
+    "realtime_stats": {
+      "events_per_min": "イベント/分",
+      "pending": "保留中",
+      "success": "成功",
+      "in_window": "ウィンドウ内",
+      "test_flow": "テストフロー",
+      "to_simulate_traffic": "トラフィックをシミュレート"
+    },
+    "bus_lane": {
+      "event_queue": "イベントキュー"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "ハートビート表示",
+      "status_page_view": "ステータスページ表示",
+      "reliability_view": "SLA 信頼性ビュー",
+      "refresh_tooltip": "ヘルスデータを更新",
+      "persona_heartbeats": "ペルソナのハートビート",
+      "system_health": "システムの状態:",
+      "computing": "ヘルスシグナルを計算中…",
+      "no_match": "選択されたフィルターに一致するペルソナはありません。",
+      "loading_status_page": "ステータスページを読み込み中…",
+      "loading_reliability": "信頼性データを読み込み中…",
+      "heartbeats_btn": "ハートビート",
+      "reliability_btn": "信頼性"
+    },
+    "crash_logs": {
+      "title": "クラッシュログ",
+      "no_logs": "クラッシュログは記録されていません。",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "無料で登録",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": "、設定からAPIキーをコピーしてください。このキーはローカルに保存され、すべてのエージェントで共有されます。"
+    },
+    "events_list": {
+      "save_view_tooltip": "現在のフィルターをビューとして保存",
+      "clear_filters_tooltip": "すべてのフィルターをクリア"
+    },
+    "dashboard_home": {
+      "you_have": "あなたには"
+    },
+    "fleet_optimization_card": {
+      "title": "フリート最適化"
+    },
+    "usage_filters": {
+      "time_range_label": "時間範囲"
+    },
+    "day_range_picker": {
+      "start_date": "開始日",
+      "end_date": "終了日"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "今週の自動修復",
+      "issues_in_7d": "7日間のイシュー"
     }
   },
   "templates": {
@@ -8678,11 +8758,7 @@
       "close_panel_title": "パネルを閉じる",
       "md_extension": ".md",
       "edit_note_aria": "ノートを編集"
-    },
-    "doc_signing_label": "Doc Signing",
-    "doc_signing_desc": "ワークスペースから直接デジタル署名でドキュメントに署名・検証します。",
-    "ocr_label": "OCR",
-    "ocr_desc": "Gemini VisionまたはClaudeマルチモーダルを使用して画像やPDFからテキストを抽出します。"
+    }
   },
   "media_studio": {
     "title": "メディアスタジオ",

@@ -143,55 +143,7 @@
     "command_palette_navigate": "تنقل",
     "command_palette_select": "اختيار",
     "command_palette_commands": "أوامر",
-    "loading_label": "جارٍ التحميل",
-    "agent_count_zero": "{count} وكيل",
-    "agent_count_two": "وكيلان",
-    "agent_count_few": "{count} وكلاء",
-    "agent_count_many": "{count} وكيلًا",
-    "trigger_count_zero": "{count} مُشغّل",
-    "trigger_count_two": "مُشغّلان",
-    "trigger_count_few": "{count} مُشغّلات",
-    "trigger_count_many": "{count} مُشغّلًا",
-    "connector_count_zero": "{count} موصّل",
-    "connector_count_two": "موصّلان",
-    "connector_count_few": "{count} موصّلات",
-    "connector_count_many": "{count} موصّلًا",
-    "tool_count_zero": "{count} أداة",
-    "tool_count_two": "أداتان",
-    "tool_count_few": "{count} أدوات",
-    "tool_count_many": "{count} أداةً",
-    "channel_count_zero": "{count} قناة",
-    "channel_count_two": "قناتان",
-    "channel_count_few": "{count} قنوات",
-    "channel_count_many": "{count} قناةً",
-    "event_count_zero": "{count} حدث",
-    "event_count_two": "حدثان",
-    "event_count_few": "{count} أحداث",
-    "event_count_many": "{count} حدثًا",
-    "use_case_count_zero": "{count} حالة استخدام",
-    "use_case_count_two": "حالتا استخدام",
-    "use_case_count_few": "{count} حالات استخدام",
-    "use_case_count_many": "{count} حالة استخدام",
-    "step_count_zero": "{count} خطوة",
-    "step_count_two": "خطوتان",
-    "step_count_few": "{count} خطوات",
-    "step_count_many": "{count} خطوةً",
-    "scenario_count_zero": "{count} سيناريو",
-    "scenario_count_two": "سيناريوهان",
-    "scenario_count_few": "{count} سيناريوهات",
-    "scenario_count_many": "{count} سيناريو",
-    "node_count_zero": "{count} عقدة",
-    "node_count_two": "عقدتان",
-    "node_count_few": "{count} عُقَد",
-    "node_count_many": "{count} عقدةً",
-    "edge_count_zero": "{count} رابط",
-    "edge_count_two": "رابطان",
-    "edge_count_few": "{count} روابط",
-    "edge_count_many": "{count} رابطًا",
-    "adoption_count_zero": "{count} اعتماد",
-    "adoption_count_two": "اعتمادان",
-    "adoption_count_few": "{count} اعتمادات",
-    "adoption_count_many": "{count} اعتمادًا"
+    "loading_label": "جارٍ التحميل"
   },
   "chrome": {
     "app_title": "Personas",
@@ -4941,7 +4893,8 @@
       "no_open_issues": "لا توجد مشاكل مفتوحة",
       "run_analysis_hint": "شغّل التحليل للتحقق من المشاكل.",
       "healing_audit_log": "سجل مراجعة الإصلاح",
-      "no_silent_failures": "لم يتم تسجيل إخفاقات صامتة."
+      "no_silent_failures": "لم يتم تسجيل إخفاقات صامتة.",
+      "analysis_complete_prefix": "اكتمل التحليل:"
     },
     "remote_control_card": {
       "connect_to_desktop": "الاتصال بسطح المكتب",
@@ -5056,14 +5009,20 @@
       "auto_resolved": "تم حل هذه المشكلة تلقائياً",
       "close": "إغلاق",
       "resolving": "جارٍ الحل…",
-      "mark_resolved": "وسم كمحلول"
+      "mark_resolved": "وسم كمحلول",
+      "retrying_badge": "إعادة المحاولة",
+      "auto_fixed_badge": "تم الإصلاح تلقائياً",
+      "retry_in_progress_badge": "إعادة المحاولة قيد التنفيذ",
+      "healed_via_retry_badge": "تم الإصلاح عبر إعادة المحاولة",
+      "severity_suffix": "شدة"
     },
     "healing_timeline": {
       "loading": "جارٍ تحميل الجدول الزمني...",
       "no_events": "لا توجد أحداث إصلاح",
       "no_events_hint": "شغّل التحليل لبناء الجدول الزمني للمرونة.",
       "knowledge_base": "قاعدة المعرفة",
-      "patterns_hint": "الأنماط المؤثرة في قرارات الإصلاح"
+      "patterns_hint": "الأنماط المؤثرة في قرارات الإصلاح",
+      "retry_badge": "إعادة #{count}"
     },
     "ipc_panel": {
       "title": "أداء IPC",
@@ -5072,19 +5031,25 @@
       "command": "الأمر",
       "calls_header": "الاستدعاءات",
       "duration_header": "المدة",
-      "when_header": "الوقت"
+      "when_header": "الوقت",
+      "commands_table_label": "أداء أوامر IPC",
+      "slowest_table_label": "أبطأ استدعاءات IPC",
+      "error_rate": "معدل الأخطاء:",
+      "timeout_rate": "معدل المهلات:"
     },
     "system_trace_extra": {
       "no_traces": "لم يتم تسجيل تتبعات النظام",
       "no_traces_hint": "تظهر التتبعات عند تشغيل عمليات التصميم أو بيانات الاعتماد أو القوالب",
       "all_operations": "جميع العمليات",
       "clear_completed": "مسح التتبعات المكتملة",
-      "span": "المدة"
+      "span": "المدة",
+      "zero_ms": "0 مللي"
     },
     "event_log_sidebar": {
       "title": "سجل الأحداث",
       "no_events": "لا توجد أحداث بعد",
-      "open_detail_drawer": "فتح في درج التفاصيل"
+      "open_detail_drawer": "فتح في درج التفاصيل",
+      "filter_placeholder": "تصفية الأحداث…"
     },
     "chart_error": {
       "chart_unavailable": "المخطط غير متاح"
@@ -5094,6 +5059,73 @@
     },
     "day_range": {
       "apply": "تطبيق"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "معرّف الحدث",
+      "broadcast": "(بث)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "{count} حدث سابق غير معروض",
+      "earlier_events_not_shown_other": "{count} أحداث سابقة غير معروضة"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "بحث الأحداث..."
+    },
+    "realtime_stats": {
+      "events_per_min": "أحداث/دقيقة",
+      "pending": "قيد الانتظار",
+      "success": "نجاح",
+      "in_window": "في النافذة",
+      "test_flow": "تدفّق الاختبار",
+      "to_simulate_traffic": "لمحاكاة حركة المرور"
+    },
+    "bus_lane": {
+      "event_queue": "قائمة الأحداث"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "عرض نبضات القلب",
+      "status_page_view": "عرض صفحة الحالة",
+      "reliability_view": "عرض موثوقية SLA",
+      "refresh_tooltip": "تحديث بيانات الصحة",
+      "persona_heartbeats": "نبضات الشخصيات",
+      "system_health": "صحة النظام:",
+      "computing": "جارٍ حساب إشارات الصحة...",
+      "no_match": "لا تتطابق أي شخصيات مع التصفية المختارة.",
+      "loading_status_page": "جارٍ تحميل صفحة الحالة...",
+      "loading_reliability": "جارٍ تحميل بيانات الموثوقية...",
+      "heartbeats_btn": "نبضات",
+      "reliability_btn": "الموثوقية"
+    },
+    "crash_logs": {
+      "title": "سجلات الأعطال",
+      "no_logs": "لم يتم تسجيل أي سجلات أعطال.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "اشترك مجاناً على",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": "، ثم انسخ مفتاح API من الإعدادات. يُخزَّن هذا المفتاح محلياً ويُشارَك بين جميع الوكلاء."
+    },
+    "events_list": {
+      "save_view_tooltip": "حفظ المرشحات الحالية كعرض",
+      "clear_filters_tooltip": "مسح جميع المرشحات"
+    },
+    "dashboard_home": {
+      "you_have": "لديك"
+    },
+    "fleet_optimization_card": {
+      "title": "تحسين الأسطول"
+    },
+    "usage_filters": {
+      "time_range_label": "النطاق الزمني"
+    },
+    "day_range_picker": {
+      "start_date": "تاريخ البدء",
+      "end_date": "تاريخ الانتهاء"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "تم الإصلاح تلقائياً هذا الأسبوع",
+      "issues_in_7d": "مشكلات خلال 7 أيام"
     }
   },
   "templates": {
@@ -8726,11 +8758,7 @@
       "close_panel_title": "إغلاق اللوحة",
       "md_extension": ".md",
       "edit_note_aria": "تعديل الملاحظة"
-    },
-    "doc_signing_label": "توقيع المستندات",
-    "doc_signing_desc": "توقيع والتحقق من المستندات بالتوقيعات الرقمية مباشرة من مساحة عملك.",
-    "ocr_label": "OCR",
-    "ocr_desc": "استخراج النصوص من الصور وملفات PDF باستخدام Gemini Vision أو Claude متعدد الوسائط."
+    }
   },
   "media_studio": {
     "title": "استوديو الوسائط",

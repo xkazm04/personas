@@ -1986,8 +1986,7 @@
       "rerun": "재실행",
       "capabilities": "기능",
       "all_healthy": "모든 시스템 정상",
-      "all_healthy_detail": "에이전트 구성에서 이슈 감지 없음",
-      "input_json_placeholder": "value"
+      "all_healthy_detail": "에이전트 구성에서 이슈 감지 없음"
     },
     "health_digest": {
       "title": "에이전트 상태 요약",
@@ -4894,7 +4893,8 @@
       "no_open_issues": "열린 이슈 없음",
       "run_analysis_hint": "문제 확인을 위해 분석을 실행하세요.",
       "healing_audit_log": "복구 감사 로그",
-      "no_silent_failures": "조용한 실패 기록 없음."
+      "no_silent_failures": "조용한 실패 기록 없음.",
+      "analysis_complete_prefix": "분석 완료:"
     },
     "remote_control_card": {
       "connect_to_desktop": "데스크탑에 연결",
@@ -5009,14 +5009,20 @@
       "auto_resolved": "이 이슈는 자동으로 해결됐습니다",
       "close": "닫기",
       "resolving": "해결 중…",
-      "mark_resolved": "해결됨으로 표시"
+      "mark_resolved": "해결됨으로 표시",
+      "retrying_badge": "재시도 중",
+      "auto_fixed_badge": "자동 수정됨",
+      "retry_in_progress_badge": "재시도 진행 중",
+      "healed_via_retry_badge": "재시도로 복구됨",
+      "severity_suffix": "심각도"
     },
     "healing_timeline": {
       "loading": "타임라인 불러오는 중...",
       "no_events": "복구 이벤트 없음",
       "no_events_hint": "분석을 실행해 복원력 타임라인을 구축하세요.",
       "knowledge_base": "지식 베이스",
-      "patterns_hint": "복구 결정에 영향을 미치는 패턴"
+      "patterns_hint": "복구 결정에 영향을 미치는 패턴",
+      "retry_badge": "재시도 #{count}"
     },
     "ipc_panel": {
       "title": "IPC 성능",
@@ -5025,19 +5031,25 @@
       "command": "명령",
       "calls_header": "호출",
       "duration_header": "소요 시간",
-      "when_header": "시기"
+      "when_header": "시기",
+      "commands_table_label": "IPC 명령 성능",
+      "slowest_table_label": "가장 느린 IPC 호출",
+      "error_rate": "오류율:",
+      "timeout_rate": "타임아웃 비율:"
     },
     "system_trace_extra": {
       "no_traces": "시스템 추적 기록 없음",
       "no_traces_hint": "디자인, 자격 증명 또는 템플릿 작업 실행 시 추적이 표시됩니다",
       "all_operations": "전체 작업",
       "clear_completed": "완료된 추적 지우기",
-      "span": "스팬"
+      "span": "스팬",
+      "zero_ms": "0ms"
     },
     "event_log_sidebar": {
       "title": "이벤트 로그",
       "no_events": "아직 이벤트 없음",
-      "open_detail_drawer": "세부 서랍에서 열기"
+      "open_detail_drawer": "세부 서랍에서 열기",
+      "filter_placeholder": "이벤트 필터링…"
     },
     "chart_error": {
       "chart_unavailable": "차트 사용 불가"
@@ -5047,6 +5059,73 @@
     },
     "day_range": {
       "apply": "적용"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "이벤트 ID",
+      "broadcast": "(브로드캐스트)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "이전 이벤트 {count}건 표시되지 않음",
+      "earlier_events_not_shown_other": "이전 이벤트 {count}건 표시되지 않음"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "이벤트 검색…"
+    },
+    "realtime_stats": {
+      "events_per_min": "이벤트/분",
+      "pending": "대기 중",
+      "success": "성공",
+      "in_window": "창 내",
+      "test_flow": "테스트 흐름",
+      "to_simulate_traffic": "트래픽 시뮬레이션"
+    },
+    "bus_lane": {
+      "event_queue": "이벤트 큐"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "하트비트 보기",
+      "status_page_view": "상태 페이지 보기",
+      "reliability_view": "SLA 신뢰성 보기",
+      "refresh_tooltip": "상태 데이터 새로고침",
+      "persona_heartbeats": "페르소나 하트비트",
+      "system_health": "시스템 상태:",
+      "computing": "상태 신호 계산 중…",
+      "no_match": "선택한 필터와 일치하는 페르소나가 없습니다.",
+      "loading_status_page": "상태 페이지 불러오는 중…",
+      "loading_reliability": "신뢰성 데이터 불러오는 중…",
+      "heartbeats_btn": "하트비트",
+      "reliability_btn": "신뢰성"
+    },
+    "crash_logs": {
+      "title": "충돌 로그",
+      "no_logs": "기록된 충돌 로그가 없습니다.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "무료 가입 위치:",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", 설정에서 API 키를 복사하세요. 이 키는 로컬에 저장되며 모든 에이전트에서 공유됩니다."
+    },
+    "events_list": {
+      "save_view_tooltip": "현재 필터를 보기로 저장",
+      "clear_filters_tooltip": "모든 필터 지우기"
+    },
+    "dashboard_home": {
+      "you_have": "보유 중:"
+    },
+    "fleet_optimization_card": {
+      "title": "플릿 최적화"
+    },
+    "usage_filters": {
+      "time_range_label": "시간 범위"
+    },
+    "day_range_picker": {
+      "start_date": "시작일",
+      "end_date": "종료일"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "이번 주 자동 수정됨",
+      "issues_in_7d": "지난 7일간 이슈"
     }
   },
   "templates": {
@@ -8679,11 +8758,7 @@
       "close_panel_title": "패널 닫기",
       "md_extension": ".md",
       "edit_note_aria": "노트 편집"
-    },
-    "doc_signing_label": "Doc Signing",
-    "doc_signing_desc": "Sign and verify documents with digital signatures directly from your workspace.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Extract text from images and PDFs using Gemini Vision or Claude multimodal."
+    }
   },
   "media_studio": {
     "title": "Media Studio",

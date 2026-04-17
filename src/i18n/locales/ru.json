@@ -143,31 +143,7 @@
     "command_palette_navigate": "навигация",
     "command_palette_select": "выбрать",
     "command_palette_commands": "команды",
-    "loading_label": "Загрузка",
-    "agent_count_few": "{count} агента",
-    "agent_count_many": "{count} агентов",
-    "trigger_count_few": "{count} триггера",
-    "trigger_count_many": "{count} триггеров",
-    "connector_count_few": "{count} коннектора",
-    "connector_count_many": "{count} коннекторов",
-    "tool_count_few": "{count} инструмента",
-    "tool_count_many": "{count} инструментов",
-    "channel_count_few": "{count} канала",
-    "channel_count_many": "{count} каналов",
-    "event_count_few": "{count} события",
-    "event_count_many": "{count} событий",
-    "use_case_count_few": "{count} сценария использования",
-    "use_case_count_many": "{count} сценариев использования",
-    "step_count_few": "{count} шага",
-    "step_count_many": "{count} шагов",
-    "scenario_count_few": "{count} сценария",
-    "scenario_count_many": "{count} сценариев",
-    "node_count_few": "{count} узла",
-    "node_count_many": "{count} узлов",
-    "edge_count_few": "{count} связи",
-    "edge_count_many": "{count} связей",
-    "adoption_count_few": "{count} внедрения",
-    "adoption_count_many": "{count} внедрений"
+    "loading_label": "Загрузка"
   },
   "chrome": {
     "app_title": "Personas",
@@ -258,13 +234,7 @@
     "unread_messages_sr": "{count} непрочитанное сообщение",
     "unread_messages_sr_other": "{count} непрочитанных сообщений",
     "pending_events_sr": "{count} ожидающее событие",
-    "pending_events_sr_other": "{count} ожидающих событий",
-    "pending_reviews_sr_few": "{count} ожидающие проверки",
-    "pending_reviews_sr_many": "{count} ожидающих проверок",
-    "unread_messages_sr_few": "{count} непрочитанных сообщения",
-    "unread_messages_sr_many": "{count} непрочитанных сообщений",
-    "pending_events_sr_few": "{count} ожидающих события",
-    "pending_events_sr_many": "{count} ожидающих событий"
+    "pending_events_sr_other": "{count} ожидающих событий"
   },
   "home": {
     "welcome": "Добро пожаловать",
@@ -410,9 +380,7 @@
       "subtitle_other": "{count} агентов -- отсортировано по релевантности",
       "needs_attention": "Требуют внимания",
       "active": "Активные",
-      "idle": "Неактивные",
-      "subtitle_few": "{count} агента -- отсортировано по релевантности",
-      "subtitle_many": "{count} агентов -- отсортировано по релевантности"
+      "idle": "Неактивные"
     },
     "sidebar": {
       "no_match": "Нет агентов, соответствующих фильтрам",
@@ -432,9 +400,7 @@
       "triggers_active_one": "{count} активный триггер",
       "triggers_active_other": "{count} активных триггеров",
       "no_triggers": "Нет триггеров",
-      "custom_model": "Пользовательская",
-      "triggers_active_few": "{count} активных триггера",
-      "triggers_active_many": "{count} активных триггеров"
+      "custom_model": "Пользовательская"
     },
     "creation": {
       "heading": "Новый агент",
@@ -2375,9 +2341,7 @@
       "open_in_browser": "Открыть в браузере",
       "step_complete_captured": "Шаг завершён -- значения получены",
       "mark_complete": "Отметить как выполненный",
-      "completed": "Выполнено",
-      "steps_auto_skipped_few": "{count} шага пропущено автоматически",
-      "steps_auto_skipped_many": "{count} шагов пропущено автоматически"
+      "completed": "Выполнено"
     },
     "card": {
       "scope_mismatch": "Несоответствие областей",
@@ -4074,9 +4038,7 @@
       "run_once_tooltip": "Запустить один раз сейчас",
       "skip_tooltip": "Пропустить -- не восстанавливать",
       "dismiss_all": "Отклонить все",
-      "recover_selected": "Восстановить {count} выбранных",
-      "agents_missed_few": "{count} агента пропустили выполнения",
-      "agents_missed_many": "{count} агентов пропустили выполнения"
+      "recover_selected": "Восстановить {count} выбранных"
     },
     "sla": {
       "title": "SLA надёжности агентов",
@@ -4133,9 +4095,7 @@
       "resolved": "Конфликт разрешён",
       "resolve_failed": "Не удалось разрешить конфликт",
       "conflict_count_one": "{count} конфликт",
-      "conflict_count_other": "{count} конфликтов",
-      "conflict_count_few": "{count} конфликта",
-      "conflict_count_many": "{count} конфликтов"
+      "conflict_count_other": "{count} конфликтов"
     },
     "dashboard": {
       "title": "Дашборд",
@@ -4933,7 +4893,8 @@
       "no_open_issues": "Нет открытых проблем",
       "run_analysis_hint": "Запустите анализ для проверки на наличие проблем.",
       "healing_audit_log": "Журнал аудита самоисправления",
-      "no_silent_failures": "Скрытых сбоев не записано."
+      "no_silent_failures": "Скрытых сбоев не записано.",
+      "analysis_complete_prefix": "Анализ завершён:"
     },
     "remote_control_card": {
       "connect_to_desktop": "Подключиться к десктопу",
@@ -5048,14 +5009,20 @@
       "auto_resolved": "Эта проблема была автоматически устранена",
       "close": "Закрыть",
       "resolving": "Устранение…",
-      "mark_resolved": "Отметить как устранённое"
+      "mark_resolved": "Отметить как устранённое",
+      "retrying_badge": "повтор",
+      "auto_fixed_badge": "исправлено автоматически",
+      "retry_in_progress_badge": "идёт повтор",
+      "healed_via_retry_badge": "исправлено повтором",
+      "severity_suffix": "серьёзность"
     },
     "healing_timeline": {
       "loading": "Загрузка временной шкалы...",
       "no_events": "Нет событий самоисправления",
       "no_events_hint": "Запустите анализ для построения временной шкалы устойчивости.",
       "knowledge_base": "База знаний",
-      "patterns_hint": "Паттерны, влияющие на решения самоисправления"
+      "patterns_hint": "Паттерны, влияющие на решения самоисправления",
+      "retry_badge": "повтор #{count}"
     },
     "ipc_panel": {
       "title": "Производительность IPC",
@@ -5064,19 +5031,25 @@
       "command": "Команда",
       "calls_header": "Вызовы",
       "duration_header": "Длительность",
-      "when_header": "Когда"
+      "when_header": "Когда",
+      "commands_table_label": "Производительность команд IPC",
+      "slowest_table_label": "Самые медленные вызовы IPC",
+      "error_rate": "Частота ошибок:",
+      "timeout_rate": "Частота тайм-аутов:"
     },
     "system_trace_extra": {
       "no_traces": "Системных трассировок не записано",
       "no_traces_hint": "Трассировки появляются при выполнении операций проектирования, работы с учётными данными или шаблонами",
       "all_operations": "Все операции",
       "clear_completed": "Очистить завершённые трассировки",
-      "span": "Период"
+      "span": "Период",
+      "zero_ms": "0 мс"
     },
     "event_log_sidebar": {
       "title": "Журнал событий",
       "no_events": "Событий пока нет",
-      "open_detail_drawer": "Открыть в панели деталей"
+      "open_detail_drawer": "Открыть в панели деталей",
+      "filter_placeholder": "Фильтр событий…"
     },
     "chart_error": {
       "chart_unavailable": "График недоступен"
@@ -5086,6 +5059,73 @@
     },
     "day_range": {
       "apply": "Применить"
+    },
+    "event_detail_drawer": {
+      "event_id_label": "ID события",
+      "broadcast": "(широковещание)"
+    },
+    "event_bus_overlay": {
+      "earlier_events_not_shown_one": "Не показано {count} более раннее событие",
+      "earlier_events_not_shown_other": "Не показано {count} более ранних событий"
+    },
+    "event_bus_filter": {
+      "search_placeholder": "Поиск событий…"
+    },
+    "realtime_stats": {
+      "events_per_min": "событий/мин",
+      "pending": "ожидает",
+      "success": "успех",
+      "in_window": "в окне",
+      "test_flow": "Тестовый поток",
+      "to_simulate_traffic": "для имитации трафика"
+    },
+    "bus_lane": {
+      "event_queue": "ОЧЕРЕДЬ СОБЫТИЙ"
+    },
+    "health_dashboard": {
+      "heartbeats_view": "Просмотр сигналов",
+      "status_page_view": "Страница статуса",
+      "reliability_view": "Надёжность SLA",
+      "refresh_tooltip": "Обновить данные о состоянии",
+      "persona_heartbeats": "Пульс персон",
+      "system_health": "Состояние системы:",
+      "computing": "Вычисление показателей здоровья…",
+      "no_match": "Ни одна персона не соответствует выбранному фильтру.",
+      "loading_status_page": "Загрузка страницы статуса…",
+      "loading_reliability": "Загрузка данных надёжности…",
+      "heartbeats_btn": "Сигналы",
+      "reliability_btn": "Надёжность"
+    },
+    "crash_logs": {
+      "title": "Журналы сбоев",
+      "no_logs": "Журналы сбоев не зарегистрированы.",
+      "component_stack_separator": "--- Component Stack ---"
+    },
+    "popup_fields": {
+      "sign_up_free_at": "Бесплатная регистрация на",
+      "ollama_domain": "ollama.com",
+      "ollama_key_instructions": ", затем скопируйте API-ключ из Настроек. Ключ хранится локально и используется всеми агентами."
+    },
+    "events_list": {
+      "save_view_tooltip": "Сохранить текущие фильтры как представление",
+      "clear_filters_tooltip": "Очистить все фильтры"
+    },
+    "dashboard_home": {
+      "you_have": "У вас есть"
+    },
+    "fleet_optimization_card": {
+      "title": "Оптимизация флота"
+    },
+    "usage_filters": {
+      "time_range_label": "Временной диапазон"
+    },
+    "day_range_picker": {
+      "start_date": "Дата начала",
+      "end_date": "Дата окончания"
+    },
+    "healing_summary": {
+      "auto_fixed_this_week": "автоматически исправлено на этой неделе",
+      "issues_in_7d": "проблемы за 7 дней"
     }
   },
   "templates": {
@@ -5268,15 +5308,7 @@
       "safety_issues": "Проблемы безопасности",
       "safety_acknowledge_one": "Я признаю {count} критическую проблему безопасности и принимаю риск",
       "safety_acknowledge_other": "Я признаю {count} критических проблем безопасности и принимаю риск",
-      "edit_details": "Изменить детали",
-      "with_tools_few": ", {count} инструмента",
-      "with_tools_many": ", {count} инструментов",
-      "with_triggers_few": ", {count} триггера",
-      "with_triggers_many": ", {count} триггеров",
-      "with_connectors_few": ", {count} подписки на коннектор",
-      "with_connectors_many": ", {count} подписок на коннектор",
-      "safety_acknowledge_few": "Я признаю {count} критические проблемы безопасности и принимаю риск",
-      "safety_acknowledge_many": "Я признаю {count} критических проблем безопасности и принимаю риск"
+      "edit_details": "Изменить детали"
     },
     "review": {
       "use_cases_header": "Сценарии использования ({count})",
@@ -5349,9 +5381,7 @@
       "desc_unverified": "Этот шаблон получен из неизвестного источника и не прошёл проверку. Он будет работать с ограниченными возможностями для защиты вашей системы.",
       "desc_community": "Этот шаблон сообщества не прошёл официальную проверку. Он будет работать в режиме песочницы с ограниченными возможностями.",
       "badge_unverified": "Не проверен",
-      "badge_sandbox": "Режим песочницы",
-      "restriction_concurrent_few": "Максимум {max} одновременных запуска",
-      "restriction_concurrent_many": "Максимум {max} одновременных запусков"
+      "badge_sandbox": "Режим песочницы"
     },
     "page": {
       "title": "Агентные шаблоны",
@@ -7099,9 +7129,7 @@
       "rerun_tooltip": "Перезапустить этот набор",
       "rename_tooltip": "Переименовать",
       "delete_tooltip": "Удалить набор",
-      "no_scenarios": "Нет сценариев в этом наборе",
-      "scenario_count_few": "{count} сценария",
-      "scenario_count_many": "{count} сценариев"
+      "no_scenarios": "Нет сценариев в этом наборе"
     },
     "progress": {
       "generating": "Генерация тестовых сценариев...",
@@ -7109,9 +7137,7 @@
       "tool_prefix": "Инструмент: ",
       "output_prefix": "Вывод: ",
       "protocol_prefix": "Протокол: "
-    },
-    "run_test_few": "Запустить тест ({count} модели...)",
-    "run_test_many": "Запустить тест ({count} моделей...)"
+    }
   },
   "onboarding": {
     "title": "Начало работы",
@@ -8732,11 +8758,7 @@
       "close_panel_title": "Закрыть панель",
       "md_extension": ".md",
       "edit_note_aria": "Редактировать заметку"
-    },
-    "doc_signing_label": "Подписание документов",
-    "doc_signing_desc": "Подписывайте и проверяйте документы с цифровыми подписями прямо из рабочего пространства.",
-    "ocr_label": "OCR",
-    "ocr_desc": "Извлечение текста из изображений и PDF с помощью Gemini Vision или Claude multimodal."
+    }
   },
   "media_studio": {
     "title": "Медиастудия",
