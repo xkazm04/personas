@@ -1,264 +1,31 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Lightbulb, Play, CheckSquare, Square, Clock,
-  BarChart3, BrainCircuit,
+  Lightbulb, Play,
+  BrainCircuit,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
-import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
-import { formatDuration } from '@/lib/utils/formatters';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
-  type ScanAgentDef,
 } from '../constants/scanAgents';
 import {
-  HEX_COLOR_MAP, DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor,
+  DEFAULT_CATEGORY_TW, CATEGORY_TW,
 } from '../constants/ideaColors';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
 import { AgentScoreboard } from './AgentScoreboard';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
-import type { DevContext } from '@/lib/bindings/DevContext';
-import { parseJsonArray } from '../sub_context/contextMapTypes';
-
-// ---------------------------------------------------------------------------
-// Auto-scan: match scan types to contexts based on keywords
-// ---------------------------------------------------------------------------
-
-/** Keyword patterns that map context attributes to relevant scan agents */
-const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
-  { agentKey: 'code-optimizer', keywords: /performance|render|bundle|query|slow|cache|optim/i },
-  { agentKey: 'security-auditor', keywords: /auth|login|token|secret|password|credential|session|encrypt|permission/i },
-  { agentKey: 'architecture-analyst', keywords: /architect|module|component|layer|service|pattern|coupling|abstract/i },
-  { agentKey: 'test-strategist', keywords: /test|spec|coverage|mock|assert|e2e|integration|unit/i },
-  { agentKey: 'dependency-auditor', keywords: /package|dependency|import|library|version|npm|cargo/i },
-  { agentKey: 'ux-reviewer', keywords: /ui|ux|component|page|view|form|modal|button|layout|style/i },
-  { agentKey: 'accessibility-checker', keywords: /a11y|accessibility|aria|wcag|screen.?reader|keyboard|contrast/i },
-  { agentKey: 'mobile-specialist', keywords: /mobile|responsive|viewport|touch|swipe|tablet/i },
-  { agentKey: 'error-handler', keywords: /error|exception|catch|boundary|fallback|retry|toast|alert/i },
-  { agentKey: 'onboarding-designer', keywords: /onboard|wizard|setup|welcome|tutorial|getting.?started/i },
-  { agentKey: 'feature-scout', keywords: /feature|roadmap|missing|todo|placeholder|future/i },
-  { agentKey: 'monetization-advisor', keywords: /billing|payment|subscription|plan|pricing|tier|premium/i },
-  { agentKey: 'analytics-planner', keywords: /analytics|tracking|event|metric|telemetry|log/i },
-  { agentKey: 'documentation-auditor', keywords: /doc|readme|comment|api.?doc|jsdoc|guide/i },
-  { agentKey: 'growth-hacker', keywords: /share|referral|invite|social|viral|notification/i },
-  { agentKey: 'tech-debt-tracker', keywords: /debt|legacy|workaround|hack|deprecated|fixme|todo/i },
-  { agentKey: 'innovation-catalyst', keywords: /ai|ml|machine.?learn|llm|agent|automat|innovat/i },
-  { agentKey: 'risk-assessor', keywords: /risk|single.?point|scale|failover|backup|disaster|recovery/i },
-  { agentKey: 'integration-planner', keywords: /api|webhook|integration|sync|external|third.?party|oauth/i },
-  { agentKey: 'devops-optimizer', keywords: /ci|cd|deploy|docker|pipeline|build|monitor|infra/i },
-];
-
-function matchAgentsToContext(ctx: DevContext): string[] {
-  const searchable = [
-    ctx.name,
-    ctx.description ?? '',
-    ...parseJsonArray(ctx.keywords),
-    ...parseJsonArray(ctx.tech_stack),
-    ...parseJsonArray(ctx.api_surface),
-    ...parseJsonArray(ctx.file_paths),
-  ].join(' ');
-
-  const matched = SCAN_MATCH_RULES
-    .filter((rule) => rule.keywords.test(searchable))
-    .map((rule) => rule.agentKey);
-
-  // Always include at least architecture-analyst and code-optimizer as baseline
-  if (matched.length === 0) return ['architecture-analyst', 'code-optimizer'];
-  return [...new Set(matched)];
-}
-
-// ---------------------------------------------------------------------------
-// Types (local until devToolsSlice wired)
-// ---------------------------------------------------------------------------
-
-type CategoryKey = typeof AGENT_CATEGORIES[number]['key'];
-
-interface ScanIdea {
-  id: string;
-  title: string;
-  description: string;
-  category: CategoryKey;
-  agentKey: string;
-  effort: number;
-  impact: number;
-  risk: number;
-}
-
-interface ScanHistoryEntry {
-  id: string;
-  agentTypes: string;
-  ideaCount: number;
-  timestamp: string;
-  status: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  durationMs: number | null;
-}
-
-function agentColor(agent: ScanAgentDef) {
-  return HEX_COLOR_MAP[agent.color] ?? { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
-}
-
-function relativeTime(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (ms < 60_000) return `${Math.floor(ms / 1000)}s ago`;
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
-  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
-  return `${Math.floor(ms / 86_400_000)}d ago`;
-}
-
-
-const SCAN_STATUS_STYLES: Record<string, string> = {
-  complete: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  running: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  error: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
-
-// ---------------------------------------------------------------------------
-// Badge helpers
-// ---------------------------------------------------------------------------
-
-function LevelBadge({ label, value }: { label: string; value: number }) {
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(value)}`}>
-      {label}: {value}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Agent Card
-// ---------------------------------------------------------------------------
-
-function AgentCard({
-  agent,
-  selected,
-  onToggle,
-}: {
-  agent: ScanAgentDef;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  const ac = agentColor(agent);
-  return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onToggle}
-      className={`relative flex flex-col items-start p-3.5 rounded-xl border text-left transition-colors ${
-        selected
-          ? 'bg-primary/10 border-primary/20 ring-1 ring-amber-500/20'
-          : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
-      }`}
-    >
-      <div className={`w-9 h-9 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
-        {agent.emoji}
-      </div>
-      <span className="text-md font-medium text-foreground mb-0.5">{agent.label}</span>
-      <span className="text-md text-foreground line-clamp-2 leading-relaxed">{agent.description}</span>
-      <div className="absolute top-3 right-3">
-        {selected ? (
-          <CheckSquare className="w-4 h-4 text-amber-400" />
-        ) : (
-          <Square className="w-4 h-4 text-foreground" />
-        )}
-      </div>
-    </motion.button>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Scan Progress
-// ---------------------------------------------------------------------------
-
-function ScanProgress({
-  running,
-  currentAgent,
-  progress,
-}: {
-  running: boolean;
-  currentAgent: ScanAgentDef | null;
-  progress: number;
-}) {
-  if (!running) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4"
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-md">
-          {currentAgent?.emoji ?? '...'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-md font-medium text-foreground">
-            Scanning with {currentAgent?.label ?? '...'}
-          </p>
-          <p className="text-md text-foreground">
-            Analyzing codebase patterns and generating ideas
-          </p>
-        </div>
-        <span className="text-md text-amber-400 font-medium">{Math.round(progress)}%</span>
-      </div>
-      <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full bg-amber-400 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.4 }}
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Idea Card
-// ---------------------------------------------------------------------------
-
-function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
-  const { staggerDelay } = useMotion();
-  const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_CATEGORY_TW;
-  const agent = SCAN_AGENTS.find((a) => a.key === idea.agentKey);
-  const ac = agent ? agentColor(agent) : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
-  const catLabel = AGENT_CATEGORIES.find((c) => c.key === idea.category)?.label ?? idea.category;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * staggerDelay }}
-      className="border border-primary/10 rounded-xl p-4 hover:bg-primary/5 hover:border-primary/20 transition-colors"
-    >
-      <div className="flex items-start gap-3 mb-3">
-        <div className={`w-7 h-7 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-md flex-shrink-0`}>
-          {agent?.emoji ?? '?'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-md font-medium text-foreground mb-0.5">{idea.title}</h4>
-          <p className="text-md text-foreground line-clamp-2">{idea.description}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
-          {catLabel}
-        </span>
-        <LevelBadge label="Effort" value={idea.effort} />
-        <LevelBadge label="Impact" value={idea.impact} />
-        <LevelBadge label="Risk" value={idea.risk} />
-      </div>
-    </motion.div>
-  );
-}
+import {
+  AgentCard, ScanProgress, IdeaCard, ScanHistoryTable,
+  type CategoryKey, type ScanIdea, type ScanHistoryEntry,
+} from './IdeaScannerCards';
+import { matchAgentsToContext } from './ideaScannerHelpers';
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -561,7 +328,7 @@ export default function IdeaScannerPage() {
 
   // Group agents by category
   const agentsByCategory = useMemo(() => {
-    const map = new Map<string, ScanAgentDef[]>();
+    const map = new Map<string, typeof SCAN_AGENTS[number][]>();
     for (const agent of SCAN_AGENTS) {
       const list = map.get(agent.categoryGroup) ?? [];
       list.push(agent);
@@ -744,51 +511,7 @@ export default function IdeaScannerPage() {
             <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-3">
               Scan History ({history.length})
             </h3>
-            {history.length === 0 ? (
-              <p className="text-md text-foreground">No previous scans.</p>
-            ) : (
-              <div className="border border-primary/10 rounded-xl overflow-hidden">
-                {/* Table header */}
-                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider">
-                  <span>Agents</span>
-                  <span>Status</span>
-                  <span>Ideas</span>
-                  <span>Tokens</span>
-                  <span>Duration</span>
-                  <span>When</span>
-                </div>
-                {history.map((entry) => {
-                  const agentKeys = entry.agentTypes.split(',');
-                  const agentEmojis = agentKeys.map((k) => SCAN_AGENTS.find((a) => a.key === k.trim())?.emoji ?? '?').join(' ');
-                  const statusStyle = SCAN_STATUS_STYLES[entry.status] ?? SCAN_STATUS_STYLES.error;
-                  const totalTokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
-                  return (
-                    <div key={entry.id} className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center">
-                      <span className="text-md text-foreground truncate" title={agentKeys.join(', ')}>
-                        {agentEmojis} <span className="text-foreground">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
-                      </span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border w-fit ${statusStyle}`}>
-                        {entry.status}
-                      </span>
-                      <span className="text-md text-foreground flex items-center gap-1">
-                        <BarChart3 className="w-3.5 h-3.5 text-foreground" />
-                        {entry.ideaCount}
-                      </span>
-                      <span className="text-md text-foreground font-mono">
-                        {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}
-                      </span>
-                      <span className="text-md text-foreground">
-                        {formatDuration(entry.durationMs)}
-                      </span>
-                      <span className="text-md text-foreground flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {relativeTime(entry.timestamp)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <ScanHistoryTable history={history} />
           </div>
         </div>
       </ContentBody>
