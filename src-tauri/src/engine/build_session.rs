@@ -110,6 +110,7 @@ impl BuildSessionManager {
             resolved_cells: "{}".to_string(),
             pending_question: None,
             agent_ir: None,
+            adoption_answers: None,
             intent: intent.clone(),
             error_message: None,
             cli_pid: None,

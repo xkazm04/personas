@@ -46,6 +46,7 @@ const SECTION_DEFS: Record<string, { icon: LucideIcon; color: string }> = {
 };
 
 export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: Props) {
+  const { t } = useTranslation();
   const executePersona = useAgentStore((s) => s.executePersona);
   const fetchExecutions = useAgentStore((s) => s.fetchExecutions);
   const [showRaw, setShowRaw] = useState(false);

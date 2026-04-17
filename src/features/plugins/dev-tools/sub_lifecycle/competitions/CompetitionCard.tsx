@@ -3,6 +3,7 @@ import { Swords, RefreshCw, Ban, Lightbulb, Trash2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
@@ -21,6 +22,7 @@ function statusBadge(status: string) {
 }
 
 function BaselineHealth({ json }: { json: string }) {
+  const { t } = useTranslation();
   try {
     const bl = JSON.parse(json) as {
       tsc_errors?: number | null; cargo_errors?: number | null;
@@ -28,18 +30,18 @@ function BaselineHealth({ json }: { json: string }) {
     };
     return (
       <div className="flex items-center gap-3 flex-wrap typo-caption text-foreground">
-        <span className="uppercase tracking-wider text-primary">{t.plugins.dev_tools.baseline_label}</span>
+        <span className="uppercase tracking-wider text-primary">{t.plugins.dev_lifecycle.baseline_label}</span>
         {bl.tsc_errors != null && (
-          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_tools.ts_errors_label} {bl.tsc_errors}</span>
+          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_lifecycle.ts_errors_label} {bl.tsc_errors}</span>
         )}
         {bl.cargo_errors != null && (
-          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_tools.cargo_errors_label} {bl.cargo_errors}</span>
+          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_lifecycle.cargo_errors_label} {bl.cargo_errors}</span>
         )}
         <span className={bl.has_test_runner ? 'text-emerald-400' : 'text-amber-400'}>
-          Tests: {bl.has_test_runner ? 'runner found' : 'no runner'}
+          {t.plugins.dev_lifecycle.tests_label} {bl.has_test_runner ? 'runner found' : 'no runner'}
         </span>
         <span className={bl.git_clean ? 'text-emerald-400' : 'text-amber-400'}>
-          Git: {bl.git_clean ? 'clean' : 'dirty'}
+          {t.plugins.dev_lifecycle.git_label} {bl.git_clean ? 'clean' : 'dirty'}
         </span>
       </div>
     );
@@ -47,6 +49,7 @@ function BaselineHealth({ json }: { json: string }) {
 }
 
 export function CompetitionCard({ competition, onRefresh }: { competition: DevCompetition; onRefresh: () => void }) {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [detail, setDetail] = useState<CompetitionDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -162,7 +165,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
             <>
               {detail.competition.task_description && (
                 <div className="rounded-interactive bg-background/40 border border-primary/10 p-3">
-                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">Task</p>
+                  <p className="typo-caption text-primary uppercase tracking-wider mb-1">{t.plugins.dev_tools.task}</p>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.task_description}</p>
                 </div>
               )}

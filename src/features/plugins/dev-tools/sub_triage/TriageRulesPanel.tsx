@@ -119,7 +119,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Zap className="w-3 h-3" />
-        Auto-Triage Rules
+        {t.plugins.dev_triage.auto_triage_rules}
         {rules.length > 0 && (
           <span className="ml-auto text-foreground">{rules.length} rule{rules.length !== 1 ? 's' : ''}</span>
         )}
@@ -184,9 +184,9 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                   )}
                 </div>
               ))}
-              <button onClick={addCondition} className="text-[10px] text-primary/60 hover:text-primary">+ Add condition</button>
+              <button onClick={addCondition} className="text-[10px] text-primary/60 hover:text-primary">{t.plugins.dev_triage.add_condition}</button>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-foreground">Action:</span>
+                <span className="text-[10px] text-foreground">{t.plugins.dev_triage.action_label}</span>
                 <button onClick={() => setAction('accept')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'accept' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-secondary/40 text-foreground'}`}>Accept</button>
                 <button onClick={() => setAction('reject')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'reject' ? 'bg-red-500/20 text-red-400' : 'bg-secondary/40 text-foreground'}`}>Reject</button>
               </div>
@@ -198,11 +198,11 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
           ) : (
             <div className="flex gap-2">
               <button onClick={() => setCreating(true)} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
-                <Plus className="w-3 h-3" /> New Rule
+                <Plus className="w-3 h-3" /> {t.plugins.dev_triage.new_rule}
               </button>
               {rules.length > 0 && (
                 <button onClick={handleRun} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                  <Zap className="w-3 h-3" /> Run Rules
+                  <Zap className="w-3 h-3" /> {t.plugins.dev_triage.run_rules}
                 </button>
               )}
             </div>

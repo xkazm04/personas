@@ -171,7 +171,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Add rate limiting to /api/auth/login"
+              placeholder={t.plugins.dev_lifecycle.competition_title_placeholder}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring"
               autoFocus
             />
@@ -184,7 +184,7 @@ function NewCompetitionModal({ open, onClose, projectId, onCreated }: NewCompeti
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What should the competitors accomplish? Constraints, target files, acceptance criteria..."
+              placeholder={t.plugins.dev_lifecycle.competition_desc_placeholder}
               rows={4}
               className="w-full px-3 py-2 rounded-interactive bg-background/60 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-ring resize-none"
             />
@@ -513,7 +513,7 @@ export function CompetitionPanel() {
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setShowNewModal(true)}
           >
-            New Competition
+            {t.plugins.dev_tools.new_competition}
           </Button>
         </div>
       </div>

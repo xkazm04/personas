@@ -145,6 +145,7 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
 }
 
 export default function ReasoningTrace({ entries, isLive, startTime }: ReasoningTraceProps) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const userScrolledUp = useRef(false);
 

@@ -1428,6 +1428,7 @@ CREATE TABLE IF NOT EXISTS build_sessions (
     resolved_cells  TEXT NOT NULL DEFAULT '{}',
     pending_question TEXT,
     agent_ir        TEXT,
+    adoption_answers TEXT,
     intent          TEXT NOT NULL,
     error_message   TEXT,
     cli_pid         INTEGER,

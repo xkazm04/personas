@@ -108,6 +108,33 @@ pub async fn create_adoption_session(
     Ok(session_id)
 }
 
+/// Persist adoption questionnaire answers for a build session.
+///
+/// Called by the frontend after the user completes the adoption questionnaire.
+/// The answers are stored in `build_sessions.adoption_answers` and applied to
+/// the `AgentIr` during `test_build_draft` and `promote_build_draft_inner` via
+/// `adoption_answers::substitute_variables` + `inject_configuration_section`.
+#[tauri::command]
+pub async fn save_adoption_answers(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+    adoption_answers_json: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+
+    build_session_repo::update(
+        &state.db,
+        &session_id,
+        &UpdateBuildSession {
+            adoption_answers: Some(Some(adoption_answers_json)),
+            ..Default::default()
+        },
+    )?;
+
+    tracing::info!(session_id = %session_id, "save_adoption_answers: persisted adoption answers");
+    Ok(())
+}
+
 /// Send a user answer to a pending question in a build session.
 #[tauri::command]
 pub async fn answer_build_question(
@@ -225,7 +252,7 @@ pub async fn test_build_draft(
         .map_err(AppError::Validation)?;
 
     // Parse agent_ir — try session first, fall back to persona's last_design_result
-    let agent_ir: crate::db::models::AgentIr = if let Some(ref raw) = session.agent_ir {
+    let mut agent_ir: crate::db::models::AgentIr = if let Some(ref raw) = session.agent_ir {
         serde_json::from_str(raw).map_err(|e| {
             tracing::error!(session_id = %session_id, error = %e, raw_len = raw.len(), "Failed to parse agent_ir");
             AppError::Validation(format!("Build session agent_ir parse error: {e}"))
@@ -247,6 +274,16 @@ pub async fn test_build_draft(
         });
         ir
     };
+
+    // Apply adoption questionnaire answers: variable substitution + configuration section.
+    // This ensures the test runs with the user's actual configured values, not template placeholders.
+    if let Some(ref raw_answers) = session.adoption_answers {
+        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+            crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+            tracing::info!(session_id = %session_id, answer_count = answers.answers.len(), "Applied adoption answers to agent_ir for testing");
+        }
+    }
 
     // Transition to testing phase
     build_session_repo::update(
@@ -1163,6 +1200,16 @@ pub async fn promote_build_draft_inner(
         has_structured_prompt = ir.structured_prompt.is_some(),
         "promote_build_draft: extracted IR fields"
     );
+
+    // Apply adoption questionnaire answers: variable substitution + configuration section.
+    // This ensures the promoted persona carries the user's configured values in its prompt.
+    if let Some(ref raw_answers) = session.adoption_answers {
+        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+            crate::engine::adoption_answers::substitute_variables(&mut ir, &answers);
+            crate::engine::adoption_answers::inject_configuration_section(&mut ir, &answers);
+            tracing::info!(persona_id = %persona_id, answer_count = answers.answers.len(), "Applied adoption answers to agent_ir for promotion");
+        }
+    }
 
     // Auto-generate webhook_secret for webhook triggers that lack one.
     // Templates and adoption flows produce webhook triggers without a secret

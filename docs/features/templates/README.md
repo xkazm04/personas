@@ -23,6 +23,7 @@ The system has five layers worth documenting separately:
 | [04-adoption-questionnaire.md](04-adoption-questionnaire.md) | Question types, vault matching, blocking, Focus variant UI | Adding question types or changing the questionnaire UX |
 | [05-dynamic-discovery.md](05-dynamic-discovery.md) | Rust registry, auth strategies, per-connector ops | Adding a new connector op or debugging 401s during adoption |
 | [06-integrity-and-security.md](06-integrity-and-security.md) | Two-layer checksum verification, trust model | Touching template loading or checksum generation |
+| [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md) | How questionnaire answers reach the persona's prompt at runtime | Debugging "my adoption answers aren't being used" or adding `{{param}}` support to a template |
 
 ## TL;DR architecture
 
@@ -48,17 +49,26 @@ MatrixAdoptionView
   │     ├── useDynamicQuestionOptions            (Sentry/Notion/Linear/...)
   │     ├── matchVaultToQuestions                (auto-detect + block)
   │     └── QuestionCard ── SelectPills / DynamicSelectBody / ...
+  ├── save_adoption_answers (Tauri IPC)         (persists answers to SQLite)
   └── useMatrixBuild + useMatrixLifecycle       (test → promote)
         │
         ▼ create_adoption_session (Tauri command)
-build_sessions row + cells hydrated → test → promote → production persona
+build_sessions row + cells + adoption_answers hydrated
+        │
+        ▼ test_build_draft
+substitute_variables() + inject_configuration_section() → run_tool_tests()
+        │
+        ▼ promote_build_draft
+substitute_variables() + inject_configuration_section() → persona with real config
 ```
 
 Rust surface:
 
 ```
+src-tauri/src/commands/design/build_sessions.rs   (test, promote, save_adoption_answers)
 src-tauri/src/commands/design/template_adopt.rs   (adoption commands)
 src-tauri/src/commands/credentials/discovery.rs   (discover_connector_resources)
+src-tauri/src/engine/adoption_answers.rs          (variable substitution + config injection)
 src-tauri/src/engine/discovery.rs                 (discovery registry + ops)
 src-tauri/src/engine/connector_strategy.rs        (auth strategies per connector)
 src-tauri/src/engine/api_proxy.rs                 (HTTP proxy w/ auth + SSRF + rate limit)

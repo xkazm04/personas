@@ -4,6 +4,7 @@ import {
   AlertCircle, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useDevCloneAdoption } from '../useDevCloneAdoption';
 
 interface DevCloneAdoptionCardProps {
@@ -19,6 +20,7 @@ export function DevCloneAdoptionCard({
   activeProjectHasGithub,
   activeProjectRootPath,
 }: DevCloneAdoptionCardProps) {
+  const { t } = useTranslation();
   const { adoptDevClone, adopting } = useDevCloneAdoption();
 
   const handleAdopt = useCallback(async () => {
@@ -34,38 +36,37 @@ export function DevCloneAdoptionCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="typo-section-title">
-            Adopt Dev Clone
+            {t.plugins.dev_tools.adopt_dev_clone}
           </h3>
           <p className="typo-body text-foreground mt-1">
-            Dev Clone is an autonomous developer persona bundled with Personas.
-            It scans your codebase every hour, proposes tasks for review, and builds
-            on approval. Adopting creates the persona, registers tools, and wires triggers.
+            {t.plugins.dev_lifecycle.dev_clone_desc}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-5">
         <PrereqRow icon={FolderKanban} ok={Boolean(activeProjectName)}
-          title="Dev project" value={activeProjectName ?? 'none selected'}
+          title={t.plugins.dev_tools.dev_project} value={activeProjectName ?? t.plugins.dev_tools.none_selected}
           hint={activeProjectRootPath ?? undefined} />
         <PrereqRow icon={GitBranch} ok={activeProjectHasGithub}
-          title="GitHub repo" value={activeProjectHasGithub ? 'linked' : 'not linked'}
-          hint={activeProjectHasGithub ? undefined : 'Needed for PR workflows'} />
-        <PrereqRow icon={Download} ok title="Dev Clone template" value="bundled" />
+          title={t.plugins.dev_tools.github_repo}
+          value={activeProjectHasGithub ? t.plugins.dev_tools.linked : t.plugins.dev_tools.not_linked}
+          hint={activeProjectHasGithub ? undefined : t.plugins.dev_tools.needed_for_pr} />
+        <PrereqRow icon={Download} ok title={t.plugins.dev_tools.dev_clone_template} value={t.plugins.dev_tools.bundled} />
       </div>
 
       <div className="flex items-center gap-3">
         <Button variant="accent" accentColor="violet" size="md"
           icon={<Sparkles className="w-4 h-4" />} loading={adopting}
           disabled={!activeProjectName}
-          disabledReason={!activeProjectName ? 'Select a project first' : undefined}
+          disabledReason={!activeProjectName ? t.plugins.dev_tools.select_project_first : undefined}
           onClick={handleAdopt}
         >
-          Adopt Dev Clone
+          {t.plugins.dev_tools.adopt_dev_clone}
         </Button>
         {!activeProjectHasGithub && activeProjectName && (
           <p className="typo-caption text-foreground">
-            You can still adopt now — add GitHub URL later.
+            {t.plugins.dev_lifecycle.can_still_adopt}
           </p>
         )}
       </div>

@@ -9970,6 +9970,18 @@ export const en = {
       ocr_saved: "Saved",
       ocr_saved_to: "Saved to",
       ocr_copied: "Copied to clipboard",
+
+      // --- merged from duplicated drive: subsection ---
+      // Empty state shown when no file/folder is selected in the details pane
+      select_file_or_folder: "Select a file or folder to see its details.",
+      // Accessible label for the download button in the details pane
+      download_aria: "Download",
+      // Tooltip on the download button in the details pane
+      download_title: "Download",
+      // Loading placeholder in the drive file list
+      loading: "Loading...",
+      // Placeholder for the signing reason input
+      sign_reason_placeholder: "Reason for signing…",
     },
 
     artist: {
@@ -11005,18 +11017,6 @@ export const en = {
     // ---------------------------------------------------------------
     //  drive — Google Drive file manager
     // ---------------------------------------------------------------
-    drive: {
-      // Empty state shown when no file/folder is selected in the details pane
-      select_file_or_folder: "Select a file or folder to see its details.",
-      // Accessible label for the download button in the details pane
-      download_aria: "Download",
-      // Tooltip on the download button in the details pane
-      download_title: "Download",
-      // Loading placeholder in the drive file list
-      loading: "Loading...",
-      // Placeholder for the signing reason input
-      sign_reason_placeholder: "Reason for signing…",
-    },
 
     // ---------------------------------------------------------------
     //  obsidian-brain — Obsidian vault browser and sync

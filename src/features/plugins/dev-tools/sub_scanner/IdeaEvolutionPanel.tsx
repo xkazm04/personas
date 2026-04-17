@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Dna, AlertTriangle, Sparkles, Link2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   computeIdeaFitness,
   generateSynthesisSuggestions,
@@ -9,6 +10,7 @@ import {
 import { fitnessColor, fitnessBar } from '../constants/ideaColors';
 
 export function IdeaEvolutionPanel() {
+  const { t } = useTranslation();
   const ideas = useSystemStore((s) => s.ideas);
 
   const fitness = useMemo(() => computeIdeaFitness(ideas), [ideas]);
@@ -25,7 +27,7 @@ export function IdeaEvolutionPanel() {
       <div className="flex items-center gap-2 mb-1">
         <Dna className="w-4 h-4 text-violet-400" />
         <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
-          Idea Evolution
+          {t.plugins.dev_scanner.idea_evolution}
         </h3>
       </div>
 
@@ -33,7 +35,7 @@ export function IdeaEvolutionPanel() {
       {fitness.length > 0 && (
         <div className="rounded-modal border border-primary/10 overflow-hidden">
           <div className="px-4 py-2.5 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
-            <span className="text-md font-medium text-foreground">Fitness Ranking</span>
+            <span className="text-md font-medium text-foreground">{t.plugins.dev_scanner.fitness_ranking}</span>
             <div className="flex items-center gap-3 text-md text-foreground">
               <span className="text-emerald-400">{highFitness.length} high</span>
               {penalizedCount > 0 && (
@@ -50,7 +52,7 @@ export function IdeaEvolutionPanel() {
                   <p className="text-md text-foreground truncate">{f.idea.title}</p>
                   {f.similarRejections.length > 0 && (
                     <p className="text-md text-red-400/60 truncate">
-                      Similar to rejected: {f.similarRejections[0]}
+                      {t.plugins.dev_scanner.similar_to_rejected} {f.similarRejections[0]}
                     </p>
                   )}
                 </div>
@@ -79,7 +81,7 @@ export function IdeaEvolutionPanel() {
         <div className="rounded-modal border border-violet-500/15 bg-violet-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-md font-medium text-foreground">Synthesis Suggestions</span>
+            <span className="text-md font-medium text-foreground">{t.plugins.dev_scanner.synthesis_suggestions}</span>
           </div>
           {syntheses.map((s, i) => (
             <div key={i} className="rounded-card border border-violet-500/10 bg-background/30 p-3">
@@ -88,7 +90,7 @@ export function IdeaEvolutionPanel() {
               <div className="flex items-center gap-2 mt-2 text-md text-violet-400/60">
                 <Link2 className="w-3 h-3" />
                 {s.parentA.title.slice(0, 30)} + {s.parentB.title.slice(0, 30)}
-                <span className="text-foreground ml-auto">{Math.round(s.similarity * 100)}% similar</span>
+                <span className="text-foreground ml-auto">{Math.round(s.similarity * 100)}{t.plugins.dev_scanner.percent_similar}</span>
               </div>
             </div>
           ))}
@@ -100,7 +102,7 @@ export function IdeaEvolutionPanel() {
         <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-md font-medium text-foreground">Potential Duplicates</span>
+            <span className="text-md font-medium text-foreground">{t.plugins.dev_scanner.potential_duplicates}</span>
           </div>
           {similarPairs.map((pair, i) => (
             <div key={i} className="flex items-center gap-2 text-md text-foreground">

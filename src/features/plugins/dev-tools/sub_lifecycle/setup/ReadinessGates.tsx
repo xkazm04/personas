@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface QualityGate {
   id: string;
@@ -14,6 +15,7 @@ interface ReadinessGatesProps {
 }
 
 export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
+  const { t } = useTranslation();
   return (
     <div className={`rounded-card border p-4 ${
       qualityScore >= 85
@@ -29,7 +31,7 @@ export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
         }`} />
         <div className="flex-1 min-w-0">
           <h3 className="typo-section-title">
-            Lifecycle Readiness — {qualityScore}/100
+            {t.plugins.dev_tools.lifecycle_readiness} {qualityScore}/100
           </h3>
           <p className="typo-body text-foreground mt-0.5">
             {qualityScore >= 85

@@ -2030,5 +2030,18 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         ));
     }
 
+    // -- adoption_answers column on build_sessions --------------------------------
+    // Stores questionnaire answers so they flow into test + promote pipelines.
+    let has_adoption_answers: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('build_sessions') WHERE name = 'adoption_answers'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_adoption_answers {
+        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN adoption_answers TEXT;")?;
+        tracing::info!("Added adoption_answers column to build_sessions");
+    }
+
     Ok(())
 }

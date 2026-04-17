@@ -141,7 +141,7 @@ export default function ProjectManagerPage() {
               disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
               disabled={projects.length === 0}
             >
-              Cross-Project Map
+              {t.plugins.dev_projects.cross_project_map_btn}
             </Button>
             <Button
               variant="accent"
@@ -150,7 +150,7 @@ export default function ProjectManagerPage() {
               icon={<Plus className="w-3.5 h-3.5" />}
               onClick={() => { setEditingProject(null); setShowModal(true); }}
             >
-              New Project
+              {t.plugins.dev_projects.new_project}
             </Button>
           </div>
         }
@@ -176,9 +176,9 @@ export default function ProjectManagerPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Goals', value: activeProject.goalCount },
-                  { label: 'Tech Stack', value: activeProject.techStack.join(', ') || 'N/A' },
-                  { label: 'Created', value: activeProject.createdAt },
+                  { label: t.plugins.dev_tools.col_goals, value: activeProject.goalCount },
+                  { label: t.plugins.dev_projects.tech_stack, value: activeProject.techStack.join(', ') || 'N/A' },
+                  { label: t.common.created, value: activeProject.createdAt },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-primary/5 rounded-modal px-3 py-2">
                     <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{stat.label}</p>
@@ -203,14 +203,14 @@ export default function ProjectManagerPage() {
           ) : (
             <div className="border border-dashed border-primary/10 rounded-2xl p-8 text-center">
               <Folder className="w-8 h-8 text-foreground mx-auto mb-2" />
-              <p className="text-md text-foreground">Select a project below or create a new one</p>
+              <p className="text-md text-foreground">{t.plugins.dev_projects.select_or_create}</p>
             </div>
           )}
 
           {/* Project list */}
           <div>
             <h3 className="typo-label font-semibold text-primary uppercase tracking-wider mb-3">
-              All Projects ({projects.length})
+              {t.plugins.dev_projects.all_projects}({projects.length})
             </h3>
 
             {projects.length === 0 ? (
@@ -218,7 +218,7 @@ export default function ProjectManagerPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <FolderKanban className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-md text-foreground mb-4">No projects yet</p>
+                <p className="text-md text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
                 <Button
                   variant="accent"
                   accentColor="amber"
@@ -226,19 +226,19 @@ export default function ProjectManagerPage() {
                   icon={<Plus className="w-3.5 h-3.5" />}
                   onClick={() => { setEditingProject(null); setShowModal(true); }}
                 >
-                  Create First Project
+                  {t.plugins.dev_projects.create_first_project}
                 </Button>
               </div>
             ) : (
               <div className="border border-primary/10 rounded-modal">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-xl">
-                  <span>Name</span>
-                  <span>Path</span>
-                  <span>Tech Stack</span>
-                  <span>Goals</span>
-                  <span>Status</span>
-                  <span>Created</span>
+                  <span>{t.plugins.dev_tools.col_name}</span>
+                  <span>{t.plugins.dev_tools.col_path}</span>
+                  <span>{t.plugins.dev_tools.col_tech_stack}</span>
+                  <span>{t.plugins.dev_tools.col_goals}</span>
+                  <span>{t.plugins.dev_tools.col_status}</span>
+                  <span>{t.plugins.dev_tools.col_created}</span>
                   <span></span>
                 </div>
                 {/* Table rows */}

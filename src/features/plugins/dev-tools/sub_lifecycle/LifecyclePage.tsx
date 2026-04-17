@@ -35,9 +35,9 @@ const REVIEW_REJECTED_EVENT = 'review_decision.rejected';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function parseListenerConfig(t: PersonaTrigger, event: string): boolean {
-  if (t.trigger_type !== 'event_listener' || !t.config) return false;
-  try { return JSON.parse(t.config).listen_event_type === event; }
+function parseListenerConfig(trigger: PersonaTrigger, event: string): boolean {
+  if (trigger.trigger_type !== 'event_listener' || !trigger.config) return false;
+  try { return JSON.parse(trigger.config).listen_event_type === event; }
   catch { return false; }
 }
 
@@ -46,6 +46,7 @@ function parseListenerConfig(t: PersonaTrigger, event: string): boolean {
 // ---------------------------------------------------------------------------
 
 export default function LifecyclePage() {
+  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
@@ -77,9 +78,9 @@ export default function LifecyclePage() {
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { if (activeProjectId) fetchGoals(activeProjectId); }, [activeProjectId, fetchGoals]);
 
-  const hasApproved = triggers.some((t) => parseListenerConfig(t, REVIEW_APPROVED_EVENT));
-  const hasRejected = triggers.some((t) => parseListenerConfig(t, REVIEW_REJECTED_EVENT));
-  const hasSchedule = triggers.some((t) => t.trigger_type === 'schedule');
+  const hasApproved = triggers.some((tr) => parseListenerConfig(tr, REVIEW_APPROVED_EVENT));
+  const hasRejected = triggers.some((tr) => parseListenerConfig(tr, REVIEW_REJECTED_EVENT));
+  const hasSchedule = triggers.some((tr) => tr.trigger_type === 'schedule');
   const allConfigured = Boolean(devClone && hasApproved && hasRejected && hasSchedule);
 
   const handleAutoSetup = useCallback(async () => {
@@ -100,7 +101,7 @@ export default function LifecyclePage() {
     if (!devClone) return;
     setConfiguring(true);
     try {
-      for (const t of triggers) await deleteTrigger(t.id, devClone.id);
+      for (const tr of triggers) await deleteTrigger(tr.id, devClone.id);
       addToast('All Dev Clone triggers removed.', 'success');
       await refresh();
     } catch (err) { addToast(err instanceof Error ? err.message : 'Teardown failed', 'error'); }
@@ -129,17 +130,17 @@ export default function LifecyclePage() {
       >
         {/* Tab menu below header */}
         <div className="flex items-center gap-1 mt-3">
-          {TABS.map((t) => {
-            const Icon = t.icon;
+          {TABS.map((tabItem) => {
+            const Icon = tabItem.icon;
             return (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-interactive typo-heading transition-colors ${
-                  tab === t.id
+                  tab === tabItem.id
                     ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
                     : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
                 }`}>
                 <Icon className="w-4 h-4" />
-                {t.label}
+                {tabItem.label}
               </button>
             );
           })}
@@ -150,7 +151,7 @@ export default function LifecyclePage() {
         {loading ? (
           <div className="flex items-center justify-center py-20 text-foreground">
             <RefreshCw className="w-5 h-5 animate-spin mr-2" />
-            <span className="typo-body">Loading lifecycle status...</span>
+            <span className="typo-body">{t.plugins.dev_tools.loading_lifecycle}</span>
           </div>
         ) : (
           <>

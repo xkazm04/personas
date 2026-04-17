@@ -8,6 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -32,6 +33,7 @@ import { matchAgentsToContext } from './ideaScannerHelpers';
 // ---------------------------------------------------------------------------
 
 export default function IdeaScannerPage() {
+  const { t } = useTranslation();
   const { runScan } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation
@@ -348,8 +350,8 @@ export default function IdeaScannerPage() {
       <ContentHeader
         icon={<Lightbulb className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
-        title="Idea Scanner"
-        subtitle="Run specialized agents to generate improvement ideas"
+        title={t.plugins.dev_scanner.idea_scanner_title}
+        subtitle={t.plugins.dev_scanner.idea_scanner_subtitle}
         actions={
           <div className="flex items-center gap-2">
             <LifecycleProjectPicker />
@@ -369,7 +371,7 @@ export default function IdeaScannerPage() {
               loading={isRunning && !autoScanRunning}
               onClick={handleRunScan}
             >
-              Run Scan ({selectedAgents.size})
+              {t.plugins.dev_scanner.run_scan_btn}{selectedAgents.size})
             </Button>
             <Button
               variant="accent"
@@ -380,7 +382,7 @@ export default function IdeaScannerPage() {
               loading={autoScanRunning}
               onClick={handleAutoScan}
             >
-              Auto-Scan
+              {t.plugins.dev_scanner.auto_scan}
             </Button>
           </div>
         }
@@ -407,7 +409,7 @@ export default function IdeaScannerPage() {
                   <BrainCircuit className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-md font-medium text-foreground">Automated Context Scan</p>
+                  <p className="text-md font-medium text-foreground">{t.plugins.dev_scanner.automated_context_scan}</p>
                   <p className="text-md text-foreground">{autoScanStatus}</p>
                 </div>
                 <span className="text-md text-violet-400 font-medium">{Math.round(scanProgress)}%</span>
@@ -453,7 +455,7 @@ export default function IdeaScannerPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
-                Results ({ideas.length} idea{ideas.length !== 1 ? 's' : ''})
+                {t.plugins.dev_scanner.results_header}{ideas.length} idea{ideas.length !== 1 ? 's' : ''})
               </h3>
               {/* Category filter tabs */}
               <div className="flex items-center gap-1">
@@ -509,7 +511,7 @@ export default function IdeaScannerPage() {
           {/* Scan history */}
           <div>
             <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-3">
-              Scan History ({history.length})
+              {t.plugins.dev_scanner.scan_history_header}{history.length})
             </h3>
             <ScanHistoryTable history={history} />
           </div>

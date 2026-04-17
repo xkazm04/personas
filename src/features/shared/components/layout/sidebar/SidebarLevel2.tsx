@@ -29,6 +29,7 @@ interface SidebarLevel2Props {
 }
 
 export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadMessageCount = 0, pendingEventCount = 0 }: SidebarLevel2Props) {
+  const { t } = useTranslation();
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
   // Vault and pipeline stores loaded lazily to keep them out of the main bundle.

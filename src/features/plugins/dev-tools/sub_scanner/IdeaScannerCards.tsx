@@ -11,6 +11,7 @@ import { CheckSquare, Square, BarChart3, Clock } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -110,6 +111,7 @@ export function ScanProgress({
   currentAgent: ScanAgentDef | null;
   progress: number;
 }) {
+  const { t } = useTranslation();
   if (!running) return null;
   return (
     <motion.div
@@ -124,10 +126,10 @@ export function ScanProgress({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-md font-medium text-foreground">
-            Scanning with {currentAgent?.label ?? '...'}
+            {t.plugins.dev_scanner.scanning_with} {currentAgent?.label ?? '...'}
           </p>
           <p className="text-md text-foreground">
-            Analyzing codebase patterns and generating ideas
+            {t.plugins.dev_scanner.analyzing_codebase}
           </p>
         </div>
         <span className="text-md text-amber-400 font-medium">{Math.round(progress)}%</span>
@@ -199,8 +201,9 @@ export interface ScanHistoryEntry {
 }
 
 export function ScanHistoryTable({ history }: { history: ScanHistoryEntry[] }) {
+  const { t } = useTranslation();
   if (history.length === 0) {
-    return <p className="text-md text-foreground">No previous scans.</p>;
+    return <p className="text-md text-foreground">{t.plugins.dev_scanner.no_previous_scans}</p>;
   }
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">

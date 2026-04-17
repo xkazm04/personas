@@ -2,6 +2,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, Bot, Target,
   ClipboardCheck, Brain, Play, Clock, RefreshCw, Zap,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 export interface FlowStep {
@@ -64,30 +65,31 @@ export function FlowStepsList({ steps }: { steps: FlowStep[] }) {
 }
 
 export function TriggerList({ triggers }: { triggers: PersonaTrigger[] }) {
+  const { t } = useTranslation();
   if (triggers.length === 0) return null;
   return (
     <div className="space-y-2">
       <h3 className="typo-caption text-primary uppercase tracking-wider">
-        Active Triggers ({triggers.length})
+        {t.plugins.dev_lifecycle.active_triggers}({triggers.length})
       </h3>
       <div className="border border-primary/15 rounded-card overflow-hidden">
-        {triggers.map((t) => {
-          let configLabel = t.trigger_type;
+        {triggers.map((trigger) => {
+          let configLabel = trigger.trigger_type;
           try {
-            const cfg = JSON.parse(t.config ?? '{}');
+            const cfg = JSON.parse(trigger.config ?? '{}');
             if (cfg.listen_event_type) configLabel = cfg.listen_event_type;
             else if (cfg.cron) configLabel = `cron: ${cfg.cron}`;
           } catch { /* use default */ }
           return (
-            <div key={t.id} className="flex items-center gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0">
+            <div key={trigger.id} className="flex items-center gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0">
               <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-              <span className="typo-body text-foreground flex-1">{t.trigger_type}</span>
+              <span className="typo-body text-foreground flex-1">{trigger.trigger_type}</span>
               <span className="typo-code text-foreground">{configLabel}</span>
               <span className={`rounded-full px-2 py-0.5 typo-caption font-medium border ${
-                t.enabled ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+                trigger.enabled ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
                 : 'bg-red-500/15 text-red-400 border-red-500/25'
               }`}>
-                {t.enabled ? 'enabled' : 'disabled'}
+                {trigger.enabled ? 'enabled' : 'disabled'}
               </span>
             </div>
           );

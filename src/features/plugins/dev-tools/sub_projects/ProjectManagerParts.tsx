@@ -8,6 +8,7 @@ import {
   Target, GripVertical, Trash2, Plus, MoreHorizontal, Pencil,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from '@/stores/systemStore';
 import { ImplementationLog } from './ImplementationLog';
@@ -26,6 +27,7 @@ export function ProjectRowMenu({
   projectName: string;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const deleteProject = useSystemStore((s) => s.deleteProject);
@@ -67,7 +69,7 @@ export function ProjectRowMenu({
               className="w-full flex items-center gap-2 px-3 py-2 typo-caption text-left text-foreground hover:bg-primary/5 transition-colors"
             >
               <Pencil className="w-3 h-3" />
-              Edit Project
+              {t.plugins.dev_projects.edit_project}
             </button>
             <button
               type="button"
@@ -109,6 +111,7 @@ export function GoalBoard({
   onAddNote: (goalId: string, message: string) => void;
   rawGoalSignals: import('@/lib/bindings/DevGoalSignal').DevGoalSignal[];
 }) {
+  const { t } = useTranslation();
   const [newTitle, setNewTitle] = useState('');
   const { staggerDelay: _staggerDelay } = useMotion();
 
@@ -133,7 +136,7 @@ export function GoalBoard({
         {goals.length === 0 ? (
           <div className="text-center py-12">
             <Target className="w-8 h-8 text-foreground mx-auto mb-2" />
-            <p className="text-md text-foreground">No goals yet. Add one below.</p>
+            <p className="text-md text-foreground">{t.plugins.dev_projects.no_goals_add_below}</p>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -179,7 +182,7 @@ export function GoalBoard({
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            placeholder="Add a goal..."
+            placeholder={t.plugins.dev_projects.goal_title_placeholder}
             className="flex-1 px-3 py-2 text-md bg-secondary/30 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
           />
           <Button

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Swords, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCompetitions } from '@/api/devTools/devTools';
 import { CompetitionCard } from './CompetitionCard';
@@ -9,6 +10,7 @@ import { NewCompetitionModal } from './NewCompetitionModal';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
 export function CompetitionList() {
+  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const [competitions, setCompetitions] = useState<DevCompetition[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export function CompetitionList() {
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setShowNewModal(true)}
           >
-            New Competition
+            {t.plugins.dev_tools.new_competition}
           </Button>
         </div>
       </div>
@@ -77,7 +79,8 @@ export function CompetitionList() {
         <div className="rounded-card border border-primary/10 bg-card/20 p-6 text-center">
           <Swords className="w-8 h-8 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">
-            {t.plugins.dev_tools.no_competitions}</p>
+            {t.plugins.dev_tools.no_competitions}
+          </p>
         </div>
       )}
 

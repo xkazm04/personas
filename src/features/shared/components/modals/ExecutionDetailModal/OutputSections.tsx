@@ -86,6 +86,7 @@ export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] })
 }
 
 export function MemoriesList({ memories }: { memories: Record<string, unknown>[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       {memories.map((m, i) => (

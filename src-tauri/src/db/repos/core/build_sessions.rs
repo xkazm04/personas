@@ -21,6 +21,7 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
         resolved_cells: row.get("resolved_cells")?,
         pending_question: row.get("pending_question")?,
         agent_ir: row.get("agent_ir")?,
+        adoption_answers: row.get("adoption_answers").unwrap_or(None),
         intent: row.get("intent")?,
         error_message: row.get("error_message")?,
         cli_pid: cli_pid.map(|p| p as u32),
@@ -38,9 +39,9 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
         conn.execute(
             "INSERT INTO build_sessions
              (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
-              intent, error_message, cli_pid, workflow_json, parser_result_json,
-              created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+              adoption_answers, intent, error_message, cli_pid, workflow_json,
+              parser_result_json, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
             params![
                 session.id,
                 session.persona_id,
@@ -48,6 +49,7 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
                 session.resolved_cells,
                 session.pending_question,
                 session.agent_ir,
+                session.adoption_answers,
                 session.intent,
                 session.error_message,
                 session.cli_pid.map(|p| p as i64),
@@ -148,6 +150,10 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
         if let Some(ref agent_ir) = updates.agent_ir {
             set_clauses.push(format!("agent_ir = ?{}", set_clauses.len() + 1));
             param_values.push(Box::new(agent_ir.clone()));
+        }
+        if let Some(ref adoption_answers) = updates.adoption_answers {
+            set_clauses.push(format!("adoption_answers = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(adoption_answers.clone()));
         }
         if let Some(ref error_message) = updates.error_message {
             set_clauses.push(format!("error_message = ?{}", set_clauses.len() + 1));

@@ -157,13 +157,21 @@ See [05-dynamic-discovery.md](05-dynamic-discovery.md).
 ### Submit
 
 Clicking **Submit** calls `setQuestionsComplete(true)`. This triggers
-two effects:
+three effects:
 
 1. The phase-3 guard flips, so the next render falls through to the
    seed effect.
 2. The answers get merged into the build draft as `_adoption_answers`
    and the build phase is patched to `draft_ready` (unless a more
    advanced phase is already active, which would regress).
+3. **Answers are persisted to the backend** via `save_adoption_answers`
+   IPC. The payload contains the answer map, question metadata, and
+   credential bindings derived from vault-category questions. This
+   ensures `test_build_draft` and `promote_build_draft_inner` can read
+   the answers from `build_sessions.adoption_answers` and apply them
+   to the `AgentIr` via variable substitution + configuration injection.
+   See [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md)
+   for the full mechanics.
 
 ## Phase 4 — Matrix + build session
 
@@ -232,6 +240,25 @@ the template's pre-resolved cells. This differs from an interactive
 build (where the LLM populates cells one at a time) — adoption sessions
 arrive pre-populated and go directly to `draft_ready`. The test phase
 then runs against the already-known-good template output.
+
+### Answer application during test + promote
+
+Both `test_build_draft` and `promote_build_draft_inner` load
+`session.adoption_answers` from SQLite after parsing `agent_ir`. If
+answers exist, two operations transform the `AgentIr` before any
+downstream processing:
+
+1. **`substitute_variables`** — replaces `{{param.aq_*}}` placeholders
+   in all string fields (system_prompt, structured_prompt, tool guidance,
+   trigger configs) with the user's actual answer values.
+2. **`inject_configuration_section`** — appends a `## User Configuration`
+   block to the system prompt listing all Q→A pairs, ensuring the LLM
+   always knows what the user configured regardless of whether the
+   template uses `{{param}}` placeholders.
+
+This means tests run against the user's real configuration (not the
+generic template), and the promoted persona carries configured values
+permanently. See [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md).
 
 ## Phase 5 — Test → Promote
 
@@ -349,5 +376,7 @@ confirmation on close.
 | `src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts` | Credential auto-detect / block logic |
 | `src/features/agents/components/matrix/useMatrixBuild.ts` | Build state hook (hydrated via `hydrateBuildSession`) |
 | `src/features/agents/components/matrix/useMatrixLifecycle.ts` | Test / promote / refine callbacks |
+| `src-tauri/src/commands/design/build_sessions.rs` | `test_build_draft`, `promote_build_draft_inner`, `save_adoption_answers` — answer application lives here |
 | `src-tauri/src/commands/design/template_adopt.rs` | `create_adoption_session`, `check_template_integrity`, LLM path (unused for shipped templates) |
+| `src-tauri/src/engine/adoption_answers.rs` | `substitute_variables`, `inject_configuration_section`, `extract_credential_bindings` |
 | `src-tauri/src/db/repos/communication/reviews.rs` | `batch_create_reviews` with ON CONFLICT upsert |

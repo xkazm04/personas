@@ -43,7 +43,7 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
   return (
     <div className="space-y-3">
       <h4 className="typo-label font-semibold text-primary uppercase tracking-wider">
-        Implementation Log
+        {t.plugins.dev_projects.implementation_log}
       </h4>
 
       {/* Add note input */}

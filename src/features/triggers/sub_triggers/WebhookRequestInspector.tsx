@@ -75,6 +75,7 @@ interface RequestRowProps {
 }
 
 function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isReplaying, replayResult, copiedCurl }: RequestRowProps) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
       <button

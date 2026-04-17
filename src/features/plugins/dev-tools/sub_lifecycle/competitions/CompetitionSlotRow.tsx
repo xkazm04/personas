@@ -5,6 +5,7 @@ import {
   Ban as BanIcon, Play, Square, ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   parseCompetitionSlotDiffStats,
   getCompetitionSlotDiff,
@@ -36,6 +37,7 @@ export function CompetitionSlotRow({
   onPickWinner,
   picking,
 }: CompetitionSlotRowProps) {
+  const { t } = useTranslation();
   const [expandedDiff, setExpandedDiff] = useState<string | 'loading' | null>(null);
   const [server, setServer] = useState<{ port: number; pid: number; url: string } | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
@@ -114,7 +116,7 @@ export function CompetitionSlotRow({
             </span>
             {isWinner && (
               <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-                <Trophy className="w-3 h-3" /> Winner
+                <Trophy className="w-3 h-3" /> {t.plugins.dev_tools.winner}
               </span>
             )}
             {isDq && (
@@ -122,7 +124,7 @@ export function CompetitionSlotRow({
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25"
                 title={slot.disqualify_reason ?? undefined}
               >
-                <BanIcon className="w-3 h-3" /> Disqualified
+                <BanIcon className="w-3 h-3" /> {t.plugins.dev_tools.disqualified_label}
               </span>
             )}
             {diffStats && (
@@ -148,19 +150,19 @@ export function CompetitionSlotRow({
           <div className="flex items-center gap-3 mt-0.5 flex-wrap">
             {taskStatus === 'running' && task?.started_at && (
               <span className="typo-caption text-blue-400">
-                {elapsedStr(new Date(task.started_at).getTime())} elapsed
+                {elapsedStr(new Date(task.started_at).getTime())} {t.plugins.dev_tools.elapsed_label}
               </span>
             )}
             {taskStatus === 'completed' && task?.started_at && task?.completed_at && (
               <span className="typo-caption text-emerald-400">
-                Completed in {durationStr(task.started_at, task.completed_at)}
+                {t.plugins.dev_tools.completed_in} {durationStr(task.started_at, task.completed_at)}
               </span>
             )}
             {taskStatus === 'failed' && (
               <span className="typo-caption text-red-400">Failed{task?.error ? `: ${task.error}` : ''}</span>
             )}
             {taskStatus !== 'completed' && taskStatus !== 'failed' && taskStatus !== 'running' && (
-              <span className="typo-caption text-foreground">Status: {taskStatus}</span>
+              <span className="typo-caption text-foreground">{t.plugins.dev_tools.status_label} {taskStatus}</span>
             )}
             {isDq && slot.disqualify_reason && (
               <span className="typo-caption text-amber-400">{slot.disqualify_reason}</span>
@@ -170,12 +172,12 @@ export function CompetitionSlotRow({
           {/* Completion achievements — shown once task finishes */}
           {taskStatus === 'completed' && diffStats && (
             <div className="mt-1.5 flex items-center gap-2 flex-wrap typo-caption text-foreground">
-              <span className="text-foreground">Achievements:</span>
+              <span className="text-foreground">{t.plugins.dev_tools.achievements_label}</span>
               <span>Modified {diffStats.files_changed} file{diffStats.files_changed !== 1 ? 's' : ''}</span>
               <span className="text-emerald-400">+{diffStats.lines_added} lines</span>
               <span className="text-red-400">{diffStats.lines_removed} lines</span>
               {task?.output_lines != null && task.output_lines > 0 && (
-                <span>{task.output_lines} output lines</span>
+                <span>{task.output_lines} {t.plugins.dev_tools.output_lines}</span>
               )}
             </div>
           )}
@@ -187,7 +189,7 @@ export function CompetitionSlotRow({
             icon={<Play className="w-3.5 h-3.5" />}
             onClick={handleStartServer}
             loading={serverLoading}
-            title="Start dev server in this worktree"
+            title={t.plugins.dev_lifecycle.start_dev_server_title}
           >
             Preview
           </Button>
@@ -209,7 +211,7 @@ export function CompetitionSlotRow({
               size="sm"
               icon={<Square className="w-3.5 h-3.5 text-red-400" />}
               onClick={handleStopServer}
-              title="Stop dev server"
+              title={t.plugins.dev_lifecycle.stop_dev_server_title}
             >
               Stop
             </Button>
@@ -221,7 +223,7 @@ export function CompetitionSlotRow({
             size="sm"
             icon={<FolderOpen className="w-3.5 h-3.5" />}
             onClick={handleBrowse}
-            title="Open worktree directory"
+            title={t.plugins.dev_lifecycle.open_worktree_title}
           >
             Browse
           </Button>
@@ -245,7 +247,7 @@ export function CompetitionSlotRow({
             onClick={() => onPickWinner(slot.task_id)}
             loading={picking === slot.task_id}
           >
-            Pick winner
+            {t.plugins.dev_tools.pick_winner}
           </Button>
         )}
       </div>
@@ -254,7 +256,7 @@ export function CompetitionSlotRow({
           {expandedDiff === 'loading' ? (
             <div className="flex items-center gap-2 text-foreground">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span className="typo-caption">Loading diff...</span>
+              <span className="typo-caption">{t.plugins.dev_tools.loading_diff}</span>
             </div>
           ) : (
             <pre className="typo-code text-foreground whitespace-pre-wrap break-all">

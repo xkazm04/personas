@@ -145,7 +145,7 @@ function TaskModal({
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title..."
+                placeholder={t.plugins.dev_runner.task_title_placeholder}
                 className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
               />
             </div>
@@ -154,7 +154,7 @@ function TaskModal({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what this task should accomplish..."
+                placeholder={t.plugins.dev_runner.task_details_placeholder}
                 rows={3}
                 className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
               />
@@ -162,7 +162,7 @@ function TaskModal({
 
             {/* Task depth selector */}
             <div>
-              <label className="typo-caption font-medium text-foreground mb-1.5 block">Task Depth</label>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.plugins.dev_runner.task_depth}</label>
               <div className="grid grid-cols-3 gap-2">
                 {DEPTH_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
@@ -188,14 +188,14 @@ function TaskModal({
 
             <div>
               <label className="typo-caption font-medium text-foreground mb-1.5 block">
-                Goal Link <span className="text-foreground">(optional)</span>
+                {t.plugins.dev_runner.goal_link} <span className="text-foreground">{t.plugins.dev_runner.optional}</span>
               </label>
               <div className="relative">
                 <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
                 <input
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}
-                  placeholder="Goal ID or name..."
+                  placeholder={t.plugins.dev_runner.goal_link_placeholder}
                   className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                 />
               </div>
@@ -212,7 +212,7 @@ function TaskModal({
               disabled={!title.trim()}
               onClick={handleSubmit}
             >
-              Create Task
+              {t.plugins.dev_runner.create_task}
             </Button>
           </div>
         </div>
@@ -273,7 +273,7 @@ function TaskCard({
             )}
           </div>
           {task.source && (
-            <p className="text-[10px] text-foreground mt-0.5">Source: {task.source}</p>
+            <p className="text-[10px] text-foreground mt-0.5">{t.plugins.dev_runner.source_label} {task.source}</p>
           )}
         </div>
 
@@ -461,7 +461,7 @@ export default function TaskRunnerPage() {
               icon={<Plus className="w-3.5 h-3.5" />}
               onClick={() => setShowModal(true)}
             >
-              New Task
+              {t.plugins.dev_runner.new_task}
             </Button>
             <Button
               variant="secondary"
@@ -469,7 +469,7 @@ export default function TaskRunnerPage() {
               icon={<ListChecks className="w-3.5 h-3.5" />}
               onClick={() => batchFromAccepted()}
             >
-              Batch from Accepted
+              {t.plugins.dev_runner.batch_from_accepted}
             </Button>
             <Button
               variant="accent"
@@ -479,7 +479,7 @@ export default function TaskRunnerPage() {
               disabled={queuedCount === 0 && runningCount === 0}
               onClick={() => { startBatch(); useOverviewStore.getState().processStarted('task_runner', undefined, 'Task Runner Batch'); }}
             >
-              Start Batch
+              {t.plugins.dev_runner.start_batch}
             </Button>
             <Button
               variant="danger"
@@ -488,7 +488,7 @@ export default function TaskRunnerPage() {
               disabled={runningCount === 0 && queuedCount === 0}
               onClick={() => cancelAll()}
             >
-              Cancel All
+              {t.plugins.dev_runner.cancel_all}
             </Button>
           </div>
         }
@@ -500,7 +500,7 @@ export default function TaskRunnerPage() {
           {totalCount > 0 && (
             <div className="border border-primary/10 rounded-modal p-4 bg-primary/5">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="typo-section-title">Batch Progress</h3>
+                <h3 className="typo-section-title">{t.plugins.dev_runner.batch_progress}</h3>
                 <div className="flex items-center gap-3 text-[10px] text-foreground">
                   {runningCount > 0 && (
                     <span className="flex items-center gap-1 text-blue-400">
@@ -530,7 +530,7 @@ export default function TaskRunnerPage() {
                 />
               </div>
               <p className="text-[10px] text-foreground mt-1.5 text-right">
-                {Math.round(overallProgress)}% overall
+                {Math.round(overallProgress)}{t.plugins.dev_runner.percent_overall}
               </p>
             </div>
           )}
@@ -549,7 +549,7 @@ export default function TaskRunnerPage() {
           {/* Task queue */}
           <div>
             <h3 className="typo-label font-semibold uppercase tracking-wider text-primary mb-3">
-              Task Queue ({totalCount})
+              {t.plugins.dev_runner.task_queue}({totalCount})
             </h3>
 
             {tasks.length === 0 ? (
@@ -557,9 +557,9 @@ export default function TaskRunnerPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <Play className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-md text-foreground mb-1">No tasks in queue</p>
+                <p className="text-md text-foreground mb-1">{t.plugins.dev_runner.no_tasks_queued}</p>
                 <p className="text-md text-foreground mb-4">
-                  Create tasks manually or batch from accepted ideas
+                  {t.plugins.dev_runner.no_tasks_queued_sub}
                 </p>
                 <div className="flex justify-center gap-2">
                   <Button
@@ -568,7 +568,7 @@ export default function TaskRunnerPage() {
                     icon={<Plus className="w-3.5 h-3.5" />}
                     onClick={() => setShowModal(true)}
                   >
-                    New Task
+                    {t.plugins.dev_runner.new_task}
                   </Button>
                   <Button
                     variant="accent"
@@ -577,7 +577,7 @@ export default function TaskRunnerPage() {
                     icon={<ListChecks className="w-3.5 h-3.5" />}
                     onClick={() => batchFromAccepted()}
                   >
-                    Batch from Accepted
+                    {t.plugins.dev_runner.batch_from_accepted}
                   </Button>
                 </div>
               </div>

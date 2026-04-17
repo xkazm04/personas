@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   FolderOpen, X, Plus, Pencil, Search, CheckCircle2,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ export function ProjectModal({
   onScanNow,
   editProject,
 }: ProjectModalProps) {
+  const { t } = useTranslation();
   const isEdit = !!editProject;
 
   const [step, setStep] = useState<ModalStep>('form');
@@ -138,7 +140,7 @@ export function ProjectModal({
             <>
               <div className="flex items-center justify-between mb-5">
                 <h2 className="typo-section-title">
-                  {isEdit ? 'Edit Project' : 'New Project'}
+                  {isEdit ? t.plugins.dev_projects.edit_project : t.plugins.dev_projects.new_project}
                 </h2>
                 <Button variant="ghost" size="icon-sm" onClick={handleClose}>
                   <X className="w-4 h-4" />
@@ -148,7 +150,7 @@ export function ProjectModal({
               <div className="space-y-4">
                 {/* Folder picker (read-only in edit mode) */}
                 <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 block">Project Folder</label>
+                  <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.plugins.dev_projects.project_folder}</label>
                   <div className="flex gap-2">
                     <div
                       onClick={isEdit ? undefined : handleSelectFolder}
@@ -160,7 +162,7 @@ export function ProjectModal({
                       {path ? (
                         <span className="text-foreground truncate">{path}</span>
                       ) : (
-                        <span className="text-foreground">Select a folder...</span>
+                        <span className="text-foreground">{t.plugins.dev_projects.select_folder}</span>
                       )}
                     </div>
                     {!isEdit && (
@@ -174,16 +176,16 @@ export function ProjectModal({
                 {/* Project Name */}
                 <div>
                   <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    Project Name
+                    {t.plugins.dev_projects.project_name}
                     {!isEdit && path && !nameEdited && (
-                      <span className="text-[10px] text-foreground font-normal">(auto-filled from folder)</span>
+                      <span className="text-[10px] text-foreground font-normal">({t.plugins.dev_projects.auto_filled_from_folder})</span>
                     )}
                   </label>
                   <div className="relative">
                     <input
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder="My Awesome App"
+                      placeholder={t.plugins.dev_projects.project_name_placeholder}
                       className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
                     />
                     <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
@@ -193,8 +195,8 @@ export function ProjectModal({
                 {/* Project Type */}
                 <div>
                   <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    Project Type
-                    <span className="text-[10px] text-foreground font-normal">(optional, visual only)</span>
+                    {t.plugins.dev_projects.project_type}
+                    <span className="text-[10px] text-foreground font-normal">({t.plugins.dev_projects.project_type_optional})</span>
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {PROJECT_TYPES.map((pt) => (
@@ -219,7 +221,7 @@ export function ProjectModal({
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
-                <Button variant="ghost" size="sm" onClick={handleClose}>Cancel</Button>
+                <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
                 <Button
                   variant="accent"
                   accentColor="amber"
@@ -228,7 +230,7 @@ export function ProjectModal({
                   disabled={!name.trim() || !path.trim()}
                   onClick={handleSubmit}
                 >
-                  {isEdit ? 'Save Changes' : 'Create Project'}
+                  {isEdit ? t.common.save : t.plugins.dev_projects.new_project}
                 </Button>
               </div>
             </>
@@ -240,21 +242,19 @@ export function ProjectModal({
                   <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                 </div>
                 <h2 className="typo-section-title mb-1">
-                  Project Created
+                  {t.plugins.dev_projects.project_created}
                 </h2>
                 <p className="typo-caption text-foreground mb-6">
-                  <span className="font-medium text-foreground">{createdProject?.name}</span> is ready.
-                  Would you like to generate a context map now?
+                  <span className="font-medium text-foreground">{createdProject?.name}</span> {t.plugins.dev_projects.project_ready_desc}
                 </p>
 
                 <div className="bg-primary/5 border border-primary/10 rounded-modal p-4 mb-6 text-left">
                   <div className="flex items-start gap-3">
                     <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="typo-card-label mb-1">Generate Context Map</h4>
+                      <h4 className="typo-card-label mb-1">{t.plugins.dev_projects.generate_context_map}</h4>
                       <p className="typo-caption text-foreground">
-                        Scans your codebase to identify business features and organize them into context groups.
-                        This runs in the background -- you&apos;ll get a notification when it&apos;s done.
+                        {t.plugins.dev_projects.generate_context_map_desc}
                       </p>
                     </div>
                   </div>
@@ -262,7 +262,7 @@ export function ProjectModal({
 
                 <div className="flex justify-center gap-2">
                   <Button variant="ghost" size="sm" onClick={handleClose}>
-                    Skip for now
+                    {t.plugins.dev_projects.skip_for_now}
                   </Button>
                   <Button
                     variant="accent"
@@ -271,7 +271,7 @@ export function ProjectModal({
                     icon={<Search className="w-3.5 h-3.5" />}
                     onClick={handleScanNow}
                   >
-                    Scan Codebase
+                    {t.plugins.dev_projects.scan_codebase}
                   </Button>
                 </div>
               </div>

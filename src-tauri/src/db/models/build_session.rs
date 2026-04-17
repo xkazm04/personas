@@ -148,6 +148,8 @@ pub struct BuildSession {
     pub pending_question: Option<String>,
     /// JSON-encoded agent intermediate representation.
     pub agent_ir: Option<String>,
+    /// JSON-encoded adoption questionnaire answers (answers + question metadata + credential bindings).
+    pub adoption_answers: Option<String>,
     pub intent: String,
     pub error_message: Option<String>,
     pub cli_pid: Option<u32>,
@@ -194,6 +196,7 @@ pub struct PersistedBuildSession {
     pub resolved_cells: serde_json::Value,
     pub pending_question: Option<serde_json::Value>,
     pub agent_ir: Option<serde_json::Value>,
+    pub adoption_answers: Option<serde_json::Value>,
     pub intent: String,
     pub error_message: Option<String>,
     pub created_at: String,
@@ -216,6 +219,10 @@ impl PersistedBuildSession {
                 .agent_ir
                 .as_deref()
                 .and_then(|ir| serde_json::from_str(ir).ok()),
+            adoption_answers: s
+                .adoption_answers
+                .as_deref()
+                .and_then(|a| serde_json::from_str(a).ok()),
             intent: s.intent.clone(),
             error_message: s.error_message.clone(),
             created_at: s.created_at.clone(),
@@ -233,6 +240,7 @@ pub struct UpdateBuildSession {
     pub resolved_cells: Option<String>,
     pub pending_question: Option<Option<String>>,
     pub agent_ir: Option<Option<String>>,
+    pub adoption_answers: Option<Option<String>>,
     pub error_message: Option<Option<String>>,
     pub cli_pid: Option<Option<u32>>,
 }
