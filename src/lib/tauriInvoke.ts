@@ -90,7 +90,7 @@ const inflightByKey = new Map<string, Promise<unknown>>();
  */
 export function coerceArgs(args: InvokeArgs): InvokeArgs {
   if (Array.isArray(args)) {
-    return args.map((item) => {
+    return args.map((item: unknown) => {
       if (item === undefined) return null;
       if (item !== null && typeof item === "object" && !(item instanceof Date)) {
         // Covers both plain objects and nested arrays — recurse into both.
