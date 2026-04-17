@@ -108,7 +108,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                   fallback={
                     <div className="flex flex-col items-center gap-2 text-foreground">
                       <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
-                      <span className="text-md">Loading viewer…</span>
+                      <span className="text-md">{t.plugins.artist_gallery.loading_viewer}</span>
                     </div>
                   }
                 >

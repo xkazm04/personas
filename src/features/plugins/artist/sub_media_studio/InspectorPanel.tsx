@@ -548,7 +548,7 @@ export default function InspectorPanel({
                 {measuring && (
                   <p className="text-md text-rose-400/80 flex items-center gap-1 -mt-2 ml-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    Running ffmpeg loudnorm dry-run…
+                    {t.plugins.artist_media_studio.running_loudnorm}
                   </p>
                 )}
               </>

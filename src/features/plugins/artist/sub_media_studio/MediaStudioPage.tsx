@@ -328,7 +328,7 @@ export default function MediaStudioPage() {
             </Button>
           </div>
           <p className="text-md text-foreground">
-            {t.media_studio.import_media} — drag & drop files anywhere
+            {t.media_studio.import_media} {t.plugins.artist_media_studio.drag_drop_hint}
           </p>
         </div>
       )}

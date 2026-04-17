@@ -347,7 +347,7 @@ function TimelinePanelImpl({
         </Button>
 
         <span className="text-md text-foreground w-14 text-center tabular-nums font-mono">
-          {Math.round(zoom)}px/s
+          {Math.round(zoom)}{t.plugins.artist_media_studio.px_per_second}
         </span>
 
         <div className="w-px h-4 bg-primary/10 mx-1" />

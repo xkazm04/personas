@@ -126,7 +126,7 @@ export default function PlaybackControls({
       {/* Keyboard shortcut hint */}
       <div className="flex items-center gap-1 text-md text-foreground">
         <Keyboard className="w-3 h-3" />
-        <span>Space / Del / Arrows</span>
+        <span>{t.plugins.artist_media_studio.keyboard_shortcuts}</span>
       </div>
     </div>
   );

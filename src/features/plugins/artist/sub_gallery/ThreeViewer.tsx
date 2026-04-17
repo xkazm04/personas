@@ -4,6 +4,7 @@ import { OrbitControls, useGLTF, Environment, Stage, Bounds } from '@react-three
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Box, Loader2 } from 'lucide-react';
 import * as THREE from 'three';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type LightingPreset = 'studio' | 'outdoor' | 'soft';
 
@@ -74,19 +75,21 @@ function ModelScene({
 }
 
 function LoadingFallback() {
+  const { t } = useTranslation();
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-foreground pointer-events-none">
       <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
-      <span className="text-md">Loading model...</span>
+      <span className="text-md">{t.plugins.artist_gallery.loading_model}</span>
     </div>
   );
 }
 
 function ErrorFallback({ error }: { error: Error }) {
+  const { t } = useTranslation();
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center p-8">
       <Box className="w-12 h-12 text-rose-400/40" />
-      <p className="typo-body text-foreground">Could not load model</p>
+      <p className="typo-body text-foreground">{t.plugins.artist_gallery.could_not_load_model}</p>
       <p className="text-md text-foreground max-w-sm font-mono break-all">{error.message}</p>
     </div>
   );
