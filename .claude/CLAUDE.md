@@ -198,3 +198,4 @@ After significant feature work, run `/guide-sync` to keep the marketing site gui
 - `AccountSettings.tsx` has TS errors (missing Sparkles, TIERS, TIER_LABELS imports)
 - ~159 pre-existing TS errors across DualBatchPanel, commandHandlers, Social module, DebtPrediction (varies by branch state)
 - Git post-commit hook warning about `git_hook.py` is harmless
+- Lint baseline (post-2026-04-17 react-hooks pass): 23,419 warnings and 0 errors (up from 23,159 after adding eslint-plugin-react-hooks@7.1.0); 21 `react-hooks/rules-of-hooks` violations (conditional hooks + hooks called outside components) across 7 files are at warn-level pending triage.
