@@ -680,7 +680,7 @@ async fn execute_scenario_ollama(
         "stream": false
     });
 
-    let client = reqwest::Client::new();
+    let client = crate::SHARED_HTTP.clone();
     let response = client
         .post(&url)
         .json(&body)
