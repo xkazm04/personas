@@ -55,7 +55,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-card border border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
-                Open in Browser
+                {t.vault.auto_cred.open_in_browser}
               </button>
             )}
             <button
@@ -63,7 +63,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-card border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
             >
               <Check className="w-3 h-3" />
-              I've completed this
+              {t.vault.auto_cred.completed_step}
             </button>
           </div>
         )}

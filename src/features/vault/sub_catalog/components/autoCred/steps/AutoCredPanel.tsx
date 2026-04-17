@@ -25,7 +25,7 @@ interface AutoCredPanelProps {
 }
 
 export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [mode, setMode] = useState<AutoCredMode>('playwright');
   const [modeChecked, setModeChecked] = useState(false);
 
@@ -162,14 +162,14 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             <div className="text-center">
               <p className="typo-body-lg font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
               <p className="typo-body text-foreground mt-1">
-                {designResult.connector.label} credential has been securely stored.
+                {tx(t.vault.auto_cred_extra.credential_stored, { label: designResult.connector.label })}
               </p>
             </div>
             <button
               onClick={onComplete}
               className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body font-medium transition-colors"
             >
-              Done
+              {t.common.done}
             </button>
           </motion.div>
         )}

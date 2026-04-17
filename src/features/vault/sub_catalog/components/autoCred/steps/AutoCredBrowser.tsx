@@ -156,7 +156,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
           onClick={onCancel}
           className="px-4 py-2 typo-body text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
         >
-          {t.vault.auto_cred.cancel_session ?? 'Cancel Session'}
+          {t.vault.auto_cred.cancel_session}
         </button>
       </div>
     </div>

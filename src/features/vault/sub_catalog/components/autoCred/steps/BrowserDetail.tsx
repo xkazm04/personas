@@ -56,7 +56,7 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
           <MonitorX className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
           <p className="typo-body text-foreground">
             <span className="font-medium text-orange-400/90">{t.vault.auto_cred_extra.do_not_interact}</span>{' '}
-            The automation controls the browser window directly -- clicking, scrolling or typing in it may break the process.
+            {t.vault.auto_cred_extra.browser_automation_warning}
           </p>
         </div>
       )}

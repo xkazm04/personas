@@ -1168,6 +1168,29 @@ export const en = {
       offset_prefix: "offset:",
       step_tooltip: "Step {step}: {name}",
       ms_into_stage: "{ms}ms into stage",
+
+      // ChainCascadeTimeline footer
+      // {id} = first 8 chars of chain trace ID
+      chain_id_prefix: "Chain: {id}",
+      // {duration} = formatted duration string
+      chain_total_duration: "Total: {duration}",
+
+      // PipelineWaterfall / TraceInspector axis start label
+      zero_ms: "0ms",
+
+      // ToolCallList in ExecutionSummaryCard
+      // {count} = number of tool calls
+      tool_calls_count: "{count} tool call",
+      tool_calls_count_other: "{count} tool calls",
+      // {count} = number of unique tools
+      unique_tools_count: "({count} unique)",
+
+      // DreamReplayTheater error navigation buttons
+      prev_error_nav: "Previous error (Shift+E)",
+      next_error_nav: "Next error (E)",
+
+      // PersonaRunner input editor placeholder
+      runner_input_placeholder: "{\"key\": \"value\"}",
     },
 
     // -----------------------------------------------------------------
@@ -7836,6 +7859,38 @@ export const en = {
     relay_channel_url_placeholder: "https://smee.io/your-channel-id",
     // Placeholder for event filter input field in smee relay form
     relay_filter_placeholder: "github_push, github_pull_request",
+    // Title on 'retry exhausted' badge in dead letter tab
+    dead_letter_retry_exhausted_title: "Retry limit exhausted — discard or investigate the root cause",
+    // Title on discard button in dead letter tab
+    dead_letter_discard_title: "Discard this event permanently",
+    // Tooltip on retry button showing attempts used — {count}/{max} are interpolated
+    dead_letter_retry_title: "Retry this event",
+    // Tooltip on replay button in execution history
+    replay_button_title: "Re-fire with the same input payload",
+    // Placeholder for interval seconds input in schedule config
+    interval_seconds_placeholder: "Seconds (min 60)",
+    // Placeholder for cron expression input in schedule config
+    cron_expression_placeholder: "* * * * *  (min hour dom mon dow)",
+    // Placeholder for app focus config: process name input
+    app_focus_process_placeholder: "e.g. Code.exe, chrome.exe, Figma.exe",
+    // Placeholder for app focus config: window title pattern input
+    app_focus_window_placeholder: "e.g. .*.rs$ or Project - Visual Studio",
+    // Placeholder for clipboard config: text pattern input
+    clipboard_pattern_placeholder: "e.g. https?://.* or error|exception",
+    // Placeholder for composite config: event type input
+    composite_event_type_placeholder: "Event type (e.g. file_changed)",
+    // Placeholder for composite config: debounce seconds input
+    composite_debounce_placeholder: "300",
+    // Placeholder for file watcher config: directory path input
+    file_watcher_path_placeholder: "C:\Users\me\projects or /home/me/src",
+    // Placeholder for file watcher config: file pattern input
+    file_watcher_pattern_placeholder: "e.g. *.py, *.{ts,tsx}, Dockerfile",
+    // Placeholder for polling config: endpoint URL input
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    // Tooltip for 'More tools' button in EventCanvasToolbar
+    more_tools_title: "More tools",
+    // 'Last poll:' label in cloud webhooks status banner
+    last_poll_label: "Last poll:",
     // Tooltip on validate-and-fire trigger button in drawer
     validate_and_fire_title: "Validate trigger config, then fire",
     // Tooltip on dry-run trigger button in drawer
@@ -7882,6 +7937,8 @@ export const en = {
       telemetry_on: "Crash reports and usage analytics are active.",
       telemetry_off: "Telemetry is disabled. No data is sent to Sentry.",
       telemetry_restart: "Restart the app for this change to take effect",
+      // Accessible label for the telemetry toggle switch button
+      telemetry_toggle_aria: "Toggle telemetry",
     },
 
     // -- Appearance -------------------------------------------------------

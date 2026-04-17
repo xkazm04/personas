@@ -10,6 +10,7 @@ interface DesktopBridgeBlockProps {
 }
 
 export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockProps) {
+  const { t, tx } = useTranslation();
   return (
     <div
       className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-orange-500/15 rounded-modal p-6 space-y-4"
@@ -19,9 +20,9 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
           <Monitor className="w-5 h-5 text-orange-400" />
         </div>
         <div className="flex-1">
-          <h4 className="font-medium text-foreground">{connector.label} is a desktop app</h4>
+          <h4 className="font-medium text-foreground">{tx(t.vault.auto_cred_extra.desktop_bridge_title, { label: connector.label })}</h4>
           <p className="typo-body text-foreground">
-            This connector uses a local desktop bridge, not an online API. Use the Desktop Apps panel to detect and connect it.
+            {t.vault.auto_cred_extra.desktop_bridge_hint}
           </p>
         </div>
       </div>
@@ -30,7 +31,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
           onClick={onCancel}
           className="px-4 py-2 typo-body font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
         >
-          Back
+          {t.common.back}
         </button>
       </div>
     </div>
@@ -45,7 +46,7 @@ interface SetupHeaderProps {
 }
 
 export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="flex items-center gap-3">
       <button
@@ -68,7 +69,7 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
         )}
       </div>
       <div className="flex-1">
-        <h4 className="font-medium text-foreground">Auto-Setup {connector.label}</h4>
+        <h4 className="font-medium text-foreground">{tx(t.vault.auto_cred_extra.auto_setup_label, { label: connector.label })}</h4>
         <p className="typo-body text-foreground">
           {phase === 'analyzing' ? t.vault.auto_cred_extra.analyzing_setup : t.vault.auto_cred_extra.browser_hint}
         </p>

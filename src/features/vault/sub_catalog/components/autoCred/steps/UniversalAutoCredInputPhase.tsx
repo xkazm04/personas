@@ -56,7 +56,7 @@ export function UniversalAutoCredInputPhase({
           value={serviceUrl}
           onChange={(e) => onServiceUrlChange(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="https://app.example.com or https://developer.example.com"
+          placeholder={t.vault.auto_cred_extra.service_url_placeholder}
           className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
           autoFocus
         />
@@ -75,7 +75,7 @@ export function UniversalAutoCredInputPhase({
         <textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder="e.g. I need an API key for their REST API to read and write data. The developer portal has an API Keys section under Settings."
+          placeholder={t.vault.auto_cred_extra.description_placeholder}
           rows={3}
           className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 resize-none transition-colors"
         />

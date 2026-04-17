@@ -18,7 +18,7 @@ export function AutoCredErrorDisplay({
   onRetry,
   onCancel,
 }: AutoCredErrorDisplayProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [contextOpen, setContextOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const config = ERROR_KIND_CONFIG[error.kind] ?? ERROR_KIND_CONFIG.cli_error!;
@@ -64,19 +64,19 @@ export function AutoCredErrorDisplay({
               {ctx.duration_secs != null && (
                 <div className="flex items-center gap-2">
                   <Clock className="w-3 h-3 shrink-0" />
-                  <span>Session ran for {ctx.duration_secs.toFixed(1)}s</span>
+                  <span>{tx(t.vault.auto_cred.session_duration, { seconds: ctx.duration_secs.toFixed(1) })}</span>
                 </div>
               )}
               {ctx.tool_call_count > 0 && (
                 <div className="flex items-center gap-2">
                   <Wrench className="w-3 h-3 shrink-0" />
-                  <span>{ctx.tool_call_count} browser action{ctx.tool_call_count !== 1 ? 's' : ''} performed</span>
+                  <span>{ctx.tool_call_count === 1 ? tx(t.vault.auto_cred.actions_performed_one, { count: ctx.tool_call_count }) : tx(t.vault.auto_cred.actions_performed_other, { count: ctx.tool_call_count })}</span>
                 </div>
               )}
               {ctx.last_url && (
                 <div className="flex items-center gap-2">
                   <Globe className="w-3 h-3 shrink-0" />
-                  <span className="truncate">Last URL: {ctx.last_url}</span>
+                  <span className="truncate">{tx(t.vault.auto_cred.last_url, { url: ctx.last_url })}</span>
                 </div>
               )}
               {ctx.had_waiting_prompt && (
@@ -108,7 +108,7 @@ export function AutoCredErrorDisplay({
             onClick={() => setLogOpen((v) => !v)}
             className="w-full flex items-center justify-between px-4 py-2.5 typo-body font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
           >
-            <span>Session log ({logs.length} entries)</span>
+            <span>{tx(t.vault.auto_cred.session_log, { count: logs.length })}</span>
             {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {logOpen && (
@@ -142,14 +142,14 @@ export function AutoCredErrorDisplay({
           onClick={onCancel}
           className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
-          {error.retryable ? 'Cancel' : 'Set Up Manually'}
+          {error.retryable ? t.common.cancel : t.vault.auto_cred.setup_manually}
         </button>
         {error.retryable && (
           <button
             onClick={onRetry}
             className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
           >
-            Retry
+            {t.vault.auto_cred.retry}
           </button>
         )}
       </div>
