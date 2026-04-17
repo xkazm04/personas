@@ -86,7 +86,7 @@ export default function MemoryRowDetail({
         </select>
 
         <div className="flex items-center gap-1">
-          <span className="typo-body text-foreground">Imp:</span>
+          <span className="typo-body text-foreground">{pt.importance_label}</span>
           <input
             type="range"
             min={IMPORTANCE_MIN}

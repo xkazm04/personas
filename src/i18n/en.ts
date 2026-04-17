@@ -4041,11 +4041,51 @@ export const en = {
       // Accessible labels for step states
       step_completed: "(completed)",
       step_current: "(current)",
+      // ForagingIdle action button
+      start_scan: "Start Scan",
+      // ForagingScanning description
+      checking_env: "Checking environment variables, config files, and dev tool credentials",
+      // ForagingImporting status
+      importing: "Importing credentials to vault...",
+      // ForagingDone actions
+      scan_again: "Scan again",
+      back_to_vault: "Back to vault",
+      // ForagingResultCard badge labels
+      already_in_vault: "Already in vault",
+      imported: "Imported",
+      // ForagingResults import button label suffix
+      to_vault: "to vault",
+      // McpServerCard -- env var count suffix (singular/plural)
+      env_var_one: "{count} env var",
+      env_var_other: "{count} env vars",
+      // McpServerCard -- import button label
+      import_server: "Import",
+      // McpServerCard -- sources count in ({n} sources in ...)
+      sources_in: "sources in",
     },
     // Desktop discovery
     desktop_discovery: {
       title: "Desktop Apps",
       allowed_binaries: "Allowed binaries: ",
+      // Panel description
+      connect_description: "Connect local applications or import Claude Desktop MCP servers",
+      // Tab labels -- {count} = item count
+      detected_apps_tab: "Detected Apps ({count})",
+      claude_mcp_tab: "Claude MCP ({count})",
+      // DiscoveryAppList states
+      scanning: "Scanning for desktop apps...",
+      detected_on_system: "Detected on your system",
+      not_detected: "Not detected",
+      no_apps: "No desktop apps detected. Try refreshing.",
+      // DiscoveryMcpList states
+      reading_config: "Reading Claude Desktop config...",
+      // {count} = number of servers, {plural} = "s" or ""
+      mcp_servers_found_one: "Found {count} MCP server in Claude Desktop configuration. Import them as credentials to use with your agents.",
+      mcp_servers_found_other: "Found {count} MCP servers in Claude Desktop configuration. Import them as credentials to use with your agents.",
+      no_mcp_config: "No Claude Desktop MCP configuration found.",
+      mcp_config_hint: "If you have Claude Desktop installed, ensure it has MCP servers configured in its settings.",
+      // CapabilityApprovalCard
+      permission_required: "Permission Required",
     },
     // Picker
     picker_section: {
@@ -4057,6 +4097,17 @@ export const en = {
       filter_purpose: "Purpose",
       filter_category: "Category",
       filter_license: "License",
+      // CodebaseProjectPicker
+      credential_name: "Credential Name",
+      add_project_first: "Add a project in Dev Tools first to connect a codebase to your agents.",
+      go_to_dev_tools: "Go to Dev Tools",
+      // CredentialTypePicker descriptions
+      workspace_connect_description: "One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically",
+      foraging_description: "Scan your filesystem for existing API keys, AWS profiles, env vars, and more",
+      // SetupGuideModal
+      no_setup_guide: "No setup guide available for this connector. Visit the documentation link below for instructions.",
+      // {label} = connector label
+      open_setup_page: "Open {label} setup page",
     },
     // CLI capture flow: import credentials from locally installed, already-authenticated CLIs (gcloud, gh, vercel, ...)
     cli_capture: {
@@ -10342,6 +10393,596 @@ export const en = {
       no_results: "No OCR results yet",
       no_results_hint: "Extract text from a document to see it here.",
     },
+
+    // --- merged from previously-duplicated top-level plugins block(s) ---
+
+    // ---------------------------------------------------------------
+    //  artist.gallery — 3D model and asset gallery viewer
+    // ---------------------------------------------------------------
+    artist_gallery: {
+      // Loading spinner text shown while the 3D viewer initialises
+      loading_viewer: "Loading viewer…",
+      // Loading spinner text shown while a 3D model is being parsed
+      loading_model: "Loading model...",
+      // Error message when the 3D model file could not be loaded
+      could_not_load_model: "Could not load model",
+    },
+
+    // ---------------------------------------------------------------
+    //  artist.media_studio — video/audio timeline editor
+    // ---------------------------------------------------------------
+    artist_media_studio: {
+      // Shown next to the import button in the empty timeline area
+      drag_drop_hint: "— drag & drop files anywhere",
+      // Keyboard shortcut hint shown in the playback controls bar
+      keyboard_shortcuts: "Space / Del / Arrows",
+      // Unit label for the timeline zoom level (pixels per second)
+      px_per_second: "px/s",
+      // Status text shown while ffmpeg loudnorm analysis is running
+      running_loudnorm: "Running ffmpeg loudnorm dry-run…",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.context — context map / codebase scanner
+    // ---------------------------------------------------------------
+    dev_context: {
+      // Section header showing count of files; opened count follows in JSX
+      files_header: "Files (",
+      // Placeholder text for the group filter/search input
+      filter_groups_placeholder: "Filter groups…",
+      // Tooltip on the re-scan button
+      rescan_title: "Re-scan",
+      // Loading indicator while an automated context scan runs
+      scanning_with: "Scanning with",
+      // Subtitle shown below the scanning indicator
+      scanning_subtitle: "Analyzing codebase patterns and generating context groups…",
+      // Empty state message when no prior scans exist
+      no_previous_scans: "No previous scans.",
+      // Button label to launch a manual scan; slot count appended in JSX
+      run_scan: "Run Scan (",
+      // Button label for the scheduled auto-scan toggle
+      auto_scan: "Auto-Scan",
+      // Section label for automated context scan settings
+      automated_context_scan: "Automated Context Scan",
+      // Section header for scan results; count appended in JSX
+      results: "Results (",
+      // Section header for scan history; count appended in JSX
+      scan_history: "Scan History (",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.lifecycle — lifecycle management (goals, competitions)
+    // ---------------------------------------------------------------
+    dev_lifecycle: {
+      // Title for the competition creation call-to-action
+      start_a_competition: "Start a Competition",
+      // Subtitle for the competition creation panel
+      start_a_competition_desc: "Spawn 2–4 competitors with different strategies to tackle the same task. The winner's approach gets promoted.",
+      // Label for the task title field in new competition form
+      task_title: "Task title",
+      // Placeholder for the task title input
+      task_title_placeholder: "E.g. Refactor auth module",
+      // Label for the task description field in new competition form
+      task_description: "Task description (optional)",
+      // Placeholder for the task description input
+      task_description_placeholder: "Describe what success looks like…",
+      // Label for the strategy slot picker
+      strategy_slots: "Strategy slots (pick 2–4)",
+      // Counter suffix showing selected count out of 4
+      of_4_selected: "/4 selected",
+      // Warning label prefix in the cost notice
+      cost_warning: "Cost warning:",
+      // Warning body text about cost of running competitors
+      cost_warning_desc: "each competitor runs the full task independently — this uses {count}× more tokens.",
+      // Button to launch the competition
+      start_competition: "Start Competition",
+      // Separator dot between competitor count and title
+      competitors_dot: "competitors ·",
+      // Loading state while competitor data loads
+      loading_competitors: "Loading competitors...",
+      // Error state when competitor detail could not be fetched
+      failed_to_load_detail: "Failed to load detail.",
+      // Label for the competition status field
+      status_label: "Status:",
+      // Short label for the weight metric in competition cards
+      weight_label: "wt:",
+      // Button to pick the winner of a competition slot
+      pick_winner: "Pick winner",
+      // Button to cancel an active competition
+      cancel_competition: "Cancel competition",
+      // Empty state when no project is selected to show competitions
+      select_project_for_competitions: "Select a project to see competitions.",
+      // Button to create a new competition
+      new_competition: "New Competition",
+      // Empty state message when no competitions exist yet
+      no_competitions_yet: "No competitions yet. Start one to have 2–4 strategies race to solve a task.",
+      // Empty state when no goals exist for a project
+      no_goals_yet_project: "No goals yet. Create goals in the Project Manager to track progress.",
+      // Tooltip on the zoom-in goal constellation button
+      zoom_in_title: "Zoom in",
+      // Tooltip on the zoom-out goal constellation button
+      zoom_out_title: "Zoom out",
+      // Tooltip on the reset/fit goal constellation button
+      reset_view_title: "Reset view",
+      // Pluralised label in the goal constellation legend
+      goals_label: "goals,",
+      // Legend entry for a parent-relationship edge in goal graph
+      legend_parent: "━━ parent",
+      // Legend entry for a dependency-relationship edge in goal graph
+      legend_dependency: "┄┄ dependency",
+      // Empty state on goal kanban board
+      no_goals_kanban: "No goals yet. Create goals to see them here.",
+      // Empty state for a single kanban column with no goals
+      no_goals_here: "No goals here",
+      // Tooltip on the Auto-Setup button
+      auto_setup_title: "Run automated lifecycle setup",
+      // Text label for the Auto-Setup toggle button
+      auto_setup: "Auto-Setup",
+      // Loading state for lifecycle status data
+      loading_lifecycle: "Loading lifecycle status...",
+      // Shown when no project is linked; prompts user to create one
+      no_project_click_to_create: "No project — click to create",
+      // Shown when a project has no linked repository
+      no_repo: "no repo",
+      // Section header for competition metrics baseline
+      baseline_label: "Baseline:",
+      // Metric label for TypeScript errors
+      ts_errors_label: "TS errors:",
+      // Metric label for Cargo (Rust) errors
+      cargo_errors_label: "Cargo errors:",
+      // Metric label for test count
+      tests_label: "Tests:",
+      // Metric label for git commit hash
+      git_label: "Git:",
+      // Badge label for a winning insight in a competition card
+      winning_insight: "Winning insight",
+      // Duration label prefix in slot result; duration follows in JSX
+      completed_in: "Completed in",
+      // Label for the achievements section of a competition slot
+      achievements_label: "Achievements:",
+      // Label for the output line count metric
+      output_lines: "output lines",
+      // Tooltip on the expand/collapse slot button
+      expand_slot_title: "Expand slot",
+      // Tooltip on the collapse slot button
+      collapse_slot_title: "Collapse slot",
+      // Tooltip on the copy diff button
+      copy_diff_title: "Copy diff",
+      // Loading indicator while the diff is being fetched
+      loading_diff: "Loading diff...",
+      // Title for the NewCompetitionModal; also in CompetitionPanel
+      new_competition_modal_title: "Start a Competition",
+      // Slot-biasing hint shown in the strategy picker
+      first_slot_bias: "First slot biased toward previous winner's approach.",
+      // Button label with slot count prefix; count inserted in JSX
+      start_competition_slots: "Start Competition (",
+      // Suffix for the Start Competition button after the count
+      slots_suffix: "slots)",
+      // Title for the strategy leaderboard section
+      strategy_leaderboard: "Strategy Leaderboard",
+      // Tooltip on a disqualified slot badge; count follows in JSX
+      dq_title: "Disqualified",
+      // Badge text for a disqualified slot; count follows in JSX
+      dq_label: "DQ x",
+      // Subtitle for the strategy leaderboard
+      leaderboard_subtitle: "Aggregated across resolved competitions. Higher wins.",
+      // Title for the winner insight capture dialog
+      capture_winning_insight: "Capture the winning insight",
+      // Instruction text in the winner insight dialog
+      capture_insight_desc: "What made this approach win? This note is stored with the winner and used to seed future competitions.",
+      // Placeholder for the insight textarea
+      insight_placeholder: "Describe what made this approach succeed…",
+      // Confirmation button in the winner insight dialog
+      confirm_winner: "Confirm winner",
+      // Placeholder for the competition task title input
+      competition_title_placeholder: "e.g. Add rate limiting to /api/auth/login",
+      // Placeholder for the competition task description input
+      competition_desc_placeholder: "Acceptance criteria, target files, constraints...",
+      // Tooltip on the regenerate-strategies button in competition form
+      regenerate_strategies_title: "Regenerate strategies",
+      // Tooltip on the "Start dev server in this worktree" button
+      start_dev_server_title: "Start dev server in this worktree",
+      // Tooltip on the "Stop dev server" button
+      stop_dev_server_title: "Stop dev server",
+      // Tooltip on the "Browse worktree" button
+      open_worktree_title: "Open worktree directory",
+      // Title for the DevClone adoption card
+      adopt_dev_clone: "Adopt Dev Clone",
+      // Description for the DevClone adoption card
+      dev_clone_desc: "Dev Clone is an autonomous developer persona that manages your project lifecycle — competing strategies, healing errors, and shipping code.",
+      // Tooltip on the GitHub requirements icon
+      github_required_title: "GitHub repository required",
+      // Tooltip on the project folder requirements icon
+      folder_required_title: "Project folder required",
+      // Tooltip on the complete requirements icon
+      requirements_met_title: "All requirements met",
+      // Advisory text when user can still adopt without full setup
+      can_still_adopt: "You can still adopt now — add GitHub URL and project folder later in project settings.",
+      // Section header showing active trigger count; count follows in JSX
+      active_triggers: "Active Triggers (",
+      // Section header with dash separator for readiness status
+      lifecycle_readiness: "Lifecycle Readiness —",
+      // Goals tab empty state: no goals created yet
+      goals_tab_no_goals: "No goals yet. Create goals in the Project Manager.",
+      // Goals tab header with count; count follows in JSX
+      goal_constellation: "Goal Constellation (",
+      // Button to sync goals to Obsidian vault
+      sync_to_obsidian: "Sync to Obsidian",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.projects — project manager
+    // ---------------------------------------------------------------
+    dev_projects: {
+      // Count label in the cross-project metadata modal; count follows in JSX
+      active_goals: "active goals",
+      // Button to trigger a context-map scan for this project
+      run_context_map_scan: "Run Context Map scan for this project to populate metadata.",
+      // Metadata section label for entry points
+      entry_points: "entry points",
+      // Metadata section label for database tables
+      db_tables: "db tables",
+      // Metadata section label for top keywords
+      top_keywords: "Top Keywords",
+      // Metadata section label for listed entry points
+      entry_points_header: "Entry Points",
+      // Metadata section label for listed db tables
+      db_tables_header: "Database Tables",
+      // Metadata section label for api surface
+      api_surface: "API Surface",
+      // Metadata section label for hot directories
+      hot_directories: "Hot Directories",
+      // Modal title for cross-project metadata map
+      cross_project_map_title: "Cross-Project Metadata Map",
+      // Modal subtitle for cross-project metadata map
+      cross_project_map_subtitle: "Aggregated from existing context maps. Click any project to expand.",
+      // Metadata section label for tech distribution
+      tech_distribution: "Tech Distribution",
+      // Section header for shared keywords; count follows in JSX
+      shared_keywords: "Shared Keywords (",
+      // Shared keywords section subtitle
+      shared_keywords_subtitle: "Concepts present in multiple projects — may indicate shared architecture.",
+      // Section header for project similarity
+      project_similarity: "Project Similarity",
+      // Section header for projects list; count follows in JSX
+      projects_header: "Projects (",
+      // Button to open the cross-project map
+      cross_project_map_btn: "Cross-Project Map",
+      // Button to create a new project
+      new_project: "New Project",
+      // Instruction shown when no project is selected
+      select_or_create: "Select a project below or create a new one.",
+      // Section header for the all-projects list; count follows in JSX
+      all_projects: "All Projects (",
+      // Empty state when no projects exist
+      no_projects_yet: "No projects yet",
+      // Button to create the first project
+      create_first_project: "Create First Project",
+      // Label for the tech stack section
+      tech_stack: "Tech Stack",
+      // Button to edit an existing project
+      edit_project: "Edit Project",
+      // Empty state when no goals have been added to a project
+      no_goals_add_below: "No goals yet. Add one below.",
+      // Placeholder for the goal title input
+      goal_title_placeholder: "Goal title…",
+      // Modal field label for project folder
+      project_folder: "Project Folder",
+      // Placeholder text shown when no folder is selected
+      select_folder: "Select a folder...",
+      // Modal field label for project name
+      project_name: "Project Name",
+      // Helper text when project name is auto-populated from folder
+      auto_filled_from_folder: "(auto-filled from folder)",
+      // Placeholder for the project name input
+      project_name_placeholder: "My Project",
+      // Modal field label for project type
+      project_type: "Project Type",
+      // Helper text that project type is optional and visual only
+      project_type_optional: "(optional, visual only)",
+      // Post-creation prompt title
+      project_created: "Project Created",
+      // Button to generate a context map for a new project
+      generate_context_map: "Generate Context Map",
+      // Description of the generate context map action
+      generate_context_map_desc: "Scans your codebase to identify business logic, entry points, and data structures.",
+      // Button to skip context map generation
+      skip_for_now: "Skip for now",
+      // Button to start the codebase scan
+      scan_codebase: "Scan Codebase",
+      // Loading repositories status text
+      loading_repositories: "Loading repositories...",
+      // Label for GitHub URL section
+      github_url_label: "GitHub URL",
+      // Optional qualifier for GitHub URL
+      optional: "(optional)",
+      // Placeholder for GitHub URL input
+      github_url_placeholder: "https://github.com/owner/repo",
+      // Label for GitHub Repository selector
+      github_repository: "GitHub Repository",
+      // Placeholder for the repository picker dropdown
+      select_repository: "Select a repository...",
+      // Empty state when no repositories are found
+      no_repositories_found: "No repositories found",
+      // Section label for implementation log
+      implementation_log: "Implementation Log",
+      // Loading state for metadata map
+      loading_metadata: "Loading...",
+      // Empty state for metadata map when not generated yet
+      no_metadata_yet: "No metadata map generated yet",
+      // Prompt to generate metadata map
+      generate_metadata_prompt: "to analyze all projects' context maps and extract shared patterns.",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.runner — task runner and self-healing panel
+    // ---------------------------------------------------------------
+    dev_runner: {
+      // Section header for the self-healing panel
+      self_healing: "Self-Healing",
+      // Toggle label for automatic healing
+      auto_heal: "Auto-heal",
+      // Button to trigger healing on all issues; count follows in JSX
+      heal_all: "Heal All (",
+      // Placeholder for task title input
+      task_title_placeholder: "Task title…",
+      // Placeholder for task details/description input
+      task_details_placeholder: "Task details or paste a spec…",
+      // Label for task depth selector
+      task_depth: "Task Depth",
+      // Label for the goal link field
+      goal_link: "Goal Link",
+      // Optional qualifier for the goal link field
+      optional: "(optional)",
+      // Placeholder for goal link input
+      goal_link_placeholder: "Select a goal…",
+      // Button to create a task
+      create_task: "Create Task",
+      // Label for the source field in task details
+      source_label: "Source:",
+      // Button to create a new task
+      new_task: "New Task",
+      // Button to batch create tasks from accepted ideas
+      batch_from_accepted: "Batch from Accepted",
+      // Button to start the task batch
+      start_batch: "Start Batch",
+      // Button to cancel all running tasks
+      cancel_all: "Cancel All",
+      // Section header for batch progress
+      batch_progress: "Batch Progress",
+      // Suffix showing overall completion percentage; value precedes in JSX
+      percent_overall: "% overall",
+      // Section header for task queue; count follows in JSX
+      task_queue: "Task Queue (",
+      // Empty state when no tasks are queued
+      no_tasks_queued: "No tasks in queue",
+      // Empty state subtitle for the task queue
+      no_tasks_queued_sub: "Create tasks manually or batch from accepted ideas.",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.scanner — idea scanner and evolution panel
+    // ---------------------------------------------------------------
+    dev_scanner: {
+      // Section header for the idea evolution panel
+      idea_evolution: "Idea Evolution",
+      // Label for fitness ranking in idea evolution
+      fitness_ranking: "Fitness Ranking",
+      // Prefix label for ideas similar to rejected ones
+      similar_to_rejected: "Similar to rejected:",
+      // Section header for synthesis suggestions
+      synthesis_suggestions: "Synthesis Suggestions",
+      // Suffix showing similarity score; percentage precedes in JSX
+      percent_similar: "% similar",
+      // Section header for potential duplicate ideas
+      potential_duplicates: "Potential Duplicates",
+      // Message showing which model is scanning; model name appended in JSX
+      scanning_with: "Scanning with",
+      // Status message while analyzing the codebase
+      analyzing_codebase: "Analyzing codebase...",
+      // Empty state message when no previous scans exist
+      no_previous_scans: "No previous scans yet.",
+      // Button label to run an automated scan
+      auto_scan: "Auto-Scan",
+      // Label for the automated context scan section
+      automated_context_scan: "Automated Context Scan",
+      // Prefix before the scan date/time in scan history
+      run_scan_prefix: "Run:",
+      // Prefix before the result count in scan history
+      results_prefix: "Results:",
+      // Prefix before the history item count
+      scan_history_prefix: "Scan History",
+      // Title for the idea scanner page/header
+      idea_scanner_title: "Idea Scanner",
+      // Subtitle describing the idea scanner feature
+      idea_scanner_subtitle: "AI-powered idea analysis and evolution",
+    },
+
+    // ---------------------------------------------------------------
+    //  dev-tools.triage — idea triage rules panel
+    // ---------------------------------------------------------------
+    dev_triage: {
+      // Section header for the auto-triage rules panel
+      auto_triage_rules: "Auto-Triage Rules",
+      // Button to add a condition to a triage rule
+      add_condition: "+ Add condition",
+      // Label prefix for the action selector in a triage rule
+      action_label: "Action:",
+      // Button to create a new triage rule
+      new_rule: "New Rule",
+      // Button to run all triage rules
+      run_rules: "Run Rules",
+    },
+
+    // ---------------------------------------------------------------
+    //  drive — Google Drive file manager
+    // ---------------------------------------------------------------
+    drive: {
+      // Empty state shown when no file/folder is selected in the details pane
+      select_file_or_folder: "Select a file or folder to see its details.",
+      // Accessible label for the download button in the details pane
+      download_aria: "Download",
+      // Tooltip on the download button in the details pane
+      download_title: "Download",
+      // Loading placeholder in the drive file list
+      loading: "Loading...",
+      // Placeholder for the signing reason input
+      sign_reason_placeholder: "Reason for signing…",
+    },
+
+    // ---------------------------------------------------------------
+    //  obsidian-brain — Obsidian vault browser and sync
+    // ---------------------------------------------------------------
+    obsidian: {
+      // Section header in the saved vaults sidebar
+      saved_vaults: "Saved Vaults",
+      // Tooltip on the remove saved vault button
+      remove_vault_title: "Remove saved vault",
+      // Empty state when the vault has no notes
+      vault_is_empty: "Vault is empty",
+      // Error state when vault notes could not be loaded
+      failed_to_load: "Failed to load",
+      // Button to open the current note in Obsidian
+      open_in_obsidian: "Open in Obsidian",
+      // Tooltip on the copy path button
+      copy_path_title: "Copy path",
+      // Title attribute for disconnect button in cloud sync panel
+      disconnect_title: "Disconnect Google Drive",
+      // Call-to-action heading for connecting Google Drive
+      sign_in_to_enable: "Sign in to enable cloud sync",
+      // Subtitle explaining the Google Drive sync benefit
+      sign_in_subtitle: "Sign in with your Google account to back up your vault to Google Drive.",
+      // Tooltip on the refresh button in cloud sync panel
+      refresh_title: "Refresh sync status",
+      // Status badge when Google Drive is connected
+      drive_connected: "Drive Connected",
+      // Suffix after the file count in the drive connected badge
+      files_synced: "files synced to Drive",
+      // Description for connecting Google Drive
+      connect_drive_desc: "Connect Google Drive to back up your vault to the cloud.",
+      // Step header to connect Google Drive
+      step_connect_drive: "Connect Google Drive",
+      // Step description to connect Google Drive
+      step_connect_drive_desc: "Grant Personas access to create files in your Google Drive.",
+      // Step header to push your vault
+      step_push_vault: "Push your vault",
+      // Step description for pushing vault files
+      step_push_vault_desc: "Vault notes are uploaded as markdown files to Google Drive.",
+      // Step header for syncing across devices
+      step_sync_devices: "Sync across devices",
+      // Step description for syncing across devices
+      step_sync_devices_desc: "Pull on another device to download. Your vault is your data.",
+      // Tooltip on the push/sync button
+      push_title: "Push vault to Google Drive",
+      // Description of what the push action does
+      push_desc: "Push uploads local vault changes to Google Drive.",
+      // Section header for last sync result
+      last_sync_result: "Last Sync Result",
+      // Tooltip on the pull button
+      pull_title: "Pull vault from Google Drive",
+      // Button to connect Google Drive
+      connect_google_drive: "Connect Google Drive",
+      // Description for Google Drive connection button
+      connect_drive_btn_desc: "Grant Personas access to create files in your Google Drive.",
+      // Empty state in the graph stats panel
+      no_stats_yet: "No stats yet.",
+      // Tooltip on the search button in graph panel
+      search_title: "Search notes",
+      // Placeholder for the search input in the graph panel
+      search_placeholder: "Search notes…",
+      // Empty state when no notes match a search query
+      no_matches: "No matches.",
+      // Empty state when all notes have at least one link
+      no_orphan_notes: "No orphan notes — every note is linked from at least one other note.",
+      // Empty state when no map-of-content clusters are detected
+      no_mocs: "No MOCs detected — try lowering the link threshold.",
+      // Tooltip on the AI quick-capture button
+      quick_capture_title: "AI quick-capture",
+      // Placeholder for the note search/quick-capture input
+      note_search_placeholder: "Search notes or ask a question…",
+      // Button to append content to today's daily note
+      append_to_today: "Append to Today",
+      // Placeholder for the append content input
+      append_content_placeholder: "Content to append…",
+      // Tooltip on the meeting note save button
+      save_meeting_title: "Save meeting note",
+      // Placeholder for the meeting attendees input
+      meeting_attendees_placeholder: "Attendees…",
+      // Placeholder for the meeting summary input
+      meeting_summary_placeholder: "Meeting summary…",
+      // Placeholder for the meeting action items input
+      meeting_action_items_placeholder: "Action items…",
+      // Placeholder for the meeting decisions input
+      meeting_decisions_placeholder: "Decisions…",
+      // Button to save the meeting note
+      save_meeting_note: "Save Meeting Note",
+      // Tooltip on the remove saved vault button in setup panel
+      remove_vault_setup_title: "Remove",
+      // Label showing detected vaults count
+      detected_vaults: "Detected vaults:",
+      // Status text when connected to a vault; vault name follows
+      connected_to: "Connected to \"",
+      // Suffix after the note count
+      notes_found: "notes found",
+      // Tooltip on the scan for vaults button
+      scan_for_vaults_title: "Scan for vaults",
+      // Tooltip on the manual path entry button
+      manual_path_title: "Enter path manually",
+      // Label for the path preview section
+      preview_label: "Preview:",
+      // Shown in vault path when no agent name is provided; do NOT translate
+      vault_path_agent_placeholder: "/AgentName/",
+      // Shown in vault path as example note filename; do NOT translate
+      vault_path_note_example: "/fact/memory-title.md",
+      // Tooltip on the disconnect vault button in sync panel
+      disconnect_sync_title: "Disconnect",
+      // Label showing the currently active vault
+      active_vault: "Active vault:",
+      // Tooltip on the refresh vault stats button
+      refresh_stats_title: "Refresh stats",
+      // Section header prompting user to select personas to push
+      select_personas: "Select personas to push",
+      // Button to toggle select-all in the personas picker
+      select_all: "Select all",
+      // Empty state when no personas exist
+      no_personas_found: "No personas found",
+      // Section header for last push result
+      last_push_result: "Last Push Result",
+      // Label for the app version in the conflict resolution panel
+      app_version: "App Version",
+      // Label for the vault version in the conflict resolution panel
+      vault_version: "Vault Version",
+      // Button to keep the app data in a conflict resolution
+      keep_app: "Keep App",
+      // Button to keep the vault data in a conflict resolution
+      keep_vault: "Keep Vault",
+      // Tooltip on the clear sync history button
+      clear_history_title: "Clear history",
+      // Empty state when no sync activity has occurred
+      no_sync_activity: "No sync activity yet. Push or pull to start.",
+    },
+
+    // ---------------------------------------------------------------
+    //  research-lab — ResearchLabFormModal batch saving
+    // ---------------------------------------------------------------
+    research_lab: {
+      // Instruction shown before the user reviews batch-saved items
+      review_before_saving: "Review before saving. Uncheck any you don't want to add.",
+      // Button to re-run the generation
+      re_run: "Re-run",
+      // Placeholder for the search input in research lab
+      search_placeholder: "Search…",
+      // Tooltip on the filter button
+      filter_title: "Filter",
+      // Placeholder for the research query input
+      query_placeholder: "Type a query and press Enter to search across all panels…",
+      // Tooltip on the close panel button
+      close_panel_title: "Close panel",
+      // Marks a file extension shown in the browse panel (technical, not translated)
+      md_extension: ".md",
+      // Accessible label for the edit note button
+      edit_note_aria: "Edit note",
+    },
   },
 
   // ==========================================================================
@@ -11473,6 +12114,21 @@ export const en = {
     run_pipeline_or_add: "Run a pipeline or add one manually",
     load_more: "Load more",
     showing_count: "Showing {shown} of {total}",
+
+    // -- MemoryTimeline --
+    // Shown when there are no timeline entries to display
+    no_timeline_data: "No timeline data",
+    // Button to clear the active run filter in the timeline
+    clear_filter: "Clear filter",
+
+    // -- TimelineControls --
+    // Button shown on each timeline group to filter to just that run
+    filter_to_run: "Filter to this run",
+
+    // -- DiffContent --
+    // {count} = number of newly added memories; suffix is "y" (1) or "ies" (other)
+    new_memories_one: "{count} new memory",
+    new_memories_other: "{count} new memories",
   },
 
   // -------------------------------------------------------------------
@@ -12100,599 +12756,6 @@ export const en = {
       release_roadmap_item_4_description: "Full multi-language support, including right-to-left layouts and language-specific fonts.",
       release_roadmap_item_6_title: "Team Workspaces",
       release_roadmap_item_6_description: "Build agents together with your team — shared spaces, role permissions, and live dashboards.",
-    },
-  },
-  // -------------------------------------------------------------------
-  //  PLUGINS — feature plugin modules
-  // -------------------------------------------------------------------
-  plugins: {
-
-    // ---------------------------------------------------------------
-    //  artist.gallery — 3D model and asset gallery viewer
-    // ---------------------------------------------------------------
-    artist_gallery: {
-      // Loading spinner text shown while the 3D viewer initialises
-      loading_viewer: "Loading viewer…",
-      // Loading spinner text shown while a 3D model is being parsed
-      loading_model: "Loading model...",
-      // Error message when the 3D model file could not be loaded
-      could_not_load_model: "Could not load model",
-    },
-
-    // ---------------------------------------------------------------
-    //  artist.media_studio — video/audio timeline editor
-    // ---------------------------------------------------------------
-    artist_media_studio: {
-      // Shown next to the import button in the empty timeline area
-      drag_drop_hint: "— drag & drop files anywhere",
-      // Keyboard shortcut hint shown in the playback controls bar
-      keyboard_shortcuts: "Space / Del / Arrows",
-      // Unit label for the timeline zoom level (pixels per second)
-      px_per_second: "px/s",
-      // Status text shown while ffmpeg loudnorm analysis is running
-      running_loudnorm: "Running ffmpeg loudnorm dry-run…",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.context — context map / codebase scanner
-    // ---------------------------------------------------------------
-    dev_context: {
-      // Section header showing count of files; opened count follows in JSX
-      files_header: "Files (",
-      // Placeholder text for the group filter/search input
-      filter_groups_placeholder: "Filter groups…",
-      // Tooltip on the re-scan button
-      rescan_title: "Re-scan",
-      // Loading indicator while an automated context scan runs
-      scanning_with: "Scanning with",
-      // Subtitle shown below the scanning indicator
-      scanning_subtitle: "Analyzing codebase patterns and generating context groups…",
-      // Empty state message when no prior scans exist
-      no_previous_scans: "No previous scans.",
-      // Button label to launch a manual scan; slot count appended in JSX
-      run_scan: "Run Scan (",
-      // Button label for the scheduled auto-scan toggle
-      auto_scan: "Auto-Scan",
-      // Section label for automated context scan settings
-      automated_context_scan: "Automated Context Scan",
-      // Section header for scan results; count appended in JSX
-      results: "Results (",
-      // Section header for scan history; count appended in JSX
-      scan_history: "Scan History (",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.lifecycle — lifecycle management (goals, competitions)
-    // ---------------------------------------------------------------
-    dev_lifecycle: {
-      // Title for the competition creation call-to-action
-      start_a_competition: "Start a Competition",
-      // Subtitle for the competition creation panel
-      start_a_competition_desc: "Spawn 2–4 competitors with different strategies to tackle the same task. The winner's approach gets promoted.",
-      // Label for the task title field in new competition form
-      task_title: "Task title",
-      // Placeholder for the task title input
-      task_title_placeholder: "E.g. Refactor auth module",
-      // Label for the task description field in new competition form
-      task_description: "Task description (optional)",
-      // Placeholder for the task description input
-      task_description_placeholder: "Describe what success looks like…",
-      // Label for the strategy slot picker
-      strategy_slots: "Strategy slots (pick 2–4)",
-      // Counter suffix showing selected count out of 4
-      of_4_selected: "/4 selected",
-      // Warning label prefix in the cost notice
-      cost_warning: "Cost warning:",
-      // Warning body text about cost of running competitors
-      cost_warning_desc: "each competitor runs the full task independently — this uses {count}× more tokens.",
-      // Button to launch the competition
-      start_competition: "Start Competition",
-      // Separator dot between competitor count and title
-      competitors_dot: "competitors ·",
-      // Loading state while competitor data loads
-      loading_competitors: "Loading competitors...",
-      // Error state when competitor detail could not be fetched
-      failed_to_load_detail: "Failed to load detail.",
-      // Label for the competition status field
-      status_label: "Status:",
-      // Short label for the weight metric in competition cards
-      weight_label: "wt:",
-      // Button to pick the winner of a competition slot
-      pick_winner: "Pick winner",
-      // Button to cancel an active competition
-      cancel_competition: "Cancel competition",
-      // Empty state when no project is selected to show competitions
-      select_project_for_competitions: "Select a project to see competitions.",
-      // Button to create a new competition
-      new_competition: "New Competition",
-      // Empty state message when no competitions exist yet
-      no_competitions_yet: "No competitions yet. Start one to have 2–4 strategies race to solve a task.",
-      // Empty state when no goals exist for a project
-      no_goals_yet_project: "No goals yet. Create goals in the Project Manager to track progress.",
-      // Tooltip on the zoom-in goal constellation button
-      zoom_in_title: "Zoom in",
-      // Tooltip on the zoom-out goal constellation button
-      zoom_out_title: "Zoom out",
-      // Tooltip on the reset/fit goal constellation button
-      reset_view_title: "Reset view",
-      // Pluralised label in the goal constellation legend
-      goals_label: "goals,",
-      // Legend entry for a parent-relationship edge in goal graph
-      legend_parent: "━━ parent",
-      // Legend entry for a dependency-relationship edge in goal graph
-      legend_dependency: "┄┄ dependency",
-      // Empty state on goal kanban board
-      no_goals_kanban: "No goals yet. Create goals to see them here.",
-      // Empty state for a single kanban column with no goals
-      no_goals_here: "No goals here",
-      // Tooltip on the Auto-Setup button
-      auto_setup_title: "Run automated lifecycle setup",
-      // Text label for the Auto-Setup toggle button
-      auto_setup: "Auto-Setup",
-      // Loading state for lifecycle status data
-      loading_lifecycle: "Loading lifecycle status...",
-      // Shown when no project is linked; prompts user to create one
-      no_project_click_to_create: "No project — click to create",
-      // Shown when a project has no linked repository
-      no_repo: "no repo",
-      // Section header for competition metrics baseline
-      baseline_label: "Baseline:",
-      // Metric label for TypeScript errors
-      ts_errors_label: "TS errors:",
-      // Metric label for Cargo (Rust) errors
-      cargo_errors_label: "Cargo errors:",
-      // Metric label for test count
-      tests_label: "Tests:",
-      // Metric label for git commit hash
-      git_label: "Git:",
-      // Badge label for a winning insight in a competition card
-      winning_insight: "Winning insight",
-      // Duration label prefix in slot result; duration follows in JSX
-      completed_in: "Completed in",
-      // Label for the achievements section of a competition slot
-      achievements_label: "Achievements:",
-      // Label for the output line count metric
-      output_lines: "output lines",
-      // Tooltip on the expand/collapse slot button
-      expand_slot_title: "Expand slot",
-      // Tooltip on the collapse slot button
-      collapse_slot_title: "Collapse slot",
-      // Tooltip on the copy diff button
-      copy_diff_title: "Copy diff",
-      // Loading indicator while the diff is being fetched
-      loading_diff: "Loading diff...",
-      // Title for the NewCompetitionModal; also in CompetitionPanel
-      new_competition_modal_title: "Start a Competition",
-      // Slot-biasing hint shown in the strategy picker
-      first_slot_bias: "First slot biased toward previous winner's approach.",
-      // Button label with slot count prefix; count inserted in JSX
-      start_competition_slots: "Start Competition (",
-      // Suffix for the Start Competition button after the count
-      slots_suffix: "slots)",
-      // Title for the strategy leaderboard section
-      strategy_leaderboard: "Strategy Leaderboard",
-      // Tooltip on a disqualified slot badge; count follows in JSX
-      dq_title: "Disqualified",
-      // Badge text for a disqualified slot; count follows in JSX
-      dq_label: "DQ x",
-      // Subtitle for the strategy leaderboard
-      leaderboard_subtitle: "Aggregated across resolved competitions. Higher wins.",
-      // Title for the winner insight capture dialog
-      capture_winning_insight: "Capture the winning insight",
-      // Instruction text in the winner insight dialog
-      capture_insight_desc: "What made this approach win? This note is stored with the winner and used to seed future competitions.",
-      // Placeholder for the insight textarea
-      insight_placeholder: "Describe what made this approach succeed…",
-      // Confirmation button in the winner insight dialog
-      confirm_winner: "Confirm winner",
-      // Placeholder for the competition task title input
-      competition_title_placeholder: "e.g. Add rate limiting to /api/auth/login",
-      // Placeholder for the competition task description input
-      competition_desc_placeholder: "Acceptance criteria, target files, constraints...",
-      // Tooltip on the regenerate-strategies button in competition form
-      regenerate_strategies_title: "Regenerate strategies",
-      // Tooltip on the "Start dev server in this worktree" button
-      start_dev_server_title: "Start dev server in this worktree",
-      // Tooltip on the "Stop dev server" button
-      stop_dev_server_title: "Stop dev server",
-      // Tooltip on the "Browse worktree" button
-      open_worktree_title: "Open worktree directory",
-      // Title for the DevClone adoption card
-      adopt_dev_clone: "Adopt Dev Clone",
-      // Description for the DevClone adoption card
-      dev_clone_desc: "Dev Clone is an autonomous developer persona that manages your project lifecycle — competing strategies, healing errors, and shipping code.",
-      // Tooltip on the GitHub requirements icon
-      github_required_title: "GitHub repository required",
-      // Tooltip on the project folder requirements icon
-      folder_required_title: "Project folder required",
-      // Tooltip on the complete requirements icon
-      requirements_met_title: "All requirements met",
-      // Advisory text when user can still adopt without full setup
-      can_still_adopt: "You can still adopt now — add GitHub URL and project folder later in project settings.",
-      // Section header showing active trigger count; count follows in JSX
-      active_triggers: "Active Triggers (",
-      // Section header with dash separator for readiness status
-      lifecycle_readiness: "Lifecycle Readiness —",
-      // Goals tab empty state: no goals created yet
-      goals_tab_no_goals: "No goals yet. Create goals in the Project Manager.",
-      // Goals tab header with count; count follows in JSX
-      goal_constellation: "Goal Constellation (",
-      // Button to sync goals to Obsidian vault
-      sync_to_obsidian: "Sync to Obsidian",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.projects — project manager
-    // ---------------------------------------------------------------
-    dev_projects: {
-      // Count label in the cross-project metadata modal; count follows in JSX
-      active_goals: "active goals",
-      // Button to trigger a context-map scan for this project
-      run_context_map_scan: "Run Context Map scan for this project to populate metadata.",
-      // Metadata section label for entry points
-      entry_points: "entry points",
-      // Metadata section label for database tables
-      db_tables: "db tables",
-      // Metadata section label for top keywords
-      top_keywords: "Top Keywords",
-      // Metadata section label for listed entry points
-      entry_points_header: "Entry Points",
-      // Metadata section label for listed db tables
-      db_tables_header: "Database Tables",
-      // Metadata section label for api surface
-      api_surface: "API Surface",
-      // Metadata section label for hot directories
-      hot_directories: "Hot Directories",
-      // Modal title for cross-project metadata map
-      cross_project_map_title: "Cross-Project Metadata Map",
-      // Modal subtitle for cross-project metadata map
-      cross_project_map_subtitle: "Aggregated from existing context maps. Click any project to expand.",
-      // Metadata section label for tech distribution
-      tech_distribution: "Tech Distribution",
-      // Section header for shared keywords; count follows in JSX
-      shared_keywords: "Shared Keywords (",
-      // Shared keywords section subtitle
-      shared_keywords_subtitle: "Concepts present in multiple projects — may indicate shared architecture.",
-      // Section header for project similarity
-      project_similarity: "Project Similarity",
-      // Section header for projects list; count follows in JSX
-      projects_header: "Projects (",
-      // Button to open the cross-project map
-      cross_project_map_btn: "Cross-Project Map",
-      // Button to create a new project
-      new_project: "New Project",
-      // Instruction shown when no project is selected
-      select_or_create: "Select a project below or create a new one.",
-      // Section header for the all-projects list; count follows in JSX
-      all_projects: "All Projects (",
-      // Empty state when no projects exist
-      no_projects_yet: "No projects yet",
-      // Button to create the first project
-      create_first_project: "Create First Project",
-      // Label for the tech stack section
-      tech_stack: "Tech Stack",
-      // Button to edit an existing project
-      edit_project: "Edit Project",
-      // Empty state when no goals have been added to a project
-      no_goals_add_below: "No goals yet. Add one below.",
-      // Placeholder for the goal title input
-      goal_title_placeholder: "Goal title…",
-      // Modal field label for project folder
-      project_folder: "Project Folder",
-      // Placeholder text shown when no folder is selected
-      select_folder: "Select a folder...",
-      // Modal field label for project name
-      project_name: "Project Name",
-      // Helper text when project name is auto-populated from folder
-      auto_filled_from_folder: "(auto-filled from folder)",
-      // Placeholder for the project name input
-      project_name_placeholder: "My Project",
-      // Modal field label for project type
-      project_type: "Project Type",
-      // Helper text that project type is optional and visual only
-      project_type_optional: "(optional, visual only)",
-      // Post-creation prompt title
-      project_created: "Project Created",
-      // Button to generate a context map for a new project
-      generate_context_map: "Generate Context Map",
-      // Description of the generate context map action
-      generate_context_map_desc: "Scans your codebase to identify business logic, entry points, and data structures.",
-      // Button to skip context map generation
-      skip_for_now: "Skip for now",
-      // Button to start the codebase scan
-      scan_codebase: "Scan Codebase",
-      // Loading repositories status text
-      loading_repositories: "Loading repositories...",
-      // Label for GitHub URL section
-      github_url_label: "GitHub URL",
-      // Optional qualifier for GitHub URL
-      optional: "(optional)",
-      // Placeholder for GitHub URL input
-      github_url_placeholder: "https://github.com/owner/repo",
-      // Label for GitHub Repository selector
-      github_repository: "GitHub Repository",
-      // Placeholder for the repository picker dropdown
-      select_repository: "Select a repository...",
-      // Empty state when no repositories are found
-      no_repositories_found: "No repositories found",
-      // Section label for implementation log
-      implementation_log: "Implementation Log",
-      // Loading state for metadata map
-      loading_metadata: "Loading...",
-      // Empty state for metadata map when not generated yet
-      no_metadata_yet: "No metadata map generated yet",
-      // Prompt to generate metadata map
-      generate_metadata_prompt: "to analyze all projects' context maps and extract shared patterns.",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.runner — task runner and self-healing panel
-    // ---------------------------------------------------------------
-    dev_runner: {
-      // Section header for the self-healing panel
-      self_healing: "Self-Healing",
-      // Toggle label for automatic healing
-      auto_heal: "Auto-heal",
-      // Button to trigger healing on all issues; count follows in JSX
-      heal_all: "Heal All (",
-      // Placeholder for task title input
-      task_title_placeholder: "Task title…",
-      // Placeholder for task details/description input
-      task_details_placeholder: "Task details or paste a spec…",
-      // Label for task depth selector
-      task_depth: "Task Depth",
-      // Label for the goal link field
-      goal_link: "Goal Link",
-      // Optional qualifier for the goal link field
-      optional: "(optional)",
-      // Placeholder for goal link input
-      goal_link_placeholder: "Select a goal…",
-      // Button to create a task
-      create_task: "Create Task",
-      // Label for the source field in task details
-      source_label: "Source:",
-      // Button to create a new task
-      new_task: "New Task",
-      // Button to batch create tasks from accepted ideas
-      batch_from_accepted: "Batch from Accepted",
-      // Button to start the task batch
-      start_batch: "Start Batch",
-      // Button to cancel all running tasks
-      cancel_all: "Cancel All",
-      // Section header for batch progress
-      batch_progress: "Batch Progress",
-      // Suffix showing overall completion percentage; value precedes in JSX
-      percent_overall: "% overall",
-      // Section header for task queue; count follows in JSX
-      task_queue: "Task Queue (",
-      // Empty state when no tasks are queued
-      no_tasks_queued: "No tasks in queue",
-      // Empty state subtitle for the task queue
-      no_tasks_queued_sub: "Create tasks manually or batch from accepted ideas.",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.scanner — idea scanner and evolution panel
-    // ---------------------------------------------------------------
-    dev_scanner: {
-      // Section header for the idea evolution panel
-      idea_evolution: "Idea Evolution",
-      // Label for fitness ranking in idea evolution
-      fitness_ranking: "Fitness Ranking",
-      // Prefix label for ideas similar to rejected ones
-      similar_to_rejected: "Similar to rejected:",
-      // Section header for synthesis suggestions
-      synthesis_suggestions: "Synthesis Suggestions",
-      // Suffix showing similarity score; percentage precedes in JSX
-      percent_similar: "% similar",
-      // Section header for potential duplicate ideas
-      potential_duplicates: "Potential Duplicates",
-      // Message showing which model is scanning; model name appended in JSX
-      scanning_with: "Scanning with",
-      // Status message while analyzing the codebase
-      analyzing_codebase: "Analyzing codebase...",
-      // Empty state message when no previous scans exist
-      no_previous_scans: "No previous scans yet.",
-      // Button label to run an automated scan
-      auto_scan: "Auto-Scan",
-      // Label for the automated context scan section
-      automated_context_scan: "Automated Context Scan",
-      // Prefix before the scan date/time in scan history
-      run_scan_prefix: "Run:",
-      // Prefix before the result count in scan history
-      results_prefix: "Results:",
-      // Prefix before the history item count
-      scan_history_prefix: "Scan History",
-      // Title for the idea scanner page/header
-      idea_scanner_title: "Idea Scanner",
-      // Subtitle describing the idea scanner feature
-      idea_scanner_subtitle: "AI-powered idea analysis and evolution",
-    },
-
-    // ---------------------------------------------------------------
-    //  dev-tools.triage — idea triage rules panel
-    // ---------------------------------------------------------------
-    dev_triage: {
-      // Section header for the auto-triage rules panel
-      auto_triage_rules: "Auto-Triage Rules",
-      // Button to add a condition to a triage rule
-      add_condition: "+ Add condition",
-      // Label prefix for the action selector in a triage rule
-      action_label: "Action:",
-      // Button to create a new triage rule
-      new_rule: "New Rule",
-      // Button to run all triage rules
-      run_rules: "Run Rules",
-    },
-
-    // ---------------------------------------------------------------
-    //  drive — Google Drive file manager
-    // ---------------------------------------------------------------
-    drive: {
-      // Empty state shown when no file/folder is selected in the details pane
-      select_file_or_folder: "Select a file or folder to see its details.",
-      // Accessible label for the download button in the details pane
-      download_aria: "Download",
-      // Tooltip on the download button in the details pane
-      download_title: "Download",
-      // Loading placeholder in the drive file list
-      loading: "Loading...",
-      // Placeholder for the signing reason input
-      sign_reason_placeholder: "Reason for signing…",
-    },
-
-    // ---------------------------------------------------------------
-    //  obsidian-brain — Obsidian vault browser and sync
-    // ---------------------------------------------------------------
-    obsidian: {
-      // Section header in the saved vaults sidebar
-      saved_vaults: "Saved Vaults",
-      // Tooltip on the remove saved vault button
-      remove_vault_title: "Remove saved vault",
-      // Empty state when the vault has no notes
-      vault_is_empty: "Vault is empty",
-      // Error state when vault notes could not be loaded
-      failed_to_load: "Failed to load",
-      // Button to open the current note in Obsidian
-      open_in_obsidian: "Open in Obsidian",
-      // Tooltip on the copy path button
-      copy_path_title: "Copy path",
-      // Title attribute for disconnect button in cloud sync panel
-      disconnect_title: "Disconnect Google Drive",
-      // Call-to-action heading for connecting Google Drive
-      sign_in_to_enable: "Sign in to enable cloud sync",
-      // Subtitle explaining the Google Drive sync benefit
-      sign_in_subtitle: "Sign in with your Google account to back up your vault to Google Drive.",
-      // Tooltip on the refresh button in cloud sync panel
-      refresh_title: "Refresh sync status",
-      // Status badge when Google Drive is connected
-      drive_connected: "Drive Connected",
-      // Suffix after the file count in the drive connected badge
-      files_synced: "files synced to Drive",
-      // Description for connecting Google Drive
-      connect_drive_desc: "Connect Google Drive to back up your vault to the cloud.",
-      // Step header to connect Google Drive
-      step_connect_drive: "Connect Google Drive",
-      // Step description to connect Google Drive
-      step_connect_drive_desc: "Grant Personas access to create files in your Google Drive.",
-      // Step header to push your vault
-      step_push_vault: "Push your vault",
-      // Step description for pushing vault files
-      step_push_vault_desc: "Vault notes are uploaded as markdown files to Google Drive.",
-      // Step header for syncing across devices
-      step_sync_devices: "Sync across devices",
-      // Step description for syncing across devices
-      step_sync_devices_desc: "Pull on another device to download. Your vault is your data.",
-      // Tooltip on the push/sync button
-      push_title: "Push vault to Google Drive",
-      // Description of what the push action does
-      push_desc: "Push uploads local vault changes to Google Drive.",
-      // Section header for last sync result
-      last_sync_result: "Last Sync Result",
-      // Tooltip on the pull button
-      pull_title: "Pull vault from Google Drive",
-      // Button to connect Google Drive
-      connect_google_drive: "Connect Google Drive",
-      // Description for Google Drive connection button
-      connect_drive_btn_desc: "Grant Personas access to create files in your Google Drive.",
-      // Empty state in the graph stats panel
-      no_stats_yet: "No stats yet.",
-      // Tooltip on the search button in graph panel
-      search_title: "Search notes",
-      // Placeholder for the search input in the graph panel
-      search_placeholder: "Search notes…",
-      // Empty state when no notes match a search query
-      no_matches: "No matches.",
-      // Empty state when all notes have at least one link
-      no_orphan_notes: "No orphan notes — every note is linked from at least one other note.",
-      // Empty state when no map-of-content clusters are detected
-      no_mocs: "No MOCs detected — try lowering the link threshold.",
-      // Tooltip on the AI quick-capture button
-      quick_capture_title: "AI quick-capture",
-      // Placeholder for the note search/quick-capture input
-      note_search_placeholder: "Search notes or ask a question…",
-      // Button to append content to today's daily note
-      append_to_today: "Append to Today",
-      // Placeholder for the append content input
-      append_content_placeholder: "Content to append…",
-      // Tooltip on the meeting note save button
-      save_meeting_title: "Save meeting note",
-      // Placeholder for the meeting attendees input
-      meeting_attendees_placeholder: "Attendees…",
-      // Placeholder for the meeting summary input
-      meeting_summary_placeholder: "Meeting summary…",
-      // Placeholder for the meeting action items input
-      meeting_action_items_placeholder: "Action items…",
-      // Placeholder for the meeting decisions input
-      meeting_decisions_placeholder: "Decisions…",
-      // Button to save the meeting note
-      save_meeting_note: "Save Meeting Note",
-      // Tooltip on the remove saved vault button in setup panel
-      remove_vault_setup_title: "Remove",
-      // Label showing detected vaults count
-      detected_vaults: "Detected vaults:",
-      // Status text when connected to a vault; vault name follows
-      connected_to: "Connected to \"",
-      // Suffix after the note count
-      notes_found: "notes found",
-      // Tooltip on the scan for vaults button
-      scan_for_vaults_title: "Scan for vaults",
-      // Tooltip on the manual path entry button
-      manual_path_title: "Enter path manually",
-      // Label for the path preview section
-      preview_label: "Preview:",
-      // Shown in vault path when no agent name is provided; do NOT translate
-      vault_path_agent_placeholder: "/AgentName/",
-      // Shown in vault path as example note filename; do NOT translate
-      vault_path_note_example: "/fact/memory-title.md",
-      // Tooltip on the disconnect vault button in sync panel
-      disconnect_sync_title: "Disconnect",
-      // Label showing the currently active vault
-      active_vault: "Active vault:",
-      // Tooltip on the refresh vault stats button
-      refresh_stats_title: "Refresh stats",
-      // Section header prompting user to select personas to push
-      select_personas: "Select personas to push",
-      // Button to toggle select-all in the personas picker
-      select_all: "Select all",
-      // Empty state when no personas exist
-      no_personas_found: "No personas found",
-      // Section header for last push result
-      last_push_result: "Last Push Result",
-      // Label for the app version in the conflict resolution panel
-      app_version: "App Version",
-      // Label for the vault version in the conflict resolution panel
-      vault_version: "Vault Version",
-      // Button to keep the app data in a conflict resolution
-      keep_app: "Keep App",
-      // Button to keep the vault data in a conflict resolution
-      keep_vault: "Keep Vault",
-      // Tooltip on the clear sync history button
-      clear_history_title: "Clear history",
-      // Empty state when no sync activity has occurred
-      no_sync_activity: "No sync activity yet. Push or pull to start.",
-    },
-
-    // ---------------------------------------------------------------
-    //  research-lab — ResearchLabFormModal batch saving
-    // ---------------------------------------------------------------
-    research_lab: {
-      // Instruction shown before the user reviews batch-saved items
-      review_before_saving: "Review before saving. Uncheck any you don't want to add.",
-      // Button to re-run the generation
-      re_run: "Re-run",
-      // Placeholder for the search input in research lab
-      search_placeholder: "Search…",
-      // Tooltip on the filter button
-      filter_title: "Filter",
-      // Placeholder for the research query input
-      query_placeholder: "Type a query and press Enter to search across all panels…",
-      // Tooltip on the close panel button
-      close_panel_title: "Close panel",
-      // Marks a file extension shown in the browse panel (technical, not translated)
-      md_extension: ".md",
-      // Accessible label for the edit note button
-      edit_note_aria: "Edit note",
     },
   },
 };

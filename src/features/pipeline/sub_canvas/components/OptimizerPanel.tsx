@@ -88,7 +88,7 @@ export default function OptimizerPanel({
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="w-3 h-3 text-foreground" />
                     <span className="typo-code text-foreground font-mono">
-                      {Math.round(analytics.success_rate * 100)}% success
+                      {pt.success_rate.replace('{rate}', String(Math.round(analytics.success_rate * 100)))}
                     </span>
                   </div>
                   <div className="flex-1" />

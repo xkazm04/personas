@@ -12,6 +12,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'added' | 'removed' }) {
+  const { t } = useTranslation();
   const borderColor = variant === 'added' ? 'border-emerald-500/20' : 'border-red-500/20';
   const bgColor = variant === 'added' ? 'bg-emerald-500/5' : 'bg-red-500/5';
   const catColor = CATEGORY_COLORS[memory.category] ?? 'text-foreground';
@@ -22,7 +23,7 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
       <p className="typo-caption text-foreground line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
         <span className={`typo-caption capitalize ${catColor}`}>{memory.category}</span>
-        <span className="typo-caption text-foreground">imp: {memory.importance}</span>
+        <span className="typo-caption text-foreground">{t.pipeline.importance_label} {memory.importance}</span>
       </div>
     </div>
   );
@@ -95,7 +96,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {diff.added.length > 0 && (
         <div className="px-1">
           <button onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
-            <Plus className="w-3 h-3" />{diff.added.length} new memor{diff.added.length === 1 ? 'y' : 'ies'}
+            <Plus className="w-3 h-3" />{diff.added.length === 1 ? pt.new_memories_one.replace('{count}', '1') : pt.new_memories_other.replace('{count}', String(diff.added.length))}
           </button>
           {expandedSection === 'added' && (
             <div className="space-y-1 max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10">

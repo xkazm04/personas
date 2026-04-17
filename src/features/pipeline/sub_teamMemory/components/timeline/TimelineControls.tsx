@@ -1,6 +1,7 @@
 import { GitCommitVertical, ChevronRight } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { MemoryEntry, formatTime } from './TimelineItem';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface RunGroup {
   runId: string;
@@ -27,6 +28,7 @@ export function RunMarker({
   onFilterRun: (runId: string) => void;
   isFiltered: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="relative">
       {/* Run header */}
@@ -66,7 +68,7 @@ export function RunMarker({
               onClick={() => onFilterRun(group.runId)}
               className="typo-body text-violet-400/60 hover:text-violet-400 transition-colors pl-1 py-0.5"
             >
-              Filter to this run
+              {t.pipeline.filter_to_run}
             </button>
           )}
         </div>

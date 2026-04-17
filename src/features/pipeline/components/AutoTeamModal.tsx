@@ -224,7 +224,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     </span>
                     {at.memoriesSeeded > 0 && (
                       <span className="flex items-center gap-1">
-                        <Brain className="w-3 h-3" /> {at.memoriesSeeded} memories seeded
+                        <Brain className="w-3 h-3" /> {t.pipeline.memories_seeded.replace('{count}', String(at.memoriesSeeded))}
                       </span>
                     )}
                   </div>

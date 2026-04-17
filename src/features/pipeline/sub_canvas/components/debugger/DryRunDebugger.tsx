@@ -56,9 +56,7 @@ export default function DryRunDebugger({
           <div className="typo-body text-amber-300">
             <span className="font-semibold">{pt.cycle_detected}</span>
             <span className="text-amber-300/80">
-              {' -- '}Execution order is arbitrary for:{' '}
-              {Array.from(dbg.cycleNodeIds).map((id) => agentNames[id] || id).join(', ')}
-              . Consider removing circular connections or marking them as feedback edges.
+              {' -- '}{pt.cycle_warning.replace('{nodes}', Array.from(dbg.cycleNodeIds).map((id) => agentNames[id] || id).join(', '))}
             </span>
           </div>
         </div>
