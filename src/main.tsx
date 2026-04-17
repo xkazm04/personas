@@ -3,7 +3,6 @@ if (import.meta.env.DEV) {
   import('./lib/debug/freezeDetector');
   import('./lib/debug/freezeWatchdog');
 }
-import { monitorStore } from './lib/debug/storeMonitor';
 import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
@@ -159,7 +158,8 @@ if (root) {
 // Wire store monitoring for freeze diagnostics (dev only — zero overhead in production)
 if (import.meta.env.DEV) (async () => {
   try {
-    const [{ useSystemStore }, { useAgentStore }] = await Promise.all([
+    const [{ monitorStore }, { useSystemStore }, { useAgentStore }] = await Promise.all([
+      import("./lib/debug/storeMonitor"),
       import("./stores/systemStore"),
       import("./stores/agentStore"),
     ]);
