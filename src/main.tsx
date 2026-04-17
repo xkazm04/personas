@@ -17,6 +17,43 @@ import "./styles/globals.css";
 
 const globalErrorLogger = createLogger("global-error");
 
+// Copy for the top-level Sentry error boundary fallback. This renders when
+// the React tree itself crashed, so useTranslation() may be unsafe here
+// (the translation provider could be the thing that threw). A static lookup
+// against navigator.language covers the 14 supported locales; unknown
+// languages fall back to English.
+type ErrorBoundaryCopy = { title: string; generic: string; retry: string };
+const EN_ERROR_COPY: ErrorBoundaryCopy = {
+  title: "Something went wrong",
+  generic: "An unexpected error occurred",
+  retry: "Try again",
+};
+const ERROR_BOUNDARY_COPY: Record<string, ErrorBoundaryCopy> = {
+  en: EN_ERROR_COPY,
+  es: { title: "Algo salió mal", generic: "Ocurrió un error inesperado", retry: "Reintentar" },
+  fr: { title: "Une erreur s'est produite", generic: "Une erreur inattendue s'est produite", retry: "Réessayer" },
+  de: { title: "Etwas ist schiefgelaufen", generic: "Ein unerwarteter Fehler ist aufgetreten", retry: "Erneut versuchen" },
+  zh: { title: "出现错误", generic: "发生意外错误", retry: "重试" },
+  ja: { title: "エラーが発生しました", generic: "予期しないエラーが発生しました", retry: "再試行" },
+  ko: { title: "오류가 발생했습니다", generic: "예기치 않은 오류가 발생했습니다", retry: "다시 시도" },
+  ru: { title: "Что-то пошло не так", generic: "Произошла непредвиденная ошибка", retry: "Повторить" },
+  cs: { title: "Něco se pokazilo", generic: "Došlo k neočekávané chybě", retry: "Zkusit znovu" },
+  ar: { title: "حدث خطأ ما", generic: "حدث خطأ غير متوقع", retry: "حاول مرة أخرى" },
+  hi: { title: "कुछ गलत हो गया", generic: "एक अप्रत्याशित त्रुटि हुई", retry: "पुनः प्रयास करें" },
+  id: { title: "Ada yang tidak beres", generic: "Terjadi kesalahan tak terduga", retry: "Coba lagi" },
+  vi: { title: "Đã xảy ra lỗi", generic: "Đã xảy ra lỗi không mong muốn", retry: "Thử lại" },
+  bn: { title: "কিছু ভুল হয়েছে", generic: "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে", retry: "আবার চেষ্টা করুন" },
+};
+
+function errorBoundaryCopy(): ErrorBoundaryCopy {
+  try {
+    const lang = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return ERROR_BOUNDARY_COPY[lang] ?? EN_ERROR_COPY;
+  } catch {
+    return EN_ERROR_COPY;
+  }
+}
+
 // -- Global error handlers (sync, before React) ------------------------------
 // Registered immediately so no early crash is silently lost.
 // Sentry capture is deferred until initSentry() completes in the async phase;
@@ -87,51 +124,52 @@ const root = document.getElementById("root");
 if (root) {
   try {
     const AppWithBoundary = Sentry.withErrorBoundary(App, {
-      fallback: ({ error, resetError }) => (
-        <div
-          role="alert"
-          style={{
-            padding: "2rem",
-            fontFamily: "system-ui, sans-serif",
-            color: "var(--foreground, #fff)",
-            background: "var(--background, #1a1a1a)",
-            height: "100vh",
-            display: "flex",
-            flexDirection: "column" as const,
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "1rem",
-          }}
-        >
-          <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Something went wrong</h1>
-          <p
+      fallback: ({ error, resetError }) => {
+        const copy = errorBoundaryCopy();
+        return (
+          <div
+            role="alert"
             style={{
-              opacity: 0.7,
-              maxWidth: "400px",
-              textAlign: "center" as const,
-              margin: 0,
+              padding: "2rem",
+              fontFamily: "system-ui, sans-serif",
+              color: "var(--foreground, #fff)",
+              background: "var(--background, #1a1a1a)",
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column" as const,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "1rem",
             }}
           >
-            {error instanceof Error
-              ? error.message
-              : "An unexpected error occurred"}
-          </p>
-          <button
-            onClick={resetError}
-            style={{
-              padding: "0.5rem 1.5rem",
-              borderRadius: "6px",
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "transparent",
-              color: "inherit",
-              cursor: "pointer",
-              marginTop: "0.5rem",
-            }}
-          >
-            Try again
-          </button>
-        </div>
-      ),
+            <h1 style={{ fontSize: "1.5rem", margin: 0 }}>{copy.title}</h1>
+            <p
+              style={{
+                opacity: 0.7,
+                maxWidth: "400px",
+                textAlign: "center" as const,
+                margin: 0,
+              }}
+            >
+              {error instanceof Error ? error.message : copy.generic}
+            </p>
+            <button
+              onClick={resetError}
+              style={{
+                padding: "0.5rem 1.5rem",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "transparent",
+                color: "inherit",
+                cursor: "pointer",
+                marginTop: "0.5rem",
+              }}
+            >
+              {copy.retry}
+            </button>
+          </div>
+        );
+      },
     });
 
     ReactDOM.createRoot(root).render(
