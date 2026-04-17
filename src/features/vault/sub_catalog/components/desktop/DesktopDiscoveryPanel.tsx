@@ -25,7 +25,8 @@ interface DesktopDiscoveryPanelProps {
 type Tab = 'apps' | 'mcp-import';
 
 export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDiscoveryPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dd = t.vault.desktop_discovery;
   const [tab, setTab] = useState<Tab>('apps');
   const [apps, setApps] = useState<DiscoveredApp[]>([]);
   const [mcpServers, setMcpServers] = useState<ImportedMcpServer[]>([]);
@@ -122,9 +123,9 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="typo-heading font-semibold text-foreground">{t.vault.desktop_discovery.title}</h3>
+          <h3 className="typo-heading font-semibold text-foreground">{dd.title}</h3>
           <p className="typo-body text-foreground">
-            Connect local applications or import Claude Desktop MCP servers
+            {dd.connect_description}
           </p>
         </div>
         <button
@@ -148,7 +149,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           }`}
         >
           <Monitor className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
-          Detected Apps ({installedApps.length})
+          {tx(dd.detected_apps_tab, { count: installedApps.length })}
         </button>
         <button
           onClick={() => setTab('mcp-import')}
@@ -160,7 +161,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           }`}
         >
           <Download className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
-          Claude MCP ({mcpServers.length})
+          {tx(dd.claude_mcp_tab, { count: mcpServers.length })}
         </button>
       </div>
 

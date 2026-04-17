@@ -23,6 +23,7 @@ export function StepExpandedContent({
   isLoadingHelp,
 }: StepExpandedContentProps) {
   const { t } = useTranslation();
+  const neg = t.vault.negotiator;
   const allFieldsCaptured = step.field_fills
     ? Object.keys(step.field_fills).every((key) => capturedValues[key]?.trim())
     : true;
@@ -74,7 +75,7 @@ export function StepExpandedContent({
             data-testid={`negotiator-step-${stepIndex}-open-url-btn`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            Open in browser
+            {neg.open_in_browser}
           </button>
           <p className="typo-code text-foreground font-mono truncate pl-0.5">{step.url}</p>
         </motion.div>
@@ -126,7 +127,7 @@ export function StepExpandedContent({
             data-testid={`negotiator-step-${stepIndex}-complete-btn`}
           >
             <Check className="w-3.5 h-3.5" />
-            {step.field_fills ? t.vault.negotiator.step_complete_captured : t.vault.negotiator.mark_complete}
+            {step.field_fills ? neg.step_complete_captured : neg.mark_complete}
           </button>
         )}
         {isCompleted && (
@@ -135,7 +136,7 @@ export function StepExpandedContent({
             data-testid={`negotiator-step-${stepIndex}-completed-badge`}
           >
             <CheckCircle className="w-3 h-3" />
-            Completed
+            {neg.completed}
           </span>
         )}
       </motion.div>

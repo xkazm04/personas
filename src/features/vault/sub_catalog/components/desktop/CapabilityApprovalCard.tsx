@@ -17,6 +17,7 @@ interface CapabilityApprovalCardProps {
 
 export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, approving }: CapabilityApprovalCardProps) {
   const { t } = useTranslation();
+  const dd = t.vault.desktop_discovery;
   return (
     <div
       className="animate-fade-slide-in overflow-hidden"
@@ -25,13 +26,12 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-orange-400" />
           <h4 className="typo-heading font-semibold text-foreground">
-            Permission Required
+            {dd.permission_required}
           </h4>
         </div>
 
         <p className="typo-caption text-foreground">
-          <strong>{app.label}</strong> requests the following capabilities.
-          Review and approve to enable this connector.
+          <strong>{app.label}</strong> {t.vault.desktop_discovery.approve_description}
         </p>
 
         <div className="space-y-1.5">
@@ -73,7 +73,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
 
         {manifest.allowed_binaries.length > 0 && (
           <div className="typo-caption text-foreground">
-            <span className="font-medium">{t.vault.desktop_discovery.allowed_binaries}</span>
+            <span className="font-medium">{dd.allowed_binaries}</span>
             {manifest.allowed_binaries.join(', ')}
           </div>
         )}
@@ -83,7 +83,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             onClick={onCancel}
             className="flex-1 px-3 py-1.5 typo-caption font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             onClick={onApprove}
@@ -93,7 +93,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             {approving ? (
               <LoadingSpinner size="sm" className="mx-auto" />
             ) : (
-              'Approve & Connect'
+              dd.approve_connect
             )}
           </button>
         </div>

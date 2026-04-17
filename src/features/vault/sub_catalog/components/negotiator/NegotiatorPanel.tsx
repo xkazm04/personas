@@ -21,7 +21,9 @@ interface NegotiatorPanelProps {
 }
 
 export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues, prefetchedAuthDetections }: NegotiatorPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const neg = t.vault.negotiator;
+  const negx = t.vault.negotiator_extra;
   const hasPrefetched = prefetchedAuthDetections !== undefined;
   const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>(hasPrefetched ? prefetchedAuthDetections : []);
   const [authDetectLoading, setAuthDetectLoading] = useState(!hasPrefetched);
@@ -98,13 +100,13 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
               <Bot className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h3 className="typo-heading font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
+              <h3 className="typo-heading font-bold tracking-tight text-foreground">{negx.panel_title}</h3>
               <p className="typo-body text-foreground">
-                {negotiator.phase === 'idle' && (authDetectLoading ? t.vault.negotiator_extra.checking_auth : t.vault.negotiator_extra.auto_provisioning)}
-                {negotiator.phase === 'planning' && t.vault.negotiator_extra.generating_plan}
-                {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
-                {negotiator.phase === 'done' && t.vault.negotiator.captured}
-                {negotiator.phase === 'error' && t.vault.negotiator.error_title}
+                {negotiator.phase === 'idle' && (authDetectLoading ? negx.checking_auth : negx.auto_provisioning)}
+                {negotiator.phase === 'planning' && negx.generating_plan}
+                {negotiator.phase === 'guiding' && tx(neg.provisioning_label, { label: designResult.connector.label })}
+                {negotiator.phase === 'done' && neg.captured}
+                {negotiator.phase === 'error' && neg.error_title}
               </p>
             </div>
           </div>

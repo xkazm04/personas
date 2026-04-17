@@ -63,6 +63,7 @@ export function CredentialTypePicker({
   onBack,
 }: CredentialTypePickerProps) {
   const { t } = useTranslation();
+  const ps = t.vault.picker_section;
   const handlers: Record<string, () => void> = {
     'ai-guide': onSelectAiGuide,
     'mcp': onSelectMcp,
@@ -131,7 +132,7 @@ export function CredentialTypePicker({
           <div>
             <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
             <p className="typo-body text-foreground">
-              One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically
+              {ps.workspace_connect_description}
             </p>
           </div>
         </div>
@@ -151,7 +152,7 @@ export function CredentialTypePicker({
             <div>
               <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
               <p className="typo-body text-foreground">
-                Scan your filesystem for existing API keys, AWS profiles, env vars, and more
+                {ps.foraging_description}
               </p>
             </div>
           </div>

@@ -17,7 +17,8 @@ interface NegotiatorIdlePhaseProps {
 }
 
 export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart }: NegotiatorIdlePhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const neg = t.vault.negotiator;
   return (
     <motion.div
       key="neg-idle"
@@ -29,8 +30,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       className="space-y-3"
     >
       <p className="typo-body text-foreground/90">
-        Let the AI guide you step-by-step through obtaining {connectorLabel} API credentials.
-        It will open the right pages, tell you exactly what to click, and auto-capture your keys.
+        {tx(neg.start_description, { label: connectorLabel })}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -47,7 +47,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
         </button>
         {!authDetectLoading && (
           <span className="typo-body text-foreground">
-            Takes ~{Math.ceil(60 / 60)}-2 minutes
+            {tx(neg.estimated_time, { minutes: 2 })}
           </span>
         )}
       </div>
@@ -61,7 +61,8 @@ interface NegotiatorDonePhaseProps {
 }
 
 export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: NegotiatorDonePhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const neg = t.vault.negotiator;
   return (
     <motion.div
       key="neg-done"
@@ -75,15 +76,15 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
         <Zap className="w-5 h-5 text-emerald-400" />
       </div>
-      <p className="typo-body text-foreground font-medium">{t.vault.negotiator.captured}</p>
+      <p className="typo-body text-foreground font-medium">{neg.captured}</p>
       <p className="typo-body text-foreground">
-        {capturedValuesCount} field(s) auto-filled from the provisioning flow.
+        {tx(neg.fields_captured, { count: capturedValuesCount })}
       </p>
       <button
         onClick={onFinish}
         className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors mt-1"
       >
-        Apply to credential form
+        {neg.apply_button}
       </button>
     </motion.div>
   );
@@ -97,6 +98,8 @@ interface NegotiatorErrorPhaseProps {
 }
 
 export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClose }: NegotiatorErrorPhaseProps) {
+  const { t } = useTranslation();
+  const neg = t.vault.negotiator;
   return (
     <motion.div
       key="neg-error"
@@ -116,13 +119,13 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
           disabled={authDetectLoading}
           className="px-4 py-2 rounded-modal bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Try again
+          {neg.try_again}
         </button>
         <button
           onClick={onClose}
           className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-foreground/95 transition-colors"
         >
-          Close
+          {t.common.close}
         </button>
       </div>
     </motion.div>

@@ -9,6 +9,8 @@ interface NegotiatorPlanningPhaseProps {
 
 export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorPlanningPhaseProps) {
   const { t } = useTranslation();
+  const neg = t.vault.negotiator;
+  const negx = t.vault.negotiator_extra;
   return (
     <div
       key="negotiator-planning"
@@ -17,7 +19,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
       <div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border border-violet-500/20 rounded-modal">
         <Brain className="w-4 h-4 text-violet-400 shrink-0 animate-pulse" />
         <p className="typo-body text-violet-200/80">
-          AI is analyzing the developer portal and generating a step-by-step provisioning plan...
+          {negx.planning_description}
         </p>
       </div>
 
@@ -43,7 +45,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
         {progressLines.length === 0 && (
           <div className="flex items-center gap-3 py-1.5">
             <LoadingSpinner size="sm" className="text-violet-400 shrink-0" />
-            <span className="typo-body text-foreground">{t.vault.negotiator.initializing}</span>
+            <span className="typo-body text-foreground">{neg.initializing}</span>
           </div>
         )}
       </div>
@@ -53,7 +55,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
           onClick={onCancel}
           className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

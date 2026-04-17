@@ -19,7 +19,8 @@ interface SetupGuideModalProps {
 }
 
 export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuideModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const ps = t.vault.picker_section;
   const [cliAvailable, setCliAvailable] = useState<boolean>(false);
   const [cliBusy, setCliBusy] = useState<boolean>(false);
   const [cliError, setCliError] = useState<string | null>(null);
@@ -95,7 +96,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
           )}
         </div>
         <div className="flex-1">
-          <h3 id="setup-guide-title" className="font-semibold text-foreground">How to get {connector.label} {authLabel}</h3>
+          <h3 id="setup-guide-title" className="font-semibold text-foreground">{tx(ps.how_to_get, { label: connector.label, authLabel })}</h3>
           {summary && (
             <p className="typo-body text-foreground mt-0.5">{summary}</p>
           )}
@@ -127,14 +128,14 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
           </div>
         ) : (
           <p className="typo-body text-foreground">
-            No setup guide available for this connector. Visit the documentation link below for instructions.
+            {ps.no_setup_guide}
           </p>
         )}
 
         {/* Required fields hint */}
         {connector.fields.length > 0 && (
           <div className="pt-2 border-t border-primary/8">
-            <p className="typo-body text-foreground mb-2">{t.vault.picker_section.required_fields}</p>
+            <p className="typo-body text-foreground mb-2">{ps.required_fields}</p>
             <div className="flex flex-wrap gap-1.5">
               {connector.fields.filter((f) => f.required).map((f) => (
                 <span key={f.key} className="typo-code px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 text-foreground font-mono">
@@ -181,7 +182,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
               className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary typo-body font-medium transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Open {connector.label} setup page
+              {tx(ps.open_setup_page, { label: connector.label })}
             </button>
           )}
         </div>

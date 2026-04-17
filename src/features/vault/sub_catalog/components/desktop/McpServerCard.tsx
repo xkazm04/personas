@@ -1,6 +1,7 @@
 import { Monitor, CheckCircle2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ImportedMcpServer } from '@/api/system/desktop';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface McpServerCardProps {
   server: ImportedMcpServer;
@@ -10,6 +11,9 @@ interface McpServerCardProps {
 }
 
 export function McpServerCard({ server, imported, importing, onImport }: McpServerCardProps) {
+  const { t, tx } = useTranslation();
+  const forg = t.vault.foraging;
+  const envCount = Object.keys(server.env).length;
   return (
     <div className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20">
       <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20">
@@ -18,16 +22,16 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
       <div className="flex-1 min-w-0">
         <p className="typo-body font-medium text-foreground">{server.label}</p>
         <p className="typo-code text-foreground truncate font-mono">{server.command}</p>
-        {Object.keys(server.env).length > 0 && (
+        {envCount > 0 && (
           <p className="typo-caption text-foreground">
-            {Object.keys(server.env).length} env var{Object.keys(server.env).length !== 1 ? 's' : ''}
+            {tx(envCount === 1 ? forg.env_var_one : forg.env_var_other, { count: envCount })}
           </p>
         )}
       </div>
       {imported ? (
         <span className="flex items-center gap-1 typo-caption text-emerald-400">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          Imported
+          {forg.imported}
         </span>
       ) : (
         <button
@@ -38,7 +42,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           {importing ? (
             <LoadingSpinner size="sm" />
           ) : (
-            'Import'
+            forg.import_server
           )}
         </button>
       )}
