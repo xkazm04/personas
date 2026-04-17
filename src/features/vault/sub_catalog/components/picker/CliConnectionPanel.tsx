@@ -76,7 +76,6 @@ export function CliConnectionPanel({
     if (!credentialName || credentialName === connector.label) {
       onCredentialNameChange(`${connector.label} CLI`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSave = async () => {
