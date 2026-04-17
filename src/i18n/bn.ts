@@ -1,5 +1,4 @@
 export const bn = {
-
   common: {
     loading: "লোড হচ্ছে...",
     saving: "সংরক্ষণ হচ্ছে...",
@@ -48,6 +47,7 @@ export const bn = {
     error: "ত্রুটি",
     success: "সফল",
     required: "আবশ্যক",
+    optional: "ঐচ্ছিক",
     select: "-- নির্বাচন --",
     no_results: "কোনো ফলাফল নেই",
     active: "সক্রিয়",
@@ -143,7 +143,7 @@ export const bn = {
     command_palette_navigate: "নেভিগেট করুন",
     command_palette_select: "নির্বাচন করুন",
     command_palette_commands: "কমান্ড",
-    loading_label: "লোড হচ্ছে",
+    loading_label: "লোড হচ্ছে"
   },
   chrome: {
     app_title: "Personas",
@@ -163,7 +163,7 @@ export const bn = {
     sign_in_google: "Google দিয়ে সাইন ইন করুন",
     signed_in: "সাইন ইন করা হয়েছে",
     sign_out: "সাইন আউট",
-    offline: "অফলাইন",
+    offline: "অফলাইন"
   },
   sidebar: {
     home: "হোম",
@@ -234,7 +234,7 @@ export const bn = {
     unread_messages_sr: "{count} অপঠিত বার্তা",
     unread_messages_sr_other: "{count} অপঠিত বার্তা",
     pending_events_sr: "{count} মুলতুবি ইভেন্ট",
-    pending_events_sr_other: "{count} মুলতুবি ইভেন্ট",
+    pending_events_sr_other: "{count} মুলতুবি ইভেন্ট"
   },
   home: {
     welcome: "স্বাগতম",
@@ -259,7 +259,7 @@ export const bn = {
       priority_next: "পরবর্তী",
       priority_later: "পরে",
       in_progress_count: "{count}টি চলমান",
-      next_count: "{count}টি পরবর্তী",
+      next_count: "{count}টি পরবর্তী"
     },
     setup: {
       choose_role: "আপনার ভূমিকা বেছে নিন",
@@ -287,45 +287,45 @@ export const bn = {
       role_manager_hint: "পরিকল্পনা ও সমন্বয়",
       role: "ভূমিকা",
       tool: "টুল",
-      goal: "লক্ষ্য",
+      goal: "লক্ষ্য"
     },
     nav: {
       overview: {
         label: "সারসংক্ষেপ",
-        description: "ড্যাশবোর্ড বিশ্লেষণ, সম্পাদন ইতিহাস এবং রিয়েল-টাইম মনিটরিং",
+        description: "ড্যাশবোর্ড বিশ্লেষণ, সম্পাদন ইতিহাস এবং রিয়েল-টাইম মনিটরিং"
       },
       personas: {
         label: "এজেন্ট",
-        description: "AI এজেন্ট তৈরি, কনফিগার ও পরিচালনা করুন",
+        description: "AI এজেন্ট তৈরি, কনফিগার ও পরিচালনা করুন"
       },
       events: {
         label: "ইভেন্ট",
-        description: "ইভেন্ট ট্রিগার, webhook ও সময়সূচি অটোমেশন কনফিগার করুন",
+        description: "ইভেন্ট ট্রিগার, webhook ও সময়সূচি অটোমেশন কনফিগার করুন"
       },
       credentials: {
         label: "কী",
-        description: "API শংসাপত্র, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা",
+        description: "API শংসাপত্র, ডাটাবেস সংযোগ ও এনক্রিপ্টেড সিক্রেট পরিচালনা"
       },
       "design-reviews": {
         label: "টেমপ্লেট",
-        description: "n8n ওয়ার্কফ্লো ইম্পোর্ট, টেমপ্লেট গ্যালারি ও এজেন্ট ব্লুপ্রিন্ট তৈরি",
+        description: "n8n ওয়ার্কফ্লো ইম্পোর্ট, টেমপ্লেট গ্যালারি ও এজেন্ট ব্লুপ্রিন্ট তৈরি"
       },
       team: {
         label: "দল",
-        description: "মাল্টি-এজেন্ট টিম পাইপলাইন ড্র্যাগ-অ্যান্ড-ড্রপে তৈরি করুন",
+        description: "মাল্টি-এজেন্ট টিম পাইপলাইন ড্র্যাগ-অ্যান্ড-ড্রপে তৈরি করুন"
       },
       cloud: {
         label: "ক্লাউড",
-        description: "ক্লাউডে এজেন্ট ডিপ্লয়, সময়সূচি পরিচালনা ও GitLab CI ইন্টিগ্রেশন",
+        description: "ক্লাউডে এজেন্ট ডিপ্লয়, সময়সূচি পরিচালনা ও GitLab CI ইন্টিগ্রেশন"
       },
       settings: {
         label: "সেটিংস",
-        description: "অ্যাকাউন্ট, থিম, বিজ্ঞপ্তি ও ইঞ্জিন কনফিগারেশন",
+        description: "অ্যাকাউন্ট, থিম, বিজ্ঞপ্তি ও ইঞ্জিন কনফিগারেশন"
       },
       plugins: {
         label: "প্লাগিন",
-        description: "তৃতীয় পক্ষের প্লাগিন এবং কাস্টম এক্সটেনশন দিয়ে এজেন্ট প্রসারিত করুন",
-      },
+        description: "তৃতীয় পক্ষের প্লাগিন এবং কাস্টম এক্সটেনশন দিয়ে এজেন্ট প্রসারিত করুন"
+      }
     },
     learning: {
       title: "লার্নিং সেন্টার",
@@ -342,7 +342,7 @@ export const bn = {
       pro_tip: "প্রো টিপ: ",
       cat_agent_craft: "এজেন্ট ক্রাফট",
       cat_observability: "পর্যবেক্ষণযোগ্যতা ও ইভেন্ট",
-      cat_platform: "প্ল্যাটফর্ম ও সেটআপ",
+      cat_platform: "প্ল্যাটফর্ম ও সেটআপ"
     },
     setup_stepper: {
       your_profile: "আপনার প্রোফাইল",
@@ -358,18 +358,18 @@ export const bn = {
       ready_to_save: "সংরক্ষণের জন্য প্রস্তুত",
       back: "পিছনে",
       next: "পরবর্তী",
-      finish: "শেষ করুন",
+      finish: "শেষ করুন"
     },
     welcome_layout: {
       get_started: "শুরু করুন",
-      language: "ভাষা",
+      language: "ভাষা"
     },
     icon_showcase: {
       lucide_tab: "Lucide (লাইব্রেরি)",
       personas_tab: "Personas (অ্যানিমেটেড)",
       lucide_footer: "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
-      personas_footer: "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ",
-    },
+      personas_footer: "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
+    }
   },
   agents: {
     title: "Personas",
@@ -380,12 +380,12 @@ export const bn = {
       subtitle_other: "{count} এজেন্ট -- প্রাসঙ্গিকতা অনুযায়ী",
       needs_attention: "মনোযোগ দরকার",
       active: "সক্রিয়",
-      idle: "নিষ্ক্রিয়",
+      idle: "নিষ্ক্রিয়"
     },
     sidebar: {
       no_match: "কোনো এজেন্ট ফিল্টারে মেলেনি",
       clear_filters: "সব ফিল্টার মুছুন",
-      empty: "কোনো persona নেই",
+      empty: "কোনো persona নেই"
     },
     preview: {
       sensitive_hidden: "সংবেদনশীল প্রিভিউ লুকানো",
@@ -400,7 +400,7 @@ export const bn = {
       triggers_active_one: "{count} ট্রিগার সক্রিয়",
       triggers_active_other: "{count} ট্রিগার সক্রিয়",
       no_triggers: "কোনো ট্রিগার নেই",
-      custom_model: "কাস্টম",
+      custom_model: "কাস্টম"
     },
     creation: {
       heading: "নতুন এজেন্ট",
@@ -417,7 +417,7 @@ export const bn = {
       no_group: "কোনো গ্রুপ নেই",
       create_button: "এজেন্ট তৈরি",
       creating_button: "তৈরি হচ্ছে...",
-      name_required: "চালিয়ে যেতে নাম দিন",
+      name_required: "চালিয়ে যেতে নাম দিন"
     },
     editor: {
       tabs: {
@@ -428,7 +428,7 @@ export const bn = {
         design: "ডিজাইন",
         health: "স্বাস্থ্য",
         settings: "সেটিংস",
-        model: "মডেল",
+        model: "মডেল"
       },
       no_persona: "কোনো persona নির্বাচিত নয়",
       save_failed: "{tabs} সংরক্ষণ ব্যর্থ",
@@ -442,13 +442,13 @@ export const bn = {
       cloud_banner_connect: "দূরবর্তীভাবে চালাতে ক্লাউড অর্কেস্ট্রেটর সংযুক্ত করুন",
       cloud_banner_signin: "ক্লাউড ফিচার আনলক করতে সাইন ইন করুন",
       sign_in: "সাইন ইন",
-      set_up_cloud: "ক্লাউড সেটআপ",
+      set_up_cloud: "ক্লাউড সেটআপ"
     },
     header: {
       no_triggers_warning: "কোনো ট্রিগার বা ইভেন্ট সাবস্ক্রিপশন কনফিগার করা নেই",
       missing_credentials: "অনুপস্থিত শংসাপত্র: {credentials}",
       toggle_failed: "Persona টগল ব্যর্থ -- সংযোগ পরীক্ষা করুন",
-      cannot_enable: "Persona সচল করা যাচ্ছে না",
+      cannot_enable: "Persona সচল করা যাচ্ছে না"
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -469,7 +469,7 @@ export const bn = {
       selected: "{count}টি নির্বাচিত",
       remove_from_favorites: "পছন্দ থেকে সরান",
       add_to_favorites: "পছন্দে যোগ করুন",
-      filter_by: "{label} দ্বারা ফিল্টার করুন",
+      filter_by: "{label} দ্বারা ফিল্টার করুন"
     },
     status: {
       draft: "খসড়া",
@@ -477,7 +477,7 @@ export const bn = {
       healthy: "সুস্থ",
       degraded: "অবনতি",
       failing: "ব্যর্থ",
-      building: "তৈরি হচ্ছে",
+      building: "তৈরি হচ্ছে"
     },
     executions: {
       no_persona_selected: "কোনো পার্সোনা নির্বাচিত নয়",
@@ -718,6 +718,10 @@ export const bn = {
       loading_dream_replay: "ড্রিম রিপ্লে লোড হচ্ছে...",
       no_dream_trace: "ড্রিম রিপ্লের জন্য কোনো ট্রেস ডেটা পাওয়া যায়নি",
       frame_count: "ফ্রেম {index}/{total}",
+      depth_label: "গভীরতা:",
+      active_count_label: "সক্রিয় ({count})",
+      completed_count_label: "সম্পন্ন ({count})",
+      metadata_section: "মেটাডেটা",
       phase_initializing: "প্রাথমিককরণ",
       phase_thinking: "ভাবছে",
       phase_calling_tools: "টুলস চালাচ্ছে",
@@ -745,6 +749,15 @@ export const bn = {
       offset_prefix: "অফসেট:",
       step_tooltip: "ধাপ {step}: {name}",
       ms_into_stage: "স্তরের {ms}ms পরে",
+      chain_id_prefix: "চেইন: {id}",
+      chain_total_duration: "মোট: {duration}",
+      zero_ms: "0ms",
+      tool_calls_count: "{count} টুল কল",
+      tool_calls_count_other: "{count} টুল কল",
+      unique_tools_count: "({count} অনন্য)",
+      prev_error_nav: "পূর্ববর্তী ত্রুটি (Shift+E)",
+      next_error_nav: "পরবর্তী ত্রুটি (E)",
+      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "আরেনা",
@@ -878,6 +891,8 @@ export const bn = {
       quality_label: "মান",
       speed_label: "গতি",
       cost_label: "খরচ",
+      objective_warning: "ফিটনেস উদ্দেশ্য সমস্যা",
+      objective_fallback_toast: "বিবর্তনে ডিফল্ট ফিটনেস ওজন ব্যবহার হয়েছে — উদ্দেশ্য সেটিংস পরীক্ষা করুন",
       genome_breeding: "জিনোম ব্রিডিং",
       genome_breeding_subtitle: "নতুন কনফিগারেশন আবিষ্কার করতে শীর্ষ পার্সোনাগুলো ক্রস-ব্রিড করুন",
       select_parents: "অভিভাবক নির্বাচন করুন (২-৫টি পার্সোনা)",
@@ -994,7 +1009,7 @@ export const bn = {
       quality_score_inline: "স্কোর: {score} | {coverage}টি দৃশ্যকল্প",
       cancel_default: "বাতিল",
       hide_impact: "প্রভাব লুকান",
-      show_impact: "প্রভাব দেখান",
+      show_impact: "প্রভাব দেখান"
     },
     design: {
       select_agent: "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",
@@ -1004,7 +1019,7 @@ export const bn = {
       compile_from_examples: "উদাহরণ থেকে কম্পাইল করুন",
       compile_intent: "ইন্টেন্ট কম্পাইল করুন",
       analyze_build: "বিশ্লেষণ করুন ও তৈরি করুন",
-      intent_placeholder: "সহজ ভাষায় এই এজেন্ট কী করবে তা বর্ণনা করুন...\\n\\nযেমন: \\\"আমাদের Stripe অ্যাকাউন্টে $১০০-এর বেশি ব্যর্থ পেমেন্ট পর্যবেক্ষণ করুন এবং Slack-এ একটি সারাংশ সহ ফিনান্স টিমকে অবহিত করুন\\\"",
+      intent_placeholder: "সহজ ভাষায় এই এজেন্ট কী করবে তা বর্ণনা করুন...\\\n\\\nযেমন: \\\"আমাদের Stripe অ্যাকাউন্টে $১০০-এর বেশি ব্যর্থ পেমেন্ট পর্যবেক্ষণ করুন এবং Slack-এ একটি সারাংশ সহ ফিনান্স টিমকে অবহিত করুন\\\"",
       intent_submit_hint: "সাবমিট করতে Enter চাপুন, নতুন লাইনের জন্য Shift+Enter।",
       intent_detail: "কম্পাইলার একটি সম্পূর্ণ কনফিগারেশন তৈরি করবে: প্রম্পট, টুলস, ট্রিগার, ব্যবহারের ক্ষেত্র, মডেল সুপারিশ এবং পরীক্ষার দৃশ্যকল্প।",
       example_context_placeholder: "ঐচ্ছিক: প্রেক্ষাপট বা সীমাবদ্ধতা যোগ করুন (যেমন: \\\"সবসময় P1 টিকেটকে অগ্রাধিকার দিন\\\", \\\"#alerts চ্যানেলে পোস্ট করুন\\\")",
@@ -1060,14 +1075,15 @@ export const bn = {
       msg_count_one: "{count}টি বার্তা",
       msg_count_other: "{count}টি বার্তা",
       resume: "পুনরায় শুরু",
+      conv_controls_aria: "ডিজাইন কথোপকথন নিয়ন্ত্রণ",
       design_drift: "ডিজাইন ড্রিফট",
       design_sessions: "ডিজাইন সেশনসমূহ",
       example_n: "উদাহরণ {index}",
       remove_example: "উদাহরণ সরান",
       input_label: "ইনপুট — এজেন্ট কী পাবে",
       output_label: "আউটপুট — এজেন্ট কী তৈরি করবেন তা চান",
-      input_placeholder: "একটি প্রকৃত ইনপুট পেস্ট করুন...\\n\\nযেমন: একটি ইমেইল বডি, একটি Slack বার্তা, একটি আগত অনুরোধ, একটি CSV সারি",
-      output_placeholder: "কাঙ্ক্ষিত আউটপুট বর্ণনা বা পেস্ট করুন...\\n\\nযেমন: \\\"বিষয় থেকে শিরোনাম, অগ্রাধিকার P2, ব্যাকএন্ড টিমকে নির্ধারিত Jira টিকেট তৈরি করুন\\\"",
+      input_placeholder: "একটি প্রকৃত ইনপুট পেস্ট করুন...\\\n\\\nযেমন: একটি ইমেইল বডি, একটি Slack বার্তা, একটি আগত অনুরোধ, একটি CSV সারি",
+      output_placeholder: "কাঙ্ক্ষিত আউটপুট বর্ণনা বা পেস্ট করুন...\\\n\\\nযেমন: \\\"বিষয় থেকে শিরোনাম, অগ্রাধিকার P2, ব্যাকএন্ড টিমকে নির্ধারিত Jira টিকেট তৈরি করুন\\\"",
       example_instructions: "একটি প্রকৃত ইনপুট (ইমেইল, আগত অনুরোধ, বার্তা) পেস্ট করুন এবং আপনার কাঙ্ক্ষিত আউটপুট দেখান। কম্পাইলার আপনার উদাহরণ থেকে সম্পূর্ণ এজেন্ট কনফিগারেশন রিভার্স-ইঞ্জিনিয়ার করবে।",
       add_first_example: "আপনার প্রথম ইনপুট -> আউটপুট উদাহরণ যোগ করুন",
       current_config_preserved: "বর্তমান কনফিগারেশন সংরক্ষিত থাকবে। কী পরিবর্তন করতে হবে বর্ণনা করুন।",
@@ -1078,7 +1094,7 @@ export const bn = {
       next: "পরবর্তী",
       go_back_hint: "ফিরে যান এবং আপনার এজেন্ট কনফিগার করতে প্রশ্নের উত্তর দিন।",
       additional_instructions: "অতিরিক্ত নির্দেশনা বা প্রেক্ষাপট (ঐচ্ছিক)",
-      additional_instructions_placeholder: "যেকোনো নির্দিষ্ট প্রয়োজনীয়তা, ডোমেন জ্ঞান বা সীমাবদ্ধতা যোগ করুন...",
+      additional_instructions_placeholder: "যেকোনো নির্দিষ্ট প্রয়োজনীয়তা, ডোমেন জ্ঞান বা সীমাবদ্ধতা যোগ করুন..."
     },
     connectors: {
       connectors_label: "কানেক্টরসমূহ",
@@ -1164,6 +1180,9 @@ export const bn = {
       auto_event_type: "ইভেন্ট টাইপ: {eventType}",
       auto_zapier_hint: "ক্যাচ হুক যাচাই ও সংযুক্ত হবে।",
       auto_custom_hint: "ম্যানুয়াল সেটআপ প্রয়োজন। অটোমেশন খসড়া হিসেবে সংরক্ষিত হবে।",
+      auto_input_schema_placeholder: "string",
+      auto_github_token_needs: "আপনার টোকেনের {scopes} স্কোপ(গুলি) প্রয়োজন। github.com/settings/tokens-এ আপনার টোকেন আপডেট করুন।",
+      auto_fallback_title: "ব্যর্থতায় সরাসরি কানেক্টরে ফিরে যায়",
       ch_title: "বিজ্ঞপ্তি চ্যানেলসমূহ",
       ch_add: "চ্যানেল যোগ করুন",
       ch_all_added: "সব চ্যানেল টাইপ যোগ করা হয়েছে",
@@ -1239,7 +1258,7 @@ export const bn = {
       sub_confirm: "নিশ্চিত করুন?",
       sub_triggers_title: "ট্রিগার ও সাবস্ক্রিপশনসমূহ",
       sub_suggested: "{count}টি প্রস্তাবিত",
-      sub_filter: "ফিল্টার: {filter}",
+      sub_filter: "ফিল্টার: {filter}"
     },
     editor_chrome: {
       tab_activity: "কার্যক্রম",
@@ -1272,7 +1291,7 @@ export const bn = {
       latency_label: "লেটেন্সি",
       cost_run_label: "খরচ/রান",
       last_run_label: "শেষ রান",
-      rank: "র‌্যাংক",
+      rank: "র‌্যাংক"
     },
     model_config: {
       model_provider: "মডেল ও প্রোভাইডার",
@@ -1335,6 +1354,7 @@ export const bn = {
       model_name_placeholder_litellm: "যেমন anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "যেমন llama3.1:8b",
       model_name_placeholder_custom: "মডেল আইডেন্টিফায়ার",
+      model_name_placeholder_override: "যেমন claude-sonnet-4-20250514",
       base_url_hint: "আপনার মডেল প্রোভাইডারের API এন্ডপয়েন্ট। প্রোটোকল (http/https) এবং অ-মানক পোর্ট অন্তর্ভুক্ত করতে হবে।",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "প্রোভাইডার API-এর জন্য অথেন্টিকেশন টোকেন। Ollama লোকালের জন্য 'ollama' ব্যবহার করুন। LiteLLM-এর জন্য আপনার মাস্টার কী ব্যবহার করুন।",
@@ -1375,7 +1395,7 @@ export const bn = {
       latency: "লেটেন্সি",
       cost: "খরচ",
       output_previews: "আউটপুট প্রিভিউ",
-      no_output: "কোনো আউটপুট নেই",
+      no_output: "কোনো আউটপুট নেই"
     },
     use_cases: {
       no_persona: "কোনো পার্সোনা নির্বাচিত নেই",
@@ -1470,7 +1490,7 @@ export const bn = {
       cron_field_hour: "ঘণ্টা",
       cron_field_day: "দিন",
       cron_field_month: "মাস",
-      cron_field_weekday: "সপ্তাহের দিন",
+      cron_field_weekday: "সপ্তাহের দিন"
     },
     tools: {
       no_persona: "কোনো পার্সোনা নির্বাচিত নেই",
@@ -1509,11 +1529,11 @@ export const bn = {
       credential: "ক্রেডেনশিয়াল",
       linked: "— লিংক করা",
       cred_missing: "— অনুপস্থিত",
-      often_used: "প্রায়ই একসাথে ব্যবহৃত",
+      often_used: "প্রায়ই একসাথে ব্যবহৃত"
     },
     chat_thread: {
       welcome: "এই এজেন্টটি কী করবে তা আমাকে বলুন। আমি আপনার বিবরণ থেকে সম্পূর্ণ কনফিগারেশন — প্রম্পট, টুলস, ট্রিগার — তৈরি করব।",
-      welcome_example: "আমার GitHub PR-গুলো দেখুন এবং প্রতিদিন সকালে Slack-এ একটি সারাংশ পোস্ট করুন",
+      welcome_example: "আমার GitHub PR-গুলো দেখুন এবং প্রতিদিন সকালে Slack-এ একটি সারাংশ পোস্ট করুন"
     },
     assign: {
       assign_to: "{role}-এ নির্ধারণ করুন",
@@ -1524,50 +1544,50 @@ export const bn = {
       no_saved_credentials: "এখনো কোনো সংরক্ষিত ক্রেডেনশিয়াল নেই",
       no_credentials_match: "আপনার অনুসন্ধানের সাথে কোনো ক্রেডেনশিয়াল মেলে না",
       vault_hint: "ভল্টে ক্রেডেনশিয়াল সংরক্ষণ করুন, অথবা কানেক্টর ট্যাব ব্যবহার করুন",
-      no_connectors_match: "আপনার অনুসন্ধানের সাথে কোনো কানেক্টর মেলে না",
+      no_connectors_match: "আপনার অনুসন্ধানের সাথে কোনো কানেক্টর মেলে না"
     },
     credential_coverage: "{matched}/{total}টি ক্রেডেনশিয়াল",
     role_card: {
       no_credential: "কোনো ক্রেডেনশিয়াল নেই",
       edit_tables: "সম্পাদনা করুন",
       select_tables: "টেবিল নির্বাচন করুন",
-      assign: "নির্ধারণ করুন",
+      assign: "নির্ধারণ করুন"
     },
     channel_picker: {
       in_app_messaging: "ইন-অ্যাপ মেসেজিং",
-      vault_hint: "এখানে দেখতে ভল্টে যোগাযোগ ক্রেডেনশিয়াল (Slack, Email, ইত্যাদি) সংরক্ষণ করুন।",
+      vault_hint: "এখানে দেখতে ভল্টে যোগাযোগ ক্রেডেনশিয়াল (Slack, Email, ইত্যাদি) সংরক্ষণ করুন।"
     },
     connector_picker: {
       no_connectors: "কোনো কানেক্টর পাওয়া যায়নি",
       search: "কানেক্টর খুঁজুন...",
-      no_match: "\\\"{search}\\\" এর সাথে কোনো কানেক্টর মেলে না",
+      no_match: "\\\"{search}\\\" এর সাথে কোনো কানেক্টর মেলে না"
     },
     policy_picker: {
       error_handling: "ত্রুটি পরিচালনা",
-      manual_review: "ম্যানুয়াল পর্যালোচনা",
+      manual_review: "ম্যানুয়াল পর্যালোচনা"
     },
     table_selector: {
       title: "টেবিল নির্বাচন করুন",
       subtitle: "{label} — দেখার জন্য টেবিল বেছে নিন",
       tables_selected_one: "{count}টি টেবিল নির্বাচিত",
       tables_selected_other: "{count}টি টেবিল নির্বাচিত",
-      no_tables_selected: "কোনো টেবিল নির্বাচিত নেই — এজেন্ট সব দেখবে",
+      no_tables_selected: "কোনো টেবিল নির্বাচিত নেই — এজেন্ট সব দেখবে"
     },
     trigger_popover: {
       trigger: "ট্রিগার",
-      clear_override: "ওভাররাইড সাফ করুন",
+      clear_override: "ওভাররাইড সাফ করুন"
     },
     use_case: {
       add: "ব্যবহারের ক্ষেত্র যোগ করুন",
       title_placeholder: "ব্যবহারের ক্ষেত্রের শিরোনাম — যেমন রিফান্ড অনুরোধ পরিচালনা, দৈনিক টিকেট সারাংশ",
-      description_placeholder: "ধাপগুলো বর্ণনা করুন — যেমন রিফান্ড অনুরোধ এলে অর্ডার যাচাই করুন, নীতি পরীক্ষা করুন এবং অনুমোদন বা অস্বীকার পাঠান",
+      description_placeholder: "ধাপগুলো বর্ণনা করুন — যেমন রিফান্ড অনুরোধ এলে অর্ডার যাচাই করুন, নীতি পরীক্ষা করুন এবং অনুমোদন বা অস্বীকার পাঠান"
     },
     builder_action: {
       processing: "প্রক্রিয়া হচ্ছে...",
       error_retry: "কিছু ভুল হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
       enhancing: "উন্নত হচ্ছে...",
       enhance_with_ai: "AI দিয়ে উন্নত করুন",
-      describe_agent: "আপনার এজেন্ট কী করবে বর্ণনা করুন",
+      describe_agent: "আপনার এজেন্ট কী করবে বর্ণনা করুন"
     },
     builder_preview: {
       title: "প্রিভিউ",
@@ -1581,7 +1601,7 @@ export const bn = {
       schedule: "শিডিউল",
       manual_only: "শুধু ম্যানুয়াল",
       errors: "ত্রুটিসমূহ",
-      review: "পর্যালোচনা",
+      review: "পর্যালোচনা"
     },
     dry_run: {
       ready: "প্রস্তুত",
@@ -1593,7 +1613,7 @@ export const bn = {
       issues: "সমস্যাসমূহ",
       apply_fix: "সংশোধন প্রয়োগ করুন: {label}",
       manual_action_needed: "ম্যানুয়াল পদক্ষেপ প্রয়োজন",
-      no_issues: "কোনো সমস্যা পাওয়া যায়নি। আপনার এজেন্ট কনফিগারেশন ভালো দেখাচ্ছে।",
+      no_issues: "কোনো সমস্যা পাওয়া যায়নি। আপনার এজেন্ট কনফিগারেশন ভালো দেখাচ্ছে।"
     },
     identity_preview: {
       title: "প্রিভিউ",
@@ -1604,7 +1624,7 @@ export const bn = {
       components: "উপাদানসমূহ",
       schedule_label: "শিডিউল:",
       errors_label: "ত্রুটি:",
-      review_label: "পর্যালোচনা:",
+      review_label: "পর্যালোচনা:"
     },
     build_review: {
       agent_name: "এজেন্টের নাম",
@@ -1613,7 +1633,7 @@ export const bn = {
       connectors_ready: "কানেক্টর প্রস্তুত",
       promote_agent: "এজেন্ট পদোন্নত করুন",
       testing: "পরীক্ষা হচ্ছে...",
-      test_agent: "এজেন্ট পরীক্ষা করুন",
+      test_agent: "এজেন্ট পরীক্ষা করুন"
     },
     connectors_cell: {
       add_in_keys: "Keys-এ যোগ করুন",
@@ -1623,7 +1643,7 @@ export const bn = {
       swap_to: "পরিবর্তন করুন:",
       recalculating: "পুনর্গণনা হচ্ছে...",
       recalculate_dimensions: "মাত্রা পুনর্গণনা করুন",
-      rebuilding: "নতুন কানেক্টর দিয়ে পুনর্নির্মাণ হচ্ছে...",
+      rebuilding: "নতুন কানেক্টর দিয়ে পুনর্নির্মাণ হচ্ছে..."
     },
     dimension_edit: {
       add_item: "আইটেম যোগ করুন...",
@@ -1649,7 +1669,7 @@ export const bn = {
       fully_automated: "সম্পূর্ণ স্বয়ংক্রিয়",
       cron_label: "Cron:",
       every_label: "প্রতি:",
-      done: "সম্পন্ন",
+      done: "সম্পন্ন"
     },
     quick_config: {
       title: "দ্রুত সেটআপ",
@@ -1663,7 +1683,7 @@ export const bn = {
       monthly: "মাসিক",
       days: "দিনসমূহ",
       day_of_month: "মাসের দিন",
-      time: "সময়",
+      time: "সময়"
     },
     events_panel: {
       source_agent: "সোর্স এজেন্ট",
@@ -1672,23 +1692,23 @@ export const bn = {
       select_agent: "একটি এজেন্ট নির্বাচন করুন",
       loading_events: "ইভেন্ট লোড হচ্ছে...",
       no_subscriptions: "কোনো ইভেন্ট সাবস্ক্রিপশন পাওয়া যায়নি",
-      choose_agent: "ইভেন্ট দেখতে একটি এজেন্ট বেছে নিন",
+      choose_agent: "ইভেন্ট দেখতে একটি এজেন্ট বেছে নিন"
     },
     matrix_cred_picker: {
       no_stored: "কোনো সংরক্ষিত ক্রেডেনশিয়াল নেই",
       best_match: "সেরা মিল",
-      other: "অন্য",
+      other: "অন্য"
     },
     services_panel: {
       no_connectors: "সুস্থ API কী সহ কোনো কানেক্টর পাওয়া যায়নি। প্রথমে ভল্টে ক্রেডেনশিয়াল যোগ করুন।",
-      select_table: "টেবিল নির্বাচন করুন",
+      select_table: "টেবিল নির্বাচন করুন"
     },
     spatial_question: {
       agent_configuration: "এজেন্ট কনফিগারেশন",
       or_custom_answer: "অথবা একটি কাস্টম উত্তর টাইপ করুন",
       type_answer: "আপনার উত্তর টাইপ করুন...",
       submit: "সাবমিট করুন",
-      press_to_select: "তাৎক্ষণিক নির্বাচনের জন্য ১-{count} চাপুন",
+      press_to_select: "তাৎক্ষণিক নির্বাচনের জন্য ১-{count} চাপুন"
     },
     table_picker: {
       title: "টেবিল নির্বাচন করুন",
@@ -1696,12 +1716,12 @@ export const bn = {
       loading: "টেবিল লোড হচ্ছে...",
       no_tables: "এই কানেক্টরের জন্য কোনো টেবিল পাওয়া যায়নি",
       clear_selection: "নির্বাচন সাফ করুন",
-      no_match: "\\\"{search}\\\" এর সাথে মেলে এমন কোনো টেবিল নেই",
+      no_match: "\\\"{search}\\\" এর সাথে মেলে এমন কোনো টেবিল নেই"
     },
     matrix_entry: {
       new_agent: "নতুন এজেন্ট",
       failed_to_create: "খসড়া এজেন্ট তৈরি করতে ব্যর্থ।",
-      build_failed: "বিল্ড শুরু করতে ব্যর্থ। CLI কনফিগারেশন পরীক্ষা করুন।",
+      build_failed: "বিল্ড শুরু করতে ব্যর্থ। CLI কনফিগারেশন পরীক্ষা করুন।"
     },
     workflow_upload: {
       build_hint: "এই ওয়ার্কফ্লোকে পার্সোনা এজেন্টে রূপান্তর করতে Build চাপুন।",
@@ -1709,22 +1729,22 @@ export const bn = {
       parse: "পার্স করুন",
       drop_file: "এখানে একটি ওয়ার্কফ্লো ফাইল ড্রপ করুন",
       file_types: "n8n, Zapier, Make, বা GitHub Actions (.json, .yaml)",
-      paste_json: "অথবা সরাসরি JSON পেস্ট করুন",
+      paste_json: "অথবা সরাসরি JSON পেস্ট করুন"
     },
     config_popup: {
       load_error: "সংরক্ষিত মান লোড করা যায়নি — আপনাকে পুনরায় প্রবেশ করতে হতে পারে।",
       fill_hint: "সংরক্ষণ করতে কমপক্ষে একটি ফিল্ড পূরণ করুন",
-      failed_to_save: "কনফিগারেশন সংরক্ষণ করতে ব্যর্থ",
+      failed_to_save: "কনফিগারেশন সংরক্ষণ করতে ব্যর্থ"
     },
     onboarding: {
       setup_complete: "সেটআপ {score}% সম্পন্ন",
       steps_done: "{completed}/{total}টি ধাপ সম্পন্ন",
-      dismiss_checklist: "চেকলিস্ট বাতিল করুন",
+      dismiss_checklist: "চেকলিস্ট বাতিল করুন"
     },
     template_picker: {
       title: "একটি টেমপ্লেট বেছে নিন",
       subtitle: "আপনার এজেন্ট পূর্বপূরণ করতে একটি টেমপ্লেট বেছে নিন, অথবা শূন্য থেকে শুরু করুন।",
-      start_from_scratch: "শূন্য থেকে শুরু করুন",
+      start_from_scratch: "শূন্য থেকে শুরু করুন"
     },
     persona_overview: {
       no_match: "কোনো পার্সোনা মেলে না",
@@ -1733,26 +1753,26 @@ export const bn = {
       description_copied: "বিবরণ ক্লিপবোর্ডে কপি হয়েছে",
       failed_copy: "বিবরণ কপি করতে ব্যর্থ",
       no_connectors_configured: "কোনো কানেক্টর কনফিগার নেই",
-      click_to_copy: "কপি করতে ক্লিক করুন",
+      click_to_copy: "কপি করতে ক্লিক করুন"
     },
     overview_empty: {
       title: "এই ফিল্টারের সাথে কোনো পার্সোনা মেলে না",
       subtitle: "আপনার অনুসন্ধান বা ফিল্টার চিপ সামঞ্জস্য করার চেষ্টা করুন, অথবা সব পার্সোনা দেখতে ভিউ রিসেট করুন।",
-      clear_all_filters: "সব ফিল্টার সাফ করুন",
+      clear_all_filters: "সব ফিল্টার সাফ করুন"
     },
     overview_batch: {
-      selected: "{count}টি নির্বাচিত",
+      selected: "{count}টি নির্বাচিত"
     },
     overview_menu: {
       more_actions: "আরো কার্যক্রম",
-      settings: "সেটিংস",
+      settings: "সেটিংস"
     },
     overview_toolbar: {
       search_placeholder: "পার্সোনা খুঁজুন...",
       show_all: "সব পার্সোনা দেখান",
       show_favorites: "শুধু প্রিয়গুলো দেখান",
       favorites: "প্রিয়সমূহ",
-      clear_search: "অনুসন্ধান সাফ করুন",
+      clear_search: "অনুসন্ধান সাফ করুন"
     },
     overview_columns: {
       persona: "পার্সোনা",
@@ -1767,10 +1787,10 @@ export const bn = {
       building_drafts: "তৈরি হচ্ছে / খসড়া",
       all_health: "সব স্বাস্থ্য",
       all_connectors: "সব কানেক্টর",
-      active_triggers: "{count}টি সক্রিয় ট্রিগার",
+      active_triggers: "{count}টি সক্রিয় ট্রিগার"
     },
     health_indicator: {
-      last: "শেষ {count}",
+      last: "শেষ {count}"
     },
     view_presets: {
       views: "দৃশ্যসমূহ",
@@ -1787,7 +1807,7 @@ export const bn = {
       needs_attention: "মনোযোগ প্রয়োজন",
       failing_agents: "ব্যর্থ এজেন্টসমূহ",
       my_favorites: "আমার প্রিয়সমূহ",
-      recently_active: "সম্প্রতি সক্রিয়",
+      recently_active: "সম্প্রতি সক্রিয়"
     },
     activity: {
       title: "কার্যক্রম",
@@ -1810,7 +1830,7 @@ export const bn = {
       modal_execution_title: "{name} - এক্সিকিউশন",
       modal_execution_subtitle: "আইডি: {id}",
       modal_review_title: "পর্যালোচনা: {title}",
-      modal_review_subtitle: "তীব্রতা: {severity} · অবস্থা: {status}",
+      modal_review_subtitle: "তীব্রতা: {severity} · অবস্থা: {status}"
     },
     chat: {
       select_persona: "চ্যাট শুরু করতে একটি পার্সোনা নির্বাচন করুন",
@@ -1829,7 +1849,7 @@ export const bn = {
       confirm_delete: "মুছবেন?",
       processing: "প্রক্রিয়া হচ্ছে...",
       delete_conversation: "কথোপকথন মুছুন",
-      confirm_delete_conversation: "কথোপকথন মুছতে নিশ্চিত করুন",
+      confirm_delete_conversation: "কথোপকথন মুছতে নিশ্চিত করুন"
     },
     advisory: {
       how_can_improve: "এই এজেন্ট আপনার জন্য কীভাবে আরো ভালো কাজ করতে পারে?",
@@ -1844,7 +1864,7 @@ export const bn = {
       analyze_desc: "পারফরম্যান্সের প্রবণতা ও নিদর্শন পর্যালোচনা করুন",
       test_run: "পরীক্ষামূলক রান",
       test_run_desc: "এজেন্ট চালান এবং ফলাফল মূল্যায়ন করুন",
-      test_input_label: "পরীক্ষার ইনপুট (ঐচ্ছিক)",
+      test_input_label: "পরীক্ষার ইনপুট (ঐচ্ছিক)"
     },
     ops: {
       sessions: "সেশনসমূহ",
@@ -1872,21 +1892,21 @@ export const bn = {
       reviews: "পর্যালোচনাসমূহ",
       reviews_desc: "অপেক্ষমান অনুমোদন ও সিদ্ধান্তসমূহ",
       versions: "সংস্করণসমূহ",
-      versions_desc: "প্রম্পট সংস্করণ ইতিহাস ও রোলব্যাক",
+      versions_desc: "প্রম্পট সংস্করণ ইতিহাস ও রোলব্যাক"
     },
     ops_run: {
       execute_agent: "এজেন্ট এক্সিকিউট করুন",
       running: "চলছে...",
       recent: "সাম্প্রতিক",
       no_executions: "এখনো কোনো এক্সিকিউশন নেই",
-      refresh_executions: "এক্সিকিউশন রিফ্রেশ করুন",
+      refresh_executions: "এক্সিকিউশন রিফ্রেশ করুন"
     },
     ops_lab: {
       history: "ইতিহাস",
       no_lab_runs: "এখনো কোনো ল্যাব রান নেই",
       refresh_lab: "ল্যাব ইতিহাস রিফ্রেশ করুন",
       arena: "আরেনা",
-      improve: "উন্নত করুন",
+      improve: "উন্নত করুন"
     },
     ops_health: {
       no_health_data: "কোনো স্বাস্থ্য ডেটা নেই",
@@ -1898,22 +1918,22 @@ export const bn = {
       run_check_aria: "স্বাস্থ্য পরীক্ষা চালান",
       healthy: "সুস্থ",
       degraded: "অবনতি",
-      unhealthy: "অসুস্থ",
+      unhealthy: "অসুস্থ"
     },
     ops_assertions: {
       active_count: "{enabled}/{total}টি সক্রিয়",
       no_assertions: "কোনো দাবি কনফিগার নেই",
       refresh_assertions: "দাবি রিফ্রেশ করুন",
       enable_assertion: "{name} সক্রিয় করুন",
-      disable_assertion: "{name} নিষ্ক্রিয় করুন",
+      disable_assertion: "{name} নিষ্ক্রিয় করুন"
     },
     health_tab: {
       title: "স্বাস্থ্য পরীক্ষা",
-      description: "অনুপস্থিত ক্রেডেনশিয়াল, বিচ্ছিন্ন কানেক্টর, অসামঞ্জস্যপূর্ণ টুল সংমিশ্রণ এবং অনির্দিষ্ট ব্যবহারের ক্ষেত্র শনাক্ত করতে এই এজেন্টের বর্তমান কনফিগারেশনের বিপরীতে একটি ড্রাই-রান বিশ্লেষণ চালান। সমস্যাগুলো ওয়ান-ক্লিক ফিক্স সহ অ্যাকশনযোগ্য কার্ড হিসেবে প্রদর্শিত হয়।",
+      description: "অনুপস্থিত ক্রেডেনশিয়াল, বিচ্ছিন্ন কানেক্টর, অসামঞ্জস্যপূর্ণ টুল সংমিশ্রণ এবং অনির্দিষ্ট ব্যবহারের ক্ষেত্র শনাক্ত করতে এই এজেন্টের বর্তমান কনফিগারেশনের বিপরীতে একটি ড্রাই-রান বিশ্লেষণ চালান। সমস্যাগুলো ওয়ান-ক্লিক ফিক্স সহ অ্যাকশনযোগ্য কার্ড হিসেবে প্রদর্শিত হয়।"
     },
     matrix_tab: {
       loading: "ম্যাট্রিক্স লোড হচ্ছে",
-      no_data: "কোনো ম্যাট্রিক্স ডেটা পাওয়া যায়নি। মাত্রা তৈরি করতে এই পার্সোনা তৈরি বা পুনর্নির্মাণ করুন।",
+      no_data: "কোনো ম্যাট্রিক্স ডেটা পাওয়া যায়নি। মাত্রা তৈরি করতে এই পার্সোনা তৈরি বা পুনর্নির্মাণ করুন।"
     },
     settings_status: {
       saving: "{sections} সংরক্ষণ হচ্ছে...",
@@ -1937,6 +1957,9 @@ export const bn = {
       health_watch: "স্বাস্থ্য পর্যবেক্ষণ",
       health_watch_active: "স্বাস্থ্য পর্যবেক্ষণ সক্রিয় (প্রতি ৬ঘণ্টা)",
       health_watch_enable: "ক্রমাগত স্বাস্থ্য পর্যবেক্ষণ সক্রিয় করুন",
+      speak_as: "যার মত কথা বলবেন",
+      no_twins_configured: "কোনো টুইন কনফিগার করা নেই। একটি তৈরি করতে Twin প্লাগইন খুলুন — এরপর এই পার্সোনা সেটি গ্রহণ করতে পারবে।",
+      twin_profile_aria: "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে"
     },
     tool_runner: {
       no_tools: "এই পার্সোনায় কোনো টুল নির্ধারিত নেই।",
@@ -1946,6 +1969,7 @@ export const bn = {
       success: "সফল",
       failed: "ব্যর্থ",
       error: "ত্রুটি",
+      input_json_placeholder: "মান"
     },
     health_check: {
       title: "এজেন্ট স্বাস্থ্য পরীক্ষা",
@@ -1962,7 +1986,7 @@ export const bn = {
       rerun: "পুনরায় চালান",
       capabilities: "সক্ষমতাসমূহ",
       all_healthy: "সব সিস্টেম সুস্থ",
-      all_healthy_detail: "এজেন্ট কনফিগারেশনে কোনো সমস্যা শনাক্ত হয়নি",
+      all_healthy_detail: "এজেন্ট কনফিগারেশনে কোনো সমস্যা শনাক্ত হয়নি"
     },
     health_digest: {
       title: "এজেন্ট স্বাস্থ্য ডাইজেস্ট",
@@ -1977,16 +2001,16 @@ export const bn = {
       agents_checked_other: "{count}টি এজেন্ট পরীক্ষিত",
       issues_one: "{count}টি সমস্যা",
       issues_other: "{count}টি সমস্যা",
-      last_run: "শেষ রান: {time}",
+      last_run: "শেষ রান: {time}"
     },
     health_issue: {
       apply_fix: "সংশোধন প্রয়োগ করুন: {label}",
-      manual_action: "ম্যানুয়াল পদক্ষেপ প্রয়োজন",
+      manual_action: "ম্যানুয়াল পদক্ষেপ প্রয়োজন"
     },
     health_score: {
       healthy: "সুস্থ",
       degraded: "অবনতি",
-      unhealthy: "অসুস্থ",
+      unhealthy: "অসুস্থ"
     },
     prompt_editor: {
       no_persona: "কোনো পার্সোনা নির্বাচিত নেই",
@@ -1994,6 +2018,7 @@ export const bn = {
       new_section: "নতুন বিভাগ",
       saved: "সংরক্ষিত",
       sections: "বিভাগসমূহ",
+      sections_aria: "প্রম্পট বিভাগসমূহ"
     },
     custom_sections: {
       title: "কাস্টম বিভাগসমূহ",
@@ -2003,7 +2028,7 @@ export const bn = {
       remove_section: "বিভাগ সরান",
       title_placeholder: "বিভাগের শিরোনাম...",
       content_placeholder: "বিভাগের বিষয়বস্তু...",
-      custom_section: "কাস্টম বিভাগ",
+      custom_section: "কাস্টম বিভাগ"
     },
     activity_filters: {
       all: "সব",
@@ -2011,7 +2036,7 @@ export const bn = {
       events: "ইভেন্টসমূহ",
       memories: "মেমরিসমূহ",
       reviews: "পর্যালোচনাসমূহ",
-      messages: "বার্তাসমূহ",
+      messages: "বার্তাসমূহ"
     },
     overview_actions: {
       delete_agent: "এজেন্ট মুছুন",
@@ -2019,7 +2044,7 @@ export const bn = {
       delete_agents: "{count}টি এজেন্ট মুছুন",
       delete_agents_message: "{count}টি এজেন্ট এবং তাদের সব কনফিগারেশন স্থায়ীভাবে সরানো হবে।",
       delete_drafts: "{count}টি খসড়া মুছুন",
-      delete_drafts_message: "{count}টি খসড়া এজেন্ট স্থায়ীভাবে সরানো হবে।",
+      delete_drafts_message: "{count}টি খসড়া এজেন্ট স্থায়ীভাবে সরানো হবে।"
     },
     persona_list: {
       all_personas: "সব পার্সোনা",
@@ -2047,7 +2072,7 @@ export const bn = {
       show_only_favorites: "শুধু প্রিয়গুলো দেখান",
       clear_search: "অনুসন্ধান সাফ করুন",
       col_persona: "পার্সোনা",
-      no_connectors_configured: "কোনো কানেক্টর কনফিগার নেই",
+      no_connectors_configured: "কোনো কানেক্টর কনফিগার নেই"
     },
     design_preview: {
       preview: "প্রিভিউ",
@@ -2061,7 +2086,7 @@ export const bn = {
       activating: "সক্রিয় হচ্ছে...",
       activate_agent: "এজেন্ট সক্রিয় করুন",
       create_agent: "এজেন্ট তৈরি করুন",
-      min_completeness: "৪০% সম্পূর্ণতায় পৌঁছাতে আরো বিস্তারিত যোগ করুন",
+      min_completeness: "৪০% সম্পূর্ণতায় পৌঁছাতে আরো বিস্তারিত যোগ করুন"
     },
     editor_ui: {
       max_budget_label: "সর্বোচ্চ বাজেট (USD)",
@@ -2185,8 +2210,8 @@ export const bn = {
       cost_per_run: "খরচ/রান",
       last_run: "শেষ রান",
       rank: "র‌্যাংক",
-      view_in_leaderboard: "লিডারবোর্ডে দেখুন",
-    },
+      view_in_leaderboard: "লিডারবোর্ডে দেখুন"
+    }
   },
   vault: {
     title: "ভল্ট",
@@ -2198,7 +2223,7 @@ export const bn = {
     health: {
       healthy: "সুস্থ",
       needs_attention: "মনোযোগ দরকার",
-      untested: "পরীক্ষিত নয়",
+      untested: "পরীক্ষিত নয়"
     },
     list: {
       no_credentials: "কোনো প্রমাণীকৃত সেবা পাওয়া যায়নি। নিচে ম্যানুয়ালি নির্বাচন করুন।",
@@ -2207,6 +2232,7 @@ export const bn = {
       no_dependencies: "কোনো এজেন্ট এই শংসাপত্রে নির্ভর করে না। পরিবর্তন বা মুছে ফেলা নিরাপদ।",
       affected_agents: "প্রভাবিত এজেন্ট",
       affected_events: "প্রভাবিত ইভেন্ট",
+      sort_label: "সাজান:"
     },
     import: {
       title: "ইম্পোর্ট উৎস",
@@ -2221,8 +2247,16 @@ export const bn = {
         min30: "৩০ মিনিট",
         hour1: "১ ঘণ্টা",
         hour6: "৬ ঘণ্টা",
-        day1: "২৪ ঘণ্টা",
+        day1: "২৪ ঘণ্টা"
       },
+      parse_secrets: "সিক্রেট পার্স করুন",
+      selected_for_import: "আমদানির জন্য নির্বাচিত",
+      auto_detected: "স্বয়ংক্রিয়ভাবে শনাক্ত",
+      sync_supported: "সিঙ্ক সমর্থিত",
+      secrets_found_one: "{count}টি সিক্রেট পাওয়া গেছে",
+      secrets_found_other: "{count}টি সিক্রেট পাওয়া গেছে",
+      import_secrets_one: "{count}টি সিক্রেট আমদানি করুন",
+      import_secrets_other: "{count}টি সিক্রেট আমদানি করুন"
     },
     features: {
       anomaly_detected: "অসঙ্গতি: পূর্বে সফল শংসাপত্র হঠাৎ ব্যর্থ হচ্ছে। সম্ভাব্য প্রত্যাহার।",
@@ -2246,7 +2280,7 @@ export const bn = {
         remove_failed: "নীতি সরাতে ব্যর্থ: {error}",
         update_failed: "রোটেশন পিরিয়ড আপডেট করতে ব্যর্থ: {error}",
         enable_failed: "রোটেশন সক্রিয় করতে ব্যর্থ: {error}",
-        last_rotated: "শেষ রোটেট হয়েছিল {time}",
+        last_rotated: "শেষ রোটেট হয়েছিল {time}"
       },
       anomaly: {
         healthy: "সুস্থ",
@@ -2258,13 +2292,13 @@ export const bn = {
         samples: "{count}টি চেক",
         permanent: "চলমান: {rate}",
         transient: "সাময়িক: {rate}",
-        tolerance: "সহনশীলতা: {rate}",
+        tolerance: "সহনশীলতা: {rate}"
       },
       rotation_badge: {
         disabled: "নিষ্ক্রিয়",
         perm_errors: "চলমান ত্রুটি",
         degrading: "আরো খারাপ হচ্ছে",
-        backoff: "পুনরায় চেষ্টার অপেক্ষায়",
+        backoff: "পুনরায় চেষ্টার অপেক্ষায়"
       },
       audit: {
         empty: "এখনো কোনো অডিট এন্ট্রি নেই। অপারেশনগুলো ঘটার সাথে সাথে লগ করা হবে।",
@@ -2273,13 +2307,13 @@ export const bn = {
         op_updated: "আপডেট হয়েছে",
         op_deleted: "মুছে ফেলা হয়েছে",
         op_healthcheck: "সংযোগ পরীক্ষা",
-        filter_all: "সব",
+        filter_all: "সব"
       },
       intelligence: {
         operation: "অপারেশন",
         detail: "বিস্তারিত",
-        time: "সময়",
-      },
+        time: "সময়"
+      }
     },
     negotiator: {
       title: "AI শংসাপত্র নেগোশিয়েটর",
@@ -2307,13 +2341,14 @@ export const bn = {
       open_in_browser: "ব্রাউজারে খুলুন",
       step_complete_captured: "ধাপ সম্পন্ন -- মান ক্যাপচার হয়েছে",
       mark_complete: "সম্পন্ন চিহ্নিত করুন",
-      completed: "সম্পন্ন",
+      completed: "সম্পন্ন"
     },
     card: {
       scope_mismatch: "স্কোপ মিলছে না",
       scope_missing_one: "{count}টি অনুরোধিত স্কোপ মঞ্জুর হয়নি: ",
       scope_missing_other: "{count}টি অনুরোধিত স্কোপ মঞ্জুর হয়নি: ",
       reauthorize: "পুনরায় অনুমোদন করুন",
+      reauthorize_scopes: "অতিরিক্ত স্কোপ সহ পুনরায় অনুমোদন করুন"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2331,6 +2366,18 @@ export const bn = {
       configure_fields: "ক্রেডেনশিয়াল ফিল্ড কনফিগার করুন",
       detect: "শনাক্ত করুন",
       auto_add: "স্বয়ংক্রিয় যোগ",
+      connection_test_heading: "সংযোগ পরীক্ষা",
+      test_connection_btn: "সংযোগ পরীক্ষা করুন",
+      credential_fields_heading: "ক্রেডেনশিয়াল ফিল্ড",
+      how_to_get_connector: "{connectorLabel} ক্রেডেনশিয়াল কীভাবে পাবেন",
+      authorization_complete: "অনুমোদন সম্পন্ন",
+      copied_to_clipboard: "ক্লিপবোর্ডে কপি হয়েছে",
+      credential_name: "ক্রেডেনশিয়াল নাম",
+      credential_name_placeholder: "এই ক্রেডেনশিয়ালের লেবেল দিন — যেমন My {label} Account, Production {label}",
+      authorizing_with: "{label} দিয়ে অনুমোদন করা হচ্ছে...",
+      authorize_with: "{label} দিয়ে অনুমোদন করুন",
+      oauth_consent_hint: "আপনার ব্রাউজারে {label} খুলবে। অ্যাক্সেস প্রদান করুন, তারপর এখানে ফিরে আসুন।",
+      oauth_connected_at: "{label} {time}-এ সংযুক্ত হয়েছে"
     },
     type_picker: {
       title: "ক্রেডেনশিয়াল যোগ করুন",
@@ -2359,7 +2406,7 @@ export const bn = {
       workspace_connect: "ওয়ার্কস্পেস কানেক্ট",
       workspace_connect_hint: "একটি Google লগইন স্বয়ংক্রিয়ভাবে Gmail, Calendar, Drive এবং Sheets ক্রেডেনশিয়াল তৈরি করে",
       auto_discover: "স্বয়ংক্রিয় ক্রেডেনশিয়াল আবিষ্কার",
-      auto_discover_hint: "বিদ্যমান API কী, AWS প্রোফাইল, env ভেরিয়েবল ইত্যাদির জন্য আপনার ফাইলসিস্টেম স্ক্যান করুন",
+      auto_discover_hint: "বিদ্যমান API কী, AWS প্রোফাইল, env ভেরিয়েবল ইত্যাদির জন্য আপনার ফাইলসিস্টেম স্ক্যান করুন"
     },
     body: {
       authorizing: "{name} দিয়ে অনুমোদন হচ্ছে...",
@@ -2367,12 +2414,12 @@ export const bn = {
       authorize_hint: "{name} সাইন-ইন খুলে এবং আপনার অনুমোদনের পরে অ্যাক্সেস সংরক্ষণ করে।",
       consent_completed: "{time}-এ {name} সম্মতি সম্পন্ন হয়েছে",
       update_failed: "ক্রেডেনশিয়াল আপডেট করতে ব্যর্থ",
-      delete_credential: "ক্রেডেনশিয়াল মুছুন",
+      delete_credential: "ক্রেডেনশিয়াল মুছুন"
     },
     connector: {
       filter_all: "সব",
       filter_connected: "সংযুক্ত",
-      filter_available: "পাওয়া যাচ্ছে",
+      filter_available: "পাওয়া যাচ্ছে"
     },
     auto_cred: {
       guided_setup: "গাইডেড সেটআপ",
@@ -2404,6 +2451,14 @@ export const bn = {
       open_in_browser: "ব্রাউজারে খুলুন",
       completed_step: "আমি এটি সম্পন্ন করেছি",
       input_requested: "ইনপুট অনুরোধ করা হয়েছে",
+      cancel_session: "সেশন বাতিল করুন",
+      test_connection: "সংযোগ পরীক্ষা করুন",
+      testing: "পরীক্ষা হচ্ছে...",
+      re_run_browser: "ব্রাউজার পুনরায় চালান",
+      discard: "বাতিল করুন",
+      save_credential: "ক্রেডেনশিয়াল সংরক্ষণ করুন",
+      save_procedure: "পদ্ধতি সংরক্ষণ করুন",
+      procedure_saved: "পদ্ধতি সংরক্ষিত"
     },
     vector: {
       documents_tab: "ডকুমেন্ট",
@@ -2435,7 +2490,7 @@ export const bn = {
       documents: "ডকুমেন্ট",
       chunks: "বিভাগসমূহ",
       local_embedding: "স্থানীয় সার্চ",
-      local_embedding_hint: "সার্চ ইন্ডেক্সিং {model} ({dims}-dim) ব্যবহার করে স্থানীয়ভাবে চলে। আপনার মেশিন থেকে কোনো ডেটা বের হয় না। মডেলটি (~২৩MB) প্রথম ব্যবহারে ডাউনলোড হয় এবং স্থানীয়ভাবে সংরক্ষিত হয়।",
+      local_embedding_hint: "সার্চ ইন্ডেক্সিং {model} ({dims}-dim) ব্যবহার করে স্থানীয়ভাবে চলে। আপনার মেশিন থেকে কোনো ডেটা বের হয় না। মডেলটি (~২৩MB) প্রথম ব্যবহারে ডাউনলোড হয় এবং স্থানীয়ভাবে সংরক্ষিত হয়।"
     },
     design_modal: {
       title: "ক্রেডেনশিয়াল ডিজাইন করুন",
@@ -2450,12 +2505,12 @@ export const bn = {
       how_to_fix: "কীভাবে সংশোধন করবেন",
       original_request: "আপনার মূল অনুরোধ (সংরক্ষিত):",
       start_over: "আবার শুরু করুন",
-      try_again_with: "আপনার অনুরোধ নিয়ে আবার চেষ্টা করুন",
+      try_again_with: "আপনার অনুরোধ নিয়ে আবার চেষ্টা করুন"
     },
     desktop: {
       installed: "ইনস্টল করা",
       running: "চলছে",
-      not_installed: "ইনস্টল নেই",
+      not_installed: "ইনস্টল নেই"
     },
     graph: {
       no_dependencies: "কোনো নির্ভরতা নেই",
@@ -2465,7 +2520,7 @@ export const bn = {
       dep_count_other: "{count}টি নির্ভরতা",
       not_tested: "পরীক্ষিত নয়",
       healthy: "সুস্থ",
-      unhealthy: "অসুস্থ",
+      unhealthy: "অসুস্থ"
     },
     wizard: {
       detected: "শনাক্ত ({count})",
@@ -2475,7 +2530,7 @@ export const bn = {
       already_added_badge: "ইতিমধ্যে যোগ করা",
       local: "স্থানীয়",
       cli_auth: "CLI অথ",
-      session: "সেশন",
+      session: "সেশন"
     },
     playground: {
       tab_overview: "সারসংক্ষেপ",
@@ -2505,7 +2560,7 @@ export const bn = {
       query_parameters: "কোয়েরি প্যারামিটার",
       headers: "হেডার",
       body: "বডি",
-      empty_response: "(খালি রেসপন্স)",
+      empty_response: "(খালি রেসপন্স)"
     },
     playground_extra: {
       add_tag: "ট্যাগ যোগ করুন...",
@@ -2526,11 +2581,11 @@ export const bn = {
       query_parameters: "কোয়েরি প্যারামিটার",
       recipes_title: "সংরক্ষিত রেসিপি",
       truncated_warning: "প্রদর্শনের জন্য প্রতিক্রিয়া সংক্ষিপ্ত করা হয়েছে",
-      value_col: "মান",
+      value_col: "মান"
     },
     ingest: {
       save_name: "নাম সংরক্ষণ করুন",
-      rename_credential: "ক্রেডেনশিয়ালের নাম পরিবর্তন করুন",
+      rename_credential: "ক্রেডেনশিয়ালের নাম পরিবর্তন করুন"
     },
     databases: {
       col_database: "ডেটাবেস",
@@ -2644,6 +2699,8 @@ export const bn = {
       filter_tables: "টেবিল ফিল্টার করুন...",
       refresh: "রিফ্রেশ করুন",
       introspection_unavailable: "এই কানেক্টর ধরনের জন্য টেবিল ইন্ট্রোস্পেকশন পাওয়া যায় না।",
+      not_null: "NOT NULL",
+      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "বাতিলকরণ সিমুলেট করুন",
@@ -2689,9 +2746,14 @@ export const bn = {
       daily_execs_lost: "দৈনিক এক্সিকিউশন হারানো",
       daily_cost_impact: "দৈনিক খরচের প্রভাব",
       sim_low: "কোনো পার্সোনা বা ওয়ার্কফ্লো এই ক্রেডেনশিয়ালের উপর নির্ভর করে না। বাতিল করা নিরাপদ।",
+      sim_critical: "{credentialName} প্রত্যাহার করলে {workflows}টি ওয়ার্কফ্লো{workflowPlural} ভেঙে যাবে এবং {personas}টি পার্সোনা{personaPlural} বন্ধ হয়ে যাবে।",
+      sim_high: "{credentialName} প্রত্যাহার করলে আপনার ওয়ার্কস্পেসের {personas}টি পার্সোনা{personaPlural}-এ প্রভাব পড়বে।",
+      sim_medium: "{credentialName} প্রত্যাহার করার প্রভাবের পরিসর সীমিত।",
+      per_day: "/দিন"
     },
     shared: {
       add: "যোগ করুন",
+      copied: "কপি হয়েছে",
       no_connector_available: "এই ক্রেডেনশিয়াল ধরনের জন্য কোনো কানেক্টর সংজ্ঞা পাওয়া যায়নি।",
       request_builder: "অনুরোধ নির্মাতা",
       close: "বন্ধ করুন",
@@ -2818,6 +2880,21 @@ export const bn = {
       no_documents_description: "আপনার নলেজ বেস তৈরি শুরু করতে ফাইল ড্রপ করুন, টেক্সট পেস্ট করুন, বা একটি ডিরেক্টরি স্ক্যান করুন।",
       delete_document: "ডকুমেন্ট মুছুন",
       chunks_label: "{count}টি চাংক",
+      kb_count_summary: "-- {docs}টি ডক, {chunks}টি চাঙ্ক",
+      default_patterns: "ডিফল্ট:",
+      add_pattern_placeholder: "*.pdf",
+      distance_label: "দূরত্ব:",
+      chunk_label: "চাঙ্ক:",
+      copy_credential_id: "ক্রেডেনশিয়াল ID কপি করুন",
+      request_body: "রিকোয়েস্ট বডি",
+      add_tag_title: "ট্যাগ যোগ করুন",
+      local_embedding_hint: "এমবেডিং স্থানীয়ভাবে {model} ({dims}-dim) ব্যবহার করে তৈরি হয়। কোনো ডেটা আপনার মেশিন থেকে বের হয় না। মডেল (~23MB) প্রথম ব্যবহারে ডাউনলোড এবং স্থানীয়ভাবে ক্যাশ করা হয়।",
+      api_path_placeholder: "/api/v1/resource",
+      json_body_placeholder: "মান",
+      sending: "পাঠানো হচ্ছে...",
+      send: "পাঠান",
+      search_results_one: "\"{query}\"-এর জন্য {count}টি ফলাফল",
+      search_results_other: "\"{query}\"-এর জন্য {count}টি ফলাফল"
     },
     manager: {
       title: "ক্রেডেনশিয়াল",
@@ -2837,20 +2914,23 @@ export const bn = {
       test_all_credentials: "সব ক্রেডেনশিয়াল পরীক্ষা করুন",
       test_all: "সব পরীক্ষা করুন",
       daily_progress: "প্রতিদিন {done}/{total}",
-      testing_progress: "পরীক্ষা করা হচ্ছে {done}/{total}",
+      testing_progress: "পরীক্ষা করা হচ্ছে {done}/{total}"
     },
     bulk_healthcheck: {
       title: "হেলথচেক ফলাফল",
       needs_attention: "মনোযোগ প্রয়োজন",
       slowest_responses: "সবচেয়ে ধীর প্রতিক্রিয়া",
+      passed_count: "{count}টি উত্তীর্ণ",
+      failed_count: "{count}টি ব্যর্থ",
+      total_count: "{count}টি মোট"
     },
     health_bar: {
       healthy: "সুস্থ",
       needs_attention: "মনোযোগ প্রয়োজন",
-      untested: "পরীক্ষিত নয়",
+      untested: "পরীক্ষিত নয়"
     },
     breadcrumb: {
-      aria_label: "ভল্ট ব্রেডক্রাম্ব",
+      aria_label: "ভল্ট ব্রেডক্রাম্ব"
     },
     credential_card: {
       deleting: "{name} মুছে ফেলা হচ্ছে...",
@@ -2866,7 +2946,7 @@ export const bn = {
       remove_tag: "\\\"{tag}\\\" ট্যাগ সরান",
       copy_credential_id: "ক্রেডেনশিয়াল ID কপি করুন",
       refresh_oauth: "এখন OAuth টোকেন রিফ্রেশ করুন",
-      refresh: "রিফ্রেশ করুন",
+      refresh: "রিফ্রেশ করুন"
     },
     vault_badge: {
       needs_attention: "মনোযোগ প্রয়োজন",
@@ -2889,21 +2969,21 @@ export const bn = {
       encrypt_now_other: "এখন {count}টি অ-এনক্রিপ্টেড ক্রেডেনশিয়াল এনক্রিপ্ট করুন",
       encrypt_done_one: "সম্পন্ন -- {migrated}টি ক্রেডেনশিয়াল এনক্রিপ্ট করা হয়েছে।",
       encrypt_done_other: "সম্পন্ন -- {migrated}টি ক্রেডেনশিয়াল এনক্রিপ্ট করা হয়েছে।",
-      encrypt_partial: "{migrated}টি এনক্রিপ্ট করা হয়েছে, {failed}টি ব্যর্থ হয়েছে। আবার চেষ্টা করুন বা অ্যাপ রিস্টার্ট করুন।",
+      encrypt_partial: "{migrated}টি এনক্রিপ্ট করা হয়েছে, {failed}টি ব্যর্থ হয়েছে। আবার চেষ্টা করুন বা অ্যাপ রিস্টার্ট করুন।"
     },
     delete_dialog: {
       title: "ক্রেডেনশিয়াল মুছুন",
       cannot_undo: "এই পদক্ষেপ পূর্বাবস্থায় ফেরানো যাবে না।",
       label_name: "নাম",
       label_type: "ধরন",
-      unverified_warning: "সমস্ত নির্ভরতা যাচাই করা যায়নি। কিছু সংযুক্ত এজেন্ট বা অটোমেশন দেখানো নাও হতে পারে।",
+      unverified_warning: "সমস্ত নির্ভরতা যাচাই করা যায়নি। কিছু সংযুক্ত এজেন্ট বা অটোমেশন দেখানো নাও হতে পারে।"
     },
     card_body: {
       failed_update: "ক্রেডেনশিয়াল আপডেট ব্যর্থ হয়েছে",
       authorizing_with: "{name} দিয়ে অনুমোদন হচ্ছে...",
       authorize_with: "{name} দিয়ে অনুমোদন করুন",
       authorize_hint: "অ্যাপ-পরিচালিত {name} সম্মতি চালু করে এবং অনুমোদনের পরে রিফ্রেশ টোকেন আপডেট করে।",
-      consent_completed: "{name} সম্মতি {time}-এ সম্পন্ন হয়েছে",
+      consent_completed: "{name} সম্মতি {time}-এ সম্পন্ন হয়েছে"
     },
     card_details: {
       tab_intelligence: "ইন্টেলিজেন্স",
@@ -2911,7 +2991,7 @@ export const bn = {
       tab_token_lifetime: "টোকেন লাইফটাইম",
       tab_services: "সেবা ({count})",
       tab_events: "ইভেন্ট ({count})",
-      tab_audit: "অডিট",
+      tab_audit: "অডিট"
     },
     intelligence_tab: {
       loading: "ইন্টেলিজেন্স ডেটা লোড হচ্ছে",
@@ -2932,7 +3012,7 @@ export const bn = {
       dependents_warning_other: "এই ক্রেডেনশিয়াল পরিবর্তন বা মুছলে {count}টি পার্সোনা প্রভাবিত হবে:",
       link_structural: "কাঠামোগত",
       link_observed: "পর্যবেক্ষিত",
-      via_connector: "{connector}-এর মাধ্যমে",
+      via_connector: "{connector}-এর মাধ্যমে"
     },
     token_metrics: {
       loading: "মেট্রিক্স লোড হচ্ছে...",
@@ -2944,6 +3024,11 @@ export const bn = {
       avg_drift: "গড় ড্রিফট",
       recent_ttls: "সাম্প্রতিক প্রদানকারী TTL (নতুন প্রথম)",
       recent_refreshes: "সাম্প্রতিক রিফ্রেশ",
+      fallback_used: "{rate}% রিফ্রেশে ({count}/{total}) ফলব্যাক ({fallback}s) ব্যবহৃত — প্রোভাইডার বাদ দেয়"
+    },
+    reauth_banner: {
+      access_revoked: ") -- অ্যাক্সেস প্রত্যাহার করা হয়েছে। অটোমেশন পুনরায় শুরু করতে পুনরায় অনুমোদন করুন।",
+      reconnect: "পুনরায় সংযোগ করুন"
     },
     rotation_section: {
       corrupted_warning: "হেলথচেক মেটাডেটা দূষিত। পরবর্তী সফল হেলথচেক না হওয়া পর্যন্ত অ্যানোমালি স্কোর পাওয়া যাবে না।",
@@ -2964,6 +3049,7 @@ export const bn = {
       enabling: "সক্রিয় হচ্ছে...",
       enable_rotation: "রোটেশন সক্রিয় করুন",
       enable_failed: "রোটেশন সক্রিয় ব্যর্থ: {error}",
+      last_rotated: "শেষ ঘোরানো হয়েছে {time}"
     },
     event_config: {
       event_triggers: "ইভেন্ট ট্রিগার",
@@ -2990,6 +3076,7 @@ export const bn = {
       minutes_10: "১০ মিনিট",
       healthcheck_auto_rotate: "পূর্বে সুস্থ ক্রেডেনশিয়াল হেলথচেক ব্যর্থ হলে রোটেশন স্বয়ংক্রিয়ভাবে ট্রিগার হবে।",
       last_evaluated: "শেষ মূল্যায়ন: {time}",
+      loading: "ইভেন্ট লোড হচ্ছে..."
     },
     credential_forms: {
       encrypted_keychain: "OS Keychain দিয়ে এনক্রিপ্টেড",
@@ -3003,6 +3090,10 @@ export const bn = {
       new_credential: "নতুন {label} ক্রেডেনশিয়াল",
       configure_fields: "ক্রেডেনশিয়াল ফিল্ড কনফিগার করুন",
       oauth_required: "এই ক্রেডেনশিয়াল সংযুক্ত করতে নিচের অনুমোদন বোতাম ব্যবহার করুন।",
+      open_to_generate: "একটি API কী বা টোকেন তৈরি করতে {label} খুলুন",
+      already_configured: "ক্রেডেনশিয়াল ইতিমধ্যে কনফিগার করা -- প্রতিস্থাপন করতে নিচে আপডেট করুন",
+      setup_instructions_label: "সেটআপ নির্দেশনা",
+      no_fields_defined: "এই কানেক্টরের জন্য কোনো ক্রেডেনশিয়াল ফিল্ড সংজ্ঞায়িত নেই।"
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3023,13 +3114,21 @@ export const bn = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI",
+      save_failed: "Failed to capture credential from CLI"
     },
-
     audit_log: {
       empty: "এখনও কোনো অডিট এন্ট্রি নেই",
       empty_hint: "কার্যক্রম হওয়ার সাথে সাথে অপারেশন লগ করা হবে।",
       access_events_hint: "অ্যাক্সেস ইভেন্ট এখানে দেখাবে।",
+      loading: "অডিট টাইমলাইন লোড হচ্ছে...",
+      total_accesses: "{count}টি মোট",
+      personas_one: "{count}টি পার্সোনা",
+      personas_other: "{count}টি পার্সোনা",
+      accesses_24h: "24h-এ {count}টি",
+      anomalies_one: "{count}টি অস্বাভাবিকতা",
+      anomalies_other: "{count}টি অস্বাভাবিকতা",
+      no_anomalies: "কোনো অস্বাভাবিকতা নেই",
+      show_all: "সব {count}টি এন্ট্রি দেখান"
     },
     credential_import: {
       import_from: "{source} থেকে আমদানি করুন",
@@ -3038,6 +3137,12 @@ export const bn = {
       enable_sync: "সিঙ্ক মোড সক্রিয় করুন",
       source_ref: "উৎস রেফারেন্স",
       poll_interval: "পোল ইন্টারভাল",
+      sync_hint: "পরিবর্তনের জন্য বাহ্যিক ভল্ট পর্যবেক্ষণ করে এবং পোলিং ব্যবহার করে ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে আপডেট করে।",
+      interval_15min: "15 মিনিট",
+      interval_30min: "30 মিনিট",
+      interval_1hr: "1 ঘণ্টা",
+      interval_6hr: "6 ঘণ্টা",
+      interval_24hr: "24 ঘণ্টা"
     },
     empty_state: {
       heading: "আপনার প্রথম সেবা সংযুক্ত করুন",
@@ -3046,11 +3151,11 @@ export const bn = {
       catalog_description: "Slack, GitHub, বা OpenAI-এর মতো পরিচিত সেবা বেছে নিন। পূর্ব-কনফিগার করা ফিল্ড ও হেলথচেক।",
       ai_heading: "AI-ডিজাইন করা ক্রেডেনশিয়াল",
       ai_description: "যেকোনো সেবা বর্ণনা করুন এবং AI আপনার জন্য ফিল্ড, auth টাইপ এবং হেলথচেক কনফিগার করবে।",
-      works_with_any: "যেকোনো API-এর সাথে কাজ করে",
+      works_with_any: "যেকোনো API-এর সাথে কাজ করে"
     },
     credential_list: {
       no_match: "কোনো ক্রেডেনশিয়াল মিলছে না",
-      no_match_hint: "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন",
+      no_match_hint: "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন"
     },
     wizard_detect: {
       no_services: "\\\"{search}\\\" এর সাথে কোনো সেবা মিলছে না",
@@ -3062,6 +3167,15 @@ export const bn = {
       batch_complete: "ব্যাচ সেটআপ সম্পন্ন",
       skip_service: "এই সেবা এড়িয়ে যান",
       no_filter_match: "ভিন্ন সার্চ টার্ম ব্যবহার করুন বা ফিল্টার সাফ করুন।",
+      set_up_credentials: "ক্রেডেনশিয়াল সেট আপ করুন",
+      clear_selection: "নির্বাচন সাফ করুন",
+      set_up_services: "{count}টি সার্ভিস{plural} সেট আপ করুন",
+      setting_up: "{total}-এর মধ্যে {current} সেট আপ করা হচ্ছে",
+      wizard_title: "ক্রেডেনশিয়াল সেটআপ উইজার্ড",
+      choose_service: "সেট আপ করতে একটি সার্ভিস নির্বাচন করুন",
+      ai_walk_description: "AI আপনাকে ধাপে ধাপে API ক্রেডেনশিয়াল পাওয়ার পথ দেখাবে।",
+      wizard_subtitle: "AI-পরিচালিত ক্রেডেনশিয়াল সেটআপ",
+      wizard_subtitle_batch: "{count}টি সার্ভিস{plural} সেট আপ করা হচ্ছে"
     },
     autopilot: {
       title: "API অটোপাইলট",
@@ -3085,6 +3199,23 @@ export const bn = {
       query_parameters: "কোয়েরি প্যারামিটার",
       param_name_placeholder: "প্যারাম নাম",
       request_body: "রিকোয়েস্ট বডি (JSON)",
+      from_url: "URL থেকে",
+      paste_content: "কন্টেন্ট পেস্ট করুন",
+      openapi_spec_url: "OpenAPI স্পেক URL",
+      openapi_format_hint: "JSON বা YAML ফরম্যাটে OpenAPI 3.x এবং Swagger 2.x স্পেক সমর্থন করে",
+      parsing_spec: "স্পেক পার্স করা হচ্ছে...",
+      parse_analyze: "পার্স ও বিশ্লেষণ করুন",
+      connector_in_catalog: "{connectorLabel} এখন আপনার কানেক্টর ক্যাটালগে {toolCount}টি টুল সংজ্ঞা সহ উপলব্ধ।",
+      generated_tools: "তৈরি টুল ({count})",
+      credential_fields: "ক্রেডেনশিয়াল ফিল্ড",
+      open_playground: "প্লেগ্রাউন্ড খুলুন",
+      copy_connector_id: "কানেক্টর ID কপি করুন",
+      go_to_catalog: "ক্যাটালগে যান",
+      response_headers: "প্রতিক্রিয়া হেডার ({count})",
+      base_url_placeholder: "https://api.example.com",
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      auth_schemes: "auth স্কিম",
+      body_placeholder: "মান"
     },
     foraging: {
       no_credentials_found: "কোনো ক্রেডেনশিয়াল পাওয়া যায়নি",
@@ -3101,10 +3232,44 @@ export const bn = {
       step_done: "সম্পন্ন",
       step_completed: "(সম্পন্ন)",
       step_current: "(বর্তমান)",
+      start_scan: "স্ক্যান শুরু করুন",
+      checking_env: "এনভায়রনমেন্ট ভেরিয়েবল, কনফিগ ফাইল এবং ডেভ টুল ক্রেডেনশিয়াল পরীক্ষা করা হচ্ছে",
+      importing: "ভল্টে ক্রেডেনশিয়াল আমদানি করা হচ্ছে...",
+      scan_again: "আবার স্ক্যান করুন",
+      back_to_vault: "ভল্টে ফিরে যান",
+      already_in_vault: "ইতিমধ্যে ভল্টে আছে",
+      imported: "আমদানি করা হয়েছে",
+      to_vault: "ভল্টে",
+      credentials_found_one: "{count}টি ক্রেডেনশিয়াল পাওয়া গেছে",
+      credentials_found_other: "{count}টি ক্রেডেনশিয়াল পাওয়া গেছে",
+      selected: "নির্বাচিত",
+      import_to_vault_one: "{count}টি ক্রেডেনশিয়াল ভল্টে আমদানি করুন",
+      import_to_vault_other: "{count}টি ক্রেডেনশিয়াল ভল্টে আমদানি করুন",
+      env_var_one: "{count}টি env ভেরিয়েবল",
+      env_var_other: "{count}টি env ভেরিয়েবল",
+      import_server: "আমদানি",
+      sources_in: "সোর্স সময়ে",
+      progress_aria: "ফোরেজিং অগ্রগতি",
+      scanned_sources: "{ms}ms-এ {count}টি সোর্স স্ক্যান করা হয়েছে"
     },
     desktop_discovery: {
       title: "ডেস্কটপ অ্যাপ",
       allowed_binaries: "অনুমোদিত বাইনারি: ",
+      connect_description: "স্থানীয় অ্যাপ্লিকেশন সংযোগ করুন বা Claude Desktop MCP সার্ভার আমদানি করুন",
+      detected_apps_tab: "শনাক্ত অ্যাপ ({count})",
+      claude_mcp_tab: "Claude MCP ({count})",
+      scanning: "ডেস্কটপ অ্যাপ স্ক্যান করা হচ্ছে...",
+      detected_on_system: "আপনার সিস্টেমে শনাক্ত হয়েছে",
+      not_detected: "শনাক্ত হয়নি",
+      no_apps: "কোনো ডেস্কটপ অ্যাপ শনাক্ত হয়নি। রিফ্রেশ করে দেখুন।",
+      reading_config: "Claude Desktop কনফিগ পড়া হচ্ছে...",
+      mcp_servers_found_one: "Claude Desktop কনফিগারেশনে {count}টি MCP সার্ভার পাওয়া গেছে। আপনার এজেন্টের সাথে ব্যবহার করতে ক্রেডেনশিয়াল হিসেবে আমদানি করুন।",
+      mcp_servers_found_other: "Claude Desktop কনফিগারেশনে {count}টি MCP সার্ভার পাওয়া গেছে। আপনার এজেন্টের সাথে ব্যবহার করতে ক্রেডেনশিয়াল হিসেবে আমদানি করুন।",
+      no_mcp_config: "কোনো Claude Desktop MCP কনফিগারেশন পাওয়া যায়নি।",
+      mcp_config_hint: "যদি আপনার Claude Desktop ইনস্টল করা থাকে, নিশ্চিত করুন এর সেটিংসে MCP সার্ভার কনফিগার করা আছে।",
+      permission_required: "অনুমতি প্রয়োজন",
+      approve_description: "নিম্নলিখিত ক্ষমতার অনুরোধ করছে। এই কানেক্টর সক্ষম করতে পর্যালোচনা ও অনুমোদন করুন।",
+      approve_connect: "অনুমোদন ও সংযোগ করুন"
     },
     picker_section: {
       no_connectors: "কোনো কানেক্টর পাওয়া যায়নি",
@@ -3115,10 +3280,29 @@ export const bn = {
       filter_purpose: "উদ্দেশ্য",
       filter_category: "বিভাগ",
       filter_license: "লাইসেন্স",
+      credential_name: "ক্রেডেনশিয়াল নাম",
+      add_project_first: "আপনার এজেন্টের সাথে একটি কোডবেস সংযোগ করতে প্রথমে Dev Tools-এ একটি প্রকল্প যোগ করুন।",
+      go_to_dev_tools: "Dev Tools-এ যান",
+      workspace_connect_description: "একটি Google লগইন Gmail, Calendar, Drive এবং Sheets ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে তৈরি করে",
+      foraging_description: "বিদ্যমান API কী, AWS প্রোফাইল, env ভেরিয়েবল এবং আরও অনেক কিছুর জন্য আপনার ফাইলসিস্টেম স্ক্যান করুন",
+      no_setup_guide: "এই কানেক্টরের জন্য কোনো সেটআপ গাইড উপলব্ধ নেই। নির্দেশনার জন্য নিচের ডকুমেন্টেশন লিঙ্কে যান।",
+      open_setup_page: "{label} সেটআপ পৃষ্ঠা খুলুন"
+    },
+    cli_capture: {
+      cta: "স্থানীয় CLI থেকে আমদানি করুন",
+      hint: "API কী পেস্ট করার পরিবর্তে ইতিমধ্যে লগইন করা স্থানীয় CLI ব্যবহার করুন।",
+      running: "স্থানীয় CLI চলছে...",
+      success: "CLI থেকে ক্রেডেনশিয়াল ক্যাপচার হয়েছে",
+      token_ttl_notice: "এই টোকেনটি {seconds}s-এ মেয়াদ শেষ হবে এবং স্বয়ংক্রিয়ভাবে রিফ্রেশ হবে।",
+      source_label: "CLI",
+      missing_binary: "`{binary}` ইনস্টল করা নেই বা অনুমোদিত অবস্থানে নেই।",
+      unauthenticated: "আপনি {binary}-এ সাইন ইন করেননি। {instruction}",
+      capture_failed: "CLI ক্যাপচার ব্যর্থ হয়েছে: {detail}",
+      timeout: "CLI ক্যাপচার টাইমআউট হয়েছে। প্রথমে ম্যানুয়ালি কমান্ডটি চালিয়ে দেখুন।"
     },
     schemas: {
       none_configured: "কিছু কনফিগার নেই।",
-      required_badge: "প্রয়োজনীয়",
+      required_badge: "প্রয়োজনীয়"
     },
     design_phases: {
       saving: "ক্রেডেনশিয়াল সংরক্ষণ হচ্ছে...",
@@ -3151,8 +3335,32 @@ export const bn = {
       mark_done: "সম্পন্ন চিহ্নিত করুন",
       mark_step_complete: "ধাপ সম্পন্ন চিহ্নিত করুন",
       copy_to_clipboard: "ক্লিপবোর্ডে কপি করুন",
+      credential_saved_message: "{label} ক্রেডেনশিয়াল নিরাপদে সংরক্ষিত হয়েছে।",
+      revision_count: "(সংশোধন {count})",
+      connector_added_to_catalog: "কানেক্টর আপনার ক্যাটালগে যুক্ত হয়েছে -- এখন অন্যান্য পার্সোনা এবং টেমপ্লেট গ্রহণের জন্য উপলব্ধ।",
+      view_credential: "ক্রেডেনশিয়াল দেখুন",
+      refine_hint: "স্কোপ সমন্বয়, ফিল্ড যোগ বা কনফিগারেশন পরিমার্জন করতে হবে?",
+      refine_placeholder: "যেমন write স্কোপ যোগ করুন, staging এনভায়রনমেন্ট যোগ করুন...",
+      refine: "পরিমার্জন করুন",
+      linked_to_existing: "আপনার ক্রেডেনশিয়াল বিদ্যমান কানেক্টর সংজ্ঞার সাথে লিঙ্ক করা হবে।",
+      no_existing_connector: "-- আপনার ক্যাটালগে কোনো বিদ্যমান {name} কানেক্টর পাওয়া যায়নি।",
+      new_connector_will_be_registered: "যখন আপনি এই ক্রেডেনশিয়ালটি সংরক্ষণ করবেন, AI-জেনারেটেড কানেক্টর সংজ্ঞা স্বয়ংক্রিয়ভাবে আপনার কানেক্টর ক্যাটালগে নিবন্ধিত হবে -- যা অন্যান্য পার্সোনা এবং টেমপ্লেট গ্রহণের জন্য পুনর্ব্যবহারযোগ্য করবে।",
+      refine_request: "ঠিক নয়? আপনার অনুরোধ পরিমার্জন করুন",
+      auto_provision_hint: "-- AI আপনাকে ধাপে ধাপে {label} ক্রেডেনশিয়াল পাওয়ার পথ দেখাবে।",
+      credential_name_label: "ক্রেডেনশিয়াল নাম",
+      credentials_secure_notice: "ক্রেডেনশিয়ালগুলি অ্যাপ ভল্টে নিরাপদে সংরক্ষিত এবং এজেন্ট টুল এক্সিকিউশনের জন্য উপলব্ধ।",
+      tested_successfully_at: "{time}-এ সফলভাবে পরীক্ষিত",
+      setup_instructions: "সেটআপ নির্দেশনা",
+      all_steps_complete: "সব ধাপ সম্পন্ন -- নিচের ফিল্ডগুলি পূরণ করুন এবং আপনার সংযোগ পরীক্ষা করুন।",
+      use_template: "ব্যবহার",
+      recipe_used_one: "-- {count} বার ব্যবহৃত",
+      recipe_used_other: "-- {count} বার ব্যবহৃত",
+      instruction_placeholder: "যেমন Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
+      browser_automation_warning: "ব্রাউজার অটোমেশন চলছে। উইন্ডোর সাথে ইন্টারঅ্যাক্ট করবেন না — এটি সম্পূর্ণ হলে পুনরায় শুরু হবে।",
+      desktop_bridge_title: "{{label}} এর জন্য ডেস্কটপ অ্যাপ প্রয়োজন",
+      desktop_bridge_hint: "এই কানেক্টর একটি নেটিভ ব্রাউজার সেশন চালায় যা কেবল Personas ডেস্কটপ অ্যাপে চলে।",
       preparing_guided: "গাইডেড সেটআপ নির্দেশনা প্রস্তুত হচ্ছে...",
       starting_browser: "ব্রাউজার সেশন শুরু হচ্ছে...",
       no_log_output: "কোনো লগ আউটপুট ক্যাপচার হয়নি।",
@@ -3183,8 +3391,26 @@ export const bn = {
       step_browser_review: "পর্যালোচনার জন্য এখানে ফিরে আসুন",
       step_guided_review: "ক্রেডেনশিয়াল পর্যালোচনা ও সংরক্ষণ করুন",
       setup_context: "ডিজাইন বিশ্লেষণ থেকে সেটআপ প্রেক্ষাপট:",
+      review_extracted: "নিষ্কাশিত ক্রেডেনশিয়াল পর্যালোচনা করুন",
+      review_extracted_hint: "ব্রাউজার থেকে নিষ্কাশিত মান -- সংরক্ষণের আগে যাচাই করুন",
+      completeness_partial: "{total}টির মধ্যে {filled}টি আবশ্যক ফিল্ড পূরণ হয়েছে। সংরক্ষণের আগে অনুপস্থিত ফিল্ডগুলি সম্পূর্ণ করুন।",
+      universal_auto_setup: "ইউনিভার্সাল অটো-সেটআপ",
+      universal_auto_setup_hint: "একটি URL এবং বিবরণ প্রদান করুন, এবং AI সাইটটি নেভিগেট করে API ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে আবিষ্কার ও তৈরি করবে।",
+      service_url_label: "সার্ভিস URL",
+      service_url_placeholder: "https://app.example.com বা https://developer.example.com",
+      what_do_you_need: "আপনার কী দরকার?",
+      description_placeholder: "যেমন ডেটা পড়তে ও লিখতে তাদের REST API-এর জন্য একটি API কী প্রয়োজন। ডেভেলপার পোর্টালের Settings-এর অধীনে API Keys বিভাগ আছে।",
+      discover_credentials: "ক্রেডেনশিয়াল আবিষ্কার করুন",
+      discovered_label: "আবিষ্কৃত: {label}",
+      fields_discovered_one: "{count}টি ফিল্ড আবিষ্কৃত",
+      fields_discovered_other: "{count}টি ফিল্ড আবিষ্কৃত",
+      extracted_values_label: "নিষ্কাশিত মান",
+      no_fields_discovered: "কোনো ফিল্ড আবিষ্কৃত হয়নি। আরও নির্দিষ্ট বিবরণ দিয়ে আবার চেষ্টা করুন।",
+      fields_captured_partial: "{total}-এর মধ্যে {filled}টি ফিল্ড ক্যাপচার হয়েছে",
+      credential_stored: "{label} ক্রেডেনশিয়াল নিরাপদে সংরক্ষিত হয়েছে।"
     },
     negotiator_extra: {
+      panel_title: "AI ক্রেডেনশিয়াল নেগোশিয়েটর",
       checking_auth: "বিদ্যমান প্রমাণীকরণ যাচাই হচ্ছে...",
       auto_provisioning: "স্বয়ংক্রিয় API কী প্রভিশনিং",
       generating_plan: "প্রভিশনিং পরিকল্পনা তৈরি হচ্ছে...",
@@ -3193,6 +3419,7 @@ export const bn = {
       need_help: "এই ধাপে সাহায্য প্রয়োজন?",
       hide_help: "সাহায্য লুকান",
       ask_question: "এই ধাপ সম্পর্কে একটি প্রশ্ন জিজ্ঞাসা করুন...",
+      planning_description: "AI ডেভেলপার পোর্টাল বিশ্লেষণ করছে এবং ধাপে ধাপে প্রোভিশনিং পরিকল্পনা তৈরি করছে..."
     },
     workspace_panel: {
       select_services: "সংযুক্ত করতে সেবা নির্বাচন করুন",
@@ -3200,6 +3427,15 @@ export const bn = {
       creating_credentials: "ক্রেডেনশিয়াল তৈরি হচ্ছে...",
       all_created: "সব ক্রেডেনশিয়াল তৈরি হয়েছে",
       some_failed: "কিছু ক্রেডেনশিয়াল ব্যর্থ হয়েছে",
+      selected_count: "{total}-এর মধ্যে {selected}টি নির্বাচিত",
+      select_all: "সব নির্বাচন করুন",
+      connect_services_one: "একটি লগইন দিয়ে {count}টি সার্ভিস সংযোগ করুন",
+      connect_services_other: "একটি লগইন দিয়ে {count}টি সার্ভিস সংযোগ করুন",
+      granting_access_one: "এটি {count}টি সার্ভিসে অ্যাক্সেস প্রদান করবে",
+      granting_access_other: "এটি {count}টি সার্ভিসে অ্যাক্সেস প্রদান করবে",
+      credentials_created_one: "একটি লগইন থেকে {count}টি ক্রেডেনশিয়াল তৈরি হয়েছে।",
+      credentials_created_other: "একটি লগইন থেকে {count}টি ক্রেডেনশিয়াল তৈরি হয়েছে।",
+      sign_in_browser: "ব্রাউজার উইন্ডোতে আপনার Google অ্যাকাউন্ট দিয়ে সাইন ইন করুন।"
     },
     gateway: {
       gateway_members: "{name} — গেটওয়ে সদস্য",
@@ -3216,7 +3452,7 @@ export const bn = {
       display_name: "ডিসপ্লে নাম (টুল প্রিফিক্স)",
       display_name_placeholder: "যেমন arcade, research_tools, docs",
       adding: "যোগ হচ্ছে…",
-      add_member: "সদস্য যোগ করুন",
+      add_member: "সদস্য যোগ করুন"
     },
     pending_auth: {
       title: "অনুমোদন প্রয়োজন",
@@ -3230,13 +3466,13 @@ export const bn = {
       open_first: "প্রথমে URL খুলুন ও সম্মতি দিন",
       retrying: "পুনরায় চেষ্টা হচ্ছে…",
       retry_authorized: "আমি অনুমোদন করেছি — পুনরায় চেষ্টা করুন",
-      retry_failed: "পুনরায় চেষ্টা ব্যর্থ",
+      retry_failed: "পুনরায় চেষ্টা ব্যর্থ"
     },
     rotation_insight: {
       perm_errors: "স্থায়ী ত্রুটি সনাক্ত -- রোটেশন চেষ্টা হয়েছে, সতর্কতা পাঠানো হচ্ছে।",
       degrading: "ক্রমাগত অবনতি -- প্রতিরোধমূলক রোটেশন ট্রিগার হয়েছে।",
-      backoff: "ক্ষণস্থায়ী ত্রুটি -- এক্সপোনেনশিয়াল ব্যাকঅফ সক্রিয়।",
-    },
+      backoff: "ক্ষণস্থায়ী ত্রুটি -- এক্সপোনেনশিয়াল ব্যাকঅফ সক্রিয়।"
+    }
   },
   deployment: {
     title: "ডিপ্লয়মেন্ট",
@@ -3254,7 +3490,7 @@ export const bn = {
       token_available: "টোকেন উপলব্ধ",
       no_token: "কোনো টোকেন কনফিগার করা নেই",
       no_token_configured: "কোনো টোকেন কনফিগার করা নেই",
-      no_status: "কোনো স্ট্যাটাস ডাটা নেই।",
+      no_status: "কোনো স্ট্যাটাস ডাটা নেই।"
     },
     api_playground: {
       title: "API প্লেগ্রাউন্ড",
@@ -3264,10 +3500,12 @@ export const bn = {
       sending: "পাঠানো হচ্ছে...",
       empty_response: "(খালি রেসপন্স)",
       snippets: "স্নিপেট",
+      request_body_placeholder: "আপনার প্রম্পট এখানে..."
     },
     connection: {
       orchestrator_url_label: "ক্লাউড সার্ভার URL",
       orchestrator_prefix: "https://",
+      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "API কী দিন",
       connect: "সংযুক্ত করুন",
       connected: "সংযুক্ত",
@@ -3277,16 +3515,28 @@ export const bn = {
       diagnostics_title: "ডায়াগনস্টিক্স",
       url_protocol_error: "URL-এ http বা https ব্যবহার করতে হবে",
       url_hostname_error: "URL-এ হোস্টনাম নেই",
-      url_invalid: "অবৈধ URL",
+      url_invalid: "অবৈধ URL"
     },
     deployments_panel: {
       deploy_persona: "পার্সোনা ডিপ্লয় করুন",
       select_persona: "ডিপ্লয় করতে একটি পার্সোনা নির্বাচন করুন",
       all_deployed: "সব পার্সোনা ইতিমধ্যে ডিপ্লয় করা হয়েছে",
+      no_deployments_yet: "এখনও কোনো ডিপ্লয়মেন্ট নেই। ক্লাউড API এন্ডপয়েন্ট হিসেবে ডিপ্লয় করতে উপরে একটি পার্সোনা নির্বাচন করুন।",
+      active_deployments: "সক্রিয় ডিপ্লয়মেন্ট"
     },
     exec_detail: {
       fetching_output: "আউটপুট আনা হচ্ছে...",
       no_output: "কোনো আউটপুট নেই",
+      label_status: "অবস্থা:",
+      label_duration: "সময়কাল:",
+      label_cost: "খরচ:",
+      label_tokens: "টোকেন:",
+      label_started: "শুরু:",
+      label_completed: "সম্পন্ন:",
+      label_input: "ইনপুট:",
+      view_output: "আউটপুট দেখুন",
+      output_prefix: "আউটপুট (",
+      output_lines_suffix: "লাইন)"
     },
     oauth_panel: {
       connect_anthropic: "Anthropic অ্যাকাউন্ট সংযুক্ত করুন",
@@ -3298,6 +3548,13 @@ export const bn = {
       token_unknown: "টোকেন স্ট্যাটাস অজানা",
       expires: "মেয়াদ শেষ",
       scopes: "স্কোপ",
+      open_auth_window: "অনুমোদন উইন্ডো খুলুন",
+      complete_authorization: "অনুমোদন সম্পূর্ণ করুন",
+      refresh_token: "টোকেন রিফ্রেশ করুন",
+      open_authorization_window: "অনুমোদন উইন্ডো খুলুন",
+      token_unknown_msg: "টোকেন বৈধতা যাচাই করা যায়নি। এটি এখনও সক্রিয় কিনা নিশ্চিত করতে টোকেন রিফ্রেশ করুন।",
+      connect_anthropic_msg: "ক্লাউড এক্সিকিউশনের জন্য OAuth-ভিত্তিক প্রমাণীকরণ সক্ষম করতে আপনার Anthropic অ্যাকাউন্ট সংযোগ করুন।",
+      token_expired_msg_prefix: "এই OAuth টোকেনের মেয়াদ শেষ হয়েছে"
     },
     trigger_form: {
       new_cloud_trigger: "নতুন ক্লাউড ট্রিগার",
@@ -3307,9 +3564,15 @@ export const bn = {
       schedule_cron: "শিডিউল (cron)",
       create_trigger: "ট্রিগার তৈরি করুন",
       creating: "তৈরি হচ্ছে...",
+      cron_expression: "Cron এক্সপ্রেশন",
+      utc_suffix: "(UTC)",
+      webhook_info: "এই ট্রিগারের জন্য একটি webhook এন্ডপয়েন্ট তৈরি হবে। তৈরির পরে আপনি পেলোড ফিল্টারিং কনফিগার করতে পারেন।"
     },
     chart: {
       daily_executions: "দৈনিক এক্সিকিউশন",
+      tooltip_runs: "রান:",
+      tooltip_cost: "খরচ:",
+      tooltip_success: "সফল:"
     },
     deploy_card: {
       test_deployment: "ডিপ্লয়মেন্ট পরীক্ষা করুন",
@@ -3318,6 +3581,10 @@ export const bn = {
       remove_deployment: "ডিপ্লয়মেন্ট সরান",
       copy_endpoint: "এন্ডপয়েন্ট কপি করুন",
       open_endpoint: "এন্ডপয়েন্ট খুলুন",
+      budget_label: "বাজেট:",
+      label_invocations: "ইনভোকেশন:",
+      label_last_called: "শেষ কল:",
+      label_created: "তৈরি:"
     },
     tabs: {
       connection: "সংযোগ",
@@ -3325,7 +3592,7 @@ export const bn = {
       oauth: "OAuth",
       deployments: "ডিপ্লয়মেন্ট",
       schedules: "সময়সূচি",
-      history: "ইতিহাস",
+      history: "ইতিহাস"
     },
     cloud_execution: "ক্লাউড সম্পাদন",
     cloud_status: {
@@ -3337,7 +3604,7 @@ export const bn = {
       queue_length: "কিউ দৈর্ঘ্য",
       active_executions: "সক্রিয় সম্পাদন",
       active_execution: "সক্রিয় সম্পাদন",
-      claude_token: "Claude টোকেন",
+      claude_token: "Claude টোকেন"
     },
     history: {
       just_now: "এইমাত্র",
@@ -3357,6 +3624,8 @@ export const bn = {
       last_30_days: "শেষ ৩০ দিন",
       last_90_days: "শেষ ৯০ দিন",
       top_errors: "শীর্ষ ত্রুটি",
+      clear_filters: "ফিল্টার সাফ করুন",
+      execution_history: "এক্সিকিউশন ইতিহাস"
     },
     schedules: {
       header: "ক্লাউড ট্রিগার ({count})",
@@ -3366,6 +3635,12 @@ export const bn = {
       empty: "কোনো ক্লাউড ট্রিগার নেই। স্বয়ংক্রিয় রানের জন্য একটি তৈরি করুন।",
       recent_firings: "সাম্প্রতিক ফায়ারিং",
       no_firings: "কোনো সাম্প্রতিক ফায়ারিং নেই",
+      label_type: "ধরন:",
+      label_status: "অবস্থা:",
+      label_last_triggered: "শেষ ট্রিগার:",
+      label_next_trigger: "পরবর্তী ট্রিগার:",
+      label_cron: "Cron:",
+      loading_firings: "লোড হচ্ছে..."
     },
     dashboard: {
       title: "ডিপ্লয়মেন্ট",
@@ -3420,7 +3695,7 @@ export const bn = {
       stage_generating: "তৈরি হচ্ছে",
       stage_completed: "সম্পন্ন",
       stage_failed: "ব্যর্থ",
-      tool_calls: "{count}টি টুল কল",
+      tool_calls: "{count}টি টুল কল"
     },
     cloud_trigger_schedule: "নির্ধারিত (Cron)",
     cloud_trigger_polling: "পোলিং",
@@ -3435,7 +3710,7 @@ export const bn = {
     cron_daily_midnight: "প্রতিদিন মধ্যরাতে UTC",
     cron_daily_9am: "প্রতিদিন সকাল ৯টায় UTC",
     cron_weekdays_9am: "কার্যদিবসে সকাল ৯টায় UTC",
-    cron_weekly_sun: "সাপ্তাহিক (রবি মধ্যরাত UTC)",
+    cron_weekly_sun: "সাপ্তাহিক (রবি মধ্যরাত UTC)"
   },
   sharing: {
     export_title: "বান্ডিল রফতানি করুন",
@@ -3513,6 +3788,7 @@ export const bn = {
     persistence_denied: "অস্বীকৃত",
     capabilities_label: "সক্ষমতা:",
     capabilities_none: "কিছু নেই",
+    enclave_hash_label: "হ্যাশ:",
     network_sharing_title: "নেটওয়ার্ক ও শেয়ারিং",
     network_sharing_subtitle: "আপনার পরিচয়, বিশ্বস্ত পিয়ার এবং শেয়ার্ড রিসোর্স পরিচালনা করুন",
     exposed_resources: "প্রকাশিত রিসোর্স",
@@ -3576,8 +3852,17 @@ export const bn = {
     no_shared_resources: "কোনো শেয়ার্ড রিসোর্স নেই। যাচাইয়ের জন্য ম্যানিফেস্ট সিঙ্ক করুন।",
     discovered_peers: "আবিষ্কৃত পিয়ার",
     refresh: "রিফ্রেশ করুন",
+    refresh_peer_list: "পিয়ার তালিকা রিফ্রেশ করুন",
     scanning_network: "স্থানীয় নেটওয়ার্ক স্ক্যান হচ্ছে...",
     lan_hint: "একই LAN-এ অন্য Personas ইন্সট্যান্স স্বয়ংক্রিয়ভাবে এখানে দেখাবে।",
+    peer_list_stale: "পিয়ার তালিকা পুরনো হতে পারে —",
+    network_data_stale: "নেটওয়ার্ক ডেটা পুরনো হতে পারে —",
+    peer_id_footer: "পিয়ার ID",
+    remove_exposure: "এক্সপোজার সরান",
+    revoke_trust: "ট্রাস্ট প্রত্যাহার করুন",
+    remove_peer: "পিয়ার সরান",
+    share_link_tooltip: "একটি এককালীন শেয়ার লিঙ্ক তৈরি করুন (24h-এ মেয়াদ শেষ)",
+    copy_clipboard_tooltip: "ক্লিপবোর্ডে বান্ডল base64 হিসেবে কপি করুন (সর্বোচ্চ 256 KB)",
     message_throughput: "বার্তা থ্রুপুট",
     sent: "পাঠানো হয়েছে",
     received: "প্রাপ্ত হয়েছে",
@@ -3593,7 +3878,7 @@ export const bn = {
     sync_rounds: "সিঙ্ক রাউন্ড",
     success_fail: "সাফল্য / ব্যর্থতা",
     avg_sync_duration: "গড় সিঙ্ক সময়",
-    entries_received: "এন্ট্রি প্রাপ্ত",
+    entries_received: "এন্ট্রি প্রাপ্ত"
   },
   overview: {
     title: "সারসংক্ষেপ",
@@ -3603,7 +3888,7 @@ export const bn = {
     filters: {
       start_date: "শুরুর তারিখ",
       end_date: "শেষ তারিখ",
-      all_personas: "সব Persona",
+      all_personas: "সব Persona"
     },
     messages: {
       loading: "বার্তা লোড হচ্ছে...",
@@ -3614,7 +3899,7 @@ export const bn = {
         title: "শিরোনাম",
         priority: "অগ্রাধিকার",
         status: "অবস্থা",
-        created: "তৈরি",
+        created: "তৈরি"
       },
       content_header: "বিষয়বস্তু",
       priority_high: "উচ্চ",
@@ -3631,6 +3916,9 @@ export const bn = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "ডেস্কটপ",
+      id_label: "ID:",
+      confirm_delete_title: "মুছে ফেলা নিশ্চিত করুন",
+      close_message: "বার্তার বিবরণ বন্ধ করুন"
     },
     realtime: {
       idle: "নিষ্ক্রিয় -- ট্র্যাফিক সিমুলেট করতে {action} ক্লিক করুন",
@@ -3638,7 +3926,7 @@ export const bn = {
       events_per_min: "ইভেন্ট/মিনিট",
       pending: "মুলতুবি",
       success: "সফল",
-      in_window: "উইন্ডোতে",
+      in_window: "উইন্ডোতে"
     },
     observability: {
       title: "অবজার্ভেবিলিটি",
@@ -3651,12 +3939,18 @@ export const bn = {
       manual_fix: "(ম্যানুয়াল সমাধান)",
       metrics_unavailable: "মেট্রিক্স অনুপলব্ধ -- ডাটা পুরনো হতে পারে",
       no_open_issues: "কোনো খোলা সমস্যা নেই",
-      run_analysis: "সমস্যা পরীক্ষায় বিশ্লেষণ চালান।",
+      run_analysis: "সমস্যা পরীক্ষায় বিশ্লেষণ চালান।"
     },
     memories: {
       title: "স্মৃতি",
       created_success: "স্মৃতি সফলভাবে তৈরি",
       no_memories: "কোনো স্মৃতি নেই",
+      no_memories_hint: "যখন এজেন্ট চলে, তারা এখানে মূল্যবান নোট এবং শিক্ষা সংরক্ষণ করতে পারে।",
+      no_memories_match: "কোনো মেমরি বর্তমান ফিল্টারের সাথে মেলে না",
+      list_aria_label: "মেমরি তালিকা",
+      add_memory_btn: "মেমরি যোগ করুন",
+      search_placeholder: "মেমরি অনুসন্ধান...",
+      no_filter_match: "কোনো মেমরি আপনার ফিল্টারের সাথে মেলে না। আপনার অনুসন্ধান সমন্বয় করে দেখুন।",
       form: {
         agent: "এজেন্ট",
         category: "বিভাগ",
@@ -3664,8 +3958,13 @@ export const bn = {
         content: "বিষয়বস্তু",
         importance: "গুরুত্ব",
         tags: "ট্যাগ",
-        tags_hint: "(কমা-বিভক্ত)",
-      },
+        tags_hint: "(কমা-বিভক্ত)"
+      }
+    },
+    memory_review: {
+      all_conflicts_resolved: "সব দ্বন্দ্ব সমাধান হয়েছে",
+      keep_prefix: "রাখুন “",
+      keep_suffix: "”"
     },
     executions: {
       title: "সম্পাদন",
@@ -3673,7 +3972,7 @@ export const bn = {
       no_agents: "কোনো এজেন্ট তৈরি হয়নি",
       create_first: "সম্পাদন কার্যকলাপ দেখতে প্রথম এজেন্ট তৈরি করুন",
       no_executions: "কোনো সম্পাদন নেই",
-      run_agent: "সম্পাদন কার্যকলাপ দেখতে একটি এজেন্ট চালান",
+      run_agent: "সম্পাদন কার্যকলাপ দেখতে একটি এজেন্ট চালান"
     },
     workflows: {
       loading: "ওয়ার্কফ্লো লোড হচ্ছে...",
@@ -3684,7 +3983,7 @@ export const bn = {
       all_types: "সব ধরন",
       no_filter_match: "বর্তমান ফিল্টারের সাথে কোনো জব মিলছে না",
       auto_refreshing: "জব চলার সময় অটো-রিফ্রেশিং",
-      cancel_failed: "ওয়ার্কফ্লো জব বাতিল ব্যর্থ হয়েছে",
+      cancel_failed: "ওয়ার্কফ্লো জব বাতিল ব্যর্থ হয়েছে"
     },
     schedules: {
       title: "সময়সূচি টাইমলাইন",
@@ -3715,7 +4014,7 @@ export const bn = {
       change_frequency: "ফ্রিকোয়েন্সি পরিবর্তন",
       pause_schedule: "সময়সূচি বিরতি",
       resume_schedule: "সময়সূচি পুনরায় শুরু",
-      headless_badge: "headless",
+      headless_badge: "headless"
     },
     frequency_editor: {
       title: "ফ্রিকোয়েন্সি পরিবর্তন",
@@ -3725,7 +4024,7 @@ export const bn = {
       interval_seconds: "ইন্টারভ্যাল (সেকেন্ড)",
       previewing: "প্রিভিউ হচ্ছে...",
       next_runs: "পরবর্তী রান",
-      invalid_cron: "অবৈধ cron এক্সপ্রেশন",
+      invalid_cron: "অবৈধ cron এক্সপ্রেশন"
     },
     recovery: {
       agents_missed_one: "{count} এজেন্ট সম্পাদন মিস করেছে",
@@ -3739,7 +4038,7 @@ export const bn = {
       run_once_tooltip: "এখন একবার চালান",
       skip_tooltip: "এড়িয়ে যান",
       dismiss_all: "সব বাতিল",
-      recover_selected: "{count} নির্বাচিত পুনরুদ্ধার",
+      recover_selected: "{count} নির্বাচিত পুনরুদ্ধার"
     },
     sla: {
       title: "এজেন্ট নির্ভরযোগ্যতা SLA",
@@ -3764,7 +4063,7 @@ export const bn = {
       metric_cost: "খরচ",
       metric_mtbf: "MTBF",
       metric_auto_healed: "স্বয়ং-নিরাময়",
-      metric_cancelled: "বাতিল",
+      metric_cancelled: "বাতিল"
     },
     knowledge: {
       title: "জ্ঞান গ্রাফ",
@@ -3789,14 +4088,14 @@ export const bn = {
       failures: "ব্যর্থ",
       avg_cost: "গড় খরচ",
       avg_duration: "গড় সময়কাল",
-      pattern_data: "প্যাটার্ন ডাটা",
+      pattern_data: "প্যাটার্ন ডাটা"
     },
     conflicts: {
       dismissed: "দ্বন্দ্ব বাতিল",
       resolved: "দ্বন্দ্ব সমাধান",
       resolve_failed: "দ্বন্দ্ব সমাধান ব্যর্থ",
       conflict_count_one: "{count} দ্বন্দ্ব",
-      conflict_count_other: "{count} দ্বন্দ্ব",
+      conflict_count_other: "{count} দ্বন্দ্ব"
     },
     dashboard: {
       title: "ড্যাশবোর্ড",
@@ -3812,7 +4111,7 @@ export const bn = {
       empty_title: "Personas-এ স্বাগতম",
       empty_subtitle: "এক্সিকিউশন মেট্রিক্স, ট্রাফিক চার্ট এবং কার্যক্রম দেখতে আপনার প্রথম এজেন্ট তৈরি করুন।",
       create_persona: "পার্সোনা তৈরি করুন",
-      from_templates: "টেমপ্লেট থেকে",
+      from_templates: "টেমপ্লেট থেকে"
     },
     execution_metrics: {
       title: "এক্সিকিউশন মেট্রিক্স",
@@ -3830,7 +4129,7 @@ export const bn = {
       cost_spike: "খরচের স্পাইক",
       above_avg: "গড়ের উপরে",
       top_executions: "শীর্ষ এক্সিকিউশন:",
-      executions_label: "{count}টি এক্সিকিউশন",
+      executions_label: "{count}টি এক্সিকিউশন"
     },
     execution_list: {
       recorded: "{count}টি এক্সিকিউশন রেকর্ড হয়েছে",
@@ -3855,7 +4154,7 @@ export const bn = {
       no_agents: "এখনও কোনো এজেন্ট তৈরি হয়নি",
       no_agents_hint: "এখানে এক্সিকিউশন কার্যক্রম দেখতে আপনার প্রথম এজেন্ট তৈরি করুন।",
       unknown_persona: "অজানা",
-      healing_retry: "হিলিং রিট্রাই #{count}",
+      healing_retry: "হিলিং রিট্রাই #{count}"
     },
     review: {
       title: "ম্যানুয়াল পর্যালোচনা",
@@ -3919,7 +4218,7 @@ export const bn = {
       table_tooltip: "শুধু টেবিল",
       review_detail: "পর্যালোচনার বিস্তারিত",
       select_review: "দেখতে একটি পর্যালোচনা নির্বাচন করুন",
-      technical_context: "প্রযুক্তিগত প্রেক্ষাপট",
+      technical_context: "প্রযুক্তিগত প্রেক্ষাপট"
     },
     messages_view: {
       title: "বার্তা",
@@ -3967,7 +4266,7 @@ export const bn = {
       improve_placeholder: "এই আউটপুট কীভাবে উন্নত করা যায় বর্ণনা করুন...",
       submit_improvement: "উন্নতি জমা দিন",
       starting: "শুরু হচ্ছে...",
-      unknown_persona: "অজানা",
+      unknown_persona: "অজানা"
     },
     events: {
       title: "ইভেন্ট",
@@ -4005,7 +4304,7 @@ export const bn = {
       source: "উৎস",
       processed: "প্রক্রিয়াকৃত",
       event_data: "ইভেন্ট ডেটা",
-      error: "ত্রুটি",
+      error: "ত্রুটি"
     },
     health: {
       title: "এজেন্ট স্বাস্থ্য",
@@ -4035,18 +4334,26 @@ export const bn = {
       status_page: "স্ট্যাটাস পেজ",
       operational: "কার্যকর",
       degraded: "অবনতি হয়েছে",
-      outage: "বিভ্রাট",
+      outage: "বিভ্রাট"
     },
     leaderboard: {
       title: "এজেন্ট লিডারবোর্ড",
       subtitle: "সব এজেন্ট জুড়ে পারফরম্যান্স র্যাংকিং",
       no_data: "কোনো লিডারবোর্ড ডেটা পাওয়া যায়নি",
       no_data_hint: "পারফরম্যান্স র্যাংকিং তৈরি শুরু করতে আপনার এজেন্ট চালান",
+      fleet_avg: "ফ্লিট গড়:",
+      refresh_label: "লিডারবোর্ড রিফ্রেশ করুন",
+      computing_scores: "এজেন্ট স্কোর গণনা করা হচ্ছে...",
+      single_agent_has_data: "-এ ডেটা আছে।",
+      add_more_agents: "র‍্যাঙ্কিং দেখতে আরও এজেন্ট যোগ করুন। বর্তমানে কেবল {name}",
+      open_agent: "এজেন্ট খুলুন",
+      no_agent_data_title: "এখনও কোনো এজেন্ট ডেটা নেই",
+      no_agent_data_hint: "পারফরম্যান্স র‍্যাঙ্কিং দেখতে কিছু এজেন্ট চালান। স্কোর গণনা করতে লিডারবোর্ডের এক্সিকিউশন ইতিহাস এবং স্বাস্থ্য ডেটা প্রয়োজন।",
       reliability: "নির্ভরযোগ্যতা",
       speed: "গতি",
       efficiency: "দক্ষতা",
       cost_effectiveness: "খরচ সাশ্রয়",
-      overall: "সামগ্রিক",
+      overall: "সামগ্রিক"
     },
     analytics: {
       title: "অ্যানালিটিক্স",
@@ -4063,25 +4370,25 @@ export const bn = {
       saved_views: "সংরক্ষিত দৃশ্য",
       create_view: "দৃশ্য তৈরি করুন",
       health_issues: "স্বাস্থ্য সমস্যা",
-      rotation_overview: "রোটেশন সারসংক্ষেপ",
+      rotation_overview: "রোটেশন সারসংক্ষেপ"
     },
     usage: {
       title: "ব্যবহার",
       subtitle: "খরচ ও রিসোর্স ব্যবহার",
       chart_error: "চার্ট লোড ব্যর্থ হয়েছে",
       chart_error_hint: "এই চার্ট রেন্ডার করতে একটি ত্রুটি হয়েছে",
-      try_again: "আবার চেষ্টা করুন",
+      try_again: "আবার চেষ্টা করুন"
     },
     cron_agents: {
       title: "নির্ধারিত এজেন্ট",
       subtitle: "স্বয়ংক্রিয় শিডিউলে চলা এজেন্ট",
       no_agents: "কোনো নির্ধারিত এজেন্ট নেই",
-      no_agents_hint: "এখানে দেখতে যেকোনো এজেন্টে cron ট্রিগার যোগ করুন",
+      no_agents_hint: "এখানে দেখতে যেকোনো এজেন্টে cron ট্রিগার যোগ করুন"
     },
     timeline: {
       title: "কার্যক্রমের টাইমলাইন",
       subtitle: "সব এজেন্টের কার্যক্রমের একীভূত দৃশ্য",
-      no_activity: "কোনো সাম্প্রতিক কার্যক্রম নেই",
+      no_activity: "কোনো সাম্প্রতিক কার্যক্রম নেই"
     },
     realtime_viz: {
       title: "ইভেন্ট বাস",
@@ -4098,7 +4405,7 @@ export const bn = {
       timestamp: "টাইমস্ট্যাম্প",
       payload: "পেলোড",
       saved_views: "সংরক্ষিত দৃশ্য",
-      save_current: "বর্তমান সংরক্ষণ করুন",
+      save_current: "বর্তমান সংরক্ষণ করুন"
     },
     observability_extra: {
       auto_refresh_on: "অটো-রিফ্রেশ চালু",
@@ -4124,7 +4431,7 @@ export const bn = {
       ipc_channel: "IPC চ্যানেল",
       avg_duration: "গড় সময়কাল",
       call_count: "কল সংখ্যা",
-      error_rate: "ত্রুটির হার",
+      error_rate: "ত্রুটির হার"
     },
     widgets: {
       recent_activity: "সাম্প্রতিক কার্যক্রম",
@@ -4141,7 +4448,7 @@ export const bn = {
       executions_badge: "এক্সিকিউশন",
       success_badge: "সাফল্য",
       alerts_badge: "সতর্কতা",
-      agents_badge: "এজেন্ট",
+      agents_badge: "এজেন্ট"
     },
     cards: {
       fleet_optimization: "ফ্লিট অপ্টিমাইজেশন",
@@ -4150,7 +4457,7 @@ export const bn = {
       remote_subtitle: "এজেন্ট ব্যবস্থাপনার দ্রুত পদক্ষেপ",
       resume_setup: "সেটআপ চালিয়ে যান",
       resume_subtitle: "যেখানে ছেড়েছিলেন সেখান থেকে শুরু করুন",
-      knowledge_hub: "জ্ঞানের কেন্দ্র",
+      knowledge_hub: "জ্ঞানের কেন্দ্র"
     },
     activity: {
       title: "কার্যক্রম",
@@ -4196,7 +4503,7 @@ export const bn = {
       create_persona: "পার্সোনা তৈরি করুন",
       from_templates: "টেমপ্লেট থেকে",
       execution_label: "এক্সিকিউশন",
-      unknown: "অজানা",
+      unknown: "অজানা"
     },
     analytics_dashboard: {
       title: "অ্যানালিটিক্স",
@@ -4255,7 +4562,7 @@ export const bn = {
       issues_count: "{count}টি সমস্যা",
       issues_count_one: "{count}টি সমস্যা",
       never: "কখনও নয়",
-      fail_count: "{count}x ব্যর্থ",
+      fail_count: "{count}x ব্যর্থ"
     },
     cron: {
       title: "Cron এজেন্ট",
@@ -4274,7 +4581,7 @@ export const bn = {
       no_schedule: "কোনো শিডিউল নেই",
       every_interval: "প্রতি {interval}",
       next: "পরবর্তী",
-      last: "শেষ",
+      last: "শেষ"
     },
     activity_timeline: {
       title: "কার্যক্রমের টাইমলাইন",
@@ -4283,7 +4590,7 @@ export const bn = {
       events: "ইভেন্ট",
       messages: "বার্তা",
       no_activity: "এখনও কোনো কার্যক্রম নেই",
-      high: "উচ্চ",
+      high: "উচ্চ"
     },
     sla_card: {
       successful: "সফল",
@@ -4295,7 +4602,7 @@ export const bn = {
       auto_healed: "স্বয়ংক্রিয়-সারানো",
       cancelled: "বাতিল",
       failing: "{count}টি ব্যর্থ হচ্ছে",
-      healed: "{count}টি সারানো হয়েছে",
+      healed: "{count}টি সারানো হয়েছে"
     },
     realtime_page: {
       title: "ইভেন্ট বাস মনিটর",
@@ -4349,7 +4656,7 @@ export const bn = {
       galaxy: "গ্যালাক্সি",
       galaxy_desc: "ধূমকেতু ট্রেইল সহ কক্ষীয় নক্ষত্রমণ্ডল",
       lanes: "লেন",
-      lanes_desc: "অনুভূমিক সুইম-লেন প্রবাহ ডায়াগ্রাম",
+      lanes_desc: "অনুভূমিক সুইম-লেন প্রবাহ ডায়াগ্রাম"
     },
     memory_form: {
       agent: "এজেন্ট",
@@ -4366,25 +4673,25 @@ export const bn = {
       saving: "সংরক্ষণ হচ্ছে...",
       created_success: "স্মৃতি সফলভাবে তৈরি হয়েছে",
       fill_required: "সংরক্ষণ করতে সব প্রয়োজনীয় ফিল্ড পূরণ করুন",
-      saving_memory: "স্মৃতি সংরক্ষণ হচ্ছে...",
+      saving_memory: "স্মৃতি সংরক্ষণ হচ্ছে..."
     },
     memory_filter: {
       search_placeholder: "স্মৃতি অনুসন্ধান করুন...",
       all_agents: "সব এজেন্ট",
-      all_categories: "সব বিভাগ",
+      all_categories: "সব বিভাগ"
     },
     memory_actions: {
       dismiss_suggestion: "পরামর্শ বরখাস্ত করুন",
       memory_insights: "স্মৃতির অন্তর্দৃষ্টি",
       suggestions: "{count}টি পরামর্শ",
-      suggestions_one: "{count}টি পরামর্শ",
+      suggestions_one: "{count}টি পরামর্শ"
     },
     memory_conflict: {
       memory_a: "স্মৃতি A",
       memory_b: "স্মৃতি B",
       merge: "মার্জ করুন",
       keep: "রাখুন",
-      vs: "বনাম",
+      vs: "বনাম"
     },
     observability_charts: {
       cost_over_time: "সময়ের সাথে খরচ",
@@ -4396,7 +4703,7 @@ export const bn = {
       anomaly_detected: "{count}টি খরচের অ্যানোমালি সনাক্ত",
       anomaly_click_hint: "তদন্ত করতে চার্টের একটি ডায়মন্ড মার্কারে ক্লিক করুন",
       clear_traces: "সম্পন্ন ট্রেস সাফ করুন",
-      all_operations: "সব অপারেশন",
+      all_operations: "সব অপারেশন"
     },
     health_extra: {
       success: "সাফল্য",
@@ -4412,6 +4719,11 @@ export const bn = {
       predicted_failure: "ব্যর্থতার স্পাইক পূর্বানুমান",
       loading_status: "স্ট্যাটাস পেজ ডেটা লোড হচ্ছে...",
       no_personas: "দেখানোর জন্য কোনো পার্সোনা নেই।",
+      score_prefix: "স্কোর:",
+      uptime_30d_prefix: "30d আপটাইম:",
+      updated_prefix: "আপডেট",
+      consecutive_failures_one: "{count}টি ধারাবাহিক ব্যর্থতা",
+      consecutive_failures_other: "{count}টি ধারাবাহিক ব্যর্থতা",
       score_label: "স্কোর",
       uptime_30d: "৩০ দিনের আপটাইম",
       updated: "{time}-এ আপডেট হয়েছে",
@@ -4428,7 +4740,7 @@ export const bn = {
       open: "{count}টি খোলা",
       sla_compliance: "SLA সম্মতি",
       consecutive_failures: "{count}টি ক্রমাগত ব্যর্থতা",
-      consecutive_failure: "{count}টি ক্রমাগত ব্যর্থতা",
+      consecutive_failure: "{count}টি ক্রমাগত ব্যর্থতা"
     },
     system_health: {
       title: "সিস্টেম যাচাই",
@@ -4442,7 +4754,7 @@ export const bn = {
       save_configuration: "কনফিগারেশন সংরক্ষণ করুন",
       litellm_footer: "এই সেটিং স্থানীয়ভাবে সংরক্ষিত এবং LiteLLM প্রদানকারী ব্যবহার করতে কনফিগার করা সব এজেন্ট জুড়ে শেয়ার্ড।",
       ipc_error: "অ্যাপ্লিকেশন ব্রিজ সাড়া দিচ্ছে না। অ্যাপ রিস্টার্ট করুন। আপনি এখনও ইন্টারফেস অন্বেষণ চালিয়ে যেতে পারেন।",
-      issues_warning: "কিছু যাচাইয়ে সমস্যা দেখা গেছে। আপনি এগিয়ে যেতে পারেন, তবে কিছু ফিচার সঠিকভাবে কাজ না করতে পারে।",
+      issues_warning: "কিছু যাচাইয়ে সমস্যা দেখা গেছে। আপনি এগিয়ে যেতে পারেন, তবে কিছু ফিচার সঠিকভাবে কাজ না করতে পারে।"
     },
     review_extra: {
       add_note: "একটি নোট যোগ করুন (ঐচ্ছিক)...",
@@ -4454,7 +4766,7 @@ export const bn = {
       quick_actions: "দ্রুত পদক্ষেপ",
       accepted: "{count}টি গৃহীত",
       rejected: "{count}টি প্রত্যাখ্যাত",
-      undecided: "{count}টি অনিশ্চিত",
+      undecided: "{count}টি অনিশ্চিত"
     },
     widgets_extra: {
       execution_health_chart: "এক্সিকিউশন স্বাস্থ্য",
@@ -4463,29 +4775,147 @@ export const bn = {
       failed: "ব্যর্থ",
       close: "বন্ধ করুন",
       dismiss_help: "সাহায্য বরখাস্ত করুন",
-      skip_tour: "ট্যুর সম্পূর্ণ এড়িয়ে যান",
+      skip_tour: "ট্যুর সম্পূর্ণ এড়িয়ে যান"
+    },
+    burn_rate_extra: {
+      active_personas_subtitle: "{count}টি সক্রিয় পার্সোনা · স্থানীয় মাসের সীমানা",
+      title: "বার্ন রেট প্রজেকশন",
+      daily_burn: "দৈনিক বার্ন",
+      projected_monthly: "প্রজেক্টেড মাসিক",
+      at_risk: "ঝুঁকিতে",
+      top_cost_drivers: "শীর্ষ খরচের কারণ",
+      budget_exhaustion_warnings: "বাজেট শেষের সতর্কতা",
+      exhausted: "শেষ হয়েছে",
+      days_left: "{days} দিন বাকি"
+    },
+    predictive_alerts_extra: {
+      per_month: "/মা",
+      confidence_pct: "% বিশ্বাস",
+      title: "পূর্বানুমানমূলক সতর্কতা",
+      all_nominal: "সব সিস্টেম স্বাভাবিক",
+      no_alerts: "কোনো পূর্বানুমানমূলক সতর্কতা নেই -- সব পার্সোনা সুস্থ সীমার মধ্যে।",
+      budget_exhausted: "বাজেট শেষ হয়েছে",
+      budget_exhaustion_in: "{days} দিনে বাজেট শেষ হবে",
+      failure_spike_predicted: "{days} দিনে ব্যর্থতার হার বৃদ্ধির পূর্বাভাস",
+      excessive_healing: "অতিরিক্ত স্বয়ং-হিলিং কার্যক্রম",
+      critical_health: "সংকটজনক স্বাস্থ্য স্ট্যাটাস",
+      byom_recommendations: "BYOM রাউটিং সুপারিশ"
+    },
+    annotate_modal: {
+      annotation_placeholder: "যেমন Stripe webhook যাচাইকরণের জন্য কাঁচা রিকোয়েস্ট বডি দরকার, পার্স করা JSON নয়",
+      title: "জ্ঞান টীকা যোগ করুন",
+      persona_label: "অ্যাট্রিবিউশন পার্সোনা",
+      scope_label: "স্কোপ",
+      tool_name: "টুলের নাম",
+      connector_type: "কানেক্টর / সেবার ধরন",
+      annotation_label: "টীকা",
+      cancel: "বাতিল",
+      saving: "সংরক্ষণ হচ্ছে...",
+      save_annotation: "টীকা সংরক্ষণ করুন"
+    },
+    knowledge_row: {
+      execution_trend_label: "এক্সিকিউশন প্রবণতা",
+      annotation: "টীকা",
+      successes: "সাফল্য",
+      failures: "ব্যর্থতা",
+      avg_cost: "গড় খরচ",
+      avg_duration: "গড় সময়কাল",
+      pattern_data: "প্যাটার্ন ডেটা",
+      collapse_details: "বিস্তারিত ভাঁজ করুন",
+      expand_details: "বিস্তারিত প্রসারিত করুন",
+      verify_annotation: "টীকা যাচাই করুন",
+      dismiss_annotation: "টীকা বরখাস্ত করুন"
+    },
+    knowledge_graph: {
+      mock_pattern: "মক প্যাটার্ন",
+      seed_tooltip: "একটি মক প্যাটার্ন সিড করুন (কেবল dev)",
+      all_types: "সব ধরন",
+      all_scopes: "সব স্কোপ",
+      failure_drilldown_prefix: "ব্যর্থতা ড্রিল-ডাউন:",
+      failure_date_filter: "{date}-এ বা এর পরে সক্রিয় ব্যর্থতা প্যাটার্ন দেখানো হচ্ছে",
+      data_unavailable: "জ্ঞান ডেটা অনুপলব্ধ",
+      loading_patterns: "জ্ঞান প্যাটার্ন লোড হচ্ছে...",
+      drilldown_toggle_title: "ব্যর্থতা ড্রিল-ডাউন দেখান/লুকান",
+      no_patterns_yet: "এখনও কোনো জ্ঞান প্যাটার্ন নেই",
+      no_patterns_yet_hint: "জ্ঞান প্যাটার্ন তৈরি করতে এজেন্ট এক্সিকিউশন চালান। সময়ের সাথে এজেন্টরা আরও স্মার্ট হয়।",
+      no_patterns_match: "কোনো প্যাটার্ন বর্তমান ফিল্টারের সাথে মেলে না",
+      recent_learnings: "সাম্প্রতিক শিক্ষা",
+      curating_manually: "ম্যানুয়ালি ডকুমেন্ট কিউরেট করছেন?",
+      obsidian_tip: "~1000 নোটের কম হলে, একটি Obsidian কানেক্টর আপনার ভল্ট সরাসরি সিঙ্ক করতে পারে।"
+    },
+    focused_decision: {
+      video_not_supported: "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।",
+      reject_this: "এটি প্রত্যাখ্যান করুন",
+      accept_this: "এটি গ্রহণ করুন",
+      accept: "গ্রহণ করুন",
+      reject: "প্রত্যাখ্যান করুন",
+      media_unavailable: "মিডিয়া পাওয়া যাচ্ছে না"
+    },
+    review_focus: {
+      video_not_supported: "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।",
+      all_caught_up: "সব ঠিক আছে",
+      no_pending: "প্রক্রিয়া করার জন্য কোনো মুলতুবি পর্যালোচনা নেই।",
+      queue: "কিউ",
+      clear: "সাফ করুন",
+      clear_all_verdicts: "সব রায় সাফ করুন",
+      quick_actions: "দ্রুত পদক্ষেপ",
+      reject_all: "সব প্রত্যাখ্যান করুন",
+      accept_all: "সব গ্রহণ করুন",
+      retry_with_changes: "পরিবর্তন সহ পুনরায় চেষ্টা করুন"
+    },
+    bulk_action_bar: {
+      pending_reviews_selected_one: "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত",
+      pending_reviews_selected_other: "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত"
+    },
+    review_inbox: {
+      drag_to_resize: "আকার পরিবর্তন করতে টেনে আনুন"
+    },
+    healing_issues_panel: {
+      ai_healing_title: "AI হিলিং",
+      diagnosis_label: "নির্ণয়:",
+      fixes_applied: "প্রয়োগ করা ফিক্স",
+      alert_history_title: "সতর্কতা ইতিহাস",
+      all_agents_global: "সব এজেন্ট (গ্লোবাল)",
+      add_rule: "নিয়ম যোগ করুন",
+      no_rules_configured: "কোনো সতর্কতা নিয়ম কনফিগার করা নেই। পর্যবেক্ষণ শুরু করতে একটি নিয়ম যোগ করুন।",
+      confidence_pct_suffix: "% বিশ্বাস",
+      spike_on: "স্পাইক",
+      correlated_events_prefix: "সম্পর্কিত ইভেন্ট (",
+      circuit_breaker_label: "সার্কিট ব্রেকার",
+      auto_disabled_message: "বারবার ব্যর্থতার সার্কিট-ব্রেকার প্রতিক্রিয়া হিসেবে এই পার্সোনাটি স্বয়ংক্রিয়ভাবে নিষ্ক্রিয় করা হয়েছে।",
+      execution_label: "এক্সিকিউশন:",
+      issue_marked_as: "এই সমস্যাটি চিহ্নিত",
+      retry_in_progress: "পুনরায় চেষ্টা চলছে — সম্পন্ন হলে অবস্থা আপডেট হবে।",
+      resolve_issue_title: "সমস্যা সমাধান হিসেবে চিহ্নিত করুন",
+      title: "স্বাস্থ্য সমস্যা",
+      analyzing: "বিশ্লেষণ হচ্ছে...",
+      run_analysis: "বিশ্লেষণ চালান",
+      no_open_issues: "কোনো খোলা সমস্যা নেই",
+      run_analysis_hint: "সমস্যা যাচাই করতে বিশ্লেষণ চালান।",
+      healing_audit_log: "হিলিং অডিট লগ",
+      no_silent_failures: "কোনো নীরব ব্যর্থতা রেকর্ড নেই।"
     },
     remote_control_card: {
       connect_to_desktop: "ডেস্কটপে সংযুক্ত করুন",
       connect_description: "রিমোট কন্ট্রোলের মাধ্যমে আপনার ডেস্কটপ CLI ব্যবহার করে এজেন্ট চালান। আপনার কম্পিউটারে {command} শুরু করুন, তারপর এখানে সংযুক্ত করুন।",
-      requires_subscription: "Claude Pro বা Max সাবস্ক্রিপশন প্রয়োজন",
+      requires_subscription: "Claude Pro বা Max সাবস্ক্রিপশন প্রয়োজন"
     },
     resume_setup_card: {
       resume_tour: "ট্যুর পুনরায় শুরু করুন",
       left_off_at: "আপনি যেখানে ছেড়েছিলেন",
       steps_completed: "{completed}/{total}টি ধাপ সম্পন্ন",
       skip_tour: "ট্যুর সম্পূর্ণ এড়িয়ে যান",
-      continue_label: "চালিয়ে যান",
+      continue_label: "চালিয়ে যান"
     },
     detail_modal: {
-      close: "বন্ধ করুন",
+      close: "বন্ধ করুন"
     },
     metric_help_popover: {
       help_for: "{label}-এর জন্য সাহায্য",
       dismiss_help: "সাহায্য বরখাস্ত করুন",
       healthy: "সুস্থ:",
       click: "ক্লিক করুন:",
-      got_it: "বুঝেছি, আবার দেখাবেন না",
+      got_it: "বুঝেছি, আবার দেখাবেন না"
     },
     install_button: {
       install_node: "Node.js ইনস্টল করুন",
@@ -4496,7 +4926,7 @@ export const bn = {
       installation_failed: "ইনস্টলেশন ব্যর্থ হয়েছে",
       try_manually: "ম্যানুয়ালি চালানোর চেষ্টা করুন:",
       retry: "পুনরায় চেষ্টা করুন",
-      official_page: "অফিসিয়াল পেজ",
+      official_page: "অফিসিয়াল পেজ"
     },
     section_card: {
       checking: "{section} যাচাই হচ্ছে...",
@@ -4507,12 +4937,12 @@ export const bn = {
       sign_in_google: "Google দিয়ে সাইন ইন করুন",
       working: "কাজ হচ্ছে...",
       connect_claude: "Claude Desktop-এ সংযুক্ত করুন",
-      disconnect: "সংযোগ বিচ্ছিন্ন করুন",
+      disconnect: "সংযোগ বিচ্ছিন্ন করুন"
     },
     metrics_cards: {
       cost_spike: "খরচের স্পাইক",
       above_avg: "গড়ের উপরে",
-      top_executions: "শীর্ষ এক্সিকিউশন:",
+      top_executions: "শীর্ষ এক্সিকিউশন:"
     },
     event_log_item: {
       event_id: "ইভেন্ট ID",
@@ -4524,75 +4954,15 @@ export const bn = {
       copied: "কপি হয়েছে",
       copy: "কপি করুন",
       error: "ত্রুটি",
-      system: "সিস্টেম",
-    },
-    burn_rate_extra: {
-      title: "বার্ন রেট প্রজেকশন",
-      daily_burn: "দৈনিক বার্ন",
-      projected_monthly: "প্রজেক্টেড মাসিক",
-      at_risk: "ঝুঁকিতে",
-      top_cost_drivers: "শীর্ষ খরচের কারণ",
-      budget_exhaustion_warnings: "বাজেট শেষের সতর্কতা",
-      exhausted: "শেষ হয়েছে",
-      days_left: "{days} দিন বাকি",
+      system: "সিস্টেম"
     },
     cascade: {
       title: "চেইন ক্যাসকেড ম্যাপ",
-      no_chains: "কোনো চেইন সনাক্ত হয়নি -- সব পার্সোনা স্বাধীনভাবে কাজ করছে",
-    },
-    predictive_alerts_extra: {
-      title: "পূর্বানুমানমূলক সতর্কতা",
-      all_nominal: "সব সিস্টেম স্বাভাবিক",
-      no_alerts: "কোনো পূর্বানুমানমূলক সতর্কতা নেই -- সব পার্সোনা সুস্থ সীমার মধ্যে।",
-      budget_exhausted: "বাজেট শেষ হয়েছে",
-      budget_exhaustion_in: "{days} দিনে বাজেট শেষ হবে",
-      failure_spike_predicted: "{days} দিনে ব্যর্থতার হার বৃদ্ধির পূর্বাভাস",
-      excessive_healing: "অতিরিক্ত স্বয়ং-হিলিং কার্যক্রম",
-      critical_health: "সংকটজনক স্বাস্থ্য স্ট্যাটাস",
-      byom_recommendations: "BYOM রাউটিং সুপারিশ",
-    },
-    annotate_modal: {
-      title: "জ্ঞান টীকা যোগ করুন",
-      persona_label: "অ্যাট্রিবিউশন পার্সোনা",
-      scope_label: "স্কোপ",
-      tool_name: "টুলের নাম",
-      connector_type: "কানেক্টর / সেবার ধরন",
-      annotation_label: "টীকা",
-      cancel: "বাতিল",
-      saving: "সংরক্ষণ হচ্ছে...",
-      save_annotation: "টীকা সংরক্ষণ করুন",
-    },
-    knowledge_row: {
-      annotation: "টীকা",
-      successes: "সাফল্য",
-      failures: "ব্যর্থতা",
-      avg_cost: "গড় খরচ",
-      avg_duration: "গড় সময়কাল",
-      pattern_data: "প্যাটার্ন ডেটা",
-      collapse_details: "বিস্তারিত ভাঁজ করুন",
-      expand_details: "বিস্তারিত প্রসারিত করুন",
-      verify_annotation: "টীকা যাচাই করুন",
-      dismiss_annotation: "টীকা বরখাস্ত করুন",
-    },
-    focused_decision: {
-      accept: "গ্রহণ করুন",
-      reject: "প্রত্যাখ্যান করুন",
-      media_unavailable: "মিডিয়া পাওয়া যাচ্ছে না",
-    },
-    review_focus: {
-      all_caught_up: "সব ঠিক আছে",
-      no_pending: "প্রক্রিয়া করার জন্য কোনো মুলতুবি পর্যালোচনা নেই।",
-      queue: "কিউ",
-      clear: "সাফ করুন",
-      clear_all_verdicts: "সব রায় সাফ করুন",
-      quick_actions: "দ্রুত পদক্ষেপ",
-      reject_all: "সব প্রত্যাখ্যান করুন",
-      accept_all: "সব গ্রহণ করুন",
-      retry_with_changes: "পরিবর্তন সহ পুনরায় চেষ্টা করুন",
+      no_chains: "কোনো চেইন সনাক্ত হয়নি -- সব পার্সোনা স্বাধীনভাবে কাজ করছে"
     },
     memory_card: {
       confirm: "নিশ্চিত করুন",
-      cancel: "বাতিল",
+      cancel: "বাতিল"
     },
     memory_detail: {
       title_label: "শিরোনাম",
@@ -4602,7 +4972,7 @@ export const bn = {
       tags_label: "ট্যাগ",
       view_source_execution: "উৎস এক্সিকিউশন দেখুন",
       delete_memory: "স্মৃতি মুছুন",
-      close: "বন্ধ করুন",
+      close: "বন্ধ করুন"
     },
     memory_table: {
       agent: "এজেন্ট",
@@ -4610,11 +4980,11 @@ export const bn = {
       category: "বিভাগ",
       priority: "অগ্রাধিকার",
       tags: "ট্যাগ",
-      created: "তৈরি হয়েছে",
+      created: "তৈরি হয়েছে"
     },
     review_results: {
       title: "AI স্মৃতি পর্যালোচনা",
-      review_failed: "পর্যালোচনা ব্যর্থ হয়েছে",
+      review_failed: "পর্যালোচনা ব্যর্থ হয়েছে"
     },
     anomaly_drilldown_extra: {
       title: "অ্যানোমালি ড্রিল-ডাউন",
@@ -4623,7 +4993,7 @@ export const bn = {
       correlating: "ঘটনা সম্পর্কযুক্ত করা হচ্ছে...",
       likely_root_causes: "সম্ভাব্য মূল কারণ",
       correlated_events: "সম্পর্কযুক্ত ইভেন্ট",
-      no_correlated: "±২৪ ঘণ্টার উইন্ডোতে কোনো সম্পর্কযুক্ত ইভেন্ট পাওয়া যায়নি।",
+      no_correlated: "±২৪ ঘণ্টার উইন্ডোতে কোনো সম্পর্কযুক্ত ইভেন্ট পাওয়া যায়নি।"
     },
     healing_issue_modal: {
       issue_resolved: "সমস্যা সমাধান হয়েছে",
@@ -4638,23 +5008,14 @@ export const bn = {
       auto_resolved: "এই সমস্যা স্বয়ংক্রিয়ভাবে সমাধান হয়েছিল",
       close: "বন্ধ করুন",
       resolving: "সমাধান হচ্ছে…",
-      mark_resolved: "সমাধান হয়েছে চিহ্নিত করুন",
-    },
-    healing_issues_panel: {
-      title: "স্বাস্থ্য সমস্যা",
-      analyzing: "বিশ্লেষণ হচ্ছে...",
-      run_analysis: "বিশ্লেষণ চালান",
-      no_open_issues: "কোনো খোলা সমস্যা নেই",
-      run_analysis_hint: "সমস্যা যাচাই করতে বিশ্লেষণ চালান।",
-      healing_audit_log: "হিলিং অডিট লগ",
-      no_silent_failures: "কোনো নীরব ব্যর্থতা রেকর্ড নেই।",
+      mark_resolved: "সমাধান হয়েছে চিহ্নিত করুন"
     },
     healing_timeline: {
       loading: "টাইমলাইন লোড হচ্ছে...",
       no_events: "কোনো হিলিং ইভেন্ট নেই",
       no_events_hint: "রেজিলিয়েন্স টাইমলাইন তৈরি করতে বিশ্লেষণ চালান।",
       knowledge_base: "জ্ঞানের ভান্ডার",
-      patterns_hint: "হিলিং সিদ্ধান্তকে প্রভাবিত করা প্যাটার্ন",
+      patterns_hint: "হিলিং সিদ্ধান্তকে প্রভাবিত করা প্যাটার্ন"
     },
     ipc_panel: {
       title: "IPC পারফরম্যান্স",
@@ -4663,29 +5024,29 @@ export const bn = {
       command: "কমান্ড",
       calls_header: "কল",
       duration_header: "সময়কাল",
-      when_header: "কখন",
+      when_header: "কখন"
     },
     system_trace_extra: {
       no_traces: "কোনো সিস্টেম ট্রেস রেকর্ড হয়নি",
       no_traces_hint: "ডিজাইন, ক্রেডেনশিয়াল বা টেমপ্লেট অপারেশন চললে ট্রেস দেখাবে",
       all_operations: "সব অপারেশন",
       clear_completed: "সম্পন্ন ট্রেস সাফ করুন",
-      span: "স্প্যান",
+      span: "স্প্যান"
     },
     event_log_sidebar: {
       title: "ইভেন্ট লগ",
       no_events: "এখনও কোনো ইভেন্ট নেই",
-      open_detail_drawer: "বিস্তারিত ড্রয়ারে খুলুন",
+      open_detail_drawer: "বিস্তারিত ড্রয়ারে খুলুন"
     },
     chart_error: {
-      chart_unavailable: "চার্ট পাওয়া যাচ্ছে না",
+      chart_unavailable: "চার্ট পাওয়া যাচ্ছে না"
     },
     realtime_idle: {
-      idle: "নিষ্ক্রিয়",
+      idle: "নিষ্ক্রিয়"
     },
     day_range: {
-      apply: "প্রয়োগ করুন",
-    },
+      apply: "প্রয়োগ করুন"
+    }
   },
   templates: {
     gallery: {
@@ -4701,13 +5062,14 @@ export const bn = {
       triggers: "ট্রিগার",
       no_flows: "কোনো ফ্লো নেই",
       readiness_tooltip: "{percent}% সংযোগকারী প্রস্তুত",
+      template_details_tabs_aria: "টেমপ্লেট বিবরণ"
     },
     actions: {
       view_details: "বিস্তারিত দেখুন",
       adopt: "গ্রহণ",
       try_it: "চেষ্টা করুন",
       adopt_as_persona: "Persona হিসেবে গ্রহণ",
-      delete: "মুছুন",
+      delete: "মুছুন"
     },
     detail: {
       tab_overview: "সারসংক্ষেপ",
@@ -4719,14 +5081,14 @@ export const bn = {
       review_error: "ত্রুটি",
       used_references: "রেফারেন্স প্যাটার্ন ব্যবহৃত",
       no_design_data: "কোনো ডিজাইন ডাটা নেই",
-      no_design_data_hint: "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।",
+      no_design_data_hint: "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।"
     },
     detail_overview: {
       use_case_flows: "ব্যবহারের ক্ষেত্র ফ্লো",
       suggested_adjustment: "প্রস্তাবিত সমন্বয়",
       adjustment_attempt: "(প্রচেষ্টা {attempt}/3)",
       dimension_completion: "ডাইমেনশন সম্পূর্ণতা",
-      dimensions_score: "({score}/9 ডাইমেনশন)",
+      dimensions_score: "({score}/9 ডাইমেনশন)"
     },
     adoption: {
       title: "টেমপ্লেট গ্রহণ",
@@ -4735,7 +5097,7 @@ export const bn = {
       step_credentials: "শংসাপত্র লিঙ্ক",
       step_preferences: "পছন্দ সেট",
       step_generate: "Persona তৈরি",
-      step_review: "পর্যালোচনা ও সংরক্ষণ",
+      step_review: "পর্যালোচনা ও সংরক্ষণ"
     },
     choose: {
       select_use_cases: "ব্যবহারের ক্ষেত্র নির্বাচন",
@@ -4745,7 +5107,7 @@ export const bn = {
       components: "উপাদান",
       examples: "উদাহরণ",
       tools: "টুল",
-      none_selected: "কোনো ব্যবহারের ক্ষেত্র নির্বাচিত নয় -- অন্তত একটি নির্বাচন করুন",
+      none_selected: "কোনো ব্যবহারের ক্ষেত্র নির্বাচিত নয় -- অন্তত একটি নির্বাচন করুন"
     },
     connect: {
       all_set: "কোনো সংযোগকারী দরকার নেই -- সব ঠিক আছে!",
@@ -4758,7 +5120,7 @@ export const bn = {
       select_credential: "শংসাপত্র নির্বাচন...",
       create_new: "+ নতুন শংসাপত্র তৈরি",
       design_custom: "+ কাস্টম সংযোগকারী ডিজাইন",
-      add_credential: "শংসাপত্র যোগ",
+      add_credential: "শংসাপত্র যোগ"
     },
     build: {
       title: "Persona তৈরি",
@@ -4775,7 +5137,7 @@ export const bn = {
       close_hint: "আপনি এই ডায়ালগ বন্ধ করতে পারেন -- প্রক্রিয়া ব্যাকগ্রাউন্ডে চলবে।",
       adjustments_label: "সমন্বয় অনুরোধ (ঐচ্ছিক)",
       adjustments_placeholder: "উদাহরণ: সময়সূচি সকাল ৯টায় করুন, ClickUp ইন্টিগ্রেশন বাদ দিন, Slack বিজ্ঞপ্তি যোগ করুন",
-      discard_draft: "ড্রাফট বাতিল করে আবার শুরু",
+      discard_draft: "ড্রাফট বাতিল করে আবার শুরু"
     },
     quick_adopt: {
       all_matched: "সব সংযোগকারী মিলেছে",
@@ -4783,7 +5145,7 @@ export const bn = {
       missing_prefix: "অনুপস্থিত: ",
       add_in_catalog: "কী ক্যাটালগে যোগ করুন",
       build_persona: "Persona তৈরি",
-      full_wizard: "পূর্ণ উইজার্ড",
+      full_wizard: "পূর্ণ উইজার্ড"
     },
     data: {
       title: "ডাটা সেটআপ",
@@ -4792,7 +5154,7 @@ export const bn = {
       tables_found: "বিল্ট-ইন ডাটাবেসে {tables} পাওয়া গেছে।",
       create_new: "নতুন টেবিল তৈরি",
       use_existing: "বিদ্যমান টেবিল ব্যবহার",
-      complete: "ডাটা সেটআপ সম্পন্ন",
+      complete: "ডাটা সেটআপ সম্পন্ন"
     },
     tune: {
       title: "Persona কনফিগার",
@@ -4811,7 +5173,7 @@ export const bn = {
       check_interval: "পরীক্ষার ইন্টারভ্যাল",
       check_interval_placeholder: "প্রতি ৫ মিনিট",
       manual_hint: "ম্যানুয়ালি চালু -- কনফিগারেশন দরকার নেই",
-      system_hint: "সিস্টেম ইভেন্টে চালু -- কনফিগারেশন দরকার নেই",
+      system_hint: "সিস্টেম ইভেন্টে চালু -- কনফিগারেশন দরকার নেই"
     },
     review_policy: {
       title: "মানব পর্যালোচনা",
@@ -4828,7 +5190,7 @@ export const bn = {
       timeout_1h: "১ ঘণ্টা",
       timeout_4h: "৪ ঘণ্টা",
       timeout_24h: "২৪ ঘণ্টা",
-      timeout_none: "টাইমআউট নেই",
+      timeout_none: "টাইমআউট নেই"
     },
     memory: {
       title: "মেমরি",
@@ -4841,7 +5203,7 @@ export const bn = {
       scope_patterns: "সম্পাদন প্যাটার্ন",
       scope_errors: "ত্রুটি সমাধান",
       scope_custom: "কাস্টম পরিসর...",
-      scope_custom_placeholder: "কী মনে রাখতে হবে বর্ণনা করুন...",
+      scope_custom_placeholder: "কী মনে রাখতে হবে বর্ণনা করুন..."
     },
     create: {
       use_cases: "ব্যবহারের ক্ষেত্র",
@@ -4866,12 +5228,12 @@ export const bn = {
       safety_issues: "নিরাপত্তা সমস্যা",
       safety_acknowledge_one: "আমি {count}টি গুরুতর নিরাপত্তা ফলাফল স্বীকার করি ও ঝুঁকি গ্রহণ করি",
       safety_acknowledge_other: "আমি {count}টি গুরুতর নিরাপত্তা ফলাফল স্বীকার করি ও ঝুঁকি গ্রহণ করি",
-      edit_details: "বিস্তারিত সম্পাদনা",
+      edit_details: "বিস্তারিত সম্পাদনা"
     },
     review: {
       use_cases_header: "ব্যবহারের ক্ষেত্র ({count})",
       tools_header: "টুল ({count})",
-      triggers_header: "ট্রিগার ({count})",
+      triggers_header: "ট্রিগার ({count})"
     },
     matrix: {
       preparing: "বিল্ড প্রস্তুত হচ্ছে...",
@@ -4911,6 +5273,19 @@ export const bn = {
       build_complete: "বিল্ড সম্পন্ন",
       adjust_placeholder: "যেকোনো কিছু সামঞ্জস্য করুন...",
       answer_placeholder: "আপনার উত্তর...",
+      answer_cell: "উত্তর: {cell}",
+      working_on: "কাজ হচ্ছে: {cells}",
+      draft_ready_label: "খসড়া প্রস্তুত",
+      editing_cell: "সম্পাদনা: {cell}",
+      protocol_active: "প্রোটোকল সক্রিয়",
+      matrix_unavailable: "ম্যাট্রিক্স ডেটা অনুপলব্ধ।",
+      persona_matrix_title: "পার্সোনা ম্যাট্রিক্স",
+      cell_status_analyzing: "বিশ্লেষণ করা হচ্ছে",
+      cell_status_answered: "উত্তর দেওয়া হয়েছে",
+      cell_status_resolved: "সমাধান হয়েছে",
+      cell_status_input_needed: "ইনপুট প্রয়োজন",
+      cell_status_missing_credential: "ক্রেডেনশিয়াল অনুপস্থিত",
+      cell_status_error: "ত্রুটি"
     },
     sandbox: {
       restriction_events: "ইভেন্ট নির্গমন অচল",
@@ -4926,12 +5301,12 @@ export const bn = {
       desc_unverified: "এই টেমপ্লেট অজানা উৎস থেকে এসেছে এবং যাচাই হয়নি। সিস্টেম সুরক্ষায় সীমিত সক্ষমতায় চলবে।",
       desc_community: "এই কমিউনিটি টেমপ্লেট আনুষ্ঠানিকভাবে যাচাই হয়নি। স্যান্ডবক্স মোডে সীমিত সক্ষমতায় চলবে।",
       badge_unverified: "অযাচাইকৃত",
-      badge_sandbox: "স্যান্ডবক্স মোড",
+      badge_sandbox: "স্যান্ডবক্স মোড"
     },
     page: {
       title: "এজেন্টিক টেমপ্লেট",
       subtitle_one: "{count}টি টেমপ্লেট পাওয়া যাচ্ছে",
-      subtitle_other: "{count}টি টেমপ্লেট পাওয়া যাচ্ছে",
+      subtitle_other: "{count}টি টেমপ্লেট পাওয়া যাচ্ছে"
     },
     explore: {
       ready_to_deploy: "ডিপ্লয়ের জন্য প্রস্তুত",
@@ -4952,7 +5327,7 @@ export const bn = {
       role_templates: "{role} টেমপ্লেট",
       by_role: "ভূমিকা অনুসারে",
       by_need: "প্রয়োজন অনুসারে",
-      classic: "ক্লাসিক",
+      classic: "ক্লাসিক"
     },
     opportunities: {
       title: "অটোমেশনের সুযোগ",
@@ -4960,15 +5335,15 @@ export const bn = {
       ready_now: "এখনই প্রস্তুত",
       add_connector: "যোগ করুন",
       unlock_more: "আরও {count}টি আনলক করতে",
-      explore_templates: "{label} টেমপ্লেট অন্বেষণ করুন",
+      explore_templates: "{label} টেমপ্লেট অন্বেষণ করুন"
     },
     recommended: {
       title: "আপনার জন্য সুপারিশকৃত",
       subtitle: "আপনার কানেক্টরের উপর ভিত্তি করে",
-      no_recommendations: "এখনও কোনো সুপারিশ পাওয়া যায়নি।",
+      no_recommendations: "এখনও কোনো সুপারিশ পাওয়া যায়নি।"
     },
     trending: {
-      title: "এই সপ্তাহে সবচেয়ে বেশি অ্যাডপ্টেড",
+      title: "এই সপ্তাহে সবচেয়ে বেশি অ্যাডপ্টেড"
     },
     empty: {
       no_templates: "এখনও কোনো তৈরি টেমপ্লেট নেই",
@@ -4977,7 +5352,7 @@ export const bn = {
       no_search_results_hint: "আপনি যা খুঁজছেন তা খুঁজে পেতে সার্চ টার্ম বা ফিল্টার পরিবর্তন করুন।",
       clear_search: "সার্চ সাফ করুন",
       waiting_for_draft: "পার্সোনা ড্রাফটের অপেক্ষায়",
-      waiting_for_draft_hint: "AI আপনার নির্বাচনের উপর ভিত্তি করে একটি ড্রাফট তৈরি করছে। এটি সাধারণত কয়েক সেকেন্ড নেয়।",
+      waiting_for_draft_hint: "AI আপনার নির্বাচনের উপর ভিত্তি করে একটি ড্রাফট তৈরি করছে। এটি সাধারণত কয়েক সেকেন্ড নেয়।"
     },
     banners: {
       draft_prefix: "ড্রাফট: ",
@@ -4990,7 +5365,7 @@ export const bn = {
       status_completed: "সম্পন্ন",
       status_failed: "ব্যর্থ",
       click_to_view_result: "ফলাফল দেখতে ক্লিক করুন",
-      click_to_view_output: "আউটপুট দেখতে ক্লিক করুন",
+      click_to_view_output: "আউটপুট দেখতে ক্লিক করুন"
     },
     search: {
       switch_to_keyword: "কীওয়ার্ড অনুসন্ধানে স্যুইচ করুন",
@@ -5030,17 +5405,21 @@ export const bn = {
       autocomplete_difficulty: "কঠিনতা",
       autocomplete_setup_time: "সেটআপ সময়",
       autocomplete_suggestions: "পরামর্শ",
+      coverage_filter_aria: "কভারেজ ফিল্টার",
+      search_suggestions_aria: "অনুসন্ধান পরামর্শ",
+      clear_search_aria: "অনুসন্ধান সাফ করুন",
+      search_with_ai_aria: "AI দিয়ে অনুসন্ধান করুন"
     },
     list: {
       template_name: "টেমপ্লেটের নাম",
       components: "উপাদান",
-      adoptions: "অ্যাডপশন",
+      adoptions: "অ্যাডপশন"
     },
     row_actions: {
       row_actions_label: "সারির পদক্ষেপ",
       view_details: "বিস্তারিত দেখুন",
       rebuild: "পুনর্নির্মাণ করুন",
-      delete_template: "টেমপ্লেট মুছুন",
+      delete_template: "টেমপ্লেট মুছুন"
     },
     connector_readiness: {
       click_to_add: "ক্রেডেনশিয়াল যোগ করতে ক্লিক করুন",
@@ -5050,14 +5429,14 @@ export const bn = {
       needs_setup: "সেটআপ প্রয়োজন",
       not_ready: "প্রস্তুত নয়",
       needs_credential: "ক্রেডেনশিয়াল প্রয়োজন",
-      not_installed: "ইনস্টল করা নেই",
+      not_installed: "ইনস্টল করা নেই"
     },
     detail_modal: {
       adopted: "{count}টি অ্যাডপ্টেড",
       reference_patterns: "রেফারেন্স প্যাটার্ন",
       adopt_as_persona: "পার্সোনা হিসেবে অ্যাডপ্ট করুন",
       try_it: "চেষ্টা করুন",
-      design_unavailable: "এই টেমপ্লেটের জন্য ডিজাইন ডেটা পাওয়া যাচ্ছে না।",
+      design_unavailable: "এই টেমপ্লেটের জন্য ডিজাইন ডেটা পাওয়া যাচ্ছে না।"
     },
     overview_tab: {
       loading_metrics: "পারফরম্যান্স মেট্রিক্স লোড হচ্ছে...",
@@ -5077,7 +5456,7 @@ export const bn = {
       suggested_adjustment: "প্রস্তাবিত সামঞ্জস্য",
       adjustment_attempt: "(প্রচেষ্টা {attempt}/3)",
       dimension_completion: "ডাইমেনশন সম্পূর্ণতা",
-      dimensions_score: "({score}/9 ডাইমেনশন)",
+      dimensions_score: "({score}/9 ডাইমেনশন)"
     },
     review_detail: {
       design_unavailable: "এই টেমপ্লেটের জন্য ডিজাইন ডেটা পাওয়া যাচ্ছে না।",
@@ -5087,7 +5466,7 @@ export const bn = {
       adopt_as_new_persona: "নতুন পার্সোনা হিসেবে অ্যাডপ্ট করুন",
       view_raw_json: "র্যাও JSON দেখুন",
       hide_raw_json: "র্যাও JSON লুকান",
-      used_references: "এই টেমপ্লেট পূর্ববর্তী পাস করা পর্যালোচনার রেফারেন্স প্যাটার্ন ব্যবহার করেছে",
+      used_references: "এই টেমপ্লেট পূর্ববর্তী পাস করা পর্যালোচনার রেফারেন্স প্যাটার্ন ব্যবহার করেছে"
     },
     rebuild_modal: {
       title: "টেমপ্লেট পুনর্নির্মাণ করুন",
@@ -5104,7 +5483,7 @@ export const bn = {
       unknown_error: "পুনর্নির্মাণের সময় একটি অজানা ত্রুটি হয়েছে।",
       start_rebuild: "পুনর্নির্মাণ শুরু করুন",
       cancel_rebuild: "পুনর্নির্মাণ বাতিল করুন",
-      run_in_background: "ব্যাকগ্রাউন্ডে চালান",
+      run_in_background: "ব্যাকগ্রাউন্ডে চালান"
     },
     preview_modal: {
       preview_title: "প্রিভিউ: {name}",
@@ -5118,7 +5497,7 @@ export const bn = {
       completed: "সম্পন্ন",
       execution_failed: "এক্সিকিউশন ব্যর্থ হয়েছে",
       run_again: "আবার চালান",
-      close_test_continues: "আপনি বন্ধ করতে পারেন -- পরীক্ষা ব্যাকগ্রাউন্ডে চলতে থাকবে",
+      close_test_continues: "আপনি বন্ধ করতে পারেন -- পরীক্ষা ব্যাকগ্রাউন্ডে চলতে থাকবে"
     },
     expanded: {
       adopt: "অ্যাডপ্ট করুন",
@@ -5128,7 +5507,7 @@ export const bn = {
       architecture: "আর্কিটেকচার",
       events: "ইভেন্ট",
       reviews_label: "পর্যালোচনা",
-      notifications: "বিজ্ঞপ্তি",
+      notifications: "বিজ্ঞপ্তি"
     },
     matrix_cmd: {
       identity: "পরিচয়",
@@ -5147,7 +5526,7 @@ export const bn = {
       build_label: "বিল্ড",
       adjust_placeholder: "যেকোনো কিছু সামঞ্জস্য করুন...",
       test_agent: "এজেন্ট পরীক্ষা করুন",
-      save_version: "ভার্সন সংরক্ষণ করুন",
+      save_version: "ভার্সন সংরক্ষণ করুন"
     },
     questionnaire: {
       header: "{label} -- প্রশ্ন {current}/{total}",
@@ -5164,6 +5543,11 @@ export const bn = {
       answer_remaining: "বাকি উত্তর দিন ({count})",
       next: "পরবর্তী",
       setup: "সেটআপ",
+      previous_question: "পূর্ববর্তী প্রশ্ন",
+      next_question: "পরবর্তী প্রশ্ন",
+      go_to_question: "{number} নম্বর প্রশ্নে যান",
+      question_answered_suffix: " (উত্তর দেওয়া হয়েছে)",
+      question_unanswered_suffix: " (উত্তর দেওয়া হয়নি)"
     },
     sandbox_banner: {
       community_sandbox: "কমিউনিটি টেমপ্লেট -- স্যান্ডবক্স মোড",
@@ -5174,7 +5558,7 @@ export const bn = {
       human_review_required: "মানব পর্যালোচনা প্রয়োজন",
       budget_cap_enforced: "বাজেট সীমা প্রয়োগ হচ্ছে",
       max_concurrent_one: "সর্বোচ্চ {max}টি একযোগে চলবে",
-      max_concurrent_other: "সর্বোচ্চ {max}টি একযোগে চলবে",
+      max_concurrent_other: "সর্বোচ্চ {max}টি একযোগে চলবে"
     },
     n8n: {
       credential_label: "ক্রেডেনশিয়াল: {name}",
@@ -5261,18 +5645,26 @@ export const bn = {
       drop_file_here: "এখানে আপনার ওয়ার্কফ্লো ফাইল ড্রপ করুন",
       import_from_any_platform: "যেকোনো প্ল্যাটফর্ম থেকে ওয়ার্কফ্লো আমদানি করুন",
       click_to_browse: "ব্রাউজ করতে ক্লিক করুন বা আপনার রফতানি করা ওয়ার্কফ্লো ড্র্যাগ এবং ড্রপ করুন",
+      dropzone_aria: "ওয়ার্কফ্লো ফাইল ড্রপ করুন বা ব্রাউজ করতে ক্লিক করুন",
       continue_btn: "চালিয়ে যান",
       press_enter_or_click: "চালিয়ে যেতে Enter চাপুন বা ক্লিক করুন",
       paste_workflow_json: "ওয়ার্কফ্লো JSON পেস্ট করুন",
       paste_placeholder: "এখানে আপনার রফতানি করা ওয়ার্কফ্লো JSON পেস্ট করুন...",
+      paste_aria: "ওয়ার্কফ্লো JSON কন্টেন্ট",
       import_btn: "আমদানি করুন",
       import_from_url: "URL থেকে আমদানি করুন",
       url_description: "র্যাও ওয়ার্কফ্লো JSON ফাইলের URL পেস্ট করুন। GitHub র্যাও URL, Gist লিংক এবং সরাসরি JSON এন্ডপয়েন্ট সমর্থন করে।",
       fetching: "আনা হচ্ছে",
       fetch: "আনুন",
       accepts_label: "গ্রহণ করে:",
+      url_aria: "ওয়ার্কফ্লো URL",
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "কাঁচা JSON এন্ডপয়েন্ট",
       customize_persona: "আপনার পার্সোনা কাস্টমাইজ করতে কয়েকটি প্রশ্ন",
       answer_then_generate: "নিচে উত্তর দিন, তারপর Generate ক্লিক করুন",
+      question_view_mode_aria: "প্রশ্ন ভিউ মোড",
       list_view: "তালিকা",
       focus_view: "ফোকাস",
       no_config_needed: "কোনো কনফিগারেশন প্রয়োজন নেই",
@@ -5293,13 +5685,16 @@ export const bn = {
       analyzing_btn: "বিশ্লেষণ হচ্ছে...",
       upload_step: "আপলোড",
       analyze_step: "বিশ্লেষণ",
+      wizard_progress_aria: "আমদানি উইজার্ড অগ্রগতি",
+      wizard_steps_aria: "উইজার্ড ধাপ",
       streaming_sections: "সেকশন স্ট্রিমিং হচ্ছে",
       awaiting_next_section: "পরবর্তী সেকশনের অপেক্ষায়...",
+      transform_progress_aria: "রূপান্তর অগ্রগতি",
       analyze_phase: "বিশ্লেষণ",
       questions_phase: "প্রশ্ন",
       generate_phase: "তৈরি করুন",
       type_your_answer: "আপনার উত্তর টাইপ করুন...",
-      navigate_hint: "নেভিগেট করতে তীর কী ব্যবহার করুন",
+      navigate_hint: "নেভিগেট করতে তীর কী ব্যবহার করুন"
     },
     diagram: {
       no_flow_data: "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",
@@ -5309,7 +5704,7 @@ export const bn = {
       decisions_count: "{count}টি সিদ্ধান্ত",
       error_label: "ত্রুটি",
       request_label: "অনুরোধ",
-      response_label: "প্রতিক্রিয়া",
+      response_label: "প্রতিক্রিয়া"
     },
     design: {
       connectors_and_tools: "কানেক্টর ও টুল",
@@ -5326,7 +5721,7 @@ export const bn = {
       feasibility_assessment: "সম্ভাব্যতা মূল্যায়ন",
       confirmed_capabilities: "নিশ্চিত সক্ষমতা",
       issues_label: "সমস্যা",
-      suggested_next_steps: "প্রস্তাবিত পরবর্তী পদক্ষেপ",
+      suggested_next_steps: "প্রস্তাবিত পরবর্তী পদক্ষেপ"
     },
     card: {
       use_cases_label: "ব্যবহারের ক্ষেত্র",
@@ -5335,7 +5730,7 @@ export const bn = {
       no_flows: "কোনো প্রবাহ নেই",
       none_label: "কিছু নেই",
       more_count: "+{count}টি আরও",
-      system_prompt: "সিস্টেম প্রম্পট",
+      system_prompt: "সিস্টেম প্রম্পট"
     },
     matrix_grid: {
       prerequisites: "পূর্বশর্ত",
@@ -5345,7 +5740,7 @@ export const bn = {
       credential_configured: "ক্রেডেনশিয়াল কনফিগার করা হয়েছে",
       connector_not_installed: "কানেক্টর ইনস্টল করা নেই",
       needs_credential: "ক্রেডেনশিয়াল প্রয়োজন",
-      setup_btn: "সেটআপ",
+      setup_btn: "সেটআপ"
     },
     adopt_modal: {
       adopt_template: "টেমপ্লেট অ্যাডপ্ট করুন",
@@ -5360,6 +5755,49 @@ export const bn = {
       credential_required: "আপনার ভল্টে কোনো {category} ক্রেডেনশিয়াল পাওয়া যায়নি। চালিয়ে যেতে একটি যোগ করুন।",
       add_credential: "ক্রেডেনশিয়াল যোগ করুন",
       blocked_blocking_submit: "চালিয়ে যেতে {count}টি প্রশ্নের ক্রেডেনশিয়াল প্রয়োজন",
+      credentials_required_title: "ক্রেডেনশিয়াল প্রয়োজন",
+      credentials_required_body: "গ্রহণ চালিয়ে যাওয়ার আগে এই টেমপ্লেটের নিচের প্রতিটি বিভাগ থেকে কমপক্ষে একটি ক্রেডেনশিয়াল প্রয়োজন। \"ক্রেডেনশিয়াল যোগ করুন\" ক্লিক করুন — সেটআপ সম্পন্ন হলে আপনি স্বয়ংক্রিয়ভাবে এখানে ফিরে আসবেন।",
+      answered_of_total: "{total}-এর মধ্যে {answered}টি উত্তর",
+      blocked_count: "{count}টি ব্লকড",
+      question_number_of: "{total}-এর মধ্যে প্রশ্ন {current}",
+      question_number_aria: "প্রশ্ন {number}",
+      navigate_hint: "নেভিগেট করতে",
+      enter_to_advance: "অগ্রসর হতে",
+      previous: "পূর্ববর্তী",
+      next: "পরবর্তী",
+      live_preview: "লাইভ প্রিভিউ",
+      persona_label: "পার্সোনা",
+      untitled_agent: "শিরোনামহীন এজেন্ট",
+      not_yet_set: "এখনও সেট করা হয়নি",
+      auto_badge: "স্বয়ংক্রিয়",
+      jump_to_question_hint: "সেই প্রশ্নে যেতে উপরের যেকোনো সারিতে ক্লিক করুন। স্বয়ংক্রিয়ভাবে শনাক্ত মানগুলি আপনার সংযুক্ত ক্রেডেনশিয়াল থেকে অনুমান করা হয়।",
+      hide_explanation: "ব্যাখ্যা লুকান",
+      show_explanation: "ব্যাখ্যা দেখান",
+      all_option: "সব",
+      add_custom: "যোগ করুন",
+      custom_prefix: "+ কাস্টম…",
+      custom_plain: "কাস্টম…",
+      type_your_answer: "আপনার উত্তর লিখুন...",
+      describe_in_detail: "বিস্তারিতভাবে বর্ণনা করুন...",
+      select_directory: "একটি ডিরেক্টরি নির্বাচন করুন...",
+      type_a_value: "একটি মান লিখুন…",
+      preparing: "প্রস্তুত করা হচ্ছে…",
+      waiting_for_parent: "পূর্ববর্তী উত্তরের জন্য অপেক্ষা…",
+      loading_from_service: "{service} থেকে বিকল্প লোড হচ্ছে…",
+      loaded_live_from: "{service} থেকে লাইভ লোড হয়েছে",
+      no_items_found: "কোনো {item} পাওয়া যায়নি। প্রথমে {service}-এ একটি তৈরি করুন।",
+      retry: "পুনরায় চেষ্টা",
+      source_local: "স্থানীয় ফাইল বা ফোল্ডার",
+      source_codebase: "কোডবেস",
+      source_database: "ডাটাবেস",
+      source_local_hint: "একটি ফাইল বা ফোল্ডারের সম্পূর্ণ স্থানীয় পথ পেস্ট করুন।",
+      source_codebase_hint: "Dev Tools-এ নিবন্ধিত একটি প্রকল্প বেছে নিন।",
+      source_database_hint: "আপনার ভল্ট থেকে একটি ডাটাবেস ক্রেডেনশিয়াল বেছে নিন।",
+      source_local_placeholder: "/Users/me/project/design.md",
+      source_no_codebases: "কোনো Dev Tools প্রকল্প পাওয়া যায়নি। প্রথমে Dev Tools-এ একটি নিবন্ধন করুন।",
+      source_no_databases: "কোনো ডাটাবেস ক্রেডেনশিয়াল পাওয়া যায়নি। প্রথমে Vault-এ একটি যোগ করুন।",
+      source_pick_codebase: "একটি কোডবেস নির্বাচন করুন…",
+      source_pick_database: "একটি ডাটাবেস নির্বাচন করুন…"
     },
     scan: {
       scanning_draft: "পার্সোনা ড্রাফট স্ক্যান হচ্ছে...",
@@ -5373,7 +5811,7 @@ export const bn = {
       critical_label: "সংকটজনক",
       warnings_label: "সতর্কতা",
       informational_label: "তথ্যমূলক",
-      source_label: "উৎস:",
+      source_label: "উৎস:"
     },
     team_synthesis: {
       title: "দল সংশ্লেষণ করুন",
@@ -5385,7 +5823,7 @@ export const bn = {
       synthesizing: "সংশ্লেষণ হচ্ছে...",
       synthesize_team: "দল সংশ্লেষণ করুন",
       personas_created: "{count}টি পার্সোনা তৈরি ও সংযুক্ত হয়েছে",
-      done: "সম্পন্ন",
+      done: "সম্পন্ন"
     },
     matrix_variants: {
       processing: "প্রক্রিয়াকরণ হচ্ছে...",
@@ -5399,6 +5837,17 @@ export const bn = {
       testing_agent: "এজেন্ট পরীক্ষা হচ্ছে...",
       approve_and_promote: "অনুমোদন ও উন্নীত করুন",
       view_agent_btn: "এজেন্ট দেখুন",
+      command_center_header: "COMMAND CENTER // BUILD v1.0",
+      phase_label: "[PHASE: {phase}]",
+      your_answer_placeholder: "আপনার উত্তর...",
+      testing_background_hint: "এটি কয়েক মিনিট লাগতে পারে। আপনি এই পৃষ্ঠা ছেড়ে পরে ফিরে আসতে পারেন — পরীক্ষা ব্যাকগ্রাউন্ডে চলতে থাকে।",
+      cancel_test: "পরীক্ষা বাতিল করুন",
+      missing_keys: "অনুপস্থিত কী:",
+      approve_anyway: "তবুও অনুমোদন করুন",
+      delete_draft_title: "এই খসড়া পার্সোনাটি বাতিল করুন এবং বন্ধ করুন",
+      delete_draft: "খসড়া মুছুন",
+      agent_promoted: "এজেন্ট প্রোমোট হয়েছে",
+      view_agent: "এজেন্ট দেখুন"
     },
     diagrams: {
       no_flow_data: "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",
@@ -5406,6 +5855,7 @@ export const bn = {
       edges_count: "{count}টি প্রান্ত",
       connectors_count: "{count}টি কানেক্টর",
       decisions_count: "{count}টি সিদ্ধান্ত",
+      close_dialog: "ডায়ালগ বন্ধ করুন"
     },
     generation: {
       create_template: "টেমপ্লেট তৈরি করুন",
@@ -5428,6 +5878,51 @@ export const bn = {
       start_review_custom: "পর্যালোচনা শুরু করুন ({count}টি ক্ষেত্র)",
       copy_log: "লগ কপি করুন",
       copied_log: "কপি হয়েছে!",
+      back: "পেছনে",
+      generate_template: "টেমপ্লেট তৈরি করুন",
+      view_draft: "খসড়া দেখুন",
+      saving: "সংরক্ষণ হচ্ছে...",
+      save_template: "টেমপ্লেট সংরক্ষণ করুন",
+      template_saved: "টেমপ্লেট সংরক্ষিত",
+      template_name_label_step: "টেমপ্লেট নাম",
+      template_name_placeholder: "টেমপ্লেট নাম...",
+      description_label: "বিবরণ",
+      description_placeholder: "বর্ণনা করুন এই পার্সোনা কী করবে, কোন সার্ভিসের সাথে সংযুক্ত হবে এবং কীভাবে আচরণ করবে। প্রয়োজনীয় টুল, ট্রিগার এবং ইন্টিগ্রেশন সম্পর্কে নির্দিষ্ট হন।\n\nউদাহরণ: একটি পার্সোনা যা গুরুত্বপূর্ণ ইমেলের জন্য Gmail ইনবক্স পর্যবেক্ষণ করে, অগ্রাধিকার অনুসারে শ্রেণীবদ্ধ করে, জরুরীগুলির জন্য Slack বিজ্ঞপ্তি পাঠায় এবং একটি দৈনিক ডাইজেস্ট সারাংশ তৈরি করে।",
+      description_hint: "AI সিস্টেম প্রম্পট, টুল, ট্রিগার, কানেক্টর এবং টেমপ্লেট ভেরিয়েবল সহ একটি সম্পূর্ণ পার্সোনা টেমপ্লেট তৈরি করবে।",
+      terminal_aria_label: "ডিজাইন পর্যালোচনা আউটপুট",
+      terminal_placeholder: "পর্যালোচনা শুরু হলে এখানে আউটপুট প্রদর্শিত হবে",
+      terminal_running: "চলছে...",
+      result_passed: "{count}টি উত্তীর্ণ",
+      result_failed: "{count}টি ব্যর্থ",
+      result_errored: "{count}টি ত্রুটি",
+      result_total: "{count}টি মোট পরীক্ষা",
+      mode_predefined: "পূর্বনির্ধারিত (5)",
+      mode_custom: "কাস্টম",
+      mode_batch: "ব্যাচ",
+      mode_batch_count: "ব্যাচ ({count})",
+      batch_upload_hint: "Claude CLI-এর মাধ্যমে টেমপ্লেট ব্যাচ-জেনারেট করতে সংখ্যাযুক্ত টেমপ্লেট এন্ট্রি সহ একটি list.md ফাইল আপলোড করুন।",
+      batch_upload_btn: "list.md আপলোড করুন",
+      batch_format_hint: "প্রত্যাশিত ফরম্যাট:",
+      batch_all: "সব ({count})",
+      batch_count: "{count}টি টেমপ্লেট{plural} Claude CLI-এর মাধ্যমে তৈরি হবে (~45s প্রতিটি)",
+      batch_clear: "সাফ করুন",
+      batch_format_example: "**1. Template Name**",
+      custom_count: "টেমপ্লেট ব্যবহারের ক্ষেত্র সংজ্ঞায়িত করুন ({count}টি প্রস্তুত)",
+      custom_load_file_title: ".txt বা .md ফাইল থেকে লোড করুন",
+      custom_load_file: "ফাইল লোড করুন",
+      custom_add: "যোগ করুন",
+      custom_case_name_placeholder: "টেমপ্লেট নাম (যেমন Gmail Smart Filter)",
+      custom_instruction_placeholder: "বর্ণনা করুন এই পার্সোনা কী করবে, কোন সার্ভিস ইন্টিগ্রেট করবে এবং কোন ট্রিগারগুলি এটি সক্রিয় করবে...",
+      custom_short_instruction: "{current}/{min} অক্ষর ন্যূনতম",
+      custom_category_default: "বিভাগ...",
+      custom_trigger_default: "ট্রিগার...",
+      custom_connectors_placeholder: "কানেক্টর (যেমন gmail, slack)",
+      custom_detail_hint: "আরও বিবরণ = ভালো ফলাফল। সার্ভিস, ট্রিগার এবং প্রত্যাশিত আচরণ অন্তর্ভুক্ত করুন।",
+      custom_show_example: "উদাহরণ দেখান",
+      custom_hide_example: "উদাহরণ লুকান",
+      custom_example_title: "উদাহরণ: Gmail Smart Filter",
+      custom_example_body: "\"একটি এজেন্ট তৈরি করুন যা গুরুত্বপূর্ণ ইমেলের জন্য Gmail পর্যবেক্ষণ করে, প্রেরক এবং জরুরীতা অনুসারে শ্রেণীবদ্ধ করে, লেবেল প্রয়োগ করে এবং জরুরীগুলি Slack-এ ফরোয়ার্ড করে। gmail এবং slack কানেক্টর সহ পোলিং ট্রিগার ব্যবহার করুন।\"",
+      predefined_intro: "ডিজাইন ইঞ্জিনের মাধ্যমে {count}টি পূর্বনির্ধারিত ব্যবহারের ক্ষেত্র চালায়:"
     },
     connector_edit: {
       credential: "ক্রেডেনশিয়াল",
@@ -5443,22 +5938,24 @@ export const bn = {
       existing_table_label: "বিদ্যমান টেবিল",
       schema: "স্কিমা",
       table_name: "টেবিলের নাম",
+      table_name_placeholder: "যেমন persona_data",
       in_app_messages: "ইন-অ্যাপ বার্তা",
       not_connected: "সংযুক্ত নয়",
       no_connectors: "কোনো কানেক্টর প্রয়োজন নেই",
       linked: "লিংক করা হয়েছে",
       set_up: "সেটআপ করুন",
-      more_connectors: "+{count}টি আরও",
+      more_connectors: "+{count}টি আরও"
     },
     trigger_edit: {
       schedule: "শিডিউল",
       schedule_placeholder: "প্রতি কার্যদিবস সকাল ৯টায়",
       schedule_hint: "প্রাকৃতিক ভাষা বা cron (যেমন \\\"0 9 * * 1-5\\\")",
       webhook_url: "Webhook URL",
+      webhook_url_placeholder: "https://...",
       check_interval: "চেক ইন্টারভাল",
       check_interval_placeholder: "প্রতি ৫ মিনিটে",
       no_config_needed: "কোনো কনফিগারেশন প্রয়োজন নেই",
-      manual_only: "শুধুমাত্র ম্যানুয়াল এক্সিকিউশন",
+      manual_only: "শুধুমাত্র ম্যানুয়াল এক্সিকিউশন"
     },
     preset_edit: {
       select_review: "পর্যালোচনা নীতি নির্বাচন করুন...",
@@ -5470,7 +5967,7 @@ export const bn = {
       retry_once: "একবার পুনরায় চেষ্টা",
       retry_3x: "৩ বার পুনরায় চেষ্টা",
       notify_continue: "জানান ও চালিয়ে যান",
-      skip_failed: "ব্যর্থ ধাপ এড়িয়ে যান",
+      skip_failed: "ব্যর্থ ধাপ এড়িয়ে যান"
     },
     test_report: {
       title: "পরীক্ষার রিপোর্ট",
@@ -5496,8 +5993,8 @@ export const bn = {
       response_preview: "রেসপন্স প্রিভিউ",
       error_detail: "ত্রুটির বিস্তারিত",
       copy: "কপি করুন",
-      copied: "কপি হয়েছে",
-    },
+      copied: "কপি হয়েছে"
+    }
   },
   triggers: {
     title: "ট্রিগার ও চেইন",
@@ -5539,7 +6036,7 @@ export const bn = {
       show_sidebar: "সাইডবার দেখান",
       source: "উৎস",
       source_personas: "উৎস পার্সোনা",
-      use_template: "টেমপ্লেট ব্যবহার করুন",
+      use_template: "টেমপ্লেট ব্যবহার করুন"
     },
     studio: {
       building_blocks: "বিল্ডিং ব্লক",
@@ -5555,7 +6052,7 @@ export const bn = {
       remove_from_chain: "চেইন থেকে সরান",
       studio_title: "ট্রিগার স্টুডিও",
       trigger_sources: "ট্রিগার উৎস",
-      unsaved_changes: "সংরক্ষণ না হওয়া পরিবর্তন",
+      unsaved_changes: "সংরক্ষণ না হওয়া পরিবর্তন"
     },
     subscription_list: {
       active: "সক্রিয়",
@@ -5569,10 +6066,10 @@ export const bn = {
       error: "ত্রুটি",
       never: "কখনও নয়",
       no_active_subs: "কোনো সক্রিয় সাবস্ক্রিপশন নেই",
-      unsubscribe: "আনসাবস্ক্রাইব করুন",
+      unsubscribe: "আনসাবস্ক্রাইব করুন"
     },
     type_selector: {
-      trigger_type: "ট্রিগার টাইপ",
+      trigger_type: "ট্রিগার টাইপ"
     },
     tab_triggers: "ট্রিগার",
     tab_chains: "চেইন",
@@ -5648,11 +6145,11 @@ export const bn = {
       cron_daily_midnight: "প্রতিদিন মধ্যরাত",
       cron_weekly_monday: "সাপ্তাহিক সোমবার",
       next_runs: "পরবর্তী রান",
-      invalid_cron: "অবৈধ শিডিউল এক্সপ্রেশন",
+      invalid_cron: "অবৈধ শিডিউল এক্সপ্রেশন"
     },
     add: {
       create_trigger: "ট্রিগার তৈরি করুন",
-      creating: "তৈরি হচ্ছে...",
+      creating: "তৈরি হচ্ছে..."
     },
     detail: {
       test_fire: "পরীক্ষা ফায়ার",
@@ -5675,7 +6172,7 @@ export const bn = {
       last_fired: "শেষবার ফায়ার হয়েছে",
       never_fired: "কখনও ফায়ার হয়নি",
       fire_count_one: "{count} বার ফায়ার হয়েছে",
-      fire_count_other: "{count} বার ফায়ার হয়েছে",
+      fire_count_other: "{count} বার ফায়ার হয়েছে"
     },
     list: {
       empty_title: "এখনও কোনো ট্রিগার কনফিগার করা নেই",
@@ -5685,28 +6182,28 @@ export const bn = {
       budget_unavailable: "বাজেট ডেটা পাওয়া যাচ্ছে না",
       unknown_budget: "অজানা বাজেট",
       budget_exceeded: "মাসিক বাজেট অতিক্রান্ত -- ট্রিগার বিরতিতে",
-      budget: "বাজেট",
+      budget: "বাজেট"
     },
     config: {
       no_persona: "কোনো পার্সোনা নির্বাচিত নেই",
       title: "ট্রিগার",
       add_trigger: "ট্রিগার যোগ করুন",
-      empty: "কোনো ট্রিগার কনফিগার নেই। এই পার্সোনা অটোমেট করতে একটি যোগ করুন।",
+      empty: "কোনো ট্রিগার কনফিগার নেই। এই পার্সোনা অটোমেট করতে একটি যোগ করুন।"
     },
     countdown: {
       due_now: "এখনই নির্ধারিত",
-      fires_in: "{time}-এ ফায়ার হবে",
+      fires_in: "{time}-এ ফায়ার হবে"
     },
     polling: {
       endpoint_label: "চেক করার URL",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "প্রতি {interval} চেক করুন",
-      content_hash: "শুধুমাত্র পরিবর্তন সনাক্ত করুন",
+      content_hash: "শুধুমাত্র পরিবর্তন সনাক্ত করুন"
     },
     webhook: {
       url_label: "Webhook URL",
       secret_label: "সুরক্ষা কী (ঐচ্ছিক)",
-      secret_placeholder: "আগত ডেটা যাচাই করতে সিক্রেট কী",
+      secret_placeholder: "আগত ডেটা যাচাই করতে সিক্রেট কী"
     },
     file_watcher: {
       paths_label: "দেখার পথ",
@@ -5718,7 +6215,7 @@ export const bn = {
       event_delete: "মুছুন",
       recursive: "পুনরাবৃত্তিমূলক",
       glob_filter: "ফাইল প্যাটার্ন",
-      glob_placeholder: "*.json",
+      glob_placeholder: "*.json"
     },
     clipboard: {
       content_type: "কনটেন্ট টাইপ",
@@ -5726,7 +6223,7 @@ export const bn = {
       type_image: "ছবি",
       pattern_label: "মিলের প্যাটার্ন",
       pattern_placeholder: "যেমন https?://.*",
-      interval_label: "চেক ইন্টারভাল (সেকেন্ড)",
+      interval_label: "চেক ইন্টারভাল (সেকেন্ড)"
     },
     app_focus: {
       app_names_label: "অ্যাপ্লিকেশনের নাম",
@@ -5734,20 +6231,20 @@ export const bn = {
       add_app: "অ্যাপ যোগ করুন",
       title_pattern: "উইন্ডো টাইটেল প্যাটার্ন",
       title_placeholder: "যেমন .*GitHub.*",
-      interval_label: "চেক ইন্টারভাল (সেকেন্ড)",
+      interval_label: "চেক ইন্টারভাল (সেকেন্ড)"
     },
     event_listener: {
       event_type_label: "ইভেন্ট টাইপ",
       event_type_placeholder: "যেমন persona.execution.completed",
       source_filter_label: "উৎস ফিল্টার",
-      source_filter_placeholder: "যেমন persona:abc123",
+      source_filter_placeholder: "যেমন persona:abc123"
     },
     composite: {
       conditions_label: "শর্ত",
       add_condition: "শর্ত যোগ করুন",
       operator_all: "সব শর্ত মিলতে হবে",
       operator_any: "যেকোনো শর্ত মিলতে পারে",
-      window_label: "সময় উইন্ডো (সেকেন্ড)",
+      window_label: "সময় উইন্ডো (সেকেন্ড)"
     },
     rate_limit: {
       title: "গতির সীমা",
@@ -5756,14 +6253,14 @@ export const bn = {
       window_seconds: "{seconds} সেকেন্ড",
       window_minutes: "{minutes} মিনিট",
       window_hours: "{hours} ঘণ্টা",
-      currently_limited: "বর্তমানে বিরতিতে (সীমায় পৌঁছেছে)",
+      currently_limited: "বর্তমানে বিরতিতে (সীমায় পৌঁছেছে)"
     },
     dry_run: {
       title: "পরীক্ষা রানের ফলাফল",
       would_fire: "চলবে",
       would_not_fire: "চলবে না",
       matched_conditions: "শর্ত পূরণ হয়েছে",
-      payload_preview: "ডেটা প্রিভিউ",
+      payload_preview: "ডেটা প্রিভিউ"
     },
     tab_live_stream: "লাইভ স্ট্রিম",
     tab_live_stream_subtitle: "রিয়েল-টাইম ইভেন্ট হাব -- এজেন্ট এই শেয়ার্ড বাসের মাধ্যমে ইভেন্ট প্রকাশ ও সাবস্ক্রাইব করে",
@@ -5927,6 +6424,186 @@ export const bn = {
     loading_catalog: "ক্যাটালগ লোড হচ্ছে...",
     no_feeds: "এখনও কোনো শেয়ার্ড ইভেন্ট ফিড পাওয়া যায়নি",
     no_feeds_hint: "সর্বশেষ ফিড পেতে রিফ্রেশ ক্লিক করুন",
+    cron_colon: "Cron:",
+    interval_colon: "ব্যবধান:",
+    event_colon: "ইভেন্ট:",
+    endpoint_colon: "এন্ডপয়েন্ট:",
+    listens_for_colon: "শোনে:",
+    source_filter_colon: "সোর্স ফিল্টার:",
+    hmac_colon: "HMAC:",
+    paths_colon: "পথ:",
+    events_colon: "ইভেন্ট:",
+    recursive_yes: "রিকার্সিভ: হ্যাঁ",
+    filter_colon: "ফিল্টার:",
+    watches_colon: "পর্যবেক্ষণ:",
+    pattern_colon: "প্যাটার্ন:",
+    poll_every: "পোল: প্রতি",
+    apps_colon: "অ্যাপ:",
+    title_colon: "শিরোনাম:",
+    operator_colon: "অপারেটর:",
+    window_colon: "উইন্ডো:",
+    id_colon: "ID:",
+    type_colon: "ধরন:",
+    status_colon: "অবস্থা:",
+    target_colon: "লক্ষ্য:",
+    retry_hash: "পুনঃচেষ্টা #",
+    model_colon: "মডেল:",
+    next_run_colon: "পরবর্তী রান:",
+    local_label: "(স্থানীয়)",
+    then_every: ", তারপর প্রতি",
+    source_colon: "সোর্স:",
+    dry_run_target_colon: "লক্ষ্য:",
+    matched_subscriptions_count: "মিলে যাওয়া সাবস্ক্রিপশন ({count})",
+    last_label: "শেষ:",
+    loading_history: "লোড হচ্ছে...",
+    zero_unlimited: "0 = সীমাহীন",
+    category_section_label: "ট্রিগার বিভাগ",
+    no_persona_selected: "কোনো পার্সোনা নির্বাচিত নেই",
+    quick_templates_label: "দ্রুত টেমপ্লেট",
+    quick_presets_label: "দ্রুত প্রিসেট",
+    cron_expression_label: "Cron এক্সপ্রেশন",
+    this_persona_will: "এই পার্সোনা",
+    starting_from: ", যখন আপনি এটি সক্ষম করবেন তখন থেকে শুরু হবে।",
+    per_day: "প্রতিদিন।",
+    last_poll_label: "শেষ পোল:",
+    deployed_persona_label: "ডিপ্লয়েড পার্সোনা",
+    fired_at_label: "ফায়ার করার সময়",
+    webhook_last_label: "শেষ:",
+    relay_last_label: "শেষ:",
+    optional_label: "(ঐচ্ছিক)",
+    optional_comma_separated: "(ঐচ্ছিক, কমা-বিভক্ত)",
+    get_channel_url_from: "এখান থেকে একটি চ্যানেল URL নিন",
+    setup_step1: "একটি বিনামূল্যে রিলে চ্যানেল তৈরি করতে smee.io/new-এ যান",
+    setup_step2: "একটি লেবেল এবং চ্যানেল URL সহ এখানে রিলে যোগ করুন",
+    setup_step3: "GitHub / Stripe / যেকোনো সার্ভিসে webhook হিসেবে চ্যানেল URL পেস্ট করুন",
+    setup_step4: "ইভেন্ট লাইভ স্ট্রিমে প্রদর্শিত হবে এবং স্বয়ংক্রিয়ভাবে আপনার এজেন্টের কাছে রুট হবে",
+    studio_empty_desc: "আপনার পার্সোনা জুড়ে প্রতিক্রিয়াশীল ইভেন্ট ফ্লো রচনা করুন। ট্রিগার ধরনকে বিল্ডিং ব্লক হিসেবে ব্যবহার করুন, শর্তসাপেক্ষ ব্রাঞ্চিং এবং সমান্তরাল ফ্যান-আউট যোগ করে বুদ্ধিমান অটোমেশন চেইন তৈরি করুন।",
+    studio_step1: "1. সাইডবার থেকে ট্রিগার সোর্স যোগ করুন (Schedule, Webhook, ...)",
+    studio_step2: "2. ইভেন্ট প্রক্রিয়া করতে পার্সোনা ধাপ যোগ করুন",
+    studio_step3: "3. প্রতিক্রিয়াশীল চেইন তৈরি করতে সেগুলি সংযুক্ত করুন",
+    studio_step4: "4. রাউটিং লজিকের জন্য শর্ত গেট ব্যবহার করুন",
+    gate_if_else: "If / Else",
+    gate_if_else_desc: "বাইনারি শর্তসাপেক্ষ ব্রাঞ্চ",
+    gate_classifier_desc: "বহু-মুখী রাউটিং (support, sales, ...)",
+    gate_fan_out: "ফ্যান-আউট (সমান্তরাল)",
+    gate_fan_out_desc: "একাধিক ব্রাঞ্চ সমান্তরালে চালান",
+    palette_help: "প্রতিক্রিয়াশীল চেইন তৈরি করতে ট্রিগার সোর্সগুলিকে পার্সোনা ধাপগুলির সাথে সংযুক্ত করুন। ব্রাঞ্চিং লজিক এবং সমান্তরাল ফ্যান-আউটের জন্য শর্ত গেট যোগ করুন।",
+    toolbar_title_auto_layout: "স্বয়ংক্রিয় লেআউট",
+    toolbar_title_add_note: "স্টিকি নোট যোগ করুন",
+    toolbar_title_start_dry_run: "ড্রাই রান শুরু করুন",
+    toolbar_title_stop_dry_run: "ড্রাই রান বন্ধ করুন",
+    toolbar_title_assistant: "ক্যানভাস সহকারী",
+    toolbar_dry_run: "ড্রাই রান",
+    canvas_assistant_title: "ক্যানভাস সহকারী",
+    try_asking_hint: "জিজ্ঞাসা করে দেখুন",
+    assistant_placeholder: "আপনার ইভেন্ট টপোলজি বর্ণনা করুন...",
+    disconnect_persona_title: "পার্সোনা সংযোগ বিচ্ছিন্ন করবেন?",
+    disconnect_will_no_longer: "আর প্রতিক্রিয়া করবে না",
+    disconnect_events_reconnect: "ইভেন্ট। আপনি পরে পুনরায় সংযোগ করতে পারেন।",
+    rename_also_updates: "ঐতিহাসিক ইভেন্ট, পার্সোনা ইভেন্ট হ্যান্ডলার এবং ট্রিগার অডিট মেটাডেটাও আপডেট করে।",
+    delete_connection_label: "সংযোগ মুছুন",
+    search_personas_placeholder: "পার্সোনা অনুসন্ধান...",
+    no_matching_personas_found: "কোনো মিলে যাওয়া পার্সোনা পাওয়া যায়নি",
+    clear_search_label: "অনুসন্ধান সাফ করুন",
+    dead_letter_source: "সোর্স:",
+    dead_letter_id: "ID:",
+    event_data_label: "ইভেন্ট ডেটা",
+    shared_prefix: "শেয়ার:",
+    nl_type_colon: "ধরন:",
+    nl_cron_colon: "· Cron:",
+    nl_interval_colon: "· ব্যবধান:",
+    nl_filter_colon: "· ফিল্টার:",
+    nl_could_not_parse: "সেই বিবরণ থেকে একটি ট্রিগার পার্স করা যায়নি। এর মতো কিছু চেষ্টা করুন",
+    active_hours_every_day: "প্রতিদিন",
+    event_type_to_listen: "শোনার জন্য ইভেন্ট ধরন",
+    event_type_input_placeholder: "যেমন file_changed, execution_completed",
+    event_type_helper: "নিবন্ধিত ইভেন্ট ধরন অনুসন্ধান করতে টাইপ করুন, বা একটি কাস্টম ধরন লিখুন।",
+    source_filter_optional_label: "(ঐচ্ছিক)",
+    wildcard_hint: "— ট্রেইলিং * প্রিফিক্স ওয়াইল্ডকার্ড সমর্থিত",
+    window_title_pattern_label: "উইন্ডো শিরোনাম প্যাটার্ন",
+    optional_regex_label: "(ঐচ্ছিক regex)",
+    text_pattern_label: "টেক্সট প্যাটার্ন",
+    credential_event_label: "ক্রেডেনশিয়াল ইভেন্ট",
+    refresh_label: "রিফ্রেশ",
+    copy_webhook_url_title: "webhook URL কপি করুন",
+    copy_webhook_secret_title: "webhook সিক্রেট কপি করুন",
+    delete_webhook_title: "webhook ট্রিগার মুছুন",
+    status_col_label: "অবস্থা",
+    duration_col_label: "সময়কাল",
+    cost_col_label: "খরচ",
+    dead_letter_refresh: "রিফ্রেশ",
+    dead_letter_loading: "লোড হচ্ছে...",
+    dead_letter_retry: "পুনঃচেষ্টা",
+    dead_letter_discard: "বাতিল",
+    dead_letter_payload: "পেলোড",
+    event_data_section_label: "ইভেন্ট ডেটা",
+    copy_event_data_title: "ইভেন্ট ডেটা কপি করুন",
+    copied_label: "কপি হয়েছে",
+    error_section_label: "ত্রুটি",
+    meta_event_id: "ইভেন্ট ID",
+    meta_project: "প্রকল্প",
+    meta_processed: "প্রক্রিয়াকৃত",
+    clear_stream: "সাফ করুন",
+    clear_stream_title: "স্ট্রিম বাফার সাফ করুন",
+    col_type: "ধরন",
+    col_source: "সোর্স",
+    col_target_agent: "লক্ষ্য এজেন্ট",
+    col_status: "অবস্থা",
+    col_time: "সময়",
+    queued_bare: "সারিবদ্ধ",
+    pause_tooltip: "আগত ইভেন্ট বিরতি দিন",
+    resume_tooltip: "লাইভ আপডেট পুনরায় শুরু করুন",
+    relay_label_field: "লেবেল",
+    relay_channel_url_field: "চ্যানেল URL",
+    relay_route_to_agent: "এজেন্টে রুট করুন",
+    optional_suffix: "(ঐচ্ছিক)",
+    relay_event_filter_field: "ইভেন্ট ফিল্টার",
+    relay_event_filter_note: "(ঐচ্ছিক, কমা-বিভক্ত)",
+    relay_confirm_delete: "নিশ্চিত করুন",
+    setup_guide_step2: "একটি লেবেল এবং চ্যানেল URL সহ এখানে রিলে যোগ করুন",
+    setup_guide_step3: "GitHub / Stripe / যেকোনো সার্ভিসে webhook হিসেবে চ্যানেল URL পেস্ট করুন",
+    setup_guide_step4: "ইভেন্ট লাইভ স্ট্রিমে প্রদর্শিত হবে এবং স্বয়ংক্রিয়ভাবে আপনার এজেন্টের কাছে রুট হবে",
+    get_channel_url_prompt: "এখান থেকে একটি চ্যানেল URL নিন",
+    gate_if_else_label: "If / Else",
+    gate_if_else_description: "বাইনারি শর্তসাপেক্ষ ব্রাঞ্চ",
+    gate_classifier_label: "শ্রেণীবদ্ধকারী",
+    gate_classifier_description: "বহু-মুখী রাউটিং (support, sales, ...)",
+    gate_fan_out_label: "ফ্যান-আউট (সমান্তরাল)",
+    gate_fan_out_description: "একাধিক ব্রাঞ্চ সমান্তরালে চালান",
+    palette_help_text: "প্রতিক্রিয়াশীল চেইন তৈরি করতে ট্রিগার সোর্সগুলিকে পার্সোনা ধাপগুলির সাথে সংযুক্ত করুন। ব্রাঞ্চিং লজিক এবং সমান্তরাল ফ্যান-আউটের জন্য শর্ত গেট যোগ করুন।",
+    test_event_type_placeholder: "যেমন build_complete, deploy, file_changed",
+    result_id_prefix: "ID:",
+    result_type_prefix: "ধরন:",
+    result_status_prefix: "অবস্থা:",
+    result_target_prefix: "লক্ষ্য:",
+    tab_loading: "লোড হচ্ছে...",
+    smee_open_new_title: "একটি চ্যানেল তৈরি করতে smee.io/new খুলুন",
+    relay_label_placeholder: "যেমন GitHub — my-repo",
+    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
+    relay_filter_placeholder: "github_push, github_pull_request",
+    dead_letter_retry_exhausted_title: "পুনঃচেষ্টার সীমা শেষ — বাতিল করুন বা মূল কারণ তদন্ত করুন",
+    dead_letter_discard_title: "এই ইভেন্টটি স্থায়ীভাবে বাতিল করুন",
+    dead_letter_retry_title: "এই ইভেন্টটি পুনরায় চেষ্টা করুন",
+    replay_button_title: "একই ইনপুট পেলোড দিয়ে পুনরায় ফায়ার করুন",
+    interval_seconds_placeholder: "সেকেন্ড (ন্যূনতম 60)",
+    cron_expression_placeholder: "* * * * *  (min hour dom mon dow)",
+    app_focus_window_placeholder: "যেমন .*.rs$ বা Project - Visual Studio",
+    app_focus_process_placeholder: "যেমন Code.exe বা firefox",
+    field_optional: "(ঐচ্ছিক)",
+    source_filter_input_placeholder: "যেমন watcher-* বা exact-source-id",
+    meta_source: "সোর্স",
+    relay_last_event: "শেষ:",
+    relay_delete_title: "রিলে মুছুন",
+    setup_guide_step1: "smee.io/new-এ একটি চ্যানেল তৈরি করুন",
+    clipboard_pattern_placeholder: "যেমন https?://.* বা error|exception",
+    composite_event_type_placeholder: "ইভেন্ট ধরন (যেমন file_changed)",
+    composite_debounce_placeholder: "300",
+    file_watcher_path_placeholder: "C:/Users/me/projects বা /home/me/src",
+    file_watcher_pattern_placeholder: "যেমন *.py, *.{ts,tsx}, Dockerfile",
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    more_tools_title: "আরও টুল",
+    validate_and_fire_title: "ট্রিগার কনফিগ যাচাই করুন, তারপর ফায়ার করুন",
+    simulate_trigger_title: "এক্সিকিউট না করে ট্রিগার সিমুলেট করুন"
   },
   teams: {
     title: "এজেন্ট দল",
@@ -5934,7 +6611,7 @@ export const bn = {
     auto_team: "অটো-টিম",
     new_team: "নতুন দল",
     starter_templates: "স্টার্টার টেমপ্লেট",
-    use_template: "টেমপ্লেট ব্যবহার",
+    use_template: "টেমপ্লেট ব্যবহার"
   },
   settings: {
     title: "সেটিংস",
@@ -5956,6 +6633,7 @@ export const bn = {
       telemetry_on: "ক্র্যাশ রিপোর্ট ও ব্যবহারের অ্যানালিটিক্স সক্রিয়।",
       telemetry_off: "টেলিমেট্রি নিষ্ক্রিয়। Sentry-তে কোনো ডেটা পাঠানো হচ্ছে না।",
       telemetry_restart: "এই পরিবর্তন কার্যকর করতে অ্যাপ রিস্টার্ট করুন",
+      telemetry_toggle_aria: "টেলিমেট্রি টগল করুন"
     },
     appearance_extra: {
       simple: "সহজ",
@@ -5963,7 +6641,7 @@ export const bn = {
       full: "পূর্ণ",
       full_hint: "সম্পূর্ণ ইন্টারফেস দেখান",
       dev: "ডেভ",
-      dev_hint: "ডেভেলপার টুলিং আনলক করুন",
+      dev_hint: "ডেভেলপার টুলিং আনলক করুন"
     },
     appearance: {
       title: "চেহারা",
@@ -5994,6 +6672,7 @@ export const bn = {
       applied: "প্রয়োগ হয়েছে",
       reset: "রিসেট করুন",
       enter_theme_name: "একটি থিমের নাম দিন",
+      reset_to_auto: "স্বয়ংক্রিয়তে রিসেট করুন",
       preview_dashboard: "ড্যাশবোর্ড",
       preview_action: "পদক্ষেপ",
       preview_card_title: "কার্ডের শিরোনাম",
@@ -6008,7 +6687,7 @@ export const bn = {
       coverage_hint: "অনুবাদ কভারেজ -- রফতানি করতে ক্লিক করুন",
       contribute_title: "অনুবাদে অবদান রাখুন",
       contribute_hint: "আপনার ভাষায় Personas অনুবাদ করতে সাহায্য করুন। উপরে একটি ভাষার ফাইল রফতানি করুন, মানগুলি অনুবাদ করুন এবং GitHub-এর মাধ্যমে জমা দিন।",
-      contribute_github: "GitHub-এ অবদান রাখুন",
+      contribute_github: "GitHub-এ অবদান রাখুন"
     },
     notifications: {
       title: "বিজ্ঞপ্তি",
@@ -6026,7 +6705,7 @@ export const bn = {
       digest_description: "সব এজেন্টের স্বাস্থ্য সমস্যার সাপ্তাহিক সারাংশ বিজ্ঞপ্তি",
       healing_alerts_hint: "কোন হিলিং অ্যালার্ট বিজ্ঞপ্তি ট্রিগার করবে নিয়ন্ত্রণ করুন",
       healing_severity: "হিলিং অ্যালার্ট তীব্রতা",
-      notification_hint: "ডেস্কটপ বিজ্ঞপ্তি OS নোটিফিকেশন ব্যবহার করে। ইন-অ্যাপ টোস্ট গুরুতর ও উচ্চ তীব্রতার সমস্যায় সেটিংস নির্বিশেষে দেখায়।",
+      notification_hint: "ডেস্কটপ বিজ্ঞপ্তি OS নোটিফিকেশন ব্যবহার করে। ইন-অ্যাপ টোস্ট গুরুতর ও উচ্চ তীব্রতার সমস্যায় সেটিংস নির্বিশেষে দেখায়।"
     },
     engine: {
       title: "ইঞ্জিন",
@@ -6044,6 +6723,7 @@ export const bn = {
       legend_not_installed: "ইনস্টল করা নেই",
       defaults_heading: "ইন্টিগ্রেশন টেস্ট থেকে ডিফল্ট",
       defaults_description: "ডিফল্ট ম্যাপ Round 9 ব্যবসায়িক-স্তরের ইন্টিগ্রেশন টেস্ট থেকে প্রাপ্ত। ব্যর্থ অপারেশনে প্রোভাইডার সচল করলে অপার্সযোগ্য রেসপন্স হতে পারে। Claude Code একমাত্র প্রোভাইডার যা ১০০% পাস করেছে।",
+      engine_not_capable: "এই অপারেশনের জন্য {provider} ইন্টিগ্রেশন পরীক্ষায় উত্তীর্ণ হয়নি। ফলাফল পার্স করা যাবে না।"
     },
     ambient: {
       title: "অ্যাম্বিয়েন্ট কনটেক্সট ফিউশন",
@@ -6079,7 +6759,7 @@ export const bn = {
       cancel: "বাতিল",
       create_rule: "নিয়ম তৈরি করুন",
       no_rules: "কোনো কনটেক্সট নিয়ম সংজ্ঞায়িত নেই",
-      all_sources: "সব উৎস",
+      all_sources: "সব উৎস"
     },
     byom: {
       title: "নিজের মডেল আনুন",
@@ -6131,6 +6811,7 @@ export const bn = {
       complexity: "জটিলতা",
       provider: "প্রদানকারী",
       model_optional: "মডেল (ঐচ্ছিক)",
+      model_placeholder: "যেমন claude-haiku-4-5-20251001",
       compliance_title: "সম্মতি-চালিত সীমাবদ্ধতা",
       compliance_hint: "নির্দিষ্ট ওয়ার্কফ্লো টাইপের জন্য প্রদানকারী সীমাবদ্ধ করুন (যেমন HIPAA, SOC2)",
       compliance_empty: "কোনো সম্মতি নিয়ম কনফিগার নেই। সংবেদনশীল ওয়ার্কফ্লোর জন্য প্রদানকারী সীমাবদ্ধ করতে নিয়ম যোগ করুন।",
@@ -6147,7 +6828,7 @@ export const bn = {
       audit_status: "স্ট্যাটাস",
       audit_cost: "খরচ",
       audit_time: "সময়",
-      failover: "ফেইলওভার",
+      failover: "ফেইলওভার"
     },
     admin: {
       title: "অ্যাডমিন",
@@ -6173,7 +6854,7 @@ export const bn = {
       consent_not_accepted: "গৃহীত নয়",
       storage_key: "স্টোরেজ কী",
       reset_consent: "সম্মতি রিসেট করুন",
-      reload_modal: "মডাল দেখাতে রিলোড করুন",
+      reload_modal: "মডাল দেখাতে রিলোড করুন"
     },
     portability: {
       title: "ডেটা পোর্টেবিলিটি",
@@ -6201,12 +6882,17 @@ export const bn = {
       passphrase_optional: "পাসফ্রেজ (ঐচ্ছিক)",
       import_complete: "আমদানি সম্পন্ন",
       warnings: "সতর্কতা:",
+      import_personas: "{count}টি পার্সোনা",
+      import_teams: "{count}টি দল",
+      import_tools: "{count}টি টুল",
+      import_groups: "{count}টি গ্রুপ",
+      import_credentials_count: "{count}টি ক্রেডেনশিয়াল",
       export_title: "ওয়ার্কস্পেস রফতানি করুন",
       export_subtitle: "রফতানিতে কী অন্তর্ভুক্ত করবেন বেছে নিন",
       close: "বন্ধ করুন",
       loading_data: "ওয়ার্কস্পেস ডেটা লোড হচ্ছে...",
-      select_all: "সব নির্বাচন করুন",
       deselect_all: "সব নির্বাচন বাতিল করুন",
+      select_all: "সব নির্বাচন করুন",
       items_selected: "{total}-এর মধ্যে {selected}টি আইটেম নির্বাচিত",
       of_selected: "{total}-এর মধ্যে {count}টি নির্বাচিত",
       encrypt_passphrase: "পাসফ্রেজ দিয়ে ক্রেডেনশিয়াল এনক্রিপ্ট করুন",
@@ -6236,7 +6922,7 @@ export const bn = {
       cred_import_complete: "ক্রেডেনশিয়াল আমদানি সম্পন্ন",
       cred_imported: "{count}টি আমদানি হয়েছে",
       cred_skipped: ", {count}টি এড়িয়ে গেছে",
-      cred_replaced: ", {count}টি প্রতিস্থাপন হয়েছে",
+      cred_replaced: ", {count}টি প্রতিস্থাপন হয়েছে"
     },
     config: {
       title: "কনফিগ রেজোলিউশন",
@@ -6249,7 +6935,7 @@ export const bn = {
       overrides_inherited: "উত্তরাধিকার ওভাররাইড করে",
       agent: "এজেন্ট",
       loading_agents: "এজেন্ট লোড হচ্ছে...",
-      no_agents: "কোনো এজেন্ট পাওয়া যায়নি",
+      no_agents: "কোনো এজেন্ট পাওয়া যায়নি"
     },
     quality_gates: {
       title: "গুণমানের দ্বার",
@@ -6267,11 +6953,12 @@ export const bn = {
       rules_count_plural: "{count}টি নিয়ম",
       reset_defaults: "ডিফল্টে রিসেট করুন",
       confirm_reset: "রিসেট নিশ্চিত করুন?",
-      rules_hint: "নিয়মগুলি প্রতিটি ডিসপ্যাচে ডেটাবেস থেকে লোড হয়। পরিবর্তন তাৎক্ষণিকভাবে কার্যকর হয়।",
-    },
+      rules_hint: "নিয়মগুলি প্রতিটি ডিসপ্যাচে ডেটাবেস থেকে লোড হয়। পরিবর্তন তাৎক্ষণিকভাবে কার্যকর হয়।"
+    }
   },
   design: {
     no_persona: "কোনো persona নির্বাচিত নয়",
+    conversation_truncated: "এই কথোপকথন বার্তার সীমা পৌঁছেছে। পুরনো বার্তাগুলি সরিয়ে ফেলা হয়েছে — প্রসঙ্গ সংরক্ষণের জন্য একটি নতুন কথোপকথন শুরু করার কথা বিবেচনা করুন।",
     stages: {
       assembling_label: "প্রম্পট একত্রিত",
       assembling_desc: "Persona কনফিগারেশন থেকে LLM প্রম্পট তৈরি হচ্ছে",
@@ -6282,8 +6969,8 @@ export const bn = {
       checking_label: "সম্ভাব্যতা পরীক্ষা",
       checking_desc: "প্রস্তাবিত টুল ও সংযোগকারী উপলব্ধতা যাচাই হচ্ছে",
       saving_label: "ফলাফল সংরক্ষণ",
-      saving_desc: "কম্পাইল করা ডিজাইন ডাটাবেসে লেখা হচ্ছে",
-    },
+      saving_desc: "কম্পাইল করা ডিজাইন ডাটাবেসে লেখা হচ্ছে"
+    }
   },
   prompt_lab: {
     title: "প্রম্পট সংস্করণ",
@@ -6319,7 +7006,7 @@ export const bn = {
       running: "A/B টেস্ট চলছে...",
       run: "A/B টেস্ট চালান",
       failed: "A/B টেস্ট ব্যর্থ",
-      completed: "A/B টেস্ট সফল",
+      completed: "A/B টেস্ট সফল"
     },
     rollback: {
       title: "ত্রুটি হার মনিটর",
@@ -6327,7 +7014,7 @@ export const bn = {
       rollback_hint: "প্রম্পট পরিবর্তনের পর ত্রুটি হার ৫০% ছাড়ালে উপরের সংস্করণ তালিকা থেকে প্রোডাকশন সংস্করণে রোলব্যাক করুন।",
       waiting: "সম্পাদন ডাটার অপেক্ষা",
       waiting_hint: "ত্রুটি হার ট্র্যাক শুরু করতে এজেন্ট কয়েকবার চালান। মনিটরের অন্তত একটি সম্পাদন দরকার।",
-      check_again: "আবার পরীক্ষা",
+      check_again: "আবার পরীক্ষা"
     },
     performance: {
       cost_per_execution: "প্রতি সম্পাদনে খরচ",
@@ -6336,8 +7023,8 @@ export const bn = {
       latency_distribution: "লেটেন্সি বিতরণ",
       latency_delta: "লেটেন্সি ডেল্টা",
       error_rate_trend: "ত্রুটি হার প্রবণতা",
-      error_delta: "ত্রুটি ডেল্টা",
-    },
+      error_delta: "ত্রুটি ডেল্টা"
+    }
   },
   tests: {
     title: "স্যান্ডবক্স টেস্ট রানার",
@@ -6362,15 +7049,15 @@ export const bn = {
       rerun_tooltip: "এই স্যুট পুনরায় চালান",
       rename_tooltip: "পুনঃনামকরণ",
       delete_tooltip: "স্যুট মুছুন",
-      no_scenarios: "এই স্যুটে কোনো দৃশ্যপট নেই",
+      no_scenarios: "এই স্যুটে কোনো দৃশ্যপট নেই"
     },
     progress: {
       generating: "টেস্ট দৃশ্যপট তৈরি হচ্ছে...",
       testing: "{model} পরীক্ষা -- {scenario}",
       tool_prefix: "টুল: ",
       output_prefix: "আউটপুট: ",
-      protocol_prefix: "প্রোটোকল: ",
-    },
+      protocol_prefix: "প্রোটোকল: "
+    }
   },
   onboarding: {
     title: "শুরু করুন",
@@ -6494,7 +7181,7 @@ export const bn = {
     agent_promoted_hint: "আপনার প্রথম এজেন্ট লাইভ। ট্যুর প্রায় শেষ!",
     skip_build: "এখনকে জন্য বিল্ড এড়িয়ে যান",
     dark_themes: "অন্ধকার থিম",
-    light_themes: "আলো থিম",
+    light_themes: "আলো থিম"
   },
   system_health: {
     title: "সিস্টেম পরীক্ষা",
@@ -6531,7 +7218,7 @@ export const bn = {
     official_page: "অফিসিয়াল পেজ",
     edit_key: "কী সম্পাদনা",
     edit_config: "কনফিগ সম্পাদনা",
-    signing_in: "সাইন ইন হচ্ছে...",
+    signing_in: "সাইন ইন হচ্ছে..."
   },
   command_palette: {
     placeholder: "এজেন্ট খুঁজুন, নেভিগেট... (কমান্ডের জন্য \\\\\\\">\\\\\\\" টাইপ করুন)",
@@ -6544,7 +7231,7 @@ export const bn = {
     key_esc: "ESC",
     hint_navigate: "নেভিগেট",
     hint_select: "নির্বাচন",
-    hint_commands: "কমান্ড",
+    hint_commands: "কমান্ড"
   },
   errors: {
     boundary_title: "{name}-এ অপ্রত্যাশিত সমস্যা",
@@ -6566,7 +7253,7 @@ export const bn = {
     database: "ডাটাবেস ত্রুটি -- অ্যাপ রিস্টার্ট করুন",
     internal: "অপ্রত্যাশিত ত্রুটি",
     cloud_error: "ক্লাউড সেবা ত্রুটি: {detail}",
-    gitlab_error: "GitLab ত্রুটি: {detail}",
+    gitlab_error: "GitLab ত্রুটি: {detail}"
   },
   error_registry: {
     network_offline_message: "You appear to be offline.",
@@ -6638,7 +7325,7 @@ export const bn = {
     severity_critical: "Needs immediate attention",
     severity_high: "Important issue",
     severity_medium: "Minor issue",
-    severity_low: "Informational",
+    severity_low: "Informational"
   },
   empty_states: {
     credentials_title: "এজেন্ট চালাতে শংসাপত্র দরকার",
@@ -6655,11 +7342,11 @@ export const bn = {
     tools_title: "কোনো টুল বা সংযোগকারী কনফিগার করা নেই",
     tools_subtitle: "বাহ্যিক সেবা লিঙ্ক করুন যাতে এজেন্ট কার্য ও ডাটা অ্যাক্সেস করতে পারে।",
     use_cases_title: "কোনো ব্যবহারের ক্ষেত্র সংজ্ঞায়িত নয়",
-    use_cases_subtitle: "এজেন্ট কী করবে সংজ্ঞায়িত করুন -- ওয়ার্কফ্লো ইম্পোর্ট বা সহজ ভাষায় বর্ণনা করুন।",
+    use_cases_subtitle: "এজেন্ট কী করবে সংজ্ঞায়িত করুন -- ওয়ার্কফ্লো ইম্পোর্ট বা সহজ ভাষায় বর্ণনা করুন।"
   },
   cli: {
     idle: "কোনো CLI আউটপুট নেই।",
-    waiting: "Claude CLI আউটপুটের অপেক্ষা...",
+    waiting: "Claude CLI আউটপুটের অপেক্ষা..."
   },
   validation: {
     required: "{field} আবশ্যক",
@@ -6670,7 +7357,7 @@ export const bn = {
     passphrase_min: "পাসফ্রেজ কমপক্ষে ৮ অক্ষর হতে হবে",
     passphrase_prompt: "এক্সপোর্টে ব্যবহৃত পাসফ্রেজ দিন",
     at_least_one: "অন্তত একটি {field} আবশ্যক",
-    fill_one_field: "সংরক্ষণে অন্তত একটি ক্ষেত্র পূরণ করুন",
+    fill_one_field: "সংরক্ষণে অন্তত একটি ক্ষেত্র পূরণ করুন"
   },
   toasts: {
     copied: "ক্লিপবোর্ডে কপি হয়েছে",
@@ -6730,7 +7417,7 @@ export const bn = {
     scheduled_agents_failed: "নির্ধারিত এজেন্ট লোড ব্যর্থ",
     design_start_failed: "ডিজাইন কথোপকথন শুরু ব্যর্থ",
     recipe_save_failed: "রেসিপি সংরক্ষণ ব্যর্থ",
-    recipe_test_failed: "দ্রুত পরীক্ষা ব্যর্থ",
+    recipe_test_failed: "দ্রুত পরীক্ষা ব্যর্থ"
   },
   consent: {
     title: "Personas Desktop-এ স্বাগতম",
@@ -6797,7 +7484,7 @@ export const bn = {
     checkbox: "আমি বুঝি যে এই অ্যাপ AI প্রোভাইডারে ডাটা পাঠায়, সিস্টেম রিসোর্স (ক্লিপবোর্ড, ফাইল সিস্টেম, নেটওয়ার্ক) অ্যাক্সেস করে ও আমার হয়ে প্রসেস চালায়। কনফিগারেশন ও ব্যবহারের দায়িত্ব আমি গ্রহণ করি।",
     checkbox_telemetry: "Help improve Personas by sending anonymous crash reports and usage analytics. No personal data is included. You can change this later in Settings.",
     source_link: "সোর্স ও লাইসেন্স দেখুন",
-    accept_button: "আমি বুঝেছি, চালিয়ে যান",
+    accept_button: "আমি বুঝেছি, চালিয়ে যান"
   },
   schedules: {
     title: "Schedule Timeline",
@@ -6837,17 +7524,26 @@ export const bn = {
     overlap_warning: "This schedule overlaps with {count} other execution(s) in the next 7 days. Concurrent agents compete for API quota and system resources.",
     agents_missed: "{count} agent(s) missed executions",
     total_skipped: "~{count} total runs skipped while app was offline",
+    missed_since: "{time} থেকে {count}টি মিসড",
+    every_interval: "প্রতি {interval}",
     recover: "Recover",
+    mark_for_recovery: "পুনরুদ্ধারের জন্য চিহ্নিত করুন",
+    run_once_now: "এখন একবার চালান",
     run_1x: "Run 1x",
     skip: "Skip",
+    skip_dont_recover: "এড়িয়ে যান -- পুনরুদ্ধার করবেন না",
     dismiss_all: "Dismiss all",
     recover_selected: "Recover {count} selected",
+    overlaps_with: "-এর সাথে ওভারল্যাপ করে",
+    refresh_schedules: "সময়সূচি রিফ্রেশ করুন",
+    seed_mock_tooltip: "একটি মক সময়সূচি সিড করুন (কেবল dev)",
+    schedule_view_aria: "সময়সূচি ভিউ",
     today: "Today",
     projected: "Projected",
     success: "Success",
     overlap: "Overlap",
     week: "Week",
-    month: "Month",
+    month: "Month"
   },
   recipes: {
     no_match: "মিলে যাওয়া রেসিপি নেই",
@@ -6901,6 +7597,8 @@ export const bn = {
     saved_mock_values: "Saved Mock Values",
     no_mock_values: "No mock values saved",
     free_input_placeholder: "Enter input JSON or plain text...",
+    recipe_label: "রেসিপি:",
+    executed_label: "এক্সিকিউট হয়েছে:",
     rendered_prompt: "Rendered Prompt",
     execution_result: "Execution Result",
     rendering_prompt: "Rendering prompt...",
@@ -6930,7 +7628,7 @@ export const bn = {
     no_matching: "No matching recipes found.",
     loading_linked: "Loading linked recipes...",
     no_linked: "No recipes linked yet. Click \\\\\\\"Add\\\\\\\" to link recipes from the library.",
-    run: "Run",
+    run: "Run"
   },
   execution_status: {
     queued: "কিউতে",
@@ -6938,7 +7636,7 @@ export const bn = {
     completed: "সম্পন্ন",
     failed: "ব্যর্থ",
     cancelled: "বাতিল",
-    error: "ত্রুটি",
+    error: "ত্রুটি"
   },
   status_tokens: {
     execution: {
@@ -6947,61 +7645,61 @@ export const bn = {
       completed: "Completed",
       failed: "Failed",
       cancelled: "Cancelled",
-      error: "Error",
+      error: "Error"
     },
     event: {
       pending: "Pending",
       processing: "Processing",
       processed: "Processed",
       failed: "Failed",
-      retrying: "Retrying",
+      retrying: "Retrying"
     },
     automation: {
       pending: "Pending",
       running: "Running",
       completed: "Completed",
       failed: "Failed",
-      timeout: "Timed Out",
+      timeout: "Timed Out"
     },
     severity: {
       info: "Info",
       low: "Low",
       medium: "Medium",
       high: "High",
-      critical: "Critical",
+      critical: "Critical"
     },
     priority: {
       low: "Low",
       normal: "Normal",
       high: "High",
-      urgent: "Urgent",
+      urgent: "Urgent"
     },
     healing_status: {
       open: "Open",
       auto_fixed: "Auto-Fixed",
       acknowledged: "Acknowledged",
-      resolved: "Resolved",
+      resolved: "Resolved"
     },
     healing_category: {
       config: "Configuration",
       auth: "Authentication",
       network: "Network",
       timeout: "Timeout",
-      quota: "Quota",
+      quota: "Quota"
     },
     connector_status: {
       ready: "Ready",
       untested: "Untested",
       failed: "Failed",
       no_credential: "No Credential",
-      testing: "Testing",
+      testing: "Testing"
     },
     test: {
       generating: "Generating",
       running: "Running",
       completed: "Completed",
       failed: "Failed",
-      pending: "Pending",
+      pending: "Pending"
     },
     dev: {
       open: "Open",
@@ -7010,8 +7708,8 @@ export const bn = {
       blocked: "Blocked",
       queued: "Queued",
       running: "Running",
-      failed: "Failed",
-    },
+      failed: "Failed"
+    }
   },
   project_overview: {
     codebase: "Codebase",
@@ -7041,7 +7739,7 @@ export const bn = {
     failed_to_load: "Failed to load stats",
     retry: "Retry",
     no_project_selected: "No project selected",
-    select_project_hint: "Select a dev project to see its overview.",
+    select_project_hint: "Select a dev project to see its overview."
   },
   plugins: {
     title: "Plugins",
@@ -7050,12 +7748,98 @@ export const bn = {
     artist_desc: "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Project management, context mapping, idea scanning, triage, and task runner utilities.",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
-    ocr_label: "OCR",
-    ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal.",
+    drive_label: "Drive",
+    drive_desc: "পরিচালিত স্থানীয় ফাইলসিস্টেম যেখানে এজেন্টরা এক্সপোর্ট সংরক্ষণ করে। Finder-শৈলীর UI-তে ফাইল ব্রাউজ করুন; অ্যাপ আপগ্রেডে টিকে থাকে।",
+    drive: {
+      title: "Drive",
+      subtitle: "এজেন্ট এক্সপোর্টের জন্য পরিচালিত স্থানীয় ফাইলসিস্টেম",
+      root_label: "Drive রুট",
+      dev_badge: "Dev",
+      back: "পেছনে",
+      forward: "সামনে",
+      up: "উপরে",
+      refresh: "রিফ্রেশ",
+      search_placeholder: "এই ফোল্ডার অনুসন্ধান করুন...",
+      view_list: "তালিকা",
+      view_icons: "আইকন",
+      view_columns: "কলাম",
+      new_folder: "নতুন ফোল্ডার",
+      new_file: "নতুন ফাইল",
+      reveal_in_os: "ফাইল ম্যানেজারে দেখান",
+      open_in_os: "খুলুন",
+      sidebar_root: "Drive",
+      sidebar_recent: "সাম্প্রতিক",
+      sidebar_storage: "স্টোরেজ",
+      storage_used: "{used} ব্যবহৃত • {count}টি আইটেম",
+      empty_folder: "এই ফোল্ডারটি খালি",
+      empty_hint: "Local Drive-এ এক্সপোর্ট করা এজেন্টরা এখানে ফাইল সংরক্ষণ করবে।",
+      empty_cta: "ফোল্ডার তৈরি করুন",
+      col_name: "নাম",
+      col_size: "আকার",
+      col_kind: "ধরন",
+      col_modified: "পরিবর্তিত",
+      folder_kind: "ফোল্ডার",
+      ctx_open: "খুলুন",
+      ctx_rename: "নাম পরিবর্তন",
+      ctx_duplicate: "ডুপ্লিকেট",
+      ctx_delete: "মুছুন",
+      ctx_copy: "কপি",
+      ctx_cut: "কাটুন",
+      ctx_paste: "পেস্ট",
+      ctx_new_folder: "নতুন ফোল্ডার",
+      ctx_new_file: "নতুন ফাইল",
+      ctx_reveal: "ফাইল ম্যানেজারে দেখান",
+      ctx_copy_path: "পথ কপি করুন",
+      rename_title: "নাম পরিবর্তন",
+      rename_placeholder: "নতুন নাম",
+      new_folder_title: "নতুন ফোল্ডার",
+      new_folder_placeholder: "ফোল্ডার নাম",
+      new_file_title: "নতুন ফাইল",
+      new_file_placeholder: "filename.txt",
+      delete_confirm_title: "{count}টি আইটেম মুছবেন?",
+      delete_confirm_body: "এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না। মুছে ফেলা ফাইলগুলি স্থায়ীভাবে চলে যাবে।",
+      confirm: "নিশ্চিত করুন",
+      cancel: "বাতিল",
+      details_title: "বিস্তারিত",
+      details_path: "পথ",
+      details_size: "আকার",
+      details_kind: "ধরন",
+      details_modified: "পরিবর্তিত",
+      details_items: "আইটেম",
+      details_preview: "প্রিভিউ",
+      preview_unavailable: "প্রিভিউ অনুপলব্ধ",
+      preview_binary: "বাইনারি ফাইল — পরিদর্শনের জন্য OS ফাইল ম্যানেজারে খুলুন।",
+      preview_too_large: "ফাইলটি ইনলাইন প্রিভিউ করার জন্য খুব বড়।",
+      loading: "লোড হচ্ছে...",
+      error_prefix: "ত্রুটি:",
+      items_selected: "{count}টি নির্বাচিত",
+      items_total: "{count}টি আইটেম",
+      signatures_button: "স্বাক্ষর",
+      ctx_sign_file: "ফাইল স্বাক্ষর করুন…",
+      ctx_verify_file: "স্বাক্ষর যাচাই করুন…",
+      ctx_extract_text: "টেক্সট নিষ্কাশন করুন (OCR)…",
+      ctx_extract_text_no_gemini: "টেক্সট নিষ্কাশন — সক্ষম করতে Gemini সংযোগ করুন",
+      ocr_title: "Gemini দিয়ে টেক্সট নিষ্কাশন করুন",
+      ocr_subtitle: "Google Gemini 3 Flash Preview এর মাধ্যমে ভিশন OCR",
+      ocr_model_label: "মডেল",
+      ocr_connector_ready: "Gemini কানেক্টর প্রস্তুত",
+      ocr_connector_missing: "ভল্টে কোনো Gemini ক্রেডেনশিয়াল পাওয়া যায়নি। OCR সক্ষম করতে Google Gemini সংযোগ করুন।",
+      ocr_prompt_label: "ঐচ্ছিক প্রম্পট",
+      ocr_prompt_placeholder: "যেমন কেবল ইনভয়েস মোট এবং লাইন আইটেম নিষ্কাশন করুন",
+      ocr_extract: "টেক্সট নিষ্কাশন করুন",
+      ocr_running: "নিষ্কাশন হচ্ছে…",
+      ocr_done: "নিষ্কাশন সম্পন্ন",
+      ocr_save: ".ocr.txt হিসেবে সংরক্ষণ করুন",
+      ocr_saved: "সংরক্ষিত",
+      ocr_saved_to: "-এ সংরক্ষিত",
+      ocr_copied: "ক্লিপবোর্ডে কপি হয়েছে",
+      select_file_or_folder: "বিস্তারিত দেখতে একটি ফাইল বা ফোল্ডার নির্বাচন করুন।",
+      download_aria: "ডাউনলোড",
+      download_title: "ডাউনলোড",
+      sign_reason_placeholder: "স্বাক্ষরের কারণ…"
+    },
     artist: {
       title: "Artist",
       subtitle: "Generate 3D models, create images, and manage creative assets",
@@ -7117,6 +7901,31 @@ export const bn = {
       viewer_3d: "3D Viewer",
       viewer_3d_hint: "Install @react-three/fiber and @react-three/drei to enable interactive 3D previews with orbit controls.",
       tags_label: "Tags:",
+      status_partial: "আংশিক",
+      status_not_checked: "যাচাই করা হয়নি",
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      session_cancelled: "সেশন বাতিল হয়েছে।",
+      imported_assets_one: "গ্যালারিতে 1টি নতুন সম্পদ আমদানি করা হয়েছে।",
+      imported_assets_other: "গ্যালারিতে {count}টি নতুন সম্পদ আমদানি করা হয়েছে।",
+      scan_result_one: "{scanned}টি সম্পদ পাওয়া গেছে, 1টি নতুন আমদানি করা হয়েছে।",
+      scan_result_other: "{scanned}টি সম্পদ পাওয়া গেছে, {imported}টি নতুন আমদানি করা হয়েছে।",
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      tag_editor_hint: "যোগ করতে Enter বা কমা, শেষ ট্যাগ সরাতে Backspace।",
+      tag_editor_placeholder: "tag, another-tag",
+      send_to_media_studio: "Media Studio-এ পাঠান",
+      sent_to_media_studio: "Media Studio-এর জন্য সারিবদ্ধ",
+      session_history: "ইতিহাস",
+      session_history_empty: "আপনার চালানো সেশনগুলি এখানে প্রদর্শিত হবে।",
+      session_tools_label: "টুল:",
+      session_status_running: "চলছে",
+      session_status_completed: "সম্পন্ন",
+      session_status_failed: "ব্যর্থ",
+      session_status_cancelled: "বাতিল",
+      replay_session: "পুনরায় চালান",
+      delete_session: "সেশন মুছুন"
     },
     dev_tools: {
       no_project_configured: "No dev project configured",
@@ -7158,6 +7967,8 @@ export const bn = {
       task: "Task",
       pick_winner: "Pick winner",
       winner: "Winner",
+      disqualified_label: "অযোগ্য",
+      elapsed_label: "অতিবাহিত",
       cancel_competition: "Cancel competition",
       no_goals_constellation: "No goals yet. Create goals in the Projects tab to see the constellation.",
       your_turn: "Your Turn",
@@ -7262,6 +8073,8 @@ export const bn = {
       task_depth: "Task Depth",
       goal_link: "Goal Link",
       create_task: "Create Task",
+      partial_context: "আংশিক প্রসঙ্গ",
+      context_warnings_title: "প্রসঙ্গ সতর্কতা — টাস্ক অনুপস্থিত তথ্য সহ চলেছে",
       campaign: "Campaign",
       deep_build: "Deep Build",
       idea_evolution: "Idea Evolution",
@@ -7276,6 +8089,8 @@ export const bn = {
       edit: "Edit",
       save: "Save",
       file_empty: "File is empty or could not be loaded.",
+      file_load_failed: "ফাইল লোড করা যায়নি। ডেটা হারানো রোধে সম্পাদনা নিষ্ক্রিয় করা হয়েছে।",
+      file_load_failed_hint: "রিফ্রেশ করে বা স্কিল পুনরায় নির্বাচন করে দেখুন।",
       effort: "Effort",
       risk: "Risk",
       quick_wins: "Quick Wins",
@@ -7290,6 +8105,155 @@ export const bn = {
       add_condition: "+ Add condition",
       accept: "Accept",
       reject: "Reject",
+      triage_title: "আইডিয়া ট্রায়াজ",
+      triage_subtitle: "তৈরি আইডিয়াগুলি মূল্যায়ন ও অগ্রাধিকার দিন",
+      accepted_badge: "{count}টি গৃহীত",
+      rejected_badge: "{count}টি প্রত্যাখ্যাত",
+      pending_badge: "{count}টি মুলতুবি",
+      sidebar_category: "বিভাগ",
+      sidebar_scan_type: "স্ক্যান ধরন",
+      sidebar_all: "সব ({count})",
+      remaining_count: "{count}টি বাকি",
+      reviewed_count: "{total}-এর মধ্যে {done}টি পর্যালোচিত",
+      empty_no_ideas: "ট্রায়াজ করার জন্য কোনো আইডিয়া নেই",
+      empty_no_ideas_hint: "আইডিয়া তৈরি করতে প্রথমে Idea Scanner চালান।",
+      empty_all_reviewed: "সব আইডিয়া পর্যালোচিত!",
+      empty_all_reviewed_summary: "{accepted}টি গৃহীত, {rejected}টি প্রত্যাখ্যাত",
+      swipe_reject: "প্রত্যাখ্যান",
+      swipe_accept: "গ্রহণ",
+      reasoning_label: "যুক্তি",
+      hint_reject: "প্রত্যাখ্যান",
+      hint_accept: "গ্রহণ",
+      shortcuts_title: "কীবোর্ড শর্টকাট",
+      shortcuts_reject: "আইডিয়া প্রত্যাখ্যান",
+      shortcuts_accept: "আইডিয়া গ্রহণ",
+      shortcuts_toggle: "এই ওভারলে টগল করুন",
+      shortcuts_close: "ওভারলে বন্ধ করুন",
+      shortcuts_dismiss_hint: "বন্ধ করতে ? বা Esc চাপুন",
+      shortcuts_open_title: "কীবোর্ড শর্টকাট (?)",
+      shortcuts_btn_reject_title: "প্রত্যাখ্যান (বাম তীর / A)",
+      shortcuts_btn_accept_title: "গ্রহণ (ডান তীর / Z)",
+      shortcuts_btn_delete_title: "মুছুন",
+      pr_bridge_title: "খসড়া PR হিসেবে শিপ করুন",
+      pr_bridge_subtitle: "ব্রাঞ্চ, কমিট এবং পূর্ব-পূর্ণ PR — এজেন্ট যুক্তি বিবরণে বহন করা হয়।",
+      pr_bridge_branch: "ব্রাঞ্চ",
+      pr_bridge_commit_msg: "কমিট বার্তা",
+      pr_bridge_pr_title: "PR শিরোনাম",
+      pr_bridge_pr_body: "PR বডি",
+      pr_bridge_agent_citation: "{label} {emoji} দ্বারা প্রস্তাবিত",
+      pr_bridge_no_github: "PR ওয়ার্কফ্লো সক্ষম করতে এই প্রকল্পে একটি GitHub রিপো লিঙ্ক করুন।",
+      pr_bridge_link_project: "প্রকল্প সেটিংস খুলুন",
+      pr_bridge_unsupported_host: "স্বয়ংক্রিয়-পূরণ এখন কেবল GitHub-এর সাথে কাজ করে। PR বডি কপি করুন এবং ম্যানুয়ালি খুলুন।",
+      pr_bridge_copy_body: "PR বডি কপি করুন",
+      pr_bridge_copy_all: "সব কপি করুন",
+      pr_bridge_prepare: "ব্রাঞ্চ ও কমিট প্রস্তুত করুন",
+      pr_bridge_open_github: "GitHub-এ খসড়া PR খুলুন",
+      pr_bridge_expand: "PR প্রিভিউ দেখান",
+      pr_bridge_collapse: "PR প্রিভিউ লুকান",
+      pr_bridge_copied: "PR বডি ক্লিপবোর্ডে কপি হয়েছে",
+      pr_bridge_copy_failed: "ক্লিপবোর্ডে কপি করা যায়নি",
+      pr_bridge_branch_prepared: "ব্রাঞ্চ প্রস্তুত: {branch}",
+      pr_bridge_branch_failed: "ব্রাঞ্চ প্রস্তুতি ব্যর্থ: {message}",
+      pr_bridge_opening: "GitHub খোলা হচ্ছে...",
+      pr_bridge_open_failed: "বাহ্যিক URL খোলা যায়নি",
+      pr_bridge_draft_hint: "টিপ: GitHub পৃষ্ঠায়, খসড়া হিসেবে চিহ্নিত করতে \"Create pull request\"-এর পাশে ড্রপডাউন ব্যবহার করুন।",
+      scoreboard_title: "এজেন্ট পারফরম্যান্স",
+      scoreboard_subtitle: "এই প্রকল্পের জন্য স্ক্যান এজেন্ট প্রতি গ্রহণ ও বাস্তবায়ন হার।",
+      scoreboard_toggle_show: "স্কোরবোর্ড দেখান",
+      scoreboard_toggle_hide: "স্কোরবোর্ড লুকান",
+      scoreboard_empty: "এখনও কোনো ডেটা নেই — বোর্ড পূরণ করতে একটি স্ক্যান চালান এবং কিছু আইডিয়া ট্রায়াজ করুন।",
+      scoreboard_col_agent: "এজেন্ট",
+      scoreboard_col_ideas: "আইডিয়া",
+      scoreboard_col_accept_rate: "গ্রহণ %",
+      scoreboard_col_impl_rate: "বাস্তবায়ন %",
+      scoreboard_col_avg_impact: "গড় প্রভাব",
+      scoreboard_col_avg_effort: "গড় প্রচেষ্টা",
+      scoreboard_tip_ideas: "সব স্ক্যান জুড়ে এই এজেন্ট যে মোট আইডিয়া তৈরি করেছে।",
+      scoreboard_tip_accept_rate: "গৃহীত / (গৃহীত + প্রত্যাখ্যাত)। মুলতুবি আইডিয়া হরকে বাদ দেওয়া হয়।",
+      scoreboard_tip_impl_rate: "সম্পন্ন টাস্ক / এই এজেন্টের আইডিয়া থেকে তৈরি টাস্ক।",
+      scoreboard_tip_avg_impact: "এই এজেন্ট যে সব আইডিয়া তৈরি করেছে তার গড় প্রভাব স্কোর (1-10)।",
+      scoreboard_tip_avg_effort: "এই এজেন্ট যে সব আইডিয়া তৈরি করেছে তার গড় প্রচেষ্টা স্কোর (1-10)।",
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n}টি মুলতুবি",
+      scoreboard_top_performer: "শীর্ষ পারফরমার",
+      zoom_in: "জুম ইন",
+      zoom_out: "জুম আউট",
+      reset_view: "ভিউ রিসেট করুন",
+      goals_label: "লক্ষ্য,",
+      connections_label: "সংযোগ",
+      legend_parent: "━━ প্যারেন্ট",
+      legend_dependency: "┄┄ ডিপেন্ডেন্সি",
+      competitors_dot: "প্রতিযোগী ·",
+      of_4_selected: "/4 নির্বাচিত",
+      status_label: "অবস্থা:",
+      wt_label: "wt:",
+      winning_insight: "বিজয়ী অন্তর্দৃষ্টি",
+      completed_in: "সম্পন্ন হয়েছে",
+      achievements_label: "অর্জন:",
+      output_lines: "আউটপুট লাইন",
+      loading_diff: "ডিফ লোড হচ্ছে...",
+      first_slot_bias: "প্রথম স্লট পূর্ববর্তী বিজয়ীর পদ্ধতির দিকে ঝোঁকে।",
+      start_competition_prefix: "প্রতিযোগিতা শুরু করুন (",
+      slots_suffix: "স্লট)",
+      strategy_leaderboard: "কৌশল লিডারবোর্ড",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "সমাধানিত প্রতিযোগিতা জুড়ে সমষ্টিগত। উচ্চতর জয়ী।",
+      capture_winning_insight: "বিজয়ী অন্তর্দৃষ্টি ধরুন",
+      capture_insight_desc: "কী এই পদ্ধতিকে বিজয়ী করেছে? এই নোট বিজয়ীর সাথে সংরক্ষিত এবং ভবিষ্যতের প্রতিযোগিতা সিড করতে ব্যবহৃত হয়।",
+      insight_placeholder: "এই পদ্ধতিটি কীভাবে সফল হয়েছে বর্ণনা করুন…",
+      confirm_winner: "বিজয়ী নিশ্চিত করুন",
+      github_required_title: "GitHub রিপোজিটরি প্রয়োজন",
+      folder_required_title: "প্রকল্প ফোল্ডার প্রয়োজন",
+      requirements_met_title: "সব প্রয়োজনীয়তা পূরণ হয়েছে",
+      can_still_adopt: "আপনি এখনও এখন গ্রহণ করতে পারেন — প্রকল্প সেটিংসে পরে GitHub URL এবং প্রকল্প ফোল্ডার যোগ করুন।",
+      active_triggers_prefix: "সক্রিয় ট্রিগার (",
+      lifecycle_readiness: "লাইফসাইকেল প্রস্তুতি —",
+      goals_tab_no_goals: "এখনও কোনো লক্ষ্য নেই। Project Manager-এ লক্ষ্য তৈরি করুন।",
+      goal_constellation_prefix: "লক্ষ্য নক্ষত্রপুঞ্জ (",
+      sync_to_obsidian: "Obsidian-এ সিঙ্ক করুন",
+      select_or_create: "নীচে একটি প্রকল্প নির্বাচন করুন বা একটি নতুন তৈরি করুন।",
+      all_projects_prefix: "সব প্রকল্প (",
+      percent_overall: "% সামগ্রিক",
+      task_queue_prefix: "টাস্ক সারি (",
+      project_created_title: "প্রকল্প তৈরি হয়েছে",
+      generate_context_map_desc: "ব্যবসায়িক লজিক, এন্ট্রি পয়েন্ট এবং ডেটা কাঠামো শনাক্ত করতে আপনার কোডবেস স্ক্যান করে।",
+      source_label: "সোর্স:",
+      auto_filled_hint: "(ফোল্ডার থেকে স্বয়ংক্রিয়ভাবে পূরণ)",
+      project_type_optional: "(ঐচ্ছিক, শুধু দৃশ্যমান)",
+      optional_label: "(ঐচ্ছিক)",
+      implementation_log_label: "বাস্তবায়ন লগ",
+      cross_project_desc_btn: "বিদ্যমান প্রসঙ্গ মানচিত্র থেকে সমষ্টিগত। প্রসারিত করতে যেকোনো প্রকল্পে ক্লিক করুন।",
+      generate_metadata_prompt: "সব প্রকল্পের প্রসঙ্গ মানচিত্র বিশ্লেষণ করতে এবং শেয়ার করা প্যাটার্ন নিষ্কাশন করতে।",
+      projects_count_prefix: "প্রকল্প (",
+      entry_points_header: "এন্ট্রি পয়েন্ট",
+      db_tables_header: "ডাটাবেস টেবিল",
+      entry_points_count: "এন্ট্রি পয়েন্ট",
+      db_tables_count: "db টেবিল",
+      run_context_map_scan: "মেটাডেটা পূরণ করতে এই প্রকল্পের জন্য Context Map স্ক্যান চালান।",
+      active_goals_label: "সক্রিয় লক্ষ্য",
+      no_goals_add_below: "এখনও কোনো লক্ষ্য নেই। নিচে একটি যোগ করুন।",
+      goal_title_placeholder: "লক্ষ্য শিরোনাম…",
+      loading_repos: "রিপোজিটরি লোড হচ্ছে...",
+      github_url_label: "GitHub URL",
+      github_repo_label: "GitHub রিপোজিটরি",
+      idea_evolution_title: "আইডিয়া বিবর্তন",
+      fitness_ranking_label: "ফিটনেস র‍্যাঙ্কিং",
+      similar_to_rejected: "প্রত্যাখ্যাতের অনুরূপ:",
+      percent_similar: "% অনুরূপ",
+      scanning_with: "স্ক্যান হচ্ছে সাথে",
+      scanning_subtitle: "কোডবেস প্যাটার্ন বিশ্লেষণ এবং প্রসঙ্গ গ্রুপ তৈরি…",
+      no_previous_scans: "কোনো পূর্ববর্তী স্ক্যান নেই।",
+      run_scan_prefix: "স্ক্যান চালান (",
+      automated_context_scan: "স্বয়ংক্রিয় প্রসঙ্গ স্ক্যান",
+      results_prefix: "ফলাফল (",
+      scan_history_prefix: "স্ক্যান ইতিহাস (",
+      action_label: "ক্রিয়া:",
+      self_healing_title: "স্ব-নিরাময়",
+      heal_all_prefix: "সব নিরাময় (",
+      task_title_placeholder: "টাস্ক শিরোনাম…",
+      task_details_placeholder: "টাস্ক বিবরণ বা একটি স্পেক পেস্ট করুন…",
+      goal_link_placeholder: "একটি লক্ষ্য নির্বাচন করুন…",
+      no_tasks_queued_sub: "ম্যানুয়ালি টাস্ক তৈরি করুন বা গৃহীত আইডিয়া থেকে ব্যাচ করুন।"
     },
     doc_signing: {
       title: "Document Signing",
@@ -7328,7 +8292,7 @@ export const bn = {
       no_signatures: "No signatures yet",
       no_signatures_hint: "Sign a document to see it here.",
       export_sig: "Export .sig.json",
-      delete_signature: "Delete signature",
+      delete_signature: "Delete signature"
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -7336,6 +8300,7 @@ export const bn = {
       tab_setup: "Setup",
       tab_sync: "Sync",
       tab_browse: "Browse Vault",
+      tab_graph: "গ্রাফ",
       tab_cloud: "Cloud",
       filter_notes: "Filter notes...",
       vault_empty: "Vault is empty",
@@ -7405,7 +8370,7 @@ export const bn = {
       sync_log: "Sync Log",
       no_sync_activity: "No sync activity yet. Push or pull to start.",
       select_note: "Select a Note",
-      select_note_hint: "Choose a note from the tree on the left to preview its contents.",
+      select_note_hint: "Choose a note from the tree on the left to preview its contents."
     },
     ocr: {
       title: "OCR",
@@ -7432,8 +8397,292 @@ export const bn = {
       comparison_stats: "Comparison Stats",
       history_heading: "OCR History",
       no_results: "No OCR results yet",
-      no_results_hint: "Extract text from a document to see it here.",
+      no_results_hint: "Extract text from a document to see it here."
     },
+    artist_gallery: {
+      loading_viewer: "ভিউয়ার লোড হচ্ছে…",
+      loading_model: "মডেল লোড হচ্ছে...",
+      could_not_load_model: "মডেল লোড করা যায়নি"
+    },
+    artist_media_studio: {
+      drag_drop_hint: "— যেকোনো জায়গায় ফাইল ড্র্যাগ ও ড্রপ করুন",
+      keyboard_shortcuts: "Space / Del / তীর",
+      px_per_second: "px/s",
+      running_loudnorm: "ffmpeg loudnorm ড্রাই-রান চলছে…"
+    },
+    dev_context: {
+      files_header: "ফাইল (",
+      filter_groups_placeholder: "গ্রুপ ফিল্টার…",
+      rescan_title: "পুনরায় স্ক্যান",
+      scanning_with: "স্ক্যান হচ্ছে সাথে",
+      scanning_subtitle: "কোডবেস প্যাটার্ন বিশ্লেষণ এবং প্রসঙ্গ গ্রুপ তৈরি…",
+      no_previous_scans: "কোনো পূর্ববর্তী স্ক্যান নেই।",
+      run_scan: "স্ক্যান চালান (",
+      auto_scan: "স্বয়ংক্রিয় স্ক্যান",
+      automated_context_scan: "স্বয়ংক্রিয় প্রসঙ্গ স্ক্যান",
+      results: "ফলাফল (",
+      scan_history: "স্ক্যান ইতিহাস ("
+    },
+    dev_lifecycle: {
+      start_a_competition: "একটি প্রতিযোগিতা শুরু করুন",
+      start_a_competition_desc: "একই টাস্ক মোকাবেলা করতে বিভিন্ন কৌশল সহ 2–4টি প্রতিযোগী স্পন করুন। বিজয়ীর পদ্ধতি প্রোমোট হয়।",
+      task_title: "টাস্ক শিরোনাম",
+      task_title_placeholder: "যেমন auth মডিউল রিফ্যাক্টর করুন",
+      task_description: "টাস্ক বিবরণ (ঐচ্ছিক)",
+      task_description_placeholder: "সফলতা কেমন দেখায় বর্ণনা করুন…",
+      strategy_slots: "কৌশল স্লট (2–4 বেছে নিন)",
+      of_4_selected: "/4 নির্বাচিত",
+      cost_warning: "খরচ সতর্কতা:",
+      cost_warning_desc: "প্রতিটি প্রতিযোগী স্বাধীনভাবে সম্পূর্ণ টাস্ক চালায় — এটি {count}× বেশি টোকেন ব্যবহার করে।",
+      start_competition: "প্রতিযোগিতা শুরু করুন",
+      competitors_dot: "প্রতিযোগী ·",
+      loading_competitors: "প্রতিযোগী লোড হচ্ছে...",
+      failed_to_load_detail: "বিস্তারিত লোড করতে ব্যর্থ।",
+      status_label: "অবস্থা:",
+      weight_label: "wt:",
+      pick_winner: "বিজয়ী বেছে নিন",
+      cancel_competition: "প্রতিযোগিতা বাতিল করুন",
+      select_project_for_competitions: "প্রতিযোগিতা দেখতে একটি প্রকল্প নির্বাচন করুন।",
+      new_competition: "নতুন প্রতিযোগিতা",
+      no_competitions_yet: "এখনও কোনো প্রতিযোগিতা নেই। 2–4টি কৌশল টাস্ক সমাধানের জন্য দৌড়াতে একটি শুরু করুন।",
+      no_goals_yet_project: "এখনও কোনো লক্ষ্য নেই। অগ্রগতি ট্র্যাক করতে Project Manager-এ লক্ষ্য তৈরি করুন।",
+      zoom_in_title: "জুম ইন",
+      zoom_out_title: "জুম আউট",
+      reset_view_title: "ভিউ রিসেট করুন",
+      goals_label: "লক্ষ্য,",
+      legend_parent: "━━ প্যারেন্ট",
+      legend_dependency: "┄┄ ডিপেন্ডেন্সি",
+      no_goals_kanban: "এখনও কোনো লক্ষ্য নেই। এখানে দেখতে লক্ষ্য তৈরি করুন।",
+      no_goals_here: "এখানে কোনো লক্ষ্য নেই",
+      auto_setup_title: "স্বয়ংক্রিয় লাইফসাইকেল সেটআপ চালান",
+      auto_setup: "স্বয়ংক্রিয়-সেটআপ",
+      loading_lifecycle: "লাইফসাইকেল অবস্থা লোড হচ্ছে...",
+      no_project_click_to_create: "কোনো প্রকল্প নেই — তৈরি করতে ক্লিক করুন",
+      no_repo: "কোনো রিপো নেই",
+      baseline_label: "বেসলাইন:",
+      ts_errors_label: "TS ত্রুটি:",
+      cargo_errors_label: "Cargo ত্রুটি:",
+      tests_label: "পরীক্ষা:",
+      git_label: "Git:",
+      winning_insight: "বিজয়ী অন্তর্দৃষ্টি",
+      completed_in: "সম্পন্ন হয়েছে",
+      achievements_label: "অর্জন:",
+      output_lines: "আউটপুট লাইন",
+      expand_slot_title: "স্লট প্রসারিত করুন",
+      collapse_slot_title: "স্লট সংকুচিত করুন",
+      copy_diff_title: "ডিফ কপি করুন",
+      loading_diff: "ডিফ লোড হচ্ছে...",
+      new_competition_modal_title: "একটি প্রতিযোগিতা শুরু করুন",
+      first_slot_bias: "প্রথম স্লট পূর্ববর্তী বিজয়ীর পদ্ধতির দিকে ঝোঁকে।",
+      start_competition_slots: "প্রতিযোগিতা শুরু করুন (",
+      slots_suffix: "স্লট)",
+      strategy_leaderboard: "কৌশল লিডারবোর্ড",
+      dq_title: "অযোগ্য",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "সমাধানিত প্রতিযোগিতা জুড়ে সমষ্টিগত। উচ্চতর জয়ী।",
+      capture_winning_insight: "বিজয়ী অন্তর্দৃষ্টি ধরুন",
+      capture_insight_desc: "কী এই পদ্ধতিকে বিজয়ী করেছে? এই নোট বিজয়ীর সাথে সংরক্ষিত এবং ভবিষ্যতের প্রতিযোগিতা সিড করতে ব্যবহৃত হয়।",
+      insight_placeholder: "এই পদ্ধতিটি কীভাবে সফল হয়েছে বর্ণনা করুন…",
+      confirm_winner: "বিজয়ী নিশ্চিত করুন",
+      competition_title_placeholder: "যেমন /api/auth/login-এ রেট লিমিটিং যোগ করুন",
+      competition_desc_placeholder: "গ্রহণ মানদণ্ড, লক্ষ্য ফাইল, সীমাবদ্ধতা...",
+      regenerate_strategies_title: "কৌশল পুনরায় তৈরি করুন",
+      start_dev_server_title: "এই worktree-এ dev সার্ভার শুরু করুন",
+      stop_dev_server_title: "dev সার্ভার বন্ধ করুন",
+      open_worktree_title: "worktree ডিরেক্টরি খুলুন",
+      adopt_dev_clone: "Dev Clone গ্রহণ করুন",
+      dev_clone_desc: "Dev Clone একটি স্বায়ত্তশাসিত ডেভেলপার পার্সোনা যা আপনার প্রকল্প লাইফসাইকেল পরিচালনা করে — কৌশল প্রতিযোগিতা, ত্রুটি নিরাময় এবং কোড শিপিং।",
+      github_required_title: "GitHub রিপোজিটরি প্রয়োজন",
+      folder_required_title: "প্রকল্প ফোল্ডার প্রয়োজন",
+      requirements_met_title: "সব প্রয়োজনীয়তা পূরণ হয়েছে",
+      can_still_adopt: "আপনি এখনও এখন গ্রহণ করতে পারেন — প্রকল্প সেটিংসে পরে GitHub URL এবং প্রকল্প ফোল্ডার যোগ করুন।",
+      active_triggers: "সক্রিয় ট্রিগার (",
+      lifecycle_readiness: "লাইফসাইকেল প্রস্তুতি —",
+      goals_tab_no_goals: "এখনও কোনো লক্ষ্য নেই। Project Manager-এ লক্ষ্য তৈরি করুন।",
+      goal_constellation: "লক্ষ্য নক্ষত্রপুঞ্জ (",
+      sync_to_obsidian: "Obsidian-এ সিঙ্ক করুন"
+    },
+    dev_projects: {
+      active_goals: "সক্রিয় লক্ষ্য",
+      run_context_map_scan: "মেটাডেটা পূরণ করতে এই প্রকল্পের জন্য Context Map স্ক্যান চালান।",
+      entry_points: "এন্ট্রি পয়েন্ট",
+      db_tables: "db টেবিল",
+      top_keywords: "শীর্ষ কীওয়ার্ড",
+      entry_points_header: "এন্ট্রি পয়েন্ট",
+      db_tables_header: "ডাটাবেস টেবিল",
+      api_surface: "API পৃষ্ঠ",
+      hot_directories: "হট ডিরেক্টরি",
+      cross_project_map_title: "ক্রস-প্রকল্প মেটাডেটা মানচিত্র",
+      cross_project_map_subtitle: "বিদ্যমান প্রসঙ্গ মানচিত্র থেকে সমষ্টিগত। প্রসারিত করতে যেকোনো প্রকল্পে ক্লিক করুন।",
+      tech_distribution: "প্রযুক্তি বিতরণ",
+      shared_keywords: "শেয়ার করা কীওয়ার্ড (",
+      shared_keywords_subtitle: "একাধিক প্রকল্পে উপস্থিত ধারণা — শেয়ার করা আর্কিটেকচার নির্দেশ করতে পারে।",
+      project_similarity: "প্রকল্প সাদৃশ্য",
+      projects_header: "প্রকল্প (",
+      cross_project_map_btn: "ক্রস-প্রকল্প মানচিত্র",
+      new_project: "নতুন প্রকল্প",
+      select_or_create: "নীচে একটি প্রকল্প নির্বাচন করুন বা একটি নতুন তৈরি করুন।",
+      all_projects: "সব প্রকল্প (",
+      no_projects_yet: "এখনও কোনো প্রকল্প নেই",
+      create_first_project: "প্রথম প্রকল্প তৈরি করুন",
+      tech_stack: "প্রযুক্তি স্ট্যাক",
+      edit_project: "প্রকল্প সম্পাদনা",
+      no_goals_add_below: "এখনও কোনো লক্ষ্য নেই। নিচে একটি যোগ করুন।",
+      goal_title_placeholder: "লক্ষ্য শিরোনাম…",
+      project_folder: "প্রকল্প ফোল্ডার",
+      select_folder: "একটি ফোল্ডার নির্বাচন করুন...",
+      project_name: "প্রকল্প নাম",
+      auto_filled_from_folder: "(ফোল্ডার থেকে স্বয়ংক্রিয়ভাবে পূরণ)",
+      project_name_placeholder: "আমার প্রকল্প",
+      project_type: "প্রকল্প ধরন",
+      project_type_optional: "(ঐচ্ছিক, শুধু দৃশ্যমান)",
+      project_created: "প্রকল্প তৈরি হয়েছে",
+      project_ready_desc: "প্রস্তুত। আপনি কি এখন একটি প্রসঙ্গ মানচিত্র তৈরি করতে চান?",
+      generate_context_map: "প্রসঙ্গ মানচিত্র তৈরি করুন",
+      generate_context_map_desc: "ব্যবসায়িক লজিক, এন্ট্রি পয়েন্ট এবং ডেটা কাঠামো শনাক্ত করতে আপনার কোডবেস স্ক্যান করে।",
+      skip_for_now: "এখনকার জন্য এড়িয়ে যান",
+      scan_codebase: "কোডবেস স্ক্যান করুন",
+      loading_repositories: "রিপোজিটরি লোড হচ্ছে...",
+      github_url_label: "GitHub URL",
+      optional: "(ঐচ্ছিক)",
+      github_url_placeholder: "https://github.com/owner/repo",
+      github_repository: "GitHub রিপোজিটরি",
+      select_repository: "একটি রিপোজিটরি নির্বাচন করুন...",
+      no_repositories_found: "কোনো রিপোজিটরি পাওয়া যায়নি",
+      implementation_log: "বাস্তবায়ন লগ",
+      loading_metadata: "লোড হচ্ছে...",
+      no_metadata_yet: "এখনও কোনো মেটাডেটা মানচিত্র তৈরি হয়নি",
+      generate_metadata_prompt: "সব প্রকল্পের প্রসঙ্গ মানচিত্র বিশ্লেষণ করতে এবং শেয়ার করা প্যাটার্ন নিষ্কাশন করতে।"
+    },
+    dev_runner: {
+      self_healing: "স্ব-নিরাময়",
+      auto_heal: "স্বয়ংক্রিয়-নিরাময়",
+      heal_all: "সব নিরাময় (",
+      task_title_placeholder: "টাস্ক শিরোনাম…",
+      task_details_placeholder: "টাস্ক বিবরণ বা একটি স্পেক পেস্ট করুন…",
+      task_depth: "টাস্ক গভীরতা",
+      goal_link: "লক্ষ্য লিঙ্ক",
+      optional: "(ঐচ্ছিক)",
+      goal_link_placeholder: "একটি লক্ষ্য নির্বাচন করুন…",
+      create_task: "টাস্ক তৈরি করুন",
+      source_label: "সোর্স:",
+      new_task: "নতুন টাস্ক",
+      batch_from_accepted: "গৃহীত থেকে ব্যাচ",
+      start_batch: "ব্যাচ শুরু করুন",
+      cancel_all: "সব বাতিল করুন",
+      batch_progress: "ব্যাচ অগ্রগতি",
+      percent_overall: "% সামগ্রিক",
+      task_queue: "টাস্ক সারি (",
+      no_tasks_queued: "সারিতে কোনো টাস্ক নেই",
+      no_tasks_queued_sub: "ম্যানুয়ালি টাস্ক তৈরি করুন বা গৃহীত আইডিয়া থেকে ব্যাচ করুন।"
+    },
+    dev_scanner: {
+      idea_evolution: "আইডিয়া বিবর্তন",
+      fitness_ranking: "ফিটনেস র‍্যাঙ্কিং",
+      similar_to_rejected: "প্রত্যাখ্যাতের অনুরূপ:",
+      synthesis_suggestions: "সংশ্লেষণ পরামর্শ",
+      percent_similar: "% অনুরূপ",
+      potential_duplicates: "সম্ভাব্য ডুপ্লিকেট",
+      scanning_with: "স্ক্যান হচ্ছে সাথে",
+      analyzing_codebase: "কোডবেস বিশ্লেষণ করা হচ্ছে...",
+      no_previous_scans: "এখনও কোনো পূর্ববর্তী স্ক্যান নেই।",
+      auto_scan: "স্বয়ংক্রিয় স্ক্যান",
+      automated_context_scan: "স্বয়ংক্রিয় প্রসঙ্গ স্ক্যান",
+      run_scan_prefix: "চালান:",
+      results_prefix: "ফলাফল:",
+      scan_history_prefix: "স্ক্যান ইতিহাস",
+      idea_scanner_title: "আইডিয়া স্ক্যানার",
+      idea_scanner_subtitle: "উন্নতির আইডিয়া তৈরি করতে বিশেষায়িত এজেন্ট চালান",
+      run_scan_btn: "স্ক্যান চালান (",
+      results_header: "ফলাফল (",
+      scan_history_header: "স্ক্যান ইতিহাস ("
+    },
+    dev_triage: {
+      auto_triage_rules: "স্বয়ংক্রিয়-ট্রায়াজ নিয়ম",
+      add_condition: "+ শর্ত যোগ করুন",
+      action_label: "ক্রিয়া:",
+      new_rule: "নতুন নিয়ম",
+      run_rules: "নিয়ম চালান"
+    },
+    obsidian: {
+      saved_vaults: "সংরক্ষিত ভল্ট",
+      remove_vault_title: "সংরক্ষিত ভল্ট সরান",
+      vault_is_empty: "ভল্ট খালি",
+      failed_to_load: "লোড করতে ব্যর্থ",
+      open_in_obsidian: "Obsidian-এ খুলুন",
+      copy_path_title: "পথ কপি করুন",
+      disconnect_title: "Google Drive সংযোগ বিচ্ছিন্ন করুন",
+      sign_in_to_enable: "ক্লাউড সিঙ্ক সক্ষম করতে সাইন ইন করুন",
+      sign_in_subtitle: "Google Drive-এ আপনার ভল্ট ব্যাকআপ করতে আপনার Google অ্যাকাউন্ট দিয়ে সাইন ইন করুন।",
+      refresh_title: "সিঙ্ক অবস্থা রিফ্রেশ করুন",
+      drive_connected: "Drive সংযুক্ত",
+      files_synced: "ফাইল Drive-এ সিঙ্ক হয়েছে",
+      connect_drive_desc: "ক্লাউডে আপনার ভল্ট ব্যাকআপ করতে Google Drive সংযোগ করুন।",
+      step_connect_drive: "Google Drive সংযোগ করুন",
+      step_connect_drive_desc: "আপনার Google Drive-এ ফাইল তৈরি করতে Personas-কে অ্যাক্সেস দিন।",
+      step_push_vault: "আপনার ভল্ট পুশ করুন",
+      step_push_vault_desc: "ভল্ট নোটগুলি markdown ফাইল হিসেবে Google Drive-এ আপলোড হয়।",
+      step_sync_devices: "ডিভাইস জুড়ে সিঙ্ক করুন",
+      step_sync_devices_desc: "ডাউনলোড করতে অন্য ডিভাইসে পুল করুন। আপনার ভল্ট আপনার ডেটা।",
+      push_title: "Google Drive-এ ভল্ট পুশ করুন",
+      push_desc: "পুশ স্থানীয় ভল্ট পরিবর্তনগুলি Google Drive-এ আপলোড করে।",
+      last_sync_result: "শেষ সিঙ্ক ফলাফল",
+      pull_title: "Google Drive থেকে ভল্ট পুল করুন",
+      connect_google_drive: "Google Drive সংযোগ করুন",
+      connect_drive_btn_desc: "আপনার Google Drive-এ ফাইল তৈরি করতে Personas-কে অ্যাক্সেস দিন।",
+      no_stats_yet: "এখনও কোনো পরিসংখ্যান নেই।",
+      search_title: "নোট অনুসন্ধান",
+      search_placeholder: "নোট অনুসন্ধান…",
+      no_matches: "কোনো মিল নেই।",
+      no_orphan_notes: "কোনো অনাথ নোট নেই — প্রতিটি নোট অন্তত একটি অন্য নোট থেকে লিঙ্ক করা।",
+      no_mocs: "কোনো MOC শনাক্ত হয়নি — লিঙ্ক থ্রেশহোল্ড কমিয়ে দেখুন।",
+      quick_capture_title: "AI দ্রুত-ক্যাপচার",
+      note_search_placeholder: "নোট অনুসন্ধান করুন বা একটি প্রশ্ন জিজ্ঞাসা করুন…",
+      append_to_today: "আজকে যোগ করুন",
+      append_content_placeholder: "যোগ করার কন্টেন্ট…",
+      save_meeting_title: "মিটিং নোট সংরক্ষণ করুন",
+      meeting_attendees_placeholder: "উপস্থিতগণ…",
+      meeting_summary_placeholder: "মিটিং সারাংশ…",
+      meeting_action_items_placeholder: "কর্ম আইটেম…",
+      meeting_decisions_placeholder: "সিদ্ধান্ত…",
+      save_meeting_note: "মিটিং নোট সংরক্ষণ করুন",
+      remove_vault_setup_title: "সরান",
+      detected_vaults: "শনাক্ত ভল্ট:",
+      connected_to: "\"-এর সাথে সংযুক্ত",
+      notes_found: "নোট পাওয়া গেছে",
+      scan_for_vaults_title: "ভল্টের জন্য স্ক্যান",
+      manual_path_title: "ম্যানুয়ালি পথ লিখুন",
+      preview_label: "প্রিভিউ:",
+      vault_path_agent_placeholder: "/AgentName/",
+      vault_path_note_example: "/fact/memory-title.md",
+      disconnect_sync_title: "সংযোগ বিচ্ছিন্ন",
+      active_vault: "সক্রিয় ভল্ট:",
+      refresh_stats_title: "পরিসংখ্যান রিফ্রেশ",
+      select_personas: "পুশ করতে পার্সোনা নির্বাচন করুন",
+      select_all: "সব নির্বাচন করুন",
+      no_personas_found: "কোনো পার্সোনা পাওয়া যায়নি",
+      last_push_result: "শেষ পুশ ফলাফল",
+      app_version: "অ্যাপ সংস্করণ",
+      vault_version: "ভল্ট সংস্করণ",
+      keep_app: "অ্যাপ রাখুন",
+      keep_vault: "ভল্ট রাখুন",
+      clear_history_title: "ইতিহাস সাফ করুন",
+      no_sync_activity: "এখনও কোনো সিঙ্ক কার্যকলাপ নেই। শুরু করতে পুশ বা পুল করুন।"
+    },
+    research_lab: {
+      review_before_saving: "সংরক্ষণের আগে পর্যালোচনা করুন। আপনি যোগ করতে চান না এমন যেকোনোটি আনচেক করুন।",
+      re_run: "পুনরায় চালান",
+      search_placeholder: "অনুসন্ধান…",
+      filter_title: "ফিল্টার",
+      query_placeholder: "একটি প্রশ্ন টাইপ করুন এবং সব প্যানেল জুড়ে অনুসন্ধান করতে Enter চাপুন…",
+      close_panel_title: "প্যানেল বন্ধ করুন",
+      md_extension: ".md",
+      edit_note_aria: "নোট সম্পাদনা"
+    },
+    doc_signing_label: "Doc Signing",
+    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
+    ocr_label: "OCR",
+    ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal."
   },
   media_studio: {
     title: "Media Studio",
@@ -7495,10 +8744,32 @@ export const bn = {
     empty_title: "Start composing",
     empty_hint: "Add video or audio clips to the timeline to begin.",
     split: "Split at playhead",
+    undo: "পূর্বাবস্থা",
+    redo: "পুনরায় করুন",
     import_media: "Import media",
     supported_video: "Video files",
     supported_audio: "Audio files",
     supported_images: "Image files",
+    clip_actions: "ক্লিপ ক্রিয়া",
+    action_split: "প্লেহেডে বিভক্ত করুন",
+    action_extract_audio: "অডিও নিষ্কাশন",
+    action_strip_audio: "অডিও সরান",
+    action_keep_audio: "অডিও রাখুন",
+    action_save_thumbnail: "ফ্রেম ছবি হিসেবে সংরক্ষণ করুন",
+    action_trim_to_file: "নতুন ফাইলে ট্রিম করুন",
+    extracting_audio: "অডিও ট্র্যাক নিষ্কাশন করা হচ্ছে...",
+    extract_audio_done: "অডিও ট্র্যাক নিষ্কাশিত",
+    saving_thumbnail: "ফ্রেম সংরক্ষণ করা হচ্ছে...",
+    thumbnail_saved: "ফ্রেম সংরক্ষিত",
+    trimming_file: "ফাইল ট্রিম হচ্ছে...",
+    trim_done: "ট্রিম সংরক্ষিত",
+    effects: "এফেক্ট",
+    speed: "গতি",
+    fade_in: "ফেড ইন",
+    fade_out: "ফেড আউট",
+    normalize: "জোরত্ব স্বাভাবিক করুন",
+    normalize_hint: "রপ্তানিতে EBU R128 প্রয়োগ করা হয়; প্রিভিউ একটি অনুমান",
+    strip_audio_hint: "রপ্তানিতে এই ক্লিপের অডিও নিঃশব্দ করে"
   },
   research_lab: {
     dashboard: "Dashboard",
@@ -7508,20 +8779,29 @@ export const bn = {
     experiments: "Experiments",
     findings: "Findings",
     reports: "Reports",
+    graph: "গ্রাফ",
     active: "active",
     sources: "Sources",
     sources_count: "sources",
+    recent_projects: "সাম্প্রতিক প্রকল্প",
+    view_all: "সব দেখুন",
     no_projects: "No research projects yet",
     no_projects_hint: "Create a research project to start organizing your literature, hypotheses, and experiments.",
     create_project: "New Project",
+    edit_project: "প্রকল্প সম্পাদনা",
+    save_changes: "পরিবর্তন সংরক্ষণ করুন",
     project_name: "Project name",
+    project_name_placeholder: "যেমন LLM reasoning chain-of-thought faithfulness",
     project_description: "Description",
+    project_description_placeholder: "এই প্রকল্প কী তদন্ত করে তার সংক্ষিপ্ত সারাংশ",
     project_thesis: "Research question or thesis",
+    project_thesis_placeholder: "আপনি যে কেন্দ্রীয় দাবি বা প্রশ্ন পরীক্ষা করছেন",
     project_domain: "Domain",
     project_scope: "Scope constraints",
     obsidian_vault: "Obsidian vault",
     obsidian_vault_hint: "Link an Obsidian vault to sync experiments and findings",
     select_vault: "Select vault",
+    clear_vault: "সাফ করুন",
     vault_connected: "Vault connected",
     sync_to_obsidian: "Sync to Obsidian",
     syncing: "Syncing...",
@@ -7537,13 +8817,42 @@ export const bn = {
     status_writing: "Writing",
     status_review: "Review",
     status_complete: "Complete",
+    domain_cs: "কম্পিউটার সায়েন্স",
+    domain_biology: "জীববিজ্ঞান",
+    domain_chemistry: "রসায়ন",
+    domain_physics: "পদার্থবিজ্ঞান",
+    domain_mathematics: "গণিত",
+    domain_business: "ব্যবসা",
+    domain_medicine: "চিকিৎসা",
+    domain_general: "সাধারণ",
     select_project_first: "Select a research project first",
     no_sources: "No sources yet",
     no_sources_hint: "Search arXiv, Semantic Scholar, or PubMed to find relevant papers, or add sources manually.",
+    no_matching_sources: "কোনো সোর্স আপনার ফিল্টারের সাথে মেলে না",
+    filter_sources_placeholder: "শিরোনাম বা লেখক দিয়ে ফিল্টার…",
     relevance: "Relevance",
     search_sources: "Search sources",
     ingest: "Ingest",
     ingesting: "Ingesting...",
+    source_title: "শিরোনাম",
+    source_title_placeholder: "পেপার শিরোনাম",
+    source_type: "সোর্স ধরন",
+    source_year: "বছর",
+    source_year_placeholder: "যেমন 2024",
+    source_authors: "লেখক",
+    source_authors_placeholder: "লেখক 1, লেখক 2, …",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "সারাংশ",
+    source_abstract_placeholder: "পেপার সারাংশ…",
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "ওয়েব পৃষ্ঠা",
+    source_type_pdf: "PDF",
+    source_type_manual: "ম্যানুয়াল এন্ট্রি",
     no_hypotheses: "No hypotheses yet",
     no_hypotheses_hint: "Add hypotheses manually or let an AI agent generate them from your literature corpus.",
     add_hypothesis: "Add hypothesis",
@@ -7551,23 +8860,58 @@ export const bn = {
     confidence: "Confidence",
     supporting: "Supporting",
     counter: "Counter",
+    hypothesis_statement: "বিবৃতি",
+    hypothesis_statement_placeholder: "একটি পরীক্ষাযোগ্য দাবি — যেমন Prompt X বেসলাইনের চেয়ে নির্ভুলতা >5% উন্নত করে",
+    hypothesis_rationale: "যুক্তি",
+    hypothesis_rationale_placeholder: "কেন এই অনুমানটি পরীক্ষা করার মতো",
     no_experiments: "No experiments yet",
     no_experiments_hint: "Design an experiment to test a hypothesis.",
     create_experiment: "New experiment",
+    experiment_name: "পরীক্ষা নাম",
+    experiment_name_placeholder: "যেমন GSM8K-এ বেসলাইন বনাম ফাইন-টিউনড তুলনা",
     methodology: "Methodology",
+    methodology_placeholder: "এই পরীক্ষাটি কীভাবে চালানো হবে?",
     success_criteria: "Success criteria",
+    success_criteria_placeholder: "কোন ফলাফল অনুমানটি নিশ্চিত করবে?",
+    linked_hypothesis: "লিঙ্ক করা অনুমান",
+    no_linked_hypothesis: "কোনো অনুমান লিঙ্ক করা নেই",
+    linked_persona: "লিঙ্ক করা পার্সোনা",
+    no_linked_persona: "কোনো পার্সোনা লিঙ্ক করা নেই",
+    run_input: "রান ইনপুট (ঐচ্ছিক)",
+    run_input_placeholder: "ইনপুট টেক্সট যা প্রতিটি রানে পার্সোনায় পাস করা হবে।",
+    pass_pattern: "পাস প্যাটার্ন (regex)",
+    pass_pattern_placeholder: "যেমন PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "Run",
+    running_experiment: "চলছে…",
     run_count: "runs",
+    view_runs: "রান দেখুন",
+    no_runs_yet: "এখনও কোনো রান নেই",
+    run_passed: "উত্তীর্ণ",
+    run_failed: "ব্যর্থ",
+    run_duration: "সময়কাল",
+    run_cost: "খরচ",
+    run_number: "রান #",
+    runs_history: "রান ইতিহাস",
     no_findings: "No findings yet",
     no_findings_hint: "Findings are extracted from experiment results by analysis agents.",
+    create_finding: "নতুন ফলাফল",
+    finding_title: "শিরোনাম",
+    finding_title_placeholder: "ফলাফলের জন্য সংক্ষিপ্ত শিরোনাম",
+    finding_description: "বিবরণ",
+    finding_description_placeholder: "আপনি কী পর্যবেক্ষণ করেছেন এবং কেন এটি গুরুত্বপূর্ণ?",
+    finding_category: "বিভাগ",
+    finding_category_placeholder: "যেমন performance, limitation, surprise",
     no_reports: "No reports yet",
     no_reports_hint: "Create a report to compile your findings into a structured document.",
     create_report: "New report",
+    report_title: "শিরোনাম",
+    report_title_placeholder: "যেমন Q2 Research Summary",
     report_type: "Report type",
+    report_format: "ফরম্যাট",
     literature_review: "Literature review",
     experiment_report: "Experiment report",
     full_paper: "Full paper",
-    executive_summary: "Executive summary",
+    executive_summary: "Executive summary"
   },
   event_types: {
     webhook_received_label: "Webhook Received",
@@ -7642,7 +8986,7 @@ export const bn = {
     source_filter_no_regex: "Only trailing * is supported (no regex, no ? wildcards)",
     source_filter_no_source_id: "If source_filter is set but the event has no source_id, the filter will not match",
     source_filter_allowed_chars: "Allowed characters: letters, numbers, _, -, :, ., and *",
-    source_filter_max_length: "Maximum 120 characters, maximum 3 wildcard characters",
+    source_filter_max_length: "Maximum 120 characters, maximum 3 wildcard characters"
   },
   connector_roles: {
     chat_messaging: "Chat & Messaging",
@@ -7709,12 +9053,12 @@ export const bn = {
     purpose_ecommerce: "E-Commerce",
     purpose_scheduling: "Scheduling",
     purpose_forms: "Forms",
-    purpose_ai: "AI",
+    purpose_ai: "AI"
   },
   connector_licensing: {
     personal: "Personal",
     paid: "Paid",
-    enterprise: "Enterprise",
+    enterprise: "Enterprise"
   },
   alerts: {
     metric_error_rate: "Error Rate",
@@ -7730,7 +9074,7 @@ export const bn = {
     error_delete_rule: "Failed to delete alert rule:",
     error_toggle_rule: "Failed to toggle alert rule:",
     error_dismiss: "Failed to dismiss alert:",
-    error_clear_history: "Failed to clear alert history:",
+    error_clear_history: "Failed to clear alert history:"
   },
   deploy_errors: {
     not_reachable: "Could not reach the server. Check the URL and your network connection.",
@@ -7745,18 +9089,18 @@ export const bn = {
     oauth_expired: "OAuth token has expired. Please re-authorize.",
     url_empty: "Please enter the orchestrator URL.",
     api_key_empty: "Please enter your API key.",
-    token_empty: "Please enter your GitLab personal access token.",
+    token_empty: "Please enter your GitLab personal access token."
   },
   tiers: {
     starter_label: "Simple",
     starter_desc: "Core features for everyday use",
     team_label: "Power",
-    team_desc: "Full feature set",
+    team_desc: "Full feature set"
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus",
+    opus: "Opus"
   },
   error_explanation: {
     action_go_to_vault: "Go to Vault",
@@ -7800,7 +9144,7 @@ export const bn = {
     guidance_import_invalid: "The import file is empty or damaged. Try re-exporting from the source and importing again.",
     guidance_circular_chain: "This would create a loop where agents trigger each other endlessly. Review your agent chain and remove the circular reference.",
     guidance_parse_error: "The response was not in the expected format. This may indicate an API change or malformed data.",
-    guidance_process_exit: "The underlying process reported a failure. Check the execution log for more details.",
+    guidance_process_exit: "The underlying process reported a failure. Check the execution log for more details."
   },
   process_labels: {
     n8n_transform: "n8n Transform",
@@ -7814,10 +9158,11 @@ export const bn = {
     lab_run: "Lab Run",
     connector_test: "Connector Test",
     creative_session: "Creative Session",
+    feedback_chat: "ফিডব্যাক চ্যাট",
     complete_suffix: "Complete",
     failed_suffix: "Failed",
     pending_reviews_one: "{count} pending review awaiting approval",
-    pending_reviews_other: "{count} pending reviews awaiting approval",
+    pending_reviews_other: "{count} pending reviews awaiting approval"
   },
   eval_strategies: {
     keyword_match_label: "Output Quality",
@@ -7829,7 +9174,7 @@ export const bn = {
     confusion_detect_label: "Confusion Detection",
     confusion_detect_description: "Checks for known confusion/failure phrases",
     composite_label: "Composite",
-    composite_description: "Weighted combination of all strategies",
+    composite_description: "Weighted combination of all strategies"
   },
   drift_labels: {
     kind_error_pattern: "Error Pattern",
@@ -7857,7 +9202,7 @@ export const bn = {
     suggestion_error_handling: "Review errorHandling section and add handling for this failure pattern.",
     suggestion_near_timeout: "Consider increasing timeout or simplifying the agent's task scope in instructions.",
     suggestion_high_cost: "Tighten instructions to reduce token usage, or consider using a smaller model.",
-    suggestion_repeated_failure: "Consider running a new design analysis to rebuild the agent configuration.",
+    suggestion_repeated_failure: "Consider running a new design analysis to rebuild the agent configuration."
   },
   feedback_labels: {
     accurate_prompt: "Accurate Prompt",
@@ -7870,13 +9215,13 @@ export const bn = {
     over_engineered: "Over-Engineered",
     under_specified: "Under-Specified",
     wrong_triggers: "Wrong Triggers",
-    credential_issues: "Credential Issues",
+    credential_issues: "Credential Issues"
   },
   protocol_labels: {
     manual_review: "Manual Review",
     user_message: "User Notifications",
     agent_memory: "Agent Memory",
-    emit_event: "Event Emission",
+    emit_event: "Event Emission"
   },
   execution: {
     budget_exceeded: "Monthly budget exceeded for this agent. Override the budget pause in the agent settings or increase the budget to continue.",
@@ -7893,6 +9238,11 @@ export const bn = {
     waiting_for_output: "Waiting for output...",
     no_output: "No output",
     background: "Background",
+    needs_credential: "ক্রেডেনশিয়াল প্রয়োজন",
+    run_preview: "রান প্রিভিউ",
+    close_preview: "প্রিভিউ বন্ধ করুন",
+    budget_limit: "বাজেট সীমা",
+    run_agent: "এজেন্ট চালান"
   },
   gitlab: {
     integration_title: "GitLab Integration",
@@ -8007,6 +9357,10 @@ export const bn = {
     play_sound: "Play sound",
     cicd_agent_templates: "CI/CD Agent Templates",
     your_tier: "(yours)",
+    trigger_on: "চালু:",
+    connecting_to_gitlab: "GitLab-এ সংযোগ হচ্ছে...",
+    deploying_to_gitlab: "GitLab-এ পার্সোনা ডিপ্লয় করা হচ্ছে...",
+    pipeline_hash: "পাইপলাইন #"
   },
   pipeline: {
     agent_teams: "Agent Teams",
@@ -8154,6 +9508,11 @@ export const bn = {
     run_pipeline_or_add: "Run a pipeline or add one manually",
     load_more: "Load more",
     showing_count: "Showing {shown} of {total}",
+    no_timeline_data: "কোনো টাইমলাইন ডেটা নেই",
+    clear_filter: "ফিল্টার সাফ করুন",
+    filter_to_run: "এই রানে ফিল্টার করুন",
+    new_memories_one: "{count}টি নতুন মেমরি",
+    new_memories_other: "{count}টি নতুন মেমরি"
   },
   composition: {
     select_persona: "Select Persona",
@@ -8202,10 +9561,10 @@ export const bn = {
     add_input_node: "Add Input node",
     add_persona_node: "Add Persona node",
     add_output_node: "Add Output node",
-    run: "Run",
+    run: "Run"
   },
   auth: {
-    login_timed_out: "Login timed out. Please try again.",
+    login_timed_out: "Login timed out. Please try again."
   },
   shared: {
     blast_checking_impact: "Checking impact...",
@@ -8304,7 +9663,7 @@ export const bn = {
     toggle_enabled: "Enabled",
     toggle_disabled: "Disabled",
     design_drop_file: "Drop file here",
-    design_placeholder: "Describe what this persona should do...\\\\n\\\\nExamples:\\\\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\\\\n  - Watch GitHub webhooks and post summaries to Slack\\\\n  - Analyze our API logs daily and flag anomalies",
+    design_placeholder: "Describe what this persona should do...\\\\\n\\\\\nExamples:\\\\\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\\\\\n  - Watch GitHub webhooks and post summaries to Slack\\\\\n  - Analyze our API logs daily and flag anomalies",
     design_attach: "Attach",
     design_references: "References",
     design_files_attached_one: "{count} file attached",
@@ -8340,6 +9699,15 @@ export const bn = {
     cmd_select: "select",
     cmd_commands: "commands",
     draft_editor: {
+      edit_tabs_label: "খসড়া সম্পাদনা ট্যাব",
+      request_ai_adjustments: "AI সমন্বয়ের অনুরোধ করুন",
+      edit_raw_json_hint: "কাঁচা JSON সম্পাদনা করুন। পরিবর্তন ফর্ম ফিল্ডগুলিকে ওভাররাইড করে।",
+      no_custom_sections: "এখনও কোনো কাস্টম বিভাগ নেই",
+      no_content_to_preview: "প্রিভিউ করার জন্য কোনো কন্টেন্ট নেই",
+      edit_raw: "কাঁচা সম্পাদনা",
+      credential_links: "ক্রেডেনশিয়াল লিঙ্ক",
+      view_full_prompt: "সম্পূর্ণ প্রম্পট দেখুন",
+      hide_full_prompt: "সম্পূর্ণ প্রম্পট লুকান",
       persona_name_placeholder: "Persona name...",
       description_placeholder: "Brief description...",
       refine_placeholder: "Example: Make error handling stricter, add retry logic...",
@@ -8360,55 +9728,108 @@ export const bn = {
       design_context_json: "Design context JSON...",
       click_next: "Click next to proceed with the transform.",
       configure_transform: "Configure Transform",
-      select: "Select...",
+      select: "Select..."
     },
     forms_extra: {
+      color_hex_placeholder: "#8b5cf6",
+      attach_file_title: "ফাইল সংযুক্ত করুন (API spec, schema, MCP config)",
+      add_references_title: "রেফারেন্স URL বা সংযোগ স্ট্রিং যোগ করুন",
+      no_matches: "কোনো মিল নেই",
+      all_prefix: "সব (",
       references: "References",
       references_placeholder: "Paste URLs, connection strings, API keys, or any reference info (one per line)",
       remove_file: "Remove file",
       choose_color: "Choose color",
       choose_icon: "Choose icon",
       filter_placeholder: "Filter...",
-      reset_to_default: "Reset to default",
+      reset_to_default: "Reset to default"
     },
     reasoning_trace: {
+      heartbeat_silent: "s (নীরব",
+      waiting: "এক্সিকিউশন ইভেন্টের জন্য অপেক্ষা...",
+      tool_call_label: "টুল কল:",
       system_init: "System Init",
       reasoning: "Reasoning",
       tool_call: "Tool Call: {name}",
       result: "Result",
       complete: "Complete",
-      error: "Error",
+      error: "Error"
     },
     sidebar_extra: {
+      clear_completed_title: "সম্পন্ন এবং সারিবদ্ধ আইটেম সাফ করুন",
+      no_credentials: "এখনও কোনো ক্রেডেনশিয়াল নেই",
+      ai_setup_wizard: "AI সেটআপ উইজার্ড",
+      all_personas: "সব পার্সোনা",
+      no_scheduled_agents: "সময়সূচি সহ কোনো এজেন্ট নেই",
+      all_agents_label: "সব এজেন্ট",
+      draft_builds: "খসড়া বিল্ড",
+      dev_tools_label: "Dev Tools",
+      obsidian_brain: "Obsidian Brain",
+      active_twin: "সক্রিয় টুইন",
+      research_lab: "গবেষণা ল্যাব",
       agents: "Agents",
       schedules: "Schedules",
       remove_favorites: "Remove from favorites",
       add_favorites: "Add to favorites",
-      active_project: "Active Project",
+      active_project: "Active Project"
     },
     execution_detail: {
+      running: "চলছে...",
+      rerun: "পুনরায় চালান",
+      retry_prefix: "পুনঃচেষ্টা #",
+      importance_prefix: "গুরুত্ব:",
+      confidence_suffix: "% বিশ্বাস",
       copy: "Copy",
       suggested_actions: "Suggested Actions",
       knowledge_insight: "Knowledge Insight",
       outcome_assessment: "Outcome Assessment",
-      blockers: "Blockers",
+      blockers: "Blockers"
     },
     progress_extra: {
+      continue_working: "আপনি কাজ চালিয়ে যেতে পারেন -- খসড়া প্রস্তুত হলে আমরা আপনাকে জানাবো।",
+      draft_ready: "আপনার পার্সোনা খসড়া পর্যালোচনা এবং সম্পাদনার জন্য প্রস্তুত।",
+      click_generate: "শুরু করতে “Generate Persona Draft” ক্লিক করুন।",
+      skip_configuration: "কনফিগারেশন এড়িয়ে যান",
+      no_config_questions: "কোনো কনফিগারেশন প্রশ্ন প্রয়োজন নেই।",
+      answer_questions: "পার্সোনা তৈরি কাস্টমাইজ করতে এই প্রশ্নগুলির উত্তর দিন।",
+      no_output: "এখনও কোনো আউটপুট নেই...",
+      s_elapsed: "s অতিবাহিত",
+      s_remaining: "s বাকি",
+      show_cli_output: "CLI আউটপুট দেখান",
+      hide_cli_output: "CLI আউটপুট লুকান",
       taking_longer: "Taking longer than expected",
       complete: "Complete",
       resuming: "Resuming previous transformation session...",
       cancel_transformation: "Cancel transformation",
       draft_generated: "Draft generated successfully",
       transformation_failed: "Transformation failed",
-      waiting_to_start: "Waiting to start transformation...",
+      waiting_to_start: "Waiting to start transformation..."
     },
     terminal_extra: {
+      connecting: "প্রোভাইডারে সংযোগ হচ্ছে",
+      queued_at: "অবস্থানে সারিবদ্ধ",
+      new_line: "নতুন লাইন",
+      new_lines: "নতুন লাইন",
+      below: "নীচে",
+      lines_suffix: "লাইন)",
+      search_and_filter: "অনুসন্ধান ও ফিল্টার",
       press_enter: "Press Enter or click Play to start",
       connection_failed: "Connection failed -- check provider settings and retry",
       search_output: "Search output...",
-      dismiss: "Dismiss",
+      dismiss: "Dismiss"
     },
     use_cases_extra: {
+      input_placeholder: "এই ব্যবহারের ক্ষেত্র চালানোর জন্য ইনপুট টাইপ করুন…",
+      model_placeholder: "যেমন claude-3-5-sonnet-latest",
+      use_case_singular: "ব্যবহারের ক্ষেত্র",
+      window_prefix: "(উইন্ডো:",
+      loading_history: "ইতিহাস লোড হচ্ছে...",
+      no_executions: "এখনও কোনো এক্সিকিউশন নেই",
+      run_to_see_history: "এক্সিকিউশন ইতিহাস, সময় এবং খরচ এখানে দেখতে এই ব্যবহারের ক্ষেত্র চালান।",
+      run_use_case: "এই ব্যবহারের ক্ষেত্র চালান",
+      custom_model: "কাস্টম মডেল",
+      no_results: "কোনো ফলাফল পাওয়া যায়নি",
+      ctrl_enter: "Ctrl+Enter",
       example_output: "Example output",
       input_data: "Input Data",
       rerun_input: "Re-run with this input",
@@ -8416,7 +9837,7 @@ export const bn = {
       error_prefix: "Error: ",
       output_prefix: "Output: ",
       toggle_history: "Toggle execution history",
-      configure_model: "Configure model, notifications & subscriptions",
+      configure_model: "Configure model, notifications & subscriptions"
     },
     json_valid: "Valid JSON",
     json_invalid: "Invalid JSON",
@@ -8424,6 +9845,85 @@ export const bn = {
     json_format_tooltip: "Format JSON",
     agent_icon_label: "agent icon",
     breadcrumb_label: "Breadcrumb",
-    breadcrumb_show_hidden: "Show hidden breadcrumbs",
+    breadcrumb_show_hidden: "Show hidden breadcrumbs"
   },
+  releases: {
+    whats_new: {
+      title: "নতুন কী",
+      subtitle_roadmap: "আমরা এখন কী তৈরি করছি এবং পরবর্তীতে কী আসছে।",
+      subtitle_changelog: "আপনার Personas সংস্করণে কী নতুন।",
+      nav_bar_roadmap_label: "রোডম্যাপ",
+      empty: "এই রিলিজের জন্য এখনও শেয়ার করার কিছু নেই — শীঘ্রই আবার দেখুন।",
+      status_released: "প্রকাশিত",
+      status_active: "বর্তমান",
+      status_planned: "পরিকল্পিত",
+      status_roadmap: "রোডম্যাপ",
+      type_feature: "নতুন",
+      type_fix: "ঠিক",
+      type_security: "নিরাপত্তা",
+      type_docs: "ডকুমেন্ট",
+      type_chore: "রক্ষণাবেক্ষণ",
+      type_breaking: "ব্রেকিং",
+      item_status_in_progress: "চলমান",
+      item_status_planned: "পরিকল্পিত",
+      item_status_completed: "সম্পন্ন",
+      priority_now: "এখন",
+      priority_next: "পরবর্তী",
+      priority_later: "পরে",
+      summary_in_progress: "{count}টি চলমান",
+      summary_next: "{count}টি পরবর্তী",
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "Personas-এর প্রথম প্রিভিউ।",
+      release_0_0_1_item_1_title: "প্রথম পাবলিক প্রিভিউ",
+      release_0_0_1_item_1_description: "AI এজেন্ট ডিজাইন করুন, সেগুলিকে সময়সূচিতে বা ট্রিগারে চালান এবং আপনার ডেস্কটপে তাদের কাজ লাইভ দেখুন।",
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "Personas-কে অন্যান্য AI টুলের সাথে সংযুক্ত করুন এবং অ্যাপ ছাড়াই নতুন কী আছে পড়ুন।",
+      release_0_0_2_item_1_title: "অন্যান্য AI টুলে আপনার এজেন্ট খুলুন",
+      release_0_0_2_item_1_description: "Personas এখন একটি শেয়ার করা প্রোটোকলের মাধ্যমে অন্যান্য AI টুলের সাথে কথা বলতে পারে। আপনি ঠিক কোন এজেন্টগুলি শেয়ার করতে চান তা বেছে নিন এবং আপনার নিয়ন্ত্রণে থাকা অ্যাক্সেস কী দিয়ে সেগুলিকে রক্ষা করুন — আপনার ব্যক্তিগত এজেন্ট ডিফল্টভাবে ব্যক্তিগত থাকে।",
+      release_0_0_2_item_2_title: "ডেস্কটপ অ্যাপের জন্য নিরাপদ অ্যাক্সেস",
+      release_0_0_2_item_2_description: "ডেস্কটপ অ্যাপ প্রতিটি লঞ্চে নিজস্ব স্বল্পস্থায়ী অ্যাক্সেস কী তৈরি করে, তাই এটি আপনার অনুমোদন না দেওয়া কিছু প্রকাশ না করে তার ব্যাকগ্রাউন্ড সার্ভিসের সাথে কথা বলতে পারে।",
+      release_0_0_2_item_3_title: "অ্যাপের ভিতরে রিলিজ নোট",
+      release_0_0_2_item_3_description: "অ্যাপ ছাড়াই প্রতিটি Personas রিলিজে নতুন কী দেখুন। অতীত সংস্করণ, বর্তমান রিলিজ এবং দীর্ঘমেয়াদী রোডম্যাপের মধ্যে এক জায়গা থেকে পরিবর্তন করুন।",
+      release_0_0_2_item_4_title: "আপনার এজেন্টরা প্রতিটি সেশন থেকে শেখে",
+      release_0_0_2_item_4_description: "Personas এখন প্রতিটি এজেন্ট সেশন থেকে শিক্ষা ক্যাপচার করে, সেগুলিকে পুনর্ব্যবহারযোগ্য জ্ঞানে পরিণত করে এবং পরবর্তী রানে এগিয়ে নিয়ে আসে। যত বেশি সময় ব্যবহার করবেন, আপনার এজেন্টরা তত স্মার্ট হয় — কোনো ম্যানুয়াল প্রশিক্ষণ প্রয়োজন নেই।",
+      release_0_0_2_item_5_title: "যেকোনো ডকুমেন্টকে শোনার যোগ্য ব্রিফিংয়ে পরিণত করুন",
+      release_0_0_2_item_5_description: "একটি নতুন টেমপ্লেট যা গবেষণা প্রতিবেদন, মিটিং ট্রান্সক্রিপ্ট বা দীর্ঘ নিবন্ধগুলিকে 5- থেকে 15-মিনিটের দুই-হোস্ট অডিও কথোপকথনে পরিণত করে যা আপনি পথে শুনতে পারেন। আপনি শৈলী বেছে নেন — সাধারণ, আনুষ্ঠানিক, সংবাদ বা নির্বাহী — এবং কণ্ঠস্বর তৈরি হওয়ার আগে স্ক্রিপ্ট পর্যালোচনা করেন।",
+      release_0_0_2_item_6_title: "আপনার লেখার জন্য একটি Stanford-প্রশিক্ষিত সম্পাদক",
+      release_0_0_2_item_6_description: "একটি নতুন টেমপ্লেট যা Stanford \"Writing in the Sciences\" পদ্ধতি ব্যবহার করে আপনার খসড়া পর্যালোচনা করে। এটি প্যাসিভ ভয়েস, অপ্রয়োজনীয় বাক্যাংশ এবং জারগন চিহ্নিত করে — এবং ঠিক কেন প্রতিটি প্রস্তাবিত পরিবর্তন বাক্যটিকে আরও স্পষ্ট করে তা ব্যাখ্যা করে। এটি আপনার গ্রহণ বা প্রত্যাখ্যান করা সম্পাদনা থেকে আপনার কণ্ঠস্বর শেখে।",
+      release_0_0_2_item_7_title: "20 ঘন্টার YouTube প্রযোজনাকে 3-এ পরিণত করুন",
+      release_0_0_2_item_7_description: "একটি নতুন টেমপ্লেট চিত্রায়ণ ছাড়া সবকিছু পরিচালনা করে একটি সম্পূর্ণ YouTube ভিডিও চক্রকে প্রায় তিন ঘন্টায় সংকুচিত করে। এটি যাচাই করে যে আপনার বিষয়বস্তু অনুসরণ করার মতো, আপনার কণ্ঠস্বরে একটি হুক-ফার্স্ট স্ক্রিপ্ট খসড়া তৈরি করে এবং অনুমোদিত স্ক্রিপ্টকে সত্য হিসাবে ব্যবহার করে কাঁচা ফুটেজ থেকে পুনঃগ্রহণ স্বয়ংক্রিয়ভাবে সরিয়ে দেয় — যাতে আপনি স্বাভাবিকভাবে চিত্রায়ণ করতে পারেন, মুক্তভাবে হোঁচট খেতে পারেন এবং চালিয়ে যেতে পারেন।",
+      release_0_0_2_item_8_title: "আপনার এজেন্ট থেকে Apify স্ক্র্যাপার চালান",
+      release_0_0_2_item_8_description: "Apify প্ল্যাটফর্ম থেকে যেকোনো অ্যাক্টর — YouTube স্ক্র্যাপার, Twitter স্ক্র্যাপার, ব্রাউজার অটোমেশন এবং শত শত অন্যান্য — সরাসরি আপনার এজেন্টের সাথে সংযুক্ত করুন। যে ডেটা অফিসিয়াল API পৌঁছাতে পারে না তা প্রয়োজন এমন গবেষণা ওয়ার্কফ্লো আনলক করে।",
+      release_0_0_2_item_9_title: "X (Twitter) এখন একটি কানেক্টর",
+      release_0_0_2_item_9_description: "সাম্প্রতিক টুইট অনুসন্ধান করুন, ট্রেন্ডিং বিষয় ট্র্যাক করুন এবং সরাসরি আপনার এজেন্ট থেকে পোস্ট করুন। Personas ছাড়াই কন্টেন্ট গবেষণা, সামাজিক শোনা এবং মার্কেটিং অটোমেশনের জন্য দরকারী।",
+      release_0_0_2_item_10_title: "আপনার এজেন্ট থেকে YouTube দেখুন",
+      release_0_0_2_item_10_description: "Personas-এ প্রথম ভিডিও প্ল্যাটফর্ম কানেক্টর। যেকোনো এজেন্ট যা YouTube-এ কী ঘটছে তা বুঝতে চায় তার থেকে সরাসরি ভিডিও অনুসন্ধান করুন, চ্যানেল পরিসংখ্যান আনুন, ট্রেন্ডিং কন্টেন্ট টানুন এবং প্রতিযোগীদের বিশ্লেষণ করুন।",
+      release_0_0_2_item_11_title: "Deepgram দিয়ে অডিওকে টেক্সটে পরিণত করুন",
+      release_0_0_2_item_11_description: "একটি নতুন speech-to-text কানেক্টর যা শব্দ-স্তরের সময় সহ অডিও ফাইল বা URL ট্রান্সক্রাইব করে। স্বয়ংক্রিয়-সম্পাদনার জন্য YouTube ক্রিয়েটর সহকারী চালায় এবং যেকোনো এজেন্টকে ভয়েস নোট, মিটিং রেকর্ডিং বা পডকাস্ট কন্টেন্ট প্রক্রিয়া করার ক্ষমতা দেয়।",
+      release_0_0_2_item_12_title: "অন্যান্য AI টুল আপনার এজেন্ট চেক এবং থামাতে পারে",
+      release_0_0_2_item_12_description: "যখন অন্য একটি AI টুল আপনার শেয়ার করা এজেন্টগুলির একটিকে কল করে, এটি এখন মধ্য-ফ্লাইটে জিজ্ঞাসা করতে পারে 'এটি কি এখনও চলছে?' এবং 'অনুগ্রহ করে এখন থামুন'। দীর্ঘ গবেষণা কাজগুলিকে আর পুরো সময় সংযোগ খোলা রাখতে হয় না এবং আটকে থাকা রানগুলি কল করা পাশ থেকে পরিষ্কারভাবে বাতিল করা যায়। প্রতিটি এজেন্ট শুধু তার নিজের রান দেখতে পায়, তাই এজেন্ট জুড়ে কিছুই ফাঁস হয় না।",
+      release_0_0_2_item_13_title: "নতুন কানেক্টর: Humbalytics অ্যানালিটিক্স",
+      release_0_0_2_item_13_description: "আপনার কোড স্পর্শ না করে ট্র্যাফিক ট্র্যাক করুন, A/B পরীক্ষা চালান এবং ল্যান্ডিং-পৃষ্ঠার কপি অদলবদল করুন। Personas এখন Humbalytics থেকে হিট ম্যাপ এবং রূপান্তর ডেটা টানতে এবং সেগুলি ব্যবহার করে আপনার পরীক্ষাগুলিকে নির্দেশ করতে পারে।",
+      release_0_0_2_item_14_title: "নতুন কানেক্টর: Firecrawl ওয়েব স্ক্র্যাপিং",
+      release_0_0_2_item_14_description: "এজেন্টরা এখন যেকোনো ওয়েবসাইট পড়তে পারে — এমনকি আধুনিক JavaScript-ভারী — পরিষ্কার, কাঠামোবদ্ধ কন্টেন্ট হিসাবে। গবেষণা, বাজার গোয়েন্দা এবং কন্টেন্ট-মনিটরিং এজেন্টের জন্য দরকারী।",
+      release_0_0_2_item_15_title: "একটি মার্কেটিং এজেন্ট যা আসলে আপনার A/B পরীক্ষা চালায়",
+      release_0_0_2_item_15_description: "একটি নতুন টেমপ্লেট যা শিরোনাম ভেরিয়েন্ট প্রস্তাব করে, আপনার অনুমোদনের সাথে সেগুলি ডিপ্লয় করে, পরিসংখ্যানগত তাৎপর্যের জন্য অপেক্ষা করে এবং বিজয়ীদের স্বয়ংক্রিয়ভাবে প্রোমোট করে। প্রতিটি পরিবর্তন লাইভে যাওয়ার আগে মানব-নিয়ন্ত্রিত এবং প্রতিটি পরীক্ষা ফলাফলের সত্যিকারের অর্থ হওয়ার জন্য যথেষ্ট দীর্ঘ চলে।",
+      release_0_0_2_item_16_title: "যেকোনো এজেন্ট থেকে আপনার দলের BI ড্যাশবোর্ড পড়ুন",
+      release_0_0_2_item_16_description: "Personas এখন সংরক্ষিত Redash প্রশ্ন এবং ড্যাশবোর্ড থেকে ফলাফল টানতে পারে। যদি আপনার দল ইতিমধ্যে শেয়ার করা ড্যাশবোর্ড বজায় রাখে, আপনার এজেন্টরা মানুষের দেখা একই সংখ্যা পড়ে — কোনো SQL পুনর্লিখন নেই, কোনো CSV রপ্তানি নেই, কোনো কপি-পেস্ট নেই।",
+      release_0_0_2_item_17_title: "Metabase এখন একটি কানেক্টর",
+      release_0_0_2_item_17_description: "আপনার এজেন্ট সংরক্ষিত Metabase প্রশ্ন চালাতে এবং সরাসরি আপনার ওয়ার্কস্পেস থেকে ড্যাশবোর্ড পড়তে পারে। Metabase Pro, Enterprise এবং যেকোনো স্ব-হোস্টেড ইনস্ট্যান্সের সাথে কাজ করে।",
+      release_0_0_2_item_18_title: "আপনার কাছে সরবরাহিত দৈনিক BI ডাইজেস্ট",
+      release_0_0_2_item_18_description: "একটি নতুন টেমপ্লেট আপনি ইতিমধ্যে Redash বা Metabase-এ বজায় রাখা সংরক্ষিত প্রশ্নগুলি তুলে নেয়, প্রতি সকালে সর্বশেষ সংখ্যাগুলি সারাংশ করে এবং সপ্তাহ-ওভার-সপ্তাহ অসঙ্গতি ফ্ল্যাগ সহ একটি সাধারণ-ইংরেজি ডাইজেস্ট পোস্ট করে। আপনার ড্যাশবোর্ডগুলি উপযোগী থাকে এমনকি যখন কেউ খোলে না।",
+      release_roadmap_label: "রোডম্যাপ",
+      release_roadmap_summary: "আমরা এখন কী তৈরি করছি এবং পরবর্তীতে কী আসছে।",
+      release_roadmap_item_2_title: "ক্লাউড ইন্টিগ্রেশন",
+      release_roadmap_item_2_description: "ক্লাউডে আপনার এজেন্ট 24/7 চালান এবং তাদের কাজ রিয়েল-টাইমে আপনার ডেস্কটপে ফিরিয়ে স্ট্রিম করুন।",
+      release_roadmap_item_3_title: "ওয়েব অ্যাপ",
+      release_roadmap_item_3_description: "অ্যাকাউন্ট, বিলিং এবং যেকোনো ব্রাউজার থেকে এজেন্ট পরিচালনার জন্য একটি ওয়েব সহচর।",
+      release_roadmap_item_4_title: "আপনার ভাষায় Personas ব্যবহার করুন",
+      release_roadmap_item_4_description: "সম্পূর্ণ বহু-ভাষা সমর্থন, ডান-থেকে-বাম লেআউট এবং ভাষা-নির্দিষ্ট ফন্ট সহ।",
+      release_roadmap_item_6_title: "টিম ওয়ার্কস্পেস",
+      release_roadmap_item_6_description: "আপনার দলের সাথে একসাথে এজেন্ট তৈরি করুন — শেয়ার করা স্পেস, ভূমিকা অনুমতি এবং লাইভ ড্যাশবোর্ড।"
+    }
+  }
 };

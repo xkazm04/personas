@@ -1,5 +1,4 @@
 export const ja = {
-
   common: {
     loading: "読み込み中...",
     saving: "保存中...",
@@ -48,6 +47,7 @@ export const ja = {
     error: "エラー",
     success: "成功",
     required: "必須",
+    optional: "任意",
     select: "-- 選択 --",
     no_results: "結果が見つかりません",
     active: "有効",
@@ -143,7 +143,7 @@ export const ja = {
     command_palette_navigate: "ナビゲート",
     command_palette_select: "選択",
     command_palette_commands: "コマンド",
-    loading_label: "読み込み中",
+    loading_label: "読み込み中"
   },
   chrome: {
     app_title: "Personas",
@@ -163,7 +163,7 @@ export const ja = {
     sign_in_google: "Googleでサインイン",
     signed_in: "サインイン済み",
     sign_out: "サインアウト",
-    offline: "オフライン",
+    offline: "オフライン"
   },
   sidebar: {
     home: "ホーム",
@@ -209,6 +209,8 @@ export const ja = {
     engine: "エンジン",
     byom: "BYOM",
     data: "データ",
+    quality_gates: "コンテンツフィルター",
+    config_resolution: "エージェント設定",
     admin: "管理",
     create: "作成",
     all_agents: "すべてのエージェント",
@@ -232,7 +234,7 @@ export const ja = {
     unread_messages_sr: "{count}件の未読メッセージ",
     unread_messages_sr_other: "{count}件の未読メッセージ",
     pending_events_sr: "{count}件の保留イベント",
-    pending_events_sr_other: "{count}件の保留イベント",
+    pending_events_sr_other: "{count}件の保留イベント"
   },
   home: {
     welcome: "ようこそ",
@@ -257,7 +259,7 @@ export const ja = {
       priority_next: "次",
       priority_later: "後で",
       in_progress_count: "{count} 件進行中",
-      next_count: "{count} 件次予定",
+      next_count: "{count} 件次予定"
     },
     setup: {
       choose_role: "役割を選択",
@@ -285,45 +287,45 @@ export const ja = {
       role_manager_hint: "計画・調整",
       role: "役割",
       tool: "ツール",
-      goal: "目標",
+      goal: "目標"
     },
     nav: {
       overview: {
         label: "概要",
-        description: "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視",
+        description: "ダッシュボード分析、実行履歴、全エージェントのリアルタイム監視"
       },
       personas: {
         label: "エージェント",
-        description: "カスタム動作と機能を備えたAIエージェントの作成・設定・管理",
+        description: "カスタム動作と機能を備えたAIエージェントの作成・設定・管理"
       },
       events: {
         label: "イベント",
-        description: "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定",
+        description: "イベントトリガー、webhookリスナー、スケジュール駆動の自動化を設定"
       },
       credentials: {
         label: "キー",
-        description: "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理",
+        description: "API認証情報、DB接続、OAuthトークン、暗号化シークレットの管理"
       },
       "design-reviews": {
         label: "テンプレート",
-        description: "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成",
+        description: "n8nワークフローのインポート、テンプレートギャラリー、エージェント設計図の生成"
       },
       team: {
         label: "チーム",
-        description: "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築",
+        description: "ドラッグ&ドロップでマルチエージェントチームパイプラインを構築"
       },
       cloud: {
         label: "クラウド",
-        description: "クラウドへのデプロイ、スケジュール管理、GitLab CI連携",
+        description: "クラウドへのデプロイ、スケジュール管理、GitLab CI連携"
       },
       settings: {
         label: "設定",
-        description: "アカウント設定、外観テーマ、通知ルール、エンジン構成",
+        description: "アカウント設定、外観テーマ、通知ルール、エンジン構成"
       },
       plugins: {
         label: "プラグイン",
-        description: "サードパーティプラグインとカスタム拡張機能でエージェントを拡張",
-      },
+        description: "サードパーティプラグインとカスタム拡張機能でエージェントを拡張"
+      }
     },
     learning: {
       title: "ラーニングセンター",
@@ -340,7 +342,7 @@ export const ja = {
       pro_tip: "プロのヒント: ",
       cat_agent_craft: "エージェントクラフト",
       cat_observability: "オブザーバビリティとイベント",
-      cat_platform: "プラットフォームとセットアップ",
+      cat_platform: "プラットフォームとセットアップ"
     },
     setup_stepper: {
       your_profile: "プロフィール",
@@ -356,18 +358,18 @@ export const ja = {
       ready_to_save: "保存準備完了",
       back: "戻る",
       next: "次へ",
-      finish: "完了",
+      finish: "完了"
     },
     welcome_layout: {
       get_started: "はじめる",
-      language: "言語",
+      language: "言語"
     },
     icon_showcase: {
       lucide_tab: "Lucide（ライブラリ）",
       personas_tab: "Personas（アニメーション）",
       lucide_footer: "lucide-react -- 汎用アイコンライブラリ -- 静的",
-      personas_footer: "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応",
-    },
+      personas_footer: "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
+    }
   },
   agents: {
     title: "Personas",
@@ -378,12 +380,12 @@ export const ja = {
       subtitle_other: "{count}件のエージェント -- 関連度順",
       needs_attention: "要対応",
       active: "有効",
-      idle: "待機中",
+      idle: "待機中"
     },
     sidebar: {
       no_match: "フィルターに一致するエージェントがありません",
       clear_filters: "フィルターをクリア",
-      empty: "エージェントがまだありません",
+      empty: "エージェントがまだありません"
     },
     preview: {
       sensitive_hidden: "機密プレビュー非表示",
@@ -398,7 +400,7 @@ export const ja = {
       triggers_active_one: "{count}件のトリガーが有効",
       triggers_active_other: "{count}件のトリガーが有効",
       no_triggers: "トリガーなし",
-      custom_model: "カスタム",
+      custom_model: "カスタム"
     },
     creation: {
       heading: "新規エージェント",
@@ -415,7 +417,7 @@ export const ja = {
       no_group: "グループなし",
       create_button: "エージェントを作成",
       creating_button: "作成中...",
-      name_required: "続行するには名前を入力してください",
+      name_required: "続行するには名前を入力してください"
     },
     editor: {
       tabs: {
@@ -426,7 +428,7 @@ export const ja = {
         design: "デザイン",
         health: "ヘルス",
         settings: "設定",
-        model: "モデル",
+        model: "モデル"
       },
       no_persona: "エージェント未選択",
       save_failed: "{tabs}の保存に失敗しました",
@@ -440,13 +442,13 @@ export const ja = {
       cloud_banner_connect: "クラウドオーケストレーターに接続してリモート実行",
       cloud_banner_signin: "サインインしてクラウド機能とリモート実行を有効化",
       sign_in: "サインイン",
-      set_up_cloud: "クラウド設定",
+      set_up_cloud: "クラウド設定"
     },
     header: {
       no_triggers_warning: "トリガーまたはイベントサブスクリプションが未設定です",
       missing_credentials: "不足している認証情報: {credentials}",
       toggle_failed: "エージェントの切替に失敗しました -- 接続を確認してください",
-      cannot_enable: "エージェントを有効にできません",
+      cannot_enable: "エージェントを有効にできません"
     },
     sr_card: "{name}、{status}",
     filters: {
@@ -467,7 +469,7 @@ export const ja = {
       selected: "{count} 件選択",
       remove_from_favorites: "お気に入りから削除",
       add_to_favorites: "お気に入りに追加",
-      filter_by: "{label} でフィルター",
+      filter_by: "{label} でフィルター"
     },
     status: {
       draft: "下書き",
@@ -475,7 +477,7 @@ export const ja = {
       healthy: "正常",
       degraded: "劣化",
       failing: "障害",
-      building: "ビルド中",
+      building: "ビルド中"
     },
     executions: {
       no_persona_selected: "ペルソナが選択されていません",
@@ -716,6 +718,10 @@ export const ja = {
       loading_dream_replay: "ドリームリプレイを読み込み中...",
       no_dream_trace: "ドリームリプレイ用トレースデータなし",
       frame_count: "フレーム {index}/{total}",
+      depth_label: "深度:",
+      active_count_label: "アクティブ ({count})",
+      completed_count_label: "完了 ({count})",
+      metadata_section: "メタデータ",
       phase_initializing: "初期化中",
       phase_thinking: "思考中",
       phase_calling_tools: "ツール実行中",
@@ -743,6 +749,15 @@ export const ja = {
       offset_prefix: "オフセット:",
       step_tooltip: "ステップ {step}: {name}",
       ms_into_stage: "ステージ内 {ms}ms",
+      chain_id_prefix: "チェーン: {id}",
+      chain_total_duration: "合計: {duration}",
+      zero_ms: "0ms",
+      tool_calls_count: "{count} ツール呼び出し",
+      tool_calls_count_other: "{count} ツール呼び出し",
+      unique_tools_count: "({count} 個のユニーク)",
+      prev_error_nav: "前のエラー (Shift+E)",
+      next_error_nav: "次のエラー (E)",
+      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "アリーナ",
@@ -876,6 +891,8 @@ export const ja = {
       quality_label: "品質",
       speed_label: "速度",
       cost_label: "コスト",
+      objective_warning: "フィットネス目標の問題",
+      objective_fallback_toast: "進化処理にデフォルトのフィットネス重みを使用しました — 目標設定を確認してください",
       genome_breeding: "ゲノムブリーディング",
       genome_breeding_subtitle: "トップパフォーマーのペルソナをクロスブリードして新しい設定を発見",
       select_parents: "親を選択（2〜5つのペルソナ）",
@@ -992,7 +1009,7 @@ export const ja = {
       quality_score_inline: "スコア: {score} | {coverage} シナリオ",
       cancel_default: "キャンセル",
       hide_impact: "影響を非表示",
-      show_impact: "影響を表示",
+      show_impact: "影響を表示"
     },
     design: {
       select_agent: "デザイン分析を開始するエージェントを選択",
@@ -1058,6 +1075,7 @@ export const ja = {
       msg_count_one: "{count} 件のメッセージ",
       msg_count_other: "{count} 件のメッセージ",
       resume: "再開",
+      conv_controls_aria: "デザイン会話コントロール",
       design_drift: "デザインのドリフト",
       design_sessions: "デザインセッション",
       example_n: "例 {index}",
@@ -1076,7 +1094,7 @@ export const ja = {
       next: "次へ",
       go_back_hint: "戻って質問に回答し、エージェントを設定してください。",
       additional_instructions: "追加の指示またはコンテキスト（任意）",
-      additional_instructions_placeholder: "特定の要件、ドメイン知識、制約を追加...",
+      additional_instructions_placeholder: "特定の要件、ドメイン知識、制約を追加..."
     },
     connectors: {
       connectors_label: "コネクタ",
@@ -1162,6 +1180,9 @@ export const ja = {
       auto_event_type: "イベントタイプ: {eventType}",
       auto_zapier_hint: "キャッチフックが検証・接続されます。",
       auto_custom_hint: "手動セットアップが必要です。オートメーションは下書きとして保存されます。",
+      auto_input_schema_placeholder: "string",
+      auto_github_token_needs: "トークンには {scopes} スコープが必要です。github.com/settings/tokens でトークンを更新してください。",
+      auto_fallback_title: "失敗時に直接コネクタへフォールバック",
       ch_title: "通知チャンネル",
       ch_add: "チャンネルを追加",
       ch_all_added: "すべてのチャンネルタイプを追加済み",
@@ -1237,7 +1258,7 @@ export const ja = {
       sub_confirm: "確認しますか？",
       sub_triggers_title: "トリガーとサブスクリプション",
       sub_suggested: "{count} 件の推奨",
-      sub_filter: "フィルター: {filter}",
+      sub_filter: "フィルター: {filter}"
     },
     editor_chrome: {
       tab_activity: "アクティビティ",
@@ -1270,7 +1291,7 @@ export const ja = {
       latency_label: "レイテンシー",
       cost_run_label: "コスト/実行",
       last_run_label: "最終実行",
-      rank: "ランク",
+      rank: "ランク"
     },
     model_config: {
       model_provider: "モデル＆プロバイダー",
@@ -1333,6 +1354,7 @@ export const ja = {
       model_name_placeholder_litellm: "例: anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "例: llama3.1:8b",
       model_name_placeholder_custom: "モデル識別子",
+      model_name_placeholder_override: "例: claude-sonnet-4-20250514",
       base_url_hint: "モデルプロバイダーのAPIエンドポイント。プロトコル（http/https）と非標準ポートを含める必要があります。",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "プロバイダーAPIの認証トークン。Ollamaローカルには「ollama」、LiteLLMにはマスターキーを使用。",
@@ -1373,7 +1395,7 @@ export const ja = {
       latency: "レイテンシー",
       cost: "コスト",
       output_previews: "出力プレビュー",
-      no_output: "出力なし",
+      no_output: "出力なし"
     },
     use_cases: {
       no_persona: "ペルソナが選択されていません",
@@ -1468,7 +1490,7 @@ export const ja = {
       cron_field_hour: "時",
       cron_field_day: "日",
       cron_field_month: "月",
-      cron_field_weekday: "曜日",
+      cron_field_weekday: "曜日"
     },
     tools: {
       no_persona: "ペルソナが選択されていません",
@@ -1507,11 +1529,11 @@ export const ja = {
       credential: "認証情報",
       linked: "-- リンク済み",
       cred_missing: "-- 欠落",
-      often_used: "よく一緒に使われるツール",
+      often_used: "よく一緒に使われるツール"
     },
     chat_thread: {
       welcome: "このエージェントに何をさせたいか教えてください。説明からプロンプト、ツール、トリガーなど完全な設定を構築します。",
-      welcome_example: "GitHub PRを監視して毎朝Slackにサマリーを投稿する",
+      welcome_example: "GitHub PRを監視して毎朝Slackにサマリーを投稿する"
     },
     assign: {
       assign_to: "{role} に割り当て",
@@ -1522,50 +1544,50 @@ export const ja = {
       no_saved_credentials: "保存済み認証情報なし",
       no_credentials_match: "検索に一致する認証情報なし",
       vault_hint: "ボルトに認証情報を保存するか、コネクタタブを使用",
-      no_connectors_match: "検索に一致するコネクタなし",
+      no_connectors_match: "検索に一致するコネクタなし"
     },
     credential_coverage: "{matched}/{total} 件の認証情報",
     role_card: {
       no_credential: "認証情報なし",
       edit_tables: "編集",
       select_tables: "テーブルを選択",
-      assign: "割り当て",
+      assign: "割り当て"
     },
     channel_picker: {
       in_app_messaging: "アプリ内メッセージ",
-      vault_hint: "ここに表示するにはボルトに通信認証情報（Slack、メールなど）を保存してください。",
+      vault_hint: "ここに表示するにはボルトに通信認証情報（Slack、メールなど）を保存してください。"
     },
     connector_picker: {
       no_connectors: "利用可能なコネクタなし",
       search: "コネクタを検索...",
-      no_match: "\"{search}\" に一致するコネクタなし",
+      no_match: "\"{search}\" に一致するコネクタなし"
     },
     policy_picker: {
       error_handling: "エラー処理",
-      manual_review: "手動レビュー",
+      manual_review: "手動レビュー"
     },
     table_selector: {
       title: "テーブルを選択",
       subtitle: "{label} -- 監視するテーブルを選択",
       tables_selected_one: "{count} 件のテーブルを選択",
       tables_selected_other: "{count} 件のテーブルを選択",
-      no_tables_selected: "テーブル未選択 -- エージェントはすべてを監視",
+      no_tables_selected: "テーブル未選択 -- エージェントはすべてを監視"
     },
     trigger_popover: {
       trigger: "トリガー",
-      clear_override: "上書きをクリア",
+      clear_override: "上書きをクリア"
     },
     use_case: {
       add: "ユースケースを追加",
       title_placeholder: "ユースケースのタイトル -- 例: 返金リクエスト処理、日次チケット要約",
-      description_placeholder: "ステップを説明 -- 例: 返金リクエストが届いたら注文を確認し、ポリシーを確認して承認または拒否を送信",
+      description_placeholder: "ステップを説明 -- 例: 返金リクエストが届いたら注文を確認し、ポリシーを確認して承認または拒否を送信"
     },
     builder_action: {
       processing: "処理中...",
       error_retry: "問題が発生しました。再試行してください。",
       enhancing: "強化中...",
       enhance_with_ai: "AIで強化",
-      describe_agent: "エージェントに何をさせるか説明",
+      describe_agent: "エージェントに何をさせるか説明"
     },
     builder_preview: {
       title: "プレビュー",
@@ -1579,7 +1601,7 @@ export const ja = {
       schedule: "スケジュール",
       manual_only: "手動のみ",
       errors: "エラー",
-      review: "確認",
+      review: "確認"
     },
     dry_run: {
       ready: "準備完了",
@@ -1591,7 +1613,7 @@ export const ja = {
       issues: "問題",
       apply_fix: "修正を適用: {label}",
       manual_action_needed: "手動操作が必要",
-      no_issues: "問題は見つかりませんでした。エージェントの設定は正常です。",
+      no_issues: "問題は見つかりませんでした。エージェントの設定は正常です。"
     },
     identity_preview: {
       title: "プレビュー",
@@ -1602,7 +1624,7 @@ export const ja = {
       components: "コンポーネント",
       schedule_label: "スケジュール:",
       errors_label: "エラー:",
-      review_label: "確認:",
+      review_label: "確認:"
     },
     build_review: {
       agent_name: "エージェント名",
@@ -1611,7 +1633,7 @@ export const ja = {
       connectors_ready: "コネクタ準備完了",
       promote_agent: "エージェントをプロモート",
       testing: "テスト中...",
-      test_agent: "エージェントをテスト",
+      test_agent: "エージェントをテスト"
     },
     connectors_cell: {
       add_in_keys: "キーに追加",
@@ -1621,7 +1643,7 @@ export const ja = {
       swap_to: "切り替え先:",
       recalculating: "再計算中...",
       recalculate_dimensions: "次元を再計算",
-      rebuilding: "新しいコネクタで再ビルド中...",
+      rebuilding: "新しいコネクタで再ビルド中..."
     },
     dimension_edit: {
       add_item: "アイテムを追加...",
@@ -1647,7 +1669,7 @@ export const ja = {
       fully_automated: "完全自動化",
       cron_label: "Cron:",
       every_label: "間隔:",
-      done: "完了",
+      done: "完了"
     },
     quick_config: {
       title: "クイックセットアップ",
@@ -1661,7 +1683,7 @@ export const ja = {
       monthly: "毎月",
       days: "日",
       day_of_month: "月の日",
-      time: "時刻",
+      time: "時刻"
     },
     events_panel: {
       source_agent: "ソースエージェント",
@@ -1670,23 +1692,23 @@ export const ja = {
       select_agent: "エージェントを選択",
       loading_events: "イベントを読み込み中...",
       no_subscriptions: "イベントサブスクリプションが見つかりません",
-      choose_agent: "エージェントを選択してイベントを表示",
+      choose_agent: "エージェントを選択してイベントを表示"
     },
     matrix_cred_picker: {
       no_stored: "保存済み認証情報なし",
       best_match: "最良一致",
-      other: "その他",
+      other: "その他"
     },
     services_panel: {
       no_connectors: "正常なAPIキーを持つコネクタが見つかりません。先にボルトに認証情報を追加してください。",
-      select_table: "テーブルを選択",
+      select_table: "テーブルを選択"
     },
     spatial_question: {
       agent_configuration: "エージェント設定",
       or_custom_answer: "またはカスタム回答を入力",
       type_answer: "回答を入力...",
       submit: "送信",
-      press_to_select: "1〜{count}を押してすぐに選択",
+      press_to_select: "1〜{count}を押してすぐに選択"
     },
     table_picker: {
       title: "テーブルを選択",
@@ -1694,12 +1716,12 @@ export const ja = {
       loading: "テーブルを読み込み中...",
       no_tables: "このコネクタにテーブルが見つかりません",
       clear_selection: "選択をクリア",
-      no_match: "\"{search}\" に一致するテーブルなし",
+      no_match: "\"{search}\" に一致するテーブルなし"
     },
     matrix_entry: {
       new_agent: "新しいエージェント",
       failed_to_create: "エージェントの下書き作成に失敗しました。",
-      build_failed: "ビルドを開始できませんでした。CLI設定を確認してください。",
+      build_failed: "ビルドを開始できませんでした。CLI設定を確認してください。"
     },
     workflow_upload: {
       build_hint: "ビルドを押してこのワークフローをペルソナエージェントに変換します。",
@@ -1707,22 +1729,22 @@ export const ja = {
       parse: "解析",
       drop_file: "ワークフローファイルをここにドロップ",
       file_types: "n8n、Zapier、Make、またはGitHub Actions（.json、.yaml）",
-      paste_json: "またはJSONを直接貼り付け",
+      paste_json: "またはJSONを直接貼り付け"
     },
     config_popup: {
       load_error: "保存済みの値を読み込めませんでした -- 再入力が必要な場合があります。",
       fill_hint: "保存するには少なくとも1つのフィールドを入力してください",
-      failed_to_save: "設定の保存に失敗しました",
+      failed_to_save: "設定の保存に失敗しました"
     },
     onboarding: {
       setup_complete: "セットアップ {score}% 完了",
       steps_done: "{completed}/{total} ステップ完了",
-      dismiss_checklist: "チェックリストを閉じる",
+      dismiss_checklist: "チェックリストを閉じる"
     },
     template_picker: {
       title: "テンプレートを選択",
       subtitle: "テンプレートを選択してエージェントを事前入力するか、ゼロから開始します。",
-      start_from_scratch: "ゼロから開始",
+      start_from_scratch: "ゼロから開始"
     },
     persona_overview: {
       no_match: "一致するペルソナなし",
@@ -1731,26 +1753,26 @@ export const ja = {
       description_copied: "説明をクリップボードにコピーしました",
       failed_copy: "説明のコピーに失敗しました",
       no_connectors_configured: "コネクタ未設定",
-      click_to_copy: "クリックしてコピー",
+      click_to_copy: "クリックしてコピー"
     },
     overview_empty: {
       title: "フィルターに一致するペルソナなし",
       subtitle: "検索やフィルターチップを調整するか、ビューをリセットしてすべてのペルソナを表示してください。",
-      clear_all_filters: "すべてのフィルターをクリア",
+      clear_all_filters: "すべてのフィルターをクリア"
     },
     overview_batch: {
-      selected: "{count} 件選択",
+      selected: "{count} 件選択"
     },
     overview_menu: {
       more_actions: "その他のアクション",
-      settings: "設定",
+      settings: "設定"
     },
     overview_toolbar: {
       search_placeholder: "ペルソナを検索...",
       show_all: "すべてのペルソナを表示",
       show_favorites: "お気に入りのみ表示",
       favorites: "お気に入り",
-      clear_search: "検索をクリア",
+      clear_search: "検索をクリア"
     },
     overview_columns: {
       persona: "ペルソナ",
@@ -1765,10 +1787,10 @@ export const ja = {
       building_drafts: "ビルド中/下書き",
       all_health: "すべてのヘルス",
       all_connectors: "すべてのコネクタ",
-      active_triggers: "{count} 件のアクティブなトリガー",
+      active_triggers: "{count} 件のアクティブなトリガー"
     },
     health_indicator: {
-      last: "最後の {count}",
+      last: "最後の {count}"
     },
     view_presets: {
       views: "ビュー",
@@ -1785,7 +1807,7 @@ export const ja = {
       needs_attention: "要注意",
       failing_agents: "障害エージェント",
       my_favorites: "お気に入り",
-      recently_active: "最近アクティブ",
+      recently_active: "最近アクティブ"
     },
     activity: {
       title: "アクティビティ",
@@ -1808,7 +1830,7 @@ export const ja = {
       modal_execution_title: "{name} - 実行",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "レビュー: {title}",
-      modal_review_subtitle: "深刻度: {severity} · ステータス: {status}",
+      modal_review_subtitle: "深刻度: {severity} · ステータス: {status}"
     },
     chat: {
       select_persona: "ペルソナを選択してチャットを開始",
@@ -1827,7 +1849,7 @@ export const ja = {
       confirm_delete: "削除しますか？",
       processing: "処理中...",
       delete_conversation: "会話を削除",
-      confirm_delete_conversation: "会話の削除を確認",
+      confirm_delete_conversation: "会話の削除を確認"
     },
     advisory: {
       how_can_improve: "このエージェントをどう改善できますか？",
@@ -1842,7 +1864,7 @@ export const ja = {
       analyze_desc: "パフォーマンストレンドとパターンをレビュー",
       test_run: "テスト実行",
       test_run_desc: "エージェントを実行して結果を評価",
-      test_input_label: "テスト入力（任意）",
+      test_input_label: "テスト入力（任意）"
     },
     ops: {
       sessions: "セッション",
@@ -1870,21 +1892,21 @@ export const ja = {
       reviews: "レビュー",
       reviews_desc: "保留中の承認と判断",
       versions: "バージョン",
-      versions_desc: "プロンプトバージョン履歴とロールバック",
+      versions_desc: "プロンプトバージョン履歴とロールバック"
     },
     ops_run: {
       execute_agent: "エージェントを実行",
       running: "実行中...",
       recent: "最近",
       no_executions: "実行なし",
-      refresh_executions: "実行を更新",
+      refresh_executions: "実行を更新"
     },
     ops_lab: {
       history: "履歴",
       no_lab_runs: "ラボ実行なし",
       refresh_lab: "ラボ履歴を更新",
       arena: "アリーナ",
-      improve: "改善",
+      improve: "改善"
     },
     ops_health: {
       no_health_data: "ヘルスデータなし",
@@ -1896,22 +1918,22 @@ export const ja = {
       run_check_aria: "ヘルスチェックを実行",
       healthy: "正常",
       degraded: "劣化",
-      unhealthy: "異常",
+      unhealthy: "異常"
     },
     ops_assertions: {
       active_count: "{enabled}/{total} 件アクティブ",
       no_assertions: "アサーション未設定",
       refresh_assertions: "アサーションを更新",
       enable_assertion: "{name} を有効化",
-      disable_assertion: "{name} を無効化",
+      disable_assertion: "{name} を無効化"
     },
     health_tab: {
       title: "ヘルスチェック",
-      description: "このエージェントの現在の設定に対してドライラン分析を実行し、欠落した認証情報、切断されたコネクタ、互換性のないツールの組み合わせ、および不十分なユースケースを検出します。問題はワンクリック修正付きのカードとして表示されます。",
+      description: "このエージェントの現在の設定に対してドライラン分析を実行し、欠落した認証情報、切断されたコネクタ、互換性のないツールの組み合わせ、および不十分なユースケースを検出します。問題はワンクリック修正付きのカードとして表示されます。"
     },
     matrix_tab: {
       loading: "マトリクスを読み込み中",
-      no_data: "マトリクスデータなし。このペルソナをビルドまたは再ビルドして次元を生成してください。",
+      no_data: "マトリクスデータなし。このペルソナをビルドまたは再ビルドして次元を生成してください。"
     },
     settings_status: {
       saving: "{sections} を保存中...",
@@ -1935,6 +1957,9 @@ export const ja = {
       health_watch: "ヘルス監視",
       health_watch_active: "ヘルス監視アクティブ（6時間ごと）",
       health_watch_enable: "継続的ヘルス監視を有効にする",
+      speak_as: "話者",
+      no_twins_configured: "ツインが設定されていません。Twinプラグインを開いて作成してください — その後このペルソナが採用できるようになります。",
+      twin_profile_aria: "このペルソナが話者として使うツインプロファイル"
     },
     tool_runner: {
       no_tools: "このペルソナにツールが割り当てられていません。",
@@ -1944,6 +1969,7 @@ export const ja = {
       success: "成功",
       failed: "失敗",
       error: "エラー",
+      input_json_placeholder: "value"
     },
     health_check: {
       title: "エージェントヘルスチェック",
@@ -1960,7 +1986,7 @@ export const ja = {
       rerun: "再実行",
       capabilities: "機能",
       all_healthy: "すべてのシステムが正常",
-      all_healthy_detail: "エージェント設定に問題は検出されませんでした",
+      all_healthy_detail: "エージェント設定に問題は検出されませんでした"
     },
     health_digest: {
       title: "エージェントヘルスダイジェスト",
@@ -1975,16 +2001,16 @@ export const ja = {
       agents_checked_other: "{count} 件のエージェントをチェック",
       issues_one: "{count} 件の問題",
       issues_other: "{count} 件の問題",
-      last_run: "最終実行: {time}",
+      last_run: "最終実行: {time}"
     },
     health_issue: {
       apply_fix: "修正を適用: {label}",
-      manual_action: "手動操作が必要",
+      manual_action: "手動操作が必要"
     },
     health_score: {
       healthy: "正常",
       degraded: "劣化",
-      unhealthy: "異常",
+      unhealthy: "異常"
     },
     prompt_editor: {
       no_persona: "ペルソナが選択されていません",
@@ -1992,6 +2018,7 @@ export const ja = {
       new_section: "新しいセクション",
       saved: "保存済み",
       sections: "セクション",
+      sections_aria: "プロンプトセクション"
     },
     custom_sections: {
       title: "カスタムセクション",
@@ -2001,7 +2028,7 @@ export const ja = {
       remove_section: "セクションを削除",
       title_placeholder: "セクションタイトル...",
       content_placeholder: "セクションコンテンツ...",
-      custom_section: "カスタムセクション",
+      custom_section: "カスタムセクション"
     },
     activity_filters: {
       all: "すべて",
@@ -2009,7 +2036,7 @@ export const ja = {
       events: "イベント",
       memories: "メモリ",
       reviews: "レビュー",
-      messages: "メッセージ",
+      messages: "メッセージ"
     },
     overview_actions: {
       delete_agent: "エージェントを削除",
@@ -2017,7 +2044,7 @@ export const ja = {
       delete_agents: "{count} 件のエージェントを削除",
       delete_agents_message: "{count} 件のエージェントとすべての設定が完全に削除されます。",
       delete_drafts: "{count} 件の下書きを削除",
-      delete_drafts_message: "{count} 件の下書きエージェントが完全に削除されます。",
+      delete_drafts_message: "{count} 件の下書きエージェントが完全に削除されます。"
     },
     persona_list: {
       all_personas: "すべてのペルソナ",
@@ -2045,7 +2072,7 @@ export const ja = {
       show_only_favorites: "お気に入りのみ表示",
       clear_search: "検索をクリア",
       col_persona: "ペルソナ",
-      no_connectors_configured: "コネクタ未設定",
+      no_connectors_configured: "コネクタ未設定"
     },
     design_preview: {
       preview: "プレビュー",
@@ -2059,7 +2086,7 @@ export const ja = {
       activating: "有効化中...",
       activate_agent: "エージェントを有効化",
       create_agent: "エージェントを作成",
-      min_completeness: "40%の完成度に達するにはさらに詳細を追加",
+      min_completeness: "40%の完成度に達するにはさらに詳細を追加"
     },
     editor_ui: {
       max_budget_label: "最大予算（USD）",
@@ -2183,8 +2210,8 @@ export const ja = {
       cost_per_run: "コスト/実行",
       last_run: "最終実行",
       rank: "ランク",
-      view_in_leaderboard: "リーダーボードで表示",
-    },
+      view_in_leaderboard: "リーダーボードで表示"
+    }
   },
   vault: {
     title: "保管庫",
@@ -2196,7 +2223,7 @@ export const ja = {
     health: {
       healthy: "正常",
       needs_attention: "要対応",
-      untested: "未テスト",
+      untested: "未テスト"
     },
     list: {
       no_credentials: "認証済みサービスが見つかりません。下から手動で選択してください。",
@@ -2205,6 +2232,7 @@ export const ja = {
       no_dependencies: "この認証情報に依存するエージェントはありません。安全に変更・削除できます。",
       affected_agents: "影響を受けるエージェント",
       affected_events: "影響を受けるイベント",
+      sort_label: "並び替え:"
     },
     import: {
       title: "インポート元",
@@ -2219,8 +2247,16 @@ export const ja = {
         min30: "30分",
         hour1: "1時間",
         hour6: "6時間",
-        day1: "24時間",
+        day1: "24時間"
       },
+      parse_secrets: "シークレットを解析",
+      selected_for_import: "インポート対象として選択済み",
+      auto_detected: "自動検出",
+      sync_supported: "同期対応",
+      secrets_found_one: "{count} 件のシークレットが見つかりました",
+      secrets_found_other: "{count} 件のシークレットが見つかりました",
+      import_secrets_one: "{count} 件のシークレットをインポート",
+      import_secrets_other: "{count} 件のシークレットをインポート"
     },
     features: {
       anomaly_detected: "異常検出: 以前成功していた認証情報が突然失敗しています。失効の可能性があります。",
@@ -2244,7 +2280,7 @@ export const ja = {
         remove_failed: "ポリシーの削除に失敗: {error}",
         update_failed: "ローテーション期間の更新に失敗: {error}",
         enable_failed: "ローテーションの有効化に失敗: {error}",
-        last_rotated: "{time}に最後にローテーション",
+        last_rotated: "{time}に最後にローテーション"
       },
       anomaly: {
         healthy: "正常",
@@ -2256,13 +2292,13 @@ export const ja = {
         samples: "{count}回チェック",
         permanent: "継続: {rate}",
         transient: "一時的: {rate}",
-        tolerance: "許容範囲: {rate}",
+        tolerance: "許容範囲: {rate}"
       },
       rotation_badge: {
         disabled: "無効",
         perm_errors: "継続的なエラー",
         degrading: "悪化中",
-        backoff: "再試行待機中",
+        backoff: "再試行待機中"
       },
       audit: {
         empty: "まだ監査エントリはありません。操作が発生するとログに記録されます。",
@@ -2271,13 +2307,13 @@ export const ja = {
         op_updated: "更新済み",
         op_deleted: "削除済み",
         op_healthcheck: "接続テスト",
-        filter_all: "すべて",
+        filter_all: "すべて"
       },
       intelligence: {
         operation: "操作",
         detail: "詳細",
-        time: "時刻",
-      },
+        time: "時刻"
+      }
     },
     negotiator: {
       title: "AI認証情報ネゴシエーター",
@@ -2305,13 +2341,14 @@ export const ja = {
       open_in_browser: "ブラウザで開く",
       step_complete_captured: "ステップ完了 -- 値を取得済",
       mark_complete: "完了にする",
-      completed: "完了",
+      completed: "完了"
     },
     card: {
       scope_mismatch: "スコープの不一致",
       scope_missing_one: "リクエストされた{count}つのスコープが付与されていません: ",
       scope_missing_other: "リクエストされた{count}つのスコープが付与されていません: ",
       reauthorize: "再認証",
+      reauthorize_scopes: "追加スコープで再認証"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2329,6 +2366,18 @@ export const ja = {
       configure_fields: "認証情報フィールドを設定",
       detect: "検出",
       auto_add: "自動追加",
+      connection_test_heading: "接続テスト",
+      test_connection_btn: "接続をテスト",
+      credential_fields_heading: "認証情報フィールド",
+      how_to_get_connector: "{connectorLabel} 認証情報の取得方法",
+      authorization_complete: "認証完了",
+      copied_to_clipboard: "クリップボードにコピーしました",
+      credential_name: "認証情報名",
+      credential_name_placeholder: "この認証情報にラベルを付ける — 例: My {label} Account, Production {label}",
+      authorizing_with: "{label} で認証中...",
+      authorize_with: "{label} で認証",
+      oauth_consent_hint: "ブラウザで {label} を開きます。アクセスを許可してからここに戻ってください。",
+      oauth_connected_at: "{label} が {time} に接続されました"
     },
     type_picker: {
       title: "認証情報を追加",
@@ -2357,7 +2406,7 @@ export const ja = {
       workspace_connect: "ワークスペース接続",
       workspace_connect_hint: "Googleにログインするだけで、Gmail、カレンダー、ドライブ、スプレッドシートの認証情報が自動作成されます",
       auto_discover: "認証情報を自動検出",
-      auto_discover_hint: "ファイルシステムをスキャンして既存のAPIキー、AWSプロファイル、環境変数などを検出します",
+      auto_discover_hint: "ファイルシステムをスキャンして既存のAPIキー、AWSプロファイル、環境変数などを検出します"
     },
     body: {
       authorizing: "{name}で認証中...",
@@ -2365,12 +2414,12 @@ export const ja = {
       authorize_hint: "{name}のサインイン画面を開き、承認後にアクセスを保存します。",
       consent_completed: "{name}の同意が{time}に完了しました",
       update_failed: "認証情報の更新に失敗しました",
-      delete_credential: "認証情報を削除",
+      delete_credential: "認証情報を削除"
     },
     connector: {
       filter_all: "すべて",
       filter_connected: "接続済み",
-      filter_available: "利用可能",
+      filter_available: "利用可能"
     },
     auto_cred: {
       guided_setup: "ガイド付きセットアップ",
@@ -2402,6 +2451,14 @@ export const ja = {
       open_in_browser: "ブラウザで開く",
       completed_step: "完了しました",
       input_requested: "入力が要求されています",
+      cancel_session: "セッションをキャンセル",
+      test_connection: "接続をテスト",
+      testing: "テスト中...",
+      re_run_browser: "ブラウザを再実行",
+      discard: "破棄",
+      save_credential: "認証情報を保存",
+      save_procedure: "手順を保存",
+      procedure_saved: "手順を保存しました"
     },
     vector: {
       documents_tab: "ドキュメント",
@@ -2433,7 +2490,7 @@ export const ja = {
       documents: "ドキュメント",
       chunks: "セクション",
       local_embedding: "ローカル検索",
-      local_embedding_hint: "検索インデックスは{model}（{dims}次元）を使用してローカルで実行されます。データは外部に送信されません。モデル（約23MB）は初回使用時にダウンロードされ、ローカルに保存されます。",
+      local_embedding_hint: "検索インデックスは{model}（{dims}次元）を使用してローカルで実行されます。データは外部に送信されません。モデル（約23MB）は初回使用時にダウンロードされ、ローカルに保存されます。"
     },
     design_modal: {
       title: "認証情報を設計",
@@ -2448,12 +2505,12 @@ export const ja = {
       how_to_fix: "修正方法",
       original_request: "元のリクエスト（保存済み）:",
       start_over: "最初からやり直す",
-      try_again_with: "リクエストで再試行",
+      try_again_with: "リクエストで再試行"
     },
     desktop: {
       installed: "インストール済み",
       running: "実行中",
-      not_installed: "未インストール",
+      not_installed: "未インストール"
     },
     graph: {
       no_dependencies: "依存関係なし",
@@ -2463,7 +2520,7 @@ export const ja = {
       dep_count_other: "{count}件の依存",
       not_tested: "未テスト",
       healthy: "正常",
-      unhealthy: "異常",
+      unhealthy: "異常"
     },
     wizard: {
       detected: "検出済み（{count}）",
@@ -2473,7 +2530,7 @@ export const ja = {
       already_added_badge: "追加済み",
       local: "ローカル",
       cli_auth: "CLI認証",
-      session: "セッション",
+      session: "セッション"
     },
     playground: {
       tab_overview: "概要",
@@ -2503,7 +2560,7 @@ export const ja = {
       query_parameters: "クエリパラメータ",
       headers: "ヘッダー",
       body: "ボディ",
-      empty_response: "(空のレスポンス)",
+      empty_response: "(空のレスポンス)"
     },
     playground_extra: {
       add_tag: "タグを追加...",
@@ -2524,11 +2581,11 @@ export const ja = {
       query_parameters: "クエリパラメータ",
       recipes_title: "保存済みレシピ",
       truncated_warning: "表示のためにレスポンスを切り捨てました",
-      value_col: "値",
+      value_col: "値"
     },
     ingest: {
       save_name: "名前を保存",
-      rename_credential: "認証情報名を変更",
+      rename_credential: "認証情報名を変更"
     },
     databases: {
       col_database: "データベース",
@@ -2642,6 +2699,8 @@ export const ja = {
       filter_tables: "テーブルをフィルター...",
       refresh: "更新",
       introspection_unavailable: "このコネクタタイプではテーブルのイントロスペクションは利用できません。",
+      not_null: "NOT NULL",
+      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "失効をシミュレート",
@@ -2687,9 +2746,14 @@ export const ja = {
       daily_execs_lost: "失われる1日の実行数",
       daily_cost_impact: "1日のコスト影響",
       sim_low: "この認証情報に依存するペルソナやワークフローはありません。失効しても安全です。",
+      sim_critical: "{credentialName} を取り消すと {workflows} 件のワークフローが壊れ、{personas} 件のペルソナが停止します。",
+      sim_high: "{credentialName} を取り消すとワークスペース全体の {personas} 件のペルソナに影響します。",
+      sim_medium: "{credentialName} の取り消しは影響範囲が限定的です。",
+      per_day: "/日"
     },
     shared: {
       add: "追加",
+      copied: "コピー済み",
       no_connector_available: "この認証情報タイプに利用可能なコネクタ定義がありません。",
       request_builder: "リクエストビルダー",
       close: "閉じる",
@@ -2816,6 +2880,21 @@ export const ja = {
       no_documents_description: "ここにファイルをドロップするか、テキストを貼り付けるか、ディレクトリをスキャンしてナレッジベースの構築を始めてください。",
       delete_document: "ドキュメントを削除",
       chunks_label: "{count}チャンク",
+      kb_count_summary: "-- {docs} 件のドキュメント、{chunks} 件のチャンク",
+      default_patterns: "デフォルト:",
+      add_pattern_placeholder: "*.pdf",
+      distance_label: "距離:",
+      chunk_label: "チャンク:",
+      copy_credential_id: "認証情報IDをコピー",
+      request_body: "リクエストボディ",
+      add_tag_title: "タグを追加",
+      local_embedding_hint: "埋め込みは {model} ({dims}次元) を使ってローカルで生成されます。データは端末外に出ません。モデル (~23MB) は初回使用時にダウンロードされ、ローカルにキャッシュされます。",
+      api_path_placeholder: "/api/v1/resource",
+      json_body_placeholder: "value",
+      sending: "送信中...",
+      send: "送信",
+      search_results_one: "\"{query}\" の {count} 件の結果",
+      search_results_other: "\"{query}\" の {count} 件の結果"
     },
     manager: {
       title: "認証情報",
@@ -2835,20 +2914,23 @@ export const ja = {
       test_all_credentials: "すべての認証情報をテスト",
       test_all: "すべてテスト",
       daily_progress: "1日 {done}/{total}",
-      testing_progress: "{done}/{total}をテスト中",
+      testing_progress: "{done}/{total}をテスト中"
     },
     bulk_healthcheck: {
       title: "ヘルスチェック結果",
       needs_attention: "要注意",
       slowest_responses: "最も遅い応答",
+      passed_count: "{count} 件合格",
+      failed_count: "{count} 件失敗",
+      total_count: "{count} 件合計"
     },
     health_bar: {
       healthy: "正常",
       needs_attention: "要注意",
-      untested: "未テスト",
+      untested: "未テスト"
     },
     breadcrumb: {
-      aria_label: "ボルトのパンくずリスト",
+      aria_label: "ボルトのパンくずリスト"
     },
     credential_card: {
       deleting: "{name}を削除中...",
@@ -2864,7 +2946,7 @@ export const ja = {
       remove_tag: "タグ\"{tag}\"を削除",
       copy_credential_id: "認証情報IDをコピー",
       refresh_oauth: "OAuthトークンを今すぐ更新",
-      refresh: "更新",
+      refresh: "更新"
     },
     vault_badge: {
       needs_attention: "要注意",
@@ -2887,21 +2969,21 @@ export const ja = {
       encrypt_now_other: "未暗号化の認証情報{count}件を今すぐ暗号化",
       encrypt_done_one: "完了 -- {migrated}件の認証情報を暗号化しました。",
       encrypt_done_other: "完了 -- {migrated}件の認証情報を暗号化しました。",
-      encrypt_partial: "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。",
+      encrypt_partial: "{migrated}件を暗号化、{failed}件が失敗。再試行するかアプリを再起動してください。"
     },
     delete_dialog: {
       title: "認証情報を削除",
       cannot_undo: "この操作は元に戻せません。",
       label_name: "名前",
       label_type: "種類",
-      unverified_warning: "すべての依存関係を確認できませんでした。接続されているエージェントや自動化の一部が表示されていない場合があります。",
+      unverified_warning: "すべての依存関係を確認できませんでした。接続されているエージェントや自動化の一部が表示されていない場合があります。"
     },
     card_body: {
       failed_update: "認証情報の更新に失敗しました",
       authorizing_with: "{name}で認証中...",
       authorize_with: "{name}で認証",
       authorize_hint: "アプリ管理の{name}の同意を起動し、承認後にリフレッシュトークンを更新します。",
-      consent_completed: "{name}の同意が{time}に完了しました",
+      consent_completed: "{name}の同意が{time}に完了しました"
     },
     card_details: {
       tab_intelligence: "インテリジェンス",
@@ -2909,7 +2991,7 @@ export const ja = {
       tab_token_lifetime: "トークン有効期間",
       tab_services: "サービス（{count}）",
       tab_events: "イベント（{count}）",
-      tab_audit: "監査",
+      tab_audit: "監査"
     },
     intelligence_tab: {
       loading: "インテリジェンスデータを読み込み中",
@@ -2930,7 +3012,7 @@ export const ja = {
       dependents_warning_other: "この認証情報を変更または削除すると{count}件のペルソナに影響します:",
       link_structural: "構造的",
       link_observed: "観測済み",
-      via_connector: "{connector}経由",
+      via_connector: "{connector}経由"
     },
     token_metrics: {
       loading: "メトリクスを読み込み中...",
@@ -2942,6 +3024,11 @@ export const ja = {
       avg_drift: "平均ドリフト",
       recent_ttls: "最近のプロバイダーTTL（新しい順）",
       recent_refreshes: "最近の更新",
+      fallback_used: "フォールバック ({fallback}秒) が更新の {rate}% ({count}/{total}) で使用されました — プロバイダが省略"
+    },
+    reauth_banner: {
+      access_revoked: ") -- アクセスが取り消されました。自動化を再開するには再認証してください。",
+      reconnect: "再接続"
     },
     rotation_section: {
       corrupted_warning: "ヘルスチェックメタデータが破損しています。次の正常なヘルスチェックが不正データを上書きするまで、異常スコアは利用できません。",
@@ -2962,6 +3049,7 @@ export const ja = {
       enabling: "有効化中...",
       enable_rotation: "ローテーションを有効にする",
       enable_failed: "ローテーションの有効化に失敗: {error}",
+      last_rotated: "最終ローテーション {time}"
     },
     event_config: {
       event_triggers: "イベントトリガー",
@@ -2988,6 +3076,7 @@ export const ja = {
       minutes_10: "10分",
       healthcheck_auto_rotate: "以前は正常だった認証情報がヘルスチェックに失敗し始めると、ローテーションが自動的にトリガーされます。",
       last_evaluated: "最終評価: {time}",
+      loading: "イベントを読み込み中..."
     },
     credential_forms: {
       encrypted_keychain: "OSキーチェーンで暗号化",
@@ -3001,6 +3090,10 @@ export const ja = {
       new_credential: "新しい{label}認証情報",
       configure_fields: "認証情報フィールドを設定",
       oauth_required: "この認証情報を接続するには下の認証ボタンを使用してください。",
+      open_to_generate: "APIキーまたはトークンを生成するには {label} を開いてください",
+      already_configured: "認証情報は既に設定済み -- 下記を更新して置き換え",
+      setup_instructions_label: "セットアップ手順",
+      no_fields_defined: "このコネクタには認証情報フィールドが定義されていません。"
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3021,12 +3114,21 @@ export const ja = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI",
+      save_failed: "Failed to capture credential from CLI"
     },
     audit_log: {
       empty: "まだ監査エントリはありません",
       empty_hint: "操作が発生するとログに記録されます。",
       access_events_hint: "アクセスイベントがここに表示されます。",
+      loading: "監査タイムラインを読み込み中...",
+      total_accesses: "{count} 件合計",
+      personas_one: "{count} 件のペルソナ",
+      personas_other: "{count} 件のペルソナ",
+      accesses_24h: "24時間で {count} 件",
+      anomalies_one: "{count} 件の異常",
+      anomalies_other: "{count} 件の異常",
+      no_anomalies: "異常なし",
+      show_all: "{count} 件すべてのエントリを表示"
     },
     credential_import: {
       import_from: "{source}からインポート",
@@ -3035,6 +3137,12 @@ export const ja = {
       enable_sync: "同期モードを有効にする",
       source_ref: "ソース参照",
       poll_interval: "ポーリング間隔",
+      sync_hint: "外部ボールトの変更を監視し、ポーリングで認証情報を自動更新します。",
+      interval_15min: "15分",
+      interval_30min: "30分",
+      interval_1hr: "1時間",
+      interval_6hr: "6時間",
+      interval_24hr: "24時間"
     },
     empty_state: {
       heading: "最初のサービスを接続",
@@ -3043,11 +3151,11 @@ export const ja = {
       catalog_description: "Slack、GitHub、OpenAIなどの既知のサービスを選択してください。事前設定済みのフィールドとヘルスチェックがあります。",
       ai_heading: "AIが設計した認証情報",
       ai_description: "任意のサービスを説明すると、AIがフィールド、認証タイプ、ヘルスチェックを設定します。",
-      works_with_any: "任意のAPIに対応",
+      works_with_any: "任意のAPIに対応"
     },
     credential_list: {
       no_match: "一致する認証情報がありません",
-      no_match_hint: "フィルターまたは検索語を調整してみてください",
+      no_match_hint: "フィルターまたは検索語を調整してみてください"
     },
     wizard_detect: {
       no_services: "\"{search}\"に一致するサービスはありません",
@@ -3059,6 +3167,15 @@ export const ja = {
       batch_complete: "バッチセットアップ完了",
       skip_service: "このサービスをスキップ",
       no_filter_match: "別の検索語を試すか、フィルターをクリアしてください。",
+      set_up_credentials: "認証情報をセットアップ",
+      clear_selection: "選択をクリア",
+      set_up_services: "{count} 件のサービスをセットアップ",
+      setting_up: "{total} 件中 {current} 件をセットアップ中",
+      wizard_title: "認証情報セットアップウィザード",
+      choose_service: "セットアップするサービスを選択",
+      ai_walk_description: "AIがAPI認証情報の取得を段階的にガイドします。",
+      wizard_subtitle: "AIガイド付き認証情報セットアップ",
+      wizard_subtitle_batch: "{count} 件のサービスをセットアップ中"
     },
     autopilot: {
       title: "API自動操縦",
@@ -3082,6 +3199,23 @@ export const ja = {
       query_parameters: "クエリパラメータ",
       param_name_placeholder: "パラメータ名",
       request_body: "リクエストボディ（JSON）",
+      from_url: "URLから",
+      paste_content: "コンテンツを貼り付け",
+      openapi_spec_url: "OpenAPI仕様のURL",
+      openapi_format_hint: "OpenAPI 3.x および Swagger 2.x 仕様をJSONまたはYAML形式でサポート",
+      parsing_spec: "仕様を解析中...",
+      parse_analyze: "解析と分析",
+      connector_in_catalog: "{connectorLabel} が {toolCount} 件のツール定義とともにコネクタカタログで利用可能になりました。",
+      generated_tools: "生成されたツール ({count})",
+      credential_fields: "認証情報フィールド",
+      open_playground: "プレイグラウンドを開く",
+      copy_connector_id: "コネクタIDをコピー",
+      go_to_catalog: "カタログへ",
+      response_headers: "レスポンスヘッダ ({count})",
+      base_url_placeholder: "https://api.example.com",
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      auth_schemes: "認証スキーム",
+      body_placeholder: "value"
     },
     foraging: {
       no_credentials_found: "認証情報が見つかりません",
@@ -3098,10 +3232,44 @@ export const ja = {
       step_done: "完了",
       step_completed: "（完了）",
       step_current: "（現在）",
+      start_scan: "スキャン開始",
+      checking_env: "環境変数、設定ファイル、開発ツール認証情報をチェック中",
+      importing: "認証情報をボールトにインポート中...",
+      scan_again: "再スキャン",
+      back_to_vault: "ボールトに戻る",
+      already_in_vault: "ボールトに既に存在",
+      imported: "インポート済み",
+      to_vault: "ボールトへ",
+      credentials_found_one: "{count} 件の認証情報が見つかりました",
+      credentials_found_other: "{count} 件の認証情報が見つかりました",
+      selected: "選択済み",
+      import_to_vault_one: "{count} 件の認証情報をボールトにインポート",
+      import_to_vault_other: "{count} 件の認証情報をボールトにインポート",
+      env_var_one: "{count} 件の環境変数",
+      env_var_other: "{count} 件の環境変数",
+      import_server: "インポート",
+      sources_in: "ソース、所要時間",
+      progress_aria: "探索の進捗",
+      scanned_sources: "{ms}ms で {count} 件のソースをスキャンしました"
     },
     desktop_discovery: {
       title: "デスクトップアプリ",
       allowed_binaries: "許可されているバイナリ: ",
+      connect_description: "ローカルアプリケーションを接続、またはClaude Desktop MCPサーバーをインポート",
+      detected_apps_tab: "検出されたアプリ ({count})",
+      claude_mcp_tab: "Claude MCP ({count})",
+      scanning: "デスクトップアプリをスキャン中...",
+      detected_on_system: "システム上で検出",
+      not_detected: "検出されていません",
+      no_apps: "デスクトップアプリが検出されませんでした。更新してみてください。",
+      reading_config: "Claude Desktop の設定を読み込み中...",
+      mcp_servers_found_one: "Claude Desktop 設定に {count} 件のMCPサーバーが見つかりました。認証情報としてインポートしてエージェントで使用できます。",
+      mcp_servers_found_other: "Claude Desktop 設定に {count} 件のMCPサーバーが見つかりました。認証情報としてインポートしてエージェントで使用できます。",
+      no_mcp_config: "Claude Desktop のMCP設定が見つかりません。",
+      mcp_config_hint: "Claude Desktop がインストールされている場合は、設定でMCPサーバーが構成されていることを確認してください。",
+      permission_required: "権限が必要です",
+      approve_description: "は以下の機能を要求しています。確認して承認し、このコネクタを有効にしてください。",
+      approve_connect: "承認して接続"
     },
     picker_section: {
       no_connectors: "コネクタが見つかりません",
@@ -3112,10 +3280,29 @@ export const ja = {
       filter_purpose: "用途",
       filter_category: "カテゴリ",
       filter_license: "ライセンス",
+      credential_name: "認証情報名",
+      add_project_first: "コードベースをエージェントに接続するには、まず Dev Tools でプロジェクトを追加してください。",
+      go_to_dev_tools: "Dev Tools へ",
+      workspace_connect_description: "1回のGoogleログインで Gmail、Calendar、Drive、Sheets の認証情報を自動作成",
+      foraging_description: "既存のAPIキー、AWSプロファイル、環境変数などをファイルシステムからスキャン",
+      no_setup_guide: "このコネクタ用のセットアップガイドはありません。下記のドキュメントリンクを参照してください。",
+      open_setup_page: "{label} のセットアップページを開く"
+    },
+    cli_capture: {
+      cta: "ローカルCLIからインポート",
+      hint: "APIキーを貼り付ける代わりに、既にログイン済みのローカルCLIを使用します。",
+      running: "ローカルCLIを実行中...",
+      success: "CLIから認証情報を取得しました",
+      token_ttl_notice: "このトークンは {seconds} 秒で期限切れになり、自動的に更新されます。",
+      source_label: "CLI",
+      missing_binary: "`{binary}` がインストールされていない、または許可リストにない場所にあります。",
+      unauthenticated: "{binary} にサインインしていません。{instruction}",
+      capture_failed: "CLIからの取得に失敗しました: {detail}",
+      timeout: "CLIからの取得がタイムアウトしました。まず手動でコマンドを実行してみてください。"
     },
     schemas: {
       none_configured: "設定なし。",
-      required_badge: "必須",
+      required_badge: "必須"
     },
     design_phases: {
       saving: "認証情報を保存中...",
@@ -3148,8 +3335,32 @@ export const ja = {
       mark_done: "完了としてマーク",
       mark_step_complete: "ステップを完了としてマーク",
       copy_to_clipboard: "クリップボードにコピー",
+      credential_saved_message: "{label} の認証情報が安全に保存されました。",
+      revision_count: "(リビジョン {count})",
+      connector_added_to_catalog: "コネクタがカタログに追加されました -- 他のペルソナやテンプレート採用で利用可能になりました。",
+      view_credential: "認証情報を表示",
+      refine_hint: "スコープの調整、フィールドの追加、設定の微調整が必要ですか？",
+      refine_placeholder: "例: 書き込みスコープを追加、ステージング環境を追加...",
+      refine: "改善",
+      linked_to_existing: "認証情報は既存のコネクタ定義にリンクされます。",
+      no_existing_connector: "-- カタログに既存の {name} コネクタは見つかりませんでした。",
+      new_connector_will_be_registered: "この認証情報を保存すると、AI生成のコネクタ定義が自動的にコネクタカタログに登録され -- 他のペルソナやテンプレート採用で再利用できます。",
+      refine_request: "うまくいきませんか？ リクエストを改善する",
+      auto_provision_hint: "-- AIが {label} 認証情報の取得を段階的にガイドします。",
+      credential_name_label: "認証情報名",
+      credentials_secure_notice: "認証情報はアプリのボールトに安全に保存され、エージェントのツール実行で利用できます。",
+      tested_successfully_at: "{time} にテスト成功",
+      setup_instructions: "セットアップ手順",
+      all_steps_complete: "すべてのステップが完了 -- 下のフィールドに入力して接続をテストしてください。",
+      use_template: "使用",
+      recipe_used_one: "-- {count} 回使用",
+      recipe_used_other: "-- {count} 回使用",
+      instruction_placeholder: "例: Slack、OpenAI、GitHub、Stripe..."
     },
     auto_cred_extra: {
+      browser_automation_warning: "ブラウザ自動化が実行中です。ウィンドウを操作しないでください — 完了時に再開されます。",
+      desktop_bridge_title: "{{label}} はデスクトップアプリが必要です",
+      desktop_bridge_hint: "このコネクタは Personas デスクトップアプリでのみ動作するネイティブブラウザセッションを利用します。",
       preparing_guided: "ガイド付きセットアップの手順を準備中...",
       starting_browser: "ブラウザセッションを開始中...",
       no_log_output: "ログ出力がありません。",
@@ -3180,8 +3391,26 @@ export const ja = {
       step_browser_review: "保存前のレビューのためにここに戻る",
       step_guided_review: "認証情報を確認して保存",
       setup_context: "設計分析からのセットアップコンテキスト:",
+      review_extracted: "抽出された認証情報を確認",
+      review_extracted_hint: "ブラウザから抽出された値 -- 保存前に確認してください",
+      completeness_partial: "{total} 件の必須フィールドのうち {filled} 件が入力済み。保存前に未入力フィールドを完成させてください。",
+      universal_auto_setup: "ユニバーサル自動セットアップ",
+      universal_auto_setup_hint: "URLと説明を提供すると、AIがサイトをナビゲートしてAPI認証情報を自動的に発見・作成します。",
+      service_url_label: "サービスURL",
+      service_url_placeholder: "https://app.example.com または https://developer.example.com",
+      what_do_you_need: "何が必要ですか？",
+      description_placeholder: "例: データを読み書きするREST APIのAPIキーが必要です。開発者ポータルの Settings 下にAPI Keysセクションがあります。",
+      discover_credentials: "認証情報を発見",
+      discovered_label: "発見: {label}",
+      fields_discovered_one: "{count} フィールドを発見",
+      fields_discovered_other: "{count} フィールドを発見",
+      extracted_values_label: "抽出された値",
+      no_fields_discovered: "フィールドが発見されませんでした。より具体的な説明で再試行してください。",
+      fields_captured_partial: "{total} フィールドのうち {filled} 件を取得",
+      credential_stored: "{label} の認証情報が安全に保存されました。"
     },
     negotiator_extra: {
+      panel_title: "AI認証情報ネゴシエーター",
       checking_auth: "既存の認証情報を確認中...",
       auto_provisioning: "APIキーの自動プロビジョニング",
       generating_plan: "プロビジョニングプランを生成中...",
@@ -3190,6 +3419,7 @@ export const ja = {
       need_help: "このステップでサポートが必要ですか？",
       hide_help: "ヘルプを非表示",
       ask_question: "このステップについて質問する...",
+      planning_description: "AIが開発者ポータルを分析し、段階的なプロビジョニングプランを生成しています..."
     },
     workspace_panel: {
       select_services: "接続するサービスを選択",
@@ -3197,6 +3427,15 @@ export const ja = {
       creating_credentials: "認証情報を作成中...",
       all_created: "すべての認証情報が作成されました",
       some_failed: "一部の認証情報が失敗しました",
+      selected_count: "{total} 件中 {selected} 件選択済み",
+      select_all: "すべて選択",
+      connect_services_one: "{count} 件のサービスを1回のログインで接続",
+      connect_services_other: "{count} 件のサービスを1回のログインで接続",
+      granting_access_one: "これにより {count} 件のサービスへのアクセスが許可されます",
+      granting_access_other: "これにより {count} 件のサービスへのアクセスが許可されます",
+      credentials_created_one: "1回のログインから {count} 件の認証情報が作成されました。",
+      credentials_created_other: "1回のログインから {count} 件の認証情報が作成されました。",
+      sign_in_browser: "ブラウザウィンドウでGoogleアカウントにサインインしてください。"
     },
     gateway: {
       gateway_members: "{name} — ゲートウェイメンバー",
@@ -3213,7 +3452,7 @@ export const ja = {
       display_name: "表示名（ツールのプレフィックス）",
       display_name_placeholder: "例: arcade、research_tools、docs",
       adding: "追加中…",
-      add_member: "メンバーを追加",
+      add_member: "メンバーを追加"
     },
     pending_auth: {
       title: "認証が必要です",
@@ -3227,13 +3466,13 @@ export const ja = {
       open_first: "まずURLを開いて同意を付与してください",
       retrying: "再試行中…",
       retry_authorized: "認証しました — 再試行",
-      retry_failed: "再試行に失敗しました",
+      retry_failed: "再試行に失敗しました"
     },
     rotation_insight: {
       perm_errors: "永続的なエラーが検出されました — ローテーションを試みてアラートを送信中。",
       degrading: "持続的な低下 — 予防的なローテーションをトリガー中。",
-      backoff: "一時的な失敗 — 指数バックオフが有効です。",
-    },
+      backoff: "一時的な失敗 — 指数バックオフが有効です。"
+    }
   },
   deployment: {
     title: "デプロイ",
@@ -3251,7 +3490,7 @@ export const ja = {
       token_available: "トークンあり",
       no_token: "トークン未設定",
       no_token_configured: "トークンが設定されていません",
-      no_status: "ステータスデータがありません。",
+      no_status: "ステータスデータがありません。"
     },
     api_playground: {
       title: "APIプレイグラウンド",
@@ -3261,10 +3500,12 @@ export const ja = {
       sending: "送信中...",
       empty_response: "（空のレスポンス）",
       snippets: "スニペット",
+      request_body_placeholder: "ここにプロンプトを入力..."
     },
     connection: {
       orchestrator_url_label: "クラウドサーバーURL",
       orchestrator_prefix: "https://",
+      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "APIキーを入力",
       connect: "接続",
       connected: "接続済み",
@@ -3274,16 +3515,28 @@ export const ja = {
       diagnostics_title: "診断",
       url_protocol_error: "URLはhttpまたはhttpsを使用する必要があります",
       url_hostname_error: "URLにホスト名がありません",
-      url_invalid: "無効なURL",
+      url_invalid: "無効なURL"
     },
     deployments_panel: {
       deploy_persona: "ペルソナをデプロイ",
       select_persona: "デプロイするペルソナを選択",
       all_deployed: "すべてのペルソナはすでにデプロイ済みです",
+      no_deployments_yet: "デプロイメントはまだありません。上からペルソナを選択してクラウドAPIエンドポイントとしてデプロイしてください。",
+      active_deployments: "アクティブなデプロイメント"
     },
     exec_detail: {
       fetching_output: "出力を取得中...",
       no_output: "出力なし",
+      label_status: "ステータス:",
+      label_duration: "所要時間:",
+      label_cost: "コスト:",
+      label_tokens: "トークン:",
+      label_started: "開始:",
+      label_completed: "完了:",
+      label_input: "入力:",
+      view_output: "出力を表示",
+      output_prefix: "出力 (",
+      output_lines_suffix: "行)"
     },
     oauth_panel: {
       connect_anthropic: "Anthropicアカウントを接続",
@@ -3295,6 +3548,13 @@ export const ja = {
       token_unknown: "トークンステータス不明",
       expires: "有効期限",
       scopes: "スコープ",
+      open_auth_window: "認証ウィンドウを開く",
+      complete_authorization: "認証を完了",
+      refresh_token: "リフレッシュトークン",
+      open_authorization_window: "認証ウィンドウを開く",
+      token_unknown_msg: "トークンの有効性を確認できませんでした。トークンを更新してアクティブであることを確認してください。",
+      connect_anthropic_msg: "Anthropic アカウントを接続して、クラウド実行でOAuthベースの認証を有効にしてください。",
+      token_expired_msg_prefix: "このOAuthトークンは期限切れです"
     },
     trigger_form: {
       new_cloud_trigger: "新しいクラウドトリガー",
@@ -3304,9 +3564,15 @@ export const ja = {
       schedule_cron: "スケジュール（cron）",
       create_trigger: "トリガーを作成",
       creating: "作成中...",
+      cron_expression: "Cron式",
+      utc_suffix: "(UTC)",
+      webhook_info: "このトリガー用のwebhookエンドポイントが作成されます。作成後にペイロードフィルタリングを設定できます。"
     },
     chart: {
       daily_executions: "1日の実行数",
+      tooltip_runs: "実行:",
+      tooltip_cost: "コスト:",
+      tooltip_success: "成功:"
     },
     deploy_card: {
       test_deployment: "デプロイをテスト",
@@ -3315,6 +3581,10 @@ export const ja = {
       remove_deployment: "デプロイを削除",
       copy_endpoint: "エンドポイントをコピー",
       open_endpoint: "エンドポイントを開く",
+      budget_label: "予算:",
+      label_invocations: "呼び出し:",
+      label_last_called: "最終呼び出し:",
+      label_created: "作成日:"
     },
     tabs: {
       connection: "接続",
@@ -3322,7 +3592,7 @@ export const ja = {
       oauth: "OAuth",
       deployments: "デプロイ",
       schedules: "スケジュール",
-      history: "履歴",
+      history: "履歴"
     },
     cloud_execution: "クラウド実行",
     cloud_status: {
@@ -3334,7 +3604,7 @@ export const ja = {
       queue_length: "キュー長",
       active_executions: "実行中",
       active_execution: "実行中",
-      claude_token: "Claudeトークン",
+      claude_token: "Claudeトークン"
     },
     history: {
       just_now: "たった今",
@@ -3354,6 +3624,8 @@ export const ja = {
       last_30_days: "過去30日間",
       last_90_days: "過去90日間",
       top_errors: "主なエラー",
+      clear_filters: "フィルターをクリア",
+      execution_history: "実行履歴"
     },
     schedules: {
       header: "クラウドトリガー ({count})",
@@ -3363,6 +3635,12 @@ export const ja = {
       empty: "クラウドトリガーがまだありません。自動実行のスケジュールを作成してください。",
       recent_firings: "最近の発火",
       no_firings: "最近の発火なし",
+      label_type: "タイプ:",
+      label_status: "ステータス:",
+      label_last_triggered: "最終トリガー:",
+      label_next_trigger: "次回トリガー:",
+      label_cron: "Cron:",
+      loading_firings: "読み込み中..."
     },
     dashboard: {
       title: "デプロイメント",
@@ -3417,7 +3695,7 @@ export const ja = {
       stage_generating: "生成中",
       stage_completed: "完了",
       stage_failed: "失敗",
-      tool_calls: "{count}回のツール呼び出し",
+      tool_calls: "{count}回のツール呼び出し"
     },
     cloud_trigger_schedule: "スケジュール（cron）",
     cloud_trigger_polling: "ポーリング",
@@ -3432,7 +3710,7 @@ export const ja = {
     cron_daily_midnight: "毎日深夜（UTC）",
     cron_daily_9am: "毎日午前9時（UTC）",
     cron_weekdays_9am: "平日午前9時（UTC）",
-    cron_weekly_sun: "毎週日曜深夜（UTC）",
+    cron_weekly_sun: "毎週日曜深夜（UTC）"
   },
   sharing: {
     export_title: "バンドルをエクスポート",
@@ -3510,6 +3788,7 @@ export const ja = {
     persistence_denied: "拒否",
     capabilities_label: "機能:",
     capabilities_none: "なし",
+    enclave_hash_label: "ハッシュ:",
     network_sharing_title: "ネットワークと共有",
     network_sharing_subtitle: "IDの管理、信頼済み相手、共有リソース",
     exposed_resources: "公開リソース",
@@ -3573,8 +3852,17 @@ export const ja = {
     no_shared_resources: "共有リソースはありません。マニフェストを同期して確認してください。",
     discovered_peers: "検出されたピア",
     refresh: "更新",
+    refresh_peer_list: "ピアリストを更新",
     scanning_network: "ローカルネットワークをスキャン中...",
     lan_hint: "同じLAN上の他のPersonasインスタンスが自動的にここに表示されます。",
+    peer_list_stale: "ピアリストが古い可能性があります \\u2014",
+    network_data_stale: "ネットワークデータが古い可能性があります \\u2014",
+    peer_id_footer: "ピアID",
+    remove_exposure: "公開を削除",
+    revoke_trust: "信頼を取り消し",
+    remove_peer: "ピアを削除",
+    share_link_tooltip: "ワンタイム共有リンクを生成 (24時間で期限切れ)",
+    copy_clipboard_tooltip: "バンドルをbase64としてクリップボードにコピー (最大 256 KB)",
     message_throughput: "メッセージスループット",
     sent: "送信",
     received: "受信",
@@ -3590,7 +3878,7 @@ export const ja = {
     sync_rounds: "同期ラウンド",
     success_fail: "成功 / 失敗",
     avg_sync_duration: "平均同期時間",
-    entries_received: "受信エントリ数",
+    entries_received: "受信エントリ数"
   },
   overview: {
     title: "概要",
@@ -3600,7 +3888,7 @@ export const ja = {
     filters: {
       start_date: "開始日",
       end_date: "終了日",
-      all_personas: "全エージェント",
+      all_personas: "全エージェント"
     },
     messages: {
       loading: "メッセージを読み込み中...",
@@ -3611,7 +3899,7 @@ export const ja = {
         title: "タイトル",
         priority: "優先度",
         status: "ステータス",
-        created: "作成日",
+        created: "作成日"
       },
       content_header: "内容",
       priority_high: "高",
@@ -3628,6 +3916,9 @@ export const ja = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "デスクトップ",
+      id_label: "ID:",
+      confirm_delete_title: "削除を確認",
+      close_message: "メッセージ詳細を閉じる"
     },
     realtime: {
       idle: "待機中 -- {action}をクリックしてトラフィックをシミュレート",
@@ -3635,7 +3926,7 @@ export const ja = {
       events_per_min: "イベント/分",
       pending: "保留",
       success: "成功",
-      in_window: "ウィンドウ内",
+      in_window: "ウィンドウ内"
     },
     observability: {
       title: "オブザーバビリティ",
@@ -3648,12 +3939,18 @@ export const ja = {
       manual_fix: "(手動修正済)",
       metrics_unavailable: "メトリクスが利用不可 -- 表示データは古い可能性があります",
       no_open_issues: "未解決の問題はありません",
-      run_analysis: "分析を実行して問題を確認してください。",
+      run_analysis: "分析を実行して問題を確認してください。"
     },
     memories: {
       title: "メモリ",
       created_success: "メモリを作成しました",
       no_memories: "メモリはまだありません",
+      no_memories_hint: "エージェントが実行されると、有用なメモや学習内容をここに保存できます。",
+      no_memories_match: "現在のフィルターに一致するメモリーはありません",
+      list_aria_label: "メモリーリスト",
+      add_memory_btn: "メモリーを追加",
+      search_placeholder: "メモリーを検索...",
+      no_filter_match: "フィルターに一致するメモリーはありません。検索を調整してみてください。",
       form: {
         agent: "エージェント",
         category: "カテゴリ",
@@ -3661,8 +3958,13 @@ export const ja = {
         content: "内容",
         importance: "重要度",
         tags: "タグ",
-        tags_hint: "(カンマ区切り)",
-      },
+        tags_hint: "(カンマ区切り)"
+      }
+    },
+    memory_review: {
+      all_conflicts_resolved: "すべての競合が解決されました",
+      keep_prefix: "「",
+      keep_suffix: "」を保持"
     },
     executions: {
       title: "実行履歴",
@@ -3670,7 +3972,7 @@ export const ja = {
       no_agents: "エージェントがまだ作成されていません",
       create_first: "最初のエージェントを作成すると、ここに実行履歴が表示されます",
       no_executions: "実行履歴はまだありません",
-      run_agent: "エージェントを実行すると、ここに履歴が表示されます",
+      run_agent: "エージェントを実行すると、ここに履歴が表示されます"
     },
     workflows: {
       loading: "ワークフローを読み込み中...",
@@ -3681,7 +3983,7 @@ export const ja = {
       all_types: "すべての種類",
       no_filter_match: "現在のフィルターに一致するジョブがありません",
       auto_refreshing: "ジョブ実行中は自動更新",
-      cancel_failed: "ワークフロージョブのキャンセルに失敗しました",
+      cancel_failed: "ワークフロージョブのキャンセルに失敗しました"
     },
     schedules: {
       title: "スケジュールタイムライン",
@@ -3712,7 +4014,7 @@ export const ja = {
       change_frequency: "頻度を変更",
       pause_schedule: "スケジュールを一時停止",
       resume_schedule: "スケジュールを再開",
-      headless_badge: "ヘッドレス",
+      headless_badge: "ヘッドレス"
     },
     frequency_editor: {
       title: "頻度を変更",
@@ -3722,7 +4024,7 @@ export const ja = {
       interval_seconds: "間隔（秒）",
       previewing: "プレビュー中...",
       next_runs: "次回実行",
-      invalid_cron: "無効なcron式です",
+      invalid_cron: "無効なcron式です"
     },
     recovery: {
       agents_missed_one: "{count}件のエージェントが実行を逃しました",
@@ -3736,7 +4038,7 @@ export const ja = {
       run_once_tooltip: "今すぐ1回実行",
       skip_tooltip: "スキップ -- リカバリしない",
       dismiss_all: "すべて非表示",
-      recover_selected: "{count}件をリカバリ",
+      recover_selected: "{count}件をリカバリ"
     },
     sla: {
       title: "エージェント信頼性SLA",
@@ -3761,7 +4063,7 @@ export const ja = {
       metric_cost: "コスト",
       metric_mtbf: "MTBF",
       metric_auto_healed: "自動復旧",
-      metric_cancelled: "キャンセル済",
+      metric_cancelled: "キャンセル済"
     },
     knowledge: {
       title: "ナレッジグラフ",
@@ -3786,14 +4088,14 @@ export const ja = {
       failures: "失敗",
       avg_cost: "平均コスト",
       avg_duration: "平均所要時間",
-      pattern_data: "パターンデータ",
+      pattern_data: "パターンデータ"
     },
     conflicts: {
       dismissed: "競合を非表示にしました",
       resolved: "競合を解決しました",
       resolve_failed: "競合の解決に失敗しました",
       conflict_count_one: "{count}件の競合",
-      conflict_count_other: "{count}件の競合",
+      conflict_count_other: "{count}件の競合"
     },
     dashboard: {
       title: "ダッシュボード",
@@ -3809,7 +4111,7 @@ export const ja = {
       empty_title: "Personasへようこそ",
       empty_subtitle: "最初のエージェントを作成して、実行メトリクス、トラフィックチャート、アクティビティをここで確認してください。",
       create_persona: "ペルソナを作成",
-      from_templates: "テンプレートから",
+      from_templates: "テンプレートから"
     },
     execution_metrics: {
       title: "実行メトリクス",
@@ -3827,7 +4129,7 @@ export const ja = {
       cost_spike: "コストスパイク",
       above_avg: "平均以上",
       top_executions: "上位の実行:",
-      executions_label: "{count}回実行",
+      executions_label: "{count}回実行"
     },
     execution_list: {
       recorded: "{count}回の実行を記録",
@@ -3852,7 +4154,7 @@ export const ja = {
       no_agents: "まだエージェントが作成されていません",
       no_agents_hint: "最初のエージェントを作成してここで実行アクティビティを確認してください。",
       unknown_persona: "不明",
-      healing_retry: "ヒーリング再試行 #{count}",
+      healing_retry: "ヒーリング再試行 #{count}"
     },
     review: {
       title: "手動レビュー",
@@ -3916,7 +4218,7 @@ export const ja = {
       table_tooltip: "テーブルのみ",
       review_detail: "レビュー詳細",
       select_review: "レビューを選択して表示",
-      technical_context: "技術的コンテキスト",
+      technical_context: "技術的コンテキスト"
     },
     messages_view: {
       title: "メッセージ",
@@ -3964,7 +4266,7 @@ export const ja = {
       improve_placeholder: "この出力をどのように改善できるか説明してください...",
       submit_improvement: "改善を送信",
       starting: "開始中...",
-      unknown_persona: "不明",
+      unknown_persona: "不明"
     },
     events: {
       title: "イベント",
@@ -4002,7 +4304,7 @@ export const ja = {
       source: "ソース",
       processed: "処理済み",
       event_data: "イベントデータ",
-      error: "エラー",
+      error: "エラー"
     },
     health: {
       title: "エージェントヘルス",
@@ -4032,18 +4334,26 @@ export const ja = {
       status_page: "ステータスページ",
       operational: "稼働中",
       degraded: "低下中",
-      outage: "障害",
+      outage: "障害"
     },
     leaderboard: {
       title: "エージェントリーダーボード",
       subtitle: "すべてのエージェントのパフォーマンスランキング",
       no_data: "リーダーボードデータがありません",
       no_data_hint: "エージェントを実行してパフォーマンスランキングを構築してください",
+      fleet_avg: "フリート平均:",
+      refresh_label: "リーダーボードを更新",
+      computing_scores: "エージェントスコアを計算中...",
+      single_agent_has_data: "にデータがあります。",
+      add_more_agents: "ランキングを表示するにはエージェントを追加してください。現在は {name} のみ",
+      open_agent: "エージェントを開く",
+      no_agent_data_title: "エージェントデータがありません",
+      no_agent_data_hint: "エージェントを実行するとパフォーマンスランキングが表示されます。リーダーボードはスコア計算に実行履歴とヘルスデータが必要です。",
       reliability: "信頼性",
       speed: "速度",
       efficiency: "効率",
       cost_effectiveness: "コスト効率",
-      overall: "総合",
+      overall: "総合"
     },
     analytics: {
       title: "分析",
@@ -4060,25 +4370,25 @@ export const ja = {
       saved_views: "保存済みビュー",
       create_view: "ビューを作成",
       health_issues: "ヘルスの問題",
-      rotation_overview: "ローテーション概要",
+      rotation_overview: "ローテーション概要"
     },
     usage: {
       title: "使用状況",
       subtitle: "コストとリソース消費",
       chart_error: "チャートの読み込みに失敗",
       chart_error_hint: "このチャートのレンダリング中にエラーが発生しました",
-      try_again: "再試行",
+      try_again: "再試行"
     },
     cron_agents: {
       title: "スケジュールエージェント",
       subtitle: "自動スケジュールで実行されるエージェント",
       no_agents: "スケジュールエージェントなし",
-      no_agents_hint: "任意のエージェントにcronトリガーを追加するとここに表示されます",
+      no_agents_hint: "任意のエージェントにcronトリガーを追加するとここに表示されます"
     },
     timeline: {
       title: "アクティビティタイムライン",
       subtitle: "すべてのエージェントアクティビティの統合ビュー",
-      no_activity: "最近のアクティビティなし",
+      no_activity: "最近のアクティビティなし"
     },
     realtime_viz: {
       title: "イベントバス",
@@ -4095,7 +4405,7 @@ export const ja = {
       timestamp: "タイムスタンプ",
       payload: "ペイロード",
       saved_views: "保存済みビュー",
-      save_current: "現在のビューを保存",
+      save_current: "現在のビューを保存"
     },
     observability_extra: {
       auto_refresh_on: "自動更新オン",
@@ -4121,7 +4431,7 @@ export const ja = {
       ipc_channel: "IPCチャンネル",
       avg_duration: "平均所要時間",
       call_count: "呼び出し回数",
-      error_rate: "エラー率",
+      error_rate: "エラー率"
     },
     widgets: {
       recent_activity: "最近のアクティビティ",
@@ -4138,7 +4448,7 @@ export const ja = {
       executions_badge: "実行",
       success_badge: "成功",
       alerts_badge: "アラート",
-      agents_badge: "エージェント",
+      agents_badge: "エージェント"
     },
     cards: {
       fleet_optimization: "フリート最適化",
@@ -4147,7 +4457,7 @@ export const ja = {
       remote_subtitle: "エージェント管理のクイックアクション",
       resume_setup: "セットアップを再開",
       resume_subtitle: "中断したところから再開",
-      knowledge_hub: "ナレッジハブ",
+      knowledge_hub: "ナレッジハブ"
     },
     activity: {
       title: "アクティビティ",
@@ -4193,7 +4503,7 @@ export const ja = {
       create_persona: "ペルソナを作成",
       from_templates: "テンプレートから",
       execution_label: "実行",
-      unknown: "不明",
+      unknown: "不明"
     },
     analytics_dashboard: {
       title: "分析",
@@ -4252,7 +4562,7 @@ export const ja = {
       issues_count: "{count}件の問題",
       issues_count_one: "{count}件の問題",
       never: "なし",
-      fail_count: "{count}回失敗",
+      fail_count: "{count}回失敗"
     },
     cron: {
       title: "cronエージェント",
@@ -4271,7 +4581,7 @@ export const ja = {
       no_schedule: "スケジュールなし",
       every_interval: "{interval}ごと",
       next: "次回",
-      last: "最後",
+      last: "最後"
     },
     activity_timeline: {
       title: "アクティビティタイムライン",
@@ -4280,7 +4590,7 @@ export const ja = {
       events: "イベント",
       messages: "メッセージ",
       no_activity: "まだアクティビティはありません",
-      high: "高",
+      high: "高"
     },
     sla_card: {
       successful: "成功",
@@ -4292,7 +4602,7 @@ export const ja = {
       auto_healed: "自動ヒール",
       cancelled: "キャンセル",
       failing: "{count}件失敗中",
-      healed: "{count}件ヒール済み",
+      healed: "{count}件ヒール済み"
     },
     realtime_page: {
       title: "イベントバスモニター",
@@ -4346,7 +4656,7 @@ export const ja = {
       galaxy: "ギャラクシー",
       galaxy_desc: "彗星の軌跡付きの軌道星座",
       lanes: "レーン",
-      lanes_desc: "水平スイムレーンフロー図",
+      lanes_desc: "水平スイムレーンフロー図"
     },
     memory_form: {
       agent: "エージェント",
@@ -4363,25 +4673,25 @@ export const ja = {
       saving: "保存中...",
       created_success: "メモリが正常に作成されました",
       fill_required: "保存するにはすべての必須フィールドを入力してください",
-      saving_memory: "メモリを保存中...",
+      saving_memory: "メモリを保存中..."
     },
     memory_filter: {
       search_placeholder: "メモリを検索...",
       all_agents: "すべてのエージェント",
-      all_categories: "すべてのカテゴリ",
+      all_categories: "すべてのカテゴリ"
     },
     memory_actions: {
       dismiss_suggestion: "提案を却下",
       memory_insights: "メモリインサイト",
       suggestions: "{count}件の提案",
-      suggestions_one: "{count}件の提案",
+      suggestions_one: "{count}件の提案"
     },
     memory_conflict: {
       memory_a: "メモリA",
       memory_b: "メモリB",
       merge: "マージ",
       keep: "保持",
-      vs: "対",
+      vs: "対"
     },
     observability_charts: {
       cost_over_time: "時系列コスト",
@@ -4393,7 +4703,7 @@ export const ja = {
       anomaly_detected: "{count}件のコスト異常を検出",
       anomaly_click_hint: "チャートのダイヤモンドマーカーをクリックして調査",
       clear_traces: "完了したトレースをクリア",
-      all_operations: "すべての操作",
+      all_operations: "すべての操作"
     },
     health_extra: {
       success: "成功",
@@ -4409,6 +4719,11 @@ export const ja = {
       predicted_failure: "予測される障害スパイクまで",
       loading_status: "ステータスページデータを読み込み中...",
       no_personas: "表示するペルソナがありません。",
+      score_prefix: "スコア:",
+      uptime_30d_prefix: "30日アップタイム:",
+      updated_prefix: "更新",
+      consecutive_failures_one: "{count} 回連続失敗",
+      consecutive_failures_other: "{count} 回連続失敗",
       score_label: "スコア",
       uptime_30d: "30日間稼働率",
       updated: "{time}に更新",
@@ -4425,7 +4740,7 @@ export const ja = {
       open: "{count}件未解決",
       sla_compliance: "SLAコンプライアンス",
       consecutive_failures: "{count}回連続失敗",
-      consecutive_failure: "{count}回連続失敗",
+      consecutive_failure: "{count}回連続失敗"
     },
     system_health: {
       title: "システムチェック",
@@ -4439,7 +4754,7 @@ export const ja = {
       save_configuration: "設定を保存",
       litellm_footer: "これらの設定はローカルに保存され、LiteLLMプロバイダーを使用するように設定されたすべてのエージェントで共有されます。",
       ipc_error: "アプリケーションブリッジが応答していません。アプリを再起動してみてください。引き続きインターフェースを探索できます。",
-      issues_warning: "一部のチェックで問題が報告されました。続行できますが、一部の機能が正しく動作しない場合があります。",
+      issues_warning: "一部のチェックで問題が報告されました。続行できますが、一部の機能が正しく動作しない場合があります。"
     },
     review_extra: {
       add_note: "メモを追加（任意）...",
@@ -4451,7 +4766,7 @@ export const ja = {
       quick_actions: "クイックアクション",
       accepted: "{count}件受諾",
       rejected: "{count}件却下",
-      undecided: "{count}件未決定",
+      undecided: "{count}件未決定"
     },
     widgets_extra: {
       execution_health_chart: "実行ヘルス",
@@ -4460,29 +4775,147 @@ export const ja = {
       failed: "失敗",
       close: "閉じる",
       dismiss_help: "ヘルプを閉じる",
-      skip_tour: "ツアーを完全にスキップ",
+      skip_tour: "ツアーを完全にスキップ"
+    },
+    burn_rate_extra: {
+      active_personas_subtitle: "{count} 件のアクティブなペルソナ · ローカル月境界",
+      title: "消費率予測",
+      daily_burn: "1日の消費",
+      projected_monthly: "月間予測",
+      at_risk: "リスクあり",
+      top_cost_drivers: "主なコスト要因",
+      budget_exhaustion_warnings: "予算枯渇の警告",
+      exhausted: "枯渇",
+      days_left: "残り{days}日"
+    },
+    predictive_alerts_extra: {
+      per_month: "/月",
+      confidence_pct: "% 信頼度",
+      title: "予測アラート",
+      all_nominal: "すべて正常",
+      no_alerts: "予測アラートなし — すべてのペルソナが正常範囲内。",
+      budget_exhausted: "予算枯渇",
+      budget_exhaustion_in: "{days}日後に予算枯渇",
+      failure_spike_predicted: "{days}日後に失敗率スパイクを予測",
+      excessive_healing: "過剰な自己ヒーリングアクティビティ",
+      critical_health: "重大なヘルス状態",
+      byom_recommendations: "BYOMルーティングの推奨"
+    },
+    annotate_modal: {
+      annotation_placeholder: "例: Stripe webhook検証には、パース済みのJSONではなく生のリクエストボディが必要です",
+      title: "ナレッジ注釈を追加",
+      persona_label: "帰属ペルソナ",
+      scope_label: "スコープ",
+      tool_name: "ツール名",
+      connector_type: "コネクタ / サービスタイプ",
+      annotation_label: "注釈",
+      cancel: "キャンセル",
+      saving: "保存中...",
+      save_annotation: "注釈を保存"
+    },
+    knowledge_row: {
+      execution_trend_label: "実行傾向",
+      annotation: "注釈",
+      successes: "成功",
+      failures: "失敗",
+      avg_cost: "平均コスト",
+      avg_duration: "平均所要時間",
+      pattern_data: "パターンデータ",
+      collapse_details: "詳細を折りたたむ",
+      expand_details: "詳細を展開",
+      verify_annotation: "注釈を確認",
+      dismiss_annotation: "注釈を却下"
+    },
+    knowledge_graph: {
+      mock_pattern: "モックパターン",
+      seed_tooltip: "モックパターンをシード (dev専用)",
+      all_types: "すべてのタイプ",
+      all_scopes: "すべてのスコープ",
+      failure_drilldown_prefix: "失敗のドリルダウン:",
+      failure_date_filter: "{date} 以降にアクティブな失敗パターンを表示",
+      data_unavailable: "ナレッジデータが利用できません",
+      loading_patterns: "ナレッジパターンを読み込み中...",
+      drilldown_toggle_title: "失敗のドリルダウンを表示/非表示",
+      no_patterns_yet: "ナレッジパターンはまだありません",
+      no_patterns_yet_hint: "エージェント実行を実行してナレッジパターンを蓄積してください。エージェントは時間とともに賢くなります。",
+      no_patterns_match: "現在のフィルターに一致するパターンはありません",
+      recent_learnings: "最近の学習内容",
+      curating_manually: "手動でドキュメントをキュレーションしていますか？",
+      obsidian_tip: "約1000ノート未満であれば、Obsidianコネクタでvaultを直接同期できます。"
+    },
+    focused_decision: {
+      video_not_supported: "お使いのブラウザはビデオ再生をサポートしていません。",
+      reject_this: "これを拒否",
+      accept_this: "これを承認",
+      accept: "受諾",
+      reject: "却下",
+      media_unavailable: "メディアが利用できません"
+    },
+    review_focus: {
+      video_not_supported: "お使いのブラウザはビデオ再生をサポートしていません。",
+      all_caught_up: "すべて完了",
+      no_pending: "処理する保留中のレビューはありません。",
+      queue: "キュー",
+      clear: "クリア",
+      clear_all_verdicts: "すべての判定をクリア",
+      quick_actions: "クイックアクション",
+      reject_all: "すべて却下",
+      accept_all: "すべて受諾",
+      retry_with_changes: "変更して再試行"
+    },
+    bulk_action_bar: {
+      pending_reviews_selected_one: "{count} 件の保留中のレビューが選択されました",
+      pending_reviews_selected_other: "{count} 件の保留中のレビューが選択されました"
+    },
+    review_inbox: {
+      drag_to_resize: "ドラッグしてサイズ変更"
+    },
+    healing_issues_panel: {
+      ai_healing_title: "AI自己修復",
+      diagnosis_label: "診断:",
+      fixes_applied: "適用された修正",
+      alert_history_title: "アラート履歴",
+      all_agents_global: "すべてのエージェント (グローバル)",
+      add_rule: "ルールを追加",
+      no_rules_configured: "アラートルールが設定されていません。監視を開始するにはルールを追加してください。",
+      confidence_pct_suffix: "% 信頼度",
+      spike_on: "でスパイク",
+      correlated_events_prefix: "関連イベント (",
+      circuit_breaker_label: "サーキットブレーカー",
+      auto_disabled_message: "このペルソナは繰り返し失敗によるサーキットブレーカー応答として自動的に無効化されました。",
+      execution_label: "実行:",
+      issue_marked_as: "この問題は次のようにマークされています",
+      retry_in_progress: "再試行中 — 完了時にステータスが更新されます。",
+      resolve_issue_title: "問題を解決済みとしてマーク",
+      title: "ヘルスの問題",
+      analyzing: "分析中...",
+      run_analysis: "分析を実行",
+      no_open_issues: "未解決の問題はありません",
+      run_analysis_hint: "分析を実行して問題を確認してください。",
+      healing_audit_log: "ヒーリング監査ログ",
+      no_silent_failures: "サイレント障害は記録されていません。"
     },
     remote_control_card: {
       connect_to_desktop: "デスクトップに接続",
       connect_description: "リモートコントロール経由でデスクトップCLIを使用してエージェントを実行します。コンピュータで{command}を起動してここで接続してください。",
-      requires_subscription: "Claude ProまたはMaxのサブスクリプションが必要",
+      requires_subscription: "Claude ProまたはMaxのサブスクリプションが必要"
     },
     resume_setup_card: {
       resume_tour: "ツアーを再開",
       left_off_at: "中断したところ",
       steps_completed: "{total}ステップ中{completed}ステップ完了",
       skip_tour: "ツアーを完全にスキップ",
-      continue_label: "続行",
+      continue_label: "続行"
     },
     detail_modal: {
-      close: "閉じる",
+      close: "閉じる"
     },
     metric_help_popover: {
       help_for: "{label}のヘルプ",
       dismiss_help: "ヘルプを閉じる",
       healthy: "正常:",
       click: "クリック:",
-      got_it: "わかりました、今後表示しない",
+      got_it: "わかりました、今後表示しない"
     },
     install_button: {
       install_node: "Node.jsをインストール",
@@ -4493,7 +4926,7 @@ export const ja = {
       installation_failed: "インストール失敗",
       try_manually: "手動で実行してみてください:",
       retry: "再試行",
-      official_page: "公式ページ",
+      official_page: "公式ページ"
     },
     section_card: {
       checking: "{section}を確認中...",
@@ -4504,12 +4937,12 @@ export const ja = {
       sign_in_google: "Googleでサインイン",
       working: "処理中...",
       connect_claude: "Claude Desktopに接続",
-      disconnect: "切断",
+      disconnect: "切断"
     },
     metrics_cards: {
       cost_spike: "コストスパイク",
       above_avg: "平均以上",
-      top_executions: "上位の実行:",
+      top_executions: "上位の実行:"
     },
     event_log_item: {
       event_id: "イベントID",
@@ -4521,75 +4954,15 @@ export const ja = {
       copied: "コピーしました",
       copy: "コピー",
       error: "エラー",
-      system: "システム",
-    },
-    burn_rate_extra: {
-      title: "消費率予測",
-      daily_burn: "1日の消費",
-      projected_monthly: "月間予測",
-      at_risk: "リスクあり",
-      top_cost_drivers: "主なコスト要因",
-      budget_exhaustion_warnings: "予算枯渇の警告",
-      exhausted: "枯渇",
-      days_left: "残り{days}日",
+      system: "システム"
     },
     cascade: {
       title: "チェーンカスケードマップ",
-      no_chains: "チェーンが検出されません — すべてのペルソナが独立して動作しています",
-    },
-    predictive_alerts_extra: {
-      title: "予測アラート",
-      all_nominal: "すべて正常",
-      no_alerts: "予測アラートなし — すべてのペルソナが正常範囲内。",
-      budget_exhausted: "予算枯渇",
-      budget_exhaustion_in: "{days}日後に予算枯渇",
-      failure_spike_predicted: "{days}日後に失敗率スパイクを予測",
-      excessive_healing: "過剰な自己ヒーリングアクティビティ",
-      critical_health: "重大なヘルス状態",
-      byom_recommendations: "BYOMルーティングの推奨",
-    },
-    annotate_modal: {
-      title: "ナレッジ注釈を追加",
-      persona_label: "帰属ペルソナ",
-      scope_label: "スコープ",
-      tool_name: "ツール名",
-      connector_type: "コネクタ / サービスタイプ",
-      annotation_label: "注釈",
-      cancel: "キャンセル",
-      saving: "保存中...",
-      save_annotation: "注釈を保存",
-    },
-    knowledge_row: {
-      annotation: "注釈",
-      successes: "成功",
-      failures: "失敗",
-      avg_cost: "平均コスト",
-      avg_duration: "平均所要時間",
-      pattern_data: "パターンデータ",
-      collapse_details: "詳細を折りたたむ",
-      expand_details: "詳細を展開",
-      verify_annotation: "注釈を確認",
-      dismiss_annotation: "注釈を却下",
-    },
-    focused_decision: {
-      accept: "受諾",
-      reject: "却下",
-      media_unavailable: "メディアが利用できません",
-    },
-    review_focus: {
-      all_caught_up: "すべて完了",
-      no_pending: "処理する保留中のレビューはありません。",
-      queue: "キュー",
-      clear: "クリア",
-      clear_all_verdicts: "すべての判定をクリア",
-      quick_actions: "クイックアクション",
-      reject_all: "すべて却下",
-      accept_all: "すべて受諾",
-      retry_with_changes: "変更して再試行",
+      no_chains: "チェーンが検出されません — すべてのペルソナが独立して動作しています"
     },
     memory_card: {
       confirm: "確認",
-      cancel: "キャンセル",
+      cancel: "キャンセル"
     },
     memory_detail: {
       title_label: "タイトル",
@@ -4599,7 +4972,7 @@ export const ja = {
       tags_label: "タグ",
       view_source_execution: "ソース実行を表示",
       delete_memory: "メモリを削除",
-      close: "閉じる",
+      close: "閉じる"
     },
     memory_table: {
       agent: "エージェント",
@@ -4607,11 +4980,11 @@ export const ja = {
       category: "カテゴリ",
       priority: "優先度",
       tags: "タグ",
-      created: "作成日",
+      created: "作成日"
     },
     review_results: {
       title: "AIメモリレビュー",
-      review_failed: "レビューに失敗しました",
+      review_failed: "レビューに失敗しました"
     },
     anomaly_drilldown_extra: {
       title: "異常ドリルダウン",
@@ -4620,7 +4993,7 @@ export const ja = {
       correlating: "相関イベントを分析中...",
       likely_root_causes: "推定根本原因",
       correlated_events: "相関イベント",
-      no_correlated: "±24時間ウィンドウ内に相関イベントが見つかりません。",
+      no_correlated: "±24時間ウィンドウ内に相関イベントが見つかりません。"
     },
     healing_issue_modal: {
       issue_resolved: "問題が解決されました",
@@ -4635,23 +5008,14 @@ export const ja = {
       auto_resolved: "この問題は自動的に解決されました",
       close: "閉じる",
       resolving: "解決中…",
-      mark_resolved: "解決済みとしてマーク",
-    },
-    healing_issues_panel: {
-      title: "ヘルスの問題",
-      analyzing: "分析中...",
-      run_analysis: "分析を実行",
-      no_open_issues: "未解決の問題はありません",
-      run_analysis_hint: "分析を実行して問題を確認してください。",
-      healing_audit_log: "ヒーリング監査ログ",
-      no_silent_failures: "サイレント障害は記録されていません。",
+      mark_resolved: "解決済みとしてマーク"
     },
     healing_timeline: {
       loading: "タイムラインを読み込み中...",
       no_events: "ヒーリングイベントなし",
       no_events_hint: "分析を実行してレジリエンスタイムラインを構築してください。",
       knowledge_base: "ナレッジベース",
-      patterns_hint: "ヒーリング決定に影響するパターン",
+      patterns_hint: "ヒーリング決定に影響するパターン"
     },
     ipc_panel: {
       title: "IPCパフォーマンス",
@@ -4660,29 +5024,29 @@ export const ja = {
       command: "コマンド",
       calls_header: "呼び出し",
       duration_header: "所要時間",
-      when_header: "日時",
+      when_header: "日時"
     },
     system_trace_extra: {
       no_traces: "システムトレースが記録されていません",
       no_traces_hint: "設計、認証情報、またはテンプレート操作が実行されるとトレースが表示されます",
       all_operations: "すべての操作",
       clear_completed: "完了したトレースをクリア",
-      span: "スパン",
+      span: "スパン"
     },
     event_log_sidebar: {
       title: "イベントログ",
       no_events: "まだイベントはありません",
-      open_detail_drawer: "詳細ドロワーで開く",
+      open_detail_drawer: "詳細ドロワーで開く"
     },
     chart_error: {
-      chart_unavailable: "チャートが利用できません",
+      chart_unavailable: "チャートが利用できません"
     },
     realtime_idle: {
-      idle: "アイドル",
+      idle: "アイドル"
     },
     day_range: {
-      apply: "適用",
-    },
+      apply: "適用"
+    }
   },
   templates: {
     gallery: {
@@ -4698,13 +5062,14 @@ export const ja = {
       triggers: "トリガー",
       no_flows: "フローなし",
       readiness_tooltip: "コネクタの{percent}%が準備完了",
+      template_details_tabs_aria: "テンプレートの詳細"
     },
     actions: {
       view_details: "詳細を表示",
       adopt: "採用",
       try_it: "試す",
       adopt_as_persona: "エージェントとして採用",
-      delete: "削除",
+      delete: "削除"
     },
     detail: {
       tab_overview: "概要",
@@ -4716,14 +5081,14 @@ export const ja = {
       review_error: "エラー",
       used_references: "参照パターンを使用",
       no_design_data: "デザインデータがありません",
-      no_design_data_hint: "このテンプレートのデザインデータは利用できません。",
+      no_design_data_hint: "このテンプレートのデザインデータは利用できません。"
     },
     detail_overview: {
       use_case_flows: "ユースケースフロー",
       suggested_adjustment: "推奨調整",
       adjustment_attempt: "(試行 {attempt}/3)",
       dimension_completion: "ディメンション完成度",
-      dimensions_score: "({score}/9ディメンション)",
+      dimensions_score: "({score}/9ディメンション)"
     },
     adoption: {
       title: "テンプレートを採用",
@@ -4732,7 +5097,7 @@ export const ja = {
       step_credentials: "認証情報をリンク",
       step_preferences: "設定を調整",
       step_generate: "エージェントを生成",
-      step_review: "確認して保存",
+      step_review: "確認して保存"
     },
     choose: {
       select_use_cases: "ユースケースを選択",
@@ -4742,7 +5107,7 @@ export const ja = {
       components: "コンポーネント",
       examples: "例",
       tools: "ツール",
-      none_selected: "ユースケースが未選択です -- 続行するには1つ以上選択してください",
+      none_selected: "ユースケースが未選択です -- 続行するには1つ以上選択してください"
     },
     connect: {
       all_set: "コネクタは不要です -- 準備完了です！",
@@ -4755,7 +5120,7 @@ export const ja = {
       select_credential: "認証情報を選択...",
       create_new: "+ 新しい認証情報を作成",
       design_custom: "+ カスタムコネクタを設計",
-      add_credential: "認証情報を追加",
+      add_credential: "認証情報を追加"
     },
     build: {
       title: "エージェントを構築",
@@ -4772,7 +5137,7 @@ export const ja = {
       close_hint: "このダイアログを閉じても処理はバックグラウンドで続行されます。",
       adjustments_label: "調整リクエスト（任意）",
       adjustments_placeholder: "例: スケジュールを午前9時に変更、ClickUp連携を削除、Slack通知を追加",
-      discard_draft: "ドラフトを破棄してやり直す",
+      discard_draft: "ドラフトを破棄してやり直す"
     },
     quick_adopt: {
       all_matched: "全コネクタがマッチしました",
@@ -4780,7 +5145,7 @@ export const ja = {
       missing_prefix: "不足: ",
       add_in_catalog: "キーカタログで追加",
       build_persona: "エージェントを構築",
-      full_wizard: "フルウィザード",
+      full_wizard: "フルウィザード"
     },
     data: {
       title: "データ設定",
@@ -4789,7 +5154,7 @@ export const ja = {
       tables_found: "{tables}が組み込みデータベースに見つかりました。",
       create_new: "新規テーブルを作成",
       use_existing: "既存テーブルを使用",
-      complete: "データ設定完了",
+      complete: "データ設定完了"
     },
     tune: {
       title: "エージェントを設定",
@@ -4808,7 +5173,7 @@ export const ja = {
       check_interval: "チェック間隔",
       check_interval_placeholder: "5分ごと",
       manual_hint: "手動トリガー -- 設定不要",
-      system_hint: "システムイベントでトリガー -- 設定不要",
+      system_hint: "システムイベントでトリガー -- 設定不要"
     },
     review_policy: {
       title: "人間によるレビュー",
@@ -4825,7 +5190,7 @@ export const ja = {
       timeout_1h: "1時間",
       timeout_4h: "4時間",
       timeout_24h: "24時間",
-      timeout_none: "タイムアウトなし",
+      timeout_none: "タイムアウトなし"
     },
     memory: {
       title: "メモリ",
@@ -4838,7 +5203,7 @@ export const ja = {
       scope_patterns: "実行パターン",
       scope_errors: "エラー解決策",
       scope_custom: "カスタムスコープ...",
-      scope_custom_placeholder: "記憶する内容を記述...",
+      scope_custom_placeholder: "記憶する内容を記述..."
     },
     create: {
       use_cases: "ユースケース",
@@ -4863,12 +5228,12 @@ export const ja = {
       safety_issues: "安全性の問題",
       safety_acknowledge_one: "重大な安全性の指摘{count}件を確認し、リスクを受け入れます",
       safety_acknowledge_other: "重大な安全性の指摘{count}件を確認し、リスクを受け入れます",
-      edit_details: "詳細を編集",
+      edit_details: "詳細を編集"
     },
     review: {
       use_cases_header: "ユースケース ({count})",
       tools_header: "ツール ({count})",
-      triggers_header: "トリガー ({count})",
+      triggers_header: "トリガー ({count})"
     },
     matrix: {
       preparing: "ビルドを準備中...",
@@ -4908,6 +5273,19 @@ export const ja = {
       build_complete: "ビルド完了",
       adjust_placeholder: "調整内容を入力...",
       answer_placeholder: "回答を入力...",
+      answer_cell: "回答: {cell}",
+      working_on: "作業中: {cells}",
+      draft_ready_label: "下書き準備完了",
+      editing_cell: "編集中: {cell}",
+      protocol_active: "プロトコル有効",
+      matrix_unavailable: "マトリックスデータが利用できません。",
+      persona_matrix_title: "ペルソナマトリックス",
+      cell_status_analyzing: "分析中",
+      cell_status_answered: "回答済み",
+      cell_status_resolved: "解決済み",
+      cell_status_input_needed: "入力が必要",
+      cell_status_missing_credential: "認証情報が不足",
+      cell_status_error: "エラー"
     },
     sandbox: {
       restriction_events: "イベント発行無効",
@@ -4923,12 +5301,12 @@ export const ja = {
       desc_unverified: "このテンプレートは出所不明で未検証です。システム保護のため制限付きで実行されます。",
       desc_community: "このコミュニティテンプレートは公式に検証されていません。制限付きのサンドボックスモードで実行されます。",
       badge_unverified: "未検証",
-      badge_sandbox: "サンドボックス",
+      badge_sandbox: "サンドボックス"
     },
     page: {
       title: "エージェントテンプレート",
       subtitle_one: "{count}件のテンプレートが利用可能",
-      subtitle_other: "{count}件のテンプレートが利用可能",
+      subtitle_other: "{count}件のテンプレートが利用可能"
     },
     explore: {
       ready_to_deploy: "デプロイ準備完了",
@@ -4949,7 +5327,7 @@ export const ja = {
       role_templates: "{role}テンプレート",
       by_role: "役割別",
       by_need: "ニーズ別",
-      classic: "クラシック",
+      classic: "クラシック"
     },
     opportunities: {
       title: "自動化の機会",
@@ -4957,15 +5335,15 @@ export const ja = {
       ready_now: "今すぐ準備完了",
       add_connector: "追加",
       unlock_more: "あとさらに{count}件を解放するには",
-      explore_templates: "{label}テンプレートを探す",
+      explore_templates: "{label}テンプレートを探す"
     },
     recommended: {
       title: "あなたへのおすすめ",
       subtitle: "コネクタに基づく",
-      no_recommendations: "まだ推奨事項はありません。",
+      no_recommendations: "まだ推奨事項はありません。"
     },
     trending: {
-      title: "今週最も採用された",
+      title: "今週最も採用された"
     },
     empty: {
       no_templates: "生成済みテンプレートはまだありません",
@@ -4974,7 +5352,7 @@ export const ja = {
       no_search_results_hint: "検索語やフィルターを調整してお探しのものを見つけてください。",
       clear_search: "検索をクリア",
       waiting_for_draft: "ペルソナのドラフト待機中",
-      waiting_for_draft_hint: "AIが選択に基づいてドラフトを生成しています。通常数秒かかります。",
+      waiting_for_draft_hint: "AIが選択に基づいてドラフトを生成しています。通常数秒かかります。"
     },
     banners: {
       draft_prefix: "ドラフト: ",
@@ -4987,7 +5365,7 @@ export const ja = {
       status_completed: "完了",
       status_failed: "失敗",
       click_to_view_result: "クリックして結果を確認",
-      click_to_view_output: "クリックして出力を確認",
+      click_to_view_output: "クリックして出力を確認"
     },
     search: {
       switch_to_keyword: "キーワード検索に切り替え",
@@ -5027,17 +5405,21 @@ export const ja = {
       autocomplete_difficulty: "難易度",
       autocomplete_setup_time: "セットアップ時間",
       autocomplete_suggestions: "候補",
+      coverage_filter_aria: "カバレッジフィルター",
+      search_suggestions_aria: "検索候補",
+      clear_search_aria: "検索をクリア",
+      search_with_ai_aria: "AIで検索"
     },
     list: {
       template_name: "テンプレート名",
       components: "コンポーネント",
-      adoptions: "採用数",
+      adoptions: "採用数"
     },
     row_actions: {
       row_actions_label: "行アクション",
       view_details: "詳細を表示",
       rebuild: "リビルド",
-      delete_template: "テンプレートを削除",
+      delete_template: "テンプレートを削除"
     },
     connector_readiness: {
       click_to_add: "クリックして認証情報を追加",
@@ -5047,14 +5429,14 @@ export const ja = {
       needs_setup: "セットアップが必要",
       not_ready: "準備未完了",
       needs_credential: "認証情報が必要",
-      not_installed: "未インストール",
+      not_installed: "未インストール"
     },
     detail_modal: {
       adopted: "{count}件採用",
       reference_patterns: "参照パターン",
       adopt_as_persona: "ペルソナとして採用",
       try_it: "試してみる",
-      design_unavailable: "このテンプレートの設計データは利用できません。",
+      design_unavailable: "このテンプレートの設計データは利用できません。"
     },
     overview_tab: {
       loading_metrics: "パフォーマンスメトリクスを読み込み中...",
@@ -5074,7 +5456,7 @@ export const ja = {
       suggested_adjustment: "推奨される調整",
       adjustment_attempt: "（試行{attempt}/3）",
       dimension_completion: "次元の完成度",
-      dimensions_score: "（{score}/9次元）",
+      dimensions_score: "（{score}/9次元）"
     },
     review_detail: {
       design_unavailable: "このテンプレートの設計データは利用できません。",
@@ -5084,7 +5466,7 @@ export const ja = {
       adopt_as_new_persona: "新しいペルソナとして採用",
       view_raw_json: "生のJSONを表示",
       hide_raw_json: "生のJSONを非表示",
-      used_references: "このテンプレートは以前合格したレビューの参照パターンを使用しました",
+      used_references: "このテンプレートは以前合格したレビューの参照パターンを使用しました"
     },
     rebuild_modal: {
       title: "テンプレートをリビルド",
@@ -5101,7 +5483,7 @@ export const ja = {
       unknown_error: "リビルド中に不明なエラーが発生しました。",
       start_rebuild: "リビルドを開始",
       cancel_rebuild: "リビルドをキャンセル",
-      run_in_background: "バックグラウンドで実行",
+      run_in_background: "バックグラウンドで実行"
     },
     preview_modal: {
       preview_title: "プレビュー: {name}",
@@ -5115,7 +5497,7 @@ export const ja = {
       completed: "完了",
       execution_failed: "実行に失敗しました",
       run_again: "再実行",
-      close_test_continues: "閉じても — テストはバックグラウンドで続行されます",
+      close_test_continues: "閉じても — テストはバックグラウンドで続行されます"
     },
     expanded: {
       adopt: "採用",
@@ -5125,7 +5507,7 @@ export const ja = {
       architecture: "アーキテクチャ",
       events: "イベント",
       reviews_label: "レビュー",
-      notifications: "通知",
+      notifications: "通知"
     },
     matrix_cmd: {
       identity: "アイデンティティ",
@@ -5144,7 +5526,7 @@ export const ja = {
       build_label: "ビルド",
       adjust_placeholder: "調整内容を入力...",
       test_agent: "エージェントをテスト",
-      save_version: "バージョンを保存",
+      save_version: "バージョンを保存"
     },
     questionnaire: {
       header: "{label} — 質問{current}/{total}",
@@ -5161,6 +5543,11 @@ export const ja = {
       answer_remaining: "残りを回答（{count}件）",
       next: "次へ",
       setup: "セットアップ",
+      previous_question: "前の質問",
+      next_question: "次の質問",
+      go_to_question: "質問 {number} へ",
+      question_answered_suffix: " (回答済み)",
+      question_unanswered_suffix: " (未回答)"
     },
     sandbox_banner: {
       community_sandbox: "コミュニティテンプレート — サンドボックスモード",
@@ -5171,7 +5558,7 @@ export const ja = {
       human_review_required: "人間のレビューが必要",
       budget_cap_enforced: "予算上限を適用",
       max_concurrent_one: "最大{max}件の並行実行",
-      max_concurrent_other: "最大{max}件の並行実行",
+      max_concurrent_other: "最大{max}件の並行実行"
     },
     n8n: {
       credential_label: "認証情報: {name}",
@@ -5258,18 +5645,26 @@ export const ja = {
       drop_file_here: "ここにワークフローファイルをドロップ",
       import_from_any_platform: "任意のプラットフォームからワークフローをインポート",
       click_to_browse: "クリックして参照するかワークフローファイルをドラッグ＆ドロップ",
+      dropzone_aria: "ワークフローファイルをドロップまたはクリックして参照",
       continue_btn: "続行",
       press_enter_or_click: "Enterを押すかクリックして続行",
       paste_workflow_json: "ワークフローのJSONを貼り付け",
       paste_placeholder: "エクスポートされたワークフローのJSONをここに貼り付け...",
+      paste_aria: "ワークフローJSONコンテンツ",
       import_btn: "インポート",
       import_from_url: "URLからインポート",
       url_description: "未加工のワークフローJSONファイルへのURLを貼り付けます。GitHub RAW URL、Gistリンク、直接JSONエンドポイントに対応しています。",
       fetching: "取得中",
       fetch: "取得",
       accepts_label: "対応:",
+      url_aria: "ワークフローURL",
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "生のJSONエンドポイント",
       customize_persona: "ペルソナをカスタマイズするためのいくつかの質問",
       answer_then_generate: "以下に回答してから「生成」をクリック",
+      question_view_mode_aria: "質問表示モード",
       list_view: "リスト",
       focus_view: "フォーカス",
       no_config_needed: "設定は不要です",
@@ -5290,13 +5685,16 @@ export const ja = {
       analyzing_btn: "分析中...",
       upload_step: "アップロード",
       analyze_step: "分析",
+      wizard_progress_aria: "インポートウィザードの進捗",
+      wizard_steps_aria: "ウィザードのステップ",
       streaming_sections: "セクションをストリーミング中",
       awaiting_next_section: "次のセクションを待機中...",
+      transform_progress_aria: "変換の進捗",
       analyze_phase: "分析",
       questions_phase: "質問",
       generate_phase: "生成",
       type_your_answer: "回答を入力...",
-      navigate_hint: "矢印キーでナビゲート",
+      navigate_hint: "矢印キーでナビゲート"
     },
     diagram: {
       no_flow_data: "フローデータがありません",
@@ -5306,7 +5704,7 @@ export const ja = {
       decisions_count: "{count}決定",
       error_label: "エラー",
       request_label: "リクエスト",
-      response_label: "レスポンス",
+      response_label: "レスポンス"
     },
     design: {
       connectors_and_tools: "コネクタとツール",
@@ -5323,7 +5721,7 @@ export const ja = {
       feasibility_assessment: "実現可能性評価",
       confirmed_capabilities: "確認された機能",
       issues_label: "問題",
-      suggested_next_steps: "推奨される次のステップ",
+      suggested_next_steps: "推奨される次のステップ"
     },
     card: {
       use_cases_label: "ユースケース",
@@ -5332,7 +5730,7 @@ export const ja = {
       no_flows: "フローなし",
       none_label: "なし",
       more_count: "+{count}件追加",
-      system_prompt: "システムプロンプト",
+      system_prompt: "システムプロンプト"
     },
     matrix_grid: {
       prerequisites: "前提条件",
@@ -5342,7 +5740,7 @@ export const ja = {
       credential_configured: "認証情報設定済み",
       connector_not_installed: "コネクタ未インストール",
       needs_credential: "認証情報が必要",
-      setup_btn: "セットアップ",
+      setup_btn: "セットアップ"
     },
     adopt_modal: {
       adopt_template: "テンプレートを採用",
@@ -5357,6 +5755,49 @@ export const ja = {
       credential_required: "ボルトに{category}の認証情報が見つかりません。追加して続行してください。",
       add_credential: "認証情報を追加",
       blocked_blocking_submit: "{count}件の質問に認証情報が必要です。続行前に追加してください。",
+      credentials_required_title: "認証情報が必要です",
+      credentials_required_body: "このテンプレートを採用するには、以下の各カテゴリから少なくとも1つの認証情報が必要です。「認証情報を追加」をクリックしてください — セットアップが完了すると自動的にここに戻ります。",
+      answered_of_total: "{total} 件中 {answered} 件回答済み",
+      blocked_count: "{count} 件ブロック",
+      question_number_of: "質問 {total} 件中 {current} 件目",
+      question_number_aria: "質問 {number}",
+      navigate_hint: "でナビゲート",
+      enter_to_advance: "で進む",
+      previous: "前へ",
+      next: "次へ",
+      live_preview: "ライブプレビュー",
+      persona_label: "ペルソナ",
+      untitled_agent: "無題のエージェント",
+      not_yet_set: "未設定",
+      auto_badge: "自動",
+      jump_to_question_hint: "上の行をクリックしてその質問にジャンプできます。自動検出された値は接続された認証情報から推測されます。",
+      hide_explanation: "説明を非表示",
+      show_explanation: "説明を表示",
+      all_option: "すべて",
+      add_custom: "追加",
+      custom_prefix: "+ カスタム…",
+      custom_plain: "カスタム…",
+      type_your_answer: "回答を入力...",
+      describe_in_detail: "詳細に記述...",
+      select_directory: "ディレクトリを選択...",
+      type_a_value: "値を入力…",
+      preparing: "準備中…",
+      waiting_for_parent: "先の回答を待機中…",
+      loading_from_service: "{service} からオプションを読み込み中…",
+      loaded_live_from: "{service} からライブ読み込み済み",
+      no_items_found: "{item} が見つかりません。まず {service} で作成してください。",
+      retry: "再試行",
+      source_local: "ローカルファイルまたはフォルダ",
+      source_codebase: "コードベース",
+      source_database: "データベース",
+      source_local_hint: "ファイルまたはフォルダへの完全なローカルパスを貼り付け。",
+      source_codebase_hint: "Dev Tools に登録されたプロジェクトを選択。",
+      source_database_hint: "ボールトからデータベース認証情報を選択。",
+      source_local_placeholder: "/Users/me/project/design.md",
+      source_no_codebases: "Dev Tools プロジェクトが見つかりません。まず Dev Tools で登録してください。",
+      source_no_databases: "データベース認証情報が見つかりません。まずボールトで追加してください。",
+      source_pick_codebase: "コードベースを選択…",
+      source_pick_database: "データベースを選択…"
     },
     scan: {
       scanning_draft: "ペルソナのドラフトをスキャン中...",
@@ -5370,7 +5811,7 @@ export const ja = {
       critical_label: "重大",
       warnings_label: "警告",
       informational_label: "情報",
-      source_label: "ソース:",
+      source_label: "ソース:"
     },
     team_synthesis: {
       title: "チームを合成",
@@ -5382,7 +5823,7 @@ export const ja = {
       synthesizing: "合成中...",
       synthesize_team: "チームを合成",
       personas_created: "{count}件のペルソナが作成・接続されました",
-      done: "完了",
+      done: "完了"
     },
     matrix_variants: {
       processing: "処理中...",
@@ -5396,6 +5837,17 @@ export const ja = {
       testing_agent: "エージェントをテスト中...",
       approve_and_promote: "承認して昇格",
       view_agent_btn: "エージェントを表示",
+      command_center_header: "COMMAND CENTER // BUILD v1.0",
+      phase_label: "[PHASE: {phase}]",
+      your_answer_placeholder: "あなたの回答...",
+      testing_background_hint: "数分かかる場合があります。このページを離れて後で戻ることができます — テストはバックグラウンドで継続されます。",
+      cancel_test: "テストをキャンセル",
+      missing_keys: "不足キー:",
+      approve_anyway: "それでも承認",
+      delete_draft_title: "この下書きペルソナを破棄して閉じる",
+      delete_draft: "下書きを削除",
+      agent_promoted: "エージェントが昇格されました",
+      view_agent: "エージェントを表示"
     },
     diagrams: {
       no_flow_data: "フローデータがありません",
@@ -5403,6 +5855,7 @@ export const ja = {
       edges_count: "{count}エッジ",
       connectors_count: "{count}コネクタ",
       decisions_count: "{count}決定",
+      close_dialog: "ダイアログを閉じる"
     },
     generation: {
       create_template: "テンプレートを作成",
@@ -5425,6 +5878,51 @@ export const ja = {
       start_review_custom: "レビューを開始（{count}件のケース）",
       copy_log: "ログをコピー",
       copied_log: "コピーしました！",
+      back: "戻る",
+      generate_template: "テンプレートを生成",
+      view_draft: "下書きを表示",
+      saving: "保存中...",
+      save_template: "テンプレートを保存",
+      template_saved: "テンプレートを保存しました",
+      template_name_label_step: "テンプレート名",
+      template_name_placeholder: "テンプレート名...",
+      description_label: "説明",
+      description_placeholder: "このペルソナが何をすべきか、どのサービスに接続するか、どのように振る舞うべきかを記述してください。必要なツール、トリガー、統合について具体的に記述してください。\n\n例: 重要なメールについて Gmail の受信トレイを監視し、優先度で分類し、緊急のものは Slack 通知を送信し、日次のダイジェストサマリーを作成するペルソナ。",
+      description_hint: "AIがシステムプロンプト、ツール、トリガー、コネクタ、テンプレート変数を含む完全なペルソナテンプレートを生成します。",
+      terminal_aria_label: "デザインレビュー出力",
+      terminal_placeholder: "レビュー開始時にここに出力が表示されます",
+      terminal_running: "実行中...",
+      result_passed: "{count} 件合格",
+      result_failed: "{count} 件失敗",
+      result_errored: "{count} 件エラー",
+      result_total: "{count} 件のテスト合計",
+      mode_predefined: "定義済み (5)",
+      mode_custom: "カスタム",
+      mode_batch: "バッチ",
+      mode_batch_count: "バッチ ({count})",
+      batch_upload_hint: "番号付きテンプレートエントリ付きの list.md ファイルをアップロードして、Claude CLI 経由でテンプレートをバッチ生成します。",
+      batch_upload_btn: "list.md をアップロード",
+      batch_format_hint: "期待される形式:",
+      batch_all: "すべて ({count})",
+      batch_count: "{count} 件のテンプレートが Claude CLI 経由で生成されます (各 ~45秒)",
+      batch_clear: "クリア",
+      batch_format_example: "**1. テンプレート名**",
+      custom_count: "テンプレートのユースケースを定義 ({count} 件準備完了)",
+      custom_load_file_title: ".txt または .md ファイルから読み込み",
+      custom_load_file: "ファイル読み込み",
+      custom_add: "追加",
+      custom_case_name_placeholder: "テンプレート名 (例: Gmail Smart Filter)",
+      custom_instruction_placeholder: "このペルソナが何をすべきか、統合するサービス、どんなトリガーで起動すべきかを記述してください...",
+      custom_short_instruction: "{current}/{min} 文字 最小",
+      custom_category_default: "カテゴリ...",
+      custom_trigger_default: "トリガー...",
+      custom_connectors_placeholder: "コネクタ (例: gmail, slack)",
+      custom_detail_hint: "詳細 = より良い結果。サービス、トリガー、期待される動作を含めてください。",
+      custom_show_example: "例を表示",
+      custom_hide_example: "例を非表示",
+      custom_example_title: "例: Gmail Smart Filter",
+      custom_example_body: "\"重要なメールについて Gmail を監視し、送信者と緊急度で分類し、ラベルを適用し、緊急のものは Slack に転送するエージェントを作成してください。ポーリングトリガーと gmail、slack コネクタを使用。\"",
+      predefined_intro: "デザインエンジン経由で {count} 件の定義済みユースケースを実行します:"
     },
     connector_edit: {
       credential: "認証情報",
@@ -5440,22 +5938,24 @@ export const ja = {
       existing_table_label: "既存のテーブル",
       schema: "スキーマ",
       table_name: "テーブル名",
+      table_name_placeholder: "例: persona_data",
       in_app_messages: "アプリ内メッセージ",
       not_connected: "未接続",
       no_connectors: "コネクタは不要",
       linked: "連携済み",
       set_up: "セットアップ",
-      more_connectors: "+{count}件追加",
+      more_connectors: "+{count}件追加"
     },
     trigger_edit: {
       schedule: "スケジュール",
       schedule_placeholder: "平日の午前9時ごと",
       schedule_hint: "自然言語またはcron（例:「0 9 * * 1-5」）",
       webhook_url: "Webhook URL",
+      webhook_url_placeholder: "https://...",
       check_interval: "チェック間隔",
       check_interval_placeholder: "5分ごと",
       no_config_needed: "設定は不要です",
-      manual_only: "手動実行のみ",
+      manual_only: "手動実行のみ"
     },
     preset_edit: {
       select_review: "レビューポリシーを選択...",
@@ -5467,7 +5967,7 @@ export const ja = {
       retry_once: "1回再試行",
       retry_3x: "3回再試行",
       notify_continue: "通知して続行",
-      skip_failed: "失敗ステップをスキップ",
+      skip_failed: "失敗ステップをスキップ"
     },
     test_report: {
       title: "テストレポート",
@@ -5493,8 +5993,8 @@ export const ja = {
       response_preview: "レスポンスのプレビュー",
       error_detail: "エラーの詳細",
       copy: "コピー",
-      copied: "コピーしました",
-    },
+      copied: "コピーしました"
+    }
   },
   triggers: {
     title: "トリガーとチェーン",
@@ -5536,7 +6036,7 @@ export const ja = {
       show_sidebar: "サイドバーを表示",
       source: "ソース",
       source_personas: "ソースペルソナ",
-      use_template: "テンプレートを使用",
+      use_template: "テンプレートを使用"
     },
     studio: {
       building_blocks: "ビルディングブロック",
@@ -5552,7 +6052,7 @@ export const ja = {
       remove_from_chain: "チェーンから削除",
       studio_title: "トリガースタジオ",
       trigger_sources: "トリガーソース",
-      unsaved_changes: "未保存の変更",
+      unsaved_changes: "未保存の変更"
     },
     subscription_list: {
       active: "アクティブ",
@@ -5566,10 +6066,10 @@ export const ja = {
       error: "エラー",
       never: "なし",
       no_active_subs: "アクティブなサブスクリプションがありません",
-      unsubscribe: "登録解除",
+      unsubscribe: "登録解除"
     },
     type_selector: {
-      trigger_type: "トリガータイプ",
+      trigger_type: "トリガータイプ"
     },
     tab_triggers: "トリガー",
     tab_chains: "チェーン",
@@ -5645,11 +6145,11 @@ export const ja = {
       cron_daily_midnight: "毎日深夜",
       cron_weekly_monday: "毎週月曜日",
       next_runs: "次回の実行",
-      invalid_cron: "無効なスケジュール式",
+      invalid_cron: "無効なスケジュール式"
     },
     add: {
       create_trigger: "トリガーを作成",
-      creating: "作成中...",
+      creating: "作成中..."
     },
     detail: {
       test_fire: "テスト発火",
@@ -5672,7 +6172,7 @@ export const ja = {
       last_fired: "最後に発火",
       never_fired: "一度も発火していません",
       fire_count_one: "{count}回発火",
-      fire_count_other: "{count}回発火",
+      fire_count_other: "{count}回発火"
     },
     list: {
       empty_title: "まだトリガーが設定されていません",
@@ -5682,28 +6182,28 @@ export const ja = {
       budget_unavailable: "予算データが利用できません",
       unknown_budget: "不明な予算",
       budget_exceeded: "月間予算超過 — トリガーが一時停止されています",
-      budget: "予算",
+      budget: "予算"
     },
     config: {
       no_persona: "ペルソナが選択されていません",
       title: "トリガー",
       add_trigger: "トリガーを追加",
-      empty: "トリガーが設定されていません。追加してこのペルソナを自動化してください。",
+      empty: "トリガーが設定されていません。追加してこのペルソナを自動化してください。"
     },
     countdown: {
       due_now: "今すぐ実行",
-      fires_in: "{time}後に発火",
+      fires_in: "{time}後に発火"
     },
     polling: {
       endpoint_label: "チェックするURL",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "{interval}ごとにチェック",
-      content_hash: "変更のみを検出",
+      content_hash: "変更のみを検出"
     },
     webhook: {
       url_label: "Webhook URL",
       secret_label: "セキュリティキー（任意）",
-      secret_placeholder: "受信データを検証するためのシークレットキー",
+      secret_placeholder: "受信データを検証するためのシークレットキー"
     },
     file_watcher: {
       paths_label: "監視パス",
@@ -5715,7 +6215,7 @@ export const ja = {
       event_delete: "削除",
       recursive: "再帰的",
       glob_filter: "ファイルパターン",
-      glob_placeholder: "*.json",
+      glob_placeholder: "*.json"
     },
     clipboard: {
       content_type: "コンテンツタイプ",
@@ -5723,7 +6223,7 @@ export const ja = {
       type_image: "画像",
       pattern_label: "マッチパターン",
       pattern_placeholder: "例: https?://.*",
-      interval_label: "チェック間隔（秒）",
+      interval_label: "チェック間隔（秒）"
     },
     app_focus: {
       app_names_label: "アプリケーション名",
@@ -5731,20 +6231,20 @@ export const ja = {
       add_app: "アプリを追加",
       title_pattern: "ウィンドウタイトルパターン",
       title_placeholder: "例: .*GitHub.*",
-      interval_label: "チェック間隔（秒）",
+      interval_label: "チェック間隔（秒）"
     },
     event_listener: {
       event_type_label: "イベントタイプ",
       event_type_placeholder: "例: persona.execution.completed",
       source_filter_label: "ソースフィルター",
-      source_filter_placeholder: "例: persona:abc123",
+      source_filter_placeholder: "例: persona:abc123"
     },
     composite: {
       conditions_label: "条件",
       add_condition: "条件を追加",
       operator_all: "すべての条件が一致する必要があります",
       operator_any: "いずれかの条件が一致すれば可能",
-      window_label: "時間ウィンドウ（秒）",
+      window_label: "時間ウィンドウ（秒）"
     },
     rate_limit: {
       title: "速度制限",
@@ -5753,14 +6253,14 @@ export const ja = {
       window_seconds: "{seconds}秒",
       window_minutes: "{minutes}分",
       window_hours: "{hours}時間",
-      currently_limited: "現在一時停止中（制限に達しました）",
+      currently_limited: "現在一時停止中（制限に達しました）"
     },
     dry_run: {
       title: "テスト実行結果",
       would_fire: "実行されます",
       would_not_fire: "実行されません",
       matched_conditions: "条件が満たされました",
-      payload_preview: "データプレビュー",
+      payload_preview: "データプレビュー"
     },
     tab_live_stream: "ライブストリーム",
     tab_live_stream_subtitle: "リアルタイムイベントハブ — エージェントはこの共有バスを通じてイベントを発行・購読します",
@@ -5924,6 +6424,186 @@ export const ja = {
     loading_catalog: "カタログを読み込み中...",
     no_feeds: "まだ共有イベントフィードはありません",
     no_feeds_hint: "「更新」をクリックしてクラウドから最新のフィードを取得",
+    cron_colon: "Cron:",
+    interval_colon: "間隔:",
+    event_colon: "イベント:",
+    endpoint_colon: "エンドポイント:",
+    listens_for_colon: "リッスン対象:",
+    source_filter_colon: "ソースフィルター:",
+    hmac_colon: "HMAC:",
+    paths_colon: "パス:",
+    events_colon: "イベント:",
+    recursive_yes: "再帰: はい",
+    filter_colon: "フィルター:",
+    watches_colon: "監視対象:",
+    pattern_colon: "パターン:",
+    poll_every: "ポーリング: 毎",
+    apps_colon: "アプリ:",
+    title_colon: "タイトル:",
+    operator_colon: "演算子:",
+    window_colon: "ウィンドウ:",
+    id_colon: "ID:",
+    type_colon: "タイプ:",
+    status_colon: "ステータス:",
+    target_colon: "ターゲット:",
+    retry_hash: "再試行 #",
+    model_colon: "モデル:",
+    next_run_colon: "次回実行:",
+    local_label: "(ローカル)",
+    then_every: "、その後毎",
+    source_colon: "ソース:",
+    dry_run_target_colon: "ターゲット:",
+    matched_subscriptions_count: "一致するサブスクリプション ({count})",
+    last_label: "最終:",
+    loading_history: "読み込み中...",
+    zero_unlimited: "0 = 無制限",
+    category_section_label: "トリガーカテゴリ",
+    no_persona_selected: "ペルソナが選択されていません",
+    quick_templates_label: "クイックテンプレート",
+    quick_presets_label: "クイックプリセット",
+    cron_expression_label: "Cron式",
+    this_persona_will: "このペルソナは",
+    starting_from: "、有効化した時点から。",
+    per_day: "/日。",
+    last_poll_label: "最終ポーリング:",
+    deployed_persona_label: "デプロイ済みペルソナ",
+    fired_at_label: "発火時刻",
+    webhook_last_label: "最終:",
+    relay_last_label: "最終:",
+    optional_label: "(任意)",
+    optional_comma_separated: "(任意、カンマ区切り)",
+    get_channel_url_from: "チャネルURLを取得する場所:",
+    setup_step1: "smee.io/new にアクセスして無料のリレーチャネルを作成",
+    setup_step2: "ラベルとチャネルURLを付けてリレーをここに追加",
+    setup_step3: "チャネルURLを GitHub / Stripe / 任意のサービスのwebhookとして貼り付け",
+    setup_step4: "イベントはライブストリームに表示され、エージェントに自動ルーティングされます",
+    studio_empty_desc: "ペルソナ間のリアクティブなイベントフローを構成します。トリガータイプを構築ブロックとして使用し、条件分岐と並列ファンアウトを追加してインテリジェントな自動化チェーンを作成します。",
+    studio_step1: "1. サイドバーからトリガーソースを追加 (Schedule、Webhookなど)",
+    studio_step2: "2. イベントを処理するペルソナステップを追加",
+    studio_step3: "3. それらを接続してリアクティブチェーンを構築",
+    studio_step4: "4. ルーティングロジックに条件ゲートを使用",
+    gate_if_else: "If / Else",
+    gate_if_else_desc: "2項条件分岐",
+    gate_classifier_desc: "多方向ルーティング (サポート、営業など)",
+    gate_fan_out: "ファンアウト (並列)",
+    gate_fan_out_desc: "複数のブランチを並列実行",
+    palette_help: "トリガーソースをペルソナステップに接続してリアクティブチェーンを構築します。分岐ロジックと並列ファンアウトに条件ゲートを追加します。",
+    toolbar_title_auto_layout: "自動レイアウト",
+    toolbar_title_add_note: "付箋メモを追加",
+    toolbar_title_start_dry_run: "ドライランを開始",
+    toolbar_title_stop_dry_run: "ドライランを停止",
+    toolbar_title_assistant: "キャンバスアシスタント",
+    toolbar_dry_run: "ドライラン",
+    canvas_assistant_title: "キャンバスアシスタント",
+    try_asking_hint: "試しに聞いてみる",
+    assistant_placeholder: "イベントトポロジーを記述...",
+    disconnect_persona_title: "ペルソナを切断しますか？",
+    disconnect_will_no_longer: "は以下にリアクションしなくなります",
+    disconnect_events_reconnect: "イベント。後で再接続できます。",
+    rename_also_updates: "履歴イベント、ペルソナのイベントハンドラ、トリガー監査メタデータも更新されます。",
+    delete_connection_label: "接続を削除",
+    search_personas_placeholder: "ペルソナを検索...",
+    no_matching_personas_found: "一致するペルソナが見つかりません",
+    clear_search_label: "検索をクリア",
+    dead_letter_source: "ソース:",
+    dead_letter_id: "ID:",
+    event_data_label: "イベントデータ",
+    shared_prefix: "共有:",
+    nl_type_colon: "タイプ:",
+    nl_cron_colon: "\\u00b7 Cron:",
+    nl_interval_colon: "\\u00b7 間隔:",
+    nl_filter_colon: "\\u00b7 フィルター:",
+    nl_could_not_parse: "その記述からトリガーを解析できませんでした。次のように試してみてください",
+    active_hours_every_day: "毎日",
+    event_type_to_listen: "リッスンするイベントタイプ",
+    event_type_input_placeholder: "例: file_changed、execution_completed",
+    event_type_helper: "登録済みイベントタイプを検索するか、カスタムタイプを入力してください。",
+    source_filter_optional_label: "(任意)",
+    wildcard_hint: "\\u2014 末尾 * プレフィックスワイルドカード対応",
+    window_title_pattern_label: "ウィンドウタイトルパターン",
+    optional_regex_label: "(任意の正規表現)",
+    text_pattern_label: "テキストパターン",
+    credential_event_label: "認証情報イベント",
+    refresh_label: "更新",
+    copy_webhook_url_title: "webhook URLをコピー",
+    copy_webhook_secret_title: "webhookシークレットをコピー",
+    delete_webhook_title: "webhookトリガーを削除",
+    status_col_label: "ステータス",
+    duration_col_label: "所要時間",
+    cost_col_label: "コスト",
+    dead_letter_refresh: "更新",
+    dead_letter_loading: "読み込み中...",
+    dead_letter_retry: "再試行",
+    dead_letter_discard: "破棄",
+    dead_letter_payload: "ペイロード",
+    event_data_section_label: "イベントデータ",
+    copy_event_data_title: "イベントデータをコピー",
+    copied_label: "コピー済み",
+    error_section_label: "エラー",
+    meta_event_id: "イベントID",
+    meta_project: "プロジェクト",
+    meta_processed: "処理済み",
+    clear_stream: "クリア",
+    clear_stream_title: "ストリームバッファをクリア",
+    col_type: "タイプ",
+    col_source: "ソース",
+    col_target_agent: "ターゲットエージェント",
+    col_status: "ステータス",
+    col_time: "時刻",
+    queued_bare: "キュー済み",
+    pause_tooltip: "入力イベントを一時停止",
+    resume_tooltip: "ライブ更新を再開",
+    relay_label_field: "ラベル",
+    relay_channel_url_field: "チャネルURL",
+    relay_route_to_agent: "エージェントへルーティング",
+    optional_suffix: "(任意)",
+    relay_event_filter_field: "イベントフィルター",
+    relay_event_filter_note: "(任意、カンマ区切り)",
+    relay_confirm_delete: "確認",
+    setup_guide_step2: "ラベルとチャネルURLを付けてリレーをここに追加",
+    setup_guide_step3: "チャネルURLを GitHub / Stripe / 任意のサービスのwebhookとして貼り付け",
+    setup_guide_step4: "イベントはライブストリームに表示され、エージェントに自動ルーティングされます",
+    get_channel_url_prompt: "チャネルURLを取得する場所:",
+    gate_if_else_label: "If / Else",
+    gate_if_else_description: "2項条件分岐",
+    gate_classifier_label: "分類器",
+    gate_classifier_description: "多方向ルーティング (サポート、営業など)",
+    gate_fan_out_label: "ファンアウト (並列)",
+    gate_fan_out_description: "複数のブランチを並列実行",
+    palette_help_text: "トリガーソースをペルソナステップに接続してリアクティブチェーンを構築します。分岐ロジックと並列ファンアウトに条件ゲートを追加します。",
+    test_event_type_placeholder: "例: build_complete、deploy、file_changed",
+    result_id_prefix: "ID:",
+    result_type_prefix: "タイプ:",
+    result_status_prefix: "ステータス:",
+    result_target_prefix: "ターゲット:",
+    tab_loading: "読み込み中...",
+    smee_open_new_title: "smee.io/new を開いてチャネルを作成",
+    relay_label_placeholder: "例: GitHub — my-repo",
+    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
+    relay_filter_placeholder: "github_push, github_pull_request",
+    dead_letter_retry_exhausted_title: "再試行制限に達しました — 破棄するか、根本原因を調査してください",
+    dead_letter_discard_title: "このイベントを永久に破棄",
+    dead_letter_retry_title: "このイベントを再試行",
+    replay_button_title: "同じ入力ペイロードで再発火",
+    interval_seconds_placeholder: "秒 (最小 60)",
+    cron_expression_placeholder: "* * * * *  (分 時 日 月 曜日)",
+    app_focus_window_placeholder: "例: .*.rs$ または Project - Visual Studio",
+    app_focus_process_placeholder: "例: Code.exe または firefox",
+    field_optional: "(任意)",
+    source_filter_input_placeholder: "例: watcher-* または exact-source-id",
+    meta_source: "ソース",
+    relay_last_event: "最終:",
+    relay_delete_title: "リレーを削除",
+    setup_guide_step1: "smee.io/new でチャネルを作成",
+    clipboard_pattern_placeholder: "例: https?://.* または error|exception",
+    composite_event_type_placeholder: "イベントタイプ (例: file_changed)",
+    composite_debounce_placeholder: "300",
+    file_watcher_path_placeholder: "C:/Users/me/projects または /home/me/src",
+    file_watcher_pattern_placeholder: "例: *.py、*.{ts,tsx}、Dockerfile",
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    more_tools_title: "その他のツール",
+    validate_and_fire_title: "トリガー設定を検証してから発火",
+    simulate_trigger_title: "実行せずにトリガーをシミュレート"
   },
   teams: {
     title: "エージェントチーム",
@@ -5931,10 +6611,11 @@ export const ja = {
     auto_team: "自動チーム",
     new_team: "新規チーム",
     starter_templates: "スターターテンプレート",
-    use_template: "テンプレートを使用",
+    use_template: "テンプレートを使用"
   },
   settings: {
     title: "設定",
+    settings_saved: "保存しました",
     account: {
       title: "アカウント",
       subtitle: "サインインとプロフィールの管理",
@@ -5952,6 +6633,7 @@ export const ja = {
       telemetry_on: "クラッシュレポートと使用状況分析が有効です。",
       telemetry_off: "テレメトリは無効です。Sentryにデータは送信されません。",
       telemetry_restart: "この変更を有効にするにはアプリを再起動してください",
+      telemetry_toggle_aria: "テレメトリを切り替え"
     },
     appearance_extra: {
       simple: "シンプル",
@@ -5959,7 +6641,7 @@ export const ja = {
       full: "フル",
       full_hint: "完全なインターフェースを表示",
       dev: "開発者",
-      dev_hint: "開発者ツールを有効化",
+      dev_hint: "開発者ツールを有効化"
     },
     appearance: {
       title: "外観",
@@ -5990,6 +6672,7 @@ export const ja = {
       applied: "適用済み",
       reset: "リセット",
       enter_theme_name: "テーマ名を入力",
+      reset_to_auto: "自動にリセット",
       preview_dashboard: "ダッシュボード",
       preview_action: "アクション",
       preview_card_title: "カードタイトル",
@@ -6004,7 +6687,7 @@ export const ja = {
       coverage_hint: "翻訳カバレッジ — クリックしてエクスポート",
       contribute_title: "翻訳に貢献する",
       contribute_hint: "Personasをあなたの言語に翻訳するのにご協力ください。上の言語ファイルをエクスポートし、値を翻訳してGitHubで提出してください。",
-      contribute_github: "GitHubで貢献する",
+      contribute_github: "GitHubで貢献する"
     },
     notifications: {
       title: "通知",
@@ -6022,7 +6705,7 @@ export const ja = {
       digest_description: "全エージェントのヘルス問題を要約した週次通知（総合ヘルススコア付き）",
       healing_alerts_hint: "どの自動復旧アラートで通知するか設定",
       healing_severity: "自動復旧アラート重要度",
-      notification_hint: "デスクトップ通知はOS標準の通知システムを使用します。重大・高重要度の問題はこの設定に関係なくアプリ内トーストで表示されます。",
+      notification_hint: "デスクトップ通知はOS標準の通知システムを使用します。重大・高重要度の問題はこの設定に関係なくアプリ内トーストで表示されます。"
     },
     engine: {
       title: "エンジン",
@@ -6040,6 +6723,7 @@ export const ja = {
       legend_not_installed: "未インストール",
       defaults_heading: "統合テストによるデフォルト",
       defaults_description: "デフォルトマップはラウンド9のビジネスレベル統合テストに基づいています。各プロバイダーをバックエンドが解析するJSONスキーマに対して検証しています。テストに失敗した操作のプロバイダーを有効にすると、解析不能なレスポンスが発生する可能性があります。Claude Codeのみが全操作で100%合格しています。",
+      engine_not_capable: "{provider} はこの操作の統合テストに合格していません。結果が解析不可能な場合があります。"
     },
     ambient: {
       title: "アンビエントコンテキスト融合",
@@ -6075,7 +6759,7 @@ export const ja = {
       cancel: "キャンセル",
       create_rule: "ルールを作成",
       no_rules: "コンテキストルールが定義されていません",
-      all_sources: "すべてのソース",
+      all_sources: "すべてのソース"
     },
     byom: {
       title: "独自モデルの持ち込み（BYOM）",
@@ -6127,6 +6811,7 @@ export const ja = {
       complexity: "複雑さ",
       provider: "プロバイダー",
       model_optional: "モデル（任意）",
+      model_placeholder: "例: claude-haiku-4-5-20251001",
       compliance_title: "コンプライアンス主導の制限",
       compliance_hint: "特定のワークフロータイプのプロバイダーを制限します（例: HIPAA、SOC2）",
       compliance_empty: "コンプライアンスルールが設定されていません。機密性の高いワークフローのプロバイダーを制限するルールを追加してください。",
@@ -6143,7 +6828,7 @@ export const ja = {
       audit_status: "ステータス",
       audit_cost: "コスト",
       audit_time: "時刻",
-      failover: "フェイルオーバー",
+      failover: "フェイルオーバー"
     },
     admin: {
       title: "管理",
@@ -6169,7 +6854,7 @@ export const ja = {
       consent_not_accepted: "未承認",
       storage_key: "ストレージキー",
       reset_consent: "同意をリセット",
-      reload_modal: "リロードしてモーダルを表示",
+      reload_modal: "リロードしてモーダルを表示"
     },
     portability: {
       title: "データポータビリティ",
@@ -6197,12 +6882,17 @@ export const ja = {
       passphrase_optional: "パスフレーズ（任意）",
       import_complete: "インポート完了",
       warnings: "警告:",
+      import_personas: "{count} 件のペルソナ",
+      import_teams: "{count} 件のチーム",
+      import_tools: "{count} 件のツール",
+      import_groups: "{count} 件のグループ",
+      import_credentials_count: "{count} 件の認証情報",
       export_title: "ワークスペースをエクスポート",
       export_subtitle: "エクスポートに含める内容を選択してください",
       close: "閉じる",
       loading_data: "ワークスペースデータを読み込み中...",
-      select_all: "すべて選択",
       deselect_all: "すべて選択解除",
+      select_all: "すべて選択",
       items_selected: "{total}個中{selected}個のアイテムを選択",
       of_selected: "{total}個中{count}個を選択",
       encrypt_passphrase: "パスフレーズで認証情報を暗号化する",
@@ -6232,7 +6922,7 @@ export const ja = {
       cred_import_complete: "認証情報のインポートが完了しました",
       cred_imported: "{count}件をインポート",
       cred_skipped: "、{count}件をスキップ",
-      cred_replaced: "、{count}件を置き換え",
+      cred_replaced: "、{count}件を置き換え"
     },
     config: {
       title: "設定の解決",
@@ -6245,7 +6935,7 @@ export const ja = {
       overrides_inherited: "継承を上書き",
       agent: "エージェント",
       loading_agents: "エージェントを読み込み中...",
-      no_agents: "エージェントが見つかりません",
+      no_agents: "エージェントが見つかりません"
     },
     quality_gates: {
       title: "品質ゲート",
@@ -6263,11 +6953,12 @@ export const ja = {
       rules_count_plural: "{count}個のルール",
       reset_defaults: "デフォルトにリセット",
       confirm_reset: "リセットを確認しますか？",
-      rules_hint: "ルールは各ディスパッチ時にデータベースから読み込まれます。変更はすぐに有効になります。",
-    },
+      rules_hint: "ルールは各ディスパッチ時にデータベースから読み込まれます。変更はすぐに有効になります。"
+    }
   },
   design: {
     no_persona: "エージェント未選択",
+    conversation_truncated: "この会話はメッセージ制限に達しました。古いメッセージは削除されました — コンテキストを保持するため、新しい会話を開始することを検討してください。",
     stages: {
       assembling_label: "プロンプトを組み立て中",
       assembling_desc: "エージェント設定と指示からLLMプロンプトを構築中",
@@ -6278,8 +6969,8 @@ export const ja = {
       checking_label: "実現可能性を確認中",
       checking_desc: "提案されたツールとコネクタが利用可能か検証中",
       saving_label: "結果を保存中",
-      saving_desc: "コンパイル済デザインをデータベースに書き込み中",
-    },
+      saving_desc: "コンパイル済デザインをデータベースに書き込み中"
+    }
   },
   prompt_lab: {
     title: "プロンプトバージョン",
@@ -6315,7 +7006,7 @@ export const ja = {
       running: "A/Bテスト実行中...",
       run: "A/Bテストを実行",
       failed: "A/Bテスト失敗",
-      completed: "A/Bテストが正常に完了しました",
+      completed: "A/Bテストが正常に完了しました"
     },
     rollback: {
       title: "エラー率モニター",
@@ -6323,7 +7014,7 @@ export const ja = {
       rollback_hint: "プロンプト変更後にエラー率が50%を超えた場合、上のバージョンリストから本番バージョンにロールバックしてください。",
       waiting: "実行データを待機中",
       waiting_hint: "エージェントを数回実行してエラー率の追跡を開始してください。モニターには少なくとも1回の実行が必要です。",
-      check_again: "再確認",
+      check_again: "再確認"
     },
     performance: {
       cost_per_execution: "実行あたりのコスト",
@@ -6332,8 +7023,8 @@ export const ja = {
       latency_distribution: "レイテンシ分布",
       latency_delta: "レイテンシ差分",
       error_rate_trend: "エラー率トレンド",
-      error_delta: "エラー差分",
-    },
+      error_delta: "エラー差分"
+    }
   },
   tests: {
     title: "サンドボックステストランナー",
@@ -6358,15 +7049,15 @@ export const ja = {
       rerun_tooltip: "このスイートを再実行",
       rename_tooltip: "名前を変更",
       delete_tooltip: "スイートを削除",
-      no_scenarios: "このスイートにシナリオがありません",
+      no_scenarios: "このスイートにシナリオがありません"
     },
     progress: {
       generating: "テストシナリオを生成中...",
       testing: "{model}をテスト中 -- {scenario}",
       tool_prefix: "ツール: ",
       output_prefix: "出力: ",
-      protocol_prefix: "プロトコル: ",
-    },
+      protocol_prefix: "プロトコル: "
+    }
   },
   onboarding: {
     title: "はじめましょう",
@@ -6490,7 +7181,7 @@ export const ja = {
     agent_promoted_hint: "最初のエージェントが稼働しています。ツアーはもうすぐ完了です！",
     skip_build: "今はビルドをスキップ",
     dark_themes: "ダークテーマ",
-    light_themes: "ライトテーマ",
+    light_themes: "ライトテーマ"
   },
   system_health: {
     title: "システムチェック",
@@ -6527,7 +7218,7 @@ export const ja = {
     official_page: "公式ページ",
     edit_key: "キーを編集",
     edit_config: "設定を編集",
-    signing_in: "サインイン中...",
+    signing_in: "サインイン中..."
   },
   command_palette: {
     placeholder: "エージェント検索、ナビゲーション...（\\\">\\\"でコマンド）",
@@ -6540,7 +7231,7 @@ export const ja = {
     key_esc: "ESC",
     hint_navigate: "移動",
     hint_select: "選択",
-    hint_commands: "コマンド",
+    hint_commands: "コマンド"
   },
   errors: {
     boundary_title: "{name}で予期しないエラーが発生しました",
@@ -6562,7 +7253,7 @@ export const ja = {
     database: "データベースエラー -- アプリを再起動してください",
     internal: "予期しないエラーが発生しました",
     cloud_error: "クラウドサービスエラー: {detail}",
-    gitlab_error: "GitLabエラー: {detail}",
+    gitlab_error: "GitLabエラー: {detail}"
   },
   error_registry: {
     network_offline_message: "オフラインのようです。",
@@ -6634,7 +7325,7 @@ export const ja = {
     severity_critical: "即時対応が必要です",
     severity_high: "重要な問題",
     severity_medium: "軽微な問題",
-    severity_low: "情報",
+    severity_low: "情報"
   },
   empty_states: {
     credentials_title: "エージェントの実行には認証情報が必要です",
@@ -6651,11 +7342,11 @@ export const ja = {
     tools_title: "ツールやコネクタが未設定です",
     tools_subtitle: "外部サービスをリンクして、エージェントがアクションやデータアクセスできるようにしてください。",
     use_cases_title: "ユースケースがまだ定義されていません",
-    use_cases_subtitle: "エージェントの役割を定義 -- ワークフローからインポートするか、自然言語で記述してください。",
+    use_cases_subtitle: "エージェントの役割を定義 -- ワークフローからインポートするか、自然言語で記述してください。"
   },
   cli: {
     idle: "CLI出力はまだありません。",
-    waiting: "Claude CLIの出力を待機中...",
+    waiting: "Claude CLIの出力を待機中..."
   },
   validation: {
     required: "{field}は必須です",
@@ -6666,7 +7357,7 @@ export const ja = {
     passphrase_min: "パスフレーズは8文字以上必要です",
     passphrase_prompt: "エクスポート時に使用したパスフレーズを入力してください",
     at_least_one: "{field}は1つ以上必要です",
-    fill_one_field: "保存するには1つ以上のフィールドを入力してください",
+    fill_one_field: "保存するには1つ以上のフィールドを入力してください"
   },
   toasts: {
     copied: "クリップボードにコピーしました",
@@ -6726,7 +7417,7 @@ export const ja = {
     scheduled_agents_failed: "スケジュール済エージェントの読み込みに失敗しました",
     design_start_failed: "デザイン会話の開始に失敗しました",
     recipe_save_failed: "レシピの保存に失敗しました",
-    recipe_test_failed: "クイックテスト失敗",
+    recipe_test_failed: "クイックテスト失敗"
   },
   consent: {
     title: "Personas Desktopへようこそ",
@@ -6793,7 +7484,7 @@ export const ja = {
     checkbox: "このアプリケーションがAIプロバイダーにデータを送信し、システムリソース（クリップボード、ファイルシステム、ネットワーク）にアクセスし、私に代わってプロセスを実行することを理解しています。設定と使用方法について責任を受け入れます。",
     checkbox_telemetry: "匿名のクラッシュレポートと使用状況分析を送信してPersonasの改善に協力してください。個人データは含まれません。後で設定から変更できます。",
     source_link: "ソースとライセンスを表示",
-    accept_button: "理解しました、続行する",
+    accept_button: "理解しました、続行する"
   },
   schedules: {
     title: "スケジュールタイムライン",
@@ -6833,17 +7524,26 @@ export const ja = {
     overlap_warning: "このスケジュールは今後7日間で{count}件の他の実行と重複しています。同時実行のエージェントはAPIクォータとシステムリソースを奪い合います。",
     agents_missed: "{count}件のエージェントが実行を見逃しました",
     total_skipped: "アプリがオフラインの間に合計約{count}件の実行がスキップされました",
+    missed_since: "{time} から {count} 件未処理",
+    every_interval: "毎 {interval}",
     recover: "回復",
+    mark_for_recovery: "復旧対象としてマーク",
+    run_once_now: "今すぐ1回実行",
     run_1x: "1回実行",
     skip: "スキップ",
+    skip_dont_recover: "スキップ -- 復旧しない",
     dismiss_all: "すべて閉じる",
     recover_selected: "選択した{count}件を回復",
+    overlaps_with: "重複:",
+    refresh_schedules: "スケジュールを更新",
+    seed_mock_tooltip: "モックスケジュールをシード (dev専用)",
+    schedule_view_aria: "スケジュールビュー",
     today: "今日",
     projected: "予測",
     success: "成功",
     overlap: "重複",
     week: "週",
-    month: "月",
+    month: "月"
   },
   recipes: {
     no_match: "一致するレシピがありません",
@@ -6897,6 +7597,8 @@ export const ja = {
     saved_mock_values: "保存されたモック値",
     no_mock_values: "モック値が保存されていません",
     free_input_placeholder: "入力JSONまたはプレーンテキストを入力してください...",
+    recipe_label: "レシピ:",
+    executed_label: "実行済み:",
     rendered_prompt: "レンダリングされたプロンプト",
     execution_result: "実行結果",
     rendering_prompt: "プロンプトをレンダリング中...",
@@ -6926,7 +7628,7 @@ export const ja = {
     no_matching: "一致するレシピが見つかりません。",
     loading_linked: "リンクされたレシピを読み込み中...",
     no_linked: "レシピがまだリンクされていません。「追加」をクリックしてライブラリからレシピをリンクしてください。",
-    run: "実行",
+    run: "実行"
   },
   execution_status: {
     queued: "キュー待ち",
@@ -6934,7 +7636,7 @@ export const ja = {
     completed: "完了",
     failed: "失敗",
     cancelled: "キャンセル済",
-    error: "エラー",
+    error: "エラー"
   },
   status_tokens: {
     execution: {
@@ -6943,61 +7645,61 @@ export const ja = {
       completed: "完了",
       failed: "失敗",
       cancelled: "キャンセル済み",
-      error: "エラー",
+      error: "エラー"
     },
     event: {
       pending: "保留中",
       processing: "処理中",
       processed: "処理済み",
       failed: "失敗",
-      retrying: "再試行中",
+      retrying: "再試行中"
     },
     automation: {
       pending: "保留中",
       running: "実行中",
       completed: "完了",
       failed: "失敗",
-      timeout: "タイムアウト",
+      timeout: "タイムアウト"
     },
     severity: {
       info: "情報",
       low: "低",
       medium: "中",
       high: "高",
-      critical: "重大",
+      critical: "重大"
     },
     priority: {
       low: "低",
       normal: "通常",
       high: "高",
-      urgent: "緊急",
+      urgent: "緊急"
     },
     healing_status: {
       open: "オープン",
       auto_fixed: "自動修正済み",
       acknowledged: "確認済み",
-      resolved: "解決済み",
+      resolved: "解決済み"
     },
     healing_category: {
       config: "設定",
       auth: "認証",
       network: "ネットワーク",
       timeout: "タイムアウト",
-      quota: "クォータ",
+      quota: "クォータ"
     },
     connector_status: {
       ready: "準備完了",
       untested: "未テスト",
       failed: "失敗",
       no_credential: "認証情報なし",
-      testing: "テスト中",
+      testing: "テスト中"
     },
     test: {
       generating: "生成中",
       running: "実行中",
       completed: "完了",
       failed: "失敗",
-      pending: "保留中",
+      pending: "保留中"
     },
     dev: {
       open: "オープン",
@@ -7006,8 +7708,8 @@ export const ja = {
       blocked: "ブロック中",
       queued: "キュー待ち",
       running: "実行中",
-      failed: "失敗",
-    },
+      failed: "失敗"
+    }
   },
   project_overview: {
     codebase: "コードベース",
@@ -7037,7 +7739,7 @@ export const ja = {
     failed_to_load: "統計の読み込みに失敗しました",
     retry: "再試行",
     no_project_selected: "プロジェクトが選択されていません",
-    select_project_hint: "概要を確認するために開発プロジェクトを選択してください。",
+    select_project_hint: "概要を確認するために開発プロジェクトを選択してください。"
   },
   plugins: {
     title: "プラグイン",
@@ -7046,12 +7748,98 @@ export const ja = {
     artist_desc: "Blenderで3Dモデルを生成し、Leonardo AIで画像を作成し、クリエイティブアセットを管理します。",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "プロジェクト管理、コンテキストマッピング、アイデアスキャン、トリアージ、タスクランナーユーティリティ。",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "ワークスペースから直接デジタル署名でドキュメントに署名・検証します。",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "ナレッジの取得、ノートの閲覧、同期のためにObsidian vaultを接続します。",
-    ocr_label: "OCR",
-    ocr_desc: "Gemini VisionまたはClaudeマルチモーダルを使用して画像やPDFからテキストを抽出します。",
+    drive_label: "Drive",
+    drive_desc: "エージェントがエクスポートを保存する管理されたローカルファイルシステム。Finderスタイルのストアでファイルを閲覧でき、アプリのアップグレードを越えて保持されます。",
+    drive: {
+      title: "Drive",
+      subtitle: "エージェントのエクスポート用管理されたローカルファイルシステム",
+      root_label: "Drive ルート",
+      dev_badge: "Dev",
+      back: "戻る",
+      forward: "進む",
+      up: "上へ",
+      refresh: "更新",
+      search_placeholder: "このフォルダを検索...",
+      view_list: "リスト",
+      view_icons: "アイコン",
+      view_columns: "カラム",
+      new_folder: "新規フォルダ",
+      new_file: "新規ファイル",
+      reveal_in_os: "ファイルマネージャーで表示",
+      open_in_os: "開く",
+      sidebar_root: "Drive",
+      sidebar_recent: "最近",
+      sidebar_storage: "ストレージ",
+      storage_used: "{used} 使用 \\u2022 {count} 項目",
+      empty_folder: "このフォルダは空です",
+      empty_hint: "ローカルドライブにエクスポートするエージェントはここにファイルを保存します。",
+      empty_cta: "フォルダを作成",
+      col_name: "名前",
+      col_size: "サイズ",
+      col_kind: "種類",
+      col_modified: "更新日時",
+      folder_kind: "フォルダ",
+      ctx_open: "開く",
+      ctx_rename: "名前を変更",
+      ctx_duplicate: "複製",
+      ctx_delete: "削除",
+      ctx_copy: "コピー",
+      ctx_cut: "切り取り",
+      ctx_paste: "貼り付け",
+      ctx_new_folder: "新規フォルダ",
+      ctx_new_file: "新規ファイル",
+      ctx_reveal: "ファイルマネージャーで表示",
+      ctx_copy_path: "パスをコピー",
+      rename_title: "名前を変更",
+      rename_placeholder: "新しい名前",
+      new_folder_title: "新規フォルダ",
+      new_folder_placeholder: "フォルダ名",
+      new_file_title: "新規ファイル",
+      new_file_placeholder: "filename.txt",
+      delete_confirm_title: "{count} 項目を削除しますか？",
+      delete_confirm_body: "この操作は元に戻せません。削除されたファイルは完全に失われます。",
+      confirm: "確認",
+      cancel: "キャンセル",
+      details_title: "詳細",
+      details_path: "パス",
+      details_size: "サイズ",
+      details_kind: "種類",
+      details_modified: "更新日時",
+      details_items: "項目",
+      details_preview: "プレビュー",
+      preview_unavailable: "プレビュー利用不可",
+      preview_binary: "バイナリファイル \\u2014 OSファイルマネージャーで開いて確認してください。",
+      preview_too_large: "ファイルが大きすぎてインラインプレビューできません。",
+      loading: "読み込み中...",
+      error_prefix: "エラー:",
+      items_selected: "{count} 件選択済み",
+      items_total: "{count} 項目",
+      signatures_button: "署名",
+      ctx_sign_file: "ファイルに署名\\u2026",
+      ctx_verify_file: "署名を検証\\u2026",
+      ctx_extract_text: "テキストを抽出 (OCR)\\u2026",
+      ctx_extract_text_no_gemini: "テキストを抽出 \\u2014 有効にするには Gemini を接続",
+      ocr_title: "Gemini でテキストを抽出",
+      ocr_subtitle: "Google Gemini 3 Flash Preview による Vision OCR",
+      ocr_model_label: "モデル",
+      ocr_connector_ready: "Gemini コネクタ準備完了",
+      ocr_connector_missing: "ボールトに Gemini 認証情報が見つかりません。OCRを有効にするには Google Gemini を接続してください。",
+      ocr_prompt_label: "任意のプロンプト",
+      ocr_prompt_placeholder: "例: 請求書の合計と明細のみ抽出",
+      ocr_extract: "テキストを抽出",
+      ocr_running: "抽出中\\u2026",
+      ocr_done: "抽出完了",
+      ocr_save: ".ocr.txt として保存",
+      ocr_saved: "保存しました",
+      ocr_saved_to: "保存先",
+      ocr_copied: "クリップボードにコピーしました",
+      select_file_or_folder: "詳細を表示するにはファイルまたはフォルダを選択してください。",
+      download_aria: "ダウンロード",
+      download_title: "ダウンロード",
+      sign_reason_placeholder: "署名の理由…"
+    },
     artist: {
       title: "Artist",
       subtitle: "3Dモデルを生成し、画像を作成し、クリエイティブアセットを管理します",
@@ -7113,6 +7901,31 @@ export const ja = {
       viewer_3d: "3Dビューアー",
       viewer_3d_hint: "@react-three/fiberと@react-three/dreiをインストールして、軌道コントロール付きのインタラクティブな3Dプレビューを有効にしてください。",
       tags_label: "タグ:",
+      status_partial: "部分的",
+      status_not_checked: "未確認",
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      session_cancelled: "セッションがキャンセルされました。",
+      imported_assets_one: "1 件の新しいアセットをギャラリーにインポートしました。",
+      imported_assets_other: "{count} 件の新しいアセットをギャラリーにインポートしました。",
+      scan_result_one: "{scanned} 件のアセットが見つかり、1 件新規インポート。",
+      scan_result_other: "{scanned} 件のアセットが見つかり、{imported} 件新規インポート。",
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      tag_editor_hint: "Enter またはカンマで追加、Backspace で最後のタグを削除。",
+      tag_editor_placeholder: "tag, another-tag",
+      send_to_media_studio: "Media Studio に送信",
+      sent_to_media_studio: "Media Studio のキューに追加されました",
+      session_history: "履歴",
+      session_history_empty: "実行したセッションはここに表示されます。",
+      session_tools_label: "ツール:",
+      session_status_running: "実行中",
+      session_status_completed: "完了",
+      session_status_failed: "失敗",
+      session_status_cancelled: "キャンセル",
+      replay_session: "再生",
+      delete_session: "セッションを削除"
     },
     dev_tools: {
       no_project_configured: "開発プロジェクトが設定されていません",
@@ -7154,6 +7967,8 @@ export const ja = {
       task: "タスク",
       pick_winner: "勝者を選ぶ",
       winner: "勝者",
+      disqualified_label: "失格",
+      elapsed_label: "経過",
       cancel_competition: "コンペをキャンセル",
       no_goals_constellation: "目標がまだありません。プロジェクトタブでゴールを作成してコンステレーションを確認してください。",
       your_turn: "あなたの番",
@@ -7258,6 +8073,8 @@ export const ja = {
       task_depth: "タスクの深さ",
       goal_link: "ゴールリンク",
       create_task: "タスクを作成",
+      partial_context: "部分的なコンテキスト",
+      context_warnings_title: "コンテキスト警告 — 情報不足でタスクが実行されました",
       campaign: "キャンペーン",
       deep_build: "ディープビルド",
       idea_evolution: "アイデアの進化",
@@ -7272,6 +8089,8 @@ export const ja = {
       edit: "編集",
       save: "保存",
       file_empty: "ファイルが空であるか読み込めませんでした。",
+      file_load_failed: "ファイルを読み込めませんでした。データ損失を防ぐため編集が無効化されています。",
+      file_load_failed_hint: "更新するかスキルを再選択してみてください。",
       effort: "工数",
       risk: "リスク",
       quick_wins: "クイックウィン",
@@ -7286,6 +8105,155 @@ export const ja = {
       add_condition: "+ 条件を追加",
       accept: "承認",
       reject: "拒否",
+      triage_title: "アイデアトリアージ",
+      triage_subtitle: "生成されたアイデアを評価して優先順位付け",
+      accepted_badge: "{count} 件承認",
+      rejected_badge: "{count} 件拒否",
+      pending_badge: "{count} 件保留中",
+      sidebar_category: "カテゴリ",
+      sidebar_scan_type: "スキャンタイプ",
+      sidebar_all: "すべて ({count})",
+      remaining_count: "{count} 件残り",
+      reviewed_count: "{total} 件中 {done} 件レビュー済み",
+      empty_no_ideas: "トリアージするアイデアがありません",
+      empty_no_ideas_hint: "アイデアを生成するにはまず Idea Scanner を実行してください。",
+      empty_all_reviewed: "すべてのアイデアがレビュー済み！",
+      empty_all_reviewed_summary: "{accepted} 件承認、{rejected} 件拒否",
+      swipe_reject: "拒否",
+      swipe_accept: "承認",
+      reasoning_label: "理由",
+      hint_reject: "拒否",
+      hint_accept: "承認",
+      shortcuts_title: "キーボードショートカット",
+      shortcuts_reject: "アイデアを拒否",
+      shortcuts_accept: "アイデアを承認",
+      shortcuts_toggle: "このオーバーレイを切り替え",
+      shortcuts_close: "オーバーレイを閉じる",
+      shortcuts_dismiss_hint: "? または Esc で閉じる",
+      shortcuts_open_title: "キーボードショートカット (?)",
+      shortcuts_btn_reject_title: "拒否 (左矢印 / A)",
+      shortcuts_btn_accept_title: "承認 (右矢印 / Z)",
+      shortcuts_btn_delete_title: "削除",
+      pr_bridge_title: "ドラフトPRとして出荷",
+      pr_bridge_subtitle: "ブランチ、コミット、事前入力されたPR — エージェントの理由が説明に引き継がれます。",
+      pr_bridge_branch: "ブランチ",
+      pr_bridge_commit_msg: "コミットメッセージ",
+      pr_bridge_pr_title: "PRタイトル",
+      pr_bridge_pr_body: "PR本文",
+      pr_bridge_agent_citation: "{label} {emoji} により提案",
+      pr_bridge_no_github: "PR ワークフローを有効にするには、このプロジェクトに GitHub リポジトリをリンクしてください。",
+      pr_bridge_link_project: "プロジェクト設定を開く",
+      pr_bridge_unsupported_host: "自動入力は現時点で GitHub でのみ動作します。PR本文をコピーして手動で開いてください。",
+      pr_bridge_copy_body: "PR本文をコピー",
+      pr_bridge_copy_all: "すべてコピー",
+      pr_bridge_prepare: "ブランチとコミットを準備",
+      pr_bridge_open_github: "GitHub でドラフトPRを開く",
+      pr_bridge_expand: "PRプレビューを表示",
+      pr_bridge_collapse: "PRプレビューを非表示",
+      pr_bridge_copied: "PR本文をクリップボードにコピーしました",
+      pr_bridge_copy_failed: "クリップボードにコピーできませんでした",
+      pr_bridge_branch_prepared: "ブランチを準備: {branch}",
+      pr_bridge_branch_failed: "ブランチの準備に失敗: {message}",
+      pr_bridge_opening: "GitHub を開いています...",
+      pr_bridge_open_failed: "外部URLを開けませんでした",
+      pr_bridge_draft_hint: "ヒント: GitHub ページで「Create pull request」の隣のドロップダウンを使ってドラフトとしてマークしてください。",
+      scoreboard_title: "エージェントパフォーマンス",
+      scoreboard_subtitle: "このプロジェクトのスキャンエージェントごとの承認率と実装率。",
+      scoreboard_toggle_show: "スコアボードを表示",
+      scoreboard_toggle_hide: "スコアボードを非表示",
+      scoreboard_empty: "データがありません — スキャンを実行してアイデアをトリアージしてボードを埋めてください。",
+      scoreboard_col_agent: "エージェント",
+      scoreboard_col_ideas: "アイデア",
+      scoreboard_col_accept_rate: "承認 %",
+      scoreboard_col_impl_rate: "実装 %",
+      scoreboard_col_avg_impact: "平均インパクト",
+      scoreboard_col_avg_effort: "平均労力",
+      scoreboard_tip_ideas: "このエージェントがすべてのスキャンで生成したアイデアの合計。",
+      scoreboard_tip_accept_rate: "承認 / (承認 + 拒否)。保留中のアイデアは分母から除外されます。",
+      scoreboard_tip_impl_rate: "このエージェントのアイデアから作成されたタスクのうち完了したタスク。",
+      scoreboard_tip_avg_impact: "このエージェントが生成したすべてのアイデアの平均インパクトスコア (1-10)。",
+      scoreboard_tip_avg_effort: "このエージェントが生成したすべてのアイデアの平均労力スコア (1-10)。",
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n} 件保留中",
+      scoreboard_top_performer: "トップパフォーマー",
+      zoom_in: "ズームイン",
+      zoom_out: "ズームアウト",
+      reset_view: "ビューをリセット",
+      goals_label: "ゴール、",
+      connections_label: "接続",
+      legend_parent: "━━ 親",
+      legend_dependency: "┄┄ 依存関係",
+      competitors_dot: "コンペティター ·",
+      of_4_selected: "/4 選択済み",
+      status_label: "ステータス:",
+      wt_label: "wt:",
+      winning_insight: "勝利のインサイト",
+      completed_in: "完了時間",
+      achievements_label: "達成:",
+      output_lines: "出力行",
+      loading_diff: "差分を読み込み中...",
+      first_slot_bias: "最初のスロットは前回の勝者のアプローチに偏っています。",
+      start_competition_prefix: "コンペティション開始 (",
+      slots_suffix: "スロット)",
+      strategy_leaderboard: "戦略リーダーボード",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "解決されたコンペティション全体で集計。高いほど勝ち。",
+      capture_winning_insight: "勝利のインサイトを記録",
+      capture_insight_desc: "このアプローチを勝たせたのは何か？ このメモは勝者と共に保存され、今後のコンペティションのシードに使用されます。",
+      insight_placeholder: "このアプローチを成功させた要因を記述…",
+      confirm_winner: "勝者を確定",
+      github_required_title: "GitHub リポジトリが必要",
+      folder_required_title: "プロジェクトフォルダが必要",
+      requirements_met_title: "すべての要件を満たしています",
+      can_still_adopt: "今すぐ採用できます — GitHub URL とプロジェクトフォルダは後でプロジェクト設定で追加できます。",
+      active_triggers_prefix: "アクティブなトリガー (",
+      lifecycle_readiness: "ライフサイクル準備状況 —",
+      goals_tab_no_goals: "ゴールがまだありません。Project Manager でゴールを作成してください。",
+      goal_constellation_prefix: "ゴールコンステレーション (",
+      sync_to_obsidian: "Obsidian に同期",
+      select_or_create: "以下のプロジェクトを選択するか、新規作成してください。",
+      all_projects_prefix: "すべてのプロジェクト (",
+      percent_overall: "% 全体",
+      task_queue_prefix: "タスクキュー (",
+      project_created_title: "プロジェクトを作成しました",
+      generate_context_map_desc: "コードベースをスキャンしてビジネスロジック、エントリポイント、データ構造を特定します。",
+      source_label: "ソース:",
+      auto_filled_hint: "(フォルダから自動入力)",
+      project_type_optional: "(任意、表示のみ)",
+      optional_label: "(任意)",
+      implementation_log_label: "実装ログ",
+      cross_project_desc_btn: "既存のコンテキストマップから集計。プロジェクトをクリックして展開できます。",
+      generate_metadata_prompt: "すべてのプロジェクトのコンテキストマップを分析し、共有パターンを抽出します。",
+      projects_count_prefix: "プロジェクト (",
+      entry_points_header: "エントリポイント",
+      db_tables_header: "データベーステーブル",
+      entry_points_count: "エントリポイント",
+      db_tables_count: "データベーステーブル",
+      run_context_map_scan: "このプロジェクトのメタデータを埋めるには Context Map スキャンを実行してください。",
+      active_goals_label: "アクティブなゴール",
+      no_goals_add_below: "ゴールがまだありません。下から追加してください。",
+      goal_title_placeholder: "ゴールタイトル…",
+      loading_repos: "リポジトリを読み込み中...",
+      github_url_label: "GitHub URL",
+      github_repo_label: "GitHub リポジトリ",
+      idea_evolution_title: "アイデア進化",
+      fitness_ranking_label: "フィットネスランキング",
+      similar_to_rejected: "拒否されたものに類似:",
+      percent_similar: "% 類似",
+      scanning_with: "スキャン中:",
+      scanning_subtitle: "コードベースパターンを分析し、コンテキストグループを生成中…",
+      no_previous_scans: "過去のスキャンはありません。",
+      run_scan_prefix: "スキャン実行 (",
+      automated_context_scan: "自動コンテキストスキャン",
+      results_prefix: "結果 (",
+      scan_history_prefix: "スキャン履歴 (",
+      action_label: "アクション:",
+      self_healing_title: "自己修復",
+      heal_all_prefix: "すべて修復 (",
+      task_title_placeholder: "タスクタイトル…",
+      task_details_placeholder: "タスクの詳細または仕様を貼り付け…",
+      goal_link_placeholder: "ゴールを選択…",
+      no_tasks_queued_sub: "手動でタスクを作成するか、承認されたアイデアからバッチで作成してください。"
     },
     doc_signing: {
       title: "ドキュメント署名",
@@ -7324,7 +8292,7 @@ export const ja = {
       no_signatures: "署名がまだありません",
       no_signatures_hint: "ドキュメントに署名するとここに表示されます。",
       export_sig: ".sig.jsonをエクスポート",
-      delete_signature: "署名を削除",
+      delete_signature: "署名を削除"
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -7332,6 +8300,7 @@ export const ja = {
       tab_setup: "セットアップ",
       tab_sync: "同期",
       tab_browse: "Vaultを閲覧",
+      tab_graph: "グラフ",
       tab_cloud: "クラウド",
       filter_notes: "ノートをフィルター...",
       vault_empty: "Vaultが空です",
@@ -7401,7 +8370,7 @@ export const ja = {
       sync_log: "同期ログ",
       no_sync_activity: "同期アクティビティがまだありません。プッシュまたはプルして開始してください。",
       select_note: "ノートを選択",
-      select_note_hint: "左のツリーからノートを選択してその内容をプレビューしてください。",
+      select_note_hint: "左のツリーからノートを選択してその内容をプレビューしてください。"
     },
     ocr: {
       title: "OCR",
@@ -7428,8 +8397,292 @@ export const ja = {
       comparison_stats: "比較統計",
       history_heading: "OCR履歴",
       no_results: "OCR結果がまだありません",
-      no_results_hint: "ドキュメントからテキストを抽出するとここに表示されます。",
+      no_results_hint: "ドキュメントからテキストを抽出するとここに表示されます。"
     },
+    artist_gallery: {
+      loading_viewer: "ビューアを読み込み中…",
+      loading_model: "モデルを読み込み中...",
+      could_not_load_model: "モデルを読み込めませんでした"
+    },
+    artist_media_studio: {
+      drag_drop_hint: "— どこでもドラッグ＆ドロップ",
+      keyboard_shortcuts: "Space / Del / 矢印",
+      px_per_second: "px/秒",
+      running_loudnorm: "ffmpeg loudnorm ドライランを実行中…"
+    },
+    dev_context: {
+      files_header: "ファイル (",
+      filter_groups_placeholder: "グループをフィルター…",
+      rescan_title: "再スキャン",
+      scanning_with: "スキャン中:",
+      scanning_subtitle: "コードベースパターンを分析し、コンテキストグループを生成中…",
+      no_previous_scans: "過去のスキャンはありません。",
+      run_scan: "スキャン実行 (",
+      auto_scan: "自動スキャン",
+      automated_context_scan: "自動コンテキストスキャン",
+      results: "結果 (",
+      scan_history: "スキャン履歴 ("
+    },
+    dev_lifecycle: {
+      start_a_competition: "コンペティションを開始",
+      start_a_competition_desc: "異なる戦略を持つ 2〜4 のコンペティターを生成して、同じタスクに取り組ませます。勝者のアプローチが昇格されます。",
+      task_title: "タスクタイトル",
+      task_title_placeholder: "例: 認証モジュールをリファクタリング",
+      task_description: "タスクの説明 (任意)",
+      task_description_placeholder: "成功がどう見えるかを記述…",
+      strategy_slots: "戦略スロット (2〜4 を選択)",
+      of_4_selected: "/4 選択済み",
+      cost_warning: "コスト警告:",
+      cost_warning_desc: "各コンペティターは独立して完全なタスクを実行します — {count}倍 のトークンを使用します。",
+      start_competition: "コンペティション開始",
+      competitors_dot: "コンペティター ·",
+      loading_competitors: "コンペティターを読み込み中...",
+      failed_to_load_detail: "詳細の読み込みに失敗しました。",
+      status_label: "ステータス:",
+      weight_label: "wt:",
+      pick_winner: "勝者を選ぶ",
+      cancel_competition: "コンペティションをキャンセル",
+      select_project_for_competitions: "コンペティションを表示するにはプロジェクトを選択してください。",
+      new_competition: "新規コンペティション",
+      no_competitions_yet: "コンペティションがまだありません。2〜4 の戦略がタスクを競うものを開始してください。",
+      no_goals_yet_project: "ゴールがまだありません。進捗を追跡するには Project Manager でゴールを作成してください。",
+      zoom_in_title: "ズームイン",
+      zoom_out_title: "ズームアウト",
+      reset_view_title: "ビューをリセット",
+      goals_label: "ゴール、",
+      legend_parent: "━━ 親",
+      legend_dependency: "┄┄ 依存関係",
+      no_goals_kanban: "ゴールがまだありません。ゴールを作成してここに表示しましょう。",
+      no_goals_here: "ここにはゴールがありません",
+      auto_setup_title: "自動ライフサイクルセットアップを実行",
+      auto_setup: "自動セットアップ",
+      loading_lifecycle: "ライフサイクルステータスを読み込み中...",
+      no_project_click_to_create: "プロジェクトがありません — クリックして作成",
+      no_repo: "リポジトリなし",
+      baseline_label: "ベースライン:",
+      ts_errors_label: "TS エラー:",
+      cargo_errors_label: "Cargo エラー:",
+      tests_label: "テスト:",
+      git_label: "Git:",
+      winning_insight: "勝利のインサイト",
+      completed_in: "完了時間",
+      achievements_label: "達成:",
+      output_lines: "出力行",
+      expand_slot_title: "スロットを展開",
+      collapse_slot_title: "スロットを折りたたむ",
+      copy_diff_title: "差分をコピー",
+      loading_diff: "差分を読み込み中...",
+      new_competition_modal_title: "コンペティションを開始",
+      first_slot_bias: "最初のスロットは前回の勝者のアプローチに偏っています。",
+      start_competition_slots: "コンペティション開始 (",
+      slots_suffix: "スロット)",
+      strategy_leaderboard: "戦略リーダーボード",
+      dq_title: "失格",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "解決されたコンペティション全体で集計。高いほど勝ち。",
+      capture_winning_insight: "勝利のインサイトを記録",
+      capture_insight_desc: "このアプローチを勝たせたのは何か？ このメモは勝者と共に保存され、今後のコンペティションのシードに使用されます。",
+      insight_placeholder: "このアプローチを成功させた要因を記述…",
+      confirm_winner: "勝者を確定",
+      competition_title_placeholder: "例: /api/auth/login にレート制限を追加",
+      competition_desc_placeholder: "受け入れ基準、ターゲットファイル、制約...",
+      regenerate_strategies_title: "戦略を再生成",
+      start_dev_server_title: "このワークツリーで開発サーバーを起動",
+      stop_dev_server_title: "開発サーバーを停止",
+      open_worktree_title: "ワークツリーディレクトリを開く",
+      adopt_dev_clone: "Dev Clone を採用",
+      dev_clone_desc: "Dev Clone はプロジェクトのライフサイクルを管理する自律型開発者ペルソナです — 戦略を競わせ、エラーを修復し、コードを出荷します。",
+      github_required_title: "GitHub リポジトリが必要",
+      folder_required_title: "プロジェクトフォルダが必要",
+      requirements_met_title: "すべての要件を満たしています",
+      can_still_adopt: "今すぐ採用できます — GitHub URL とプロジェクトフォルダは後でプロジェクト設定で追加できます。",
+      active_triggers: "アクティブなトリガー (",
+      lifecycle_readiness: "ライフサイクル準備状況 —",
+      goals_tab_no_goals: "ゴールがまだありません。Project Manager でゴールを作成してください。",
+      goal_constellation: "ゴールコンステレーション (",
+      sync_to_obsidian: "Obsidian に同期"
+    },
+    dev_projects: {
+      active_goals: "アクティブなゴール",
+      run_context_map_scan: "このプロジェクトのメタデータを埋めるには Context Map スキャンを実行してください。",
+      entry_points: "エントリポイント",
+      db_tables: "データベーステーブル",
+      top_keywords: "トップキーワード",
+      entry_points_header: "エントリポイント",
+      db_tables_header: "データベーステーブル",
+      api_surface: "API サーフェス",
+      hot_directories: "ホットディレクトリ",
+      cross_project_map_title: "クロスプロジェクトメタデータマップ",
+      cross_project_map_subtitle: "既存のコンテキストマップから集計。プロジェクトをクリックして展開できます。",
+      tech_distribution: "技術分布",
+      shared_keywords: "共有キーワード (",
+      shared_keywords_subtitle: "複数のプロジェクトに存在する概念 — 共有アーキテクチャを示す可能性があります。",
+      project_similarity: "プロジェクト類似度",
+      projects_header: "プロジェクト (",
+      cross_project_map_btn: "クロスプロジェクトマップ",
+      new_project: "新規プロジェクト",
+      select_or_create: "以下のプロジェクトを選択するか、新規作成してください。",
+      all_projects: "すべてのプロジェクト (",
+      no_projects_yet: "プロジェクトがまだありません",
+      create_first_project: "最初のプロジェクトを作成",
+      tech_stack: "技術スタック",
+      edit_project: "プロジェクトを編集",
+      no_goals_add_below: "ゴールがまだありません。下から追加してください。",
+      goal_title_placeholder: "ゴールタイトル…",
+      project_folder: "プロジェクトフォルダ",
+      select_folder: "フォルダを選択...",
+      project_name: "プロジェクト名",
+      auto_filled_from_folder: "(フォルダから自動入力)",
+      project_name_placeholder: "My Project",
+      project_type: "プロジェクトタイプ",
+      project_type_optional: "(任意、表示のみ)",
+      project_created: "プロジェクトを作成しました",
+      project_ready_desc: "の準備ができました。今すぐコンテキストマップを生成しますか？",
+      generate_context_map: "コンテキストマップを生成",
+      generate_context_map_desc: "コードベースをスキャンしてビジネスロジック、エントリポイント、データ構造を特定します。",
+      skip_for_now: "今はスキップ",
+      scan_codebase: "コードベースをスキャン",
+      loading_repositories: "リポジトリを読み込み中...",
+      github_url_label: "GitHub URL",
+      optional: "(任意)",
+      github_url_placeholder: "https://github.com/owner/repo",
+      github_repository: "GitHub リポジトリ",
+      select_repository: "リポジトリを選択...",
+      no_repositories_found: "リポジトリが見つかりません",
+      implementation_log: "実装ログ",
+      loading_metadata: "読み込み中...",
+      no_metadata_yet: "メタデータマップがまだ生成されていません",
+      generate_metadata_prompt: "すべてのプロジェクトのコンテキストマップを分析し、共有パターンを抽出します。"
+    },
+    dev_runner: {
+      self_healing: "自己修復",
+      auto_heal: "自動修復",
+      heal_all: "すべて修復 (",
+      task_title_placeholder: "タスクタイトル…",
+      task_details_placeholder: "タスクの詳細または仕様を貼り付け…",
+      task_depth: "タスク深度",
+      goal_link: "ゴールリンク",
+      optional: "(任意)",
+      goal_link_placeholder: "ゴールを選択…",
+      create_task: "タスクを作成",
+      source_label: "ソース:",
+      new_task: "新規タスク",
+      batch_from_accepted: "承認済みからバッチ",
+      start_batch: "バッチを開始",
+      cancel_all: "すべてキャンセル",
+      batch_progress: "バッチの進捗",
+      percent_overall: "% 全体",
+      task_queue: "タスクキュー (",
+      no_tasks_queued: "キューにタスクがありません",
+      no_tasks_queued_sub: "手動でタスクを作成するか、承認されたアイデアからバッチで作成してください。"
+    },
+    dev_scanner: {
+      idea_evolution: "アイデア進化",
+      fitness_ranking: "フィットネスランキング",
+      similar_to_rejected: "拒否されたものに類似:",
+      synthesis_suggestions: "統合の提案",
+      percent_similar: "% 類似",
+      potential_duplicates: "重複の可能性",
+      scanning_with: "スキャン中:",
+      analyzing_codebase: "コードベースを分析中...",
+      no_previous_scans: "過去のスキャンはまだありません。",
+      auto_scan: "自動スキャン",
+      automated_context_scan: "自動コンテキストスキャン",
+      run_scan_prefix: "実行:",
+      results_prefix: "結果:",
+      scan_history_prefix: "スキャン履歴",
+      idea_scanner_title: "アイデアスキャナ",
+      idea_scanner_subtitle: "特化エージェントを実行して改善アイデアを生成",
+      run_scan_btn: "スキャン実行 (",
+      results_header: "結果 (",
+      scan_history_header: "スキャン履歴 ("
+    },
+    dev_triage: {
+      auto_triage_rules: "自動トリアージルール",
+      add_condition: "+ 条件を追加",
+      action_label: "アクション:",
+      new_rule: "新規ルール",
+      run_rules: "ルールを実行"
+    },
+    obsidian: {
+      saved_vaults: "保存されたボールト",
+      remove_vault_title: "保存されたボールトを削除",
+      vault_is_empty: "ボールトが空です",
+      failed_to_load: "読み込みに失敗しました",
+      open_in_obsidian: "Obsidian で開く",
+      copy_path_title: "パスをコピー",
+      disconnect_title: "Google Drive を切断",
+      sign_in_to_enable: "クラウド同期を有効にするにはサインイン",
+      sign_in_subtitle: "Google アカウントでサインインしてボールトを Google Drive にバックアップ。",
+      refresh_title: "同期ステータスを更新",
+      drive_connected: "Drive 接続済み",
+      files_synced: "Drive に同期されたファイル",
+      connect_drive_desc: "Google Drive を接続してボールトをクラウドにバックアップします。",
+      step_connect_drive: "Google Drive を接続",
+      step_connect_drive_desc: "Personas に Google Drive でファイルを作成するアクセスを許可します。",
+      step_push_vault: "ボールトをプッシュ",
+      step_push_vault_desc: "ボールトのノートはマークダウンファイルとして Google Drive にアップロードされます。",
+      step_sync_devices: "デバイス間で同期",
+      step_sync_devices_desc: "別のデバイスでプルしてダウンロード。ボールトはあなたのデータです。",
+      push_title: "ボールトを Google Drive にプッシュ",
+      push_desc: "プッシュはローカルボールトの変更を Google Drive にアップロードします。",
+      last_sync_result: "最後の同期結果",
+      pull_title: "ボールトを Google Drive からプル",
+      connect_google_drive: "Google Drive を接続",
+      connect_drive_btn_desc: "Personas に Google Drive でファイルを作成するアクセスを許可します。",
+      no_stats_yet: "まだ統計はありません。",
+      search_title: "ノートを検索",
+      search_placeholder: "ノートを検索…",
+      no_matches: "一致なし。",
+      no_orphan_notes: "孤立したノートなし — すべてのノートが少なくとも1つの他のノートからリンクされています。",
+      no_mocs: "MOC が検出されません — リンクしきい値を下げてみてください。",
+      quick_capture_title: "AI クイックキャプチャ",
+      note_search_placeholder: "ノートを検索または質問…",
+      append_to_today: "今日に追加",
+      append_content_placeholder: "追加する内容…",
+      save_meeting_title: "会議ノートを保存",
+      meeting_attendees_placeholder: "出席者…",
+      meeting_summary_placeholder: "会議の要約…",
+      meeting_action_items_placeholder: "アクションアイテム…",
+      meeting_decisions_placeholder: "決定事項…",
+      save_meeting_note: "会議ノートを保存",
+      remove_vault_setup_title: "削除",
+      detected_vaults: "検出されたボールト:",
+      connected_to: "接続先 \"",
+      notes_found: "件のノートが見つかりました",
+      scan_for_vaults_title: "ボールトをスキャン",
+      manual_path_title: "手動でパスを入力",
+      preview_label: "プレビュー:",
+      vault_path_agent_placeholder: "/AgentName/",
+      vault_path_note_example: "/fact/memory-title.md",
+      disconnect_sync_title: "切断",
+      active_vault: "アクティブなボールト:",
+      refresh_stats_title: "統計を更新",
+      select_personas: "プッシュするペルソナを選択",
+      select_all: "すべて選択",
+      no_personas_found: "ペルソナが見つかりません",
+      last_push_result: "最後のプッシュ結果",
+      app_version: "アプリバージョン",
+      vault_version: "ボールトバージョン",
+      keep_app: "アプリを保持",
+      keep_vault: "ボールトを保持",
+      clear_history_title: "履歴をクリア",
+      no_sync_activity: "同期アクティビティがまだありません。プッシュまたはプルを開始してください。"
+    },
+    research_lab: {
+      review_before_saving: "保存前にレビューしてください。追加したくないものはチェックを外してください。",
+      re_run: "再実行",
+      search_placeholder: "検索…",
+      filter_title: "フィルター",
+      query_placeholder: "クエリを入力して Enter を押し、すべてのパネルで検索…",
+      close_panel_title: "パネルを閉じる",
+      md_extension: ".md",
+      edit_note_aria: "ノートを編集"
+    },
+    doc_signing_label: "Doc Signing",
+    doc_signing_desc: "ワークスペースから直接デジタル署名でドキュメントに署名・検証します。",
+    ocr_label: "OCR",
+    ocr_desc: "Gemini VisionまたはClaudeマルチモーダルを使用して画像やPDFからテキストを抽出します。"
   },
   media_studio: {
     title: "メディアスタジオ",
@@ -7491,10 +8744,32 @@ export const ja = {
     empty_title: "構成を開始",
     empty_hint: "動画またはオーディオクリップをタイムラインに追加して開始してください。",
     split: "再生ヘッドで分割",
+    undo: "元に戻す",
+    redo: "やり直す",
     import_media: "メディアをインポート",
     supported_video: "動画ファイル",
     supported_audio: "オーディオファイル",
     supported_images: "画像ファイル",
+    clip_actions: "クリップ操作",
+    action_split: "再生ヘッドで分割",
+    action_extract_audio: "音声を抽出",
+    action_strip_audio: "音声を削除",
+    action_keep_audio: "音声を保持",
+    action_save_thumbnail: "フレームを画像として保存",
+    action_trim_to_file: "新規ファイルにトリム",
+    extracting_audio: "音声トラックを抽出中...",
+    extract_audio_done: "音声トラックを抽出しました",
+    saving_thumbnail: "フレームを保存中...",
+    thumbnail_saved: "フレームを保存しました",
+    trimming_file: "ファイルをトリム中...",
+    trim_done: "トリムを保存しました",
+    effects: "エフェクト",
+    speed: "速度",
+    fade_in: "フェードイン",
+    fade_out: "フェードアウト",
+    normalize: "音量を正規化",
+    normalize_hint: "エクスポート時に EBU R128 を適用。プレビューは近似値",
+    strip_audio_hint: "エクスポート時にこのクリップの音声をミュート"
   },
   research_lab: {
     dashboard: "ダッシュボード",
@@ -7504,20 +8779,29 @@ export const ja = {
     experiments: "実験",
     findings: "発見",
     reports: "レポート",
+    graph: "グラフ",
     active: "アクティブ",
     sources: "ソース",
     sources_count: "件のソース",
+    recent_projects: "最近のプロジェクト",
+    view_all: "すべて表示",
     no_projects: "研究プロジェクトがまだありません",
     no_projects_hint: "研究プロジェクトを作成して文献、仮説、実験の整理を始めてください。",
     create_project: "新規プロジェクト",
+    edit_project: "プロジェクトを編集",
+    save_changes: "変更を保存",
     project_name: "プロジェクト名",
+    project_name_placeholder: "例: LLM reasoning chain-of-thought faithfulness",
     project_description: "説明",
+    project_description_placeholder: "このプロジェクトが調査する内容の短い要約",
     project_thesis: "研究課題またはテーゼ",
+    project_thesis_placeholder: "あなたがテストしている中心的な主張または質問",
     project_domain: "ドメイン",
     project_scope: "スコープの制約",
     obsidian_vault: "Obsidian vault",
     obsidian_vault_hint: "実験と発見を同期するためにObsidian vaultをリンクします",
     select_vault: "Vaultを選択",
+    clear_vault: "クリア",
     vault_connected: "Vaultが接続されました",
     sync_to_obsidian: "Obsidianに同期",
     syncing: "同期中...",
@@ -7533,13 +8817,42 @@ export const ja = {
     status_writing: "執筆",
     status_review: "レビュー",
     status_complete: "完了",
+    domain_cs: "コンピュータサイエンス",
+    domain_biology: "生物学",
+    domain_chemistry: "化学",
+    domain_physics: "物理学",
+    domain_mathematics: "数学",
+    domain_business: "ビジネス",
+    domain_medicine: "医学",
+    domain_general: "一般",
     select_project_first: "まず研究プロジェクトを選択してください",
     no_sources: "ソースがまだありません",
     no_sources_hint: "関連する論文を見つけるためにarXiv、Semantic Scholar、PubMedを検索するか、手動でソースを追加してください。",
+    no_matching_sources: "フィルターに一致するソースはありません",
+    filter_sources_placeholder: "タイトルまたは著者でフィルター…",
     relevance: "関連性",
     search_sources: "ソースを検索",
     ingest: "インジェスト",
     ingesting: "インジェスト中...",
+    source_title: "タイトル",
+    source_title_placeholder: "論文タイトル",
+    source_type: "ソースタイプ",
+    source_year: "年",
+    source_year_placeholder: "例: 2024",
+    source_authors: "著者",
+    source_authors_placeholder: "著者 1, 著者 2, …",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "要旨",
+    source_abstract_placeholder: "論文の要旨…",
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "Web ページ",
+    source_type_pdf: "PDF",
+    source_type_manual: "手動入力",
     no_hypotheses: "仮説がまだありません",
     no_hypotheses_hint: "手動で仮説を追加するか、AIエージェントに文献コーパスから生成させてください。",
     add_hypothesis: "仮説を追加",
@@ -7547,23 +8860,58 @@ export const ja = {
     confidence: "確信度",
     supporting: "支持",
     counter: "反論",
+    hypothesis_statement: "仮説",
+    hypothesis_statement_placeholder: "テスト可能な主張 — 例: Prompt X はベースラインより精度を 5% 以上向上させる",
+    hypothesis_rationale: "根拠",
+    hypothesis_rationale_placeholder: "この仮説をテストする価値がある理由",
     no_experiments: "実験がまだありません",
     no_experiments_hint: "仮説を検証するための実験を設計してください。",
     create_experiment: "新規実験",
+    experiment_name: "実験名",
+    experiment_name_placeholder: "例: GSM8K でベースラインとファインチューニングを比較",
     methodology: "方法論",
+    methodology_placeholder: "この実験はどのように実行されますか？",
     success_criteria: "成功基準",
+    success_criteria_placeholder: "どのような結果で仮説が確認されますか？",
+    linked_hypothesis: "リンクされた仮説",
+    no_linked_hypothesis: "仮説がリンクされていません",
+    linked_persona: "リンクされたペルソナ",
+    no_linked_persona: "ペルソナがリンクされていません",
+    run_input: "実行入力 (任意)",
+    run_input_placeholder: "各実行でペルソナに渡される入力テキスト。",
+    pass_pattern: "合格パターン (正規表現)",
+    pass_pattern_placeholder: "例: PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "実行",
+    running_experiment: "実行中…",
     run_count: "件の実行",
+    view_runs: "実行を表示",
+    no_runs_yet: "実行がまだありません",
+    run_passed: "合格",
+    run_failed: "失敗",
+    run_duration: "所要時間",
+    run_cost: "コスト",
+    run_number: "実行 #",
+    runs_history: "実行履歴",
     no_findings: "発見がまだありません",
     no_findings_hint: "発見は分析エージェントによって実験結果から抽出されます。",
+    create_finding: "新規の発見",
+    finding_title: "タイトル",
+    finding_title_placeholder: "発見の短い見出し",
+    finding_description: "説明",
+    finding_description_placeholder: "何を観察したか、なぜそれが重要なのか？",
+    finding_category: "カテゴリ",
+    finding_category_placeholder: "例: パフォーマンス、制限、驚き",
     no_reports: "レポートがまだありません",
     no_reports_hint: "発見を構造化されたドキュメントにまとめるレポートを作成してください。",
     create_report: "新規レポート",
+    report_title: "タイトル",
+    report_title_placeholder: "例: Q2 研究サマリー",
     report_type: "レポートタイプ",
+    report_format: "フォーマット",
     literature_review: "文献レビュー",
     experiment_report: "実験レポート",
     full_paper: "完全論文",
-    executive_summary: "エグゼクティブサマリー",
+    executive_summary: "エグゼクティブサマリー"
   },
   event_types: {
     webhook_received_label: "Webhookを受信",
@@ -7638,7 +8986,7 @@ export const ja = {
     source_filter_no_regex: "末尾の*のみサポート（正規表現や?ワイルドカードは不可）",
     source_filter_no_source_id: "source_filterが設定されているがイベントにsource_idがない場合、フィルターは一致しません",
     source_filter_allowed_chars: "使用可能な文字: 英字、数字、_、-、:、.、*",
-    source_filter_max_length: "最大120文字、ワイルドカード文字は最大3個",
+    source_filter_max_length: "最大120文字、ワイルドカード文字は最大3個"
   },
   connector_roles: {
     chat_messaging: "チャット・メッセージング",
@@ -7705,12 +9053,12 @@ export const ja = {
     purpose_ecommerce: "Eコマース",
     purpose_scheduling: "スケジューリング",
     purpose_forms: "フォーム",
-    purpose_ai: "AI",
+    purpose_ai: "AI"
   },
   connector_licensing: {
     personal: "個人",
     paid: "有料",
-    enterprise: "エンタープライズ",
+    enterprise: "エンタープライズ"
   },
   alerts: {
     metric_error_rate: "エラー率",
@@ -7726,7 +9074,7 @@ export const ja = {
     error_delete_rule: "アラートルールの削除に失敗しました:",
     error_toggle_rule: "アラートルールの切り替えに失敗しました:",
     error_dismiss: "アラートの非表示に失敗しました:",
-    error_clear_history: "アラート履歴のクリアに失敗しました:",
+    error_clear_history: "アラート履歴のクリアに失敗しました:"
   },
   deploy_errors: {
     not_reachable: "サーバーに接続できませんでした。URLとネットワーク接続を確認してください。",
@@ -7741,18 +9089,18 @@ export const ja = {
     oauth_expired: "OAuthトークンが期限切れです。再認可してください。",
     url_empty: "オーケストレーターのURLを入力してください。",
     api_key_empty: "APIキーを入力してください。",
-    token_empty: "GitLabの個人アクセストークンを入力してください。",
+    token_empty: "GitLabの個人アクセストークンを入力してください。"
   },
   tiers: {
     starter_label: "シンプル",
     starter_desc: "日常使いのための主要機能",
     team_label: "パワー",
-    team_desc: "完全な機能セット",
+    team_desc: "完全な機能セット"
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus",
+    opus: "Opus"
   },
   error_explanation: {
     action_go_to_vault: "ボルトに移動",
@@ -7796,7 +9144,7 @@ export const ja = {
     guidance_import_invalid: "インポートファイルが空であるか損傷しています。ソースから再度エクスポートして再インポートしてみてください。",
     guidance_circular_chain: "これにより、エージェントが互いをトリガーし続けるループが作成されます。エージェントチェーンを確認して循環参照を取り除いてください。",
     guidance_parse_error: "レスポンスが期待される形式ではありませんでした。これはAPIの変更または不正なデータを示している可能性があります。",
-    guidance_process_exit: "基礎となるプロセスが失敗を報告しました。詳細については実行ログを確認してください。",
+    guidance_process_exit: "基礎となるプロセスが失敗を報告しました。詳細については実行ログを確認してください。"
   },
   process_labels: {
     n8n_transform: "n8n変換",
@@ -7810,10 +9158,11 @@ export const ja = {
     lab_run: "ラボ実行",
     connector_test: "コネクタテスト",
     creative_session: "クリエイティブセッション",
+    feedback_chat: "フィードバックチャット",
     complete_suffix: "完了",
     failed_suffix: "失敗",
     pending_reviews_one: "{count}件の承認待ちレビューがあります",
-    pending_reviews_other: "{count}件の承認待ちレビューがあります",
+    pending_reviews_other: "{count}件の承認待ちレビューがあります"
   },
   eval_strategies: {
     keyword_match_label: "出力品質",
@@ -7825,7 +9174,7 @@ export const ja = {
     confusion_detect_label: "混乱検出",
     confusion_detect_description: "既知の混乱・失敗フレーズを確認",
     composite_label: "コンポジット",
-    composite_description: "すべての戦略の加重組み合わせ",
+    composite_description: "すべての戦略の加重組み合わせ"
   },
   drift_labels: {
     kind_error_pattern: "エラーパターン",
@@ -7853,7 +9202,7 @@ export const ja = {
     suggestion_error_handling: "errorHandlingセクションを確認し、この失敗パターンへの対処を追加してください。",
     suggestion_near_timeout: "タイムアウトを増やすか、指示のエージェントのタスクスコープを簡略化することを検討してください。",
     suggestion_high_cost: "トークン使用量を減らすために指示を絞り込むか、より小さいモデルの使用を検討してください。",
-    suggestion_repeated_failure: "新しいデザイン分析を実行してエージェント設定を再構築することを検討してください。",
+    suggestion_repeated_failure: "新しいデザイン分析を実行してエージェント設定を再構築することを検討してください。"
   },
   feedback_labels: {
     accurate_prompt: "正確なプロンプト",
@@ -7866,13 +9215,13 @@ export const ja = {
     over_engineered: "過剰設計",
     under_specified: "仕様不足",
     wrong_triggers: "トリガーが間違っている",
-    credential_issues: "認証情報の問題",
+    credential_issues: "認証情報の問題"
   },
   protocol_labels: {
     manual_review: "手動レビュー",
     user_message: "ユーザー通知",
     agent_memory: "エージェントメモリ",
-    emit_event: "イベント発行",
+    emit_event: "イベント発行"
   },
   execution: {
     budget_exceeded: "このエージェントの月次予算が超過しました。エージェント設定で予算の一時停止を解除するか、予算を増やして続けてください。",
@@ -7889,6 +9238,11 @@ export const ja = {
     waiting_for_output: "出力を待っています...",
     no_output: "出力なし",
     background: "バックグラウンド",
+    needs_credential: "認証情報が必要",
+    run_preview: "実行プレビュー",
+    close_preview: "プレビューを閉じる",
+    budget_limit: "予算制限",
+    run_agent: "エージェントを実行"
   },
   gitlab: {
     integration_title: "GitLab統合",
@@ -8003,6 +9357,10 @@ export const ja = {
     play_sound: "サウンドを再生",
     cicd_agent_templates: "CI/CDエージェントテンプレート",
     your_tier: "（あなたのプラン）",
+    trigger_on: "トリガー:",
+    connecting_to_gitlab: "GitLab に接続中...",
+    deploying_to_gitlab: "ペルソナを GitLab にデプロイ中...",
+    pipeline_hash: "パイプライン #"
   },
   pipeline: {
     agent_teams: "エージェントチーム",
@@ -8150,6 +9508,11 @@ export const ja = {
     run_pipeline_or_add: "パイプラインを実行するか手動で追加してください",
     load_more: "さらに読み込む",
     showing_count: "{total}件中{shown}件を表示",
+    no_timeline_data: "タイムラインデータがありません",
+    clear_filter: "フィルターをクリア",
+    filter_to_run: "この実行にフィルター",
+    new_memories_one: "{count} 件の新規メモリー",
+    new_memories_other: "{count} 件の新規メモリー"
   },
   composition: {
     select_persona: "ペルソナを選択",
@@ -8198,10 +9561,10 @@ export const ja = {
     add_input_node: "入力ノードを追加",
     add_persona_node: "ペルソナノードを追加",
     add_output_node: "出力ノードを追加",
-    run: "実行",
+    run: "実行"
   },
   auth: {
-    login_timed_out: "ログインがタイムアウトしました。もう一度お試しください。",
+    login_timed_out: "ログインがタイムアウトしました。もう一度お試しください。"
   },
   shared: {
     blast_checking_impact: "影響を確認中...",
@@ -8336,6 +9699,15 @@ export const ja = {
     cmd_select: "選択",
     cmd_commands: "コマンド",
     draft_editor: {
+      edit_tabs_label: "下書き編集タブ",
+      request_ai_adjustments: "AI 調整をリクエスト",
+      edit_raw_json_hint: "生の JSON を編集。変更はフォームフィールドをオーバーライドします。",
+      no_custom_sections: "カスタムセクションがまだありません",
+      no_content_to_preview: "プレビューするコンテンツがありません",
+      edit_raw: "生を編集",
+      credential_links: "認証情報リンク",
+      view_full_prompt: "完全なプロンプトを表示",
+      hide_full_prompt: "完全なプロンプトを非表示",
       persona_name_placeholder: "ペルソナ名...",
       description_placeholder: "簡単な説明...",
       refine_placeholder: "例: エラーハンドリングを厳格にする、リトライロジックを追加...",
@@ -8356,55 +9728,108 @@ export const ja = {
       design_context_json: "デザインコンテキストJSON...",
       click_next: "次へをクリックして変換を続けてください。",
       configure_transform: "変換を設定",
-      select: "選択...",
+      select: "選択..."
     },
     forms_extra: {
+      color_hex_placeholder: "#8b5cf6",
+      attach_file_title: "ファイルを添付 (API 仕様、スキーマ、MCP 設定)",
+      add_references_title: "参照 URL または接続文字列を追加",
+      no_matches: "一致なし",
+      all_prefix: "すべて (",
       references: "参照",
       references_placeholder: "URL、接続文字列、APIキー、またはその他の参照情報を貼り付けてください（1行に1つ）",
       remove_file: "ファイルを削除",
       choose_color: "カラーを選択",
       choose_icon: "アイコンを選択",
       filter_placeholder: "フィルター...",
-      reset_to_default: "デフォルトにリセット",
+      reset_to_default: "デフォルトにリセット"
     },
     reasoning_trace: {
+      heartbeat_silent: "秒 (サイレント",
+      waiting: "実行イベントを待機中...",
+      tool_call_label: "ツール呼び出し:",
       system_init: "システム初期化",
       reasoning: "推論",
       tool_call: "ツール呼び出し: {name}",
       result: "結果",
       complete: "完了",
-      error: "エラー",
+      error: "エラー"
     },
     sidebar_extra: {
+      clear_completed_title: "完了済みおよびキュー済みの項目をクリア",
+      no_credentials: "認証情報がまだありません",
+      ai_setup_wizard: "AI セットアップウィザード",
+      all_personas: "すべてのペルソナ",
+      no_scheduled_agents: "スケジュール付きのエージェントはありません",
+      all_agents_label: "すべてのエージェント",
+      draft_builds: "下書きビルド",
+      dev_tools_label: "Dev Tools",
+      obsidian_brain: "Obsidian Brain",
+      active_twin: "アクティブなツイン",
+      research_lab: "Research Lab",
       agents: "エージェント",
       schedules: "スケジュール",
       remove_favorites: "お気に入りから削除",
       add_favorites: "お気に入りに追加",
-      active_project: "アクティブなプロジェクト",
+      active_project: "アクティブなプロジェクト"
     },
     execution_detail: {
+      running: "実行中...",
+      rerun: "再実行",
+      retry_prefix: "再試行 #",
+      importance_prefix: "重要度:",
+      confidence_suffix: "% 信頼度",
       copy: "コピー",
       suggested_actions: "推奨アクション",
       knowledge_insight: "ナレッジの洞察",
       outcome_assessment: "結果評価",
-      blockers: "ブロッカー",
+      blockers: "ブロッカー"
     },
     progress_extra: {
+      continue_working: "作業を続けてください -- 下書きの準備ができたら通知します。",
+      draft_ready: "ペルソナの下書きがレビューと編集の準備ができました。",
+      click_generate: "開始するには \\u201cペルソナ下書きを生成\\u201d をクリックしてください。",
+      skip_configuration: "設定をスキップ",
+      no_config_questions: "設定質問は必要ありません。",
+      answer_questions: "ペルソナ生成をカスタマイズするためにこれらの質問に回答してください。",
+      no_output: "出力がまだありません...",
+      s_elapsed: "秒経過",
+      s_remaining: "秒残り",
+      show_cli_output: "CLI 出力を表示",
+      hide_cli_output: "CLI 出力を非表示",
       taking_longer: "予想より時間がかかっています",
       complete: "完了",
       resuming: "前回の変換セッションを再開中...",
       cancel_transformation: "変換をキャンセル",
       draft_generated: "下書きが正常に生成されました",
       transformation_failed: "変換に失敗しました",
-      waiting_to_start: "変換の開始を待っています...",
+      waiting_to_start: "変換の開始を待っています..."
     },
     terminal_extra: {
+      connecting: "プロバイダに接続中",
+      queued_at: "キュー位置",
+      new_line: "新規行",
+      new_lines: "新規行",
+      below: "以下",
+      lines_suffix: "行)",
+      search_and_filter: "検索とフィルター",
       press_enter: "Enterキーを押すか再生をクリックして開始",
       connection_failed: "接続に失敗しました — プロバイダーの設定を確認して再試行してください",
       search_output: "出力を検索...",
-      dismiss: "閉じる",
+      dismiss: "閉じる"
     },
     use_cases_extra: {
+      input_placeholder: "このユースケースを実行する入力を入力…",
+      model_placeholder: "例: claude-3-5-sonnet-latest",
+      use_case_singular: "ユースケース",
+      window_prefix: "(ウィンドウ:",
+      loading_history: "履歴を読み込み中...",
+      no_executions: "実行がまだありません",
+      run_to_see_history: "実行履歴、タイミング、コストをここで確認するには、このユースケースを実行してください。",
+      run_use_case: "このユースケースを実行",
+      custom_model: "カスタムモデル",
+      no_results: "結果が見つかりません",
+      ctrl_enter: "Ctrl+Enter",
       example_output: "出力例",
       input_data: "入力データ",
       rerun_input: "この入力で再実行",
@@ -8412,7 +9837,7 @@ export const ja = {
       error_prefix: "エラー: ",
       output_prefix: "出力: ",
       toggle_history: "実行履歴の表示切り替え",
-      configure_model: "モデル、通知、サブスクリプションを設定",
+      configure_model: "モデル、通知、サブスクリプションを設定"
     },
     json_valid: "有効なJSON",
     json_invalid: "無効なJSON",
@@ -8420,6 +9845,85 @@ export const ja = {
     json_format_tooltip: "JSONをフォーマット",
     agent_icon_label: "エージェントアイコン",
     breadcrumb_label: "パンくずリスト",
-    breadcrumb_show_hidden: "非表示のパンくずを表示",
+    breadcrumb_show_hidden: "非表示のパンくずを表示"
   },
+  releases: {
+    whats_new: {
+      title: "新着情報",
+      subtitle_roadmap: "現在構築中のものと次に来るもの。",
+      subtitle_changelog: "お使いのバージョンの Personas の新着情報。",
+      nav_bar_roadmap_label: "ロードマップ",
+      empty: "このリリースで共有する内容はまだありません — 後ほど確認してください。",
+      status_released: "リリース済み",
+      status_active: "現在",
+      status_planned: "予定",
+      status_roadmap: "ロードマップ",
+      type_feature: "新機能",
+      type_fix: "修正",
+      type_security: "セキュリティ",
+      type_docs: "ドキュメント",
+      type_chore: "雑務",
+      type_breaking: "破壊的変更",
+      item_status_in_progress: "進行中",
+      item_status_planned: "予定",
+      item_status_completed: "完了",
+      priority_now: "今",
+      priority_next: "次",
+      priority_later: "後で",
+      summary_in_progress: "{count} 件進行中",
+      summary_next: "{count} 件次",
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "Personas の最初のプレビュー。",
+      release_0_0_1_item_1_title: "最初の公開プレビュー",
+      release_0_0_1_item_1_description: "AI エージェントを設計し、スケジュールまたはトリガーで実行し、その作業をデスクトップでライブに確認できます。",
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "Personas を他の AI ツールに接続し、アプリを離れずに新着情報を読めます。",
+      release_0_0_2_item_1_title: "エージェントを他の AI ツールに公開",
+      release_0_0_2_item_1_description: "Personas は共有プロトコルを通じて他の AI ツールと通信できるようになりました。共有したいエージェントを厳密に選び、自分で管理するアクセスキーで保護してください — プライベートなエージェントはデフォルトで非公開のままです。",
+      release_0_0_2_item_2_title: "デスクトップアプリへのより安全なアクセス",
+      release_0_0_2_item_2_description: "デスクトップアプリは起動ごとに独自の短命アクセスキーを作成するので、承認していないものを公開することなくバックグラウンドサービスと通信できます。",
+      release_0_0_2_item_3_title: "アプリ内のリリースノート",
+      release_0_0_2_item_3_description: "アプリを離れることなく、すべての Personas リリースの新着情報を確認できます。過去のバージョン、現在のリリース、長期ロードマップを 1 か所で切り替え可能。",
+      release_0_0_2_item_4_title: "エージェントは各セッションから学習",
+      release_0_0_2_item_4_description: "Personas は各エージェントセッションの教訓を捕捉し、再利用可能な知識に蒸留して、次回の実行に持ち越します。手動トレーニングなしで、使えば使うほどエージェントが賢くなります。",
+      release_0_0_2_item_5_title: "任意のドキュメントをリスニング可能なブリーフィングに変換",
+      release_0_0_2_item_5_description: "研究レポート、会議文字起こし、長い記事を 5〜15 分の 2 ホストの音声会話に変換できる新しいテンプレートで、移動中に聴けます。スタイル — カジュアル、フォーマル、ニュース、エグゼクティブ — を選び、音声生成前にスクリプトをレビューできます。",
+      release_0_0_2_item_6_title: "あなたの文章のための Stanford トレーニング済みエディター",
+      release_0_0_2_item_6_description: "Stanford の「Writing in the Sciences」メソッドを使って下書きをレビューする新しいテンプレート。受動態、冗長な表現、専門用語をフラグ付けし、各修正提案が文をなぜ明確にするかを正確に説明します。承認または拒否する編集からあなたの声を学習します。",
+      release_0_0_2_item_7_title: "20 時間の YouTube 制作を 3 時間に",
+      release_0_0_2_item_7_description: "撮影を除くすべてを処理することで、完全な YouTube ビデオサイクルを約 3 時間に圧縮する新しいテンプレート。ニッチが追求する価値があるかチェックし、あなたの声でフックファーストのスクリプトを下書きし、承認されたスクリプトを正解データとして使って生の映像から撮り直しを自動削除します — 自然に撮影し、自由に失敗し、続けてください。",
+      release_0_0_2_item_8_title: "エージェントから Apify スクレーパーを実行",
+      release_0_0_2_item_8_description: "Apify プラットフォームのあらゆるアクター — YouTube スクレーパー、Twitter スクレーパー、ブラウザ自動化、その他何百ものアクター — を直接エージェントに接続。公式 API が到達できないデータが必要な研究ワークフローを解放します。",
+      release_0_0_2_item_9_title: "X (Twitter) がコネクタに",
+      release_0_0_2_item_9_description: "最新のツイートを検索し、トレンドトピックを追跡し、エージェントから直接投稿。コンテンツ研究、ソーシャルリスニング、マーケティング自動化を Personas を離れずに実行できます。",
+      release_0_0_2_item_10_title: "エージェントから YouTube を視聴",
+      release_0_0_2_item_10_description: "Personas の最初のビデオプラットフォームコネクタ。ビデオを検索し、チャンネル統計を取得し、トレンドコンテンツを取得し、YouTube で何が起きているかを理解する必要があるエージェントから競合を直接分析。",
+      release_0_0_2_item_11_title: "Deepgram で音声をテキストに",
+      release_0_0_2_item_11_description: "単語レベルのタイミングで音声ファイルまたは URL を文字起こしする新しい音声テキスト変換コネクタ。YouTube クリエイターアシスタントの自動編集を支え、音声メモ、会議録音、ポッドキャストコンテンツを処理する能力を任意のエージェントに与えます。",
+      release_0_0_2_item_12_title: "他の AI ツールがエージェントを確認・停止可能",
+      release_0_0_2_item_12_description: "別の AI ツールが共有エージェントの 1 つを呼び出すと、「これはまだ実行中ですか？」や「すぐに停止してください」を実行中に問い合わせることができるようになりました。長い研究ジョブは接続を全時間開いたままにする必要がなくなり、行き詰まった実行を呼び出し側からクリーンにキャンセルできます。各エージェントは自身の実行のみを見るので、エージェント間で漏れることはありません。",
+      release_0_0_2_item_13_title: "新規コネクタ: Humbalytics 分析",
+      release_0_0_2_item_13_description: "トラフィックを追跡し、A/B 実験を実行し、コードを触らずにランディングページのコピーを切り替えます。Personas は Humbalytics からヒートマップとコンバージョンデータをプルし、それらを使って実験をガイドできます。",
+      release_0_0_2_item_14_title: "新規コネクタ: Firecrawl Web スクレイピング",
+      release_0_0_2_item_14_description: "エージェントはあらゆるウェブサイト — 現代の JavaScript を多用するサイトでも — クリーンで構造化されたコンテンツとして読み取れるようになりました。研究、マーケットインテリジェンス、コンテンツ監視エージェントに便利です。",
+      release_0_0_2_item_15_title: "実際に A/B テストを実行するマーケティングエージェント",
+      release_0_0_2_item_15_description: "見出しのバリエーションを提案し、承認を得てデプロイし、統計的有意性を待ち、勝者を自動的に昇格する新しいテンプレート。すべての変更は公開前に人によってゲートされ、各実験は結果が実際に意味を持つ十分な期間実行されます。",
+      release_0_0_2_item_16_title: "任意のエージェントからチームの BI ダッシュボードを読む",
+      release_0_0_2_item_16_description: "Personas は保存された Redash クエリとダッシュボードから結果をプルできるようになりました。チームが共有ダッシュボードをすでにメンテナンスしている場合、エージェントは人間が見るのと同じ数値を読み取ります — SQL の書き換えも、CSV エクスポートも、コピー＆ペーストもありません。",
+      release_0_0_2_item_17_title: "Metabase がコネクタに",
+      release_0_0_2_item_17_description: "エージェントは保存された Metabase の質問を実行し、ワークスペースから直接ダッシュボードを読み取れます。Metabase Pro、Enterprise、および任意のセルフホストインスタンスで動作します。",
+      release_0_0_2_item_18_title: "毎日の BI ダイジェストを配信",
+      release_0_0_2_item_18_description: "Redash または Metabase ですでに維持している保存済みクエリを取得し、毎朝最新の数値を要約し、週ごとの異常フラグ付きで平易な英語のダイジェストを投稿する新しいテンプレート。誰も開かない場合でもダッシュボードが有用なまま保たれます。",
+      release_roadmap_label: "ロードマップ",
+      release_roadmap_summary: "現在構築中のものと次に来るもの。",
+      release_roadmap_item_2_title: "クラウド統合",
+      release_roadmap_item_2_description: "エージェントをクラウドで 24/7 実行し、その作業をリアルタイムでデスクトップにストリーミング。",
+      release_roadmap_item_3_title: "Web アプリ",
+      release_roadmap_item_3_description: "任意のブラウザからアカウント、請求、エージェント管理のための Web コンパニオン。",
+      release_roadmap_item_4_title: "母国語で Personas を使用",
+      release_roadmap_item_4_description: "右から左へのレイアウトと言語固有のフォントを含む完全な多言語サポート。",
+      release_roadmap_item_6_title: "チームワークスペース",
+      release_roadmap_item_6_description: "チームと一緒にエージェントを構築 — 共有スペース、役割権限、ライブダッシュボード。"
+    }
+  }
 };

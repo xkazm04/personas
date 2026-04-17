@@ -1,5 +1,4 @@
 export const zh = {
-
   common: {
     loading: "加载中...",
     saving: "保存中...",
@@ -48,7 +47,6 @@ export const zh = {
     error: "错误",
     success: "成功",
     required: "必填",
-    // @llm-translated 2026-04-17
     optional: "可选",
     select: "-- 请选择 --",
     no_results: "未找到结果",
@@ -145,7 +143,7 @@ export const zh = {
     command_palette_navigate: "导航",
     command_palette_select: "选择",
     command_palette_commands: "命令",
-    loading_label: "加载中",
+    loading_label: "加载中"
   },
   chrome: {
     app_title: "Personas",
@@ -165,7 +163,7 @@ export const zh = {
     sign_in_google: "使用 Google 登录",
     signed_in: "已登录",
     sign_out: "退出登录",
-    offline: "离线",
+    offline: "离线"
   },
   sidebar: {
     home: "首页",
@@ -211,7 +209,6 @@ export const zh = {
     engine: "引擎",
     byom: "BYOM",
     data: "数据",
-    // @llm-translated 2026-04-17
     quality_gates: "内容过滤",
     config_resolution: "代理配置",
     admin: "管理",
@@ -237,7 +234,7 @@ export const zh = {
     unread_messages_sr: "{count} 条未读消息",
     unread_messages_sr_other: "{count} 条未读消息",
     pending_events_sr: "{count} 个待处理事件",
-    pending_events_sr_other: "{count} 个待处理事件",
+    pending_events_sr_other: "{count} 个待处理事件"
   },
   home: {
     welcome: "欢迎",
@@ -262,7 +259,7 @@ export const zh = {
       priority_next: "下一步",
       priority_later: "之后",
       in_progress_count: "{count} 进行中",
-      next_count: "{count} 即将到来",
+      next_count: "{count} 即将到来"
     },
     setup: {
       choose_role: "选择您的角色",
@@ -290,45 +287,45 @@ export const zh = {
       role_manager_hint: "规划与协调",
       role: "角色",
       tool: "工具",
-      goal: "目标",
+      goal: "目标"
     },
     nav: {
       overview: {
         label: "概览",
-        description: "仪表盘分析、执行历史和所有智能体的实时系统监控",
+        description: "仪表盘分析、执行历史和所有智能体的实时系统监控"
       },
       personas: {
         label: "智能体",
-        description: "创建、配置和管理具有自定义行为和能力的 AI 智能体",
+        description: "创建、配置和管理具有自定义行为和能力的 AI 智能体"
       },
       events: {
         label: "事件",
-        description: "配置事件触发器、webhook 监听器和定时自动化任务",
+        description: "配置事件触发器、webhook 监听器和定时自动化任务"
       },
       credentials: {
         label: "凭证",
-        description: "管理 API 凭证、数据库连接、OAuth 令牌和加密密钥",
+        description: "管理 API 凭证、数据库连接、OAuth 令牌和加密密钥"
       },
       "design-reviews": {
         label: "模板",
-        description: "导入 n8n 工作流、浏览模板库并生成智能体蓝图",
+        description: "导入 n8n 工作流、浏览模板库并生成智能体蓝图"
       },
       team: {
         label: "团队",
-        description: "通过拖拽编排和路由构建多智能体团队流水线",
+        description: "通过拖拽编排和路由构建多智能体团队流水线"
       },
       cloud: {
         label: "云端",
-        description: "将智能体部署到云端基础设施、管理计划任务并集成 GitLab CI",
+        description: "将智能体部署到云端基础设施、管理计划任务并集成 GitLab CI"
       },
       settings: {
         label: "设置",
-        description: "账户偏好、外观主题、通知规则和引擎配置",
+        description: "账户偏好、外观主题、通知规则和引擎配置"
       },
       plugins: {
         label: "插件",
-        description: "通过第三方插件和自定义扩展扩展您的代理",
-      },
+        description: "通过第三方插件和自定义扩展扩展您的代理"
+      }
     },
     learning: {
       title: "学习中心",
@@ -345,7 +342,7 @@ export const zh = {
       pro_tip: "专业提示：",
       cat_agent_craft: "代理构建",
       cat_observability: "可观测性与事件",
-      cat_platform: "平台与设置",
+      cat_platform: "平台与设置"
     },
     setup_stepper: {
       your_profile: "您的个人资料",
@@ -361,18 +358,18 @@ export const zh = {
       ready_to_save: "准备保存",
       back: "返回",
       next: "下一步",
-      finish: "完成",
+      finish: "完成"
     },
     welcome_layout: {
       get_started: "开始使用",
-      language: "语言",
+      language: "语言"
     },
     icon_showcase: {
       lucide_tab: "Lucide（库）",
       personas_tab: "Personas（动画）",
       lucide_footer: "lucide-react -- 通用图标库 -- 静态",
-      personas_footer: "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应",
-    },
+      personas_footer: "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
+    }
   },
   agents: {
     title: "Personas",
@@ -383,12 +380,12 @@ export const zh = {
       subtitle_other: "{count} 个智能体 -- 按相关性排序",
       needs_attention: "需要关注",
       active: "活跃",
-      idle: "空闲",
+      idle: "空闲"
     },
     sidebar: {
       no_match: "没有匹配筛选条件的智能体",
       clear_filters: "清除所有筛选条件",
-      empty: "暂无智能体",
+      empty: "暂无智能体"
     },
     preview: {
       sensitive_hidden: "敏感预览已隐藏",
@@ -403,7 +400,7 @@ export const zh = {
       triggers_active_one: "{count} 个触发器已激活",
       triggers_active_other: "{count} 个触发器已激活",
       no_triggers: "无触发器",
-      custom_model: "自定义",
+      custom_model: "自定义"
     },
     creation: {
       heading: "新建智能体",
@@ -420,7 +417,7 @@ export const zh = {
       no_group: "无分组",
       create_button: "创建智能体",
       creating_button: "创建中...",
-      name_required: "请输入名称以继续",
+      name_required: "请输入名称以继续"
     },
     editor: {
       tabs: {
@@ -431,7 +428,7 @@ export const zh = {
         design: "设计",
         health: "健康",
         settings: "设置",
-        model: "模型",
+        model: "模型"
       },
       no_persona: "未选择智能体",
       save_failed: "保存 {tabs} 失败",
@@ -445,13 +442,13 @@ export const zh = {
       cloud_banner_connect: "连接云端编排器以远程运行智能体",
       cloud_banner_signin: "登录以解锁云端功能和远程执行",
       sign_in: "登录",
-      set_up_cloud: "设置云端",
+      set_up_cloud: "设置云端"
     },
     header: {
       no_triggers_warning: "未配置触发器或事件订阅",
       missing_credentials: "缺少凭证：{credentials}",
       toggle_failed: "切换智能体失败 -- 请检查您的连接",
-      cannot_enable: "无法启用智能体",
+      cannot_enable: "无法启用智能体"
     },
     sr_card: "{name}，{status}",
     filters: {
@@ -472,7 +469,7 @@ export const zh = {
       selected: "已选 {count} 个",
       remove_from_favorites: "从收藏中移除",
       add_to_favorites: "添加到收藏",
-      filter_by: "按 {label} 筛选",
+      filter_by: "按 {label} 筛选"
     },
     status: {
       draft: "草稿",
@@ -480,7 +477,7 @@ export const zh = {
       healthy: "健康",
       degraded: "降级",
       failing: "故障",
-      building: "构建中",
+      building: "构建中"
     },
     executions: {
       no_persona_selected: "未选择代理",
@@ -721,6 +718,10 @@ export const zh = {
       loading_dream_replay: "加载梦境回放...",
       no_dream_trace: "无可用于梦境回放的追踪数据",
       frame_count: "第 {index}/{total} 帧",
+      depth_label: "深度：",
+      active_count_label: "活跃（{count}）",
+      completed_count_label: "已完成（{count}）",
+      metadata_section: "元数据",
       phase_initializing: "初始化",
       phase_thinking: "思考中",
       phase_calling_tools: "运行工具",
@@ -747,11 +748,7 @@ export const zh = {
       input_preview_prefix: "输入：",
       offset_prefix: "偏移：",
       step_tooltip: "步骤 {step}：{name}",
-      // @llm-translated 2026-04-17
-      depth_label: "深度：",
-      active_count_label: "活跃（{count}）",
-      completed_count_label: "已完成（{count}）",
-      metadata_section: "元数据",
+      ms_into_stage: "进入阶段 {ms}ms",
       chain_id_prefix: "链：{id}",
       chain_total_duration: "总计：{duration}",
       zero_ms: "0ms",
@@ -760,8 +757,7 @@ export const zh = {
       unique_tools_count: "（{count} 个唯一）",
       prev_error_nav: "上一个错误（Shift+E）",
       next_error_nav: "下一个错误（E）",
-      runner_input_placeholder: '{"key": "value"}',
-      ms_into_stage: "进入阶段 {ms}ms",
+      runner_input_placeholder: "value"
     },
     lab: {
       mode_arena: "竞技场",
@@ -895,6 +891,8 @@ export const zh = {
       quality_label: "质量",
       speed_label: "速度",
       cost_label: "成本",
+      objective_warning: "适应度目标问题",
+      objective_fallback_toast: "进化使用了默认适应度权重——请检查目标设置",
       genome_breeding: "基因繁殖",
       genome_breeding_subtitle: "交叉繁殖高性能代理以发现新配置",
       select_parents: "选择父代（2-5 个代理）",
@@ -956,9 +954,6 @@ export const zh = {
       no_structural_diff: "未检测到结构差异",
       no_changes_diff: "无变更",
       improvement_run_started: "改进运行已启动",
-      // @llm-translated 2026-04-17
-      objective_warning: "适应度目标问题",
-      objective_fallback_toast: "进化使用了默认适应度权重——请检查目标设置",
       analyzing_patching: "正在分析并修补提示词...",
       auto_improve: "自动改进提示词",
       no_prompt_changes: "提示词无变更",
@@ -1014,11 +1009,9 @@ export const zh = {
       quality_score_inline: "分数：{score} | {coverage} 个场景",
       cancel_default: "取消",
       hide_impact: "隐藏影响",
-      show_impact: "显示影响",
+      show_impact: "显示影响"
     },
     design: {
-    // @llm-translated 2026-04-17
-    conv_controls_aria: "设计对话控件",
       select_agent: "选择代理以开始设计分析",
       mode_design: "设计",
       mode_intent: "意图编译器",
@@ -1026,7 +1019,7 @@ export const zh = {
       compile_from_examples: "从示例编译",
       compile_intent: "编译意图",
       analyze_build: "分析并构建",
-      intent_placeholder: "用自然语言描述您希望代理做什么...\\n\\n例如：\\\"监控 Stripe 账户中超过 $100 的失败付款，并在 Slack 上通知财务团队并附摘要\\\"",
+      intent_placeholder: "用自然语言描述您希望代理做什么...\\\n\\\n例如：\\\"监控 Stripe 账户中超过 $100 的失败付款，并在 Slack 上通知财务团队并附摘要\\\"",
       intent_submit_hint: "按 Enter 提交，Shift+Enter 换行。",
       intent_detail: "编译器将生成完整配置：提示词、工具、触发器、用例、模型推荐和测试场景。",
       example_context_placeholder: "可选：添加上下文或约束（例如 \\\"始终优先处理 P1 工单\\\"，\\\"发布到 #alerts 频道\\\"）",
@@ -1082,14 +1075,15 @@ export const zh = {
       msg_count_one: "{count} 条消息",
       msg_count_other: "{count} 条消息",
       resume: "恢复",
+      conv_controls_aria: "设计对话控件",
       design_drift: "设计漂移",
       design_sessions: "设计会话",
       example_n: "示例 {index}",
       remove_example: "删除示例",
       input_label: "输入 — 代理接收的内容",
       output_label: "输出 — 您希望代理生成的内容",
-      input_placeholder: "粘贴真实输入...\\n\\n例如：邮件正文、Slack 消息、传入请求、CSV 行",
-      output_placeholder: "描述或粘贴期望输出...\\n\\n例如：\\\"创建 Jira 工单，标题来自主题，优先级 P2，分配给后端团队\\\"",
+      input_placeholder: "粘贴真实输入...\\\n\\\n例如：邮件正文、Slack 消息、传入请求、CSV 行",
+      output_placeholder: "描述或粘贴期望输出...\\\n\\\n例如：\\\"创建 Jira 工单，标题来自主题，优先级 P2，分配给后端团队\\\"",
       example_instructions: "粘贴真实输入（邮件、传入请求、消息）并展示您想要的输出。编译器将从示例中反向推导完整代理配置。",
       add_first_example: "添加第一个输入→输出示例",
       current_config_preserved: "当前配置将保留。请描述要修改的内容。",
@@ -1100,13 +1094,9 @@ export const zh = {
       next: "下一步",
       go_back_hint: "返回并回答问题以配置代理。",
       additional_instructions: "附加说明或上下文（可选）",
-      additional_instructions_placeholder: "添加具体需求、领域知识或约束...",
+      additional_instructions_placeholder: "添加具体需求、领域知识或约束..."
     },
     connectors: {
-      // @llm-translated 2026-04-17
-      auto_input_schema_placeholder: '{ "file_url": "string" }',
-      auto_github_token_needs: "您的令牌需要 {scopes} 权限范围。请前往 github.com/settings/tokens 更新令牌。",
-      auto_fallback_title: "失败时回退到直接连接器",
       connectors_label: "连接器",
       list_view: "列表视图",
       graph_view: "依赖关系图",
@@ -1190,6 +1180,9 @@ export const zh = {
       auto_event_type: "事件类型：{eventType}",
       auto_zapier_hint: "Catch hook 将被验证并连接。",
       auto_custom_hint: "需要手动设置。自动化将保存为草稿。",
+      auto_input_schema_placeholder: "string",
+      auto_github_token_needs: "您的令牌需要 {scopes} 权限范围。请前往 github.com/settings/tokens 更新令牌。",
+      auto_fallback_title: "失败时回退到直接连接器",
       ch_title: "通知渠道",
       ch_add: "添加渠道",
       ch_all_added: "所有渠道类型已添加",
@@ -1265,7 +1258,7 @@ export const zh = {
       sub_confirm: "确认？",
       sub_triggers_title: "触发器和订阅",
       sub_suggested: "{count} 个建议",
-      sub_filter: "筛选：{filter}",
+      sub_filter: "筛选：{filter}"
     },
     editor_chrome: {
       tab_activity: "活动",
@@ -1298,11 +1291,9 @@ export const zh = {
       latency_label: "延迟",
       cost_run_label: "单次成本",
       last_run_label: "上次运行",
-      rank: "排名",
+      rank: "排名"
     },
     model_config: {
-      // @llm-translated 2026-04-17
-      model_name_placeholder_override: "例如 claude-sonnet-4-20250514",
       model_provider: "模型与提供商",
       unsaved_changes: "有未保存的更改",
       max_budget: "最大预算（USD）",
@@ -1363,6 +1354,7 @@ export const zh = {
       model_name_placeholder_litellm: "例如 anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "例如 llama3.1:8b",
       model_name_placeholder_custom: "模型标识符",
+      model_name_placeholder_override: "例如 claude-sonnet-4-20250514",
       base_url_hint: "模型提供商的 API 端点。必须包含协议（http/https），非标准端口需指定。",
       base_url_example: "http://localhost:11434",
       auth_token_hint: "提供商 API 的认证令牌。Ollama 本地版使用 'ollama'，LiteLLM 使用主密钥。",
@@ -1403,7 +1395,7 @@ export const zh = {
       latency: "延迟",
       cost: "成本",
       output_previews: "输出预览",
-      no_output: "无输出",
+      no_output: "无输出"
     },
     use_cases: {
       no_persona: "未选择代理",
@@ -1498,7 +1490,7 @@ export const zh = {
       cron_field_hour: "时",
       cron_field_day: "日",
       cron_field_month: "月",
-      cron_field_weekday: "周",
+      cron_field_weekday: "周"
     },
     tools: {
       no_persona: "未选择代理",
@@ -1537,11 +1529,11 @@ export const zh = {
       credential: "凭据",
       linked: "— 已链接",
       cred_missing: "— 缺失",
-      often_used: "常与之共用",
+      often_used: "常与之共用"
     },
     chat_thread: {
       welcome: "告诉我您需要此代理做什么。我将根据您的描述构建完整配置——提示词、工具、触发器。",
-      welcome_example: "监控我的 GitHub PR 并每天早上在 Slack 上发布摘要",
+      welcome_example: "监控我的 GitHub PR 并每天早上在 Slack 上发布摘要"
     },
     assign: {
       assign_to: "分配给 {role}",
@@ -1552,50 +1544,50 @@ export const zh = {
       no_saved_credentials: "暂无保存的凭据",
       no_credentials_match: "无匹配凭据",
       vault_hint: "在保险库中保存凭据，或使用连接器标签页",
-      no_connectors_match: "无匹配连接器",
+      no_connectors_match: "无匹配连接器"
     },
     credential_coverage: "{matched}/{total} 个凭据",
     role_card: {
       no_credential: "无凭据",
       edit_tables: "编辑",
       select_tables: "选择表格",
-      assign: "分配",
+      assign: "分配"
     },
     channel_picker: {
       in_app_messaging: "应用内消息",
-      vault_hint: "在保险库中保存通信凭据（Slack、Email 等）以在此显示。",
+      vault_hint: "在保险库中保存通信凭据（Slack、Email 等）以在此显示。"
     },
     connector_picker: {
       no_connectors: "暂无可用连接器",
       search: "搜索连接器...",
-      no_match: "无连接器匹配 \\\"{search}\\\"",
+      no_match: "无连接器匹配 \\\"{search}\\\""
     },
     policy_picker: {
       error_handling: "错误处理",
-      manual_review: "手动审查",
+      manual_review: "手动审查"
     },
     table_selector: {
       title: "选择表格",
       subtitle: "{label} — 选择要监控的表格",
       tables_selected_one: "已选择 {count} 个表格",
       tables_selected_other: "已选择 {count} 个表格",
-      no_tables_selected: "未选择表格 — 代理监控所有表格",
+      no_tables_selected: "未选择表格 — 代理监控所有表格"
     },
     trigger_popover: {
       trigger: "触发器",
-      clear_override: "清除覆盖",
+      clear_override: "清除覆盖"
     },
     use_case: {
       add: "添加用例",
       title_placeholder: "用例标题 — 例如：处理退款请求、汇总每日工单",
-      description_placeholder: "描述步骤 — 例如：收到退款请求时，验证订单，检查政策，并发送批准或拒绝通知",
+      description_placeholder: "描述步骤 — 例如：收到退款请求时，验证订单，检查政策，并发送批准或拒绝通知"
     },
     builder_action: {
       processing: "处理中...",
       error_retry: "出现错误，请重试。",
       enhancing: "增强中...",
       enhance_with_ai: "用 AI 增强",
-      describe_agent: "描述代理应执行的操作",
+      describe_agent: "描述代理应执行的操作"
     },
     builder_preview: {
       title: "预览",
@@ -1609,7 +1601,7 @@ export const zh = {
       schedule: "计划",
       manual_only: "仅手动",
       errors: "错误",
-      review: "审查",
+      review: "审查"
     },
     dry_run: {
       ready: "就绪",
@@ -1621,7 +1613,7 @@ export const zh = {
       issues: "问题",
       apply_fix: "应用修复：{label}",
       manual_action_needed: "需要手动操作",
-      no_issues: "未发现问题。代理配置看起来良好。",
+      no_issues: "未发现问题。代理配置看起来良好。"
     },
     identity_preview: {
       title: "预览",
@@ -1632,7 +1624,7 @@ export const zh = {
       components: "组件",
       schedule_label: "计划：",
       errors_label: "错误：",
-      review_label: "审查：",
+      review_label: "审查："
     },
     build_review: {
       agent_name: "代理名称",
@@ -1641,7 +1633,7 @@ export const zh = {
       connectors_ready: "连接器就绪",
       promote_agent: "推广代理",
       testing: "测试中...",
-      test_agent: "测试代理",
+      test_agent: "测试代理"
     },
     connectors_cell: {
       add_in_keys: "在密钥中添加",
@@ -1651,7 +1643,7 @@ export const zh = {
       swap_to: "切换到：",
       recalculating: "重新计算中...",
       recalculate_dimensions: "重新计算维度",
-      rebuilding: "使用新连接器重新构建中...",
+      rebuilding: "使用新连接器重新构建中..."
     },
     dimension_edit: {
       add_item: "添加项目...",
@@ -1677,7 +1669,7 @@ export const zh = {
       fully_automated: "全自动",
       cron_label: "Cron：",
       every_label: "每：",
-      done: "完成",
+      done: "完成"
     },
     quick_config: {
       title: "快速设置",
@@ -1691,7 +1683,7 @@ export const zh = {
       monthly: "每月",
       days: "天",
       day_of_month: "每月几号",
-      time: "时间",
+      time: "时间"
     },
     events_panel: {
       source_agent: "来源代理",
@@ -1700,23 +1692,23 @@ export const zh = {
       select_agent: "选择代理",
       loading_events: "正在加载事件...",
       no_subscriptions: "未找到事件订阅",
-      choose_agent: "选择代理以查看其事件",
+      choose_agent: "选择代理以查看其事件"
     },
     matrix_cred_picker: {
       no_stored: "无已保存凭据",
       best_match: "最佳匹配",
-      other: "其他",
+      other: "其他"
     },
     services_panel: {
       no_connectors: "未找到具有健康 API 密钥的连接器。请先在保险库中添加凭据。",
-      select_table: "选择表格",
+      select_table: "选择表格"
     },
     spatial_question: {
       agent_configuration: "代理配置",
       or_custom_answer: "或输入自定义答案",
       type_answer: "输入您的答案...",
       submit: "提交",
-      press_to_select: "按 1-{count} 即时选择",
+      press_to_select: "按 1-{count} 即时选择"
     },
     table_picker: {
       title: "选择表格",
@@ -1724,12 +1716,12 @@ export const zh = {
       loading: "正在加载表格...",
       no_tables: "此连接器未找到表格",
       clear_selection: "清除选择",
-      no_match: "无表格匹配 \\\"{search}\\\"",
+      no_match: "无表格匹配 \\\"{search}\\\""
     },
     matrix_entry: {
       new_agent: "新代理",
       failed_to_create: "创建草稿代理失败。",
-      build_failed: "构建启动失败。请检查 CLI 配置。",
+      build_failed: "构建启动失败。请检查 CLI 配置。"
     },
     workflow_upload: {
       build_hint: "按构建将此工作流转换为代理。",
@@ -1737,22 +1729,22 @@ export const zh = {
       parse: "解析",
       drop_file: "将工作流文件拖放至此",
       file_types: "n8n、Zapier、Make 或 GitHub Actions（.json、.yaml）",
-      paste_json: "或直接粘贴 JSON",
+      paste_json: "或直接粘贴 JSON"
     },
     config_popup: {
       load_error: "无法加载已保存的值 — 您可能需要重新输入。",
       fill_hint: "至少填写一个字段才能保存",
-      failed_to_save: "保存配置失败",
+      failed_to_save: "保存配置失败"
     },
     onboarding: {
       setup_complete: "设置完成 {score}%",
       steps_done: "已完成 {completed}/{total} 步骤",
-      dismiss_checklist: "关闭清单",
+      dismiss_checklist: "关闭清单"
     },
     template_picker: {
       title: "选择模板",
       subtitle: "选择模板预填代理，或从零开始。",
-      start_from_scratch: "从零开始",
+      start_from_scratch: "从零开始"
     },
     persona_overview: {
       no_match: "无匹配代理",
@@ -1761,26 +1753,26 @@ export const zh = {
       description_copied: "描述已复制到剪贴板",
       failed_copy: "复制描述失败",
       no_connectors_configured: "未配置连接器",
-      click_to_copy: "点击复制",
+      click_to_copy: "点击复制"
     },
     overview_empty: {
       title: "无代理匹配这些筛选条件",
       subtitle: "尝试调整搜索或筛选条件，或重置视图以查看所有代理。",
-      clear_all_filters: "清除所有筛选",
+      clear_all_filters: "清除所有筛选"
     },
     overview_batch: {
-      selected: "已选择 {count} 个",
+      selected: "已选择 {count} 个"
     },
     overview_menu: {
       more_actions: "更多操作",
-      settings: "设置",
+      settings: "设置"
     },
     overview_toolbar: {
       search_placeholder: "搜索代理...",
       show_all: "显示所有代理",
       show_favorites: "只显示收藏",
       favorites: "收藏",
-      clear_search: "清除搜索",
+      clear_search: "清除搜索"
     },
     overview_columns: {
       persona: "代理",
@@ -1795,10 +1787,10 @@ export const zh = {
       building_drafts: "构建中/草稿",
       all_health: "所有健康状态",
       all_connectors: "所有连接器",
-      active_triggers: "{count} 个活跃触发器",
+      active_triggers: "{count} 个活跃触发器"
     },
     health_indicator: {
-      last: "最近 {count}",
+      last: "最近 {count}"
     },
     view_presets: {
       views: "视图",
@@ -1815,7 +1807,7 @@ export const zh = {
       needs_attention: "需要关注",
       failing_agents: "失败的代理",
       my_favorites: "我的收藏",
-      recently_active: "最近活跃",
+      recently_active: "最近活跃"
     },
     activity: {
       title: "活动",
@@ -1838,7 +1830,7 @@ export const zh = {
       modal_execution_title: "{name} - 执行",
       modal_execution_subtitle: "ID：{id}",
       modal_review_title: "审查：{title}",
-      modal_review_subtitle: "严重性：{severity} · 状态：{status}",
+      modal_review_subtitle: "严重性：{severity} · 状态：{status}"
     },
     chat: {
       select_persona: "选择代理开始聊天",
@@ -1857,7 +1849,7 @@ export const zh = {
       confirm_delete: "删除？",
       processing: "处理中...",
       delete_conversation: "删除对话",
-      confirm_delete_conversation: "确认删除对话",
+      confirm_delete_conversation: "确认删除对话"
     },
     advisory: {
       how_can_improve: "如何让此代理更好地为您服务？",
@@ -1872,7 +1864,7 @@ export const zh = {
       analyze_desc: "审查性能趋势和规律",
       test_run: "测试运行",
       test_run_desc: "运行代理并评估结果",
-      test_input_label: "测试输入（可选）",
+      test_input_label: "测试输入（可选）"
     },
     ops: {
       sessions: "会话",
@@ -1900,21 +1892,21 @@ export const zh = {
       reviews: "审查",
       reviews_desc: "待处理的批准和决策",
       versions: "版本",
-      versions_desc: "提示词版本历史和回滚",
+      versions_desc: "提示词版本历史和回滚"
     },
     ops_run: {
       execute_agent: "执行代理",
       running: "运行中...",
       recent: "最近",
       no_executions: "暂无执行",
-      refresh_executions: "刷新执行",
+      refresh_executions: "刷新执行"
     },
     ops_lab: {
       history: "历史",
       no_lab_runs: "暂无实验室运行",
       refresh_lab: "刷新实验室历史",
       arena: "竞技场",
-      improve: "改进",
+      improve: "改进"
     },
     ops_health: {
       no_health_data: "无健康数据",
@@ -1926,28 +1918,24 @@ export const zh = {
       run_check_aria: "运行健康检查",
       healthy: "健康",
       degraded: "性能下降",
-      unhealthy: "不健康",
+      unhealthy: "不健康"
     },
     ops_assertions: {
       active_count: "活跃 {enabled}/{total}",
       no_assertions: "未配置断言",
       refresh_assertions: "刷新断言",
       enable_assertion: "启用 {name}",
-      disable_assertion: "禁用 {name}",
+      disable_assertion: "禁用 {name}"
     },
     health_tab: {
       title: "健康检查",
-      description: "对代理当前配置运行空跑分析，以检测缺失的凭据、断开的连接器、不兼容的工具组合和未充分指定的用例。问题以可操作卡片形式呈现，支持一键修复。",
+      description: "对代理当前配置运行空跑分析，以检测缺失的凭据、断开的连接器、不兼容的工具组合和未充分指定的用例。问题以可操作卡片形式呈现，支持一键修复。"
     },
     matrix_tab: {
       loading: "正在加载矩阵",
-      no_data: "无矩阵数据。请构建或重建此代理以生成维度。",
+      no_data: "无矩阵数据。请构建或重建此代理以生成维度。"
     },
     settings_status: {
-      // @llm-translated 2026-04-17
-      speak_as: "以……身份发言",
-      no_twins_configured: "未配置孪生体。打开孪生插件创建一个——此代理即可采用它。",
-      twin_profile_aria: "此代理以哪个孪生配置文件发言",
       saving: "正在保存 {sections}...",
       changed: "{sections} 已更改",
       all_saved: "所有更改已保存",
@@ -1969,10 +1957,11 @@ export const zh = {
       health_watch: "健康监控",
       health_watch_active: "健康监控活跃（每 6 小时）",
       health_watch_enable: "启用持续健康监控",
+      speak_as: "以……身份发言",
+      no_twins_configured: "未配置孪生体。打开孪生插件创建一个——此代理即可采用它。",
+      twin_profile_aria: "此代理以哪个孪生配置文件发言"
     },
     tool_runner: {
-      // @llm-translated 2026-04-17
-      input_json_placeholder: '{ "key": "value" }',
       no_tools: "此代理未分配工具。",
       input_json: "输入 JSON",
       run: "运行",
@@ -1980,6 +1969,7 @@ export const zh = {
       success: "成功",
       failed: "失败",
       error: "错误",
+      input_json_placeholder: "value"
     },
     health_check: {
       title: "代理健康检查",
@@ -1996,7 +1986,7 @@ export const zh = {
       rerun: "重新运行",
       capabilities: "功能",
       all_healthy: "所有系统健康",
-      all_healthy_detail: "代理配置中未检测到问题",
+      all_healthy_detail: "代理配置中未检测到问题"
     },
     health_digest: {
       title: "代理健康摘要",
@@ -2011,25 +2001,24 @@ export const zh = {
       agents_checked_other: "已检查 {count} 个代理",
       issues_one: "{count} 个问题",
       issues_other: "{count} 个问题",
-      last_run: "上次运行：{time}",
+      last_run: "上次运行：{time}"
     },
     health_issue: {
       apply_fix: "应用修复：{label}",
-      manual_action: "需要手动操作",
+      manual_action: "需要手动操作"
     },
     health_score: {
       healthy: "健康",
       degraded: "性能下降",
-      unhealthy: "不健康",
+      unhealthy: "不健康"
     },
     prompt_editor: {
-      // @llm-translated 2026-04-17
-      sections_aria: "提示词章节",
       no_persona: "未选择代理",
       enter_content: "输入 {section} 内容...",
       new_section: "新章节",
       saved: "已保存",
       sections: "章节",
+      sections_aria: "提示词章节"
     },
     custom_sections: {
       title: "自定义章节",
@@ -2039,7 +2028,7 @@ export const zh = {
       remove_section: "删除章节",
       title_placeholder: "章节标题...",
       content_placeholder: "章节内容...",
-      custom_section: "自定义章节",
+      custom_section: "自定义章节"
     },
     activity_filters: {
       all: "全部",
@@ -2047,7 +2036,7 @@ export const zh = {
       events: "事件",
       memories: "记忆",
       reviews: "审查",
-      messages: "消息",
+      messages: "消息"
     },
     overview_actions: {
       delete_agent: "删除代理",
@@ -2055,7 +2044,7 @@ export const zh = {
       delete_agents: "删除 {count} 个代理",
       delete_agents_message: "{count} 个代理及其所有配置将被永久删除。",
       delete_drafts: "删除 {count} 个草稿",
-      delete_drafts_message: "{count} 个草稿代理将被永久删除。",
+      delete_drafts_message: "{count} 个草稿代理将被永久删除。"
     },
     persona_list: {
       all_personas: "所有代理",
@@ -2083,7 +2072,7 @@ export const zh = {
       show_only_favorites: "只显示收藏",
       clear_search: "清除搜索",
       col_persona: "代理",
-      no_connectors_configured: "未配置连接器",
+      no_connectors_configured: "未配置连接器"
     },
     design_preview: {
       preview: "预览",
@@ -2097,7 +2086,7 @@ export const zh = {
       activating: "激活中...",
       activate_agent: "激活代理",
       create_agent: "创建代理",
-      min_completeness: "添加更多详情以达到 40% 完整度",
+      min_completeness: "添加更多详情以达到 40% 完整度"
     },
     editor_ui: {
       max_budget_label: "最大预算（USD）",
@@ -2221,8 +2210,8 @@ export const zh = {
       cost_per_run: "单次成本",
       last_run: "上次运行",
       rank: "排名",
-      view_in_leaderboard: "在排行榜中查看",
-    },
+      view_in_leaderboard: "在排行榜中查看"
+    }
   },
   vault: {
     title: "密钥库",
@@ -2234,7 +2223,7 @@ export const zh = {
     health: {
       healthy: "健康",
       needs_attention: "需要关注",
-      untested: "未测试",
+      untested: "未测试"
     },
     list: {
       no_credentials: "未检测到已认证的服务。请在下方手动选择。",
@@ -2243,6 +2232,7 @@ export const zh = {
       no_dependencies: "没有智能体依赖此凭证。可以安全修改或删除。",
       affected_agents: "受影响的智能体",
       affected_events: "受影响的事件",
+      sort_label: "排序："
     },
     import: {
       title: "导入来源",
@@ -2257,8 +2247,16 @@ export const zh = {
         min30: "30 分钟",
         hour1: "1 小时",
         hour6: "6 小时",
-        day1: "24 小时",
+        day1: "24 小时"
       },
+      parse_secrets: "解析密钥",
+      selected_for_import: "已选择导入",
+      auto_detected: "自动检测",
+      sync_supported: "支持同步",
+      secrets_found_one: "找到 {count} 个密钥",
+      secrets_found_other: "找到 {count} 个密钥",
+      import_secrets_one: "导入 {count} 个密钥",
+      import_secrets_other: "导入 {count} 个密钥"
     },
     features: {
       anomaly_detected: "检测到异常：凭证在之前成功后突然失败。可能已被吊销。",
@@ -2282,7 +2280,7 @@ export const zh = {
         remove_failed: "删除策略失败：{error}",
         update_failed: "更新轮换周期失败：{error}",
         enable_failed: "启用轮换失败：{error}",
-        last_rotated: "上次轮换 {time}",
+        last_rotated: "上次轮换 {time}"
       },
       anomaly: {
         healthy: "健康",
@@ -2294,13 +2292,13 @@ export const zh = {
         samples: "{count} 次检查",
         permanent: "持续：{rate}",
         transient: "临时：{rate}",
-        tolerance: "容差：{rate}",
+        tolerance: "容差：{rate}"
       },
       rotation_badge: {
         disabled: "已禁用",
         perm_errors: "持续错误",
         degrading: "持续恶化",
-        backoff: "等待重试",
+        backoff: "等待重试"
       },
       audit: {
         empty: "暂无审计记录。操作发生时将自动记录。",
@@ -2309,13 +2307,13 @@ export const zh = {
         op_updated: "已更新",
         op_deleted: "已删除",
         op_healthcheck: "连接测试",
-        filter_all: "全部",
+        filter_all: "全部"
       },
       intelligence: {
         operation: "操作",
         detail: "详情",
-        time: "时间",
-      },
+        time: "时间"
+      }
     },
     negotiator: {
       title: "AI 凭证协商器",
@@ -2343,13 +2341,14 @@ export const zh = {
       open_in_browser: "在浏览器中打开",
       step_complete_captured: "步骤完成 -- 值已捕获",
       mark_complete: "标记为已完成",
-      completed: "已完成",
+      completed: "已完成"
     },
     card: {
       scope_mismatch: "权限不匹配",
       scope_missing_one: "{count} 个请求的权限未授予：",
       scope_missing_other: "{count} 个请求的权限未授予：",
       reauthorize: "重新授权",
+      reauthorize_scopes: "使用附加权限重新授权"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2367,6 +2366,18 @@ export const zh = {
       configure_fields: "配置凭据字段",
       detect: "检测",
       auto_add: "自动添加",
+      connection_test_heading: "连接测试",
+      test_connection_btn: "测试连接",
+      credential_fields_heading: "凭证字段",
+      how_to_get_connector: "如何获取 {connectorLabel} 凭证",
+      authorization_complete: "授权完成",
+      copied_to_clipboard: "已复制到剪贴板",
+      credential_name: "凭证名称",
+      credential_name_placeholder: "为此凭证命名——例如 我的 {label} 账户、生产环境 {label}",
+      authorizing_with: "正在使用 {label} 授权...",
+      authorize_with: "使用 {label} 授权",
+      oauth_consent_hint: "将在浏览器中打开 {label}。授予访问权限后返回此处。",
+      oauth_connected_at: "{label} 已于 {time} 连接"
     },
     type_picker: {
       title: "添加凭据",
@@ -2395,7 +2406,7 @@ export const zh = {
       workspace_connect: "工作区连接",
       workspace_connect_hint: "一次 Google 登录自动创建 Gmail、日历、Drive 和 Sheets 凭据",
       auto_discover: "自动发现凭据",
-      auto_discover_hint: "扫描文件系统以获取现有 API 密钥、AWS 配置文件、环境变量等",
+      auto_discover_hint: "扫描文件系统以获取现有 API 密钥、AWS 配置文件、环境变量等"
     },
     body: {
       authorizing: "正在通过 {name} 授权...",
@@ -2403,12 +2414,12 @@ export const zh = {
       authorize_hint: "打开 {name} 登录页，批准后保存访问令牌。",
       consent_completed: "{name} 授权已于 {time} 完成",
       update_failed: "更新凭据失败",
-      delete_credential: "删除凭据",
+      delete_credential: "删除凭据"
     },
     connector: {
       filter_all: "全部",
       filter_connected: "已连接",
-      filter_available: "可用",
+      filter_available: "可用"
     },
     auto_cred: {
       guided_setup: "引导设置",
@@ -2440,6 +2451,14 @@ export const zh = {
       open_in_browser: "在浏览器中打开",
       completed_step: "我已完成此步骤",
       input_requested: "需要输入",
+      cancel_session: "取消会话",
+      test_connection: "测试连接",
+      testing: "测试中...",
+      re_run_browser: "重新运行浏览器",
+      discard: "丢弃",
+      save_credential: "保存凭证",
+      save_procedure: "保存流程",
+      procedure_saved: "流程已保存"
     },
     vector: {
       documents_tab: "文档",
@@ -2471,7 +2490,7 @@ export const zh = {
       documents: "文档",
       chunks: "片段",
       local_embedding: "本地搜索",
-      local_embedding_hint: "使用 {model}（{dims} 维）在本地运行搜索索引。数据不会离开您的机器。模型（约 23MB）首次使用时下载并保存在本地。",
+      local_embedding_hint: "使用 {model}（{dims} 维）在本地运行搜索索引。数据不会离开您的机器。模型（约 23MB）首次使用时下载并保存在本地。"
     },
     design_modal: {
       title: "设计凭据",
@@ -2486,12 +2505,12 @@ export const zh = {
       how_to_fix: "如何修复",
       original_request: "您的原始请求（已保留）：",
       start_over: "重新开始",
-      try_again_with: "使用您的请求重试",
+      try_again_with: "使用您的请求重试"
     },
     desktop: {
       installed: "已安装",
       running: "运行中",
-      not_installed: "未安装",
+      not_installed: "未安装"
     },
     graph: {
       no_dependencies: "无依赖关系",
@@ -2501,7 +2520,7 @@ export const zh = {
       dep_count_other: "{count} 个依赖",
       not_tested: "未测试",
       healthy: "健康",
-      unhealthy: "不健康",
+      unhealthy: "不健康"
     },
     wizard: {
       detected: "已检测到（{count}）",
@@ -2511,7 +2530,7 @@ export const zh = {
       already_added_badge: "已添加",
       local: "本地",
       cli_auth: "CLI 认证",
-      session: "会话",
+      session: "会话"
     },
     playground: {
       tab_overview: "概览",
@@ -2541,7 +2560,7 @@ export const zh = {
       query_parameters: "查询参数",
       headers: "请求头",
       body: "请求体",
-      empty_response: "（空响应）",
+      empty_response: "（空响应）"
     },
     playground_extra: {
       add_tag: "添加标签...",
@@ -2562,11 +2581,11 @@ export const zh = {
       query_parameters: "查询参数",
       recipes_title: "已保存配方",
       truncated_warning: "响应已截断以供显示",
-      value_col: "值",
+      value_col: "值"
     },
     ingest: {
       save_name: "保存名称",
-      rename_credential: "重命名凭据",
+      rename_credential: "重命名凭据"
     },
     databases: {
       col_database: "数据库",
@@ -2680,6 +2699,8 @@ export const zh = {
       filter_tables: "筛选表格...",
       refresh: "刷新",
       introspection_unavailable: "此连接器类型不支持表格内省。",
+      not_null: "NOT NULL",
+      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "模拟撤销",
@@ -2725,9 +2746,14 @@ export const zh = {
       daily_execs_lost: "每日损失执行数",
       daily_cost_impact: "每日成本影响",
       sim_low: "无代理或工作流依赖此凭据。可以安全撤销。",
+      sim_critical: "撤销 {credentialName} 将会破坏 {workflows} 个工作流{workflowPlural}并停止 {personas} 个代理{personaPlural}。",
+      sim_high: "撤销 {credentialName} 将影响工作区中 {personas} 个代理{personaPlural}。",
+      sim_medium: "撤销 {credentialName} 的影响范围有限。",
+      per_day: "/天"
     },
     shared: {
       add: "添加",
+      copied: "已复制",
       no_connector_available: "此凭据类型没有可用的连接器定义。",
       request_builder: "请求构建器",
       close: "关闭",
@@ -2854,6 +2880,21 @@ export const zh = {
       no_documents_description: "拖放文件、粘贴文本或扫描目录以开始构建知识库。",
       delete_document: "删除文档",
       chunks_label: "{count} 个片段",
+      kb_count_summary: "-- {docs} 个文档，{chunks} 个片段",
+      default_patterns: "默认：",
+      add_pattern_placeholder: "*.pdf",
+      distance_label: "距离：",
+      chunk_label: "片段：",
+      copy_credential_id: "复制凭证 ID",
+      request_body: "请求体",
+      add_tag_title: "添加标签",
+      local_embedding_hint: "嵌入向量使用 {model} ({dims} 维) 本地生成。数据不会离开您的设备。模型（约 23MB）首次使用时下载并缓存在本地。",
+      api_path_placeholder: "/api/v1/resource",
+      json_body_placeholder: "value",
+      sending: "发送中...",
+      send: "发送",
+      search_results_one: "找到 {count} 条与 \"{query}\" 相关的结果",
+      search_results_other: "找到 {count} 条与 \"{query}\" 相关的结果"
     },
     manager: {
       title: "凭据",
@@ -2873,20 +2914,23 @@ export const zh = {
       test_all_credentials: "测试所有凭据",
       test_all: "全部测试",
       daily_progress: "每日 {done}/{total}",
-      testing_progress: "测试 {done}/{total}",
+      testing_progress: "测试 {done}/{total}"
     },
     bulk_healthcheck: {
       title: "健康检查结果",
       needs_attention: "需要关注",
       slowest_responses: "最慢响应",
+      passed_count: "{count} 个通过",
+      failed_count: "{count} 个失败",
+      total_count: "共 {count} 个"
     },
     health_bar: {
       healthy: "健康",
       needs_attention: "需要关注",
-      untested: "未测试",
+      untested: "未测试"
     },
     breadcrumb: {
-      aria_label: "保险库面包屑",
+      aria_label: "保险库面包屑"
     },
     credential_card: {
       deleting: "正在删除 {name}...",
@@ -2902,7 +2946,7 @@ export const zh = {
       remove_tag: "删除标签 \\\"{tag}\\\"",
       copy_credential_id: "复制凭据 ID",
       refresh_oauth: "立即刷新 OAuth 令牌",
-      refresh: "刷新",
+      refresh: "刷新"
     },
     vault_badge: {
       needs_attention: "需要关注",
@@ -2925,21 +2969,21 @@ export const zh = {
       encrypt_now_other: "立即加密 {count} 个未加密凭据",
       encrypt_done_one: "完成——{migrated} 个凭据已加密。",
       encrypt_done_other: "完成——{migrated} 个凭据已加密。",
-      encrypt_partial: "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。",
+      encrypt_partial: "已加密 {migrated} 个，失败 {failed} 个。请重试或重启应用。"
     },
     delete_dialog: {
       title: "删除凭据",
       cannot_undo: "此操作无法撤销。",
       label_name: "名称",
       label_type: "类型",
-      unverified_warning: "无法验证所有依赖关系。部分连接的代理或自动化可能未显示。",
+      unverified_warning: "无法验证所有依赖关系。部分连接的代理或自动化可能未显示。"
     },
     card_body: {
       failed_update: "更新凭据失败",
       authorizing_with: "正在通过 {name} 授权...",
       authorize_with: "通过 {name} 授权",
       authorize_hint: "启动应用管理的 {name} 授权并在批准后更新刷新令牌。",
-      consent_completed: "{name} 授权已于 {time} 完成",
+      consent_completed: "{name} 授权已于 {time} 完成"
     },
     card_details: {
       tab_intelligence: "智能",
@@ -2947,7 +2991,7 @@ export const zh = {
       tab_token_lifetime: "令牌生命周期",
       tab_services: "服务（{count}）",
       tab_events: "事件（{count}）",
-      tab_audit: "审计",
+      tab_audit: "审计"
     },
     intelligence_tab: {
       loading: "正在加载智能数据",
@@ -2968,7 +3012,7 @@ export const zh = {
       dependents_warning_other: "更改或删除此凭据将影响 {count} 个代理：",
       link_structural: "结构性",
       link_observed: "已观察",
-      via_connector: "通过 {connector}",
+      via_connector: "通过 {connector}"
     },
     token_metrics: {
       loading: "正在加载指标...",
@@ -2980,6 +3024,11 @@ export const zh = {
       avg_drift: "平均漂移",
       recent_ttls: "最近提供商 TTL（最新在前）",
       recent_refreshes: "最近刷新",
+      fallback_used: "在 {rate}% 的刷新中使用了回退 ({fallback}s)（{count}/{total}）— 服务商未提供"
+    },
+    reauth_banner: {
+      access_revoked: ") -- 访问权限已被撤销。请重新授权以恢复自动化。",
+      reconnect: "重新连接"
     },
     rotation_section: {
       corrupted_warning: "健康检查元数据已损坏。下次成功健康检查覆盖坏数据前，异常分数不可用。",
@@ -3000,6 +3049,7 @@ export const zh = {
       enabling: "启用中...",
       enable_rotation: "启用轮换",
       enable_failed: "启用轮换失败：{error}",
+      last_rotated: "最后轮换于 {time}"
     },
     event_config: {
       event_triggers: "事件触发器",
@@ -3026,6 +3076,7 @@ export const zh = {
       minutes_10: "10 分钟",
       healthcheck_auto_rotate: "当之前健康的凭据开始健康检查失败时，轮换将自动触发。",
       last_evaluated: "上次评估：{time}",
+      loading: "加载事件中..."
     },
     credential_forms: {
       encrypted_keychain: "已通过操作系统密钥链加密",
@@ -3039,6 +3090,10 @@ export const zh = {
       new_credential: "新 {label} 凭据",
       configure_fields: "配置凭据字段",
       oauth_required: "请使用下方授权按钮连接此凭据。",
+      open_to_generate: "打开 {label} 生成 API 密钥或令牌",
+      already_configured: "凭证已配置 -- 在下方更新以替换",
+      setup_instructions_label: "设置说明",
+      no_fields_defined: "此连接器未定义凭证字段。"
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3059,12 +3114,21 @@ export const zh = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI",
+      save_failed: "Failed to capture credential from CLI"
     },
     audit_log: {
       empty: "暂无审计记录",
       empty_hint: "操作发生时将自动记录。",
       access_events_hint: "访问事件将显示在此。",
+      loading: "正在加载审计时间线...",
+      total_accesses: "共 {count} 次",
+      personas_one: "{count} 个代理",
+      personas_other: "{count} 个代理",
+      accesses_24h: "24 小时内 {count} 次",
+      anomalies_one: "{count} 项异常",
+      anomalies_other: "{count} 项异常",
+      no_anomalies: "无异常",
+      show_all: "显示全部 {count} 条记录"
     },
     credential_import: {
       import_from: "从 {source} 导入",
@@ -3073,6 +3137,12 @@ export const zh = {
       enable_sync: "启用同步模式",
       source_ref: "来源引用",
       poll_interval: "轮询间隔",
+      sync_hint: "监听外部保险库变更并使用轮询自动更新凭证。",
+      interval_15min: "15 分钟",
+      interval_30min: "30 分钟",
+      interval_1hr: "1 小时",
+      interval_6hr: "6 小时",
+      interval_24hr: "24 小时"
     },
     empty_state: {
       heading: "连接您的第一个服务",
@@ -3081,11 +3151,11 @@ export const zh = {
       catalog_description: "选择已知服务，如 Slack、GitHub 或 OpenAI。预配置字段和健康检查。",
       ai_heading: "AI 设计凭据",
       ai_description: "描述任何服务，AI 将为您配置字段、认证类型和健康检查。",
-      works_with_any: "适用于任何 API",
+      works_with_any: "适用于任何 API"
     },
     credential_list: {
       no_match: "无匹配凭据",
-      no_match_hint: "尝试调整筛选器或搜索词",
+      no_match_hint: "尝试调整筛选器或搜索词"
     },
     wizard_detect: {
       no_services: "无服务匹配 \\\"{search}\\\"",
@@ -3097,6 +3167,15 @@ export const zh = {
       batch_complete: "批量设置完成",
       skip_service: "跳过此服务",
       no_filter_match: "尝试不同的搜索词或清除筛选器。",
+      set_up_credentials: "设置凭证",
+      clear_selection: "清除选择",
+      set_up_services: "设置 {count} 个服务{plural}",
+      setting_up: "正在设置第 {current} 个 / 共 {total} 个",
+      wizard_title: "凭证设置向导",
+      choose_service: "选择要设置的服务",
+      ai_walk_description: "AI 将逐步引导您获取 API 凭证。",
+      wizard_subtitle: "AI 引导式凭证设置",
+      wizard_subtitle_batch: "正在设置 {count} 个服务{plural}"
     },
     autopilot: {
       title: "API 自动驾驶",
@@ -3120,6 +3199,23 @@ export const zh = {
       query_parameters: "查询参数",
       param_name_placeholder: "参数名称",
       request_body: "请求体（JSON）",
+      from_url: "从 URL",
+      paste_content: "粘贴内容",
+      openapi_spec_url: "OpenAPI 规范 URL",
+      openapi_format_hint: "支持 JSON 或 YAML 格式的 OpenAPI 3.x 和 Swagger 2.x 规范",
+      parsing_spec: "正在解析规范...",
+      parse_analyze: "解析与分析",
+      connector_in_catalog: "{connectorLabel} 现已在您的连接器目录中可用，包含 {toolCount} 个工具定义。",
+      generated_tools: "生成的工具 ({count})",
+      credential_fields: "凭证字段",
+      open_playground: "打开测试工作台",
+      copy_connector_id: "复制连接器 ID",
+      go_to_catalog: "前往目录",
+      response_headers: "响应头 ({count})",
+      base_url_placeholder: "https://api.example.com",
+      openapi_url_placeholder: "https://api.example.com/openapi.json",
+      auth_schemes: "认证方案",
+      body_placeholder: "value"
     },
     foraging: {
       no_credentials_found: "未找到凭据",
@@ -3136,10 +3232,44 @@ export const zh = {
       step_done: "完成",
       step_completed: "（已完成）",
       step_current: "（当前）",
+      start_scan: "开始扫描",
+      checking_env: "正在检查环境变量、配置文件和开发工具凭证",
+      importing: "正在导入凭证至保险库...",
+      scan_again: "再次扫描",
+      back_to_vault: "返回保险库",
+      already_in_vault: "已在保险库中",
+      imported: "已导入",
+      to_vault: "至保险库",
+      credentials_found_one: "找到 {count} 个凭证",
+      credentials_found_other: "找到 {count} 个凭证",
+      selected: "已选择",
+      import_to_vault_one: "导入 {count} 个凭证至保险库",
+      import_to_vault_other: "导入 {count} 个凭证至保险库",
+      env_var_one: "{count} 个环境变量",
+      env_var_other: "{count} 个环境变量",
+      import_server: "导入",
+      sources_in: "来源，耗时",
+      progress_aria: "采集进度",
+      scanned_sources: "已扫描 {count} 个来源，耗时 {ms}ms"
     },
     desktop_discovery: {
       title: "桌面应用",
       allowed_binaries: "允许的二进制文件：",
+      connect_description: "连接本地应用或导入 Claude Desktop MCP 服务器",
+      detected_apps_tab: "已检测应用 ({count})",
+      claude_mcp_tab: "Claude MCP ({count})",
+      scanning: "正在扫描桌面应用...",
+      detected_on_system: "已在系统中检测到",
+      not_detected: "未检测到",
+      no_apps: "未检测到桌面应用。请尝试刷新。",
+      reading_config: "正在读取 Claude Desktop 配置...",
+      mcp_servers_found_one: "在 Claude Desktop 配置中找到 {count} 个 MCP 服务器。将其作为凭证导入以供您的代理使用。",
+      mcp_servers_found_other: "在 Claude Desktop 配置中找到 {count} 个 MCP 服务器。将其作为凭证导入以供您的代理使用。",
+      no_mcp_config: "未找到 Claude Desktop MCP 配置。",
+      mcp_config_hint: "如果您安装了 Claude Desktop，请确保其设置中已配置 MCP 服务器。",
+      permission_required: "需要权限",
+      approve_description: "请求以下能力。请审核并批准以启用此连接器。",
+      approve_connect: "批准并连接"
     },
     picker_section: {
       no_connectors: "未找到连接器",
@@ -3150,10 +3280,29 @@ export const zh = {
       filter_purpose: "用途",
       filter_category: "类别",
       filter_license: "许可证",
+      credential_name: "凭证名称",
+      add_project_first: "请先在开发工具中添加项目，以将代码库连接到您的代理。",
+      go_to_dev_tools: "前往开发工具",
+      workspace_connect_description: "一次 Google 登录即可自动创建 Gmail、Calendar、Drive 和 Sheets 凭证",
+      foraging_description: "扫描您的文件系统以查找现有 API 密钥、AWS 配置文件、环境变量等",
+      no_setup_guide: "此连接器没有可用的设置指南。请访问下方的文档链接查看说明。",
+      open_setup_page: "打开 {label} 设置页面"
+    },
+    cli_capture: {
+      cta: "从本地 CLI 导入",
+      hint: "使用已登录的本地 CLI 代替粘贴 API 密钥。",
+      running: "正在运行本地 CLI...",
+      success: "已从 CLI 获取凭证",
+      token_ttl_notice: "此令牌将在 {seconds}s 后过期，将自动刷新。",
+      source_label: "CLI",
+      missing_binary: "`{binary}` 未安装或不在允许列表的位置。",
+      unauthenticated: "您未登录 {binary}。{instruction}",
+      capture_failed: "CLI 获取失败：{detail}",
+      timeout: "CLI 获取超时。请先尝试手动运行该命令。"
     },
     schemas: {
       none_configured: "未配置。",
-      required_badge: "必填",
+      required_badge: "必填"
     },
     design_phases: {
       saving: "正在保存凭据...",
@@ -3186,8 +3335,32 @@ export const zh = {
       mark_done: "标记为已完成",
       mark_step_complete: "标记步骤完成",
       copy_to_clipboard: "复制到剪贴板",
+      credential_saved_message: "{label} 凭证已安全保存。",
+      revision_count: "（修订 {count}）",
+      connector_added_to_catalog: "连接器已添加至您的目录 -- 现已可用于其他代理和模板采用。",
+      view_credential: "查看凭证",
+      refine_hint: "需要调整权限范围、添加字段或修改配置？",
+      refine_placeholder: "例如 添加写入权限、添加预发布环境...",
+      refine: "优化",
+      linked_to_existing: "您的凭证将关联至现有的连接器定义。",
+      no_existing_connector: "-- 您的目录中未找到现有的 {name} 连接器。",
+      new_connector_will_be_registered: "保存此凭证时，AI 生成的连接器定义将自动注册到您的连接器目录 -- 使其可重用于其他代理和模板采用。",
+      refine_request: "不完全正确？优化您的请求",
+      auto_provision_hint: "-- 让 AI 逐步引导您获取 {label} 凭证。",
+      credential_name_label: "凭证名称",
+      credentials_secure_notice: "凭证已安全存储于应用保险库，可供代理工具执行使用。",
+      tested_successfully_at: "已于 {time} 测试成功",
+      setup_instructions: "设置说明",
+      all_steps_complete: "所有步骤已完成 -- 请填写以下字段并测试您的连接。",
+      use_template: "使用",
+      recipe_used_one: "-- 已使用 {count} 次",
+      recipe_used_other: "-- 已使用 {count} 次",
+      instruction_placeholder: "例如 Slack、OpenAI、GitHub、Stripe..."
     },
     auto_cred_extra: {
+      browser_automation_warning: "浏览器自动化正在运行。请勿与窗口交互——完成后将恢复。",
+      desktop_bridge_title: "{{label}} 需要桌面应用",
+      desktop_bridge_hint: "此连接器使用原生浏览器会话，仅在 Personas 桌面应用中运行。",
       preparing_guided: "正在准备引导设置说明...",
       starting_browser: "正在启动浏览器会话...",
       no_log_output: "未捕获日志输出。",
@@ -3218,8 +3391,26 @@ export const zh = {
       step_browser_review: "返回此处供您审查后保存",
       step_guided_review: "审查并保存凭据",
       setup_context: "来自设计分析的设置上下文：",
+      review_extracted: "审核提取的凭证",
+      review_extracted_hint: "从浏览器提取的值 -- 保存前请核对",
+      completeness_partial: "已填写 {filled} / {total} 个必填字段。保存前请完成缺失字段。",
+      universal_auto_setup: "通用自动设置",
+      universal_auto_setup_hint: "提供 URL 和描述，AI 将导航网站以自动发现并创建 API 凭证。",
+      service_url_label: "服务 URL",
+      service_url_placeholder: "https://app.example.com 或 https://developer.example.com",
+      what_do_you_need: "您需要什么？",
+      description_placeholder: "例如 我需要一个 API 密钥用于其 REST API 以读写数据。开发者门户在设置下有 API 密钥部分。",
+      discover_credentials: "发现凭证",
+      discovered_label: "已发现：{label}",
+      fields_discovered_one: "发现 {count} 个字段",
+      fields_discovered_other: "发现 {count} 个字段",
+      extracted_values_label: "提取的值",
+      no_fields_discovered: "未发现任何字段。请使用更具体的描述重试。",
+      fields_captured_partial: "已捕获 {filled}/{total} 个字段",
+      credential_stored: "{label} 凭证已安全存储。"
     },
     negotiator_extra: {
+      panel_title: "AI 凭证协商器",
       checking_auth: "正在检查现有认证...",
       auto_provisioning: "自动化 API 密钥配置",
       generating_plan: "正在生成配置计划...",
@@ -3228,6 +3419,7 @@ export const zh = {
       need_help: "此步骤需要帮助？",
       hide_help: "隐藏帮助",
       ask_question: "询问关于此步骤的问题...",
+      planning_description: "AI 正在分析开发者门户并生成分步配置计划..."
     },
     workspace_panel: {
       select_services: "选择要连接的服务",
@@ -3235,6 +3427,15 @@ export const zh = {
       creating_credentials: "正在创建凭据...",
       all_created: "所有凭据已创建",
       some_failed: "部分凭据创建失败",
+      selected_count: "已选择 {selected} / {total}",
+      select_all: "全选",
+      connect_services_one: "一次登录连接 {count} 个服务",
+      connect_services_other: "一次登录连接 {count} 个服务",
+      granting_access_one: "这将授予 {count} 个服务访问权限",
+      granting_access_other: "这将授予 {count} 个服务访问权限",
+      credentials_created_one: "单次登录创建了 {count} 个凭证。",
+      credentials_created_other: "单次登录创建了 {count} 个凭证。",
+      sign_in_browser: "在浏览器窗口中使用您的 Google 账户登录。"
     },
     gateway: {
       gateway_members: "{name} — 网关成员",
@@ -3251,7 +3452,7 @@ export const zh = {
       display_name: "显示名称（工具前缀）",
       display_name_placeholder: "例如 arcade、research_tools、docs",
       adding: "添加中…",
-      add_member: "添加成员",
+      add_member: "添加成员"
     },
     pending_auth: {
       title: "需要授权",
@@ -3265,13 +3466,13 @@ export const zh = {
       open_first: "请先打开 URL 并授予同意",
       retrying: "重试中…",
       retry_authorized: "我已授权——重试",
-      retry_failed: "重试失败",
+      retry_failed: "重试失败"
     },
     rotation_insight: {
       perm_errors: "检测到永久性错误——已尝试轮换并发出警报。",
       degrading: "持续性能下降——已触发预防性轮换。",
-      backoff: "瞬时失败——指数退避活跃。",
-    },
+      backoff: "瞬时失败——指数退避活跃。"
+    }
   },
   deployment: {
     title: "部署",
@@ -3289,7 +3490,7 @@ export const zh = {
       token_available: "令牌可用",
       no_token: "未配置令牌",
       no_token_configured: "未配置令牌",
-      no_status: "无状态数据。",
+      no_status: "无状态数据。"
     },
     api_playground: {
       title: "API 测试场",
@@ -3299,10 +3500,12 @@ export const zh = {
       sending: "发送中...",
       empty_response: "（空响应）",
       snippets: "代码片段",
+      request_body_placeholder: "在此输入您的提示..."
     },
     connection: {
       orchestrator_url_label: "云服务器 URL",
       orchestrator_prefix: "https://",
+      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "输入 API 密钥",
       connect: "连接",
       connected: "已连接",
@@ -3312,16 +3515,28 @@ export const zh = {
       diagnostics_title: "诊断",
       url_protocol_error: "URL 必须使用 http 或 https",
       url_hostname_error: "URL 缺少主机名",
-      url_invalid: "无效 URL",
+      url_invalid: "无效 URL"
     },
     deployments_panel: {
       deploy_persona: "部署代理",
       select_persona: "选择要部署的代理",
       all_deployed: "所有代理已部署",
+      no_deployments_yet: "尚无部署。在上方选择一个代理以将其部署为云 API 端点。",
+      active_deployments: "活动部署"
     },
     exec_detail: {
       fetching_output: "正在获取输出...",
       no_output: "无输出",
+      label_status: "状态：",
+      label_duration: "耗时：",
+      label_cost: "成本：",
+      label_tokens: "令牌：",
+      label_started: "开始：",
+      label_completed: "完成：",
+      label_input: "输入：",
+      view_output: "查看输出",
+      output_prefix: "输出 (",
+      output_lines_suffix: "行)"
     },
     oauth_panel: {
       connect_anthropic: "连接 Anthropic 账户",
@@ -3333,6 +3548,13 @@ export const zh = {
       token_unknown: "令牌状态未知",
       expires: "到期",
       scopes: "权限范围",
+      open_auth_window: "打开授权窗口",
+      complete_authorization: "完成授权",
+      refresh_token: "刷新令牌",
+      open_authorization_window: "打开授权窗口",
+      token_unknown_msg: "无法验证令牌有效性。请刷新令牌以确认其仍然有效。",
+      connect_anthropic_msg: "连接您的 Anthropic 账户以为云执行启用基于 OAuth 的身份验证。",
+      token_expired_msg_prefix: "此 OAuth 令牌已过期"
     },
     trigger_form: {
       new_cloud_trigger: "新建云触发器",
@@ -3342,9 +3564,15 @@ export const zh = {
       schedule_cron: "计划（cron）",
       create_trigger: "创建触发器",
       creating: "创建中...",
+      cron_expression: "Cron 表达式",
+      utc_suffix: "(UTC)",
+      webhook_info: "将为此触发器创建 webhook 端点。您可以在创建后配置负载过滤。"
     },
     chart: {
       daily_executions: "每日执行",
+      tooltip_runs: "运行次数：",
+      tooltip_cost: "成本：",
+      tooltip_success: "成功："
     },
     deploy_card: {
       test_deployment: "测试部署",
@@ -3353,6 +3581,10 @@ export const zh = {
       remove_deployment: "删除部署",
       copy_endpoint: "复制端点",
       open_endpoint: "打开端点",
+      budget_label: "预算：",
+      label_invocations: "调用次数：",
+      label_last_called: "最后调用：",
+      label_created: "创建时间："
     },
     tabs: {
       connection: "连接",
@@ -3360,7 +3592,7 @@ export const zh = {
       oauth: "OAuth",
       deployments: "部署",
       schedules: "计划任务",
-      history: "历史",
+      history: "历史"
     },
     cloud_execution: "云端执行",
     cloud_status: {
@@ -3372,7 +3604,7 @@ export const zh = {
       queue_length: "队列长度",
       active_executions: "活跃执行",
       active_execution: "活跃执行",
-      claude_token: "Claude 令牌",
+      claude_token: "Claude 令牌"
     },
     history: {
       just_now: "刚刚",
@@ -3392,6 +3624,8 @@ export const zh = {
       last_30_days: "最近 30 天",
       last_90_days: "最近 90 天",
       top_errors: "常见错误",
+      clear_filters: "清除过滤器",
+      execution_history: "执行历史"
     },
     schedules: {
       header: "云端触发器（{count}）",
@@ -3401,6 +3635,12 @@ export const zh = {
       empty: "暂无云端触发器。创建一个以安排自动运行。",
       recent_firings: "最近触发",
       no_firings: "无最近触发",
+      label_type: "类型：",
+      label_status: "状态：",
+      label_last_triggered: "上次触发：",
+      label_next_trigger: "下次触发：",
+      label_cron: "Cron：",
+      loading_firings: "加载中..."
     },
     dashboard: {
       title: "部署",
@@ -3455,7 +3695,7 @@ export const zh = {
       stage_generating: "生成中",
       stage_completed: "已完成",
       stage_failed: "已失败",
-      tool_calls: "{count} 次工具调用",
+      tool_calls: "{count} 次工具调用"
     },
     cloud_trigger_schedule: "计划（Cron）",
     cloud_trigger_polling: "轮询",
@@ -3470,7 +3710,7 @@ export const zh = {
     cron_daily_midnight: "每天午夜 UTC",
     cron_daily_9am: "每天上午 9 点 UTC",
     cron_weekdays_9am: "工作日上午 9 点 UTC",
-    cron_weekly_sun: "每周日午夜 UTC",
+    cron_weekly_sun: "每周日午夜 UTC"
   },
   sharing: {
     export_title: "导出包",
@@ -3548,6 +3788,7 @@ export const zh = {
     persistence_denied: "拒绝",
     capabilities_label: "功能：",
     capabilities_none: "无",
+    enclave_hash_label: "哈希：",
     network_sharing_title: "网络与分享",
     network_sharing_subtitle: "管理您的身份、受信任对等方和共享资源",
     exposed_resources: "暴露的资源",
@@ -3611,8 +3852,17 @@ export const zh = {
     no_shared_resources: "无共享资源。同步清单以检查。",
     discovered_peers: "已发现对等方",
     refresh: "刷新",
+    refresh_peer_list: "刷新对等节点列表",
     scanning_network: "正在扫描本地网络...",
     lan_hint: "同一局域网上的其他 Personas 实例将自动出现在此。",
+    peer_list_stale: "对等节点列表可能已过时 —",
+    network_data_stale: "网络数据可能已过时 —",
+    peer_id_footer: "对等节点 ID",
+    remove_exposure: "移除公开",
+    revoke_trust: "撤销信任",
+    remove_peer: "移除对等节点",
+    share_link_tooltip: "生成一次性分享链接（24 小时后过期）",
+    copy_clipboard_tooltip: "将捆绑包以 base64 格式复制到剪贴板（最大 256 KB）",
     message_throughput: "消息吞吐量",
     sent: "已发送",
     received: "已接收",
@@ -3628,7 +3878,7 @@ export const zh = {
     sync_rounds: "同步轮次",
     success_fail: "成功/失败",
     avg_sync_duration: "平均同步时长",
-    entries_received: "已接收条目",
+    entries_received: "已接收条目"
   },
   overview: {
     title: "概览",
@@ -3638,7 +3888,7 @@ export const zh = {
     filters: {
       start_date: "开始日期",
       end_date: "结束日期",
-      all_personas: "所有智能体",
+      all_personas: "所有智能体"
     },
     messages: {
       loading: "加载消息...",
@@ -3649,7 +3899,7 @@ export const zh = {
         title: "标题",
         priority: "优先级",
         status: "状态",
-        created: "创建时间",
+        created: "创建时间"
       },
       content_header: "内容",
       priority_high: "高",
@@ -3666,6 +3916,9 @@ export const zh = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "桌面",
+      id_label: "ID：",
+      confirm_delete_title: "确认删除",
+      close_message: "关闭消息详情"
     },
     realtime: {
       idle: "空闲 -- 点击 {action} 模拟流量",
@@ -3673,7 +3926,7 @@ export const zh = {
       events_per_min: "事件/分钟",
       pending: "待处理",
       success: "成功",
-      in_window: "窗口内",
+      in_window: "窗口内"
     },
     observability: {
       title: "可观测性",
@@ -3686,12 +3939,18 @@ export const zh = {
       manual_fix: "（已手动修复）",
       metrics_unavailable: "指标不可用 -- 显示的数据可能已过期",
       no_open_issues: "没有未解决的问题",
-      run_analysis: "运行分析以检查问题。",
+      run_analysis: "运行分析以检查问题。"
     },
     memories: {
       title: "记忆",
       created_success: "记忆创建成功",
       no_memories: "暂无记忆",
+      no_memories_hint: "当代理运行时，可以在此存储有价值的笔记和学习内容。",
+      no_memories_match: "没有匹配当前过滤器的记忆",
+      list_aria_label: "记忆列表",
+      add_memory_btn: "添加记忆",
+      search_placeholder: "搜索记忆...",
+      no_filter_match: "没有记忆匹配您的过滤器。请尝试调整搜索。",
       form: {
         agent: "智能体",
         category: "类别",
@@ -3699,8 +3958,13 @@ export const zh = {
         content: "内容",
         importance: "重要性",
         tags: "标签",
-        tags_hint: "（逗号分隔）",
-      },
+        tags_hint: "（逗号分隔）"
+      }
+    },
+    memory_review: {
+      all_conflicts_resolved: "所有冲突已解决",
+      keep_prefix: "保留 \"",
+      keep_suffix: "\""
     },
     executions: {
       title: "执行记录",
@@ -3708,7 +3972,7 @@ export const zh = {
       no_agents: "尚未创建智能体",
       create_first: "创建您的第一个智能体以在此查看执行活动",
       no_executions: "暂无执行记录",
-      run_agent: "运行智能体以在此查看执行活动",
+      run_agent: "运行智能体以在此查看执行活动"
     },
     workflows: {
       loading: "加载工作流...",
@@ -3719,7 +3983,7 @@ export const zh = {
       all_types: "所有类型",
       no_filter_match: "没有作业匹配当前过滤器",
       auto_refreshing: "作业运行时自动刷新",
-      cancel_failed: "取消工作流作业失败",
+      cancel_failed: "取消工作流作业失败"
     },
     schedules: {
       title: "计划时间线",
@@ -3750,7 +4014,7 @@ export const zh = {
       change_frequency: "更改频率",
       pause_schedule: "暂停计划",
       resume_schedule: "恢复计划",
-      headless_badge: "无界面",
+      headless_badge: "无界面"
     },
     frequency_editor: {
       title: "更改频率",
@@ -3760,7 +4024,7 @@ export const zh = {
       interval_seconds: "间隔（秒）",
       previewing: "预览中...",
       next_runs: "下次运行",
-      invalid_cron: "无效的 cron 表达式",
+      invalid_cron: "无效的 cron 表达式"
     },
     recovery: {
       agents_missed_one: "{count} 个智能体错过了执行",
@@ -3774,7 +4038,7 @@ export const zh = {
       run_once_tooltip: "立即运行一次",
       skip_tooltip: "跳过 -- 不恢复",
       dismiss_all: "全部忽略",
-      recover_selected: "恢复已选的 {count} 个",
+      recover_selected: "恢复已选的 {count} 个"
     },
     sla: {
       title: "智能体可靠性 SLA",
@@ -3799,7 +4063,7 @@ export const zh = {
       metric_cost: "成本",
       metric_mtbf: "MTBF",
       metric_auto_healed: "自动修复",
-      metric_cancelled: "已取消",
+      metric_cancelled: "已取消"
     },
     knowledge: {
       title: "知识图谱",
@@ -3824,14 +4088,14 @@ export const zh = {
       failures: "失败",
       avg_cost: "平均成本",
       avg_duration: "平均时长",
-      pattern_data: "模式数据",
+      pattern_data: "模式数据"
     },
     conflicts: {
       dismissed: "冲突已忽略",
       resolved: "冲突已解决",
       resolve_failed: "解决冲突失败",
       conflict_count_one: "{count} 个冲突",
-      conflict_count_other: "{count} 个冲突",
+      conflict_count_other: "{count} 个冲突"
     },
     dashboard: {
       title: "仪表盘",
@@ -3847,7 +4111,7 @@ export const zh = {
       empty_title: "欢迎使用 Personas",
       empty_subtitle: "创建您的第一个代理，开始在此处查看执行指标、流量图表和活动。",
       create_persona: "创建代理",
-      from_templates: "从模板",
+      from_templates: "从模板"
     },
     execution_metrics: {
       title: "执行指标",
@@ -3865,7 +4129,7 @@ export const zh = {
       cost_spike: "成本激增",
       above_avg: "高于平均",
       top_executions: "热门执行：",
-      executions_label: "{count} 次执行",
+      executions_label: "{count} 次执行"
     },
     execution_list: {
       recorded: "已记录 {count} 次执行",
@@ -3890,7 +4154,7 @@ export const zh = {
       no_agents: "尚未创建代理",
       no_agents_hint: "创建您的第一个代理以在此处查看执行活动。",
       unknown_persona: "未知",
-      healing_retry: "自愈重试 #{count}",
+      healing_retry: "自愈重试 #{count}"
     },
     review: {
       title: "人工审核",
@@ -3954,7 +4218,7 @@ export const zh = {
       table_tooltip: "仅表格",
       review_detail: "审核详情",
       select_review: "选择要查看的审核",
-      technical_context: "技术上下文",
+      technical_context: "技术上下文"
     },
     messages_view: {
       title: "消息",
@@ -4002,7 +4266,7 @@ export const zh = {
       improve_placeholder: "描述如何改进此输出...",
       submit_improvement: "提交改进",
       starting: "启动中...",
-      unknown_persona: "未知",
+      unknown_persona: "未知"
     },
     events: {
       title: "事件",
@@ -4040,7 +4304,7 @@ export const zh = {
       source: "来源",
       processed: "已处理",
       event_data: "事件数据",
-      error: "错误",
+      error: "错误"
     },
     health: {
       title: "代理健康状况",
@@ -4070,18 +4334,26 @@ export const zh = {
       status_page: "状态页面",
       operational: "正常运行",
       degraded: "性能下降",
-      outage: "中断",
+      outage: "中断"
     },
     leaderboard: {
       title: "代理排行榜",
       subtitle: "所有代理的性能排名",
       no_data: "暂无排行榜数据",
       no_data_hint: "运行您的代理以开始建立性能排名",
+      fleet_avg: "舰队平均：",
+      refresh_label: "刷新排行榜",
+      computing_scores: "正在计算代理分数...",
+      single_agent_has_data: "有数据。",
+      add_more_agents: "添加更多代理以查看排名。目前只有 {name}",
+      open_agent: "打开代理",
+      no_agent_data_title: "尚无代理数据",
+      no_agent_data_hint: "运行一些代理以查看性能排名。排行榜需要执行历史和健康数据来计算分数。",
       reliability: "可靠性",
       speed: "速度",
       efficiency: "效率",
       cost_effectiveness: "成本效益",
-      overall: "综合",
+      overall: "综合"
     },
     analytics: {
       title: "分析",
@@ -4098,25 +4370,25 @@ export const zh = {
       saved_views: "已保存视图",
       create_view: "创建视图",
       health_issues: "健康问题",
-      rotation_overview: "轮换概览",
+      rotation_overview: "轮换概览"
     },
     usage: {
       title: "用量",
       subtitle: "成本和资源消耗",
       chart_error: "图表加载失败",
       chart_error_hint: "渲染此图表时发生错误",
-      try_again: "重试",
+      try_again: "重试"
     },
     cron_agents: {
       title: "计划代理",
       subtitle: "按自动计划运行的代理",
       no_agents: "没有计划代理",
-      no_agents_hint: "为任意代理添加 cron 触发器以在此处查看",
+      no_agents_hint: "为任意代理添加 cron 触发器以在此处查看"
     },
     timeline: {
       title: "活动时间线",
       subtitle: "所有代理活动的统一视图",
-      no_activity: "没有最近活动",
+      no_activity: "没有最近活动"
     },
     realtime_viz: {
       title: "事件总线",
@@ -4133,7 +4405,7 @@ export const zh = {
       timestamp: "时间戳",
       payload: "有效载荷",
       saved_views: "已保存视图",
-      save_current: "保存当前",
+      save_current: "保存当前"
     },
     observability_extra: {
       auto_refresh_on: "自动刷新开启",
@@ -4159,7 +4431,7 @@ export const zh = {
       ipc_channel: "IPC 通道",
       avg_duration: "平均持续时间",
       call_count: "调用次数",
-      error_rate: "错误率",
+      error_rate: "错误率"
     },
     widgets: {
       recent_activity: "最近活动",
@@ -4176,7 +4448,7 @@ export const zh = {
       executions_badge: "执行",
       success_badge: "成功",
       alerts_badge: "告警",
-      agents_badge: "代理",
+      agents_badge: "代理"
     },
     cards: {
       fleet_optimization: "集群优化",
@@ -4185,7 +4457,7 @@ export const zh = {
       remote_subtitle: "代理管理的快速操作",
       resume_setup: "继续设置",
       resume_subtitle: "从上次离开的地方继续",
-      knowledge_hub: "知识中心",
+      knowledge_hub: "知识中心"
     },
     activity: {
       title: "活动",
@@ -4231,7 +4503,7 @@ export const zh = {
       create_persona: "创建代理",
       from_templates: "从模板",
       execution_label: "执行",
-      unknown: "未知",
+      unknown: "未知"
     },
     analytics_dashboard: {
       title: "分析",
@@ -4290,7 +4562,7 @@ export const zh = {
       issues_count: "{count} 个问题",
       issues_count_one: "{count} 个问题",
       never: "从未",
-      fail_count: "{count}次失败",
+      fail_count: "{count}次失败"
     },
     cron: {
       title: "Cron 代理",
@@ -4309,7 +4581,7 @@ export const zh = {
       no_schedule: "无计划",
       every_interval: "每 {interval}",
       next: "下次",
-      last: "上次",
+      last: "上次"
     },
     activity_timeline: {
       title: "活动时间线",
@@ -4318,7 +4590,7 @@ export const zh = {
       events: "事件",
       messages: "消息",
       no_activity: "暂无活动",
-      high: "高",
+      high: "高"
     },
     sla_card: {
       successful: "成功",
@@ -4330,7 +4602,7 @@ export const zh = {
       auto_healed: "自动修复",
       cancelled: "已取消",
       failing: "{count} 个失败",
-      healed: "{count} 个已修复",
+      healed: "{count} 个已修复"
     },
     realtime_page: {
       title: "事件总线监控",
@@ -4384,7 +4656,7 @@ export const zh = {
       galaxy: "星系",
       galaxy_desc: "带彗星轨迹的轨道星座",
       lanes: "通道",
-      lanes_desc: "水平泳道流程图",
+      lanes_desc: "水平泳道流程图"
     },
     memory_form: {
       agent: "代理",
@@ -4401,25 +4673,25 @@ export const zh = {
       saving: "保存中...",
       created_success: "记忆创建成功",
       fill_required: "填写所有必填字段以保存",
-      saving_memory: "正在保存记忆...",
+      saving_memory: "正在保存记忆..."
     },
     memory_filter: {
       search_placeholder: "搜索记忆...",
       all_agents: "所有代理",
-      all_categories: "所有类别",
+      all_categories: "所有类别"
     },
     memory_actions: {
       dismiss_suggestion: "忽略建议",
       memory_insights: "记忆见解",
       suggestions: "{count} 条建议",
-      suggestions_one: "{count} 条建议",
+      suggestions_one: "{count} 条建议"
     },
     memory_conflict: {
       memory_a: "记忆 A",
       memory_b: "记忆 B",
       merge: "合并",
       keep: "保留",
-      vs: "对比",
+      vs: "对比"
     },
     observability_charts: {
       cost_over_time: "随时间的成本",
@@ -4431,7 +4703,7 @@ export const zh = {
       anomaly_detected: "检测到 {count} 个成本异常",
       anomaly_click_hint: "点击图表上的菱形标记进行调查",
       clear_traces: "清除已完成的追踪",
-      all_operations: "所有操作",
+      all_operations: "所有操作"
     },
     health_extra: {
       success: "成功",
@@ -4447,6 +4719,11 @@ export const zh = {
       predicted_failure: "预测失败激增于",
       loading_status: "加载状态页面数据...",
       no_personas: "没有代理可显示。",
+      score_prefix: "分数：",
+      uptime_30d_prefix: "30 天正常运行时间：",
+      updated_prefix: "已更新",
+      consecutive_failures_one: "连续失败 {count} 次",
+      consecutive_failures_other: "连续失败 {count} 次",
       score_label: "评分",
       uptime_30d: "30天正常运行时间",
       updated: "更新于 {time}",
@@ -4463,7 +4740,7 @@ export const zh = {
       open: "{count} 个未处理",
       sla_compliance: "SLA 合规性",
       consecutive_failures: "{count} 次连续失败",
-      consecutive_failure: "{count} 次连续失败",
+      consecutive_failure: "{count} 次连续失败"
     },
     system_health: {
       title: "系统检查",
@@ -4477,7 +4754,7 @@ export const zh = {
       save_configuration: "保存配置",
       litellm_footer: "这些设置存储在本地，并在配置为使用 LiteLLM 提供商的所有代理之间共享。",
       ipc_error: "应用程序桥接未响应。请尝试重启应用。您仍然可以继续浏览界面。",
-      issues_warning: "部分检查报告了问题。您可以继续，但某些功能可能无法正常工作。",
+      issues_warning: "部分检查报告了问题。您可以继续，但某些功能可能无法正常工作。"
     },
     review_extra: {
       add_note: "添加备注（可选）...",
@@ -4489,7 +4766,7 @@ export const zh = {
       quick_actions: "快速操作",
       accepted: "{count} 条已接受",
       rejected: "{count} 条已拒绝",
-      undecided: "{count} 条未决定",
+      undecided: "{count} 条未决定"
     },
     widgets_extra: {
       execution_health_chart: "执行健康状况",
@@ -4498,29 +4775,147 @@ export const zh = {
       failed: "失败",
       close: "关闭",
       dismiss_help: "忽略帮助",
-      skip_tour: "完全跳过引导",
+      skip_tour: "完全跳过引导"
+    },
+    burn_rate_extra: {
+      active_personas_subtitle: "{count} 个活跃代理 · 本地月边界",
+      title: "消耗率预测",
+      daily_burn: "每日消耗",
+      projected_monthly: "预测月度",
+      at_risk: "面临风险",
+      top_cost_drivers: "主要成本驱动因素",
+      budget_exhaustion_warnings: "预算耗尽警告",
+      exhausted: "已耗尽",
+      days_left: "剩余 {days} 天"
+    },
+    predictive_alerts_extra: {
+      per_month: "/月",
+      confidence_pct: "% 置信度",
+      title: "预测告警",
+      all_nominal: "所有系统正常",
+      no_alerts: "没有预测告警 — 所有代理在健康参数范围内。",
+      budget_exhausted: "预算已耗尽",
+      budget_exhaustion_in: "预算将在 {days} 天内耗尽",
+      failure_spike_predicted: "预测 {days} 天内失败率激增",
+      excessive_healing: "过度自愈活动",
+      critical_health: "严重健康状态",
+      byom_recommendations: "BYOM 路由建议"
+    },
+    annotate_modal: {
+      annotation_placeholder: "例如 Stripe webhook 验证需要原始请求体，而非解析后的 JSON",
+      title: "添加知识注释",
+      persona_label: "归属代理",
+      scope_label: "范围",
+      tool_name: "工具名称",
+      connector_type: "连接器 / 服务类型",
+      annotation_label: "注释",
+      cancel: "取消",
+      saving: "保存中...",
+      save_annotation: "保存注释"
+    },
+    knowledge_row: {
+      execution_trend_label: "执行趋势",
+      annotation: "注释",
+      successes: "成功次数",
+      failures: "失败次数",
+      avg_cost: "平均成本",
+      avg_duration: "平均持续时间",
+      pattern_data: "模式数据",
+      collapse_details: "折叠详情",
+      expand_details: "展开详情",
+      verify_annotation: "验证注释",
+      dismiss_annotation: "忽略注释"
+    },
+    knowledge_graph: {
+      mock_pattern: "模拟模式",
+      seed_tooltip: "播种模拟模式（仅开发）",
+      all_types: "所有类型",
+      all_scopes: "所有范围",
+      failure_drilldown_prefix: "失败深度分析：",
+      failure_date_filter: "显示在 {date} 当日或之后活跃的失败模式",
+      data_unavailable: "知识数据不可用",
+      loading_patterns: "正在加载知识模式...",
+      drilldown_toggle_title: "显示/隐藏失败深度分析",
+      no_patterns_yet: "尚无知识模式",
+      no_patterns_yet_hint: "运行代理执行以建立知识模式。代理会随着时间变得更智能。",
+      no_patterns_match: "没有模式匹配当前过滤器",
+      recent_learnings: "近期学习内容",
+      curating_manually: "手动整理文档？",
+      obsidian_tip: "对于少于约 1000 条的笔记，Obsidian 连接器可直接同步您的保险库。"
+    },
+    focused_decision: {
+      video_not_supported: "您的浏览器不支持视频播放。",
+      reject_this: "拒绝此项",
+      accept_this: "接受此项",
+      accept: "接受",
+      reject: "拒绝",
+      media_unavailable: "媒体不可用"
+    },
+    review_focus: {
+      video_not_supported: "您的浏览器不支持视频播放。",
+      all_caught_up: "全部处理完毕",
+      no_pending: "没有待处理的审核。",
+      queue: "队列",
+      clear: "清除",
+      clear_all_verdicts: "清除所有判决",
+      quick_actions: "快速操作",
+      reject_all: "全部拒绝",
+      accept_all: "全部接受",
+      retry_with_changes: "修改后重试"
+    },
+    bulk_action_bar: {
+      pending_reviews_selected_one: "已选择 {count} 个待审核项",
+      pending_reviews_selected_other: "已选择 {count} 个待审核项"
+    },
+    review_inbox: {
+      drag_to_resize: "拖动以调整大小"
+    },
+    healing_issues_panel: {
+      ai_healing_title: "AI 自愈",
+      diagnosis_label: "诊断：",
+      fixes_applied: "已应用的修复",
+      alert_history_title: "告警历史",
+      all_agents_global: "所有代理（全局）",
+      add_rule: "添加规则",
+      no_rules_configured: "尚未配置告警规则。添加一条规则以开始监控。",
+      confidence_pct_suffix: "% 置信度",
+      spike_on: "峰值发生于",
+      correlated_events_prefix: "关联事件 (",
+      circuit_breaker_label: "熔断器",
+      auto_disabled_message: "此代理因反复失败已被自动禁用作为熔断器响应。",
+      execution_label: "执行：",
+      issue_marked_as: "此问题已标记为",
+      retry_in_progress: "重试进行中——完成后将更新状态。",
+      resolve_issue_title: "将问题标记为已解决",
+      title: "健康问题",
+      analyzing: "分析中...",
+      run_analysis: "运行分析",
+      no_open_issues: "没有未处理的问题",
+      run_analysis_hint: "运行分析以检查问题。",
+      healing_audit_log: "自愈审计日志",
+      no_silent_failures: "没有记录到静默失败。"
     },
     remote_control_card: {
       connect_to_desktop: "连接到桌面",
       connect_description: "通过远程控制使用桌面 CLI 运行代理。在您的计算机上启动 {command}，然后在此处连接。",
-      requires_subscription: "需要 Claude Pro 或 Max 订阅",
+      requires_subscription: "需要 Claude Pro 或 Max 订阅"
     },
     resume_setup_card: {
       resume_tour: "继续引导",
       left_off_at: "您上次停在",
       steps_completed: "已完成 {completed}/{total} 步",
       skip_tour: "完全跳过引导",
-      continue_label: "继续",
+      continue_label: "继续"
     },
     detail_modal: {
-      close: "关闭",
+      close: "关闭"
     },
     metric_help_popover: {
       help_for: "{label} 的帮助",
       dismiss_help: "忽略帮助",
       healthy: "健康：",
       click: "点击：",
-      got_it: "明白了，不再显示",
+      got_it: "明白了，不再显示"
     },
     install_button: {
       install_node: "安装 Node.js",
@@ -4531,7 +4926,7 @@ export const zh = {
       installation_failed: "安装失败",
       try_manually: "尝试手动运行：",
       retry: "重试",
-      official_page: "官方页面",
+      official_page: "官方页面"
     },
     section_card: {
       checking: "正在检查 {section}...",
@@ -4542,12 +4937,12 @@ export const zh = {
       sign_in_google: "使用 Google 登录",
       working: "处理中...",
       connect_claude: "连接到 Claude Desktop",
-      disconnect: "断开连接",
+      disconnect: "断开连接"
     },
     metrics_cards: {
       cost_spike: "成本激增",
       above_avg: "高于平均",
-      top_executions: "热门执行：",
+      top_executions: "热门执行："
     },
     event_log_item: {
       event_id: "事件 ID",
@@ -4559,75 +4954,15 @@ export const zh = {
       copied: "已复制",
       copy: "复制",
       error: "错误",
-      system: "系统",
-    },
-    burn_rate_extra: {
-      title: "消耗率预测",
-      daily_burn: "每日消耗",
-      projected_monthly: "预测月度",
-      at_risk: "面临风险",
-      top_cost_drivers: "主要成本驱动因素",
-      budget_exhaustion_warnings: "预算耗尽警告",
-      exhausted: "已耗尽",
-      days_left: "剩余 {days} 天",
+      system: "系统"
     },
     cascade: {
       title: "链式级联图",
-      no_chains: "未检测到链 — 所有代理独立运行",
-    },
-    predictive_alerts_extra: {
-      title: "预测告警",
-      all_nominal: "所有系统正常",
-      no_alerts: "没有预测告警 — 所有代理在健康参数范围内。",
-      budget_exhausted: "预算已耗尽",
-      budget_exhaustion_in: "预算将在 {days} 天内耗尽",
-      failure_spike_predicted: "预测 {days} 天内失败率激增",
-      excessive_healing: "过度自愈活动",
-      critical_health: "严重健康状态",
-      byom_recommendations: "BYOM 路由建议",
-    },
-    annotate_modal: {
-      title: "添加知识注释",
-      persona_label: "归属代理",
-      scope_label: "范围",
-      tool_name: "工具名称",
-      connector_type: "连接器 / 服务类型",
-      annotation_label: "注释",
-      cancel: "取消",
-      saving: "保存中...",
-      save_annotation: "保存注释",
-    },
-    knowledge_row: {
-      annotation: "注释",
-      successes: "成功次数",
-      failures: "失败次数",
-      avg_cost: "平均成本",
-      avg_duration: "平均持续时间",
-      pattern_data: "模式数据",
-      collapse_details: "折叠详情",
-      expand_details: "展开详情",
-      verify_annotation: "验证注释",
-      dismiss_annotation: "忽略注释",
-    },
-    focused_decision: {
-      accept: "接受",
-      reject: "拒绝",
-      media_unavailable: "媒体不可用",
-    },
-    review_focus: {
-      all_caught_up: "全部处理完毕",
-      no_pending: "没有待处理的审核。",
-      queue: "队列",
-      clear: "清除",
-      clear_all_verdicts: "清除所有判决",
-      quick_actions: "快速操作",
-      reject_all: "全部拒绝",
-      accept_all: "全部接受",
-      retry_with_changes: "修改后重试",
+      no_chains: "未检测到链 — 所有代理独立运行"
     },
     memory_card: {
       confirm: "确认",
-      cancel: "取消",
+      cancel: "取消"
     },
     memory_detail: {
       title_label: "标题",
@@ -4637,7 +4972,7 @@ export const zh = {
       tags_label: "标签",
       view_source_execution: "查看源执行",
       delete_memory: "删除记忆",
-      close: "关闭",
+      close: "关闭"
     },
     memory_table: {
       agent: "代理",
@@ -4645,11 +4980,11 @@ export const zh = {
       category: "类别",
       priority: "优先级",
       tags: "标签",
-      created: "创建时间",
+      created: "创建时间"
     },
     review_results: {
       title: "AI 记忆审核",
-      review_failed: "审核失败",
+      review_failed: "审核失败"
     },
     anomaly_drilldown_extra: {
       title: "异常深入分析",
@@ -4658,7 +4993,7 @@ export const zh = {
       correlating: "关联事件中...",
       likely_root_causes: "可能的根本原因",
       correlated_events: "相关事件",
-      no_correlated: "在 ±24h 窗口内未找到相关事件。",
+      no_correlated: "在 ±24h 窗口内未找到相关事件。"
     },
     healing_issue_modal: {
       issue_resolved: "问题已解决",
@@ -4673,23 +5008,14 @@ export const zh = {
       auto_resolved: "此问题已自动解决",
       close: "关闭",
       resolving: "解决中…",
-      mark_resolved: "标记为已解决",
-    },
-    healing_issues_panel: {
-      title: "健康问题",
-      analyzing: "分析中...",
-      run_analysis: "运行分析",
-      no_open_issues: "没有未处理的问题",
-      run_analysis_hint: "运行分析以检查问题。",
-      healing_audit_log: "自愈审计日志",
-      no_silent_failures: "没有记录到静默失败。",
+      mark_resolved: "标记为已解决"
     },
     healing_timeline: {
       loading: "加载时间线中...",
       no_events: "没有自愈事件",
       no_events_hint: "运行分析以构建弹性时间线。",
       knowledge_base: "知识库",
-      patterns_hint: "影响自愈决策的模式",
+      patterns_hint: "影响自愈决策的模式"
     },
     ipc_panel: {
       title: "IPC 性能",
@@ -4698,29 +5024,29 @@ export const zh = {
       command: "命令",
       calls_header: "调用次数",
       duration_header: "持续时间",
-      when_header: "时间",
+      when_header: "时间"
     },
     system_trace_extra: {
       no_traces: "没有记录到系统追踪",
       no_traces_hint: "当设计、凭据或模板操作运行时，追踪会出现",
       all_operations: "所有操作",
       clear_completed: "清除已完成的追踪",
-      span: "跨度",
+      span: "跨度"
     },
     event_log_sidebar: {
       title: "事件日志",
       no_events: "暂无事件",
-      open_detail_drawer: "在详情抽屉中打开",
+      open_detail_drawer: "在详情抽屉中打开"
     },
     chart_error: {
-      chart_unavailable: "图表不可用",
+      chart_unavailable: "图表不可用"
     },
     realtime_idle: {
-      idle: "空闲",
+      idle: "空闲"
     },
     day_range: {
-      apply: "应用",
-    },
+      apply: "应用"
+    }
   },
   templates: {
     gallery: {
@@ -4736,13 +5062,14 @@ export const zh = {
       triggers: "触发器",
       no_flows: "无流程",
       readiness_tooltip: "{percent}% 的连接器已就绪",
+      template_details_tabs_aria: "模板详情"
     },
     actions: {
       view_details: "查看详情",
       adopt: "采用",
       try_it: "试用",
       adopt_as_persona: "采用为智能体",
-      delete: "删除",
+      delete: "删除"
     },
     detail: {
       tab_overview: "概览",
@@ -4754,14 +5081,14 @@ export const zh = {
       review_error: "错误",
       used_references: "使用了参考模式",
       no_design_data: "无设计数据",
-      no_design_data_hint: "此模板的设计数据不可用。",
+      no_design_data_hint: "此模板的设计数据不可用。"
     },
     detail_overview: {
       use_case_flows: "用例流程",
       suggested_adjustment: "建议调整",
       adjustment_attempt: "（第 {attempt}/3 次尝试）",
       dimension_completion: "维度完成度",
-      dimensions_score: "（{score}/9 个维度）",
+      dimensions_score: "（{score}/9 个维度）"
     },
     adoption: {
       title: "采用模板",
@@ -4770,7 +5097,7 @@ export const zh = {
       step_credentials: "关联凭证",
       step_preferences: "设置偏好",
       step_generate: "生成智能体",
-      step_review: "审核并保存",
+      step_review: "审核并保存"
     },
     choose: {
       select_use_cases: "选择用例",
@@ -4780,7 +5107,7 @@ export const zh = {
       components: "组件",
       examples: "示例",
       tools: "工具",
-      none_selected: "未选择用例 -- 请至少选择一个以继续",
+      none_selected: "未选择用例 -- 请至少选择一个以继续"
     },
     connect: {
       all_set: "无需连接器 -- 一切就绪！",
@@ -4793,7 +5120,7 @@ export const zh = {
       select_credential: "选择凭证...",
       create_new: "+ 创建新凭证",
       design_custom: "+ 设计自定义连接器",
-      add_credential: "添加凭证",
+      add_credential: "添加凭证"
     },
     build: {
       title: "构建智能体",
@@ -4810,7 +5137,7 @@ export const zh = {
       close_hint: "您可以关闭此对话框 -- 处理将在后台继续。",
       adjustments_label: "请求调整（可选）",
       adjustments_placeholder: "例如：将计划更改为每天上午 9 点运行，移除 ClickUp 集成，添加 Slack 通知",
-      discard_draft: "丢弃草稿并重新开始",
+      discard_draft: "丢弃草稿并重新开始"
     },
     quick_adopt: {
       all_matched: "所有连接器已匹配",
@@ -4818,7 +5145,7 @@ export const zh = {
       missing_prefix: "缺少：",
       add_in_catalog: "在凭证目录中添加",
       build_persona: "构建智能体",
-      full_wizard: "完整向导",
+      full_wizard: "完整向导"
     },
     data: {
       title: "数据设置",
@@ -4827,7 +5154,7 @@ export const zh = {
       tables_found: "在内置数据库中找到 {tables}。",
       create_new: "创建新表",
       use_existing: "使用现有表",
-      complete: "数据设置完成",
+      complete: "数据设置完成"
     },
     tune: {
       title: "配置智能体",
@@ -4846,7 +5173,7 @@ export const zh = {
       check_interval: "检查间隔",
       check_interval_placeholder: "每 5 分钟",
       manual_hint: "手动触发 -- 无需配置",
-      system_hint: "由系统事件触发 -- 无需配置",
+      system_hint: "由系统事件触发 -- 无需配置"
     },
     review_policy: {
       title: "人工审核",
@@ -4863,7 +5190,7 @@ export const zh = {
       timeout_1h: "1 小时",
       timeout_4h: "4 小时",
       timeout_24h: "24 小时",
-      timeout_none: "无超时",
+      timeout_none: "无超时"
     },
     memory: {
       title: "记忆",
@@ -4876,7 +5203,7 @@ export const zh = {
       scope_patterns: "执行模式",
       scope_errors: "错误解决方案",
       scope_custom: "自定义范围...",
-      scope_custom_placeholder: "描述需要记住的内容...",
+      scope_custom_placeholder: "描述需要记住的内容..."
     },
     create: {
       use_cases: "用例",
@@ -4901,12 +5228,12 @@ export const zh = {
       safety_issues: "安全问题",
       safety_acknowledge_one: "我确认 {count} 个关键安全发现并接受风险",
       safety_acknowledge_other: "我确认 {count} 个关键安全发现并接受风险",
-      edit_details: "编辑详情",
+      edit_details: "编辑详情"
     },
     review: {
       use_cases_header: "用例（{count}）",
       tools_header: "工具（{count}）",
-      triggers_header: "触发器（{count}）",
+      triggers_header: "触发器（{count}）"
     },
     matrix: {
       preparing: "准备构建中...",
@@ -4946,6 +5273,19 @@ export const zh = {
       build_complete: "构建完成",
       adjust_placeholder: "调整任何内容...",
       answer_placeholder: "您的答案...",
+      answer_cell: "回答：{cell}",
+      working_on: "正在处理：{cells}",
+      draft_ready_label: "草稿就绪",
+      editing_cell: "正在编辑：{cell}",
+      protocol_active: "协议已激活",
+      matrix_unavailable: "矩阵数据不可用。",
+      persona_matrix_title: "代理矩阵",
+      cell_status_analyzing: "分析中",
+      cell_status_answered: "已回答",
+      cell_status_resolved: "已解决",
+      cell_status_input_needed: "需要输入",
+      cell_status_missing_credential: "缺少凭证",
+      cell_status_error: "错误"
     },
     sandbox: {
       restriction_events: "事件发送已禁用",
@@ -4961,12 +5301,12 @@ export const zh = {
       desc_unverified: "此模板来自未知来源且未经验证。它将以受限能力运行以保护您的系统。",
       desc_community: "此社区模板未经官方验证。它将在沙箱模式下以受限能力运行。",
       badge_unverified: "未验证",
-      badge_sandbox: "沙箱模式",
+      badge_sandbox: "沙箱模式"
     },
     page: {
       title: "代理模板",
       subtitle_one: "可用 {count} 个模板",
-      subtitle_other: "可用 {count} 个模板",
+      subtitle_other: "可用 {count} 个模板"
     },
     explore: {
       ready_to_deploy: "已准备好部署",
@@ -4987,7 +5327,7 @@ export const zh = {
       role_templates: "{role} 模板",
       by_role: "按角色",
       by_need: "按需求",
-      classic: "经典",
+      classic: "经典"
     },
     opportunities: {
       title: "自动化机会",
@@ -4995,15 +5335,15 @@ export const zh = {
       ready_now: "现在就绪",
       add_connector: "添加",
       unlock_more: "以解锁 {count} 个更多",
-      explore_templates: "探索 {label} 模板",
+      explore_templates: "探索 {label} 模板"
     },
     recommended: {
       title: "为您推荐",
       subtitle: "基于您的连接器",
-      no_recommendations: "暂无推荐。",
+      no_recommendations: "暂无推荐。"
     },
     trending: {
-      title: "本周最多采用",
+      title: "本周最多采用"
     },
     empty: {
       no_templates: "暂无生成的模板",
@@ -5012,7 +5352,7 @@ export const zh = {
       no_search_results_hint: "尝试调整您的搜索词或过滤器以找到您要找的内容。",
       clear_search: "清除搜索",
       waiting_for_draft: "等待代理草稿",
-      waiting_for_draft_hint: "AI 正在根据您的选择生成草稿。这通常需要几秒钟。",
+      waiting_for_draft_hint: "AI 正在根据您的选择生成草稿。这通常需要几秒钟。"
     },
     banners: {
       draft_prefix: "草稿：",
@@ -5025,7 +5365,7 @@ export const zh = {
       status_completed: "已完成",
       status_failed: "失败",
       click_to_view_result: "点击查看结果",
-      click_to_view_output: "点击查看输出",
+      click_to_view_output: "点击查看输出"
     },
     search: {
       switch_to_keyword: "切换到关键词搜索",
@@ -5065,17 +5405,21 @@ export const zh = {
       autocomplete_difficulty: "难度",
       autocomplete_setup_time: "设置时间",
       autocomplete_suggestions: "建议",
+      coverage_filter_aria: "覆盖范围过滤器",
+      search_suggestions_aria: "搜索建议",
+      clear_search_aria: "清除搜索",
+      search_with_ai_aria: "使用 AI 搜索"
     },
     list: {
       template_name: "模板名称",
       components: "组件",
-      adoptions: "采用次数",
+      adoptions: "采用次数"
     },
     row_actions: {
       row_actions_label: "行操作",
       view_details: "查看详情",
       rebuild: "重建",
-      delete_template: "删除模板",
+      delete_template: "删除模板"
     },
     connector_readiness: {
       click_to_add: "点击添加凭据",
@@ -5085,14 +5429,14 @@ export const zh = {
       needs_setup: "需要设置",
       not_ready: "未就绪",
       needs_credential: "需要凭据",
-      not_installed: "未安装",
+      not_installed: "未安装"
     },
     detail_modal: {
       adopted: "{count} 次采用",
       reference_patterns: "参考模式",
       adopt_as_persona: "采用为代理",
       try_it: "试用",
-      design_unavailable: "此模板的设计数据不可用。",
+      design_unavailable: "此模板的设计数据不可用。"
     },
     overview_tab: {
       loading_metrics: "加载性能指标中...",
@@ -5112,7 +5456,7 @@ export const zh = {
       suggested_adjustment: "建议调整",
       adjustment_attempt: "（尝试 {attempt}/3）",
       dimension_completion: "维度完成度",
-      dimensions_score: "（{score}/9 个维度）",
+      dimensions_score: "（{score}/9 个维度）"
     },
     review_detail: {
       design_unavailable: "此模板的设计数据不可用。",
@@ -5122,7 +5466,7 @@ export const zh = {
       adopt_as_new_persona: "采用为新代理",
       view_raw_json: "查看原始 JSON",
       hide_raw_json: "隐藏原始 JSON",
-      used_references: "此模板使用了之前通过审核的参考模式",
+      used_references: "此模板使用了之前通过审核的参考模式"
     },
     rebuild_modal: {
       title: "重建模板",
@@ -5139,7 +5483,7 @@ export const zh = {
       unknown_error: "重建过程中发生未知错误。",
       start_rebuild: "开始重建",
       cancel_rebuild: "取消重建",
-      run_in_background: "在后台运行",
+      run_in_background: "在后台运行"
     },
     preview_modal: {
       preview_title: "预览：{name}",
@@ -5153,7 +5497,7 @@ export const zh = {
       completed: "已完成",
       execution_failed: "执行失败",
       run_again: "再次运行",
-      close_test_continues: "您可以关闭 — 测试将在后台继续",
+      close_test_continues: "您可以关闭 — 测试将在后台继续"
     },
     expanded: {
       adopt: "采用",
@@ -5163,7 +5507,7 @@ export const zh = {
       architecture: "架构",
       events: "事件",
       reviews_label: "审核",
-      notifications: "通知",
+      notifications: "通知"
     },
     matrix_cmd: {
       identity: "身份",
@@ -5182,7 +5526,7 @@ export const zh = {
       build_label: "构建",
       adjust_placeholder: "调整任何内容...",
       test_agent: "测试代理",
-      save_version: "保存版本",
+      save_version: "保存版本"
     },
     questionnaire: {
       header: "{label} — 问题 {current} / {total}",
@@ -5199,6 +5543,11 @@ export const zh = {
       answer_remaining: "回答剩余（{count}）",
       next: "下一步",
       setup: "设置",
+      previous_question: "上一个问题",
+      next_question: "下一个问题",
+      go_to_question: "转到问题 {number}",
+      question_answered_suffix: "（已回答）",
+      question_unanswered_suffix: "（未回答）"
     },
     sandbox_banner: {
       community_sandbox: "社区模板 — 沙盒模式",
@@ -5209,7 +5558,7 @@ export const zh = {
       human_review_required: "需要人工审核",
       budget_cap_enforced: "已执行预算上限",
       max_concurrent_one: "最多 {max} 个并发运行",
-      max_concurrent_other: "最多 {max} 个并发运行",
+      max_concurrent_other: "最多 {max} 个并发运行"
     },
     n8n: {
       credential_label: "凭据：{name}",
@@ -5296,18 +5645,26 @@ export const zh = {
       drop_file_here: "将工作流文件拖放到此处",
       import_from_any_platform: "从任何平台导入工作流",
       click_to_browse: "点击浏览或拖放您的导出工作流",
+      dropzone_aria: "拖放工作流文件或点击浏览",
       continue_btn: "继续",
       press_enter_or_click: "按 Enter 或点击继续",
       paste_workflow_json: "粘贴工作流 JSON",
       paste_placeholder: "在此处粘贴您的导出工作流 JSON...",
+      paste_aria: "工作流 JSON 内容",
       import_btn: "导入",
       import_from_url: "从 URL 导入",
       url_description: "粘贴原始工作流 JSON 文件的 URL。支持 GitHub 原始 URL、Gist 链接和直接 JSON 端点。",
       fetching: "获取中",
       fetch: "获取",
       accepts_label: "接受：",
+      url_aria: "工作流 URL",
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "原始 JSON 端点",
       customize_persona: "几个问题来自定义您的代理",
       answer_then_generate: "回答下面的问题，然后点击生成",
+      question_view_mode_aria: "问题视图模式",
       list_view: "列表",
       focus_view: "聚焦",
       no_config_needed: "不需要配置",
@@ -5328,13 +5685,16 @@ export const zh = {
       analyzing_btn: "分析中...",
       upload_step: "上传",
       analyze_step: "分析",
+      wizard_progress_aria: "导入向导进度",
+      wizard_steps_aria: "向导步骤",
       streaming_sections: "流式传输节",
       awaiting_next_section: "等待下一节...",
+      transform_progress_aria: "转换进度",
       analyze_phase: "分析",
       questions_phase: "问题",
       generate_phase: "生成",
       type_your_answer: "输入您的答案...",
-      navigate_hint: "使用方向键导航",
+      navigate_hint: "使用方向键导航"
     },
     diagram: {
       no_flow_data: "没有可用的流程数据",
@@ -5344,7 +5704,7 @@ export const zh = {
       decisions_count: "{count} 个决策",
       error_label: "错误",
       request_label: "请求",
-      response_label: "响应",
+      response_label: "响应"
     },
     design: {
       connectors_and_tools: "连接器和工具",
@@ -5361,7 +5721,7 @@ export const zh = {
       feasibility_assessment: "可行性评估",
       confirmed_capabilities: "已确认的能力",
       issues_label: "问题",
-      suggested_next_steps: "建议的后续步骤",
+      suggested_next_steps: "建议的后续步骤"
     },
     card: {
       use_cases_label: "用例",
@@ -5370,7 +5730,7 @@ export const zh = {
       no_flows: "没有流程",
       none_label: "无",
       more_count: "+{count} 更多",
-      system_prompt: "系统提示词",
+      system_prompt: "系统提示词"
     },
     matrix_grid: {
       prerequisites: "前提条件",
@@ -5380,7 +5740,7 @@ export const zh = {
       credential_configured: "凭据已配置",
       connector_not_installed: "连接器未安装",
       needs_credential: "需要凭据",
-      setup_btn: "设置",
+      setup_btn: "设置"
     },
     adopt_modal: {
       adopt_template: "采用模板",
@@ -5395,6 +5755,49 @@ export const zh = {
       credential_required: "您的保险库中未找到 {category} 凭据。请添加一个以继续。",
       add_credential: "添加凭据",
       blocked_blocking_submit: "{count} 个问题在继续前需要凭据",
+      credentials_required_title: "需要凭证",
+      credentials_required_body: "此模板在继续采用前需要下方每个类别中至少一个凭证。点击\"添加凭证\"——设置完成后将自动返回此处。",
+      answered_of_total: "已回答 {answered} / {total}",
+      blocked_count: "{count} 个已阻止",
+      question_number_of: "问题 {current} / {total}",
+      question_number_aria: "问题 {number}",
+      navigate_hint: "导航",
+      enter_to_advance: "前进",
+      previous: "上一个",
+      next: "下一个",
+      live_preview: "实时预览",
+      persona_label: "代理",
+      untitled_agent: "未命名代理",
+      not_yet_set: "尚未设置",
+      auto_badge: "自动",
+      jump_to_question_hint: "点击上方任意行跳转到该问题。自动检测的值是从您连接的凭证中推断的。",
+      hide_explanation: "隐藏说明",
+      show_explanation: "显示说明",
+      all_option: "全部",
+      add_custom: "添加",
+      custom_prefix: "+ 自定义…",
+      custom_plain: "自定义…",
+      type_your_answer: "输入您的回答...",
+      describe_in_detail: "详细描述...",
+      select_directory: "选择目录...",
+      type_a_value: "输入值…",
+      preparing: "准备中…",
+      waiting_for_parent: "等待上一个回答…",
+      loading_from_service: "正在从 {service} 加载选项…",
+      loaded_live_from: "从 {service} 实时加载",
+      no_items_found: "未找到 {item}。请先在 {service} 中创建一个。",
+      retry: "重试",
+      source_local: "本地文件或文件夹",
+      source_codebase: "代码库",
+      source_database: "数据库",
+      source_local_hint: "粘贴文件或文件夹的完整本地路径。",
+      source_codebase_hint: "选择在开发工具中注册的项目。",
+      source_database_hint: "从您的保险库中选择数据库凭证。",
+      source_local_placeholder: "/Users/me/project/design.md",
+      source_no_codebases: "未找到开发工具项目。请先在开发工具中注册一个。",
+      source_no_databases: "未找到数据库凭证。请先在保险库中添加一个。",
+      source_pick_codebase: "选择代码库…",
+      source_pick_database: "选择数据库…"
     },
     scan: {
       scanning_draft: "扫描代理草稿中...",
@@ -5408,7 +5811,7 @@ export const zh = {
       critical_label: "严重",
       warnings_label: "警告",
       informational_label: "信息",
-      source_label: "来源：",
+      source_label: "来源："
     },
     team_synthesis: {
       title: "合成团队",
@@ -5420,7 +5823,7 @@ export const zh = {
       synthesizing: "合成中...",
       synthesize_team: "合成团队",
       personas_created: "已创建并连接 {count} 个代理",
-      done: "完成",
+      done: "完成"
     },
     matrix_variants: {
       processing: "处理中...",
@@ -5434,6 +5837,17 @@ export const zh = {
       testing_agent: "测试代理中...",
       approve_and_promote: "批准并晋升",
       view_agent_btn: "查看代理",
+      command_center_header: "COMMAND CENTER // BUILD v1.0",
+      phase_label: "[阶段：{phase}]",
+      your_answer_placeholder: "您的回答...",
+      testing_background_hint: "这可能需要几分钟。您可以离开此页面稍后再回来——测试将在后台继续。",
+      cancel_test: "取消测试",
+      missing_keys: "缺少键：",
+      approve_anyway: "仍然批准",
+      delete_draft_title: "丢弃此草稿代理并关闭",
+      delete_draft: "删除草稿",
+      agent_promoted: "代理已晋升",
+      view_agent: "查看代理"
     },
     diagrams: {
       no_flow_data: "没有可用的流程数据",
@@ -5441,6 +5855,7 @@ export const zh = {
       edges_count: "{count} 条边",
       connectors_count: "{count} 个连接器",
       decisions_count: "{count} 个决策",
+      close_dialog: "关闭对话框"
     },
     generation: {
       create_template: "创建模板",
@@ -5463,6 +5878,51 @@ export const zh = {
       start_review_custom: "开始审查（{count} 个案例）",
       copy_log: "复制日志",
       copied_log: "已复制！",
+      back: "返回",
+      generate_template: "生成模板",
+      view_draft: "查看草稿",
+      saving: "保存中...",
+      save_template: "保存模板",
+      template_saved: "模板已保存",
+      template_name_label_step: "模板名称",
+      template_name_placeholder: "模板名称...",
+      description_label: "描述",
+      description_placeholder: "描述此代理应该做什么、它连接到哪些服务以及它应该如何运作。具体说明所需的工具、触发器和集成。\n\n示例：一个监控 Gmail 收件箱中重要邮件的代理，按优先级对其进行分类，为紧急邮件发送 Slack 通知，并创建每日摘要。",
+      description_hint: "AI 将生成包含系统提示、工具、触发器、连接器和模板变量的完整代理模板。",
+      terminal_aria_label: "设计审查输出",
+      terminal_placeholder: "审查开始时输出将显示在此处",
+      terminal_running: "运行中...",
+      result_passed: "{count} 个通过",
+      result_failed: "{count} 个失败",
+      result_errored: "{count} 个错误",
+      result_total: "共 {count} 项测试",
+      mode_predefined: "预定义 (5)",
+      mode_custom: "自定义",
+      mode_batch: "批量",
+      mode_batch_count: "批量 ({count})",
+      batch_upload_hint: "上传包含编号模板条目的 list.md 文件以通过 Claude CLI 批量生成模板。",
+      batch_upload_btn: "上传 list.md",
+      batch_format_hint: "预期格式：",
+      batch_all: "全部 ({count})",
+      batch_count: "将通过 Claude CLI 生成 {count} 个模板{plural}（每个约 45 秒）",
+      batch_clear: "清除",
+      batch_format_example: "**1. 模板名称**",
+      custom_count: "定义模板用例（已准备 {count} 个）",
+      custom_load_file_title: "从 .txt 或 .md 文件加载",
+      custom_load_file: "加载文件",
+      custom_add: "添加",
+      custom_case_name_placeholder: "模板名称（例如 Gmail 智能过滤）",
+      custom_instruction_placeholder: "描述此代理应该做什么、要集成哪些服务、以及应由什么触发器激活它...",
+      custom_short_instruction: "{current}/{min} 个字符（最少）",
+      custom_category_default: "类别...",
+      custom_trigger_default: "触发器...",
+      custom_connectors_placeholder: "连接器（例如 gmail、slack）",
+      custom_detail_hint: "细节越多 = 结果越好。请包含服务、触发器和预期行为。",
+      custom_show_example: "显示示例",
+      custom_hide_example: "隐藏示例",
+      custom_example_title: "示例：Gmail 智能过滤",
+      custom_example_body: "\"创建一个代理，监控 Gmail 中的重要邮件，按发件人和紧急程度分类，应用标签，并将紧急邮件转发到 Slack。使用轮询触发器、gmail 和 slack 连接器。\"",
+      predefined_intro: "通过设计引擎运行 {count} 个预定义用例："
     },
     connector_edit: {
       credential: "凭据",
@@ -5478,22 +5938,24 @@ export const zh = {
       existing_table_label: "现有表",
       schema: "架构",
       table_name: "表名",
+      table_name_placeholder: "例如 persona_data",
       in_app_messages: "应用内消息",
       not_connected: "未连接",
       no_connectors: "不需要连接器",
       linked: "已链接",
       set_up: "设置",
-      more_connectors: "+{count} 更多",
+      more_connectors: "+{count} 更多"
     },
     trigger_edit: {
       schedule: "计划",
       schedule_placeholder: "每个工作日上午 9 点",
       schedule_hint: "自然语言或 cron（例如「0 9 * * 1-5」）",
       webhook_url: "Webhook URL",
+      webhook_url_placeholder: "https://...",
       check_interval: "检查间隔",
       check_interval_placeholder: "每 5 分钟",
       no_config_needed: "不需要配置",
-      manual_only: "仅手动执行",
+      manual_only: "仅手动执行"
     },
     preset_edit: {
       select_review: "选择审核策略...",
@@ -5505,7 +5967,7 @@ export const zh = {
       retry_once: "重试一次",
       retry_3x: "重试 3 次",
       notify_continue: "通知并继续",
-      skip_failed: "跳过失败步骤",
+      skip_failed: "跳过失败步骤"
     },
     test_report: {
       title: "测试报告",
@@ -5531,8 +5993,8 @@ export const zh = {
       response_preview: "响应预览",
       error_detail: "错误详情",
       copy: "复制",
-      copied: "已复制",
-    },
+      copied: "已复制"
+    }
   },
   triggers: {
     title: "触发器与链",
@@ -5574,7 +6036,7 @@ export const zh = {
       show_sidebar: "显示侧边栏",
       source: "来源",
       source_personas: "来源代理",
-      use_template: "使用模板",
+      use_template: "使用模板"
     },
     studio: {
       building_blocks: "构建块",
@@ -5590,7 +6052,7 @@ export const zh = {
       remove_from_chain: "从链中移除",
       studio_title: "触发器工作室",
       trigger_sources: "触发器来源",
-      unsaved_changes: "未保存的更改",
+      unsaved_changes: "未保存的更改"
     },
     subscription_list: {
       active: "活跃",
@@ -5604,10 +6066,10 @@ export const zh = {
       error: "错误",
       never: "从未",
       no_active_subs: "没有活跃的订阅",
-      unsubscribe: "取消订阅",
+      unsubscribe: "取消订阅"
     },
     type_selector: {
-      trigger_type: "触发器类型",
+      trigger_type: "触发器类型"
     },
     tab_triggers: "触发器",
     tab_chains: "链",
@@ -5683,11 +6145,11 @@ export const zh = {
       cron_daily_midnight: "每日凌晨",
       cron_weekly_monday: "每周一",
       next_runs: "下次运行",
-      invalid_cron: "无效的计划表达式",
+      invalid_cron: "无效的计划表达式"
     },
     add: {
       create_trigger: "创建触发器",
-      creating: "创建中...",
+      creating: "创建中..."
     },
     detail: {
       test_fire: "测试触发",
@@ -5710,7 +6172,7 @@ export const zh = {
       last_fired: "上次触发",
       never_fired: "从未触发",
       fire_count_one: "已触发 {count} 次",
-      fire_count_other: "已触发 {count} 次",
+      fire_count_other: "已触发 {count} 次"
     },
     list: {
       empty_title: "尚未配置触发器",
@@ -5720,28 +6182,28 @@ export const zh = {
       budget_unavailable: "预算数据不可用",
       unknown_budget: "未知预算",
       budget_exceeded: "月度预算已超出 — 触发器已暂停",
-      budget: "预算",
+      budget: "预算"
     },
     config: {
       no_persona: "未选择代理",
       title: "触发器",
       add_trigger: "添加触发器",
-      empty: "未配置触发器。添加一个以自动化此代理。",
+      empty: "未配置触发器。添加一个以自动化此代理。"
     },
     countdown: {
       due_now: "立即到期",
-      fires_in: "将在 {time} 内触发",
+      fires_in: "将在 {time} 内触发"
     },
     polling: {
       endpoint_label: "要检查的 URL",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "每 {interval} 检查一次",
-      content_hash: "仅检测更改",
+      content_hash: "仅检测更改"
     },
     webhook: {
       url_label: "Webhook URL",
       secret_label: "安全密钥（可选）",
-      secret_placeholder: "用于验证传入数据的密钥",
+      secret_placeholder: "用于验证传入数据的密钥"
     },
     file_watcher: {
       paths_label: "监视路径",
@@ -5753,7 +6215,7 @@ export const zh = {
       event_delete: "删除",
       recursive: "递归",
       glob_filter: "文件模式",
-      glob_placeholder: "*.json",
+      glob_placeholder: "*.json"
     },
     clipboard: {
       content_type: "内容类型",
@@ -5761,7 +6223,7 @@ export const zh = {
       type_image: "图像",
       pattern_label: "匹配模式",
       pattern_placeholder: "例如 https?://.*",
-      interval_label: "检查间隔（秒）",
+      interval_label: "检查间隔（秒）"
     },
     app_focus: {
       app_names_label: "应用程序名称",
@@ -5769,20 +6231,20 @@ export const zh = {
       add_app: "添加应用",
       title_pattern: "窗口标题模式",
       title_placeholder: "例如 .*GitHub.*",
-      interval_label: "检查间隔（秒）",
+      interval_label: "检查间隔（秒）"
     },
     event_listener: {
       event_type_label: "事件类型",
       event_type_placeholder: "例如 persona.execution.completed",
       source_filter_label: "来源过滤器",
-      source_filter_placeholder: "例如 persona:abc123",
+      source_filter_placeholder: "例如 persona:abc123"
     },
     composite: {
       conditions_label: "条件",
       add_condition: "添加条件",
       operator_all: "所有条件必须匹配",
       operator_any: "任何条件可以匹配",
-      window_label: "时间窗口（秒）",
+      window_label: "时间窗口（秒）"
     },
     rate_limit: {
       title: "速度限制",
@@ -5791,14 +6253,14 @@ export const zh = {
       window_seconds: "{seconds}秒",
       window_minutes: "{minutes}分钟",
       window_hours: "{hours}小时",
-      currently_limited: "当前已暂停（已达到限制）",
+      currently_limited: "当前已暂停（已达到限制）"
     },
     dry_run: {
       title: "测试运行结果",
       would_fire: "将会运行",
       would_not_fire: "不会运行",
       matched_conditions: "已满足条件",
-      payload_preview: "数据预览",
+      payload_preview: "数据预览"
     },
     tab_live_stream: "实时流",
     tab_live_stream_subtitle: "实时事件总线 — 代理通过此共享总线发布和订阅事件",
@@ -5962,6 +6424,186 @@ export const zh = {
     loading_catalog: "加载目录中...",
     no_feeds: "暂无可用的共享事件订阅源",
     no_feeds_hint: "点击刷新以从云端获取最新订阅源",
+    cron_colon: "Cron：",
+    interval_colon: "间隔：",
+    event_colon: "事件：",
+    endpoint_colon: "端点：",
+    listens_for_colon: "监听：",
+    source_filter_colon: "来源过滤器：",
+    hmac_colon: "HMAC：",
+    paths_colon: "路径：",
+    events_colon: "事件：",
+    recursive_yes: "递归：是",
+    filter_colon: "过滤器：",
+    watches_colon: "监视：",
+    pattern_colon: "模式：",
+    poll_every: "轮询：每",
+    apps_colon: "应用：",
+    title_colon: "标题：",
+    operator_colon: "操作符：",
+    window_colon: "窗口：",
+    id_colon: "ID：",
+    type_colon: "类型：",
+    status_colon: "状态：",
+    target_colon: "目标：",
+    retry_hash: "重试 #",
+    model_colon: "模型：",
+    next_run_colon: "下次运行：",
+    local_label: "（本地）",
+    then_every: "，然后每",
+    source_colon: "来源：",
+    dry_run_target_colon: "目标：",
+    matched_subscriptions_count: "匹配的订阅 ({count})",
+    last_label: "最后：",
+    loading_history: "加载中...",
+    zero_unlimited: "0 = 无限",
+    category_section_label: "触发器类别",
+    no_persona_selected: "未选择代理",
+    quick_templates_label: "快速模板",
+    quick_presets_label: "快速预设",
+    cron_expression_label: "Cron 表达式",
+    this_persona_will: "此代理将",
+    starting_from: "，从您启用它时开始。",
+    per_day: "每天。",
+    last_poll_label: "最后轮询：",
+    deployed_persona_label: "已部署的代理",
+    fired_at_label: "触发时间",
+    webhook_last_label: "最后：",
+    relay_last_label: "最后：",
+    optional_label: "（可选）",
+    optional_comma_separated: "（可选，逗号分隔）",
+    get_channel_url_from: "从以下位置获取频道 URL",
+    setup_step1: "访问 smee.io/new 创建免费中继频道",
+    setup_step2: "在此处添加中继，带有标签和频道 URL",
+    setup_step3: "将频道 URL 粘贴为 GitHub / Stripe / 任意服务中的 webhook",
+    setup_step4: "事件将出现在实时流中并自动路由到您的代理",
+    studio_empty_desc: "跨代理组合反应式事件流。使用触发器类型作为构建块，添加条件分支和并行扇出以创建智能自动化链。",
+    studio_step1: "1. 从侧边栏添加触发器源（计划、Webhook、...）",
+    studio_step2: "2. 添加代理步骤以处理事件",
+    studio_step3: "3. 将它们连接起来以构建反应式链",
+    studio_step4: "4. 使用条件门进行路由逻辑",
+    gate_if_else: "如果 / 否则",
+    gate_if_else_desc: "二元条件分支",
+    gate_classifier_desc: "多路路由（支持、销售...）",
+    gate_fan_out: "扇出（并行）",
+    gate_fan_out_desc: "并行运行多个分支",
+    palette_help: "将触发器源连接到代理步骤以构建反应式链。添加条件门进行分支逻辑和并行扇出。",
+    toolbar_title_auto_layout: "自动布局",
+    toolbar_title_add_note: "添加便笺",
+    toolbar_title_start_dry_run: "开始空运行",
+    toolbar_title_stop_dry_run: "停止空运行",
+    toolbar_title_assistant: "画布助手",
+    toolbar_dry_run: "空运行",
+    canvas_assistant_title: "画布助手",
+    try_asking_hint: "试着询问",
+    assistant_placeholder: "描述您的事件拓扑...",
+    disconnect_persona_title: "断开代理连接？",
+    disconnect_will_no_longer: "将不再响应",
+    disconnect_events_reconnect: "事件。您可以稍后重新连接。",
+    rename_also_updates: "同时更新历史事件、代理事件处理器和触发器审计元数据。",
+    delete_connection_label: "删除连接",
+    search_personas_placeholder: "搜索代理...",
+    no_matching_personas_found: "未找到匹配的代理",
+    clear_search_label: "清除搜索",
+    dead_letter_source: "来源：",
+    dead_letter_id: "ID：",
+    event_data_label: "事件数据",
+    shared_prefix: "共享：",
+    nl_type_colon: "类型：",
+    nl_cron_colon: "· Cron：",
+    nl_interval_colon: "· 间隔：",
+    nl_filter_colon: "· 过滤器：",
+    nl_could_not_parse: "无法从该描述解析触发器。请尝试类似这样",
+    active_hours_every_day: "每天",
+    event_type_to_listen: "要监听的事件类型",
+    event_type_input_placeholder: "例如 file_changed、execution_completed",
+    event_type_helper: "输入以搜索已注册的事件类型，或输入自定义类型。",
+    source_filter_optional_label: "（可选）",
+    wildcard_hint: "— 支持尾部 * 前缀通配符",
+    window_title_pattern_label: "窗口标题模式",
+    optional_regex_label: "（可选正则表达式）",
+    text_pattern_label: "文本模式",
+    credential_event_label: "凭证事件",
+    refresh_label: "刷新",
+    copy_webhook_url_title: "复制 webhook URL",
+    copy_webhook_secret_title: "复制 webhook 密钥",
+    delete_webhook_title: "删除 webhook 触发器",
+    status_col_label: "状态",
+    duration_col_label: "耗时",
+    cost_col_label: "成本",
+    dead_letter_refresh: "刷新",
+    dead_letter_loading: "加载中...",
+    dead_letter_retry: "重试",
+    dead_letter_discard: "丢弃",
+    dead_letter_payload: "负载",
+    event_data_section_label: "事件数据",
+    copy_event_data_title: "复制事件数据",
+    copied_label: "已复制",
+    error_section_label: "错误",
+    meta_event_id: "事件 ID",
+    meta_project: "项目",
+    meta_processed: "已处理",
+    clear_stream: "清除",
+    clear_stream_title: "清除流缓冲区",
+    col_type: "类型",
+    col_source: "来源",
+    col_target_agent: "目标代理",
+    col_status: "状态",
+    col_time: "时间",
+    queued_bare: "已排队",
+    pause_tooltip: "暂停传入事件",
+    resume_tooltip: "恢复实时更新",
+    relay_label_field: "标签",
+    relay_channel_url_field: "频道 URL",
+    relay_route_to_agent: "路由到代理",
+    optional_suffix: "（可选）",
+    relay_event_filter_field: "事件过滤器",
+    relay_event_filter_note: "（可选，逗号分隔）",
+    relay_confirm_delete: "确认",
+    setup_guide_step2: "在此处添加中继，带有标签和频道 URL",
+    setup_guide_step3: "将频道 URL 粘贴为 GitHub / Stripe / 任意服务中的 webhook",
+    setup_guide_step4: "事件将出现在实时流中并自动路由到您的代理",
+    get_channel_url_prompt: "从以下位置获取频道 URL",
+    gate_if_else_label: "如果 / 否则",
+    gate_if_else_description: "二元条件分支",
+    gate_classifier_label: "分类器",
+    gate_classifier_description: "多路路由（支持、销售...）",
+    gate_fan_out_label: "扇出（并行）",
+    gate_fan_out_description: "并行运行多个分支",
+    palette_help_text: "将触发器源连接到代理步骤以构建反应式链。添加条件门进行分支逻辑和并行扇出。",
+    test_event_type_placeholder: "例如 build_complete、deploy、file_changed",
+    result_id_prefix: "ID：",
+    result_type_prefix: "类型：",
+    result_status_prefix: "状态：",
+    result_target_prefix: "目标：",
+    tab_loading: "加载中...",
+    smee_open_new_title: "打开 smee.io/new 创建频道",
+    relay_label_placeholder: "例如 GitHub — my-repo",
+    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
+    relay_filter_placeholder: "github_push, github_pull_request",
+    dead_letter_retry_exhausted_title: "重试次数已用尽——丢弃或调查根本原因",
+    dead_letter_discard_title: "永久丢弃此事件",
+    dead_letter_retry_title: "重试此事件",
+    replay_button_title: "使用相同的输入负载重新触发",
+    interval_seconds_placeholder: "秒（最小 60）",
+    cron_expression_placeholder: "* * * * *（分 时 日 月 周）",
+    app_focus_window_placeholder: "例如 .*.rs$ 或 Project - Visual Studio",
+    app_focus_process_placeholder: "例如 Code.exe 或 firefox",
+    field_optional: "（可选）",
+    source_filter_input_placeholder: "例如 watcher-* 或 exact-source-id",
+    meta_source: "来源",
+    relay_last_event: "最后：",
+    relay_delete_title: "删除中继",
+    setup_guide_step1: "在 smee.io/new 创建频道",
+    clipboard_pattern_placeholder: "例如 https?://.* 或 error|exception",
+    composite_event_type_placeholder: "事件类型（例如 file_changed）",
+    composite_debounce_placeholder: "300",
+    file_watcher_path_placeholder: "C:/Users/me/projects 或 /home/me/src",
+    file_watcher_pattern_placeholder: "例如 *.py、*.{ts,tsx}、Dockerfile",
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    more_tools_title: "更多工具",
+    validate_and_fire_title: "验证触发器配置，然后触发",
+    simulate_trigger_title: "模拟触发器而不执行"
   },
   teams: {
     title: "智能体团队",
@@ -5969,10 +6611,11 @@ export const zh = {
     auto_team: "自动组队",
     new_team: "新建团队",
     starter_templates: "入门模板",
-    use_template: "使用模板",
+    use_template: "使用模板"
   },
   settings: {
     title: "设置",
+    settings_saved: "已保存",
     account: {
       title: "账户",
       subtitle: "管理您的登录和个人资料",
@@ -5990,6 +6633,7 @@ export const zh = {
       telemetry_on: "崩溃报告和使用分析已激活。",
       telemetry_off: "遥测已禁用。没有数据发送到 Sentry。",
       telemetry_restart: "重启应用以使此更改生效",
+      telemetry_toggle_aria: "切换遥测"
     },
     appearance_extra: {
       simple: "简单",
@@ -5997,7 +6641,7 @@ export const zh = {
       full: "完整",
       full_hint: "显示完整界面",
       dev: "开发",
-      dev_hint: "解锁开发者工具",
+      dev_hint: "解锁开发者工具"
     },
     appearance: {
       title: "外观",
@@ -6028,6 +6672,7 @@ export const zh = {
       applied: "已应用",
       reset: "重置",
       enter_theme_name: "输入主题名称",
+      reset_to_auto: "重置为自动",
       preview_dashboard: "仪表盘",
       preview_action: "操作",
       preview_card_title: "卡片标题",
@@ -6042,7 +6687,7 @@ export const zh = {
       coverage_hint: "翻译覆盖率 — 点击导出",
       contribute_title: "贡献翻译",
       contribute_hint: "帮助将 Personas 翻译成您的语言。在上方导出语言文件，翻译值，然后通过 GitHub 提交。",
-      contribute_github: "在 GitHub 上贡献",
+      contribute_github: "在 GitHub 上贡献"
     },
     notifications: {
       title: "通知",
@@ -6060,7 +6705,7 @@ export const zh = {
       digest_description: "每周通知，汇总所有智能体的健康问题及总体健康评分",
       healing_alerts_hint: "控制哪些修复告警触发通知",
       healing_severity: "修复告警严重性",
-      notification_hint: "桌面通知使用操作系统原生通知系统。无论这些设置如何，关键和高严重性问题都会显示应用内提示。",
+      notification_hint: "桌面通知使用操作系统原生通知系统。无论这些设置如何，关键和高严重性问题都会显示应用内提示。"
     },
     engine: {
       title: "引擎",
@@ -6078,6 +6723,7 @@ export const zh = {
       legend_not_installed: "未安装",
       defaults_heading: "来自集成测试的默认值",
       defaults_description: "默认映射来自第 9 轮业务级集成测试，这些测试根据后端解析的 JSON 模式验证每个提供商。为某个操作启用未通过测试的提供商可能导致无法解析的响应。Claude Code 是唯一以 100% 通过所有操作的提供商。",
+      engine_not_capable: "{provider} 未通过此操作的集成测试。结果可能无法解析。"
     },
     ambient: {
       title: "环境上下文融合",
@@ -6113,7 +6759,7 @@ export const zh = {
       cancel: "取消",
       create_rule: "创建规则",
       no_rules: "未定义上下文规则",
-      all_sources: "所有来源",
+      all_sources: "所有来源"
     },
     byom: {
       title: "自带模型",
@@ -6165,6 +6811,7 @@ export const zh = {
       complexity: "复杂度",
       provider: "提供商",
       model_optional: "模型（可选）",
+      model_placeholder: "例如 claude-haiku-4-5-20251001",
       compliance_title: "合规驱动限制",
       compliance_hint: "限制特定工作流类型的提供商（例如 HIPAA、SOC2）",
       compliance_empty: "未配置合规规则。添加规则以限制敏感工作流的提供商。",
@@ -6181,7 +6828,7 @@ export const zh = {
       audit_status: "状态",
       audit_cost: "成本",
       audit_time: "时间",
-      failover: "故障转移",
+      failover: "故障转移"
     },
     admin: {
       title: "管理",
@@ -6207,7 +6854,7 @@ export const zh = {
       consent_not_accepted: "未接受",
       storage_key: "存储键",
       reset_consent: "重置同意",
-      reload_modal: "重新加载以显示弹窗",
+      reload_modal: "重新加载以显示弹窗"
     },
     portability: {
       title: "数据可移植性",
@@ -6235,12 +6882,17 @@ export const zh = {
       passphrase_optional: "口令（可选）",
       import_complete: "导入完成",
       warnings: "警告：",
+      import_personas: "{count} 个代理",
+      import_teams: "{count} 个团队",
+      import_tools: "{count} 个工具",
+      import_groups: "{count} 个组",
+      import_credentials_count: "{count} 个凭证",
       export_title: "导出工作区",
       export_subtitle: "选择要包含在导出中的内容",
       close: "关闭",
       loading_data: "加载工作区数据中...",
-      select_all: "全选",
       deselect_all: "取消全选",
+      select_all: "全选",
       items_selected: "已选择 {selected} / {total} 项",
       of_selected: "{count} / {total} 已选择",
       encrypt_passphrase: "使用口令加密凭据",
@@ -6270,7 +6922,7 @@ export const zh = {
       cred_import_complete: "凭据导入完成",
       cred_imported: "{count} 个已导入",
       cred_skipped: "，{count} 个已跳过",
-      cred_replaced: "，{count} 个已替换",
+      cred_replaced: "，{count} 个已替换"
     },
     config: {
       title: "配置解析",
@@ -6283,7 +6935,7 @@ export const zh = {
       overrides_inherited: "覆盖继承",
       agent: "代理",
       loading_agents: "加载代理中...",
-      no_agents: "未找到代理",
+      no_agents: "未找到代理"
     },
     quality_gates: {
       title: "质量门禁",
@@ -6301,11 +6953,12 @@ export const zh = {
       rules_count_plural: "{count} 条规则",
       reset_defaults: "重置为默认值",
       confirm_reset: "确认重置？",
-      rules_hint: "规则在每次分发时从数据库加载。更改立即生效。",
-    },
+      rules_hint: "规则在每次分发时从数据库加载。更改立即生效。"
+    }
   },
   design: {
     no_persona: "未选择智能体",
+    conversation_truncated: "此对话已达到消息限制。较旧的消息已被移除——考虑开始新对话以保留上下文。",
     stages: {
       assembling_label: "组装提示词",
       assembling_desc: "根据智能体配置和指令构建 LLM 提示词",
@@ -6316,8 +6969,8 @@ export const zh = {
       checking_label: "检查可行性",
       checking_desc: "验证建议的工具和连接器是否可用",
       saving_label: "保存结果",
-      saving_desc: "将编译后的设计写入数据库",
-    },
+      saving_desc: "将编译后的设计写入数据库"
+    }
   },
   prompt_lab: {
     title: "提示词版本",
@@ -6353,7 +7006,7 @@ export const zh = {
       running: "正在运行 A/B 测试...",
       run: "运行 A/B 测试",
       failed: "A/B 测试失败",
-      completed: "A/B 测试成功完成",
+      completed: "A/B 测试成功完成"
     },
     rollback: {
       title: "错误率监控",
@@ -6361,7 +7014,7 @@ export const zh = {
       rollback_hint: "如果提示词变更后错误率超过 50%，请使用上方版本列表回滚到生产版本。",
       waiting: "等待执行数据",
       waiting_hint: "运行您的智能体几次以开始跟踪错误率。监控器需要至少一次执行来计算健康状况。",
-      check_again: "再次检查",
+      check_again: "再次检查"
     },
     performance: {
       cost_per_execution: "每次执行成本",
@@ -6370,8 +7023,8 @@ export const zh = {
       latency_distribution: "延迟分布",
       latency_delta: "延迟变化",
       error_rate_trend: "错误率趋势",
-      error_delta: "错误变化",
-    },
+      error_delta: "错误变化"
+    }
   },
   tests: {
     title: "沙箱测试运行器",
@@ -6396,15 +7049,15 @@ export const zh = {
       rerun_tooltip: "重新运行此套件",
       rename_tooltip: "重命名",
       delete_tooltip: "删除套件",
-      no_scenarios: "此套件中没有场景",
+      no_scenarios: "此套件中没有场景"
     },
     progress: {
       generating: "生成测试场景...",
       testing: "测试 {model} -- {scenario}",
       tool_prefix: "工具：",
       output_prefix: "输出：",
-      protocol_prefix: "协议：",
-    },
+      protocol_prefix: "协议："
+    }
   },
   onboarding: {
     title: "开始使用",
@@ -6528,7 +7181,7 @@ export const zh = {
     agent_promoted_hint: "您的第一个代理已上线。引导即将完成！",
     skip_build: "暂时跳过构建",
     dark_themes: "深色主题",
-    light_themes: "浅色主题",
+    light_themes: "浅色主题"
   },
   system_health: {
     title: "系统检查",
@@ -6565,7 +7218,7 @@ export const zh = {
     official_page: "官方页面",
     edit_key: "编辑凭证",
     edit_config: "编辑配置",
-    signing_in: "登录中...",
+    signing_in: "登录中..."
   },
   command_palette: {
     placeholder: "搜索智能体、导航...（输入\\\\\\\">\\\\\\\"执行命令）",
@@ -6578,7 +7231,7 @@ export const zh = {
     key_esc: "ESC",
     hint_navigate: "导航",
     hint_select: "选择",
-    hint_commands: "命令",
+    hint_commands: "命令"
   },
   errors: {
     boundary_title: "{name} 中发生了意外错误",
@@ -6600,7 +7253,7 @@ export const zh = {
     database: "数据库错误 -- 请重启应用",
     internal: "发生了意外错误",
     cloud_error: "云端服务错误：{detail}",
-    gitlab_error: "GitLab 错误：{detail}",
+    gitlab_error: "GitLab 错误：{detail}"
   },
   error_registry: {
     network_offline_message: "您似乎已离线。",
@@ -6672,7 +7325,7 @@ export const zh = {
     severity_critical: "需要立即关注",
     severity_high: "重要问题",
     severity_medium: "轻微问题",
-    severity_low: "信息",
+    severity_low: "信息"
   },
   empty_states: {
     credentials_title: "您的智能体需要凭证才能运行",
@@ -6689,11 +7342,11 @@ export const zh = {
     tools_title: "未配置工具或连接器",
     tools_subtitle: "关联外部服务，以便您的智能体可以执行操作和访问数据。",
     use_cases_title: "尚未定义用例",
-    use_cases_subtitle: "定义此智能体的任务 -- 从工作流导入或用自然语言描述。",
+    use_cases_subtitle: "定义此智能体的任务 -- 从工作流导入或用自然语言描述。"
   },
   cli: {
     idle: "暂无 CLI 输出。",
-    waiting: "等待 Claude CLI 输出...",
+    waiting: "等待 Claude CLI 输出..."
   },
   validation: {
     required: "{field}为必填项",
@@ -6704,7 +7357,7 @@ export const zh = {
     passphrase_min: "密码短语至少需要 8 个字符",
     passphrase_prompt: "请输入导出时使用的密码短语",
     at_least_one: "至少需要一个{field}",
-    fill_one_field: "至少填写一个字段才能保存",
+    fill_one_field: "至少填写一个字段才能保存"
   },
   toasts: {
     copied: "已复制到剪贴板",
@@ -6764,7 +7417,7 @@ export const zh = {
     scheduled_agents_failed: "加载计划智能体失败",
     design_start_failed: "启动设计对话失败",
     recipe_save_failed: "保存配方失败",
-    recipe_test_failed: "快速测试失败",
+    recipe_test_failed: "快速测试失败"
   },
   consent: {
     title: "欢迎使用 Personas 桌面版",
@@ -6831,7 +7484,7 @@ export const zh = {
     checkbox: "我理解此应用会向 AI 提供商发送数据、访问系统资源（剪贴板、文件系统、网络）并代表我执行进程。我对如何配置和使用它承担责任。",
     checkbox_telemetry: "通过发送匿名崩溃报告和使用分析来帮助改进 Personas。不包含个人数据。您可以稍后在设置中更改此选项。",
     source_link: "查看源代码与许可证",
-    accept_button: "我已了解，继续",
+    accept_button: "我已了解，继续"
   },
   schedules: {
     title: "计划时间线",
@@ -6871,17 +7524,26 @@ export const zh = {
     overlap_warning: "此计划与未来 7 天内的 {count} 次其他执行重叠。并发代理竞争 API 配额和系统资源。",
     agents_missed: "{count} 个代理错过了执行",
     total_skipped: "应用离线期间约 {count} 次总运行已跳过",
+    missed_since: "自 {time} 起错过 {count} 次",
+    every_interval: "每 {interval}",
     recover: "恢复",
+    mark_for_recovery: "标记为恢复",
+    run_once_now: "立即运行一次",
     run_1x: "运行 1 次",
     skip: "跳过",
+    skip_dont_recover: "跳过——不恢复",
     dismiss_all: "全部忽略",
     recover_selected: "恢复所选 {count} 个",
+    overlaps_with: "与以下重叠",
+    refresh_schedules: "刷新计划",
+    seed_mock_tooltip: "播种模拟计划（仅开发）",
+    schedule_view_aria: "计划视图",
     today: "今天",
     projected: "预测",
     success: "成功",
     overlap: "重叠",
     week: "周",
-    month: "月",
+    month: "月"
   },
   recipes: {
     no_match: "没有匹配的配方",
@@ -6935,6 +7597,8 @@ export const zh = {
     saved_mock_values: "已保存的模拟值",
     no_mock_values: "没有保存的模拟值",
     free_input_placeholder: "输入 JSON 或纯文本...",
+    recipe_label: "配方：",
+    executed_label: "已执行：",
     rendered_prompt: "渲染后的提示词",
     execution_result: "执行结果",
     rendering_prompt: "渲染提示词中...",
@@ -6964,7 +7628,7 @@ export const zh = {
     no_matching: "未找到匹配的配方。",
     loading_linked: "加载已链接配方中...",
     no_linked: "尚未链接配方。点击「添加」以从库中链接配方。",
-    run: "运行",
+    run: "运行"
   },
   execution_status: {
     queued: "排队中",
@@ -6972,7 +7636,7 @@ export const zh = {
     completed: "已完成",
     failed: "失败",
     cancelled: "已取消",
-    error: "错误",
+    error: "错误"
   },
   status_tokens: {
     execution: {
@@ -6981,61 +7645,61 @@ export const zh = {
       completed: "已完成",
       failed: "失败",
       cancelled: "已取消",
-      error: "错误",
+      error: "错误"
     },
     event: {
       pending: "待处理",
       processing: "处理中",
       processed: "已处理",
       failed: "失败",
-      retrying: "重试中",
+      retrying: "重试中"
     },
     automation: {
       pending: "待处理",
       running: "运行中",
       completed: "已完成",
       failed: "失败",
-      timeout: "已超时",
+      timeout: "已超时"
     },
     severity: {
       info: "信息",
       low: "低",
       medium: "中",
       high: "高",
-      critical: "严重",
+      critical: "严重"
     },
     priority: {
       low: "低",
       normal: "正常",
       high: "高",
-      urgent: "紧急",
+      urgent: "紧急"
     },
     healing_status: {
       open: "未处理",
       auto_fixed: "已自动修复",
       acknowledged: "已确认",
-      resolved: "已解决",
+      resolved: "已解决"
     },
     healing_category: {
       config: "配置",
       auth: "认证",
       network: "网络",
       timeout: "超时",
-      quota: "配额",
+      quota: "配额"
     },
     connector_status: {
       ready: "就绪",
       untested: "未测试",
       failed: "失败",
       no_credential: "无凭据",
-      testing: "测试中",
+      testing: "测试中"
     },
     test: {
       generating: "生成中",
       running: "运行中",
       completed: "已完成",
       failed: "失败",
-      pending: "待处理",
+      pending: "待处理"
     },
     dev: {
       open: "未处理",
@@ -7044,8 +7708,8 @@ export const zh = {
       blocked: "已阻止",
       queued: "已排队",
       running: "运行中",
-      failed: "失败",
-    },
+      failed: "失败"
+    }
   },
   project_overview: {
     codebase: "代码库",
@@ -7075,7 +7739,7 @@ export const zh = {
     failed_to_load: "加载统计失败",
     retry: "重试",
     no_project_selected: "未选择项目",
-    select_project_hint: "选择开发项目以查看其概览。",
+    select_project_hint: "选择开发项目以查看其概览。"
   },
   plugins: {
     title: "插件",
@@ -7084,12 +7748,98 @@ export const zh = {
     artist_desc: "使用 Blender 生成 3D 模型，使用 Leonardo AI 创建图像，并管理创意资产。",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "项目管理、上下文映射、想法扫描、分类和任务运行器工具。",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "直接从工作区使用数字签名签署和验证文档。",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
-    ocr_label: "OCR",
-    ocr_desc: "使用 Gemini Vision 或 Claude 多模态从图像和 PDF 中提取文本。",
+    drive_label: "Drive",
+    drive_desc: "代理保存导出内容的托管本地文件系统。以 Finder 风格界面浏览文件；跨应用升级保留。",
+    drive: {
+      title: "Drive",
+      subtitle: "代理导出的托管本地文件系统",
+      root_label: "Drive 根目录",
+      dev_badge: "开发",
+      back: "返回",
+      forward: "前进",
+      up: "向上",
+      refresh: "刷新",
+      search_placeholder: "搜索此文件夹...",
+      view_list: "列表",
+      view_icons: "图标",
+      view_columns: "栏",
+      new_folder: "新建文件夹",
+      new_file: "新建文件",
+      reveal_in_os: "在文件管理器中显示",
+      open_in_os: "打开",
+      sidebar_root: "Drive",
+      sidebar_recent: "最近",
+      sidebar_storage: "存储",
+      storage_used: "已使用 {used} • {count} 项",
+      empty_folder: "此文件夹为空",
+      empty_hint: "导出到本地 Drive 的代理会将文件保存在此处。",
+      empty_cta: "创建文件夹",
+      col_name: "名称",
+      col_size: "大小",
+      col_kind: "类型",
+      col_modified: "修改时间",
+      folder_kind: "文件夹",
+      ctx_open: "打开",
+      ctx_rename: "重命名",
+      ctx_duplicate: "复制",
+      ctx_delete: "删除",
+      ctx_copy: "拷贝",
+      ctx_cut: "剪切",
+      ctx_paste: "粘贴",
+      ctx_new_folder: "新建文件夹",
+      ctx_new_file: "新建文件",
+      ctx_reveal: "在文件管理器中显示",
+      ctx_copy_path: "复制路径",
+      rename_title: "重命名",
+      rename_placeholder: "新名称",
+      new_folder_title: "新建文件夹",
+      new_folder_placeholder: "文件夹名称",
+      new_file_title: "新建文件",
+      new_file_placeholder: "filename.txt",
+      delete_confirm_title: "删除 {count} 项？",
+      delete_confirm_body: "此操作无法撤销。已删除的文件将永久丢失。",
+      confirm: "确认",
+      cancel: "取消",
+      details_title: "详情",
+      details_path: "路径",
+      details_size: "大小",
+      details_kind: "类型",
+      details_modified: "修改时间",
+      details_items: "项目",
+      details_preview: "预览",
+      preview_unavailable: "预览不可用",
+      preview_binary: "二进制文件 — 在操作系统文件管理器中打开以检查。",
+      preview_too_large: "文件过大无法内联预览。",
+      loading: "加载中...",
+      error_prefix: "错误：",
+      items_selected: "已选择 {count} 项",
+      items_total: "{count} 项",
+      signatures_button: "签名",
+      ctx_sign_file: "签名文件…",
+      ctx_verify_file: "验证签名…",
+      ctx_extract_text: "提取文本 (OCR)…",
+      ctx_extract_text_no_gemini: "提取文本 — 连接 Gemini 以启用",
+      ocr_title: "使用 Gemini 提取文本",
+      ocr_subtitle: "通过 Google Gemini 3 Flash Preview 进行视觉 OCR",
+      ocr_model_label: "模型",
+      ocr_connector_ready: "Gemini 连接器就绪",
+      ocr_connector_missing: "保险库中未找到 Gemini 凭证。连接 Google Gemini 以启用 OCR。",
+      ocr_prompt_label: "可选提示",
+      ocr_prompt_placeholder: "例如 仅提取发票总额和行项目",
+      ocr_extract: "提取文本",
+      ocr_running: "提取中…",
+      ocr_done: "提取完成",
+      ocr_save: "保存为 .ocr.txt",
+      ocr_saved: "已保存",
+      ocr_saved_to: "已保存至",
+      ocr_copied: "已复制到剪贴板",
+      select_file_or_folder: "选择文件或文件夹以查看其详细信息。",
+      download_aria: "下载",
+      download_title: "下载",
+      sign_reason_placeholder: "签名原因…"
+    },
     artist: {
       title: "Artist",
       subtitle: "生成 3D 模型、创建图像并管理创意资产",
@@ -7151,6 +7901,31 @@ export const zh = {
       viewer_3d: "3D 查看器",
       viewer_3d_hint: "安装 @react-three/fiber 和 @react-three/drei 以启用带轨道控件的交互式 3D 预览。",
       tags_label: "标签：",
+      status_partial: "部分",
+      status_not_checked: "未检查",
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      session_cancelled: "会话已取消。",
+      imported_assets_one: "已向画廊导入 1 个新资产。",
+      imported_assets_other: "已向画廊导入 {count} 个新资产。",
+      scan_result_one: "找到 {scanned} 个资产，导入 1 个新资产。",
+      scan_result_other: "找到 {scanned} 个资产，导入 {imported} 个新资产。",
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      tag_editor_hint: "按 Enter 或逗号添加，按退格键删除最后一个标签。",
+      tag_editor_placeholder: "tag, another-tag",
+      send_to_media_studio: "发送到媒体工作室",
+      sent_to_media_studio: "已排队至媒体工作室",
+      session_history: "历史",
+      session_history_empty: "您运行的会话将显示在此处。",
+      session_tools_label: "工具：",
+      session_status_running: "运行中",
+      session_status_completed: "已完成",
+      session_status_failed: "已失败",
+      session_status_cancelled: "已取消",
+      replay_session: "重放",
+      delete_session: "删除会话"
     },
     dev_tools: {
       no_project_configured: "未配置开发项目",
@@ -7192,6 +7967,8 @@ export const zh = {
       task: "任务",
       pick_winner: "选择获胜者",
       winner: "获胜者",
+      disqualified_label: "已取消资格",
+      elapsed_label: "已耗时",
       cancel_competition: "取消竞争",
       no_goals_constellation: "暂无目标。在项目标签页中创建目标以查看星座图。",
       your_turn: "您的回合",
@@ -7296,6 +8073,8 @@ export const zh = {
       task_depth: "任务深度",
       goal_link: "目标关联",
       create_task: "创建任务",
+      partial_context: "部分上下文",
+      context_warnings_title: "上下文警告——任务运行时缺少信息",
       campaign: "活动",
       deep_build: "深度构建",
       idea_evolution: "想法演进",
@@ -7310,6 +8089,8 @@ export const zh = {
       edit: "编辑",
       save: "保存",
       file_empty: "文件为空或无法加载。",
+      file_load_failed: "无法加载文件。已禁用编辑以防止数据丢失。",
+      file_load_failed_hint: "请尝试刷新或重新选择技能。",
       effort: "工作量",
       risk: "风险",
       quick_wins: "快速获胜",
@@ -7324,6 +8105,155 @@ export const zh = {
       add_condition: "+ 添加条件",
       accept: "接受",
       reject: "拒绝",
+      triage_title: "创意分类",
+      triage_subtitle: "评估和优先排序生成的创意",
+      accepted_badge: "{count} 已接受",
+      rejected_badge: "{count} 已拒绝",
+      pending_badge: "{count} 待处理",
+      sidebar_category: "类别",
+      sidebar_scan_type: "扫描类型",
+      sidebar_all: "全部 ({count})",
+      remaining_count: "剩余 {count} 个",
+      reviewed_count: "已审查 {done} / {total}",
+      empty_no_ideas: "没有创意可分类",
+      empty_no_ideas_hint: "请先运行创意扫描器以生成创意。",
+      empty_all_reviewed: "所有创意已审查！",
+      empty_all_reviewed_summary: "{accepted} 已接受，{rejected} 已拒绝",
+      swipe_reject: "拒绝",
+      swipe_accept: "接受",
+      reasoning_label: "推理",
+      hint_reject: "拒绝",
+      hint_accept: "接受",
+      shortcuts_title: "键盘快捷键",
+      shortcuts_reject: "拒绝创意",
+      shortcuts_accept: "接受创意",
+      shortcuts_toggle: "切换此覆盖层",
+      shortcuts_close: "关闭覆盖层",
+      shortcuts_dismiss_hint: "按 ? 或 Esc 关闭",
+      shortcuts_open_title: "键盘快捷键 (?)",
+      shortcuts_btn_reject_title: "拒绝（左箭头 / A）",
+      shortcuts_btn_accept_title: "接受（右箭头 / Z）",
+      shortcuts_btn_delete_title: "删除",
+      pr_bridge_title: "作为草稿 PR 发布",
+      pr_bridge_subtitle: "分支、提交和预填 PR — 代理推理已带入描述。",
+      pr_bridge_branch: "分支",
+      pr_bridge_commit_msg: "提交消息",
+      pr_bridge_pr_title: "PR 标题",
+      pr_bridge_pr_body: "PR 正文",
+      pr_bridge_agent_citation: "由 {label} {emoji} 提议",
+      pr_bridge_no_github: "在此项目上链接 GitHub 仓库以启用 PR 工作流。",
+      pr_bridge_link_project: "打开项目设置",
+      pr_bridge_unsupported_host: "自动填充目前仅适用于 GitHub。请复制 PR 正文并手动打开。",
+      pr_bridge_copy_body: "复制 PR 正文",
+      pr_bridge_copy_all: "全部复制",
+      pr_bridge_prepare: "准备分支和提交",
+      pr_bridge_open_github: "在 GitHub 上打开草稿 PR",
+      pr_bridge_expand: "显示 PR 预览",
+      pr_bridge_collapse: "隐藏 PR 预览",
+      pr_bridge_copied: "PR 正文已复制到剪贴板",
+      pr_bridge_copy_failed: "无法复制到剪贴板",
+      pr_bridge_branch_prepared: "分支已准备：{branch}",
+      pr_bridge_branch_failed: "分支准备失败：{message}",
+      pr_bridge_opening: "正在打开 GitHub...",
+      pr_bridge_open_failed: "无法打开外部 URL",
+      pr_bridge_draft_hint: "提示：在 GitHub 页面上，使用\"创建拉取请求\"旁边的下拉菜单将其标记为草稿。",
+      scoreboard_title: "代理性能",
+      scoreboard_subtitle: "此项目每个扫描代理的接受率和实现率。",
+      scoreboard_toggle_show: "显示记分板",
+      scoreboard_toggle_hide: "隐藏记分板",
+      scoreboard_empty: "暂无数据 — 运行扫描并分类一些创意以填充板面。",
+      scoreboard_col_agent: "代理",
+      scoreboard_col_ideas: "创意",
+      scoreboard_col_accept_rate: "接受率 %",
+      scoreboard_col_impl_rate: "实现率 %",
+      scoreboard_col_avg_impact: "平均影响",
+      scoreboard_col_avg_effort: "平均工作量",
+      scoreboard_tip_ideas: "此代理在所有扫描中生成的总创意数。",
+      scoreboard_tip_accept_rate: "已接受 /（已接受 + 已拒绝）。待处理创意不计入分母。",
+      scoreboard_tip_impl_rate: "已完成任务 / 从此代理创意创建的任务。",
+      scoreboard_tip_avg_impact: "此代理生成的所有创意的平均影响分数（1-10）。",
+      scoreboard_tip_avg_effort: "此代理生成的所有创意的平均工作量分数（1-10）。",
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n} 待处理",
+      scoreboard_top_performer: "最佳表现者",
+      zoom_in: "放大",
+      zoom_out: "缩小",
+      reset_view: "重置视图",
+      goals_label: "目标，",
+      connections_label: "连接",
+      legend_parent: "━━ 父级",
+      legend_dependency: "┄┄ 依赖",
+      competitors_dot: "竞争者 ·",
+      of_4_selected: "/4 已选择",
+      status_label: "状态：",
+      wt_label: "wt：",
+      winning_insight: "获胜洞察",
+      completed_in: "完成于",
+      achievements_label: "成就：",
+      output_lines: "输出行数",
+      loading_diff: "加载差异中...",
+      first_slot_bias: "第一个槽位偏向于上一个获胜者的方法。",
+      start_competition_prefix: "开始竞赛 (",
+      slots_suffix: "个槽位)",
+      strategy_leaderboard: "策略排行榜",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "跨已解决竞赛的汇总。越高越好。",
+      capture_winning_insight: "捕获获胜洞察",
+      capture_insight_desc: "是什么让这种方法获胜？此笔记将与获胜者一同存储，用于为未来竞赛播种。",
+      insight_placeholder: "描述是什么让这种方法成功…",
+      confirm_winner: "确认获胜者",
+      github_required_title: "需要 GitHub 仓库",
+      folder_required_title: "需要项目文件夹",
+      requirements_met_title: "所有要求已满足",
+      can_still_adopt: "您仍然可以立即采用 — 稍后在项目设置中添加 GitHub URL 和项目文件夹。",
+      active_triggers_prefix: "活跃触发器 (",
+      lifecycle_readiness: "生命周期就绪度 —",
+      goals_tab_no_goals: "尚无目标。在项目管理器中创建目标。",
+      goal_constellation_prefix: "目标星座 (",
+      sync_to_obsidian: "同步到 Obsidian",
+      select_or_create: "选择下方项目或创建新项目。",
+      all_projects_prefix: "所有项目 (",
+      percent_overall: "% 整体",
+      task_queue_prefix: "任务队列 (",
+      project_created_title: "项目已创建",
+      generate_context_map_desc: "扫描您的代码库以识别业务逻辑、入口点和数据结构。",
+      source_label: "来源：",
+      auto_filled_hint: "（自动从文件夹填充）",
+      project_type_optional: "（可选，仅视觉）",
+      optional_label: "（可选）",
+      implementation_log_label: "实现日志",
+      cross_project_desc_btn: "从现有上下文地图汇总。点击任意项目展开。",
+      generate_metadata_prompt: "以分析所有项目的上下文地图并提取共享模式。",
+      projects_count_prefix: "项目 (",
+      entry_points_header: "入口点",
+      db_tables_header: "数据库表",
+      entry_points_count: "入口点",
+      db_tables_count: "数据库表",
+      run_context_map_scan: "为此项目运行上下文地图扫描以填充元数据。",
+      active_goals_label: "活跃目标",
+      no_goals_add_below: "尚无目标。请在下方添加。",
+      goal_title_placeholder: "目标标题…",
+      loading_repos: "正在加载仓库...",
+      github_url_label: "GitHub URL",
+      github_repo_label: "GitHub 仓库",
+      idea_evolution_title: "创意演化",
+      fitness_ranking_label: "适应度排名",
+      similar_to_rejected: "与已拒绝类似：",
+      percent_similar: "% 相似",
+      scanning_with: "正在扫描",
+      scanning_subtitle: "正在分析代码库模式并生成上下文组…",
+      no_previous_scans: "没有先前的扫描。",
+      run_scan_prefix: "运行扫描 (",
+      automated_context_scan: "自动化上下文扫描",
+      results_prefix: "结果 (",
+      scan_history_prefix: "扫描历史 (",
+      action_label: "操作：",
+      self_healing_title: "自愈",
+      heal_all_prefix: "修复全部 (",
+      task_title_placeholder: "任务标题…",
+      task_details_placeholder: "任务详情或粘贴规范…",
+      goal_link_placeholder: "选择目标…",
+      no_tasks_queued_sub: "手动创建任务或从已接受的创意批量创建。"
     },
     doc_signing: {
       title: "文档签署",
@@ -7362,7 +8292,7 @@ export const zh = {
       no_signatures: "暂无签名",
       no_signatures_hint: "签署文档后即可在此查看。",
       export_sig: "导出 .sig.json",
-      delete_signature: "删除签名",
+      delete_signature: "删除签名"
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -7370,6 +8300,7 @@ export const zh = {
       tab_setup: "设置",
       tab_sync: "同步",
       tab_browse: "浏览保险库",
+      tab_graph: "图表",
       tab_cloud: "云",
       filter_notes: "筛选笔记...",
       vault_empty: "保险库为空",
@@ -7439,7 +8370,7 @@ export const zh = {
       sync_log: "同步日志",
       no_sync_activity: "暂无同步活动。推送或拉取以开始。",
       select_note: "选择笔记",
-      select_note_hint: "从左侧树中选择笔记以预览其内容。",
+      select_note_hint: "从左侧树中选择笔记以预览其内容。"
     },
     ocr: {
       title: "OCR",
@@ -7466,8 +8397,292 @@ export const zh = {
       comparison_stats: "比较统计",
       history_heading: "OCR 历史",
       no_results: "暂无 OCR 结果",
-      no_results_hint: "从文档中提取文本后即可在此查看。",
+      no_results_hint: "从文档中提取文本后即可在此查看。"
     },
+    artist_gallery: {
+      loading_viewer: "加载查看器中…",
+      loading_model: "加载模型中...",
+      could_not_load_model: "无法加载模型"
+    },
+    artist_media_studio: {
+      drag_drop_hint: "— 将文件拖放到任何地方",
+      keyboard_shortcuts: "空格键 / Del / 箭头键",
+      px_per_second: "像素/秒",
+      running_loudnorm: "正在运行 ffmpeg loudnorm 预览…"
+    },
+    dev_context: {
+      files_header: "文件 (",
+      filter_groups_placeholder: "过滤分组…",
+      rescan_title: "重新扫描",
+      scanning_with: "正在扫描",
+      scanning_subtitle: "正在分析代码库模式并生成上下文组…",
+      no_previous_scans: "没有先前的扫描。",
+      run_scan: "运行扫描 (",
+      auto_scan: "自动扫描",
+      automated_context_scan: "自动化上下文扫描",
+      results: "结果 (",
+      scan_history: "扫描历史 ("
+    },
+    dev_lifecycle: {
+      start_a_competition: "开始竞赛",
+      start_a_competition_desc: "派生 2–4 个使用不同策略的竞争者来处理同一任务。获胜者的方法将被晋升。",
+      task_title: "任务标题",
+      task_title_placeholder: "例如 重构 auth 模块",
+      task_description: "任务描述（可选）",
+      task_description_placeholder: "描述成功的样子…",
+      strategy_slots: "策略槽位（选择 2–4 个）",
+      of_4_selected: "/4 已选择",
+      cost_warning: "成本警告：",
+      cost_warning_desc: "每个竞争者独立运行完整任务 — 这会使用 {count} 倍的令牌。",
+      start_competition: "开始竞赛",
+      competitors_dot: "竞争者 ·",
+      loading_competitors: "加载竞争者中...",
+      failed_to_load_detail: "无法加载详情。",
+      status_label: "状态：",
+      weight_label: "wt：",
+      pick_winner: "选择获胜者",
+      cancel_competition: "取消竞赛",
+      select_project_for_competitions: "选择项目以查看竞赛。",
+      new_competition: "新竞赛",
+      no_competitions_yet: "尚无竞赛。开始一个让 2–4 种策略竞速解决任务。",
+      no_goals_yet_project: "尚无目标。在项目管理器中创建目标以跟踪进度。",
+      zoom_in_title: "放大",
+      zoom_out_title: "缩小",
+      reset_view_title: "重置视图",
+      goals_label: "目标，",
+      legend_parent: "━━ 父级",
+      legend_dependency: "┄┄ 依赖",
+      no_goals_kanban: "尚无目标。创建目标以在此处查看。",
+      no_goals_here: "此处没有目标",
+      auto_setup_title: "运行自动化生命周期设置",
+      auto_setup: "自动设置",
+      loading_lifecycle: "正在加载生命周期状态...",
+      no_project_click_to_create: "无项目 — 点击创建",
+      no_repo: "无仓库",
+      baseline_label: "基线：",
+      ts_errors_label: "TS 错误：",
+      cargo_errors_label: "Cargo 错误：",
+      tests_label: "测试：",
+      git_label: "Git：",
+      winning_insight: "获胜洞察",
+      completed_in: "完成于",
+      achievements_label: "成就：",
+      output_lines: "输出行数",
+      expand_slot_title: "展开槽位",
+      collapse_slot_title: "折叠槽位",
+      copy_diff_title: "复制差异",
+      loading_diff: "加载差异中...",
+      new_competition_modal_title: "开始竞赛",
+      first_slot_bias: "第一个槽位偏向于上一个获胜者的方法。",
+      start_competition_slots: "开始竞赛 (",
+      slots_suffix: "个槽位)",
+      strategy_leaderboard: "策略排行榜",
+      dq_title: "已取消资格",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "跨已解决竞赛的汇总。越高越好。",
+      capture_winning_insight: "捕获获胜洞察",
+      capture_insight_desc: "是什么让这种方法获胜？此笔记将与获胜者一同存储，用于为未来竞赛播种。",
+      insight_placeholder: "描述是什么让这种方法成功…",
+      confirm_winner: "确认获胜者",
+      competition_title_placeholder: "例如 为 /api/auth/login 添加速率限制",
+      competition_desc_placeholder: "验收标准、目标文件、约束...",
+      regenerate_strategies_title: "重新生成策略",
+      start_dev_server_title: "在此工作树中启动开发服务器",
+      stop_dev_server_title: "停止开发服务器",
+      open_worktree_title: "打开工作树目录",
+      adopt_dev_clone: "采用开发克隆",
+      dev_clone_desc: "开发克隆是一个自主开发者代理，管理您的项目生命周期 — 竞争策略、修复错误和发布代码。",
+      github_required_title: "需要 GitHub 仓库",
+      folder_required_title: "需要项目文件夹",
+      requirements_met_title: "所有要求已满足",
+      can_still_adopt: "您仍然可以立即采用 — 稍后在项目设置中添加 GitHub URL 和项目文件夹。",
+      active_triggers: "活跃触发器 (",
+      lifecycle_readiness: "生命周期就绪度 —",
+      goals_tab_no_goals: "尚无目标。在项目管理器中创建目标。",
+      goal_constellation: "目标星座 (",
+      sync_to_obsidian: "同步到 Obsidian"
+    },
+    dev_projects: {
+      active_goals: "活跃目标",
+      run_context_map_scan: "为此项目运行上下文地图扫描以填充元数据。",
+      entry_points: "入口点",
+      db_tables: "数据库表",
+      top_keywords: "顶级关键字",
+      entry_points_header: "入口点",
+      db_tables_header: "数据库表",
+      api_surface: "API 表面",
+      hot_directories: "热门目录",
+      cross_project_map_title: "跨项目元数据地图",
+      cross_project_map_subtitle: "从现有上下文地图汇总。点击任意项目展开。",
+      tech_distribution: "技术分布",
+      shared_keywords: "共享关键字 (",
+      shared_keywords_subtitle: "多个项目中存在的概念——可能表明共享架构。",
+      project_similarity: "项目相似性",
+      projects_header: "项目 (",
+      cross_project_map_btn: "跨项目地图",
+      new_project: "新项目",
+      select_or_create: "选择下方项目或创建新项目。",
+      all_projects: "所有项目 (",
+      no_projects_yet: "尚无项目",
+      create_first_project: "创建第一个项目",
+      tech_stack: "技术栈",
+      edit_project: "编辑项目",
+      no_goals_add_below: "尚无目标。请在下方添加。",
+      goal_title_placeholder: "目标标题…",
+      project_folder: "项目文件夹",
+      select_folder: "选择文件夹...",
+      project_name: "项目名称",
+      auto_filled_from_folder: "（自动从文件夹填充）",
+      project_name_placeholder: "我的项目",
+      project_type: "项目类型",
+      project_type_optional: "（可选，仅视觉）",
+      project_created: "项目已创建",
+      project_ready_desc: "已就绪。您想现在生成上下文地图吗？",
+      generate_context_map: "生成上下文地图",
+      generate_context_map_desc: "扫描您的代码库以识别业务逻辑、入口点和数据结构。",
+      skip_for_now: "暂时跳过",
+      scan_codebase: "扫描代码库",
+      loading_repositories: "正在加载仓库...",
+      github_url_label: "GitHub URL",
+      optional: "（可选）",
+      github_url_placeholder: "https://github.com/owner/repo",
+      github_repository: "GitHub 仓库",
+      select_repository: "选择仓库...",
+      no_repositories_found: "未找到仓库",
+      implementation_log: "实现日志",
+      loading_metadata: "加载中...",
+      no_metadata_yet: "尚未生成元数据地图",
+      generate_metadata_prompt: "以分析所有项目的上下文地图并提取共享模式。"
+    },
+    dev_runner: {
+      self_healing: "自愈",
+      auto_heal: "自动修复",
+      heal_all: "修复全部 (",
+      task_title_placeholder: "任务标题…",
+      task_details_placeholder: "任务详情或粘贴规范…",
+      task_depth: "任务深度",
+      goal_link: "目标链接",
+      optional: "（可选）",
+      goal_link_placeholder: "选择目标…",
+      create_task: "创建任务",
+      source_label: "来源：",
+      new_task: "新任务",
+      batch_from_accepted: "从已接受批量",
+      start_batch: "开始批次",
+      cancel_all: "全部取消",
+      batch_progress: "批次进度",
+      percent_overall: "% 整体",
+      task_queue: "任务队列 (",
+      no_tasks_queued: "队列中没有任务",
+      no_tasks_queued_sub: "手动创建任务或从已接受的创意批量创建。"
+    },
+    dev_scanner: {
+      idea_evolution: "创意演化",
+      fitness_ranking: "适应度排名",
+      similar_to_rejected: "与已拒绝类似：",
+      synthesis_suggestions: "综合建议",
+      percent_similar: "% 相似",
+      potential_duplicates: "潜在重复",
+      scanning_with: "正在扫描",
+      analyzing_codebase: "正在分析代码库...",
+      no_previous_scans: "尚无先前扫描。",
+      auto_scan: "自动扫描",
+      automated_context_scan: "自动化上下文扫描",
+      run_scan_prefix: "运行：",
+      results_prefix: "结果：",
+      scan_history_prefix: "扫描历史",
+      idea_scanner_title: "创意扫描器",
+      idea_scanner_subtitle: "运行专门的代理以生成改进创意",
+      run_scan_btn: "运行扫描 (",
+      results_header: "结果 (",
+      scan_history_header: "扫描历史 ("
+    },
+    dev_triage: {
+      auto_triage_rules: "自动分类规则",
+      add_condition: "+ 添加条件",
+      action_label: "操作：",
+      new_rule: "新规则",
+      run_rules: "运行规则"
+    },
+    obsidian: {
+      saved_vaults: "已保存的保险库",
+      remove_vault_title: "移除已保存的保险库",
+      vault_is_empty: "保险库为空",
+      failed_to_load: "加载失败",
+      open_in_obsidian: "在 Obsidian 中打开",
+      copy_path_title: "复制路径",
+      disconnect_title: "断开 Google Drive",
+      sign_in_to_enable: "登录以启用云同步",
+      sign_in_subtitle: "使用您的 Google 账户登录以将您的保险库备份到 Google Drive。",
+      refresh_title: "刷新同步状态",
+      drive_connected: "Drive 已连接",
+      files_synced: "个文件已同步到 Drive",
+      connect_drive_desc: "连接 Google Drive 以将您的保险库备份到云。",
+      step_connect_drive: "连接 Google Drive",
+      step_connect_drive_desc: "授予 Personas 在您的 Google Drive 中创建文件的访问权限。",
+      step_push_vault: "推送您的保险库",
+      step_push_vault_desc: "保险库笔记作为 markdown 文件上传到 Google Drive。",
+      step_sync_devices: "跨设备同步",
+      step_sync_devices_desc: "在另一台设备上拉取以下载。您的保险库就是您的数据。",
+      push_title: "将保险库推送到 Google Drive",
+      push_desc: "推送将本地保险库更改上传到 Google Drive。",
+      last_sync_result: "上次同步结果",
+      pull_title: "从 Google Drive 拉取保险库",
+      connect_google_drive: "连接 Google Drive",
+      connect_drive_btn_desc: "授予 Personas 在您的 Google Drive 中创建文件的访问权限。",
+      no_stats_yet: "尚无统计信息。",
+      search_title: "搜索笔记",
+      search_placeholder: "搜索笔记…",
+      no_matches: "无匹配项。",
+      no_orphan_notes: "无孤立笔记——每条笔记至少被另一条笔记链接。",
+      no_mocs: "未检测到 MOC — 尝试降低链接阈值。",
+      quick_capture_title: "AI 快速捕获",
+      note_search_placeholder: "搜索笔记或提问…",
+      append_to_today: "追加到今天",
+      append_content_placeholder: "要追加的内容…",
+      save_meeting_title: "保存会议笔记",
+      meeting_attendees_placeholder: "参与者…",
+      meeting_summary_placeholder: "会议摘要…",
+      meeting_action_items_placeholder: "行动项…",
+      meeting_decisions_placeholder: "决策…",
+      save_meeting_note: "保存会议笔记",
+      remove_vault_setup_title: "移除",
+      detected_vaults: "检测到的保险库：",
+      connected_to: "已连接到 \"",
+      notes_found: "找到的笔记",
+      scan_for_vaults_title: "扫描保险库",
+      manual_path_title: "手动输入路径",
+      preview_label: "预览：",
+      vault_path_agent_placeholder: "/AgentName/",
+      vault_path_note_example: "/fact/memory-title.md",
+      disconnect_sync_title: "断开连接",
+      active_vault: "活跃保险库：",
+      refresh_stats_title: "刷新统计",
+      select_personas: "选择要推送的代理",
+      select_all: "全选",
+      no_personas_found: "未找到代理",
+      last_push_result: "上次推送结果",
+      app_version: "应用版本",
+      vault_version: "保险库版本",
+      keep_app: "保留应用",
+      keep_vault: "保留保险库",
+      clear_history_title: "清除历史",
+      no_sync_activity: "尚无同步活动。推送或拉取以开始。"
+    },
+    research_lab: {
+      review_before_saving: "保存前审查。取消勾选任何您不想添加的项。",
+      re_run: "重新运行",
+      search_placeholder: "搜索…",
+      filter_title: "过滤",
+      query_placeholder: "输入查询并按 Enter 跨所有面板搜索…",
+      close_panel_title: "关闭面板",
+      md_extension: ".md",
+      edit_note_aria: "编辑笔记"
+    },
+    doc_signing_label: "Doc Signing",
+    doc_signing_desc: "直接从工作区使用数字签名签署和验证文档。",
+    ocr_label: "OCR",
+    ocr_desc: "使用 Gemini Vision 或 Claude 多模态从图像和 PDF 中提取文本。"
   },
   media_studio: {
     title: "媒体工作室",
@@ -7529,10 +8744,32 @@ export const zh = {
     empty_title: "开始合成",
     empty_hint: "将视频或音频片段添加到时间轴以开始。",
     split: "在播放头处分割",
+    undo: "撤销",
+    redo: "重做",
     import_media: "导入媒体",
     supported_video: "视频文件",
     supported_audio: "音频文件",
     supported_images: "图像文件",
+    clip_actions: "剪辑操作",
+    action_split: "在播放头处分割",
+    action_extract_audio: "提取音频",
+    action_strip_audio: "去除音频",
+    action_keep_audio: "保留音频",
+    action_save_thumbnail: "将帧保存为图像",
+    action_trim_to_file: "修剪为新文件",
+    extracting_audio: "正在提取音轨...",
+    extract_audio_done: "音轨已提取",
+    saving_thumbnail: "正在保存帧...",
+    thumbnail_saved: "帧已保存",
+    trimming_file: "正在修剪文件...",
+    trim_done: "修剪已保存",
+    effects: "效果",
+    speed: "速度",
+    fade_in: "淡入",
+    fade_out: "淡出",
+    normalize: "归一化响度",
+    normalize_hint: "导出时应用 EBU R128；预览为近似值",
+    strip_audio_hint: "导出时将此剪辑的音频静音"
   },
   research_lab: {
     dashboard: "仪表盘",
@@ -7542,20 +8779,29 @@ export const zh = {
     experiments: "实验",
     findings: "发现",
     reports: "报告",
+    graph: "图表",
     active: "活跃",
     sources: "来源",
     sources_count: "来源",
+    recent_projects: "最近的项目",
+    view_all: "查看全部",
     no_projects: "暂无研究项目",
     no_projects_hint: "创建研究项目以开始整理文献、假设和实验。",
     create_project: "新项目",
+    edit_project: "编辑项目",
+    save_changes: "保存更改",
     project_name: "项目名称",
+    project_name_placeholder: "例如 LLM 推理思维链的忠实度",
     project_description: "描述",
+    project_description_placeholder: "此项目调查内容的简短摘要",
     project_thesis: "研究问题或论文",
+    project_thesis_placeholder: "您正在测试的核心主张或问题",
     project_domain: "领域",
     project_scope: "范围限制",
     obsidian_vault: "Obsidian 保险库",
     obsidian_vault_hint: "关联 Obsidian 保险库以同步实验和发现",
     select_vault: "选择保险库",
+    clear_vault: "清除",
     vault_connected: "保险库已连接",
     sync_to_obsidian: "同步到 Obsidian",
     syncing: "同步中...",
@@ -7571,13 +8817,42 @@ export const zh = {
     status_writing: "撰写",
     status_review: "审查",
     status_complete: "完成",
+    domain_cs: "计算机科学",
+    domain_biology: "生物学",
+    domain_chemistry: "化学",
+    domain_physics: "物理学",
+    domain_mathematics: "数学",
+    domain_business: "商业",
+    domain_medicine: "医学",
+    domain_general: "通用",
     select_project_first: "先选择研究项目",
     no_sources: "暂无来源",
     no_sources_hint: "在 arXiv、Semantic Scholar 或 PubMed 上搜索相关论文，或手动添加来源。",
+    no_matching_sources: "没有匹配您过滤器的来源",
+    filter_sources_placeholder: "按标题或作者过滤…",
     relevance: "相关性",
     search_sources: "搜索来源",
     ingest: "导入",
     ingesting: "导入中...",
+    source_title: "标题",
+    source_title_placeholder: "论文标题",
+    source_type: "来源类型",
+    source_year: "年份",
+    source_year_placeholder: "例如 2024",
+    source_authors: "作者",
+    source_authors_placeholder: "作者 1、作者 2、…",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "摘要",
+    source_abstract_placeholder: "论文摘要…",
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "网页",
+    source_type_pdf: "PDF",
+    source_type_manual: "手动输入",
     no_hypotheses: "暂无假设",
     no_hypotheses_hint: "手动添加假设，或让 AI 代理从您的文献语料库中生成。",
     add_hypothesis: "添加假设",
@@ -7585,23 +8860,58 @@ export const zh = {
     confidence: "置信度",
     supporting: "支持",
     counter: "反驳",
+    hypothesis_statement: "陈述",
+    hypothesis_statement_placeholder: "可测试的主张——例如 提示 X 使准确率比基线提高 >5%",
+    hypothesis_rationale: "依据",
+    hypothesis_rationale_placeholder: "为什么这个假设值得测试",
     no_experiments: "暂无实验",
     no_experiments_hint: "设计实验以测试假设。",
     create_experiment: "新实验",
+    experiment_name: "实验名称",
+    experiment_name_placeholder: "例如 在 GSM8K 上比较基线与微调",
     methodology: "方法论",
+    methodology_placeholder: "此实验将如何运行？",
     success_criteria: "成功标准",
+    success_criteria_placeholder: "什么结果将证实假设？",
+    linked_hypothesis: "关联的假设",
+    no_linked_hypothesis: "未关联假设",
+    linked_persona: "关联的代理",
+    no_linked_persona: "未关联代理",
+    run_input: "运行输入（可选）",
+    run_input_placeholder: "每次运行时传递给代理的输入文本。",
+    pass_pattern: "通过模式（正则表达式）",
+    pass_pattern_placeholder: "例如 PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "运行",
+    running_experiment: "运行中…",
     run_count: "次运行",
+    view_runs: "查看运行",
+    no_runs_yet: "尚无运行",
+    run_passed: "通过",
+    run_failed: "失败",
+    run_duration: "耗时",
+    run_cost: "成本",
+    run_number: "运行 #",
+    runs_history: "运行历史",
     no_findings: "暂无发现",
     no_findings_hint: "发现由分析代理从实验结果中提取。",
+    create_finding: "新发现",
+    finding_title: "标题",
+    finding_title_placeholder: "发现的简短标题",
+    finding_description: "描述",
+    finding_description_placeholder: "您观察到了什么，为什么它很重要？",
+    finding_category: "类别",
+    finding_category_placeholder: "例如 性能、限制、惊喜",
     no_reports: "暂无报告",
     no_reports_hint: "创建报告以将发现汇编成结构化文档。",
     create_report: "新报告",
+    report_title: "标题",
+    report_title_placeholder: "例如 Q2 研究摘要",
     report_type: "报告类型",
+    report_format: "格式",
     literature_review: "文献综述",
     experiment_report: "实验报告",
     full_paper: "完整论文",
-    executive_summary: "执行摘要",
+    executive_summary: "执行摘要"
   },
   event_types: {
     webhook_received_label: "收到 Webhook",
@@ -7676,7 +8986,7 @@ export const zh = {
     source_filter_no_regex: "只支持尾部 *（不支持正则表达式，不支持 ? 通配符）",
     source_filter_no_source_id: "如果设置了 source_filter 但事件没有 source_id，过滤器将不匹配",
     source_filter_allowed_chars: "允许的字符：字母、数字、_、-、:、. 和 *",
-    source_filter_max_length: "最多 120 个字符，最多 3 个通配符",
+    source_filter_max_length: "最多 120 个字符，最多 3 个通配符"
   },
   connector_roles: {
     chat_messaging: "聊天和即时通讯",
@@ -7743,12 +9053,12 @@ export const zh = {
     purpose_ecommerce: "电子商务",
     purpose_scheduling: "日程安排",
     purpose_forms: "表单",
-    purpose_ai: "AI",
+    purpose_ai: "AI"
   },
   connector_licensing: {
     personal: "个人",
     paid: "付费",
-    enterprise: "企业",
+    enterprise: "企业"
   },
   alerts: {
     metric_error_rate: "错误率",
@@ -7764,7 +9074,7 @@ export const zh = {
     error_delete_rule: "删除告警规则失败：",
     error_toggle_rule: "切换告警规则失败：",
     error_dismiss: "忽略告警失败：",
-    error_clear_history: "清除告警历史失败：",
+    error_clear_history: "清除告警历史失败："
   },
   deploy_errors: {
     not_reachable: "无法访问服务器。检查 URL 和您的网络连接。",
@@ -7779,18 +9089,18 @@ export const zh = {
     oauth_expired: "OAuth 令牌已过期。请重新授权。",
     url_empty: "请输入编排器 URL。",
     api_key_empty: "请输入您的 API 密钥。",
-    token_empty: "请输入您的 GitLab 个人访问令牌。",
+    token_empty: "请输入您的 GitLab 个人访问令牌。"
   },
   tiers: {
     starter_label: "简单",
     starter_desc: "日常使用的核心功能",
     team_label: "高级",
-    team_desc: "完整功能集",
+    team_desc: "完整功能集"
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus",
+    opus: "Opus"
   },
   error_explanation: {
     action_go_to_vault: "前往保险库",
@@ -7834,7 +9144,7 @@ export const zh = {
     guidance_import_invalid: "导入文件为空或已损坏。尝试从来源重新导出并再次导入。",
     guidance_circular_chain: "这将创建代理相互无限触发的循环。检查您的代理链并移除循环引用。",
     guidance_parse_error: "响应不是预期的格式。这可能表示 API 更改或格式错误的数据。",
-    guidance_process_exit: "底层进程报告了失败。查看执行日志获取更多详情。",
+    guidance_process_exit: "底层进程报告了失败。查看执行日志获取更多详情。"
   },
   process_labels: {
     n8n_transform: "n8n 转换",
@@ -7848,10 +9158,11 @@ export const zh = {
     lab_run: "实验室运行",
     connector_test: "连接器测试",
     creative_session: "创意会话",
+    feedback_chat: "反馈聊天",
     complete_suffix: "完成",
     failed_suffix: "失败",
     pending_reviews_one: "{count} 条待审核等待批准",
-    pending_reviews_other: "{count} 条待审核等待批准",
+    pending_reviews_other: "{count} 条待审核等待批准"
   },
   eval_strategies: {
     keyword_match_label: "输出质量",
@@ -7863,7 +9174,7 @@ export const zh = {
     confusion_detect_label: "混淆检测",
     confusion_detect_description: "检查已知的混淆/失败短语",
     composite_label: "综合",
-    composite_description: "所有策略的加权组合",
+    composite_description: "所有策略的加权组合"
   },
   drift_labels: {
     kind_error_pattern: "错误模式",
@@ -7891,7 +9202,7 @@ export const zh = {
     suggestion_error_handling: "检查 errorHandling 部分并为此失败模式添加处理。",
     suggestion_near_timeout: "考虑增加超时时间或简化代理在指令中的任务范围。",
     suggestion_high_cost: "收紧指令以减少令牌使用，或考虑使用更小的模型。",
-    suggestion_repeated_failure: "考虑运行新的设计分析以重建代理配置。",
+    suggestion_repeated_failure: "考虑运行新的设计分析以重建代理配置。"
   },
   feedback_labels: {
     accurate_prompt: "准确的提示词",
@@ -7904,13 +9215,13 @@ export const zh = {
     over_engineered: "过度设计",
     under_specified: "规格不足",
     wrong_triggers: "触发器错误",
-    credential_issues: "凭据问题",
+    credential_issues: "凭据问题"
   },
   protocol_labels: {
     manual_review: "人工审核",
     user_message: "用户通知",
     agent_memory: "代理记忆",
-    emit_event: "事件发送",
+    emit_event: "事件发送"
   },
   execution: {
     budget_exceeded: "此代理的月度预算已超出。在代理设置中覆盖预算暂停或增加预算以继续。",
@@ -7927,6 +9238,11 @@ export const zh = {
     waiting_for_output: "等待输出...",
     no_output: "没有输出",
     background: "后台",
+    needs_credential: "需要凭证",
+    run_preview: "运行预览",
+    close_preview: "关闭预览",
+    budget_limit: "预算限制",
+    run_agent: "运行代理"
   },
   gitlab: {
     integration_title: "GitLab 集成",
@@ -8041,6 +9357,10 @@ export const zh = {
     play_sound: "播放声音",
     cicd_agent_templates: "CI/CD 代理模板",
     your_tier: "（您的）",
+    trigger_on: "触发：",
+    connecting_to_gitlab: "正在连接到 GitLab...",
+    deploying_to_gitlab: "正在将代理部署到 GitLab...",
+    pipeline_hash: "Pipeline #"
   },
   pipeline: {
     agent_teams: "代理团队",
@@ -8188,6 +9508,11 @@ export const zh = {
     run_pipeline_or_add: "运行流水线或手动添加",
     load_more: "加载更多",
     showing_count: "显示 {shown}/{total}",
+    no_timeline_data: "无时间线数据",
+    clear_filter: "清除过滤器",
+    filter_to_run: "过滤到此运行",
+    new_memories_one: "{count} 条新记忆",
+    new_memories_other: "{count} 条新记忆"
   },
   composition: {
     select_persona: "选择代理",
@@ -8236,10 +9561,10 @@ export const zh = {
     add_input_node: "添加输入节点",
     add_persona_node: "添加代理节点",
     add_output_node: "添加输出节点",
-    run: "运行",
+    run: "运行"
   },
   auth: {
-    login_timed_out: "登录超时。请重试。",
+    login_timed_out: "登录超时。请重试。"
   },
   shared: {
     blast_checking_impact: "检查影响...",
@@ -8338,7 +9663,7 @@ export const zh = {
     toggle_enabled: "已启用",
     toggle_disabled: "已禁用",
     design_drop_file: "将文件拖放到此处",
-    design_placeholder: "描述此代理应该做什么...\\n\\n示例：\\n  - 监控 Gmail 中的发票并将金额提取到电子表格中\\n  - 监听 GitHub Webhook 并将摘要发布到 Slack\\n  - 每天分析 API 日志并标记异常",
+    design_placeholder: "描述此代理应该做什么...\\\n\\\n示例：\\\n  - 监控 Gmail 中的发票并将金额提取到电子表格中\\\n  - 监听 GitHub Webhook 并将摘要发布到 Slack\\\n  - 每天分析 API 日志并标记异常",
     design_attach: "附加",
     design_references: "参考资料",
     design_files_attached_one: "已附加 {count} 个文件",
@@ -8374,6 +9699,15 @@ export const zh = {
     cmd_select: "选择",
     cmd_commands: "命令",
     draft_editor: {
+      edit_tabs_label: "草稿编辑选项卡",
+      request_ai_adjustments: "请求 AI 调整",
+      edit_raw_json_hint: "编辑原始 JSON。更改将覆盖表单字段。",
+      no_custom_sections: "尚无自定义部分",
+      no_content_to_preview: "无内容可预览",
+      edit_raw: "编辑原始",
+      credential_links: "凭证链接",
+      view_full_prompt: "查看完整提示",
+      hide_full_prompt: "隐藏完整提示",
       persona_name_placeholder: "代理名称...",
       description_placeholder: "简短描述...",
       refine_placeholder: "示例：使错误处理更严格，添加重试逻辑...",
@@ -8394,55 +9728,108 @@ export const zh = {
       design_context_json: "设计上下文 JSON...",
       click_next: "点击下一步继续转换。",
       configure_transform: "配置转换",
-      select: "选择...",
+      select: "选择..."
     },
     forms_extra: {
+      color_hex_placeholder: "#8b5cf6",
+      attach_file_title: "附加文件（API 规范、模式、MCP 配置）",
+      add_references_title: "添加参考 URL 或连接字符串",
+      no_matches: "无匹配项",
+      all_prefix: "全部 (",
       references: "参考资料",
       references_placeholder: "粘贴 URL、连接字符串、API 密钥或任何参考信息（每行一条）",
       remove_file: "移除文件",
       choose_color: "选择颜色",
       choose_icon: "选择图标",
       filter_placeholder: "筛选...",
-      reset_to_default: "重置为默认",
+      reset_to_default: "重置为默认"
     },
     reasoning_trace: {
+      heartbeat_silent: "s（静默",
+      waiting: "正在等待执行事件...",
+      tool_call_label: "工具调用：",
       system_init: "系统初始化",
       reasoning: "推理",
       tool_call: "工具调用：{name}",
       result: "结果",
       complete: "完成",
-      error: "错误",
+      error: "错误"
     },
     sidebar_extra: {
+      clear_completed_title: "清除已完成和排队的项目",
+      no_credentials: "尚无凭证",
+      ai_setup_wizard: "AI 设置向导",
+      all_personas: "所有代理",
+      no_scheduled_agents: "没有已计划的代理",
+      all_agents_label: "所有代理",
+      draft_builds: "草稿构建",
+      dev_tools_label: "开发工具",
+      obsidian_brain: "Obsidian Brain",
+      active_twin: "活跃孪生",
+      research_lab: "研究实验室",
       agents: "代理",
       schedules: "计划",
       remove_favorites: "从收藏中移除",
       add_favorites: "添加到收藏",
-      active_project: "活跃项目",
+      active_project: "活跃项目"
     },
     execution_detail: {
+      running: "运行中...",
+      rerun: "重新运行",
+      retry_prefix: "重试 #",
+      importance_prefix: "重要性：",
+      confidence_suffix: "% 置信度",
       copy: "复制",
       suggested_actions: "建议操作",
       knowledge_insight: "知识洞察",
       outcome_assessment: "结果评估",
-      blockers: "阻碍",
+      blockers: "阻碍"
     },
     progress_extra: {
+      continue_working: "您可以继续工作——草稿就绪时我们会通知您。",
+      draft_ready: "您的代理草稿已可供审查和编辑。",
+      click_generate: "点击\"生成代理草稿\"开始。",
+      skip_configuration: "跳过配置",
+      no_config_questions: "不需要配置问题。",
+      answer_questions: "回答这些问题以自定义代理生成。",
+      no_output: "尚无输出...",
+      s_elapsed: "s 已耗时",
+      s_remaining: "s 剩余",
+      show_cli_output: "显示 CLI 输出",
+      hide_cli_output: "隐藏 CLI 输出",
       taking_longer: "耗时比预期更长",
       complete: "完成",
       resuming: "恢复上次转换会话...",
       cancel_transformation: "取消转换",
       draft_generated: "草稿生成成功",
       transformation_failed: "转换失败",
-      waiting_to_start: "等待开始转换...",
+      waiting_to_start: "等待开始转换..."
     },
     terminal_extra: {
+      connecting: "正在连接到服务商",
+      queued_at: "已排队至位置",
+      new_line: "新行",
+      new_lines: "新行",
+      below: "以下",
+      lines_suffix: "行)",
+      search_and_filter: "搜索与过滤",
       press_enter: "按 Enter 或点击播放以开始",
       connection_failed: "连接失败——检查提供商设置并重试",
       search_output: "搜索输出...",
-      dismiss: "关闭",
+      dismiss: "关闭"
     },
     use_cases_extra: {
+      input_placeholder: "输入内容以运行此用例…",
+      model_placeholder: "例如 claude-3-5-sonnet-latest",
+      use_case_singular: "用例",
+      window_prefix: "（窗口：",
+      loading_history: "正在加载历史...",
+      no_executions: "尚无执行",
+      run_to_see_history: "运行此用例以在此处查看执行历史、计时和成本。",
+      run_use_case: "运行此用例",
+      custom_model: "自定义模型",
+      no_results: "未找到结果",
+      ctrl_enter: "Ctrl+Enter",
       example_output: "示例输出",
       input_data: "输入数据",
       rerun_input: "使用此输入重新运行",
@@ -8450,7 +9837,7 @@ export const zh = {
       error_prefix: "错误：",
       output_prefix: "输出：",
       toggle_history: "切换执行历史",
-      configure_model: "配置模型、通知和订阅",
+      configure_model: "配置模型、通知和订阅"
     },
     json_valid: "有效 JSON",
     json_invalid: "无效 JSON",
@@ -8458,6 +9845,85 @@ export const zh = {
     json_format_tooltip: "格式化 JSON",
     agent_icon_label: "代理图标",
     breadcrumb_label: "面包屑",
-    breadcrumb_show_hidden: "显示隐藏的面包屑",
+    breadcrumb_show_hidden: "显示隐藏的面包屑"
   },
+  releases: {
+    whats_new: {
+      title: "新动态",
+      subtitle_roadmap: "我们当前正在构建的内容以及接下来的计划。",
+      subtitle_changelog: "您的 Personas 版本中的新功能。",
+      nav_bar_roadmap_label: "路线图",
+      empty: "此版本尚无分享内容——请稍后回来查看。",
+      status_released: "已发布",
+      status_active: "当前",
+      status_planned: "已计划",
+      status_roadmap: "路线图",
+      type_feature: "新功能",
+      type_fix: "已修复",
+      type_security: "安全",
+      type_docs: "文档",
+      type_chore: "杂项",
+      type_breaking: "破坏性更改",
+      item_status_in_progress: "进行中",
+      item_status_planned: "已计划",
+      item_status_completed: "完成",
+      priority_now: "现在",
+      priority_next: "下一步",
+      priority_later: "稍后",
+      summary_in_progress: "{count} 项进行中",
+      summary_next: "{count} 项下一步",
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "Personas 的首个预览。",
+      release_0_0_1_item_1_title: "首次公开预览",
+      release_0_0_1_item_1_description: "设计 AI 代理，按计划或触发器运行它们，并在您的桌面上实时观看它们的工作。",
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "将 Personas 连接到其他 AI 工具，无需离开应用即可阅读新动态。",
+      release_0_0_2_item_1_title: "向其他 AI 工具开放您的代理",
+      release_0_0_2_item_1_description: "Personas 现在可以通过共享协议与其他 AI 工具对话。精确选择要共享的代理，并使用您控制的访问密钥保护它们——您的私有代理默认保持私有。",
+      release_0_0_2_item_2_title: "更安全的桌面应用访问",
+      release_0_0_2_item_2_description: "桌面应用在每次启动时创建自己的短期访问密钥，因此它可以与其后台服务对话而不暴露您未批准的任何内容。",
+      release_0_0_2_item_3_title: "应用内发布说明",
+      release_0_0_2_item_3_description: "无需离开应用即可查看每个 Personas 版本的新动态。从一个地方在过去版本、当前发布和长期路线图之间切换。",
+      release_0_0_2_item_4_title: "您的代理从每次会话中学习",
+      release_0_0_2_item_4_description: "Personas 现在捕获每次代理会话的经验教训，提炼为可重用的知识，并带入下次运行。您使用它的时间越长，您的代理越智能——无需手动训练。",
+      release_0_0_2_item_5_title: "将任何文档转换为可听简报",
+      release_0_0_2_item_5_description: "一个新模板可将研究报告、会议记录或长篇文章转换为 5 到 15 分钟的双主持人音频对话，您可以随身收听。您选择风格——休闲、正式、新闻或高管——并在生成语音之前审查脚本。",
+      release_0_0_2_item_6_title: "为您的写作提供斯坦福训练的编辑",
+      release_0_0_2_item_6_description: "一个新模板使用斯坦福\"科学写作\"方法审查您的草稿。它标记被动语态、无意义短语和行话，并准确解释为什么每个建议的更改使句子更清晰。它从您接受或拒绝的编辑中学习您的风格。",
+      release_0_0_2_item_7_title: "将 20 小时的 YouTube 制作变为 3 小时",
+      release_0_0_2_item_7_description: "一个新模板通过处理除拍摄之外的所有内容，将完整的 YouTube 视频周期压缩到大约三小时。它检查您的领域是否值得追求，以您的风格起草以钩子为先的脚本，并使用已批准的脚本作为基准自动从原始素材中移除重拍——因此您可以自然地拍摄、自由地卡壳并继续前进。",
+      release_0_0_2_item_8_title: "从您的代理运行 Apify 爬虫",
+      release_0_0_2_item_8_description: "将 Apify 平台上的任何 actor——YouTube 爬虫、Twitter 爬虫、浏览器自动化和数百种其他——直接连接到您的代理。解锁需要官方 API 无法获取的数据的研究工作流。",
+      release_0_0_2_item_9_title: "X (Twitter) 现已成为连接器",
+      release_0_0_2_item_9_description: "搜索最近的推文、追踪热门话题，并从您的代理直接发布。适用于内容研究、社交聆听和营销自动化，无需离开 Personas。",
+      release_0_0_2_item_10_title: "从您的代理观看 YouTube",
+      release_0_0_2_item_10_description: "Personas 中的首个视频平台连接器。搜索视频、获取频道统计信息、拉取热门内容，并直接从任何需要了解 YouTube 上发生什么的代理分析竞争对手。",
+      release_0_0_2_item_11_title: "使用 Deepgram 将音频转换为文本",
+      release_0_0_2_item_11_description: "一个新的语音转文本连接器，可转录带有字词级计时的音频文件或 URL。为 YouTube 创作者助手的自动编辑提供支持，并使任何代理能够处理语音笔记、会议录音或播客内容。",
+      release_0_0_2_item_12_title: "其他 AI 工具可以检查并停止您的代理",
+      release_0_0_2_item_12_description: "当另一个 AI 工具调用您共享的代理之一时，它现在可以在运行中询问\"它仍在运行吗？\"和\"请立即停止\"。长时间运行的研究作业不再需要一直保持连接打开，并且可以从调用方干净地取消卡住的运行。每个代理只看到自己的运行，因此不会跨代理泄漏任何内容。",
+      release_0_0_2_item_13_title: "新连接器：Humbalytics 分析",
+      release_0_0_2_item_13_description: "跟踪流量、运行 A/B 实验，并交换落地页文案而无需触及您的代码。Personas 现在可以从 Humbalytics 拉取热图和转换数据，并使用它们来指导您的实验。",
+      release_0_0_2_item_14_title: "新连接器：Firecrawl 网页抓取",
+      release_0_0_2_item_14_description: "代理现在可以以干净、结构化的内容形式阅读任何网站——即使是现代 JavaScript 密集型网站。适用于研究、市场情报和内容监控代理。",
+      release_0_0_2_item_15_title: "一个真正运行您的 A/B 测试的营销代理",
+      release_0_0_2_item_15_description: "一个新模板，提议标题变体，在您批准后部署它们，等待统计显著性，并自动晋升获胜者。每个更改在上线前都经过人工审核，每个实验运行足够长的时间以使结果真正有意义。",
+      release_0_0_2_item_16_title: "从任何代理阅读您团队的 BI 仪表盘",
+      release_0_0_2_item_16_description: "Personas 现在可以从保存的 Redash 查询和仪表盘中拉取结果。如果您的团队已经维护共享仪表盘，您的代理会读取人类看到的相同数字——无需 SQL 重写，无需 CSV 导出，无需复制粘贴。",
+      release_0_0_2_item_17_title: "Metabase 现已成为连接器",
+      release_0_0_2_item_17_description: "您的代理可以运行保存的 Metabase 问题，并直接从您的工作区读取仪表盘。适用于 Metabase Pro、Enterprise 和任何自托管实例。",
+      release_0_0_2_item_18_title: "每日 BI 摘要发送给您",
+      release_0_0_2_item_18_description: "一个新模板每天早晨拾取您已在 Redash 或 Metabase 中维护的已保存查询，总结最新数字，并发布带有周环比异常标记的纯英语摘要。即使没有人打开，您的仪表盘也保持有用。",
+      release_roadmap_label: "路线图",
+      release_roadmap_summary: "我们当前正在构建的内容以及接下来的计划。",
+      release_roadmap_item_2_title: "云集成",
+      release_roadmap_item_2_description: "在云端 24/7 运行您的代理，并将其工作实时流式传输回您的桌面。",
+      release_roadmap_item_3_title: "Web 应用",
+      release_roadmap_item_3_description: "用于账户、计费和从任何浏览器管理代理的 Web 伴侣。",
+      release_roadmap_item_4_title: "使用您的语言的 Personas",
+      release_roadmap_item_4_description: "完整的多语言支持，包括从右到左的布局和特定语言的字体。",
+      release_roadmap_item_6_title: "团队工作区",
+      release_roadmap_item_6_description: "与您的团队一起构建代理——共享空间、角色权限和实时仪表盘。"
+    }
+  }
 };

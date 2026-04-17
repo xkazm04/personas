@@ -1,5 +1,4 @@
 export const ko = {
-
   common: {
     loading: "로딩 중...",
     saving: "저장 중...",
@@ -48,9 +47,6 @@ export const ko = {
     error: "오류",
     success: "성공",
     required: "필수",
-    // @llm-translated 2026-04-17
-    optional: "선택 사항",
-    // @llm-translated 2026-04-17
     optional: "선택 사항",
     select: "-- 선택 --",
     no_results: "결과를 찾을 수 없습니다",
@@ -147,7 +143,7 @@ export const ko = {
     command_palette_navigate: "탐색",
     command_palette_select: "선택",
     command_palette_commands: "명령",
-    loading_label: "로딩",
+    loading_label: "로딩"
   },
   chrome: {
     app_title: "Personas",
@@ -167,7 +163,7 @@ export const ko = {
     sign_in_google: "Google로 로그인",
     signed_in: "로그인됨",
     sign_out: "로그아웃",
-    offline: "오프라인",
+    offline: "오프라인"
   },
   sidebar: {
     home: "홈",
@@ -238,7 +234,7 @@ export const ko = {
     unread_messages_sr: "읽지 않은 메시지 {count}건",
     unread_messages_sr_other: "읽지 않은 메시지 {count}건",
     pending_events_sr: "대기 이벤트 {count}건",
-    pending_events_sr_other: "대기 이벤트 {count}건",
+    pending_events_sr_other: "대기 이벤트 {count}건"
   },
   home: {
     welcome: "환영합니다",
@@ -263,7 +259,7 @@ export const ko = {
       priority_next: "다음",
       priority_later: "나중에",
       in_progress_count: "{count}개 진행 중",
-      next_count: "{count}개 다음",
+      next_count: "{count}개 다음"
     },
     setup: {
       choose_role: "역할 선택",
@@ -291,45 +287,45 @@ export const ko = {
       role_manager_hint: "기획 및 조율",
       role: "역할",
       tool: "도구",
-      goal: "목표",
+      goal: "목표"
     },
     nav: {
       overview: {
         label: "개요",
-        description: "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링",
+        description: "대시보드 분석, 실행 기록, 모든 에이전트의 실시간 시스템 모니터링"
       },
       personas: {
         label: "에이전트",
-        description: "사용자 지정 동작 및 기능을 갖춘 AI 에이전트를 생성, 설정, 관리합니다",
+        description: "사용자 지정 동작 및 기능을 갖춘 AI 에이전트를 생성, 설정, 관리합니다"
       },
       events: {
         label: "이벤트",
-        description: "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다",
+        description: "이벤트 트리거, webhook 리스너, 스케줄 기반 자동화를 설정합니다"
       },
       credentials: {
         label: "자격 증명",
-        description: "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다",
+        description: "API 자격 증명, 데이터베이스 연결, OAuth 토큰, 암호화된 비밀을 관리합니다"
       },
       "design-reviews": {
         label: "템플릿",
-        description: "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성",
+        description: "n8n 워크플로 가져오기, 템플릿 갤러리 탐색, 에이전트 블루프린트 생성"
       },
       team: {
         label: "팀",
-        description: "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다",
+        description: "드래그 앤 드롭 오케스트레이션과 라우팅으로 다중 에이전트 팀 파이프라인을 구성합니다"
       },
       cloud: {
         label: "클라우드",
-        description: "에이전트를 클라우드 인프라에 배포하고, 스케줄을 관리하고, GitLab CI를 통합합니다",
+        description: "에이전트를 클라우드 인프라에 배포하고, 스케줄을 관리하고, GitLab CI를 통합합니다"
       },
       settings: {
         label: "설정",
-        description: "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정",
+        description: "계정 환경설정, 외관 테마, 알림 규칙, 엔진 설정"
       },
       plugins: {
         label: "플러그인",
-        description: "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장",
-      },
+        description: "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장"
+      }
     },
     learning: {
       title: "학습 센터",
@@ -346,7 +342,7 @@ export const ko = {
       pro_tip: "프로 팁: ",
       cat_agent_craft: "에이전트 제작",
       cat_observability: "관측성 & 이벤트",
-      cat_platform: "플랫폼 & 설정",
+      cat_platform: "플랫폼 & 설정"
     },
     setup_stepper: {
       your_profile: "프로필",
@@ -362,18 +358,18 @@ export const ko = {
       ready_to_save: "저장 준비 완료",
       back: "뒤로",
       next: "다음",
-      finish: "완료",
+      finish: "완료"
     },
     welcome_layout: {
       get_started: "시작하기",
-      language: "언어",
+      language: "언어"
     },
     icon_showcase: {
       lucide_tab: "Lucide (라이브러리)",
       personas_tab: "Personas (애니메이션)",
       lucide_footer: "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
-      personas_footer: "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형",
-    },
+      personas_footer: "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
+    }
   },
   agents: {
     title: "Personas",
@@ -384,12 +380,12 @@ export const ko = {
       subtitle_other: "에이전트 {count}개 -- 관련성순 정렬",
       needs_attention: "주의 필요",
       active: "활성",
-      idle: "유휴",
+      idle: "유휴"
     },
     sidebar: {
       no_match: "필터와 일치하는 에이전트가 없습니다",
       clear_filters: "모든 필터 지우기",
-      empty: "에이전트가 없습니다",
+      empty: "에이전트가 없습니다"
     },
     preview: {
       sensitive_hidden: "민감한 미리보기 숨김",
@@ -404,7 +400,7 @@ export const ko = {
       triggers_active_one: "활성 트리거 {count}개",
       triggers_active_other: "활성 트리거 {count}개",
       no_triggers: "트리거 없음",
-      custom_model: "사용자 지정",
+      custom_model: "사용자 지정"
     },
     creation: {
       heading: "새 에이전트",
@@ -421,7 +417,7 @@ export const ko = {
       no_group: "그룹 없음",
       create_button: "에이전트 생성",
       creating_button: "생성 중...",
-      name_required: "계속하려면 이름을 입력하세요",
+      name_required: "계속하려면 이름을 입력하세요"
     },
     editor: {
       tabs: {
@@ -432,7 +428,7 @@ export const ko = {
         design: "디자인",
         health: "상태",
         settings: "설정",
-        model: "모델",
+        model: "모델"
       },
       no_persona: "선택된 에이전트가 없습니다",
       save_failed: "{tabs} 저장에 실패했습니다",
@@ -446,13 +442,13 @@ export const ko = {
       cloud_banner_connect: "클라우드 오케스트레이터를 연결하여 에이전트를 원격으로 실행하세요",
       cloud_banner_signin: "클라우드 기능과 원격 실행을 사용하려면 로그인하세요",
       sign_in: "로그인",
-      set_up_cloud: "클라우드 설정",
+      set_up_cloud: "클라우드 설정"
     },
     header: {
       no_triggers_warning: "트리거 또는 이벤트 구독이 설정되지 않았습니다",
       missing_credentials: "누락된 자격 증명: {credentials}",
       toggle_failed: "에이전트 전환 실패 -- 연결을 확인하세요",
-      cannot_enable: "에이전트를 활성화할 수 없습니다",
+      cannot_enable: "에이전트를 활성화할 수 없습니다"
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -473,7 +469,7 @@ export const ko = {
       selected: "{count}개 선택됨",
       remove_from_favorites: "즐겨찾기에서 제거",
       add_to_favorites: "즐겨찾기에 추가",
-      filter_by: "{label}으로 필터",
+      filter_by: "{label}으로 필터"
     },
     status: {
       draft: "초안",
@@ -481,7 +477,7 @@ export const ko = {
       healthy: "정상",
       degraded: "저하됨",
       failing: "실패",
-      building: "빌드 중",
+      building: "빌드 중"
     },
     executions: {
       no_persona_selected: "페르소나가 선택되지 않았습니다",
@@ -624,34 +620,6 @@ export const ko = {
       trace_incomplete: "추적 미완료: {count}개 스팬 제거됨 (한도: 10,000)",
       trace_incomplete_other: "추적 미완료: {count}개 스팬 제거됨 (한도: 10,000)",
       no_pipeline_trace: "파이프라인 추적 없음",
-      // @llm-translated 2026-04-17
-      depth_label: "깊이:",
-      active_count_label: "활성 ({count})",
-      completed_count_label: "완료됨 ({count})",
-      metadata_section: "메타데이터",
-      chain_id_prefix: "체인: {id}",
-      chain_total_duration: "합계: {duration}",
-      zero_ms: "0ms",
-      tool_calls_count: "도구 호출 {count}회",
-      tool_calls_count_other: "도구 호출 {count}회",
-      unique_tools_count: "({count}개 고유)",
-      prev_error_nav: "이전 오류 (Shift+E)",
-      next_error_nav: "다음 오류 (E)",
-      runner_input_placeholder: '{"key": "value"}',
-    // @llm-translated 2026-04-17
-      depth_label: "깊이:",
-      active_count_label: "활성 ({count})",
-      completed_count_label: "완료됨 ({count})",
-      metadata_section: "메타데이터",
-      chain_id_prefix: "체인: {id}",
-      chain_total_duration: "합계: {duration}",
-      zero_ms: "0ms",
-      tool_calls_count: "도구 호출 {count}회",
-      tool_calls_count_other: "도구 호출 {count}회",
-      unique_tools_count: "({count}개 고유)",
-      prev_error_nav: "이전 오류 (Shift+E)",
-      next_error_nav: "다음 오류 (E)",
-      runner_input_placeholder: '{"key": "value"}',
       pipeline_traces_captured: "새 실행에 대해 파이프라인 추적이 캡처됩니다",
       legend_frontend: "프론트엔드",
       legend_backend: "백엔드",
@@ -750,6 +718,10 @@ export const ko = {
       loading_dream_replay: "드림 리플레이 로딩 중...",
       no_dream_trace: "드림 리플레이에 사용 가능한 추적 데이터 없음",
       frame_count: "프레임 {index}/{total}",
+      depth_label: "깊이:",
+      active_count_label: "활성 ({count})",
+      completed_count_label: "완료됨 ({count})",
+      metadata_section: "메타데이터",
       phase_initializing: "초기화 중",
       phase_thinking: "추론 중",
       phase_calling_tools: "도구 실행 중",
@@ -777,6 +749,15 @@ export const ko = {
       offset_prefix: "오프셋:",
       step_tooltip: "{step}단계: {name}",
       ms_into_stage: "단계에서 {ms}ms",
+      chain_id_prefix: "체인: {id}",
+      chain_total_duration: "합계: {duration}",
+      zero_ms: "0ms",
+      tool_calls_count: "도구 호출 {count}회",
+      tool_calls_count_other: "도구 호출 {count}회",
+      unique_tools_count: "({count}개 고유)",
+      prev_error_nav: "이전 오류 (Shift+E)",
+      next_error_nav: "다음 오류 (E)",
+      runner_input_placeholder: "value"
     },
     lab: {
       mode_arena: "아레나",
@@ -910,6 +891,8 @@ export const ko = {
       quality_label: "품질",
       speed_label: "속도",
       cost_label: "비용",
+      objective_warning: "적합도 목표 문제",
+      objective_fallback_toast: "진화에 기본 적합도 가중치가 사용됨 — 목표 설정을 확인하세요",
       genome_breeding: "게놈 교배",
       genome_breeding_subtitle: "상위 성과 페르소나를 교차 교배해 새로운 구성 발견",
       select_parents: "부모 선택 (2-5개 페르소나)",
@@ -1026,10 +1009,7 @@ export const ko = {
       quality_score_inline: "점수: {score} | {coverage}개 시나리오",
       cancel_default: "취소",
       hide_impact: "영향 숨기기",
-      show_impact: "영향 보기",
-      // @llm-translated 2026-04-17
-      objective_warning: "적합도 목표 문제",
-      objective_fallback_toast: "진화에 기본 적합도 가중치가 사용됨 — 목표 설정을 확인하세요",
+      show_impact: "영향 보기"
     },
     design: {
       select_agent: "디자인 분석을 시작할 에이전트를 선택하세요",
@@ -1095,6 +1075,7 @@ export const ko = {
       msg_count_one: "{count}개 메시지",
       msg_count_other: "{count}개 메시지",
       resume: "재개",
+      conv_controls_aria: "디자인 대화 컨트롤",
       design_drift: "디자인 드리프트",
       design_sessions: "디자인 세션",
       example_n: "예시 {index}",
@@ -1113,9 +1094,7 @@ export const ko = {
       next: "다음",
       go_back_hint: "뒤로 가서 에이전트를 구성하기 위한 질문에 답하세요.",
       additional_instructions: "추가 지시사항 또는 문맥 (선택)",
-      additional_instructions_placeholder: "특정 요구사항, 도메인 지식 또는 제약 조건 추가...",
-      // @llm-translated 2026-04-17
-      conv_controls_aria: "디자인 대화 컨트롤",
+      additional_instructions_placeholder: "특정 요구사항, 도메인 지식 또는 제약 조건 추가..."
     },
     connectors: {
       connectors_label: "커넥터",
@@ -1201,6 +1180,9 @@ export const ko = {
       auto_event_type: "이벤트 유형: {eventType}",
       auto_zapier_hint: "캐치 훅이 검증되고 연결됩니다.",
       auto_custom_hint: "수동 설정이 필요합니다. 자동화가 초안으로 저장됩니다.",
+      auto_input_schema_placeholder: "string",
+      auto_github_token_needs: "토큰에 {scopes} 범위가 필요합니다. github.com/settings/tokens에서 토큰을 업데이트하세요.",
+      auto_fallback_title: "오류 시 직접 커넥터로 폴백",
       ch_title: "알림 채널",
       ch_add: "채널 추가",
       ch_all_added: "모든 채널 유형 추가됨",
@@ -1276,11 +1258,7 @@ export const ko = {
       sub_confirm: "확인?",
       sub_triggers_title: "트리거 & 구독",
       sub_suggested: "{count}개 제안됨",
-      sub_filter: "필터: {filter}",
-      // @llm-translated 2026-04-17
-      auto_input_schema_placeholder: '{ "file_url": "string" }',
-      auto_github_token_needs: "토큰에 {scopes} 범위가 필요합니다. github.com/settings/tokens에서 토큰을 업데이트하세요.",
-      auto_fallback_title: "오류 시 직접 커넥터로 폴백",
+      sub_filter: "필터: {filter}"
     },
     editor_chrome: {
       tab_activity: "활동",
@@ -1313,7 +1291,7 @@ export const ko = {
       latency_label: "지연",
       cost_run_label: "비용/실행",
       last_run_label: "마지막 실행",
-      rank: "순위",
+      rank: "순위"
     },
     model_config: {
       model_provider: "모델 & 공급자",
@@ -1376,7 +1354,6 @@ export const ko = {
       model_name_placeholder_litellm: "예: anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "예: llama3.1:8b",
       model_name_placeholder_custom: "모델 식별자",
-      // @llm-translated 2026-04-17
       model_name_placeholder_override: "예: claude-sonnet-4-20250514",
       base_url_hint: "모델 공급자의 API 엔드포인트. 프로토콜(http/https)과 비표준 포트 포함 필수.",
       base_url_example: "http://localhost:11434",
@@ -1418,7 +1395,7 @@ export const ko = {
       latency: "지연",
       cost: "비용",
       output_previews: "출력 미리보기",
-      no_output: "출력 없음",
+      no_output: "출력 없음"
     },
     use_cases: {
       no_persona: "선택된 페르소나 없음",
@@ -1513,7 +1490,7 @@ export const ko = {
       cron_field_hour: "시",
       cron_field_day: "일",
       cron_field_month: "월",
-      cron_field_weekday: "요일",
+      cron_field_weekday: "요일"
     },
     tools: {
       no_persona: "선택된 페르소나 없음",
@@ -1552,11 +1529,11 @@ export const ko = {
       credential: "자격 증명",
       linked: "-- 연결됨",
       cred_missing: "-- 누락",
-      often_used: "함께 자주 사용",
+      often_used: "함께 자주 사용"
     },
     chat_thread: {
       welcome: "이 에이전트가 해야 할 일을 알려주세요. 설명에서 전체 구성(프롬프트, 도구, 트리거)을 빌드하겠습니다.",
-      welcome_example: "매일 아침 GitHub PR을 모니터링해 Slack에 요약 게시",
+      welcome_example: "매일 아침 GitHub PR을 모니터링해 Slack에 요약 게시"
     },
     assign: {
       assign_to: "{role}에 할당",
@@ -1567,50 +1544,50 @@ export const ko = {
       no_saved_credentials: "저장된 자격 증명 없음",
       no_credentials_match: "검색과 일치하는 자격 증명 없음",
       vault_hint: "볼트에 자격 증명을 저장하거나 커넥터 탭 사용",
-      no_connectors_match: "검색과 일치하는 커넥터 없음",
+      no_connectors_match: "검색과 일치하는 커넥터 없음"
     },
     credential_coverage: "{matched}/{total}개 자격 증명",
     role_card: {
       no_credential: "자격 증명 없음",
       edit_tables: "편집",
       select_tables: "테이블 선택",
-      assign: "할당",
+      assign: "할당"
     },
     channel_picker: {
       in_app_messaging: "인앱 메시지",
-      vault_hint: "볼트에 통신 자격 증명(Slack, 이메일 등)을 저장하면 여기에 표시됩니다.",
+      vault_hint: "볼트에 통신 자격 증명(Slack, 이메일 등)을 저장하면 여기에 표시됩니다."
     },
     connector_picker: {
       no_connectors: "사용 가능한 커넥터 없음",
       search: "커넥터 검색...",
-      no_match: "\"{search}\"와 일치하는 커넥터 없음",
+      no_match: "\"{search}\"와 일치하는 커넥터 없음"
     },
     policy_picker: {
       error_handling: "오류 처리",
-      manual_review: "수동 검토",
+      manual_review: "수동 검토"
     },
     table_selector: {
       title: "테이블 선택",
       subtitle: "{label} -- 감시할 테이블 선택",
       tables_selected_one: "{count}개 테이블 선택됨",
       tables_selected_other: "{count}개 테이블 선택됨",
-      no_tables_selected: "선택된 테이블 없음 -- 에이전트가 전체 감시",
+      no_tables_selected: "선택된 테이블 없음 -- 에이전트가 전체 감시"
     },
     trigger_popover: {
       trigger: "트리거",
-      clear_override: "재정의 지우기",
+      clear_override: "재정의 지우기"
     },
     use_case: {
       add: "사용 사례 추가",
       title_placeholder: "사용 사례 제목 -- 예: 환불 요청 처리, 일일 티켓 요약",
-      description_placeholder: "단계 설명 -- 예: 환불 요청이 들어오면 주문 확인, 정책 검토, 승인 또는 거부 전송",
+      description_placeholder: "단계 설명 -- 예: 환불 요청이 들어오면 주문 확인, 정책 검토, 승인 또는 거부 전송"
     },
     builder_action: {
       processing: "처리 중...",
       error_retry: "오류가 발생했습니다. 다시 시도하세요.",
       enhancing: "향상 중...",
       enhance_with_ai: "AI로 향상",
-      describe_agent: "에이전트가 해야 할 일을 설명하세요",
+      describe_agent: "에이전트가 해야 할 일을 설명하세요"
     },
     builder_preview: {
       title: "미리보기",
@@ -1624,7 +1601,7 @@ export const ko = {
       schedule: "스케줄",
       manual_only: "수동만",
       errors: "오류",
-      review: "검토",
+      review: "검토"
     },
     dry_run: {
       ready: "준비됨",
@@ -1636,7 +1613,7 @@ export const ko = {
       issues: "이슈",
       apply_fix: "수정 적용: {label}",
       manual_action_needed: "수동 조치 필요",
-      no_issues: "이슈 없음. 에이전트 구성이 양호합니다.",
+      no_issues: "이슈 없음. 에이전트 구성이 양호합니다."
     },
     identity_preview: {
       title: "미리보기",
@@ -1647,7 +1624,7 @@ export const ko = {
       components: "구성 요소",
       schedule_label: "스케줄:",
       errors_label: "오류:",
-      review_label: "검토:",
+      review_label: "검토:"
     },
     build_review: {
       agent_name: "에이전트 이름",
@@ -1656,7 +1633,7 @@ export const ko = {
       connectors_ready: "커넥터 준비됨",
       promote_agent: "에이전트 승격",
       testing: "테스트 중...",
-      test_agent: "에이전트 테스트",
+      test_agent: "에이전트 테스트"
     },
     connectors_cell: {
       add_in_keys: "Keys에서 추가",
@@ -1666,7 +1643,7 @@ export const ko = {
       swap_to: "교체 대상:",
       recalculating: "재계산 중...",
       recalculate_dimensions: "차원 재계산",
-      rebuilding: "새 커넥터로 재빌드 중...",
+      rebuilding: "새 커넥터로 재빌드 중..."
     },
     dimension_edit: {
       add_item: "항목 추가...",
@@ -1692,7 +1669,7 @@ export const ko = {
       fully_automated: "완전 자동화",
       cron_label: "Cron:",
       every_label: "매:",
-      done: "완료",
+      done: "완료"
     },
     quick_config: {
       title: "빠른 설정",
@@ -1706,7 +1683,7 @@ export const ko = {
       monthly: "매월",
       days: "일",
       day_of_month: "월의 일",
-      time: "시간",
+      time: "시간"
     },
     events_panel: {
       source_agent: "소스 에이전트",
@@ -1715,23 +1692,23 @@ export const ko = {
       select_agent: "에이전트 선택",
       loading_events: "이벤트 로딩 중...",
       no_subscriptions: "이벤트 구독 없음",
-      choose_agent: "이벤트를 보려면 에이전트 선택",
+      choose_agent: "이벤트를 보려면 에이전트 선택"
     },
     matrix_cred_picker: {
       no_stored: "저장된 자격 증명 없음",
       best_match: "최적 매칭",
-      other: "기타",
+      other: "기타"
     },
     services_panel: {
       no_connectors: "정상적인 API 키가 있는 커넥터가 없습니다. 먼저 볼트에 자격 증명을 추가하세요.",
-      select_table: "테이블 선택",
+      select_table: "테이블 선택"
     },
     spatial_question: {
       agent_configuration: "에이전트 구성",
       or_custom_answer: "또는 직접 입력",
       type_answer: "답 입력...",
       submit: "제출",
-      press_to_select: "1-{count} 키를 눌러 즉시 선택",
+      press_to_select: "1-{count} 키를 눌러 즉시 선택"
     },
     table_picker: {
       title: "테이블 선택",
@@ -1739,12 +1716,12 @@ export const ko = {
       loading: "테이블 로딩 중...",
       no_tables: "이 커넥터에 테이블이 없습니다",
       clear_selection: "선택 지우기",
-      no_match: "\"{search}\"와 일치하는 테이블 없음",
+      no_match: "\"{search}\"와 일치하는 테이블 없음"
     },
     matrix_entry: {
       new_agent: "새 에이전트",
       failed_to_create: "초안 에이전트 생성 실패.",
-      build_failed: "빌드 시작 실패. CLI 구성을 확인하세요.",
+      build_failed: "빌드 시작 실패. CLI 구성을 확인하세요."
     },
     workflow_upload: {
       build_hint: "빌드를 눌러 이 워크플로를 페르소나 에이전트로 변환하세요.",
@@ -1752,22 +1729,22 @@ export const ko = {
       parse: "파싱",
       drop_file: "여기에 워크플로 파일 드롭",
       file_types: "n8n, Zapier, Make, 또는 GitHub Actions (.json, .yaml)",
-      paste_json: "또는 JSON 직접 붙여넣기",
+      paste_json: "또는 JSON 직접 붙여넣기"
     },
     config_popup: {
       load_error: "저장된 값을 로드할 수 없습니다 -- 다시 입력이 필요할 수 있습니다.",
       fill_hint: "저장하려면 하나 이상의 필드를 입력하세요",
-      failed_to_save: "구성 저장 실패",
+      failed_to_save: "구성 저장 실패"
     },
     onboarding: {
       setup_complete: "설정 {score}% 완료",
       steps_done: "{completed}/{total} 단계 완료",
-      dismiss_checklist: "체크리스트 닫기",
+      dismiss_checklist: "체크리스트 닫기"
     },
     template_picker: {
       title: "템플릿 선택",
       subtitle: "템플릿을 선택해 에이전트를 미리 채우거나, 처음부터 시작하세요.",
-      start_from_scratch: "처음부터 시작",
+      start_from_scratch: "처음부터 시작"
     },
     persona_overview: {
       no_match: "일치하는 페르소나 없음",
@@ -1776,26 +1753,26 @@ export const ko = {
       description_copied: "설명이 클립보드에 복사됨",
       failed_copy: "설명 복사 실패",
       no_connectors_configured: "구성된 커넥터 없음",
-      click_to_copy: "클릭해 복사",
+      click_to_copy: "클릭해 복사"
     },
     overview_empty: {
       title: "이 필터에 일치하는 페르소나 없음",
       subtitle: "검색 또는 필터 칩을 조정하거나 뷰를 초기화해 전체 페르소나를 보세요.",
-      clear_all_filters: "전체 필터 지우기",
+      clear_all_filters: "전체 필터 지우기"
     },
     overview_batch: {
-      selected: "{count}개 선택됨",
+      selected: "{count}개 선택됨"
     },
     overview_menu: {
       more_actions: "더 많은 작업",
-      settings: "설정",
+      settings: "설정"
     },
     overview_toolbar: {
       search_placeholder: "페르소나 검색...",
       show_all: "전체 페르소나 표시",
       show_favorites: "즐겨찾기만 표시",
       favorites: "즐겨찾기",
-      clear_search: "검색 지우기",
+      clear_search: "검색 지우기"
     },
     overview_columns: {
       persona: "페르소나",
@@ -1810,10 +1787,10 @@ export const ko = {
       building_drafts: "빌드 중 / 초안",
       all_health: "전체 상태",
       all_connectors: "전체 커넥터",
-      active_triggers: "{count}개 활성 트리거",
+      active_triggers: "{count}개 활성 트리거"
     },
     health_indicator: {
-      last: "최근 {count}",
+      last: "최근 {count}"
     },
     view_presets: {
       views: "뷰",
@@ -1830,7 +1807,7 @@ export const ko = {
       needs_attention: "주의 필요",
       failing_agents: "실패 에이전트",
       my_favorites: "내 즐겨찾기",
-      recently_active: "최근 활성",
+      recently_active: "최근 활성"
     },
     activity: {
       title: "활동",
@@ -1853,7 +1830,7 @@ export const ko = {
       modal_execution_title: "{name} - 실행",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "검토: {title}",
-      modal_review_subtitle: "심각도: {severity} · 상태: {status}",
+      modal_review_subtitle: "심각도: {severity} · 상태: {status}"
     },
     chat: {
       select_persona: "채팅을 시작하려면 페르소나 선택",
@@ -1872,7 +1849,7 @@ export const ko = {
       confirm_delete: "삭제?",
       processing: "처리 중...",
       delete_conversation: "대화 삭제",
-      confirm_delete_conversation: "대화 삭제 확인",
+      confirm_delete_conversation: "대화 삭제 확인"
     },
     advisory: {
       how_can_improve: "이 에이전트가 어떻게 더 잘 작동할 수 있을까요?",
@@ -1887,7 +1864,7 @@ export const ko = {
       analyze_desc: "성능 추세 및 패턴 검토",
       test_run: "테스트 실행",
       test_run_desc: "에이전트를 실행하고 결과 평가",
-      test_input_label: "테스트 입력 (선택)",
+      test_input_label: "테스트 입력 (선택)"
     },
     ops: {
       sessions: "세션",
@@ -1915,21 +1892,21 @@ export const ko = {
       reviews: "검토",
       reviews_desc: "대기 중인 승인 및 결정",
       versions: "버전",
-      versions_desc: "프롬프트 버전 기록 및 롤백",
+      versions_desc: "프롬프트 버전 기록 및 롤백"
     },
     ops_run: {
       execute_agent: "에이전트 실행",
       running: "실행 중...",
       recent: "최근",
       no_executions: "아직 실행 없음",
-      refresh_executions: "실행 새로 고침",
+      refresh_executions: "실행 새로 고침"
     },
     ops_lab: {
       history: "기록",
       no_lab_runs: "아직 Lab 실행 없음",
       refresh_lab: "Lab 기록 새로 고침",
       arena: "아레나",
-      improve: "개선",
+      improve: "개선"
     },
     ops_health: {
       no_health_data: "상태 데이터 없음",
@@ -1941,22 +1918,22 @@ export const ko = {
       run_check_aria: "상태 확인 실행",
       healthy: "정상",
       degraded: "저하됨",
-      unhealthy: "비정상",
+      unhealthy: "비정상"
     },
     ops_assertions: {
       active_count: "{enabled}/{total}개 활성",
       no_assertions: "구성된 어서션 없음",
       refresh_assertions: "어서션 새로 고침",
       enable_assertion: "{name} 활성화",
-      disable_assertion: "{name} 비활성화",
+      disable_assertion: "{name} 비활성화"
     },
     health_tab: {
       title: "상태 확인",
-      description: "누락된 자격 증명, 연결 끊긴 커넥터, 호환되지 않는 도구 조합, 불충분한 사용 사례를 감지하기 위해 이 에이전트의 현재 구성에 대해 드라이런 분석을 실행합니다. 이슈는 원클릭 수정이 있는 카드로 표시됩니다.",
+      description: "누락된 자격 증명, 연결 끊긴 커넥터, 호환되지 않는 도구 조합, 불충분한 사용 사례를 감지하기 위해 이 에이전트의 현재 구성에 대해 드라이런 분석을 실행합니다. 이슈는 원클릭 수정이 있는 카드로 표시됩니다."
     },
     matrix_tab: {
       loading: "매트릭스 로딩",
-      no_data: "사용 가능한 매트릭스 데이터 없음. 이 페르소나를 빌드하거나 재빌드해 차원을 생성하세요.",
+      no_data: "사용 가능한 매트릭스 데이터 없음. 이 페르소나를 빌드하거나 재빌드해 차원을 생성하세요."
     },
     settings_status: {
       saving: "{sections} 저장 중...",
@@ -1977,13 +1954,12 @@ export const ko = {
       sensitive_preview: "민감한 미리보기",
       sensitive_preview_desc: "공개될 때까지 호버 미리보기 세부정보를 가립니다.",
       failed_health_watch: "상태 감시 설정 업데이트 실패",
-      // @llm-translated 2026-04-17
-      speak_as: "으로 말하기",
-      no_twins_configured: "트윈이 설정되지 않았습니다. 트윈 플러그인을 열어 생성하세요 — 그러면 이 페르소나가 트윈을 채택할 수 있습니다.",
-      twin_profile_aria: "이 페르소나가 말하는 트윈 프로필",
       health_watch: "상태 감시",
       health_watch_active: "상태 모니터링 활성 (6시간마다)",
       health_watch_enable: "지속적인 상태 모니터링 활성화",
+      speak_as: "으로 말하기",
+      no_twins_configured: "트윈이 설정되지 않았습니다. 트윈 플러그인을 열어 생성하세요 — 그러면 이 페르소나가 트윈을 채택할 수 있습니다.",
+      twin_profile_aria: "이 페르소나가 말하는 트윈 프로필"
     },
     tool_runner: {
       no_tools: "이 페르소나에 할당된 도구가 없습니다.",
@@ -1993,10 +1969,9 @@ export const ko = {
       success: "성공",
       failed: "실패",
       error: "오류",
+      input_json_placeholder: "값"
     },
     health_check: {
-      // @llm-translated 2026-04-17
-      input_json_placeholder: '{ "key": "value" }',
       title: "에이전트 상태 확인",
       idle_description: "드라이런 분석을 실행해 누락된 자격 증명, 연결 끊긴 커넥터, 불충분한 사용 사례를 감지합니다.",
       run_check: "확인 실행",
@@ -2012,6 +1987,7 @@ export const ko = {
       capabilities: "기능",
       all_healthy: "모든 시스템 정상",
       all_healthy_detail: "에이전트 구성에서 이슈 감지 없음",
+      input_json_placeholder: "value"
     },
     health_digest: {
       title: "에이전트 상태 요약",
@@ -2026,16 +2002,16 @@ export const ko = {
       agents_checked_other: "{count}개 에이전트 확인됨",
       issues_one: "{count}개 이슈",
       issues_other: "{count}개 이슈",
-      last_run: "마지막 실행: {time}",
+      last_run: "마지막 실행: {time}"
     },
     health_issue: {
       apply_fix: "수정 적용: {label}",
-      manual_action: "수동 조치 필요",
+      manual_action: "수동 조치 필요"
     },
     health_score: {
       healthy: "정상",
       degraded: "저하됨",
-      unhealthy: "비정상",
+      unhealthy: "비정상"
     },
     prompt_editor: {
       no_persona: "선택된 페르소나 없음",
@@ -2043,8 +2019,7 @@ export const ko = {
       new_section: "새 섹션",
       saved: "저장됨",
       sections: "섹션",
-      // @llm-translated 2026-04-17
-      sections_aria: "프롬프트 섹션",
+      sections_aria: "프롬프트 섹션"
     },
     custom_sections: {
       title: "커스텀 섹션",
@@ -2054,7 +2029,7 @@ export const ko = {
       remove_section: "섹션 제거",
       title_placeholder: "섹션 제목...",
       content_placeholder: "섹션 내용...",
-      custom_section: "커스텀 섹션",
+      custom_section: "커스텀 섹션"
     },
     activity_filters: {
       all: "전체",
@@ -2062,7 +2037,7 @@ export const ko = {
       events: "이벤트",
       memories: "메모리",
       reviews: "검토",
-      messages: "메시지",
+      messages: "메시지"
     },
     overview_actions: {
       delete_agent: "에이전트 삭제",
@@ -2070,7 +2045,7 @@ export const ko = {
       delete_agents: "{count}개 에이전트 삭제",
       delete_agents_message: "{count}개 에이전트와 모든 구성이 영구적으로 제거됩니다.",
       delete_drafts: "{count}개 초안 삭제",
-      delete_drafts_message: "{count}개 초안 에이전트가 영구적으로 제거됩니다.",
+      delete_drafts_message: "{count}개 초안 에이전트가 영구적으로 제거됩니다."
     },
     persona_list: {
       all_personas: "전체 페르소나",
@@ -2098,7 +2073,7 @@ export const ko = {
       show_only_favorites: "즐겨찾기만 표시",
       clear_search: "검색 지우기",
       col_persona: "페르소나",
-      no_connectors_configured: "구성된 커넥터 없음",
+      no_connectors_configured: "구성된 커넥터 없음"
     },
     design_preview: {
       preview: "미리보기",
@@ -2112,7 +2087,7 @@ export const ko = {
       activating: "활성화 중...",
       activate_agent: "에이전트 활성화",
       create_agent: "에이전트 생성",
-      min_completeness: "40% 완성도 달성을 위해 더 많은 세부정보 추가",
+      min_completeness: "40% 완성도 달성을 위해 더 많은 세부정보 추가"
     },
     editor_ui: {
       max_budget_label: "최대 예산 (USD)",
@@ -2236,8 +2211,8 @@ export const ko = {
       cost_per_run: "비용/실행",
       last_run: "마지막 실행",
       rank: "순위",
-      view_in_leaderboard: "리더보드에서 보기",
-    },
+      view_in_leaderboard: "리더보드에서 보기"
+    }
   },
   vault: {
     title: "보관함",
@@ -2249,7 +2224,7 @@ export const ko = {
     health: {
       healthy: "정상",
       needs_attention: "주의 필요",
-      untested: "테스트되지 않음",
+      untested: "테스트되지 않음"
     },
     list: {
       no_credentials: "인증된 서비스가 감지되지 않았습니다. 아래에서 수동으로 선택하세요.",
@@ -2258,6 +2233,7 @@ export const ko = {
       no_dependencies: "이 자격 증명에 의존하는 에이전트가 없습니다. 수정 또는 삭제해도 안전합니다.",
       affected_agents: "영향받는 에이전트",
       affected_events: "영향받는 이벤트",
+      sort_label: "정렬:"
     },
     import: {
       title: "가져오기 소스",
@@ -2272,8 +2248,16 @@ export const ko = {
         min30: "30분",
         hour1: "1시간",
         hour6: "6시간",
-        day1: "24시간",
+        day1: "24시간"
       },
+      parse_secrets: "시크릿 파싱",
+      selected_for_import: "가져오기 위해 선택됨",
+      auto_detected: "자동 감지됨",
+      sync_supported: "동기화 지원",
+      secrets_found_one: "시크릿 {count}개 발견",
+      secrets_found_other: "시크릿 {count}개 발견",
+      import_secrets_one: "시크릿 {count}개 가져오기",
+      import_secrets_other: "시크릿 {count}개 가져오기"
     },
     features: {
       anomaly_detected: "이상 감지: 이전 성공 후 자격 증명이 갑자기 실패합니다. 폐기 가능성이 있습니다.",
@@ -2297,9 +2281,7 @@ export const ko = {
         remove_failed: "정책 제거 실패: {error}",
         update_failed: "교체 주기 업데이트 실패: {error}",
         enable_failed: "교체 활성화 실패: {error}",
-      // @llm-translated 2026-04-17
-      last_rotated: "{time}에 마지막 교체됨",
-        last_rotated: "{time}에 마지막 교체",
+        last_rotated: "{time}에 마지막 교체"
       },
       anomaly: {
         healthy: "정상",
@@ -2311,13 +2293,13 @@ export const ko = {
         samples: "{count}회 확인",
         permanent: "지속: {rate}",
         transient: "일시: {rate}",
-        tolerance: "허용 오차: {rate}",
+        tolerance: "허용 오차: {rate}"
       },
       rotation_badge: {
         disabled: "비활성",
         perm_errors: "지속적 오류",
         degrading: "악화 중",
-        backoff: "재시도 대기 중",
+        backoff: "재시도 대기 중"
       },
       audit: {
         empty: "아직 감사 항목 없음. 작업이 발생하면 기록됩니다.",
@@ -2326,13 +2308,13 @@ export const ko = {
         op_updated: "업데이트됨",
         op_deleted: "삭제됨",
         op_healthcheck: "연결 테스트",
-        filter_all: "전체",
+        filter_all: "전체"
       },
       intelligence: {
         operation: "작업",
         detail: "세부 정보",
-        time: "시간",
-      },
+        time: "시간"
+      }
     },
     negotiator: {
       title: "AI 자격 증명 협상기",
@@ -2360,15 +2342,14 @@ export const ko = {
       open_in_browser: "브라우저에서 열기",
       step_complete_captured: "단계 완료 -- 값 캡처됨",
       mark_complete: "완료로 표시",
-      completed: "완료됨",
+      completed: "완료됨"
     },
     card: {
       scope_mismatch: "범위 불일치",
       scope_missing_one: "{count}개 요청된 범위가 허용되지 않음: ",
       scope_missing_other: "{count}개 요청된 범위가 허용되지 않음: ",
       reauthorize: "재인증",
-      // @llm-translated 2026-04-17
-      reauthorize_scopes: "추가 범위로 재인증",
+      reauthorize_scopes: "추가 범위로 재인증"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2386,7 +2367,6 @@ export const ko = {
       configure_fields: "자격 증명 필드 구성",
       detect: "감지",
       auto_add: "자동 추가",
-      // @llm-translated 2026-04-17
       connection_test_heading: "연결 테스트",
       test_connection_btn: "연결 테스트",
       credential_fields_heading: "자격 증명 필드",
@@ -2398,7 +2378,7 @@ export const ko = {
       authorizing_with: "{label}(으)로 인증 중...",
       authorize_with: "{label}(으)로 인증",
       oauth_consent_hint: "브라우저에서 {label}을(를) 엽니다. 액세스를 허용한 후 여기로 돌아오세요.",
-      oauth_connected_at: "{time}에 {label} 연결됨",
+      oauth_connected_at: "{time}에 {label} 연결됨"
     },
     type_picker: {
       title: "자격 증명 추가",
@@ -2427,7 +2407,7 @@ export const ko = {
       workspace_connect: "워크스페이스 연결",
       workspace_connect_hint: "Google 로그인 한 번으로 Gmail, Calendar, Drive, Sheets 자격 증명 자동 생성",
       auto_discover: "자격 증명 자동 발견",
-      auto_discover_hint: "기존 API 키, AWS 프로파일, 환경 변수 등을 파일 시스템에서 스캔",
+      auto_discover_hint: "기존 API 키, AWS 프로파일, 환경 변수 등을 파일 시스템에서 스캔"
     },
     body: {
       authorizing: "{name}으로 인증 중...",
@@ -2435,12 +2415,12 @@ export const ko = {
       authorize_hint: "{name} 로그인을 열고 승인 후 액세스를 저장합니다.",
       consent_completed: "{name} 동의 완료 ({time})",
       update_failed: "자격 증명 업데이트 실패",
-      delete_credential: "자격 증명 삭제",
+      delete_credential: "자격 증명 삭제"
     },
     connector: {
       filter_all: "전체",
       filter_connected: "연결됨",
-      filter_available: "사용 가능",
+      filter_available: "사용 가능"
     },
     auto_cred: {
       guided_setup: "가이드 설정",
@@ -2472,7 +2452,6 @@ export const ko = {
       open_in_browser: "브라우저에서 열기",
       completed_step: "완료했습니다",
       input_requested: "입력 요청됨",
-      // @llm-translated 2026-04-17
       cancel_session: "세션 취소",
       test_connection: "연결 테스트",
       testing: "테스트 중...",
@@ -2480,7 +2459,7 @@ export const ko = {
       discard: "버리기",
       save_credential: "자격 증명 저장",
       save_procedure: "절차 저장",
-      procedure_saved: "절차 저장됨",
+      procedure_saved: "절차 저장됨"
     },
     vector: {
       documents_tab: "문서",
@@ -2512,7 +2491,7 @@ export const ko = {
       documents: "문서",
       chunks: "섹션",
       local_embedding: "로컬 검색",
-      local_embedding_hint: "{model} ({dims}차원)을 사용해 로컬에서 검색 인덱싱을 실행합니다. 데이터가 기기를 벗어나지 않습니다.",
+      local_embedding_hint: "{model} ({dims}차원)을 사용해 로컬에서 검색 인덱싱을 실행합니다. 데이터가 기기를 벗어나지 않습니다."
     },
     design_modal: {
       title: "자격 증명 설계",
@@ -2527,12 +2506,12 @@ export const ko = {
       how_to_fix: "수정 방법",
       original_request: "원래 요청 (보존됨):",
       start_over: "처음부터 다시",
-      try_again_with: "요청으로 다시 시도",
+      try_again_with: "요청으로 다시 시도"
     },
     desktop: {
       installed: "설치됨",
       running: "실행 중",
-      not_installed: "설치되지 않음",
+      not_installed: "설치되지 않음"
     },
     graph: {
       no_dependencies: "의존성 없음",
@@ -2542,7 +2521,7 @@ export const ko = {
       dep_count_other: "{count}개 의존성",
       not_tested: "테스트 안 됨",
       healthy: "정상",
-      unhealthy: "비정상",
+      unhealthy: "비정상"
     },
     wizard: {
       detected: "감지됨 ({count})",
@@ -2552,7 +2531,7 @@ export const ko = {
       already_added_badge: "이미 추가됨",
       local: "로컬",
       cli_auth: "CLI 인증",
-      session: "세션",
+      session: "세션"
     },
     playground: {
       tab_overview: "개요",
@@ -2582,7 +2561,7 @@ export const ko = {
       query_parameters: "쿼리 매개변수",
       headers: "헤더",
       body: "본문",
-      empty_response: "(빈 응답)",
+      empty_response: "(빈 응답)"
     },
     playground_extra: {
       add_tag: "태그 추가...",
@@ -2603,11 +2582,11 @@ export const ko = {
       query_parameters: "쿼리 매개변수",
       recipes_title: "저장된 레시피",
       truncated_warning: "표시를 위해 응답이 잘렸습니다",
-      value_col: "값",
+      value_col: "값"
     },
     ingest: {
       save_name: "이름 저장",
-      rename_credential: "자격 증명 이름 변경",
+      rename_credential: "자격 증명 이름 변경"
     },
     databases: {
       col_database: "데이터베이스",
@@ -2721,9 +2700,8 @@ export const ko = {
       filter_tables: "테이블 필터...",
       refresh: "새로 고침",
       introspection_unavailable: "이 커넥터 유형에는 테이블 내부 검사를 사용할 수 없습니다.",
-      // @llm-translated 2026-04-17
       not_null: "NOT NULL",
-      ctrl_enter: "Ctrl+Enter",
+      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "취소 시뮬레이션",
@@ -2769,14 +2747,14 @@ export const ko = {
       daily_execs_lost: "일일 실행 손실",
       daily_cost_impact: "일일 비용 영향",
       sim_low: "이 자격 증명에 의존하는 페르소나나 워크플로가 없습니다. 취소가 안전합니다.",
-      // @llm-translated 2026-04-17
       sim_critical: "{credentialName} 취소 시 {workflows}개 워크플로{workflowPlural}와 {personas}개 페르소나{personaPlural}가 중단됩니다.",
       sim_high: "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나{personaPlural}에 영향을 줍니다.",
       sim_medium: "{credentialName} 취소 시 영향 범위가 제한적입니다.",
-      per_day: "/일",
+      per_day: "/일"
     },
     shared: {
       add: "추가",
+      copied: "복사됨",
       no_connector_available: "이 자격 증명 유형에 사용 가능한 커넥터 정의가 없습니다.",
       request_builder: "요청 빌더",
       close: "닫기",
@@ -2903,8 +2881,6 @@ export const ko = {
       no_documents_description: "파일을 여기에 드롭하거나, 텍스트를 붙여넣거나, 디렉토리를 스캔해 지식 베이스를 구축하세요.",
       delete_document: "문서 삭제",
       chunks_label: "{count}개 청크",
-      // @llm-translated 2026-04-17
-      copied: "복사됨",
       kb_count_summary: "-- {docs}개 문서, {chunks}개 청크",
       default_patterns: "기본값:",
       add_pattern_placeholder: "*.pdf",
@@ -2915,11 +2891,11 @@ export const ko = {
       add_tag_title: "태그 추가",
       local_embedding_hint: "{model} ({dims}차원)을 사용해 로컬에서 임베딩이 생성됩니다. 데이터가 기기를 벗어나지 않습니다. 모델(~23MB)은 처음 사용 시 다운로드되어 로컬에 캐시됩니다.",
       api_path_placeholder: "/api/v1/resource",
-      json_body_placeholder: '{"key": "value"}',
+      json_body_placeholder: "value",
       sending: "전송 중...",
       send: "보내기",
       search_results_one: "\"{query}\"에 대한 결과 {count}개",
-      search_results_other: "\"{query}\"에 대한 결과 {count}개",
+      search_results_other: "\"{query}\"에 대한 결과 {count}개"
     },
     manager: {
       title: "자격 증명",
@@ -2939,24 +2915,23 @@ export const ko = {
       test_all_credentials: "모든 자격 증명 테스트",
       test_all: "전체 테스트",
       daily_progress: "일일 {done}/{total}",
-      testing_progress: "테스트 중 {done}/{total}",
+      testing_progress: "테스트 중 {done}/{total}"
     },
     bulk_healthcheck: {
       title: "상태 확인 결과",
       needs_attention: "주의 필요",
       slowest_responses: "가장 느린 응답",
-      // @llm-translated 2026-04-17
       passed_count: "{count}개 통과",
       failed_count: "{count}개 실패",
-      total_count: "{count}개 합계",
+      total_count: "{count}개 합계"
     },
     health_bar: {
       healthy: "정상",
       needs_attention: "주의 필요",
-      untested: "테스트 안 됨",
+      untested: "테스트 안 됨"
     },
     breadcrumb: {
-      aria_label: "볼트 탐색",
+      aria_label: "볼트 탐색"
     },
     credential_card: {
       deleting: "{name} 삭제 중...",
@@ -2972,7 +2947,7 @@ export const ko = {
       remove_tag: "\"{tag}\" 태그 제거",
       copy_credential_id: "자격 증명 ID 복사",
       refresh_oauth: "OAuth 토큰 지금 갱신",
-      refresh: "갱신",
+      refresh: "갱신"
     },
     vault_badge: {
       needs_attention: "주의 필요",
@@ -2995,21 +2970,21 @@ export const ko = {
       encrypt_now_other: "{count}개 암호화되지 않은 자격 증명 지금 암호화",
       encrypt_done_one: "완료 -- {migrated}개 자격 증명 암호화됨.",
       encrypt_done_other: "완료 -- {migrated}개 자격 증명 암호화됨.",
-      encrypt_partial: "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요.",
+      encrypt_partial: "{migrated}개 암호화됨, {failed}개 실패. 다시 시도하거나 앱을 재시작하세요."
     },
     delete_dialog: {
       title: "자격 증명 삭제",
       cannot_undo: "이 작업은 취소할 수 없습니다.",
       label_name: "이름",
       label_type: "유형",
-      unverified_warning: "모든 의존성을 확인할 수 없습니다. 일부 연결된 에이전트나 자동화가 표시되지 않을 수 있습니다.",
+      unverified_warning: "모든 의존성을 확인할 수 없습니다. 일부 연결된 에이전트나 자동화가 표시되지 않을 수 있습니다."
     },
     card_body: {
       failed_update: "자격 증명 업데이트 실패",
       authorizing_with: "{name}으로 인증 중...",
       authorize_with: "{name}으로 인증",
       authorize_hint: "앱 관리 {name} 동의를 실행하고 승인 후 갱신 토큰을 업데이트합니다.",
-      consent_completed: "{name} 동의 완료 ({time})",
+      consent_completed: "{name} 동의 완료 ({time})"
     },
     card_details: {
       tab_intelligence: "인텔리전스",
@@ -3017,7 +2992,7 @@ export const ko = {
       tab_token_lifetime: "토큰 수명",
       tab_services: "서비스 ({count})",
       tab_events: "이벤트 ({count})",
-      tab_audit: "감사",
+      tab_audit: "감사"
     },
     intelligence_tab: {
       loading: "인텔리전스 데이터 로딩 중",
@@ -3038,7 +3013,7 @@ export const ko = {
       dependents_warning_other: "이 자격 증명을 변경하거나 삭제하면 {count}개 페르소나에 영향을 미칩니다:",
       link_structural: "구조적",
       link_observed: "관찰됨",
-      via_connector: "{connector}를 통해",
+      via_connector: "{connector}를 통해"
     },
     token_metrics: {
       loading: "메트릭 로딩 중...",
@@ -3050,8 +3025,11 @@ export const ko = {
       avg_drift: "평균 드리프트",
       recent_ttls: "최근 공급자 TTL (최신순)",
       recent_refreshes: "최근 갱신",
-      // @llm-translated 2026-04-17
-      fallback_used: "폴백 ({fallback}s)이 {rate}%의 갱신에서 사용됨 ({count}/{total}) — 공급자 누락",
+      fallback_used: "폴백 ({fallback}s)이 {rate}%의 갱신에서 사용됨 ({count}/{total}) — 공급자 누락"
+    },
+    reauth_banner: {
+      access_revoked: ") -- 액세스가 취소되었습니다. 자동화를 재개하려면 다시 인증하세요.",
+      reconnect: "재연결"
     },
     rotation_section: {
       corrupted_warning: "상태 확인 메타데이터가 손상됨. 다음 성공적인 상태 확인이 손상된 데이터를 덮어쓸 때까지 이상 점수를 사용할 수 없습니다.",
@@ -3072,6 +3050,7 @@ export const ko = {
       enabling: "활성화 중...",
       enable_rotation: "교체 활성화",
       enable_failed: "교체 활성화 실패: {error}",
+      last_rotated: "마지막 교체: {time}"
     },
     event_config: {
       event_triggers: "이벤트 트리거",
@@ -3098,8 +3077,7 @@ export const ko = {
       minutes_10: "10분",
       healthcheck_auto_rotate: "이전에 정상이던 자격 증명이 상태 확인에 실패하기 시작하면 교체가 자동으로 트리거됩니다.",
       last_evaluated: "마지막 평가: {time}",
-      // @llm-translated 2026-04-17
-      loading: "이벤트 로딩 중...",
+      loading: "이벤트 로딩 중..."
     },
     credential_forms: {
       encrypted_keychain: "OS 키체인으로 암호화됨",
@@ -3113,11 +3091,10 @@ export const ko = {
       new_credential: "새 {label} 자격 증명",
       configure_fields: "자격 증명 필드 구성",
       oauth_required: "이 자격 증명을 연결하려면 아래 인증 버튼을 사용하세요.",
-      // @llm-translated 2026-04-17
       open_to_generate: "{label}을(를) 열어 API 키 또는 토큰 생성",
       already_configured: "자격 증명이 이미 구성됨 -- 아래에서 업데이트해 교체",
       setup_instructions_label: "설정 지침",
-      no_fields_defined: "이 커넥터에 정의된 자격 증명 필드가 없습니다.",
+      no_fields_defined: "이 커넥터에 정의된 자격 증명 필드가 없습니다."
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3138,14 +3115,12 @@ export const ko = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI",
+      save_failed: "Failed to capture credential from CLI"
     },
-
     audit_log: {
       empty: "아직 감사 항목 없음",
       empty_hint: "작업이 발생하면 기록됩니다.",
       access_events_hint: "액세스 이벤트가 여기에 나타납니다.",
-      // @llm-translated 2026-04-17
       loading: "감사 타임라인 로딩 중...",
       total_accesses: "{count}개 합계",
       personas_one: "{count}개 페르소나",
@@ -3154,7 +3129,7 @@ export const ko = {
       anomalies_one: "{count}개 이상",
       anomalies_other: "{count}개 이상",
       no_anomalies: "이상 없음",
-      show_all: "전체 {count}개 항목 표시",
+      show_all: "전체 {count}개 항목 표시"
     },
     credential_import: {
       import_from: "{source}에서 가져오기",
@@ -3163,6 +3138,12 @@ export const ko = {
       enable_sync: "동기화 모드 활성화",
       source_ref: "소스 참조",
       poll_interval: "폴링 간격",
+      sync_hint: "외부 볼트의 변경 사항을 감시하고 폴링을 사용하여 자격 증명을 자동 업데이트합니다.",
+      interval_15min: "15분",
+      interval_30min: "30분",
+      interval_1hr: "1시간",
+      interval_6hr: "6시간",
+      interval_24hr: "24시간"
     },
     empty_state: {
       heading: "첫 번째 서비스 연결",
@@ -3171,11 +3152,11 @@ export const ko = {
       catalog_description: "Slack, GitHub, OpenAI 등 알려진 서비스 선택. 사전 구성된 필드 및 상태 확인.",
       ai_heading: "AI 설계 자격 증명",
       ai_description: "임의의 서비스를 설명하면 AI가 필드, 인증 유형, 상태 확인을 구성합니다.",
-      works_with_any: "모든 API와 호환",
+      works_with_any: "모든 API와 호환"
     },
     credential_list: {
       no_match: "일치하는 자격 증명 없음",
-      no_match_hint: "필터 또는 검색어를 조정해 보세요",
+      no_match_hint: "필터 또는 검색어를 조정해 보세요"
     },
     wizard_detect: {
       no_services: "\"{search}\"와 일치하는 서비스 없음",
@@ -3187,7 +3168,6 @@ export const ko = {
       batch_complete: "일괄 설정 완료",
       skip_service: "이 서비스 건너뛰기",
       no_filter_match: "다른 검색어를 사용하거나 필터를 지우세요.",
-      // @llm-translated 2026-04-17
       set_up_credentials: "자격 증명 설정",
       clear_selection: "선택 지우기",
       set_up_services: "{count}개 서비스{plural} 설정",
@@ -3196,7 +3176,7 @@ export const ko = {
       choose_service: "설정할 서비스 선택",
       ai_walk_description: "AI가 API 자격 증명 획득을 단계별로 안내합니다.",
       wizard_subtitle: "AI 안내 자격 증명 설정",
-      wizard_subtitle_batch: "{count}개 서비스{plural} 설정 중",
+      wizard_subtitle_batch: "{count}개 서비스{plural} 설정 중"
     },
     autopilot: {
       title: "API 오토파일럿",
@@ -3220,7 +3200,6 @@ export const ko = {
       query_parameters: "쿼리 매개변수",
       param_name_placeholder: "매개변수 이름",
       request_body: "요청 본문 (JSON)",
-      // @llm-translated 2026-04-17
       from_url: "URL에서",
       paste_content: "내용 붙여넣기",
       openapi_spec_url: "OpenAPI 스펙 URL",
@@ -3237,7 +3216,7 @@ export const ko = {
       base_url_placeholder: "https://api.example.com",
       openapi_url_placeholder: "https://api.example.com/openapi.json",
       auth_schemes: "인증 스키마",
-      body_placeholder: '{ "key": "value" }',
+      body_placeholder: "value"
     },
     foraging: {
       no_credentials_found: "자격 증명 없음",
@@ -3254,7 +3233,6 @@ export const ko = {
       step_done: "완료",
       step_completed: "(완료됨)",
       step_current: "(현재)",
-      // @llm-translated 2026-04-17
       start_scan: "스캔 시작",
       checking_env: "환경 변수, 구성 파일, 개발 도구 자격 증명 확인 중",
       importing: "볼트에 자격 증명 가져오는 중...",
@@ -3273,12 +3251,11 @@ export const ko = {
       import_server: "가져오기",
       sources_in: "소스 내",
       progress_aria: "탐색 진행률",
-      scanned_sources: "{ms}ms 내 {count}개 소스 스캔됨",
+      scanned_sources: "{ms}ms 내 {count}개 소스 스캔됨"
     },
     desktop_discovery: {
       title: "데스크톱 앱",
       allowed_binaries: "허용된 바이너리: ",
-      // @llm-translated 2026-04-17
       connect_description: "로컬 앱 연결 또는 Claude Desktop MCP 서버 가져오기",
       detected_apps_tab: "감지된 앱 ({count})",
       claude_mcp_tab: "Claude MCP ({count})",
@@ -3293,7 +3270,7 @@ export const ko = {
       mcp_config_hint: "Claude Desktop이 설치된 경우 설정에 MCP 서버가 구성되어 있는지 확인하세요.",
       permission_required: "권한 필요",
       approve_description: "다음 기능을 요청합니다. 이 커넥터를 활성화하려면 검토하고 승인하세요.",
-      approve_connect: "승인 및 연결",
+      approve_connect: "승인 및 연결"
     },
     picker_section: {
       no_connectors: "커넥터 없음",
@@ -3304,18 +3281,29 @@ export const ko = {
       filter_purpose: "목적",
       filter_category: "카테고리",
       filter_license: "라이선스",
-      // @llm-translated 2026-04-17
       credential_name: "자격 증명 이름",
       add_project_first: "코드베이스를 에이전트에 연결하려면 먼저 Dev Tools에서 프로젝트를 추가하세요.",
       go_to_dev_tools: "Dev Tools로 이동",
       workspace_connect_description: "Google 로그인 한 번으로 Gmail, Calendar, Drive, Sheets 자격 증명 자동 생성",
       foraging_description: "파일 시스템에서 기존 API 키, AWS 프로파일, 환경 변수 등을 스캔",
       no_setup_guide: "이 커넥터에 사용 가능한 설정 가이드가 없습니다. 지침은 아래 설명서 링크를 방문하세요.",
-      open_setup_page: "{label} 설정 페이지 열기",
+      open_setup_page: "{label} 설정 페이지 열기"
+    },
+    cli_capture: {
+      cta: "로컬 CLI에서 가져오기",
+      hint: "API 키를 붙여넣는 대신 이미 로그인된 로컬 CLI를 사용합니다.",
+      running: "로컬 CLI 실행 중...",
+      success: "CLI에서 자격 증명 캡처됨",
+      token_ttl_notice: "이 토큰은 {seconds}초 후 만료되며 자동으로 갱신됩니다.",
+      source_label: "CLI",
+      missing_binary: "`{binary}`가 설치되지 않았거나 허용된 위치에 있지 않습니다.",
+      unauthenticated: "{binary}에 로그인되어 있지 않습니다. {instruction}",
+      capture_failed: "CLI 캡처 실패: {detail}",
+      timeout: "CLI 캡처가 시간 초과되었습니다. 먼저 수동으로 명령을 실행해 보세요."
     },
     schemas: {
       none_configured: "구성된 것 없음.",
-      required_badge: "필수",
+      required_badge: "필수"
     },
     design_phases: {
       saving: "자격 증명 저장 중...",
@@ -3348,7 +3336,6 @@ export const ko = {
       mark_done: "완료로 표시",
       mark_step_complete: "단계 완료 표시",
       copy_to_clipboard: "클립보드에 복사",
-      // @llm-translated 2026-04-17
       credential_saved_message: "{label} 자격 증명이 안전하게 저장되었습니다.",
       revision_count: "(개정 {count})",
       connector_added_to_catalog: "커넥터가 카탈로그에 추가됨 -- 이제 다른 페르소나 및 템플릿 채택에 사용 가능합니다.",
@@ -3369,9 +3356,12 @@ export const ko = {
       use_template: "사용",
       recipe_used_one: "-- {count}회 사용됨",
       recipe_used_other: "-- {count}회 사용됨",
-      instruction_placeholder: "예: Slack, OpenAI, GitHub, Stripe...",
+      instruction_placeholder: "예: Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
+      browser_automation_warning: "브라우저 자동화가 실행 중입니다. 창과 상호작용하지 마세요 — 완료되면 재개됩니다.",
+      desktop_bridge_title: "{{label}}은(는) 데스크톱 앱이 필요합니다",
+      desktop_bridge_hint: "이 커넥터는 Personas 데스크톱 앱에서만 실행되는 네이티브 브라우저 세션을 구동합니다.",
       preparing_guided: "가이드 설정 지시사항 준비 중...",
       starting_browser: "브라우저 세션 시작 중...",
       no_log_output: "캡처된 로그 출력 없음.",
@@ -3402,10 +3392,6 @@ export const ko = {
       step_browser_review: "저장 전 검토를 위해 여기로 돌아오기",
       step_guided_review: "자격 증명 검토 및 저장",
       setup_context: "설계 분석의 설정 문맥:",
-      // @llm-translated 2026-04-17
-      browser_automation_warning: "브라우저 자동화가 실행 중입니다. 창과 상호작용하지 마세요 — 완료되면 재개됩니다.",
-      desktop_bridge_title: "{{label}}은(는) 데스크톱 앱이 필요합니다",
-      desktop_bridge_hint: "이 커넥터는 Personas 데스크톱 앱에서만 실행되는 네이티브 브라우저 세션을 구동합니다.",
       review_extracted: "추출된 자격 증명 검토",
       review_extracted_hint: "브라우저에서 추출된 값 — 저장 전에 확인하세요",
       completeness_partial: "{total}개 필수 필드 중 {filled}개 입력됨. 저장 전에 누락된 필드를 완성하세요.",
@@ -3422,9 +3408,10 @@ export const ko = {
       extracted_values_label: "추출된 값",
       no_fields_discovered: "필드가 발견되지 않았습니다. 더 구체적인 설명으로 다시 시도해 보세요.",
       fields_captured_partial: "{total}개 중 {filled}개 필드 캡처됨",
-      credential_stored: "{label} 자격 증명이 안전하게 저장되었습니다.",
+      credential_stored: "{label} 자격 증명이 안전하게 저장되었습니다."
     },
     negotiator_extra: {
+      panel_title: "AI 자격 증명 협상기",
       checking_auth: "기존 인증 확인 중...",
       auto_provisioning: "자동 API 키 프로비저닝",
       generating_plan: "프로비저닝 계획 생성 중...",
@@ -3433,9 +3420,7 @@ export const ko = {
       need_help: "이 단계에 도움이 필요하신가요?",
       hide_help: "도움말 숨기기",
       ask_question: "이 단계에 대해 질문하기...",
-      // @llm-translated 2026-04-17
-      panel_title: "AI 자격 증명 협상기",
-      planning_description: "AI가 개발자 포털을 분석하고 단계별 프로비저닝 계획을 생성하고 있습니다...",
+      planning_description: "AI가 개발자 포털을 분석하고 단계별 프로비저닝 계획을 생성하고 있습니다..."
     },
     workspace_panel: {
       select_services: "연결할 서비스 선택",
@@ -3443,7 +3428,6 @@ export const ko = {
       creating_credentials: "자격 증명 생성 중...",
       all_created: "모든 자격 증명 생성됨",
       some_failed: "일부 자격 증명 실패",
-      // @llm-translated 2026-04-17
       selected_count: "{total}개 중 {selected}개 선택됨",
       select_all: "전체 선택",
       connect_services_one: "로그인 한 번으로 {count}개 서비스 연결",
@@ -3452,7 +3436,7 @@ export const ko = {
       granting_access_other: "{count}개 서비스에 대한 액세스가 부여됩니다",
       credentials_created_one: "단일 로그인으로 {count}개 자격 증명 생성됨.",
       credentials_created_other: "단일 로그인으로 {count}개 자격 증명 생성됨.",
-      sign_in_browser: "브라우저 창에서 Google 계정으로 로그인하세요.",
+      sign_in_browser: "브라우저 창에서 Google 계정으로 로그인하세요."
     },
     gateway: {
       gateway_members: "{name} — 게이트웨이 멤버",
@@ -3469,7 +3453,7 @@ export const ko = {
       display_name: "표시 이름 (도구 접두사)",
       display_name_placeholder: "예: arcade, research_tools, docs",
       adding: "추가 중…",
-      add_member: "멤버 추가",
+      add_member: "멤버 추가"
     },
     pending_auth: {
       title: "인증 필요",
@@ -3483,13 +3467,13 @@ export const ko = {
       open_first: "먼저 URL을 열고 동의하세요",
       retrying: "재시도 중…",
       retry_authorized: "인증 완료 — 재시도",
-      retry_failed: "재시도 실패",
+      retry_failed: "재시도 실패"
     },
     rotation_insight: {
       perm_errors: "영구 오류 감지됨 -- 교체 시도, 알림 발송 중.",
       degrading: "지속적인 저하 -- 선제적 교체 트리거됨.",
-      backoff: "일시적 실패 -- 지수 백오프 활성.",
-    },
+      backoff: "일시적 실패 -- 지수 백오프 활성."
+    }
   },
   deployment: {
     title: "배포",
@@ -3507,7 +3491,7 @@ export const ko = {
       token_available: "토큰 사용 가능",
       no_token: "토큰이 설정되지 않았습니다",
       no_token_configured: "토큰 구성 없음",
-      no_status: "상태 데이터를 사용할 수 없습니다.",
+      no_status: "상태 데이터를 사용할 수 없습니다."
     },
     api_playground: {
       title: "API 플레이그라운드",
@@ -3517,10 +3501,12 @@ export const ko = {
       sending: "전송 중...",
       empty_response: "(빈 응답)",
       snippets: "스니펫",
+      request_body_placeholder: "여기에 프롬프트 입력..."
     },
     connection: {
       orchestrator_url_label: "클라우드 서버 URL",
       orchestrator_prefix: "https://",
+      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "API 키 입력",
       connect: "연결",
       connected: "연결됨",
@@ -3530,16 +3516,28 @@ export const ko = {
       diagnostics_title: "진단",
       url_protocol_error: "URL은 http 또는 https를 사용해야 합니다",
       url_hostname_error: "URL에 호스트 이름이 없습니다",
-      url_invalid: "잘못된 URL",
+      url_invalid: "잘못된 URL"
     },
     deployments_panel: {
       deploy_persona: "페르소나 배포",
       select_persona: "배포할 페르소나 선택",
       all_deployed: "모든 페르소나가 이미 배포됨",
+      no_deployments_yet: "배포가 아직 없습니다. 위에서 페르소나를 선택하여 클라우드 API 엔드포인트로 배포하세요.",
+      active_deployments: "활성 배포"
     },
     exec_detail: {
       fetching_output: "출력 가져오는 중...",
       no_output: "출력 없음",
+      label_status: "상태:",
+      label_duration: "소요 시간:",
+      label_cost: "비용:",
+      label_tokens: "토큰:",
+      label_started: "시작됨:",
+      label_completed: "완료됨:",
+      label_input: "입력:",
+      view_output: "출력 보기",
+      output_prefix: "출력 (",
+      output_lines_suffix: "줄)"
     },
     oauth_panel: {
       connect_anthropic: "Anthropic 계정 연결",
@@ -3551,6 +3549,13 @@ export const ko = {
       token_unknown: "토큰 상태 알 수 없음",
       expires: "만료",
       scopes: "범위",
+      open_auth_window: "인증 창 열기",
+      complete_authorization: "인증 완료",
+      refresh_token: "토큰 갱신",
+      open_authorization_window: "인증 창 열기",
+      token_unknown_msg: "토큰 유효성을 확인할 수 없습니다. 토큰이 아직 활성 상태인지 확인하려면 갱신하세요.",
+      connect_anthropic_msg: "클라우드 실행에 OAuth 기반 인증을 사용하려면 Anthropic 계정을 연결하세요.",
+      token_expired_msg_prefix: "이 OAuth 토큰이 만료되었습니다"
     },
     trigger_form: {
       new_cloud_trigger: "새 클라우드 트리거",
@@ -3560,9 +3565,15 @@ export const ko = {
       schedule_cron: "스케줄 (cron)",
       create_trigger: "트리거 생성",
       creating: "생성 중...",
+      cron_expression: "Cron 표현식",
+      utc_suffix: "(UTC)",
+      webhook_info: "이 트리거에 대한 webhook 엔드포인트가 생성됩니다. 생성 후 페이로드 필터링을 구성할 수 있습니다."
     },
     chart: {
       daily_executions: "일일 실행",
+      tooltip_runs: "실행:",
+      tooltip_cost: "비용:",
+      tooltip_success: "성공:"
     },
     deploy_card: {
       test_deployment: "배포 테스트",
@@ -3571,6 +3582,10 @@ export const ko = {
       remove_deployment: "배포 제거",
       copy_endpoint: "엔드포인트 복사",
       open_endpoint: "엔드포인트 열기",
+      budget_label: "예산:",
+      label_invocations: "호출:",
+      label_last_called: "마지막 호출:",
+      label_created: "생성됨:"
     },
     tabs: {
       connection: "연결",
@@ -3578,7 +3593,7 @@ export const ko = {
       oauth: "OAuth",
       deployments: "배포",
       schedules: "스케줄",
-      history: "기록",
+      history: "기록"
     },
     cloud_execution: "클라우드 실행",
     cloud_status: {
@@ -3590,7 +3605,7 @@ export const ko = {
       queue_length: "대기열 길이",
       active_executions: "활성 실행",
       active_execution: "활성 실행",
-      claude_token: "Claude 토큰",
+      claude_token: "Claude 토큰"
     },
     history: {
       just_now: "방금 전",
@@ -3610,6 +3625,8 @@ export const ko = {
       last_30_days: "최근 30일",
       last_90_days: "최근 90일",
       top_errors: "주요 오류",
+      clear_filters: "필터 지우기",
+      execution_history: "실행 이력"
     },
     schedules: {
       header: "클라우드 트리거 ({count})",
@@ -3619,6 +3636,12 @@ export const ko = {
       empty: "클라우드 트리거가 없습니다. 자동 실행을 스케줄하려면 하나를 생성하세요.",
       recent_firings: "최근 실행",
       no_firings: "최근 실행 없음",
+      label_type: "유형:",
+      label_status: "상태:",
+      label_last_triggered: "마지막 트리거:",
+      label_next_trigger: "다음 트리거:",
+      label_cron: "Cron:",
+      loading_firings: "로딩 중..."
     },
     dashboard: {
       title: "배포",
@@ -3673,7 +3696,7 @@ export const ko = {
       stage_generating: "생성 중",
       stage_completed: "완료됨",
       stage_failed: "실패",
-      tool_calls: "{count}번 도구 호출",
+      tool_calls: "{count}번 도구 호출"
     },
     cloud_trigger_schedule: "예약됨 (Cron)",
     cloud_trigger_polling: "폴링",
@@ -3688,7 +3711,7 @@ export const ko = {
     cron_daily_midnight: "매일 자정 (UTC)",
     cron_daily_9am: "매일 오전 9시 (UTC)",
     cron_weekdays_9am: "평일 오전 9시 (UTC)",
-    cron_weekly_sun: "매주 (일요일 자정 UTC)",
+    cron_weekly_sun: "매주 (일요일 자정 UTC)"
   },
   sharing: {
     export_title: "번들 내보내기",
@@ -3766,6 +3789,7 @@ export const ko = {
     persistence_denied: "거부됨",
     capabilities_label: "기능:",
     capabilities_none: "없음",
+    enclave_hash_label: "해시:",
     network_sharing_title: "네트워크 & 공유",
     network_sharing_subtitle: "정체성, 신뢰할 수 있는 피어, 공유 리소스 관리",
     exposed_resources: "노출된 리소스",
@@ -3829,8 +3853,17 @@ export const ko = {
     no_shared_resources: "공유된 리소스 없음. 매니페스트를 동기화해 확인하세요.",
     discovered_peers: "발견된 피어",
     refresh: "새로 고침",
+    refresh_peer_list: "피어 목록 새로 고침",
     scanning_network: "로컬 네트워크 스캔 중...",
     lan_hint: "동일한 LAN의 다른 Personas 인스턴스가 자동으로 여기에 나타납니다.",
+    peer_list_stale: "피어 목록이 오래되었을 수 있습니다 \\u2014",
+    network_data_stale: "네트워크 데이터가 오래되었을 수 있습니다 \\u2014",
+    peer_id_footer: "피어 ID",
+    remove_exposure: "노출 제거",
+    revoke_trust: "신뢰 취소",
+    remove_peer: "피어 제거",
+    share_link_tooltip: "일회용 공유 링크 생성 (24시간 후 만료)",
+    copy_clipboard_tooltip: "번들을 base64로 클립보드에 복사 (최대 256KB)",
     message_throughput: "메시지 처리량",
     sent: "전송됨",
     received: "수신됨",
@@ -3846,7 +3879,7 @@ export const ko = {
     sync_rounds: "동기화 라운드",
     success_fail: "성공 / 실패",
     avg_sync_duration: "평균 동기화 시간",
-    entries_received: "수신된 항목",
+    entries_received: "수신된 항목"
   },
   overview: {
     title: "개요",
@@ -3856,7 +3889,7 @@ export const ko = {
     filters: {
       start_date: "시작일",
       end_date: "종료일",
-      all_personas: "모든 에이전트",
+      all_personas: "모든 에이전트"
     },
     messages: {
       loading: "메시지 로딩 중...",
@@ -3867,7 +3900,7 @@ export const ko = {
         title: "제목",
         priority: "우선순위",
         status: "상태",
-        created: "생성일",
+        created: "생성일"
       },
       content_header: "내용",
       priority_high: "높음",
@@ -3884,6 +3917,9 @@ export const ko = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "데스크톱",
+      id_label: "ID:",
+      confirm_delete_title: "삭제 확인",
+      close_message: "메시지 상세 닫기"
     },
     realtime: {
       idle: "유휴 -- {action}을 클릭하여 트래픽을 시뮬레이션하세요",
@@ -3891,7 +3927,7 @@ export const ko = {
       events_per_min: "이벤트/분",
       pending: "대기 중",
       success: "성공",
-      in_window: "기간 내",
+      in_window: "기간 내"
     },
     observability: {
       title: "관측성",
@@ -3904,12 +3940,18 @@ export const ko = {
       manual_fix: "(수동 수정 적용됨)",
       metrics_unavailable: "메트릭을 사용할 수 없습니다 -- 표시된 데이터가 오래되었을 수 있습니다",
       no_open_issues: "미해결 문제 없음",
-      run_analysis: "문제를 확인하려면 분석을 실행하세요.",
+      run_analysis: "문제를 확인하려면 분석을 실행하세요."
     },
     memories: {
       title: "메모리",
       created_success: "메모리가 성공적으로 생성되었습니다",
       no_memories: "메모리가 없습니다",
+      no_memories_hint: "에이전트가 실행될 때 여기에 중요한 노트와 학습을 저장할 수 있습니다.",
+      no_memories_match: "현재 필터와 일치하는 메모리가 없습니다",
+      list_aria_label: "메모리 목록",
+      add_memory_btn: "메모리 추가",
+      search_placeholder: "메모리 검색...",
+      no_filter_match: "필터와 일치하는 메모리가 없습니다. 검색을 조정해 보세요.",
       form: {
         agent: "에이전트",
         category: "카테고리",
@@ -3917,8 +3959,13 @@ export const ko = {
         content: "내용",
         importance: "중요도",
         tags: "태그",
-        tags_hint: "(쉼표로 구분)",
-      },
+        tags_hint: "(쉼표로 구분)"
+      }
+    },
+    memory_review: {
+      all_conflicts_resolved: "모든 충돌이 해결되었습니다",
+      keep_prefix: "유지 “",
+      keep_suffix: "”"
     },
     executions: {
       title: "실행",
@@ -3926,7 +3973,7 @@ export const ko = {
       no_agents: "아직 생성된 에이전트가 없습니다",
       create_first: "첫 번째 에이전트를 만들어 여기서 실행 활동을 확인하세요",
       no_executions: "아직 실행 기록이 없습니다",
-      run_agent: "에이전트를 실행하여 여기서 실행 활동을 확인하세요",
+      run_agent: "에이전트를 실행하여 여기서 실행 활동을 확인하세요"
     },
     workflows: {
       loading: "워크플로 로딩 중...",
@@ -3937,7 +3984,7 @@ export const ko = {
       all_types: "전체 유형",
       no_filter_match: "현재 필터에 일치하는 작업 없음",
       auto_refreshing: "작업이 실행 중일 때 자동 새로 고침",
-      cancel_failed: "워크플로 작업 취소 실패",
+      cancel_failed: "워크플로 작업 취소 실패"
     },
     schedules: {
       title: "스케줄 타임라인",
@@ -3968,7 +4015,7 @@ export const ko = {
       change_frequency: "빈도 변경",
       pause_schedule: "스케줄 일시정지",
       resume_schedule: "스케줄 재개",
-      headless_badge: "헤드리스",
+      headless_badge: "헤드리스"
     },
     frequency_editor: {
       title: "빈도 변경",
@@ -3978,7 +4025,7 @@ export const ko = {
       interval_seconds: "간격 (초)",
       previewing: "미리보기 중...",
       next_runs: "다음 실행",
-      invalid_cron: "유효하지 않은 cron 표현식",
+      invalid_cron: "유효하지 않은 cron 표현식"
     },
     recovery: {
       agents_missed_one: "에이전트 {count}개가 실행을 놓쳤습니다",
@@ -3992,7 +4039,7 @@ export const ko = {
       run_once_tooltip: "지금 1회 실행",
       skip_tooltip: "건너뛰기 -- 복구하지 않음",
       dismiss_all: "모두 닫기",
-      recover_selected: "선택된 {count}개 복구",
+      recover_selected: "선택된 {count}개 복구"
     },
     sla: {
       title: "에이전트 신뢰성 SLA",
@@ -4017,7 +4064,7 @@ export const ko = {
       metric_cost: "비용",
       metric_mtbf: "MTBF",
       metric_auto_healed: "자동 복구됨",
-      metric_cancelled: "취소됨",
+      metric_cancelled: "취소됨"
     },
     knowledge: {
       title: "지식 그래프",
@@ -4042,14 +4089,14 @@ export const ko = {
       failures: "실패",
       avg_cost: "평균 비용",
       avg_duration: "평균 소요 시간",
-      pattern_data: "패턴 데이터",
+      pattern_data: "패턴 데이터"
     },
     conflicts: {
       dismissed: "충돌이 무시되었습니다",
       resolved: "충돌이 해결되었습니다",
       resolve_failed: "충돌 해결에 실패했습니다",
       conflict_count_one: "충돌 {count}건",
-      conflict_count_other: "충돌 {count}건",
+      conflict_count_other: "충돌 {count}건"
     },
     dashboard: {
       title: "대시보드",
@@ -4065,7 +4112,7 @@ export const ko = {
       empty_title: "Personas에 오신 것을 환영합니다",
       empty_subtitle: "첫 번째 에이전트를 생성해 실행 메트릭, 트래픽 차트, 활동을 여기서 확인하세요.",
       create_persona: "페르소나 생성",
-      from_templates: "템플릿에서",
+      from_templates: "템플릿에서"
     },
     execution_metrics: {
       title: "실행 메트릭",
@@ -4083,7 +4130,7 @@ export const ko = {
       cost_spike: "비용 급등",
       above_avg: "평균 이상",
       top_executions: "상위 실행:",
-      executions_label: "{count}회 실행",
+      executions_label: "{count}회 실행"
     },
     execution_list: {
       recorded: "{count}회 실행 기록됨",
@@ -4108,7 +4155,7 @@ export const ko = {
       no_agents: "아직 생성된 에이전트 없음",
       no_agents_hint: "첫 번째 에이전트를 생성해 여기서 실행 활동을 확인하세요.",
       unknown_persona: "알 수 없음",
-      healing_retry: "복구 재시도 #{count}",
+      healing_retry: "복구 재시도 #{count}"
     },
     review: {
       title: "수동 검토",
@@ -4172,7 +4219,7 @@ export const ko = {
       table_tooltip: "테이블만",
       review_detail: "검토 세부 정보",
       select_review: "검토를 선택해 보기",
-      technical_context: "기술적 문맥",
+      technical_context: "기술적 문맥"
     },
     messages_view: {
       title: "메시지",
@@ -4220,7 +4267,7 @@ export const ko = {
       improve_placeholder: "이 출력을 어떻게 개선할 수 있는지 설명하세요...",
       submit_improvement: "개선 제출",
       starting: "시작 중...",
-      unknown_persona: "알 수 없음",
+      unknown_persona: "알 수 없음"
     },
     events: {
       title: "이벤트",
@@ -4258,7 +4305,7 @@ export const ko = {
       source: "소스",
       processed: "처리됨",
       event_data: "이벤트 데이터",
-      error: "오류",
+      error: "오류"
     },
     health: {
       title: "에이전트 상태",
@@ -4288,18 +4335,26 @@ export const ko = {
       status_page: "상태 페이지",
       operational: "정상 운영",
       degraded: "저하됨",
-      outage: "중단",
+      outage: "중단"
     },
     leaderboard: {
       title: "에이전트 리더보드",
       subtitle: "모든 에이전트의 성능 순위",
       no_data: "리더보드 데이터 없음",
       no_data_hint: "에이전트를 실행해 성능 순위를 구축하세요",
+      fleet_avg: "전체 평균:",
+      refresh_label: "리더보드 새로 고침",
+      computing_scores: "에이전트 점수 계산 중...",
+      single_agent_has_data: "에 데이터가 있습니다.",
+      add_more_agents: "순위를 보려면 에이전트를 더 추가하세요. 현재 {name}만",
+      open_agent: "에이전트 열기",
+      no_agent_data_title: "아직 에이전트 데이터가 없습니다",
+      no_agent_data_hint: "에이전트를 실행하여 성능 순위를 확인하세요. 리더보드는 점수 계산을 위해 실행 이력 및 상태 데이터가 필요합니다.",
       reliability: "신뢰성",
       speed: "속도",
       efficiency: "효율성",
       cost_effectiveness: "비용 효율성",
-      overall: "전체",
+      overall: "전체"
     },
     analytics: {
       title: "분석",
@@ -4316,25 +4371,25 @@ export const ko = {
       saved_views: "저장된 뷰",
       create_view: "뷰 생성",
       health_issues: "상태 이슈",
-      rotation_overview: "교체 개요",
+      rotation_overview: "교체 개요"
     },
     usage: {
       title: "사용량",
       subtitle: "비용 및 리소스 소비",
       chart_error: "차트 로드 실패",
       chart_error_hint: "이 차트를 렌더링하는 중 오류 발생",
-      try_again: "다시 시도",
+      try_again: "다시 시도"
     },
     cron_agents: {
       title: "예약된 에이전트",
       subtitle: "자동 스케줄로 실행되는 에이전트",
       no_agents: "예약된 에이전트 없음",
-      no_agents_hint: "에이전트에 cron 트리거를 추가해 여기에 표시하세요",
+      no_agents_hint: "에이전트에 cron 트리거를 추가해 여기에 표시하세요"
     },
     timeline: {
       title: "활동 타임라인",
       subtitle: "모든 에이전트 활동의 통합 보기",
-      no_activity: "최근 활동 없음",
+      no_activity: "최근 활동 없음"
     },
     realtime_viz: {
       title: "이벤트 버스",
@@ -4351,7 +4406,7 @@ export const ko = {
       timestamp: "타임스탬프",
       payload: "페이로드",
       saved_views: "저장된 뷰",
-      save_current: "현재 저장",
+      save_current: "현재 저장"
     },
     observability_extra: {
       auto_refresh_on: "자동 새로 고침 켜짐",
@@ -4377,7 +4432,7 @@ export const ko = {
       ipc_channel: "IPC 채널",
       avg_duration: "평균 소요 시간",
       call_count: "호출 횟수",
-      error_rate: "오류율",
+      error_rate: "오류율"
     },
     widgets: {
       recent_activity: "최근 활동",
@@ -4394,7 +4449,7 @@ export const ko = {
       executions_badge: "실행",
       success_badge: "성공",
       alerts_badge: "알림",
-      agents_badge: "에이전트",
+      agents_badge: "에이전트"
     },
     cards: {
       fleet_optimization: "플리트 최적화",
@@ -4403,7 +4458,7 @@ export const ko = {
       remote_subtitle: "에이전트 관리를 위한 빠른 작업",
       resume_setup: "설정 계속",
       resume_subtitle: "중단한 곳에서 계속",
-      knowledge_hub: "지식 허브",
+      knowledge_hub: "지식 허브"
     },
     activity: {
       title: "활동",
@@ -4449,7 +4504,7 @@ export const ko = {
       create_persona: "페르소나 생성",
       from_templates: "템플릿에서",
       execution_label: "실행",
-      unknown: "알 수 없음",
+      unknown: "알 수 없음"
     },
     analytics_dashboard: {
       title: "분석",
@@ -4508,7 +4563,7 @@ export const ko = {
       issues_count: "{count}개 이슈",
       issues_count_one: "{count}개 이슈",
       never: "없음",
-      fail_count: "{count}회 실패",
+      fail_count: "{count}회 실패"
     },
     cron: {
       title: "크론 에이전트",
@@ -4527,7 +4582,7 @@ export const ko = {
       no_schedule: "스케줄 없음",
       every_interval: "매 {interval}",
       next: "다음",
-      last: "마지막",
+      last: "마지막"
     },
     activity_timeline: {
       title: "활동 타임라인",
@@ -4536,7 +4591,7 @@ export const ko = {
       events: "이벤트",
       messages: "메시지",
       no_activity: "아직 활동 없음",
-      high: "높음",
+      high: "높음"
     },
     sla_card: {
       successful: "성공",
@@ -4548,7 +4603,7 @@ export const ko = {
       auto_healed: "자동 복구됨",
       cancelled: "취소됨",
       failing: "{count}개 실패 중",
-      healed: "{count}개 복구됨",
+      healed: "{count}개 복구됨"
     },
     realtime_page: {
       title: "이벤트 버스 모니터",
@@ -4602,7 +4657,7 @@ export const ko = {
       galaxy: "갤럭시",
       galaxy_desc: "혜성 꼬리가 있는 궤도 별자리",
       lanes: "레인",
-      lanes_desc: "수평 스윔레인 흐름 다이어그램",
+      lanes_desc: "수평 스윔레인 흐름 다이어그램"
     },
     memory_form: {
       agent: "에이전트",
@@ -4619,25 +4674,25 @@ export const ko = {
       saving: "저장 중...",
       created_success: "메모리가 성공적으로 생성됨",
       fill_required: "저장하려면 모든 필수 항목을 입력하세요",
-      saving_memory: "메모리 저장 중...",
+      saving_memory: "메모리 저장 중..."
     },
     memory_filter: {
       search_placeholder: "메모리 검색...",
       all_agents: "전체 에이전트",
-      all_categories: "전체 카테고리",
+      all_categories: "전체 카테고리"
     },
     memory_actions: {
       dismiss_suggestion: "제안 무시",
       memory_insights: "메모리 인사이트",
       suggestions: "{count}개 제안",
-      suggestions_one: "{count}개 제안",
+      suggestions_one: "{count}개 제안"
     },
     memory_conflict: {
       memory_a: "메모리 A",
       memory_b: "메모리 B",
       merge: "병합",
       keep: "유지",
-      vs: "vs",
+      vs: "vs"
     },
     observability_charts: {
       cost_over_time: "시간별 비용",
@@ -4649,7 +4704,7 @@ export const ko = {
       anomaly_detected: "{count}개 비용 이상 감지됨",
       anomaly_click_hint: "차트의 다이아몬드 마커를 클릭해 조사하세요",
       clear_traces: "완료된 추적 지우기",
-      all_operations: "전체 작업",
+      all_operations: "전체 작업"
     },
     health_extra: {
       success: "성공",
@@ -4665,6 +4720,11 @@ export const ko = {
       predicted_failure: "예상 실패 급증까지",
       loading_status: "상태 페이지 데이터 불러오는 중...",
       no_personas: "표시할 페르소나 없음.",
+      score_prefix: "점수:",
+      uptime_30d_prefix: "30일 가동 시간:",
+      updated_prefix: "업데이트됨",
+      consecutive_failures_one: "연속 실패 {count}회",
+      consecutive_failures_other: "연속 실패 {count}회",
       score_label: "점수",
       uptime_30d: "30일 가동률",
       updated: "{time}에 업데이트됨",
@@ -4681,7 +4741,7 @@ export const ko = {
       open: "{count}개 열림",
       sla_compliance: "SLA 준수",
       consecutive_failures: "{count}회 연속 실패",
-      consecutive_failure: "{count}회 연속 실패",
+      consecutive_failure: "{count}회 연속 실패"
     },
     system_health: {
       title: "시스템 점검",
@@ -4695,7 +4755,7 @@ export const ko = {
       save_configuration: "구성 저장",
       litellm_footer: "이 설정은 로컬에 저장되며 LiteLLM 공급자를 사용하도록 구성된 모든 에이전트에서 공유됩니다.",
       ipc_error: "애플리케이션 브리지가 응답하지 않습니다. 앱을 재시작해 보세요. 인터페이스는 계속 탐색할 수 있습니다.",
-      issues_warning: "일부 점검에서 이슈가 발견됐습니다. 계속 진행할 수 있지만 일부 기능이 작동하지 않을 수 있습니다.",
+      issues_warning: "일부 점검에서 이슈가 발견됐습니다. 계속 진행할 수 있지만 일부 기능이 작동하지 않을 수 있습니다."
     },
     review_extra: {
       add_note: "메모 추가 (선택 사항)...",
@@ -4707,7 +4767,7 @@ export const ko = {
       quick_actions: "빠른 작업",
       accepted: "{count}개 수락됨",
       rejected: "{count}개 거부됨",
-      undecided: "{count}개 미결",
+      undecided: "{count}개 미결"
     },
     widgets_extra: {
       execution_health_chart: "실행 상태",
@@ -4716,29 +4776,147 @@ export const ko = {
       failed: "실패",
       close: "닫기",
       dismiss_help: "도움말 무시",
-      skip_tour: "투어 건너뛰기",
+      skip_tour: "투어 건너뛰기"
+    },
+    burn_rate_extra: {
+      active_personas_subtitle: "활성 페르소나 {count}개 · 로컬 월 경계",
+      title: "소진율 예측",
+      daily_burn: "일일 소진",
+      projected_monthly: "예상 월별",
+      at_risk: "위험",
+      top_cost_drivers: "상위 비용 요인",
+      budget_exhaustion_warnings: "예산 소진 경고",
+      exhausted: "소진됨",
+      days_left: "{days}일 남음"
+    },
+    predictive_alerts_extra: {
+      per_month: "/월",
+      confidence_pct: "% 신뢰도",
+      title: "예측 알림",
+      all_nominal: "모든 시스템 정상",
+      no_alerts: "예측 알림 없음 -- 모든 페르소나가 정상 범위 내.",
+      budget_exhausted: "예산 소진됨",
+      budget_exhaustion_in: "{days}일 내 예산 소진",
+      failure_spike_predicted: "{days}일 내 실패율 급등 예측",
+      excessive_healing: "과도한 자가 복구 활동",
+      critical_health: "심각한 건강 상태",
+      byom_recommendations: "BYOM 라우팅 추천"
+    },
+    annotate_modal: {
+      annotation_placeholder: "예: Stripe webhook 검증은 파싱된 JSON이 아닌 원시 요청 본문이 필요합니다",
+      title: "지식 주석 추가",
+      persona_label: "귀속 페르소나",
+      scope_label: "범위",
+      tool_name: "도구 이름",
+      connector_type: "커넥터 / 서비스 유형",
+      annotation_label: "주석",
+      cancel: "취소",
+      saving: "저장 중...",
+      save_annotation: "주석 저장"
+    },
+    knowledge_row: {
+      execution_trend_label: "실행 추세",
+      annotation: "주석",
+      successes: "성공",
+      failures: "실패",
+      avg_cost: "평균 비용",
+      avg_duration: "평균 소요 시간",
+      pattern_data: "패턴 데이터",
+      collapse_details: "세부 정보 접기",
+      expand_details: "세부 정보 펼치기",
+      verify_annotation: "주석 확인",
+      dismiss_annotation: "주석 무시"
+    },
+    knowledge_graph: {
+      mock_pattern: "모의 패턴",
+      seed_tooltip: "모의 패턴 시드 (개발 전용)",
+      all_types: "모든 유형",
+      all_scopes: "모든 범위",
+      failure_drilldown_prefix: "실패 드릴다운:",
+      failure_date_filter: "{date} 이후에 활성화된 실패 패턴 표시 중",
+      data_unavailable: "지식 데이터를 사용할 수 없습니다",
+      loading_patterns: "지식 패턴 로딩 중...",
+      drilldown_toggle_title: "실패 드릴다운 표시/숨기기",
+      no_patterns_yet: "아직 지식 패턴이 없습니다",
+      no_patterns_yet_hint: "에이전트 실행을 통해 지식 패턴을 구축하세요. 에이전트는 시간이 지남에 따라 더 똑똑해집니다.",
+      no_patterns_match: "현재 필터와 일치하는 패턴이 없습니다",
+      recent_learnings: "최근 학습",
+      curating_manually: "문서를 수동으로 큐레이팅하고 있나요?",
+      obsidian_tip: "노트가 ~1000개 미만인 경우 Obsidian 커넥터가 볼트를 직접 동기화할 수 있습니다."
+    },
+    focused_decision: {
+      video_not_supported: "브라우저가 비디오 재생을 지원하지 않습니다.",
+      reject_this: "이것 거부",
+      accept_this: "이것 수락",
+      accept: "수락",
+      reject: "거부",
+      media_unavailable: "미디어 사용 불가"
+    },
+    review_focus: {
+      video_not_supported: "브라우저가 비디오 재생을 지원하지 않습니다.",
+      all_caught_up: "모두 처리됨",
+      no_pending: "처리할 대기 중인 검토 없음.",
+      queue: "대기열",
+      clear: "지우기",
+      clear_all_verdicts: "모든 판정 지우기",
+      quick_actions: "빠른 작업",
+      reject_all: "전체 거부",
+      accept_all: "전체 수락",
+      retry_with_changes: "변경 사항으로 재시도"
+    },
+    bulk_action_bar: {
+      pending_reviews_selected_one: "대기 중인 리뷰 {count}개 선택됨",
+      pending_reviews_selected_other: "대기 중인 리뷰 {count}개 선택됨"
+    },
+    review_inbox: {
+      drag_to_resize: "드래그하여 크기 조정"
+    },
+    healing_issues_panel: {
+      ai_healing_title: "AI 자가 복구",
+      diagnosis_label: "진단:",
+      fixes_applied: "적용된 수정",
+      alert_history_title: "알림 이력",
+      all_agents_global: "모든 에이전트 (전역)",
+      add_rule: "규칙 추가",
+      no_rules_configured: "구성된 알림 규칙이 없습니다. 모니터링을 시작하려면 규칙을 추가하세요.",
+      confidence_pct_suffix: "% 신뢰도",
+      spike_on: "급증 시점",
+      correlated_events_prefix: "상관 이벤트 (",
+      circuit_breaker_label: "서킷 브레이커",
+      auto_disabled_message: "이 페르소나는 반복된 실패에 대한 서킷 브레이커 대응으로 자동으로 비활성화되었습니다.",
+      execution_label: "실행:",
+      issue_marked_as: "이 문제는 다음으로 표시됨",
+      retry_in_progress: "재시도 진행 중 — 완료 시 상태가 업데이트됩니다.",
+      resolve_issue_title: "문제를 해결됨으로 표시",
+      title: "건강 이슈",
+      analyzing: "분석 중...",
+      run_analysis: "분석 실행",
+      no_open_issues: "열린 이슈 없음",
+      run_analysis_hint: "문제 확인을 위해 분석을 실행하세요.",
+      healing_audit_log: "복구 감사 로그",
+      no_silent_failures: "조용한 실패 기록 없음."
     },
     remote_control_card: {
       connect_to_desktop: "데스크탑에 연결",
       connect_description: "원격 제어를 통해 데스크탑 CLI로 에이전트를 실행합니다. 컴퓨터에서 {command}를 시작하고 여기서 연결하세요.",
-      requires_subscription: "Claude Pro 또는 Max 구독 필요",
+      requires_subscription: "Claude Pro 또는 Max 구독 필요"
     },
     resume_setup_card: {
       resume_tour: "투어 재개",
       left_off_at: "중단한 곳:",
       steps_completed: "{completed}/{total}단계 완료",
       skip_tour: "투어 건너뛰기",
-      continue_label: "계속",
+      continue_label: "계속"
     },
     detail_modal: {
-      close: "닫기",
+      close: "닫기"
     },
     metric_help_popover: {
       help_for: "{label} 도움말",
       dismiss_help: "도움말 무시",
       healthy: "정상:",
       click: "클릭:",
-      got_it: "알겠습니다, 다시 표시 안 함",
+      got_it: "알겠습니다, 다시 표시 안 함"
     },
     install_button: {
       install_node: "Node.js 설치",
@@ -4749,7 +4927,7 @@ export const ko = {
       installation_failed: "설치 실패",
       try_manually: "수동으로 실행해 보세요:",
       retry: "재시도",
-      official_page: "공식 페이지",
+      official_page: "공식 페이지"
     },
     section_card: {
       checking: "{section} 확인 중...",
@@ -4760,12 +4938,12 @@ export const ko = {
       sign_in_google: "Google로 로그인",
       working: "처리 중...",
       connect_claude: "Claude Desktop에 연결",
-      disconnect: "연결 해제",
+      disconnect: "연결 해제"
     },
     metrics_cards: {
       cost_spike: "비용 급등",
       above_avg: "평균 초과",
-      top_executions: "상위 실행:",
+      top_executions: "상위 실행:"
     },
     event_log_item: {
       event_id: "이벤트 ID",
@@ -4777,75 +4955,15 @@ export const ko = {
       copied: "복사됨",
       copy: "복사",
       error: "오류",
-      system: "시스템",
-    },
-    burn_rate_extra: {
-      title: "소진율 예측",
-      daily_burn: "일일 소진",
-      projected_monthly: "예상 월별",
-      at_risk: "위험",
-      top_cost_drivers: "상위 비용 요인",
-      budget_exhaustion_warnings: "예산 소진 경고",
-      exhausted: "소진됨",
-      days_left: "{days}일 남음",
+      system: "시스템"
     },
     cascade: {
       title: "체인 연쇄 맵",
-      no_chains: "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중",
-    },
-    predictive_alerts_extra: {
-      title: "예측 알림",
-      all_nominal: "모든 시스템 정상",
-      no_alerts: "예측 알림 없음 -- 모든 페르소나가 정상 범위 내.",
-      budget_exhausted: "예산 소진됨",
-      budget_exhaustion_in: "{days}일 내 예산 소진",
-      failure_spike_predicted: "{days}일 내 실패율 급등 예측",
-      excessive_healing: "과도한 자가 복구 활동",
-      critical_health: "심각한 건강 상태",
-      byom_recommendations: "BYOM 라우팅 추천",
-    },
-    annotate_modal: {
-      title: "지식 주석 추가",
-      persona_label: "귀속 페르소나",
-      scope_label: "범위",
-      tool_name: "도구 이름",
-      connector_type: "커넥터 / 서비스 유형",
-      annotation_label: "주석",
-      cancel: "취소",
-      saving: "저장 중...",
-      save_annotation: "주석 저장",
-    },
-    knowledge_row: {
-      annotation: "주석",
-      successes: "성공",
-      failures: "실패",
-      avg_cost: "평균 비용",
-      avg_duration: "평균 소요 시간",
-      pattern_data: "패턴 데이터",
-      collapse_details: "세부 정보 접기",
-      expand_details: "세부 정보 펼치기",
-      verify_annotation: "주석 확인",
-      dismiss_annotation: "주석 무시",
-    },
-    focused_decision: {
-      accept: "수락",
-      reject: "거부",
-      media_unavailable: "미디어 사용 불가",
-    },
-    review_focus: {
-      all_caught_up: "모두 처리됨",
-      no_pending: "처리할 대기 중인 검토 없음.",
-      queue: "대기열",
-      clear: "지우기",
-      clear_all_verdicts: "모든 판정 지우기",
-      quick_actions: "빠른 작업",
-      reject_all: "전체 거부",
-      accept_all: "전체 수락",
-      retry_with_changes: "변경 사항으로 재시도",
+      no_chains: "감지된 체인 없음 -- 모든 페르소나가 독립 작동 중"
     },
     memory_card: {
       confirm: "확인",
-      cancel: "취소",
+      cancel: "취소"
     },
     memory_detail: {
       title_label: "제목",
@@ -4855,7 +4973,7 @@ export const ko = {
       tags_label: "태그",
       view_source_execution: "소스 실행 보기",
       delete_memory: "메모리 삭제",
-      close: "닫기",
+      close: "닫기"
     },
     memory_table: {
       agent: "에이전트",
@@ -4863,11 +4981,11 @@ export const ko = {
       category: "카테고리",
       priority: "우선순위",
       tags: "태그",
-      created: "생성됨",
+      created: "생성됨"
     },
     review_results: {
       title: "AI 메모리 검토",
-      review_failed: "검토 실패",
+      review_failed: "검토 실패"
     },
     anomaly_drilldown_extra: {
       title: "이상 드릴다운",
@@ -4876,7 +4994,7 @@ export const ko = {
       correlating: "이벤트 상관 분석 중...",
       likely_root_causes: "가능한 근본 원인",
       correlated_events: "상관 이벤트",
-      no_correlated: "±24시간 내 상관 이벤트 없음.",
+      no_correlated: "±24시간 내 상관 이벤트 없음."
     },
     healing_issue_modal: {
       issue_resolved: "이슈 해결됨",
@@ -4891,23 +5009,14 @@ export const ko = {
       auto_resolved: "이 이슈는 자동으로 해결됐습니다",
       close: "닫기",
       resolving: "해결 중…",
-      mark_resolved: "해결됨으로 표시",
-    },
-    healing_issues_panel: {
-      title: "건강 이슈",
-      analyzing: "분석 중...",
-      run_analysis: "분석 실행",
-      no_open_issues: "열린 이슈 없음",
-      run_analysis_hint: "문제 확인을 위해 분석을 실행하세요.",
-      healing_audit_log: "복구 감사 로그",
-      no_silent_failures: "조용한 실패 기록 없음.",
+      mark_resolved: "해결됨으로 표시"
     },
     healing_timeline: {
       loading: "타임라인 불러오는 중...",
       no_events: "복구 이벤트 없음",
       no_events_hint: "분석을 실행해 복원력 타임라인을 구축하세요.",
       knowledge_base: "지식 베이스",
-      patterns_hint: "복구 결정에 영향을 미치는 패턴",
+      patterns_hint: "복구 결정에 영향을 미치는 패턴"
     },
     ipc_panel: {
       title: "IPC 성능",
@@ -4916,29 +5025,29 @@ export const ko = {
       command: "명령",
       calls_header: "호출",
       duration_header: "소요 시간",
-      when_header: "시기",
+      when_header: "시기"
     },
     system_trace_extra: {
       no_traces: "시스템 추적 기록 없음",
       no_traces_hint: "디자인, 자격 증명 또는 템플릿 작업 실행 시 추적이 표시됩니다",
       all_operations: "전체 작업",
       clear_completed: "완료된 추적 지우기",
-      span: "스팬",
+      span: "스팬"
     },
     event_log_sidebar: {
       title: "이벤트 로그",
       no_events: "아직 이벤트 없음",
-      open_detail_drawer: "세부 서랍에서 열기",
+      open_detail_drawer: "세부 서랍에서 열기"
     },
     chart_error: {
-      chart_unavailable: "차트 사용 불가",
+      chart_unavailable: "차트 사용 불가"
     },
     realtime_idle: {
-      idle: "유휴",
+      idle: "유휴"
     },
     day_range: {
-      apply: "적용",
-    },
+      apply: "적용"
+    }
   },
   templates: {
     gallery: {
@@ -4954,13 +5063,14 @@ export const ko = {
       triggers: "트리거",
       no_flows: "흐름 없음",
       readiness_tooltip: "커넥터의 {percent}%가 준비됨",
+      template_details_tabs_aria: "템플릿 세부 정보"
     },
     actions: {
       view_details: "상세 보기",
       adopt: "채택",
       try_it: "사용해 보기",
       adopt_as_persona: "에이전트로 채택",
-      delete: "삭제",
+      delete: "삭제"
     },
     detail: {
       tab_overview: "개요",
@@ -4972,14 +5082,14 @@ export const ko = {
       review_error: "오류",
       used_references: "참조 패턴 사용됨",
       no_design_data: "디자인 데이터 없음",
-      no_design_data_hint: "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다.",
+      no_design_data_hint: "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다."
     },
     detail_overview: {
       use_case_flows: "사용 사례 흐름",
       suggested_adjustment: "제안된 조정",
       adjustment_attempt: "(시도 {attempt}/3)",
       dimension_completion: "차원 완성도",
-      dimensions_score: "({score}/9 차원)",
+      dimensions_score: "({score}/9 차원)"
     },
     adoption: {
       title: "템플릿 채택",
@@ -4988,7 +5098,7 @@ export const ko = {
       step_credentials: "자격 증명 연결",
       step_preferences: "환경설정",
       step_generate: "에이전트 생성",
-      step_review: "검토 및 저장",
+      step_review: "검토 및 저장"
     },
     choose: {
       select_use_cases: "사용 사례 선택",
@@ -4998,7 +5108,7 @@ export const ko = {
       components: "구성 요소",
       examples: "예시",
       tools: "도구",
-      none_selected: "선택된 사용 사례가 없습니다 -- 계속하려면 최소 하나를 선택하세요",
+      none_selected: "선택된 사용 사례가 없습니다 -- 계속하려면 최소 하나를 선택하세요"
     },
     connect: {
       all_set: "커넥터가 필요 없습니다 -- 준비 완료!",
@@ -5011,7 +5121,7 @@ export const ko = {
       select_credential: "자격 증명 선택...",
       create_new: "+ 새 자격 증명 생성",
       design_custom: "+ 사용자 지정 커넥터 설계",
-      add_credential: "자격 증명 추가",
+      add_credential: "자격 증명 추가"
     },
     build: {
       title: "에이전트 빌드",
@@ -5028,7 +5138,7 @@ export const ko = {
       close_hint: "이 대화 상자를 닫아도 됩니다 -- 백그라운드에서 처리가 계속됩니다.",
       adjustments_label: "조정 요청 (선택 사항)",
       adjustments_placeholder: "예: 스케줄을 오전 9시로 변경, ClickUp 통합 제거, Slack 알림 추가",
-      discard_draft: "초안 버리고 다시 시작",
+      discard_draft: "초안 버리고 다시 시작"
     },
     quick_adopt: {
       all_matched: "모든 커넥터 매칭됨",
@@ -5036,7 +5146,7 @@ export const ko = {
       missing_prefix: "누락: ",
       add_in_catalog: "자격 증명 카탈로그에서 추가",
       build_persona: "에이전트 빌드",
-      full_wizard: "전체 마법사",
+      full_wizard: "전체 마법사"
     },
     data: {
       title: "데이터 설정",
@@ -5045,7 +5155,7 @@ export const ko = {
       tables_found: "내장 데이터베이스에서 {tables}을(를) 찾았습니다.",
       create_new: "새 테이블 생성",
       use_existing: "기존 테이블 사용",
-      complete: "데이터 설정 완료",
+      complete: "데이터 설정 완료"
     },
     tune: {
       title: "에이전트 설정",
@@ -5064,7 +5174,7 @@ export const ko = {
       check_interval: "확인 간격",
       check_interval_placeholder: "5분마다",
       manual_hint: "수동 트리거 -- 설정이 필요 없습니다",
-      system_hint: "시스템 이벤트로 트리거 -- 설정이 필요 없습니다",
+      system_hint: "시스템 이벤트로 트리거 -- 설정이 필요 없습니다"
     },
     review_policy: {
       title: "사람 검토",
@@ -5081,7 +5191,7 @@ export const ko = {
       timeout_1h: "1시간",
       timeout_4h: "4시간",
       timeout_24h: "24시간",
-      timeout_none: "시간 제한 없음",
+      timeout_none: "시간 제한 없음"
     },
     memory: {
       title: "메모리",
@@ -5094,7 +5204,7 @@ export const ko = {
       scope_patterns: "실행 패턴",
       scope_errors: "오류 해결",
       scope_custom: "사용자 지정 범위...",
-      scope_custom_placeholder: "기억할 내용을 설명하세요...",
+      scope_custom_placeholder: "기억할 내용을 설명하세요..."
     },
     create: {
       use_cases: "사용 사례",
@@ -5119,12 +5229,12 @@ export const ko = {
       safety_issues: "안전 문제",
       safety_acknowledge_one: "심각한 안전 발견 {count}건을 인정하고 위험을 수용합니다",
       safety_acknowledge_other: "심각한 안전 발견 {count}건을 인정하고 위험을 수용합니다",
-      edit_details: "세부 정보 편집",
+      edit_details: "세부 정보 편집"
     },
     review: {
       use_cases_header: "사용 사례 ({count})",
       tools_header: "도구 ({count})",
-      triggers_header: "트리거 ({count})",
+      triggers_header: "트리거 ({count})"
     },
     matrix: {
       preparing: "빌드 준비 중...",
@@ -5164,6 +5274,19 @@ export const ko = {
       build_complete: "빌드 완료",
       adjust_placeholder: "조정 사항...",
       answer_placeholder: "답변...",
+      answer_cell: "답변: {cell}",
+      working_on: "작업 중: {cells}",
+      draft_ready_label: "초안 준비됨",
+      editing_cell: "편집 중: {cell}",
+      protocol_active: "프로토콜 활성",
+      matrix_unavailable: "매트릭스 데이터를 사용할 수 없습니다.",
+      persona_matrix_title: "페르소나 매트릭스",
+      cell_status_analyzing: "분석 중",
+      cell_status_answered: "답변됨",
+      cell_status_resolved: "해결됨",
+      cell_status_input_needed: "입력 필요",
+      cell_status_missing_credential: "자격 증명 누락",
+      cell_status_error: "오류"
     },
     sandbox: {
       restriction_events: "이벤트 발생 비활성화됨",
@@ -5179,12 +5302,12 @@ export const ko = {
       desc_unverified: "이 템플릿은 알 수 없는 소스에서 제공되었으며 검증되지 않았습니다. 시스템 보호를 위해 제한된 기능으로 실행됩니다.",
       desc_community: "이 커뮤니티 템플릿은 공식적으로 검증되지 않았습니다. 제한된 기능의 샌드박스 모드에서 실행됩니다.",
       badge_unverified: "검증되지 않음",
-      badge_sandbox: "샌드박스 모드",
+      badge_sandbox: "샌드박스 모드"
     },
     page: {
       title: "에이전틱 템플릿",
       subtitle_one: "{count}개 템플릿 이용 가능",
-      subtitle_other: "{count}개 템플릿 이용 가능",
+      subtitle_other: "{count}개 템플릿 이용 가능"
     },
     explore: {
       ready_to_deploy: "배포 준비됨",
@@ -5205,7 +5328,7 @@ export const ko = {
       role_templates: "{role} 템플릿",
       by_role: "역할별",
       by_need: "필요별",
-      classic: "클래식",
+      classic: "클래식"
     },
     opportunities: {
       title: "자동화 기회",
@@ -5213,15 +5336,15 @@ export const ko = {
       ready_now: "지금 준비됨",
       add_connector: "추가",
       unlock_more: "{count}개 더 잠금 해제하려면",
-      explore_templates: "{label} 템플릿 탐색",
+      explore_templates: "{label} 템플릿 탐색"
     },
     recommended: {
       title: "추천 항목",
       subtitle: "커넥터 기반 추천",
-      no_recommendations: "아직 추천 항목 없음.",
+      no_recommendations: "아직 추천 항목 없음."
     },
     trending: {
-      title: "이번 주 가장 많이 채택됨",
+      title: "이번 주 가장 많이 채택됨"
     },
     empty: {
       no_templates: "생성된 템플릿 없음",
@@ -5230,7 +5353,7 @@ export const ko = {
       no_search_results_hint: "검색어 또는 필터를 조정해 찾고 있는 항목을 찾아보세요.",
       clear_search: "검색 초기화",
       waiting_for_draft: "페르소나 초안 대기 중",
-      waiting_for_draft_hint: "AI가 선택 사항을 바탕으로 초안을 생성 중입니다. 보통 몇 초 정도 걸립니다.",
+      waiting_for_draft_hint: "AI가 선택 사항을 바탕으로 초안을 생성 중입니다. 보통 몇 초 정도 걸립니다."
     },
     banners: {
       draft_prefix: "초안: ",
@@ -5243,7 +5366,7 @@ export const ko = {
       status_completed: "완료됨",
       status_failed: "실패",
       click_to_view_result: "클릭해 결과 보기",
-      click_to_view_output: "클릭해 출력 보기",
+      click_to_view_output: "클릭해 출력 보기"
     },
     search: {
       switch_to_keyword: "키워드 검색으로 전환",
@@ -5283,17 +5406,21 @@ export const ko = {
       autocomplete_difficulty: "난이도",
       autocomplete_setup_time: "설정 시간",
       autocomplete_suggestions: "제안",
+      coverage_filter_aria: "커버리지 필터",
+      search_suggestions_aria: "검색 제안",
+      clear_search_aria: "검색 지우기",
+      search_with_ai_aria: "AI로 검색"
     },
     list: {
       template_name: "템플릿 이름",
       components: "컴포넌트",
-      adoptions: "채택",
+      adoptions: "채택"
     },
     row_actions: {
       row_actions_label: "행 작업",
       view_details: "세부 정보 보기",
       rebuild: "재빌드",
-      delete_template: "템플릿 삭제",
+      delete_template: "템플릿 삭제"
     },
     connector_readiness: {
       click_to_add: "클릭해 자격 증명 추가",
@@ -5303,14 +5430,14 @@ export const ko = {
       needs_setup: "설정 필요",
       not_ready: "준비 안 됨",
       needs_credential: "자격 증명 필요",
-      not_installed: "설치되지 않음",
+      not_installed: "설치되지 않음"
     },
     detail_modal: {
       adopted: "{count}회 채택됨",
       reference_patterns: "참조 패턴",
       adopt_as_persona: "페르소나로 채택",
       try_it: "사용해 보기",
-      design_unavailable: "이 템플릿의 디자인 데이터를 사용할 수 없습니다.",
+      design_unavailable: "이 템플릿의 디자인 데이터를 사용할 수 없습니다."
     },
     overview_tab: {
       loading_metrics: "성능 메트릭 불러오는 중...",
@@ -5330,7 +5457,7 @@ export const ko = {
       suggested_adjustment: "제안된 조정",
       adjustment_attempt: "(시도 {attempt}/3)",
       dimension_completion: "차원 완성도",
-      dimensions_score: "({score}/9 차원)",
+      dimensions_score: "({score}/9 차원)"
     },
     review_detail: {
       design_unavailable: "이 템플릿의 디자인 데이터를 사용할 수 없습니다.",
@@ -5340,7 +5467,7 @@ export const ko = {
       adopt_as_new_persona: "새 페르소나로 채택",
       view_raw_json: "원시 JSON 보기",
       hide_raw_json: "원시 JSON 숨기기",
-      used_references: "이 템플릿은 이전 통과 검토의 참조 패턴을 사용했습니다",
+      used_references: "이 템플릿은 이전 통과 검토의 참조 패턴을 사용했습니다"
     },
     rebuild_modal: {
       title: "템플릿 재빌드",
@@ -5357,7 +5484,7 @@ export const ko = {
       unknown_error: "재빌드 중 알 수 없는 오류가 발생했습니다.",
       start_rebuild: "재빌드 시작",
       cancel_rebuild: "재빌드 취소",
-      run_in_background: "백그라운드에서 실행",
+      run_in_background: "백그라운드에서 실행"
     },
     preview_modal: {
       preview_title: "미리보기: {name}",
@@ -5371,7 +5498,7 @@ export const ko = {
       completed: "완료됨",
       execution_failed: "실행 실패",
       run_again: "다시 실행",
-      close_test_continues: "닫아도 됩니다 -- 테스트는 백그라운드에서 계속됩니다",
+      close_test_continues: "닫아도 됩니다 -- 테스트는 백그라운드에서 계속됩니다"
     },
     expanded: {
       adopt: "채택",
@@ -5381,7 +5508,7 @@ export const ko = {
       architecture: "아키텍처",
       events: "이벤트",
       reviews_label: "검토",
-      notifications: "알림",
+      notifications: "알림"
     },
     matrix_cmd: {
       identity: "아이덴티티",
@@ -5400,7 +5527,7 @@ export const ko = {
       build_label: "빌드",
       adjust_placeholder: "조정 사항...",
       test_agent: "에이전트 테스트",
-      save_version: "버전 저장",
+      save_version: "버전 저장"
     },
     questionnaire: {
       header: "{label} -- 질문 {current}/{total}",
@@ -5417,6 +5544,11 @@ export const ko = {
       answer_remaining: "나머지 답변 ({count})",
       next: "다음",
       setup: "설정",
+      previous_question: "이전 질문",
+      next_question: "다음 질문",
+      go_to_question: "질문 {number}로 이동",
+      question_answered_suffix: " (답변됨)",
+      question_unanswered_suffix: " (답변되지 않음)"
     },
     sandbox_banner: {
       community_sandbox: "커뮤니티 템플릿 -- 샌드박스 모드",
@@ -5427,7 +5559,7 @@ export const ko = {
       human_review_required: "사람 검토 필요",
       budget_cap_enforced: "예산 한도 적용됨",
       max_concurrent_one: "최대 {max}회 동시 실행",
-      max_concurrent_other: "최대 {max}회 동시 실행",
+      max_concurrent_other: "최대 {max}회 동시 실행"
     },
     n8n: {
       credential_label: "자격 증명: {name}",
@@ -5514,18 +5646,26 @@ export const ko = {
       drop_file_here: "여기에 워크플로 파일을 놓으세요",
       import_from_any_platform: "모든 플랫폼에서 워크플로 가져오기",
       click_to_browse: "클릭해 탐색하거나 내보낸 워크플로를 드래그 앤 드롭하세요",
+      dropzone_aria: "워크플로 파일을 드롭하거나 클릭하여 찾아보기",
       continue_btn: "계속",
       press_enter_or_click: "Enter 키를 누르거나 클릭해 계속하세요",
       paste_workflow_json: "워크플로 JSON 붙여넣기",
       paste_placeholder: "내보낸 워크플로 JSON을 여기에 붙여넣으세요...",
+      paste_aria: "워크플로 JSON 콘텐츠",
       import_btn: "가져오기",
       import_from_url: "URL에서 가져오기",
       url_description: "원시 워크플로 JSON 파일의 URL을 붙여넣으세요. GitHub 원시 URL, Gist 링크, 직접 JSON 엔드포인트를 지원합니다.",
       fetching: "가져오는 중",
       fetch: "가져오기",
       accepts_label: "허용:",
+      url_aria: "워크플로 URL",
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "원시 JSON 엔드포인트",
       customize_persona: "페르소나를 맞춤화하기 위한 몇 가지 질문",
       answer_then_generate: "아래에 답변 후 생성 클릭",
+      question_view_mode_aria: "질문 보기 모드",
       list_view: "목록",
       focus_view: "집중",
       no_config_needed: "구성 불필요",
@@ -5546,13 +5686,16 @@ export const ko = {
       analyzing_btn: "분석 중...",
       upload_step: "업로드",
       analyze_step: "분석",
+      wizard_progress_aria: "가져오기 마법사 진행률",
+      wizard_steps_aria: "마법사 단계",
       streaming_sections: "섹션 스트리밍",
       awaiting_next_section: "다음 섹션 대기 중...",
+      transform_progress_aria: "변환 진행률",
       analyze_phase: "분석",
       questions_phase: "질문",
       generate_phase: "생성",
       type_your_answer: "답변 입력...",
-      navigate_hint: "화살표 키로 탐색하세요",
+      navigate_hint: "화살표 키로 탐색하세요"
     },
     diagram: {
       no_flow_data: "사용 가능한 흐름 데이터 없음",
@@ -5562,7 +5705,7 @@ export const ko = {
       decisions_count: "{count}개 결정",
       error_label: "오류",
       request_label: "요청",
-      response_label: "응답",
+      response_label: "응답"
     },
     design: {
       connectors_and_tools: "커넥터 & 도구",
@@ -5579,7 +5722,7 @@ export const ko = {
       feasibility_assessment: "실현 가능성 평가",
       confirmed_capabilities: "확인된 기능",
       issues_label: "이슈",
-      suggested_next_steps: "제안된 다음 단계",
+      suggested_next_steps: "제안된 다음 단계"
     },
     card: {
       use_cases_label: "사용 사례",
@@ -5588,7 +5731,7 @@ export const ko = {
       no_flows: "흐름 없음",
       none_label: "없음",
       more_count: "+{count}개 더",
-      system_prompt: "시스템 프롬프트",
+      system_prompt: "시스템 프롬프트"
     },
     matrix_grid: {
       prerequisites: "전제 조건",
@@ -5598,7 +5741,7 @@ export const ko = {
       credential_configured: "자격 증명 구성됨",
       connector_not_installed: "커넥터 설치되지 않음",
       needs_credential: "자격 증명 필요",
-      setup_btn: "설정",
+      setup_btn: "설정"
     },
     adopt_modal: {
       adopt_template: "템플릿 채택",
@@ -5613,6 +5756,49 @@ export const ko = {
       credential_required: "볼트에 {category} 자격 증명을 찾을 수 없습니다. 계속하려면 추가하세요.",
       add_credential: "자격 증명 추가",
       blocked_blocking_submit: "계속하기 전에 {count}개 질문에 자격 증명이 필요합니다",
+      credentials_required_title: "자격 증명 필요",
+      credentials_required_body: "이 템플릿은 채택을 계속하기 전에 아래 각 카테고리에서 최소한 하나의 자격 증명이 필요합니다. \"자격 증명 추가\"를 클릭하세요 — 설정이 완료되면 자동으로 여기로 돌아옵니다.",
+      answered_of_total: "{answered} / {total} 답변됨",
+      blocked_count: "{count}개 차단됨",
+      question_number_of: "질문 {current} / {total}",
+      question_number_aria: "질문 {number}",
+      navigate_hint: "탐색하려면",
+      enter_to_advance: "진행하려면",
+      previous: "이전",
+      next: "다음",
+      live_preview: "라이브 미리보기",
+      persona_label: "페르소나",
+      untitled_agent: "제목 없는 에이전트",
+      not_yet_set: "아직 설정되지 않음",
+      auto_badge: "자동",
+      jump_to_question_hint: "위의 행을 클릭하여 해당 질문으로 이동합니다. 자동 감지된 값은 연결된 자격 증명에서 추론됩니다.",
+      hide_explanation: "설명 숨기기",
+      show_explanation: "설명 표시",
+      all_option: "전체",
+      add_custom: "추가",
+      custom_prefix: "+ 사용자 지정…",
+      custom_plain: "사용자 지정…",
+      type_your_answer: "답변을 입력하세요...",
+      describe_in_detail: "자세히 설명하세요...",
+      select_directory: "디렉토리를 선택하세요...",
+      type_a_value: "값을 입력하세요…",
+      preparing: "준비 중…",
+      waiting_for_parent: "이전 답변 대기 중…",
+      loading_from_service: "{service}에서 옵션 로딩 중…",
+      loaded_live_from: "{service}에서 실시간 로드됨",
+      no_items_found: "{item}을(를) 찾을 수 없습니다. 먼저 {service}에서 생성하세요.",
+      retry: "재시도",
+      source_local: "로컬 파일 또는 폴더",
+      source_codebase: "코드베이스",
+      source_database: "데이터베이스",
+      source_local_hint: "파일이나 폴더의 전체 로컬 경로를 붙여넣으세요.",
+      source_codebase_hint: "Dev Tools에 등록된 프로젝트를 선택하세요.",
+      source_database_hint: "볼트에서 데이터베이스 자격 증명을 선택하세요.",
+      source_local_placeholder: "/Users/me/project/design.md",
+      source_no_codebases: "Dev Tools 프로젝트를 찾을 수 없습니다. 먼저 Dev Tools에 등록하세요.",
+      source_no_databases: "데이터베이스 자격 증명을 찾을 수 없습니다. 먼저 볼트에 추가하세요.",
+      source_pick_codebase: "코드베이스 선택…",
+      source_pick_database: "데이터베이스 선택…"
     },
     scan: {
       scanning_draft: "페르소나 초안 검사 중...",
@@ -5626,7 +5812,7 @@ export const ko = {
       critical_label: "심각",
       warnings_label: "경고",
       informational_label: "정보",
-      source_label: "소스:",
+      source_label: "소스:"
     },
     team_synthesis: {
       title: "팀 합성",
@@ -5638,7 +5824,7 @@ export const ko = {
       synthesizing: "합성 중...",
       synthesize_team: "팀 합성",
       personas_created: "{count}개 페르소나 생성 및 연결됨",
-      done: "완료",
+      done: "완료"
     },
     matrix_variants: {
       processing: "처리 중...",
@@ -5652,6 +5838,17 @@ export const ko = {
       testing_agent: "에이전트 테스트 중...",
       approve_and_promote: "승인 및 승격",
       view_agent_btn: "에이전트 보기",
+      command_center_header: "COMMAND CENTER // BUILD v1.0",
+      phase_label: "[단계: {phase}]",
+      your_answer_placeholder: "답변...",
+      testing_background_hint: "이 작업은 몇 분이 걸릴 수 있습니다. 이 페이지를 떠났다가 나중에 돌아와도 됩니다 — 테스트는 백그라운드에서 계속됩니다.",
+      cancel_test: "테스트 취소",
+      missing_keys: "누락된 키:",
+      approve_anyway: "그래도 승인",
+      delete_draft_title: "이 초안 페르소나를 버리고 닫기",
+      delete_draft: "초안 삭제",
+      agent_promoted: "에이전트 승격됨",
+      view_agent: "에이전트 보기"
     },
     diagrams: {
       no_flow_data: "사용 가능한 흐름 데이터 없음",
@@ -5659,6 +5856,7 @@ export const ko = {
       edges_count: "{count}개 엣지",
       connectors_count: "{count}개 커넥터",
       decisions_count: "{count}개 결정",
+      close_dialog: "대화상자 닫기"
     },
     generation: {
       create_template: "템플릿 생성",
@@ -5681,6 +5879,51 @@ export const ko = {
       start_review_custom: "검토 시작 ({count}개 케이스{plural})",
       copy_log: "로그 복사",
       copied_log: "복사됨!",
+      back: "뒤로",
+      generate_template: "템플릿 생성",
+      view_draft: "초안 보기",
+      saving: "저장 중...",
+      save_template: "템플릿 저장",
+      template_saved: "템플릿 저장됨",
+      template_name_label_step: "템플릿 이름",
+      template_name_placeholder: "템플릿 이름...",
+      description_label: "설명",
+      description_placeholder: "이 페르소나가 무엇을 해야 하는지, 어떤 서비스에 연결하는지, 어떻게 작동해야 하는지 설명하세요. 필요한 도구, 트리거, 통합에 대해 구체적으로 작성하세요.\n\n예: Gmail 받은편지함에서 중요한 이메일을 모니터링하고, 우선순위별로 분류하며, 긴급한 항목에 대해 Slack 알림을 보내고, 일일 다이제스트 요약을 생성하는 페르소나.",
+      description_hint: "AI는 시스템 프롬프트, 도구, 트리거, 커넥터, 템플릿 변수를 포함한 전체 페르소나 템플릿을 생성합니다.",
+      terminal_aria_label: "디자인 리뷰 출력",
+      terminal_placeholder: "리뷰가 시작되면 여기에 출력이 표시됩니다",
+      terminal_running: "실행 중...",
+      result_passed: "{count}개 통과",
+      result_failed: "{count}개 실패",
+      result_errored: "{count}개 오류",
+      result_total: "총 {count}개 테스트",
+      mode_predefined: "사전 정의됨 (5)",
+      mode_custom: "사용자 지정",
+      mode_batch: "배치",
+      mode_batch_count: "배치 ({count})",
+      batch_upload_hint: "Claude CLI를 통해 템플릿을 일괄 생성하려면 번호가 매겨진 템플릿 항목이 포함된 list.md 파일을 업로드하세요.",
+      batch_upload_btn: "list.md 업로드",
+      batch_format_hint: "예상 형식:",
+      batch_all: "전체 ({count})",
+      batch_count: "Claude CLI를 통해 {count}개 템플릿{plural}이 생성됩니다 (~각 45초)",
+      batch_clear: "지우기",
+      batch_format_example: "**1. 템플릿 이름**",
+      custom_count: "템플릿 사용 사례 정의 ({count}개 준비됨)",
+      custom_load_file_title: ".txt 또는 .md 파일에서 로드",
+      custom_load_file: "파일 로드",
+      custom_add: "추가",
+      custom_case_name_placeholder: "템플릿 이름 (예: Gmail 스마트 필터)",
+      custom_instruction_placeholder: "이 페르소나가 무엇을 해야 하는지, 어떤 서비스와 통합해야 하는지, 어떤 트리거가 활성화되어야 하는지 설명하세요...",
+      custom_short_instruction: "최소 {current}/{min}자",
+      custom_category_default: "카테고리...",
+      custom_trigger_default: "트리거...",
+      custom_connectors_placeholder: "커넥터 (예: gmail, slack)",
+      custom_detail_hint: "더 자세할수록 더 나은 결과. 서비스, 트리거, 예상 동작을 포함하세요.",
+      custom_show_example: "예시 보기",
+      custom_hide_example: "예시 숨기기",
+      custom_example_title: "예: Gmail 스마트 필터",
+      custom_example_body: "\"중요한 이메일에 대해 Gmail을 모니터링하고, 발신자와 긴급도별로 분류하며, 라벨을 적용하고, 긴급한 이메일을 Slack으로 전달하는 에이전트를 만드세요. gmail 및 slack 커넥터와 폴링 트리거를 사용하세요.\"",
+      predefined_intro: "디자인 엔진을 통해 {count}개의 사전 정의된 사용 사례 실행:"
     },
     connector_edit: {
       credential: "자격 증명",
@@ -5696,22 +5939,24 @@ export const ko = {
       existing_table_label: "기존 테이블",
       schema: "스키마",
       table_name: "테이블 이름",
+      table_name_placeholder: "예: persona_data",
       in_app_messages: "앱 내 메시지",
       not_connected: "연결되지 않음",
       no_connectors: "커넥터 불필요",
       linked: "연결됨",
       set_up: "설정",
-      more_connectors: "+{count}개 더",
+      more_connectors: "+{count}개 더"
     },
     trigger_edit: {
       schedule: "스케줄",
       schedule_placeholder: "평일 오전 9시마다",
       schedule_hint: "자연어 또는 cron (예: \"0 9 * * 1-5\")",
       webhook_url: "웹훅 URL",
+      webhook_url_placeholder: "https://...",
       check_interval: "확인 간격",
       check_interval_placeholder: "5분마다",
       no_config_needed: "구성 불필요",
-      manual_only: "수동 실행만",
+      manual_only: "수동 실행만"
     },
     preset_edit: {
       select_review: "검토 정책 선택...",
@@ -5723,7 +5968,7 @@ export const ko = {
       retry_once: "1회 재시도",
       retry_3x: "3회 재시도",
       notify_continue: "알림 후 계속",
-      skip_failed: "실패한 단계 건너뛰기",
+      skip_failed: "실패한 단계 건너뛰기"
     },
     test_report: {
       title: "테스트 보고서",
@@ -5749,8 +5994,8 @@ export const ko = {
       response_preview: "응답 미리보기",
       error_detail: "오류 세부 정보",
       copy: "복사",
-      copied: "복사됨",
-    },
+      copied: "복사됨"
+    }
   },
   triggers: {
     title: "트리거 및 체인",
@@ -5792,7 +6037,7 @@ export const ko = {
       show_sidebar: "사이드바 표시",
       source: "소스",
       source_personas: "소스 페르소나",
-      use_template: "템플릿 사용",
+      use_template: "템플릿 사용"
     },
     studio: {
       building_blocks: "구성 요소",
@@ -5808,7 +6053,7 @@ export const ko = {
       remove_from_chain: "체인에서 제거",
       studio_title: "트리거 스튜디오",
       trigger_sources: "트리거 소스",
-      unsaved_changes: "저장되지 않은 변경 사항",
+      unsaved_changes: "저장되지 않은 변경 사항"
     },
     subscription_list: {
       active: "활성",
@@ -5822,10 +6067,10 @@ export const ko = {
       error: "오류",
       never: "없음",
       no_active_subs: "활성 구독 없음",
-      unsubscribe: "구독 취소",
+      unsubscribe: "구독 취소"
     },
     type_selector: {
-      trigger_type: "트리거 유형",
+      trigger_type: "트리거 유형"
     },
     tab_triggers: "트리거",
     tab_chains: "체인",
@@ -5901,11 +6146,11 @@ export const ko = {
       cron_daily_midnight: "매일 자정",
       cron_weekly_monday: "매주 월요일",
       next_runs: "다음 실행",
-      invalid_cron: "잘못된 스케줄 표현식",
+      invalid_cron: "잘못된 스케줄 표현식"
     },
     add: {
       create_trigger: "트리거 생성",
-      creating: "생성 중...",
+      creating: "생성 중..."
     },
     detail: {
       test_fire: "테스트 발사",
@@ -5928,7 +6173,7 @@ export const ko = {
       last_fired: "마지막 발사",
       never_fired: "발사된 적 없음",
       fire_count_one: "{count}회 발사됨",
-      fire_count_other: "{count}회 발사됨",
+      fire_count_other: "{count}회 발사됨"
     },
     list: {
       empty_title: "아직 트리거 구성 없음",
@@ -5938,28 +6183,28 @@ export const ko = {
       budget_unavailable: "예산 데이터 사용 불가",
       unknown_budget: "알 수 없는 예산",
       budget_exceeded: "월간 예산 초과 -- 트리거 일시정지됨",
-      budget: "예산",
+      budget: "예산"
     },
     config: {
       no_persona: "선택된 페르소나 없음",
       title: "트리거",
       add_trigger: "트리거 추가",
-      empty: "구성된 트리거 없음. 이 페르소나를 자동화하려면 추가하세요.",
+      empty: "구성된 트리거 없음. 이 페르소나를 자동화하려면 추가하세요."
     },
     countdown: {
       due_now: "지금 실행",
-      fires_in: "{time} 후 발사",
+      fires_in: "{time} 후 발사"
     },
     polling: {
       endpoint_label: "확인할 URL",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "매 {interval} 확인",
-      content_hash: "변경 사항만 감지",
+      content_hash: "변경 사항만 감지"
     },
     webhook: {
       url_label: "웹훅 URL",
       secret_label: "보안 키 (선택 사항)",
-      secret_placeholder: "수신 데이터를 확인하는 비밀 키",
+      secret_placeholder: "수신 데이터를 확인하는 비밀 키"
     },
     file_watcher: {
       paths_label: "감시 경로",
@@ -5971,7 +6216,7 @@ export const ko = {
       event_delete: "삭제",
       recursive: "재귀적",
       glob_filter: "파일 패턴",
-      glob_placeholder: "*.json",
+      glob_placeholder: "*.json"
     },
     clipboard: {
       content_type: "콘텐츠 유형",
@@ -5979,7 +6224,7 @@ export const ko = {
       type_image: "이미지",
       pattern_label: "일치 패턴",
       pattern_placeholder: "예: https?://.*",
-      interval_label: "확인 간격 (초)",
+      interval_label: "확인 간격 (초)"
     },
     app_focus: {
       app_names_label: "애플리케이션 이름",
@@ -5987,20 +6232,20 @@ export const ko = {
       add_app: "앱 추가",
       title_pattern: "창 제목 패턴",
       title_placeholder: "예: .*GitHub.*",
-      interval_label: "확인 간격 (초)",
+      interval_label: "확인 간격 (초)"
     },
     event_listener: {
       event_type_label: "이벤트 유형",
       event_type_placeholder: "예: persona.execution.completed",
       source_filter_label: "소스 필터",
-      source_filter_placeholder: "예: persona:abc123",
+      source_filter_placeholder: "예: persona:abc123"
     },
     composite: {
       conditions_label: "조건",
       add_condition: "조건 추가",
       operator_all: "모든 조건 일치",
       operator_any: "조건 중 하나 일치",
-      window_label: "시간 윈도우 (초)",
+      window_label: "시간 윈도우 (초)"
     },
     rate_limit: {
       title: "속도 제한",
@@ -6009,14 +6254,14 @@ export const ko = {
       window_seconds: "{seconds}초",
       window_minutes: "{minutes}분",
       window_hours: "{hours}시간",
-      currently_limited: "현재 일시정지됨 (한도 도달)",
+      currently_limited: "현재 일시정지됨 (한도 도달)"
     },
     dry_run: {
       title: "테스트 실행 결과",
       would_fire: "실행될 것임",
       would_not_fire: "실행되지 않을 것임",
       matched_conditions: "조건 충족됨",
-      payload_preview: "데이터 미리보기",
+      payload_preview: "데이터 미리보기"
     },
     tab_live_stream: "라이브 스트림",
     tab_live_stream_subtitle: "실시간 이벤트 허브 -- 에이전트가 이 공유 버스를 통해 이벤트를 발행하고 구독합니다",
@@ -6180,6 +6425,186 @@ export const ko = {
     loading_catalog: "카탈로그 불러오는 중...",
     no_feeds: "아직 공유 이벤트 피드 없음",
     no_feeds_hint: "새로 고침을 클릭해 클라우드에서 최신 피드를 가져오세요",
+    cron_colon: "Cron:",
+    interval_colon: "간격:",
+    event_colon: "이벤트:",
+    endpoint_colon: "엔드포인트:",
+    listens_for_colon: "수신 대상:",
+    source_filter_colon: "소스 필터:",
+    hmac_colon: "HMAC:",
+    paths_colon: "경로:",
+    events_colon: "이벤트:",
+    recursive_yes: "재귀: 예",
+    filter_colon: "필터:",
+    watches_colon: "감시:",
+    pattern_colon: "패턴:",
+    poll_every: "폴링: 매",
+    apps_colon: "앱:",
+    title_colon: "제목:",
+    operator_colon: "연산자:",
+    window_colon: "창:",
+    id_colon: "ID:",
+    type_colon: "유형:",
+    status_colon: "상태:",
+    target_colon: "대상:",
+    retry_hash: "재시도 #",
+    model_colon: "모델:",
+    next_run_colon: "다음 실행:",
+    local_label: "(로컬)",
+    then_every: ", 그 다음 매",
+    source_colon: "소스:",
+    dry_run_target_colon: "대상:",
+    matched_subscriptions_count: "일치하는 구독 ({count})",
+    last_label: "마지막:",
+    loading_history: "로딩 중...",
+    zero_unlimited: "0 = 무제한",
+    category_section_label: "트리거 카테고리",
+    no_persona_selected: "선택된 페르소나 없음",
+    quick_templates_label: "빠른 템플릿",
+    quick_presets_label: "빠른 프리셋",
+    cron_expression_label: "Cron 표현식",
+    this_persona_will: "이 페르소나는",
+    starting_from: ", 활성화 시점부터 시작합니다.",
+    per_day: "하루에.",
+    last_poll_label: "마지막 폴링:",
+    deployed_persona_label: "배포된 페르소나",
+    fired_at_label: "발동 시각",
+    webhook_last_label: "마지막:",
+    relay_last_label: "마지막:",
+    optional_label: "(선택 사항)",
+    optional_comma_separated: "(선택 사항, 쉼표로 구분)",
+    get_channel_url_from: "다음에서 채널 URL 받기",
+    setup_step1: "smee.io/new에 방문하여 무료 릴레이 채널을 만드세요",
+    setup_step2: "레이블과 채널 URL로 여기에 릴레이를 추가하세요",
+    setup_step3: "채널 URL을 GitHub / Stripe / 모든 서비스에 webhook으로 붙여넣으세요",
+    setup_step4: "이벤트가 라이브 스트림에 표시되고 에이전트로 자동 라우팅됩니다",
+    studio_empty_desc: "페르소나 전반에 걸쳐 반응형 이벤트 흐름을 구성합니다. 트리거 유형을 빌딩 블록으로 사용하고, 조건부 분기 및 병렬 팬아웃을 추가하여 지능형 자동화 체인을 만드세요.",
+    studio_step1: "1. 사이드바에서 트리거 소스 추가 (스케줄, Webhook, ...)",
+    studio_step2: "2. 이벤트를 처리할 페르소나 단계 추가",
+    studio_step3: "3. 연결하여 반응형 체인 구축",
+    studio_step4: "4. 라우팅 로직을 위해 조건 게이트 사용",
+    gate_if_else: "If / Else",
+    gate_if_else_desc: "이진 조건부 분기",
+    gate_classifier_desc: "다방향 라우팅 (지원, 영업, ...)",
+    gate_fan_out: "팬아웃 (병렬)",
+    gate_fan_out_desc: "여러 분기를 병렬로 실행",
+    palette_help: "트리거 소스를 페르소나 단계에 연결하여 반응형 체인을 구축하세요. 분기 로직 및 병렬 팬아웃을 위해 조건 게이트를 추가하세요.",
+    toolbar_title_auto_layout: "자동 레이아웃",
+    toolbar_title_add_note: "스티키 노트 추가",
+    toolbar_title_start_dry_run: "드라이런 시작",
+    toolbar_title_stop_dry_run: "드라이런 중지",
+    toolbar_title_assistant: "캔버스 어시스턴트",
+    toolbar_dry_run: "드라이런",
+    canvas_assistant_title: "캔버스 어시스턴트",
+    try_asking_hint: "이렇게 물어보세요",
+    assistant_placeholder: "이벤트 토폴로지를 설명하세요...",
+    disconnect_persona_title: "페르소나 연결 해제?",
+    disconnect_will_no_longer: "더 이상 반응하지 않습니다",
+    disconnect_events_reconnect: "이벤트. 나중에 다시 연결할 수 있습니다.",
+    rename_also_updates: "과거 이벤트, 페르소나 이벤트 핸들러, 트리거 감사 메타데이터도 업데이트됩니다.",
+    delete_connection_label: "연결 삭제",
+    search_personas_placeholder: "페르소나 검색...",
+    no_matching_personas_found: "일치하는 페르소나를 찾을 수 없습니다",
+    clear_search_label: "검색 지우기",
+    dead_letter_source: "소스:",
+    dead_letter_id: "ID:",
+    event_data_label: "이벤트 데이터",
+    shared_prefix: "공유:",
+    nl_type_colon: "유형:",
+    nl_cron_colon: "\\u00b7 Cron:",
+    nl_interval_colon: "\\u00b7 간격:",
+    nl_filter_colon: "\\u00b7 필터:",
+    nl_could_not_parse: "해당 설명에서 트리거를 파싱할 수 없습니다. 다음과 같이 시도해 보세요",
+    active_hours_every_day: "매일",
+    event_type_to_listen: "수신할 이벤트 유형",
+    event_type_input_placeholder: "예: file_changed, execution_completed",
+    event_type_helper: "등록된 이벤트 유형을 검색하거나 사용자 지정 유형을 입력하세요.",
+    source_filter_optional_label: "(선택 사항)",
+    wildcard_hint: "\\u2014 후행 * 접두사 와일드카드 지원",
+    window_title_pattern_label: "창 제목 패턴",
+    optional_regex_label: "(선택적 정규식)",
+    text_pattern_label: "텍스트 패턴",
+    credential_event_label: "자격 증명 이벤트",
+    refresh_label: "새로 고침",
+    copy_webhook_url_title: "webhook URL 복사",
+    copy_webhook_secret_title: "webhook 시크릿 복사",
+    delete_webhook_title: "webhook 트리거 삭제",
+    status_col_label: "상태",
+    duration_col_label: "소요 시간",
+    cost_col_label: "비용",
+    dead_letter_refresh: "새로 고침",
+    dead_letter_loading: "로딩 중...",
+    dead_letter_retry: "재시도",
+    dead_letter_discard: "버리기",
+    dead_letter_payload: "페이로드",
+    event_data_section_label: "이벤트 데이터",
+    copy_event_data_title: "이벤트 데이터 복사",
+    copied_label: "복사됨",
+    error_section_label: "오류",
+    meta_event_id: "이벤트 ID",
+    meta_project: "프로젝트",
+    meta_processed: "처리됨",
+    clear_stream: "지우기",
+    clear_stream_title: "스트림 버퍼 지우기",
+    col_type: "유형",
+    col_source: "소스",
+    col_target_agent: "대상 에이전트",
+    col_status: "상태",
+    col_time: "시간",
+    queued_bare: "대기열에 추가됨",
+    pause_tooltip: "수신 이벤트 일시 중지",
+    resume_tooltip: "실시간 업데이트 재개",
+    relay_label_field: "레이블",
+    relay_channel_url_field: "채널 URL",
+    relay_route_to_agent: "에이전트로 라우팅",
+    optional_suffix: "(선택 사항)",
+    relay_event_filter_field: "이벤트 필터",
+    relay_event_filter_note: "(선택 사항, 쉼표로 구분)",
+    relay_confirm_delete: "확인",
+    setup_guide_step2: "레이블과 채널 URL로 여기에 릴레이를 추가하세요",
+    setup_guide_step3: "채널 URL을 GitHub / Stripe / 모든 서비스에 webhook으로 붙여넣으세요",
+    setup_guide_step4: "이벤트가 라이브 스트림에 표시되고 에이전트로 자동 라우팅됩니다",
+    get_channel_url_prompt: "다음에서 채널 URL 받기",
+    gate_if_else_label: "If / Else",
+    gate_if_else_description: "이진 조건부 분기",
+    gate_classifier_label: "분류기",
+    gate_classifier_description: "다방향 라우팅 (지원, 영업, ...)",
+    gate_fan_out_label: "팬아웃 (병렬)",
+    gate_fan_out_description: "여러 분기를 병렬로 실행",
+    palette_help_text: "트리거 소스를 페르소나 단계에 연결하여 반응형 체인을 구축하세요. 분기 로직 및 병렬 팬아웃을 위해 조건 게이트를 추가하세요.",
+    test_event_type_placeholder: "예: build_complete, deploy, file_changed",
+    result_id_prefix: "ID:",
+    result_type_prefix: "유형:",
+    result_status_prefix: "상태:",
+    result_target_prefix: "대상:",
+    tab_loading: "로딩 중...",
+    smee_open_new_title: "smee.io/new을 열어 채널 생성",
+    relay_label_placeholder: "예: GitHub — my-repo",
+    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
+    relay_filter_placeholder: "github_push, github_pull_request",
+    dead_letter_retry_exhausted_title: "재시도 한도 초과 — 버리거나 근본 원인을 조사하세요",
+    dead_letter_discard_title: "이 이벤트를 영구적으로 버리기",
+    dead_letter_retry_title: "이 이벤트 재시도",
+    replay_button_title: "동일한 입력 페이로드로 재발동",
+    interval_seconds_placeholder: "초 (최소 60)",
+    cron_expression_placeholder: "* * * * *  (분 시 일 월 요일)",
+    app_focus_window_placeholder: "예: .*.rs$ 또는 Project - Visual Studio",
+    app_focus_process_placeholder: "예: Code.exe 또는 firefox",
+    field_optional: "(선택 사항)",
+    source_filter_input_placeholder: "예: watcher-* 또는 exact-source-id",
+    meta_source: "소스",
+    relay_last_event: "마지막:",
+    relay_delete_title: "릴레이 삭제",
+    setup_guide_step1: "smee.io/new에서 채널 생성",
+    clipboard_pattern_placeholder: "예: https?://.* 또는 error|exception",
+    composite_event_type_placeholder: "이벤트 유형 (예: file_changed)",
+    composite_debounce_placeholder: "300",
+    file_watcher_path_placeholder: "C:/Users/me/projects 또는 /home/me/src",
+    file_watcher_pattern_placeholder: "예: *.py, *.{ts,tsx}, Dockerfile",
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    more_tools_title: "추가 도구",
+    validate_and_fire_title: "트리거 구성 검증 후 발동",
+    simulate_trigger_title: "실행하지 않고 트리거 시뮬레이션"
   },
   teams: {
     title: "에이전트 팀",
@@ -6187,7 +6612,7 @@ export const ko = {
     auto_team: "자동 팀 구성",
     new_team: "새 팀",
     starter_templates: "스타터 템플릿",
-    use_template: "템플릿 사용",
+    use_template: "템플릿 사용"
   },
   settings: {
     title: "설정",
@@ -6209,6 +6634,7 @@ export const ko = {
       telemetry_on: "Crash reports and usage analytics are active.",
       telemetry_off: "Telemetry is disabled. No data is sent to Sentry.",
       telemetry_restart: "Restart the app for this change to take effect",
+      telemetry_toggle_aria: "원격 측정 전환"
     },
     appearance_extra: {
       simple: "Simple",
@@ -6216,7 +6642,7 @@ export const ko = {
       full: "Full",
       full_hint: "Show the complete interface",
       dev: "Dev",
-      dev_hint: "Unlock developer tooling",
+      dev_hint: "Unlock developer tooling"
     },
     appearance: {
       title: "Appearance",
@@ -6247,6 +6673,7 @@ export const ko = {
       applied: "Applied",
       reset: "Reset",
       enter_theme_name: "Enter a theme name",
+      reset_to_auto: "자동으로 재설정",
       preview_dashboard: "Dashboard",
       preview_action: "Action",
       preview_card_title: "Card Title",
@@ -6261,7 +6688,7 @@ export const ko = {
       coverage_hint: "Translation coverage -- click to export",
       contribute_title: "Contribute translations",
       contribute_hint: "Help translate Personas into your language. Export a language file above, translate the values, and submit via GitHub.",
-      contribute_github: "Contribute on GitHub",
+      contribute_github: "Contribute on GitHub"
     },
     notifications: {
       title: "Notifications",
@@ -6279,7 +6706,7 @@ export const ko = {
       digest_description: "모든 에이전트의 상태 문제를 요약하고 총 상태 점수를 포함하는 주간 알림",
       healing_alerts_hint: "어떤 복구 알림이 알림을 트리거할지 제어합니다",
       healing_severity: "복구 알림 심각도",
-      notification_hint: "데스크톱 알림은 OS 기본 알림 시스템을 사용합니다. 앱 내 토스트는 이 설정에 관계없이 심각 및 높은 심각도 문제에 대해 표시됩니다.",
+      notification_hint: "데스크톱 알림은 OS 기본 알림 시스템을 사용합니다. 앱 내 토스트는 이 설정에 관계없이 심각 및 높은 심각도 문제에 대해 표시됩니다."
     },
     engine: {
       title: "Engine",
@@ -6297,6 +6724,7 @@ export const ko = {
       legend_not_installed: "설치되지 않음",
       defaults_heading: "통합 테스트 기반 기본값",
       defaults_description: "기본 맵은 백엔드가 파싱하는 정확한 JSON 스키마에 대해 각 제공자를 검증하는 9차 비즈니스 레벨 통합 테스트에서 도출되었습니다. 실패한 작업에 대해 제공자를 활성화하면 파싱할 수 없는 응답이 발생할 수 있습니다. Claude Code만이 모든 작업에서 100%를 통과한 유일한 제공자입니다.",
+      engine_not_capable: "{provider}는 이 작업에 대한 통합 테스트를 통과하지 못했습니다. 결과가 파싱되지 않을 수 있습니다."
     },
     ambient: {
       title: "Ambient Context Fusion",
@@ -6332,7 +6760,7 @@ export const ko = {
       cancel: "Cancel",
       create_rule: "Create Rule",
       no_rules: "No context rules defined",
-      all_sources: "all sources",
+      all_sources: "all sources"
     },
     byom: {
       title: "Bring Your Own Model",
@@ -6384,6 +6812,7 @@ export const ko = {
       complexity: "Complexity",
       provider: "Provider",
       model_optional: "Model (optional)",
+      model_placeholder: "예: claude-haiku-4-5-20251001",
       compliance_title: "Compliance-Driven Restrictions",
       compliance_hint: "Restrict providers for specific workflow types (e.g., HIPAA, SOC2)",
       compliance_empty: "No compliance rules configured. Add rules to restrict providers for sensitive workflows.",
@@ -6400,7 +6829,7 @@ export const ko = {
       audit_status: "Status",
       audit_cost: "Cost",
       audit_time: "Time",
-      failover: "failover",
+      failover: "failover"
     },
     admin: {
       title: "Admin",
@@ -6426,7 +6855,7 @@ export const ko = {
       consent_not_accepted: "Not accepted",
       storage_key: "Storage Key",
       reset_consent: "Reset Consent",
-      reload_modal: "Reload to Show Modal",
+      reload_modal: "Reload to Show Modal"
     },
     portability: {
       title: "Data Portability",
@@ -6454,12 +6883,17 @@ export const ko = {
       passphrase_optional: "Passphrase (optional)",
       import_complete: "Import Complete",
       warnings: "Warnings:",
+      import_personas: "페르소나 {count}개",
+      import_teams: "팀 {count}개",
+      import_tools: "도구 {count}개",
+      import_groups: "그룹 {count}개",
+      import_credentials_count: "자격 증명 {count}개",
       export_title: "Export Workspace",
       export_subtitle: "Choose what to include in your export",
       close: "Close",
       loading_data: "Loading workspace data...",
-      select_all: "Select All",
       deselect_all: "Deselect All",
+      select_all: "Select All",
       items_selected: "{selected} of {total} items selected",
       of_selected: "{count} of {total} selected",
       encrypt_passphrase: "Encrypt credentials with passphrase",
@@ -6489,7 +6923,7 @@ export const ko = {
       cred_import_complete: "Credential Import Complete",
       cred_imported: "{count} imported",
       cred_skipped: ", {count} skipped",
-      cred_replaced: ", {count} replaced",
+      cred_replaced: ", {count} replaced"
     },
     config: {
       title: "Config Resolution",
@@ -6502,7 +6936,7 @@ export const ko = {
       overrides_inherited: "Overrides inherited",
       agent: "Agent",
       loading_agents: "Loading agents...",
-      no_agents: "No agents found",
+      no_agents: "No agents found"
     },
     quality_gates: {
       title: "Quality Gates",
@@ -6520,11 +6954,12 @@ export const ko = {
       rules_count_plural: "{count} rules",
       reset_defaults: "Reset to defaults",
       confirm_reset: "Confirm reset?",
-      rules_hint: "Rules are loaded from the database on each dispatch. Changes take effect immediately.",
-    },
+      rules_hint: "Rules are loaded from the database on each dispatch. Changes take effect immediately."
+    }
   },
   design: {
     no_persona: "선택된 에이전트가 없습니다",
+    conversation_truncated: "이 대화가 메시지 제한에 도달했습니다. 이전 메시지는 제거되었습니다 — 컨텍스트를 보존하려면 새 대화를 시작하는 것을 고려하세요.",
     stages: {
       assembling_label: "프롬프트 조립",
       assembling_desc: "에이전트 설정 및 지침에서 LLM 프롬프트를 구성하고 있습니다",
@@ -6535,8 +6970,8 @@ export const ko = {
       checking_label: "실현 가능성 확인 중",
       checking_desc: "제안된 도구와 커넥터의 사용 가능 여부를 검증하고 있습니다",
       saving_label: "결과 저장 중",
-      saving_desc: "컴파일된 디자인을 데이터베이스에 저장하고 있습니다",
-    },
+      saving_desc: "컴파일된 디자인을 데이터베이스에 저장하고 있습니다"
+    }
   },
   prompt_lab: {
     title: "프롬프트 버전",
@@ -6572,7 +7007,7 @@ export const ko = {
       running: "A/B 테스트 실행 중...",
       run: "A/B 테스트 실행",
       failed: "A/B 테스트 실패",
-      completed: "A/B 테스트가 성공적으로 완료되었습니다",
+      completed: "A/B 테스트가 성공적으로 완료되었습니다"
     },
     rollback: {
       title: "오류율 모니터",
@@ -6580,7 +7015,7 @@ export const ko = {
       rollback_hint: "프롬프트 변경 후 오류율이 50%를 초과하면, 위의 버전 목록을 사용하여 프로덕션 버전으로 롤백하세요.",
       waiting: "실행 데이터 대기 중",
       waiting_hint: "에이전트를 몇 번 실행하여 오류율 추적을 시작하세요. 모니터에는 상태를 계산하기 위해 최소 한 번의 실행이 필요합니다.",
-      check_again: "다시 확인",
+      check_again: "다시 확인"
     },
     performance: {
       cost_per_execution: "실행당 비용",
@@ -6589,8 +7024,8 @@ export const ko = {
       latency_distribution: "지연 시간 분포",
       latency_delta: "지연 시간 차이",
       error_rate_trend: "오류율 추세",
-      error_delta: "오류 차이",
-    },
+      error_delta: "오류 차이"
+    }
   },
   tests: {
     title: "샌드박스 테스트 러너",
@@ -6615,15 +7050,15 @@ export const ko = {
       rerun_tooltip: "이 스위트 다시 실행",
       rename_tooltip: "이름 변경",
       delete_tooltip: "스위트 삭제",
-      no_scenarios: "이 스위트에 시나리오가 없습니다",
+      no_scenarios: "이 스위트에 시나리오가 없습니다"
     },
     progress: {
       generating: "테스트 시나리오 생성 중...",
       testing: "{model} 테스트 중 -- {scenario}",
       tool_prefix: "도구: ",
       output_prefix: "출력: ",
-      protocol_prefix: "프로토콜: ",
-    },
+      protocol_prefix: "프로토콜: "
+    }
   },
   onboarding: {
     title: "시작하기",
@@ -6747,7 +7182,7 @@ export const ko = {
     agent_promoted_hint: "Your first agent is live. The tour is almost complete!",
     skip_build: "Skip build for now",
     dark_themes: "Dark Themes",
-    light_themes: "Light Themes",
+    light_themes: "Light Themes"
   },
   system_health: {
     title: "시스템 점검",
@@ -6784,7 +7219,7 @@ export const ko = {
     official_page: "공식 페이지",
     edit_key: "키 편집",
     edit_config: "설정 편집",
-    signing_in: "로그인 중...",
+    signing_in: "로그인 중..."
   },
   command_palette: {
     placeholder: "에이전트 검색, 탐색... (\\\">\\\"를 입력하면 명령어)",
@@ -6797,7 +7232,7 @@ export const ko = {
     key_esc: "ESC",
     hint_navigate: "탐색",
     hint_select: "선택",
-    hint_commands: "명령어",
+    hint_commands: "명령어"
   },
   errors: {
     boundary_title: "{name}에서 예기치 않은 문제가 발생했습니다",
@@ -6819,7 +7254,7 @@ export const ko = {
     database: "데이터베이스 오류 -- 앱을 다시 시작하세요",
     internal: "예기치 않은 오류가 발생했습니다",
     cloud_error: "클라우드 서비스 오류: {detail}",
-    gitlab_error: "GitLab 오류: {detail}",
+    gitlab_error: "GitLab 오류: {detail}"
   },
   error_registry: {
     network_offline_message: "You appear to be offline.",
@@ -6891,7 +7326,7 @@ export const ko = {
     severity_critical: "Needs immediate attention",
     severity_high: "Important issue",
     severity_medium: "Minor issue",
-    severity_low: "Informational",
+    severity_low: "Informational"
   },
   empty_states: {
     credentials_title: "에이전트에 자격 증명이 필요합니다",
@@ -6908,11 +7343,11 @@ export const ko = {
     tools_title: "도구 또는 커넥터가 설정되지 않았습니다",
     tools_subtitle: "외부 서비스를 연결하여 에이전트가 작업을 수행하고 데이터에 접근할 수 있도록 하세요.",
     use_cases_title: "아직 사용 사례가 정의되지 않았습니다",
-    use_cases_subtitle: "이 에이전트가 무엇을 해야 하는지 정의하세요 -- 워크플로에서 가져오거나 자연어로 설명하세요.",
+    use_cases_subtitle: "이 에이전트가 무엇을 해야 하는지 정의하세요 -- 워크플로에서 가져오거나 자연어로 설명하세요."
   },
   cli: {
     idle: "아직 CLI 출력이 없습니다.",
-    waiting: "Claude CLI 출력 대기 중...",
+    waiting: "Claude CLI 출력 대기 중..."
   },
   validation: {
     required: "{field}은(는) 필수입니다",
@@ -6923,7 +7358,7 @@ export const ko = {
     passphrase_min: "암호문은 최소 8자 이상이어야 합니다",
     passphrase_prompt: "내보내기 시 사용한 암호문을 입력하세요",
     at_least_one: "최소 하나의 {field}이(가) 필요합니다",
-    fill_one_field: "저장하려면 최소 하나의 필드를 입력하세요",
+    fill_one_field: "저장하려면 최소 하나의 필드를 입력하세요"
   },
   toasts: {
     copied: "클립보드에 복사됨",
@@ -6983,7 +7418,7 @@ export const ko = {
     scheduled_agents_failed: "예약된 에이전트 로드에 실패했습니다",
     design_start_failed: "디자인 대화 시작에 실패했습니다",
     recipe_save_failed: "레시피 저장에 실패했습니다",
-    recipe_test_failed: "빠른 테스트에 실패했습니다",
+    recipe_test_failed: "빠른 테스트에 실패했습니다"
   },
   consent: {
     title: "Personas Desktop에 오신 것을 환영합니다",
@@ -7050,7 +7485,7 @@ export const ko = {
     checkbox: "이 애플리케이션이 AI 제공자에게 데이터를 전송하고, 시스템 리소스 (클립보드, 파일 시스템, 네트워크)에 접근하며, 사용자를 대신하여 프로세스를 실행한다는 것을 이해합니다. 설정 및 사용 방법에 대한 책임을 수락합니다.",
     checkbox_telemetry: "Help improve Personas by sending anonymous crash reports and usage analytics. No personal data is included. You can change this later in Settings.",
     source_link: "소스 및 라이선스 보기",
-    accept_button: "이해했습니다, 계속하기",
+    accept_button: "이해했습니다, 계속하기"
   },
   schedules: {
     title: "Schedule Timeline",
@@ -7090,17 +7525,26 @@ export const ko = {
     overlap_warning: "This schedule overlaps with {count} other execution(s) in the next 7 days. Concurrent agents compete for API quota and system resources.",
     agents_missed: "{count} agent(s) missed executions",
     total_skipped: "~{count} total runs skipped while app was offline",
+    missed_since: "{time} 이후 {count}개 누락",
+    every_interval: "매 {interval}마다",
     recover: "Recover",
+    mark_for_recovery: "복구용으로 표시",
+    run_once_now: "지금 한 번 실행",
     run_1x: "Run 1x",
     skip: "Skip",
+    skip_dont_recover: "건너뛰기 -- 복구하지 않음",
     dismiss_all: "Dismiss all",
     recover_selected: "Recover {count} selected",
+    overlaps_with: "다음과 겹침",
+    refresh_schedules: "스케줄 새로 고침",
+    seed_mock_tooltip: "모의 스케줄 시드 (개발 전용)",
+    schedule_view_aria: "스케줄 보기",
     today: "Today",
     projected: "Projected",
     success: "Success",
     overlap: "Overlap",
     week: "Week",
-    month: "Month",
+    month: "Month"
   },
   recipes: {
     no_match: "일치하는 레시피가 없습니다",
@@ -7154,6 +7598,8 @@ export const ko = {
     saved_mock_values: "Saved Mock Values",
     no_mock_values: "No mock values saved",
     free_input_placeholder: "Enter input JSON or plain text...",
+    recipe_label: "레시피:",
+    executed_label: "실행됨:",
     rendered_prompt: "Rendered Prompt",
     execution_result: "Execution Result",
     rendering_prompt: "Rendering prompt...",
@@ -7183,7 +7629,7 @@ export const ko = {
     no_matching: "No matching recipes found.",
     loading_linked: "Loading linked recipes...",
     no_linked: "No recipes linked yet. Click \\\"Add\\\" to link recipes from the library.",
-    run: "Run",
+    run: "Run"
   },
   execution_status: {
     queued: "대기 중",
@@ -7191,7 +7637,7 @@ export const ko = {
     completed: "완료됨",
     failed: "실패",
     cancelled: "취소됨",
-    error: "오류",
+    error: "오류"
   },
   status_tokens: {
     execution: {
@@ -7200,61 +7646,61 @@ export const ko = {
       completed: "Completed",
       failed: "Failed",
       cancelled: "Cancelled",
-      error: "Error",
+      error: "Error"
     },
     event: {
       pending: "Pending",
       processing: "Processing",
       processed: "Processed",
       failed: "Failed",
-      retrying: "Retrying",
+      retrying: "Retrying"
     },
     automation: {
       pending: "Pending",
       running: "Running",
       completed: "Completed",
       failed: "Failed",
-      timeout: "Timed Out",
+      timeout: "Timed Out"
     },
     severity: {
       info: "Info",
       low: "Low",
       medium: "Medium",
       high: "High",
-      critical: "Critical",
+      critical: "Critical"
     },
     priority: {
       low: "Low",
       normal: "Normal",
       high: "High",
-      urgent: "Urgent",
+      urgent: "Urgent"
     },
     healing_status: {
       open: "Open",
       auto_fixed: "Auto-Fixed",
       acknowledged: "Acknowledged",
-      resolved: "Resolved",
+      resolved: "Resolved"
     },
     healing_category: {
       config: "Configuration",
       auth: "Authentication",
       network: "Network",
       timeout: "Timeout",
-      quota: "Quota",
+      quota: "Quota"
     },
     connector_status: {
       ready: "Ready",
       untested: "Untested",
       failed: "Failed",
       no_credential: "No Credential",
-      testing: "Testing",
+      testing: "Testing"
     },
     test: {
       generating: "Generating",
       running: "Running",
       completed: "Completed",
       failed: "Failed",
-      pending: "Pending",
+      pending: "Pending"
     },
     dev: {
       open: "Open",
@@ -7263,8 +7709,8 @@ export const ko = {
       blocked: "Blocked",
       queued: "Queued",
       running: "Running",
-      failed: "Failed",
-    },
+      failed: "Failed"
+    }
   },
   project_overview: {
     codebase: "Codebase",
@@ -7294,7 +7740,7 @@ export const ko = {
     failed_to_load: "Failed to load stats",
     retry: "Retry",
     no_project_selected: "No project selected",
-    select_project_hint: "Select a dev project to see its overview.",
+    select_project_hint: "Select a dev project to see its overview."
   },
   plugins: {
     title: "Plugins",
@@ -7303,12 +7749,98 @@ export const ko = {
     artist_desc: "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",
     dev_tools_label: "Dev Tools",
     dev_tools_desc: "Project management, context mapping, idea scanning, triage, and task runner utilities.",
-    doc_signing_label: "Doc Signing",
-    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
-    ocr_label: "OCR",
-    ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal.",
+    drive_label: "드라이브",
+    drive_desc: "에이전트가 내보내기를 저장하는 관리형 로컬 파일시스템. Finder 스타일 UI에서 파일을 탐색하세요. 앱 업그레이드 후에도 유지됩니다.",
+    drive: {
+      title: "드라이브",
+      subtitle: "에이전트 내보내기를 위한 관리형 로컬 파일시스템",
+      root_label: "드라이브 루트",
+      dev_badge: "개발",
+      back: "뒤로",
+      forward: "앞으로",
+      up: "위로",
+      refresh: "새로 고침",
+      search_placeholder: "이 폴더에서 검색...",
+      view_list: "목록",
+      view_icons: "아이콘",
+      view_columns: "열",
+      new_folder: "새 폴더",
+      new_file: "새 파일",
+      reveal_in_os: "파일 관리자에서 표시",
+      open_in_os: "열기",
+      sidebar_root: "드라이브",
+      sidebar_recent: "최근",
+      sidebar_storage: "저장소",
+      storage_used: "{used} 사용 중 \\u2022 {count}개 항목",
+      empty_folder: "이 폴더는 비어 있습니다",
+      empty_hint: "로컬 드라이브로 내보내는 에이전트가 여기에 파일을 저장합니다.",
+      empty_cta: "폴더 생성",
+      col_name: "이름",
+      col_size: "크기",
+      col_kind: "종류",
+      col_modified: "수정됨",
+      folder_kind: "폴더",
+      ctx_open: "열기",
+      ctx_rename: "이름 바꾸기",
+      ctx_duplicate: "복제",
+      ctx_delete: "삭제",
+      ctx_copy: "복사",
+      ctx_cut: "잘라내기",
+      ctx_paste: "붙여넣기",
+      ctx_new_folder: "새 폴더",
+      ctx_new_file: "새 파일",
+      ctx_reveal: "파일 관리자에서 표시",
+      ctx_copy_path: "경로 복사",
+      rename_title: "이름 바꾸기",
+      rename_placeholder: "새 이름",
+      new_folder_title: "새 폴더",
+      new_folder_placeholder: "폴더 이름",
+      new_file_title: "새 파일",
+      new_file_placeholder: "filename.txt",
+      delete_confirm_title: "{count}개 항목을 삭제하시겠습니까?",
+      delete_confirm_body: "이 작업은 취소할 수 없습니다. 삭제된 파일은 영구적으로 사라집니다.",
+      confirm: "확인",
+      cancel: "취소",
+      details_title: "세부 정보",
+      details_path: "경로",
+      details_size: "크기",
+      details_kind: "종류",
+      details_modified: "수정됨",
+      details_items: "항목",
+      details_preview: "미리보기",
+      preview_unavailable: "미리보기를 사용할 수 없음",
+      preview_binary: "바이너리 파일 \\u2014 검사하려면 OS 파일 관리자에서 여세요.",
+      preview_too_large: "파일이 너무 커서 인라인 미리보기를 할 수 없습니다.",
+      loading: "로딩 중...",
+      error_prefix: "오류:",
+      items_selected: "{count}개 선택됨",
+      items_total: "{count}개 항목",
+      signatures_button: "서명",
+      ctx_sign_file: "파일 서명\\u2026",
+      ctx_verify_file: "서명 검증\\u2026",
+      ctx_extract_text: "텍스트 추출 (OCR)\\u2026",
+      ctx_extract_text_no_gemini: "텍스트 추출 \\u2014 Gemini를 연결하여 활성화",
+      ocr_title: "Gemini로 텍스트 추출",
+      ocr_subtitle: "Google Gemini 3 Flash Preview를 통한 비전 OCR",
+      ocr_model_label: "모델",
+      ocr_connector_ready: "Gemini 커넥터 준비됨",
+      ocr_connector_missing: "볼트에서 Gemini 자격 증명을 찾을 수 없습니다. OCR을 활성화하려면 Google Gemini를 연결하세요.",
+      ocr_prompt_label: "선택적 프롬프트",
+      ocr_prompt_placeholder: "예: 송장 총액과 항목만 추출",
+      ocr_extract: "텍스트 추출",
+      ocr_running: "추출 중\\u2026",
+      ocr_done: "추출 완료",
+      ocr_save: ".ocr.txt로 저장",
+      ocr_saved: "저장됨",
+      ocr_saved_to: "다음 위치에 저장됨",
+      ocr_copied: "클립보드에 복사됨",
+      select_file_or_folder: "세부 정보를 보려면 파일이나 폴더를 선택하세요.",
+      download_aria: "다운로드",
+      download_title: "다운로드",
+      sign_reason_placeholder: "서명 사유…"
+    },
     artist: {
       title: "Artist",
       subtitle: "Generate 3D models, create images, and manage creative assets",
@@ -7370,6 +7902,31 @@ export const ko = {
       viewer_3d: "3D Viewer",
       viewer_3d_hint: "Install @react-three/fiber and @react-three/drei to enable interactive 3D previews with orbit controls.",
       tags_label: "Tags:",
+      status_partial: "부분",
+      status_not_checked: "확인되지 않음",
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      session_cancelled: "세션이 취소되었습니다.",
+      imported_assets_one: "갤러리에 새 자산 1개를 가져왔습니다.",
+      imported_assets_other: "갤러리에 새 자산 {count}개를 가져왔습니다.",
+      scan_result_one: "자산 {scanned}개 발견, 1개 새로 가져옴.",
+      scan_result_other: "자산 {scanned}개 발견, {imported}개 새로 가져옴.",
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      tag_editor_hint: "추가하려면 Enter 또는 쉼표, 마지막 태그 제거하려면 Backspace.",
+      tag_editor_placeholder: "태그, 다른-태그",
+      send_to_media_studio: "미디어 스튜디오로 보내기",
+      sent_to_media_studio: "미디어 스튜디오 대기열에 추가됨",
+      session_history: "이력",
+      session_history_empty: "실행한 세션이 여기에 표시됩니다.",
+      session_tools_label: "도구:",
+      session_status_running: "실행 중",
+      session_status_completed: "완료됨",
+      session_status_failed: "실패함",
+      session_status_cancelled: "취소됨",
+      replay_session: "재생",
+      delete_session: "세션 삭제"
     },
     dev_tools: {
       no_project_configured: "No dev project configured",
@@ -7411,6 +7968,8 @@ export const ko = {
       task: "Task",
       pick_winner: "Pick winner",
       winner: "Winner",
+      disqualified_label: "실격됨",
+      elapsed_label: "경과됨",
       cancel_competition: "Cancel competition",
       no_goals_constellation: "No goals yet. Create goals in the Projects tab to see the constellation.",
       your_turn: "Your Turn",
@@ -7515,6 +8074,8 @@ export const ko = {
       task_depth: "Task Depth",
       goal_link: "Goal Link",
       create_task: "Create Task",
+      partial_context: "부분 컨텍스트",
+      context_warnings_title: "컨텍스트 경고 — 누락된 정보로 작업이 실행되었습니다",
       campaign: "Campaign",
       deep_build: "Deep Build",
       idea_evolution: "Idea Evolution",
@@ -7529,6 +8090,8 @@ export const ko = {
       edit: "Edit",
       save: "Save",
       file_empty: "File is empty or could not be loaded.",
+      file_load_failed: "파일을 로드할 수 없습니다. 데이터 손실을 방지하기 위해 편집이 비활성화되었습니다.",
+      file_load_failed_hint: "새로 고치거나 스킬을 다시 선택해 보세요.",
       effort: "Effort",
       risk: "Risk",
       quick_wins: "Quick Wins",
@@ -7543,6 +8106,155 @@ export const ko = {
       add_condition: "+ Add condition",
       accept: "Accept",
       reject: "Reject",
+      triage_title: "아이디어 트리아지",
+      triage_subtitle: "생성된 아이디어를 평가하고 우선순위 지정",
+      accepted_badge: "{count}개 수락됨",
+      rejected_badge: "{count}개 거부됨",
+      pending_badge: "{count}개 대기 중",
+      sidebar_category: "카테고리",
+      sidebar_scan_type: "스캔 유형",
+      sidebar_all: "전체 ({count})",
+      remaining_count: "{count}개 남음",
+      reviewed_count: "{done} / {total} 검토됨",
+      empty_no_ideas: "트리아지할 아이디어가 없습니다",
+      empty_no_ideas_hint: "아이디어를 생성하려면 먼저 아이디어 스캐너를 실행하세요.",
+      empty_all_reviewed: "모든 아이디어 검토됨!",
+      empty_all_reviewed_summary: "{accepted}개 수락됨, {rejected}개 거부됨",
+      swipe_reject: "거부",
+      swipe_accept: "수락",
+      reasoning_label: "추론",
+      hint_reject: "거부",
+      hint_accept: "수락",
+      shortcuts_title: "키보드 단축키",
+      shortcuts_reject: "아이디어 거부",
+      shortcuts_accept: "아이디어 수락",
+      shortcuts_toggle: "이 오버레이 전환",
+      shortcuts_close: "오버레이 닫기",
+      shortcuts_dismiss_hint: "닫으려면 ? 또는 Esc 누르기",
+      shortcuts_open_title: "키보드 단축키 (?)",
+      shortcuts_btn_reject_title: "거부 (왼쪽 화살표 / A)",
+      shortcuts_btn_accept_title: "수락 (오른쪽 화살표 / Z)",
+      shortcuts_btn_delete_title: "삭제",
+      pr_bridge_title: "초안 PR로 배포",
+      pr_bridge_subtitle: "브랜치, 커밋, 미리 채워진 PR — 에이전트 추론이 설명에 반영됩니다.",
+      pr_bridge_branch: "브랜치",
+      pr_bridge_commit_msg: "커밋 메시지",
+      pr_bridge_pr_title: "PR 제목",
+      pr_bridge_pr_body: "PR 본문",
+      pr_bridge_agent_citation: "{label} {emoji}이(가) 제안함",
+      pr_bridge_no_github: "PR 워크플로를 활성화하려면 이 프로젝트에 GitHub 저장소를 연결하세요.",
+      pr_bridge_link_project: "프로젝트 설정 열기",
+      pr_bridge_unsupported_host: "자동 채우기는 현재 GitHub에서만 작동합니다. PR 본문을 복사하고 수동으로 여세요.",
+      pr_bridge_copy_body: "PR 본문 복사",
+      pr_bridge_copy_all: "모두 복사",
+      pr_bridge_prepare: "브랜치 및 커밋 준비",
+      pr_bridge_open_github: "GitHub에서 초안 PR 열기",
+      pr_bridge_expand: "PR 미리보기 표시",
+      pr_bridge_collapse: "PR 미리보기 숨기기",
+      pr_bridge_copied: "PR 본문이 클립보드에 복사되었습니다",
+      pr_bridge_copy_failed: "클립보드에 복사할 수 없습니다",
+      pr_bridge_branch_prepared: "브랜치 준비됨: {branch}",
+      pr_bridge_branch_failed: "브랜치 준비 실패: {message}",
+      pr_bridge_opening: "GitHub 여는 중...",
+      pr_bridge_open_failed: "외부 URL을 열 수 없습니다",
+      pr_bridge_draft_hint: "팁: GitHub 페이지에서 \"Create pull request\" 옆의 드롭다운을 사용하여 초안으로 표시하세요.",
+      scoreboard_title: "에이전트 성능",
+      scoreboard_subtitle: "이 프로젝트의 스캔 에이전트별 수락 및 구현율.",
+      scoreboard_toggle_show: "스코어보드 표시",
+      scoreboard_toggle_hide: "스코어보드 숨기기",
+      scoreboard_empty: "아직 데이터가 없음 — 스캔을 실행하고 일부 아이디어를 트리아지하여 보드를 채우세요.",
+      scoreboard_col_agent: "에이전트",
+      scoreboard_col_ideas: "아이디어",
+      scoreboard_col_accept_rate: "수락 %",
+      scoreboard_col_impl_rate: "구현 %",
+      scoreboard_col_avg_impact: "평균 영향력",
+      scoreboard_col_avg_effort: "평균 노력",
+      scoreboard_tip_ideas: "이 에이전트가 모든 스캔에 걸쳐 생성한 총 아이디어 수.",
+      scoreboard_tip_accept_rate: "수락 / (수락 + 거부). 대기 중인 아이디어는 분모에서 제외됩니다.",
+      scoreboard_tip_impl_rate: "완료된 작업 / 이 에이전트의 아이디어로부터 생성된 작업.",
+      scoreboard_tip_avg_impact: "이 에이전트가 생성한 모든 아이디어의 평균 영향력 점수 (1-10).",
+      scoreboard_tip_avg_effort: "이 에이전트가 생성한 모든 아이디어의 평균 노력 점수 (1-10).",
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n}개 대기 중",
+      scoreboard_top_performer: "최고 성과자",
+      zoom_in: "확대",
+      zoom_out: "축소",
+      reset_view: "보기 재설정",
+      goals_label: "목표,",
+      connections_label: "연결",
+      legend_parent: "━━ 상위",
+      legend_dependency: "┄┄ 의존성",
+      competitors_dot: "경쟁자 ·",
+      of_4_selected: "/4 선택됨",
+      status_label: "상태:",
+      wt_label: "가중치:",
+      winning_insight: "승리 인사이트",
+      completed_in: "완료 시간",
+      achievements_label: "성과:",
+      output_lines: "출력 줄",
+      loading_diff: "diff 로딩 중...",
+      first_slot_bias: "첫 번째 슬롯은 이전 승자의 접근 방식에 편향됩니다.",
+      start_competition_prefix: "경쟁 시작 (",
+      slots_suffix: "슬롯)",
+      strategy_leaderboard: "전략 리더보드",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "해결된 경쟁을 전반적으로 집계. 높을수록 승리.",
+      capture_winning_insight: "승리 인사이트 캡처",
+      capture_insight_desc: "이 접근 방식이 승리한 이유는 무엇입니까? 이 노트는 승자와 함께 저장되어 향후 경쟁을 시드하는 데 사용됩니다.",
+      insight_placeholder: "이 접근 방식이 성공한 이유를 설명하세요…",
+      confirm_winner: "승자 확인",
+      github_required_title: "GitHub 저장소 필요",
+      folder_required_title: "프로젝트 폴더 필요",
+      requirements_met_title: "모든 요구 사항 충족됨",
+      can_still_adopt: "지금 채택할 수 있습니다 — 나중에 프로젝트 설정에서 GitHub URL과 프로젝트 폴더를 추가하세요.",
+      active_triggers_prefix: "활성 트리거 (",
+      lifecycle_readiness: "라이프사이클 준비도 —",
+      goals_tab_no_goals: "아직 목표가 없습니다. 프로젝트 관리자에서 목표를 생성하세요.",
+      goal_constellation_prefix: "목표 성좌 (",
+      sync_to_obsidian: "Obsidian에 동기화",
+      select_or_create: "아래에서 프로젝트를 선택하거나 새로 만드세요.",
+      all_projects_prefix: "모든 프로젝트 (",
+      percent_overall: "% 전체",
+      task_queue_prefix: "작업 대기열 (",
+      project_created_title: "프로젝트 생성됨",
+      generate_context_map_desc: "코드베이스를 스캔하여 비즈니스 로직, 진입점, 데이터 구조를 식별합니다.",
+      source_label: "소스:",
+      auto_filled_hint: "(폴더에서 자동 채워짐)",
+      project_type_optional: "(선택 사항, 시각적 용도만)",
+      optional_label: "(선택 사항)",
+      implementation_log_label: "구현 로그",
+      cross_project_desc_btn: "기존 컨텍스트 맵에서 집계됨. 확장하려면 프로젝트를 클릭하세요.",
+      generate_metadata_prompt: "모든 프로젝트의 컨텍스트 맵을 분석하고 공유 패턴을 추출합니다.",
+      projects_count_prefix: "프로젝트 (",
+      entry_points_header: "진입점",
+      db_tables_header: "데이터베이스 테이블",
+      entry_points_count: "진입점",
+      db_tables_count: "db 테이블",
+      run_context_map_scan: "메타데이터를 채우려면 이 프로젝트에 대해 컨텍스트 맵 스캔을 실행하세요.",
+      active_goals_label: "활성 목표",
+      no_goals_add_below: "아직 목표가 없습니다. 아래에 추가하세요.",
+      goal_title_placeholder: "목표 제목…",
+      loading_repos: "저장소 로딩 중...",
+      github_url_label: "GitHub URL",
+      github_repo_label: "GitHub 저장소",
+      idea_evolution_title: "아이디어 진화",
+      fitness_ranking_label: "적합도 순위",
+      similar_to_rejected: "거부된 항목과 유사함:",
+      percent_similar: "% 유사",
+      scanning_with: "다음으로 스캔 중",
+      scanning_subtitle: "코드베이스 패턴 분석 및 컨텍스트 그룹 생성 중…",
+      no_previous_scans: "이전 스캔이 없습니다.",
+      run_scan_prefix: "스캔 실행 (",
+      automated_context_scan: "자동화된 컨텍스트 스캔",
+      results_prefix: "결과 (",
+      scan_history_prefix: "스캔 이력 (",
+      action_label: "작업:",
+      self_healing_title: "자가 복구",
+      heal_all_prefix: "모두 복구 (",
+      task_title_placeholder: "작업 제목…",
+      task_details_placeholder: "작업 세부 정보 또는 사양 붙여넣기…",
+      goal_link_placeholder: "목표 선택…",
+      no_tasks_queued_sub: "수동으로 작업을 만들거나 수락된 아이디어에서 배치로 만드세요."
     },
     doc_signing: {
       title: "Document Signing",
@@ -7581,7 +8293,7 @@ export const ko = {
       no_signatures: "No signatures yet",
       no_signatures_hint: "Sign a document to see it here.",
       export_sig: "Export .sig.json",
-      delete_signature: "Delete signature",
+      delete_signature: "Delete signature"
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -7589,6 +8301,7 @@ export const ko = {
       tab_setup: "Setup",
       tab_sync: "Sync",
       tab_browse: "Browse Vault",
+      tab_graph: "그래프",
       tab_cloud: "Cloud",
       filter_notes: "Filter notes...",
       vault_empty: "Vault is empty",
@@ -7658,7 +8371,7 @@ export const ko = {
       sync_log: "Sync Log",
       no_sync_activity: "No sync activity yet. Push or pull to start.",
       select_note: "Select a Note",
-      select_note_hint: "Choose a note from the tree on the left to preview its contents.",
+      select_note_hint: "Choose a note from the tree on the left to preview its contents."
     },
     ocr: {
       title: "OCR",
@@ -7685,8 +8398,292 @@ export const ko = {
       comparison_stats: "Comparison Stats",
       history_heading: "OCR History",
       no_results: "No OCR results yet",
-      no_results_hint: "Extract text from a document to see it here.",
+      no_results_hint: "Extract text from a document to see it here."
     },
+    artist_gallery: {
+      loading_viewer: "뷰어 로딩 중…",
+      loading_model: "모델 로딩 중...",
+      could_not_load_model: "모델을 로드할 수 없습니다"
+    },
+    artist_media_studio: {
+      drag_drop_hint: "— 어디에나 파일을 드래그 앤 드롭",
+      keyboard_shortcuts: "Space / Del / 화살표",
+      px_per_second: "px/s",
+      running_loudnorm: "ffmpeg loudnorm 드라이런 실행 중…"
+    },
+    dev_context: {
+      files_header: "파일 (",
+      filter_groups_placeholder: "그룹 필터…",
+      rescan_title: "다시 스캔",
+      scanning_with: "다음으로 스캔 중",
+      scanning_subtitle: "코드베이스 패턴 분석 및 컨텍스트 그룹 생성 중…",
+      no_previous_scans: "이전 스캔이 없습니다.",
+      run_scan: "스캔 실행 (",
+      auto_scan: "자동 스캔",
+      automated_context_scan: "자동화된 컨텍스트 스캔",
+      results: "결과 (",
+      scan_history: "스캔 이력 ("
+    },
+    dev_lifecycle: {
+      start_a_competition: "경쟁 시작",
+      start_a_competition_desc: "2-4개의 경쟁자를 생성하여 다양한 전략으로 동일한 작업을 수행하세요. 승자의 접근 방식이 승격됩니다.",
+      task_title: "작업 제목",
+      task_title_placeholder: "예: 인증 모듈 리팩토링",
+      task_description: "작업 설명 (선택 사항)",
+      task_description_placeholder: "성공이 어떤 모습인지 설명하세요…",
+      strategy_slots: "전략 슬롯 (2-4개 선택)",
+      of_4_selected: "/4 선택됨",
+      cost_warning: "비용 경고:",
+      cost_warning_desc: "각 경쟁자는 전체 작업을 독립적으로 실행합니다 — 이는 {count}배 더 많은 토큰을 사용합니다.",
+      start_competition: "경쟁 시작",
+      competitors_dot: "경쟁자 ·",
+      loading_competitors: "경쟁자 로딩 중...",
+      failed_to_load_detail: "세부 정보를 로드하지 못했습니다.",
+      status_label: "상태:",
+      weight_label: "가중치:",
+      pick_winner: "승자 선택",
+      cancel_competition: "경쟁 취소",
+      select_project_for_competitions: "경쟁을 보려면 프로젝트를 선택하세요.",
+      new_competition: "새 경쟁",
+      no_competitions_yet: "아직 경쟁이 없습니다. 2-4개의 전략이 작업을 해결하기 위해 경주하도록 시작하세요.",
+      no_goals_yet_project: "아직 목표가 없습니다. 진행 상황을 추적하려면 프로젝트 관리자에서 목표를 생성하세요.",
+      zoom_in_title: "확대",
+      zoom_out_title: "축소",
+      reset_view_title: "보기 재설정",
+      goals_label: "목표,",
+      legend_parent: "━━ 상위",
+      legend_dependency: "┄┄ 의존성",
+      no_goals_kanban: "아직 목표가 없습니다. 여기에서 보려면 목표를 생성하세요.",
+      no_goals_here: "여기에 목표가 없습니다",
+      auto_setup_title: "자동화된 라이프사이클 설정 실행",
+      auto_setup: "자동 설정",
+      loading_lifecycle: "라이프사이클 상태 로딩 중...",
+      no_project_click_to_create: "프로젝트 없음 — 클릭하여 생성",
+      no_repo: "저장소 없음",
+      baseline_label: "기준선:",
+      ts_errors_label: "TS 오류:",
+      cargo_errors_label: "Cargo 오류:",
+      tests_label: "테스트:",
+      git_label: "Git:",
+      winning_insight: "승리 인사이트",
+      completed_in: "완료 시간",
+      achievements_label: "성과:",
+      output_lines: "출력 줄",
+      expand_slot_title: "슬롯 확장",
+      collapse_slot_title: "슬롯 축소",
+      copy_diff_title: "diff 복사",
+      loading_diff: "diff 로딩 중...",
+      new_competition_modal_title: "경쟁 시작",
+      first_slot_bias: "첫 번째 슬롯은 이전 승자의 접근 방식에 편향됩니다.",
+      start_competition_slots: "경쟁 시작 (",
+      slots_suffix: "슬롯)",
+      strategy_leaderboard: "전략 리더보드",
+      dq_title: "실격됨",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "해결된 경쟁을 전반적으로 집계. 높을수록 승리.",
+      capture_winning_insight: "승리 인사이트 캡처",
+      capture_insight_desc: "이 접근 방식이 승리한 이유는 무엇입니까? 이 노트는 승자와 함께 저장되어 향후 경쟁을 시드하는 데 사용됩니다.",
+      insight_placeholder: "이 접근 방식이 성공한 이유를 설명하세요…",
+      confirm_winner: "승자 확인",
+      competition_title_placeholder: "예: /api/auth/login에 속도 제한 추가",
+      competition_desc_placeholder: "수락 기준, 대상 파일, 제약 조건...",
+      regenerate_strategies_title: "전략 재생성",
+      start_dev_server_title: "이 워크트리에서 개발 서버 시작",
+      stop_dev_server_title: "개발 서버 중지",
+      open_worktree_title: "워크트리 디렉토리 열기",
+      adopt_dev_clone: "Dev Clone 채택",
+      dev_clone_desc: "Dev Clone은 프로젝트 라이프사이클을 관리하는 자율적인 개발자 페르소나입니다 — 경쟁 전략, 오류 복구, 코드 배포를 담당합니다.",
+      github_required_title: "GitHub 저장소 필요",
+      folder_required_title: "프로젝트 폴더 필요",
+      requirements_met_title: "모든 요구 사항 충족됨",
+      can_still_adopt: "지금 채택할 수 있습니다 — 나중에 프로젝트 설정에서 GitHub URL과 프로젝트 폴더를 추가하세요.",
+      active_triggers: "활성 트리거 (",
+      lifecycle_readiness: "라이프사이클 준비도 —",
+      goals_tab_no_goals: "아직 목표가 없습니다. 프로젝트 관리자에서 목표를 생성하세요.",
+      goal_constellation: "목표 성좌 (",
+      sync_to_obsidian: "Obsidian에 동기화"
+    },
+    dev_projects: {
+      active_goals: "활성 목표",
+      run_context_map_scan: "메타데이터를 채우려면 이 프로젝트에 대해 컨텍스트 맵 스캔을 실행하세요.",
+      entry_points: "진입점",
+      db_tables: "db 테이블",
+      top_keywords: "상위 키워드",
+      entry_points_header: "진입점",
+      db_tables_header: "데이터베이스 테이블",
+      api_surface: "API 표면",
+      hot_directories: "핫 디렉토리",
+      cross_project_map_title: "프로젝트 간 메타데이터 맵",
+      cross_project_map_subtitle: "기존 컨텍스트 맵에서 집계됨. 확장하려면 프로젝트를 클릭하세요.",
+      tech_distribution: "기술 분포",
+      shared_keywords: "공유 키워드 (",
+      shared_keywords_subtitle: "여러 프로젝트에 존재하는 개념 — 공유 아키텍처를 나타낼 수 있습니다.",
+      project_similarity: "프로젝트 유사도",
+      projects_header: "프로젝트 (",
+      cross_project_map_btn: "프로젝트 간 맵",
+      new_project: "새 프로젝트",
+      select_or_create: "아래에서 프로젝트를 선택하거나 새로 만드세요.",
+      all_projects: "모든 프로젝트 (",
+      no_projects_yet: "아직 프로젝트가 없습니다",
+      create_first_project: "첫 프로젝트 생성",
+      tech_stack: "기술 스택",
+      edit_project: "프로젝트 편집",
+      no_goals_add_below: "아직 목표가 없습니다. 아래에 추가하세요.",
+      goal_title_placeholder: "목표 제목…",
+      project_folder: "프로젝트 폴더",
+      select_folder: "폴더 선택...",
+      project_name: "프로젝트 이름",
+      auto_filled_from_folder: "(폴더에서 자동 채워짐)",
+      project_name_placeholder: "내 프로젝트",
+      project_type: "프로젝트 유형",
+      project_type_optional: "(선택 사항, 시각적 용도만)",
+      project_created: "프로젝트 생성됨",
+      project_ready_desc: "준비 완료. 지금 컨텍스트 맵을 생성하시겠습니까?",
+      generate_context_map: "컨텍스트 맵 생성",
+      generate_context_map_desc: "코드베이스를 스캔하여 비즈니스 로직, 진입점, 데이터 구조를 식별합니다.",
+      skip_for_now: "나중에 건너뛰기",
+      scan_codebase: "코드베이스 스캔",
+      loading_repositories: "저장소 로딩 중...",
+      github_url_label: "GitHub URL",
+      optional: "(선택 사항)",
+      github_url_placeholder: "https://github.com/owner/repo",
+      github_repository: "GitHub 저장소",
+      select_repository: "저장소 선택...",
+      no_repositories_found: "저장소를 찾을 수 없습니다",
+      implementation_log: "구현 로그",
+      loading_metadata: "로딩 중...",
+      no_metadata_yet: "아직 메타데이터 맵이 생성되지 않았습니다",
+      generate_metadata_prompt: "모든 프로젝트의 컨텍스트 맵을 분석하고 공유 패턴을 추출합니다."
+    },
+    dev_runner: {
+      self_healing: "자가 복구",
+      auto_heal: "자동 복구",
+      heal_all: "모두 복구 (",
+      task_title_placeholder: "작업 제목…",
+      task_details_placeholder: "작업 세부 정보 또는 사양 붙여넣기…",
+      task_depth: "작업 깊이",
+      goal_link: "목표 링크",
+      optional: "(선택 사항)",
+      goal_link_placeholder: "목표 선택…",
+      create_task: "작업 생성",
+      source_label: "소스:",
+      new_task: "새 작업",
+      batch_from_accepted: "수락된 항목에서 배치",
+      start_batch: "배치 시작",
+      cancel_all: "모두 취소",
+      batch_progress: "배치 진행률",
+      percent_overall: "% 전체",
+      task_queue: "작업 대기열 (",
+      no_tasks_queued: "대기열에 작업 없음",
+      no_tasks_queued_sub: "수동으로 작업을 만들거나 수락된 아이디어에서 배치로 만드세요."
+    },
+    dev_scanner: {
+      idea_evolution: "아이디어 진화",
+      fitness_ranking: "적합도 순위",
+      similar_to_rejected: "거부된 항목과 유사함:",
+      synthesis_suggestions: "종합 제안",
+      percent_similar: "% 유사",
+      potential_duplicates: "잠재적 중복",
+      scanning_with: "다음으로 스캔 중",
+      analyzing_codebase: "코드베이스 분석 중...",
+      no_previous_scans: "이전 스캔이 없습니다.",
+      auto_scan: "자동 스캔",
+      automated_context_scan: "자동화된 컨텍스트 스캔",
+      run_scan_prefix: "실행:",
+      results_prefix: "결과:",
+      scan_history_prefix: "스캔 이력",
+      idea_scanner_title: "아이디어 스캐너",
+      idea_scanner_subtitle: "전문 에이전트를 실행하여 개선 아이디어 생성",
+      run_scan_btn: "스캔 실행 (",
+      results_header: "결과 (",
+      scan_history_header: "스캔 이력 ("
+    },
+    dev_triage: {
+      auto_triage_rules: "자동 트리아지 규칙",
+      add_condition: "+ 조건 추가",
+      action_label: "작업:",
+      new_rule: "새 규칙",
+      run_rules: "규칙 실행"
+    },
+    obsidian: {
+      saved_vaults: "저장된 볼트",
+      remove_vault_title: "저장된 볼트 제거",
+      vault_is_empty: "볼트가 비어 있습니다",
+      failed_to_load: "로드 실패",
+      open_in_obsidian: "Obsidian에서 열기",
+      copy_path_title: "경로 복사",
+      disconnect_title: "Google Drive 연결 해제",
+      sign_in_to_enable: "클라우드 동기화를 활성화하려면 로그인",
+      sign_in_subtitle: "Google 계정으로 로그인하여 볼트를 Google Drive에 백업하세요.",
+      refresh_title: "동기화 상태 새로 고침",
+      drive_connected: "Drive 연결됨",
+      files_synced: "파일이 Drive에 동기화됨",
+      connect_drive_desc: "볼트를 클라우드에 백업하려면 Google Drive를 연결하세요.",
+      step_connect_drive: "Google Drive 연결",
+      step_connect_drive_desc: "Personas에 Google Drive에 파일을 만들 수 있는 액세스 권한을 부여하세요.",
+      step_push_vault: "볼트 푸시",
+      step_push_vault_desc: "볼트 노트는 마크다운 파일로 Google Drive에 업로드됩니다.",
+      step_sync_devices: "디바이스 간 동기화",
+      step_sync_devices_desc: "다운로드하려면 다른 디바이스에서 풀하세요. 볼트는 당신의 데이터입니다.",
+      push_title: "볼트를 Google Drive에 푸시",
+      push_desc: "푸시는 로컬 볼트 변경 사항을 Google Drive에 업로드합니다.",
+      last_sync_result: "마지막 동기화 결과",
+      pull_title: "Google Drive에서 볼트 풀",
+      connect_google_drive: "Google Drive 연결",
+      connect_drive_btn_desc: "Personas에 Google Drive에 파일을 만들 수 있는 액세스 권한을 부여하세요.",
+      no_stats_yet: "아직 통계가 없습니다.",
+      search_title: "노트 검색",
+      search_placeholder: "노트 검색…",
+      no_matches: "일치하는 항목 없음.",
+      no_orphan_notes: "고아 노트 없음 — 모든 노트가 다른 노트에서 최소 하나 이상 링크되어 있습니다.",
+      no_mocs: "MOC가 감지되지 않음 — 링크 임계값을 낮춰 보세요.",
+      quick_capture_title: "AI 빠른 캡처",
+      note_search_placeholder: "노트 검색 또는 질문하기…",
+      append_to_today: "오늘에 추가",
+      append_content_placeholder: "추가할 콘텐츠…",
+      save_meeting_title: "회의 노트 저장",
+      meeting_attendees_placeholder: "참석자…",
+      meeting_summary_placeholder: "회의 요약…",
+      meeting_action_items_placeholder: "액션 아이템…",
+      meeting_decisions_placeholder: "결정 사항…",
+      save_meeting_note: "회의 노트 저장",
+      remove_vault_setup_title: "제거",
+      detected_vaults: "감지된 볼트:",
+      connected_to: "연결됨 \"",
+      notes_found: "개 노트 발견",
+      scan_for_vaults_title: "볼트 스캔",
+      manual_path_title: "수동으로 경로 입력",
+      preview_label: "미리보기:",
+      vault_path_agent_placeholder: "/AgentName/",
+      vault_path_note_example: "/fact/memory-title.md",
+      disconnect_sync_title: "연결 해제",
+      active_vault: "활성 볼트:",
+      refresh_stats_title: "통계 새로 고침",
+      select_personas: "푸시할 페르소나 선택",
+      select_all: "모두 선택",
+      no_personas_found: "페르소나를 찾을 수 없음",
+      last_push_result: "마지막 푸시 결과",
+      app_version: "앱 버전",
+      vault_version: "볼트 버전",
+      keep_app: "앱 유지",
+      keep_vault: "볼트 유지",
+      clear_history_title: "이력 지우기",
+      no_sync_activity: "아직 동기화 활동이 없습니다. 시작하려면 푸시 또는 풀하세요."
+    },
+    research_lab: {
+      review_before_saving: "저장하기 전에 검토하세요. 추가하지 않을 항목은 선택 해제하세요.",
+      re_run: "다시 실행",
+      search_placeholder: "검색…",
+      filter_title: "필터",
+      query_placeholder: "쿼리를 입력하고 Enter를 눌러 모든 패널에서 검색…",
+      close_panel_title: "패널 닫기",
+      md_extension: ".md",
+      edit_note_aria: "노트 편집"
+    },
+    doc_signing_label: "Doc Signing",
+    doc_signing_desc: "Sign and verify documents with digital signatures directly from your workspace.",
+    ocr_label: "OCR",
+    ocr_desc: "Extract text from images and PDFs using Gemini Vision or Claude multimodal."
   },
   media_studio: {
     title: "Media Studio",
@@ -7748,10 +8745,32 @@ export const ko = {
     empty_title: "Start composing",
     empty_hint: "Add video or audio clips to the timeline to begin.",
     split: "Split at playhead",
+    undo: "실행 취소",
+    redo: "다시 실행",
     import_media: "Import media",
     supported_video: "Video files",
     supported_audio: "Audio files",
     supported_images: "Image files",
+    clip_actions: "클립 작업",
+    action_split: "재생 헤드에서 분할",
+    action_extract_audio: "오디오 추출",
+    action_strip_audio: "오디오 제거",
+    action_keep_audio: "오디오 유지",
+    action_save_thumbnail: "프레임을 이미지로 저장",
+    action_trim_to_file: "새 파일로 트리밍",
+    extracting_audio: "오디오 트랙 추출 중...",
+    extract_audio_done: "오디오 트랙 추출됨",
+    saving_thumbnail: "프레임 저장 중...",
+    thumbnail_saved: "프레임 저장됨",
+    trimming_file: "파일 트리밍 중...",
+    trim_done: "트리밍 저장됨",
+    effects: "효과",
+    speed: "속도",
+    fade_in: "페이드 인",
+    fade_out: "페이드 아웃",
+    normalize: "라우드니스 정규화",
+    normalize_hint: "내보낼 때 EBU R128 적용; 미리보기는 근사치입니다",
+    strip_audio_hint: "내보낼 때 이 클립의 오디오를 음소거합니다"
   },
   research_lab: {
     dashboard: "Dashboard",
@@ -7761,20 +8780,29 @@ export const ko = {
     experiments: "Experiments",
     findings: "Findings",
     reports: "Reports",
+    graph: "그래프",
     active: "active",
     sources: "Sources",
     sources_count: "sources",
+    recent_projects: "최근 프로젝트",
+    view_all: "모두 보기",
     no_projects: "No research projects yet",
     no_projects_hint: "Create a research project to start organizing your literature, hypotheses, and experiments.",
     create_project: "New Project",
+    edit_project: "프로젝트 편집",
+    save_changes: "변경 사항 저장",
     project_name: "Project name",
+    project_name_placeholder: "예: LLM 추론 chain-of-thought 충실도",
     project_description: "Description",
+    project_description_placeholder: "이 프로젝트가 조사하는 내용의 간략한 요약",
     project_thesis: "Research question or thesis",
+    project_thesis_placeholder: "테스트하려는 핵심 주장 또는 질문",
     project_domain: "Domain",
     project_scope: "Scope constraints",
     obsidian_vault: "Obsidian vault",
     obsidian_vault_hint: "Link an Obsidian vault to sync experiments and findings",
     select_vault: "Select vault",
+    clear_vault: "지우기",
     vault_connected: "Vault connected",
     sync_to_obsidian: "Sync to Obsidian",
     syncing: "Syncing...",
@@ -7790,13 +8818,42 @@ export const ko = {
     status_writing: "Writing",
     status_review: "Review",
     status_complete: "Complete",
+    domain_cs: "컴퓨터 과학",
+    domain_biology: "생물학",
+    domain_chemistry: "화학",
+    domain_physics: "물리학",
+    domain_mathematics: "수학",
+    domain_business: "비즈니스",
+    domain_medicine: "의학",
+    domain_general: "일반",
     select_project_first: "Select a research project first",
     no_sources: "No sources yet",
     no_sources_hint: "Search arXiv, Semantic Scholar, or PubMed to find relevant papers, or add sources manually.",
+    no_matching_sources: "필터와 일치하는 소스가 없습니다",
+    filter_sources_placeholder: "제목 또는 저자로 필터링…",
     relevance: "Relevance",
     search_sources: "Search sources",
     ingest: "Ingest",
     ingesting: "Ingesting...",
+    source_title: "제목",
+    source_title_placeholder: "논문 제목",
+    source_type: "소스 유형",
+    source_year: "연도",
+    source_year_placeholder: "예: 2024",
+    source_authors: "저자",
+    source_authors_placeholder: "저자 1, 저자 2, …",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "초록",
+    source_abstract_placeholder: "논문 초록…",
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "웹 페이지",
+    source_type_pdf: "PDF",
+    source_type_manual: "수동 입력",
     no_hypotheses: "No hypotheses yet",
     no_hypotheses_hint: "Add hypotheses manually or let an AI agent generate them from your literature corpus.",
     add_hypothesis: "Add hypothesis",
@@ -7804,23 +8861,58 @@ export const ko = {
     confidence: "Confidence",
     supporting: "Supporting",
     counter: "Counter",
+    hypothesis_statement: "진술",
+    hypothesis_statement_placeholder: "테스트 가능한 주장 — 예: 프롬프트 X는 기준선보다 정확도를 >5% 향상시킵니다",
+    hypothesis_rationale: "근거",
+    hypothesis_rationale_placeholder: "이 가설이 테스트할 가치가 있는 이유",
     no_experiments: "No experiments yet",
     no_experiments_hint: "Design an experiment to test a hypothesis.",
     create_experiment: "New experiment",
+    experiment_name: "실험 이름",
+    experiment_name_placeholder: "예: GSM8K에서 기준선과 fine-tuned 비교",
     methodology: "Methodology",
+    methodology_placeholder: "이 실험은 어떻게 실행됩니까?",
     success_criteria: "Success criteria",
+    success_criteria_placeholder: "어떤 결과가 가설을 확인합니까?",
+    linked_hypothesis: "연결된 가설",
+    no_linked_hypothesis: "연결된 가설 없음",
+    linked_persona: "연결된 페르소나",
+    no_linked_persona: "연결된 페르소나 없음",
+    run_input: "실행 입력 (선택 사항)",
+    run_input_placeholder: "각 실행 시 페르소나에 전달될 입력 텍스트.",
+    pass_pattern: "통과 패턴 (정규식)",
+    pass_pattern_placeholder: "예: PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "Run",
+    running_experiment: "실행 중…",
     run_count: "runs",
+    view_runs: "실행 보기",
+    no_runs_yet: "아직 실행이 없습니다",
+    run_passed: "통과됨",
+    run_failed: "실패함",
+    run_duration: "소요 시간",
+    run_cost: "비용",
+    run_number: "실행 #",
+    runs_history: "실행 이력",
     no_findings: "No findings yet",
     no_findings_hint: "Findings are extracted from experiment results by analysis agents.",
+    create_finding: "새 발견",
+    finding_title: "제목",
+    finding_title_placeholder: "발견에 대한 짧은 헤드라인",
+    finding_description: "설명",
+    finding_description_placeholder: "무엇을 관찰했으며 왜 중요한가?",
+    finding_category: "카테고리",
+    finding_category_placeholder: "예: 성능, 제한, 놀라움",
     no_reports: "No reports yet",
     no_reports_hint: "Create a report to compile your findings into a structured document.",
     create_report: "New report",
+    report_title: "제목",
+    report_title_placeholder: "예: Q2 연구 요약",
     report_type: "Report type",
+    report_format: "형식",
     literature_review: "Literature review",
     experiment_report: "Experiment report",
     full_paper: "Full paper",
-    executive_summary: "Executive summary",
+    executive_summary: "Executive summary"
   },
   event_types: {
     webhook_received_label: "Webhook Received",
@@ -7895,7 +8987,7 @@ export const ko = {
     source_filter_no_regex: "Only trailing * is supported (no regex, no ? wildcards)",
     source_filter_no_source_id: "If source_filter is set but the event has no source_id, the filter will not match",
     source_filter_allowed_chars: "Allowed characters: letters, numbers, _, -, :, ., and *",
-    source_filter_max_length: "Maximum 120 characters, maximum 3 wildcard characters",
+    source_filter_max_length: "Maximum 120 characters, maximum 3 wildcard characters"
   },
   connector_roles: {
     chat_messaging: "Chat & Messaging",
@@ -7962,12 +9054,12 @@ export const ko = {
     purpose_ecommerce: "E-Commerce",
     purpose_scheduling: "Scheduling",
     purpose_forms: "Forms",
-    purpose_ai: "AI",
+    purpose_ai: "AI"
   },
   connector_licensing: {
     personal: "Personal",
     paid: "Paid",
-    enterprise: "Enterprise",
+    enterprise: "Enterprise"
   },
   alerts: {
     metric_error_rate: "Error Rate",
@@ -7983,7 +9075,7 @@ export const ko = {
     error_delete_rule: "Failed to delete alert rule:",
     error_toggle_rule: "Failed to toggle alert rule:",
     error_dismiss: "Failed to dismiss alert:",
-    error_clear_history: "Failed to clear alert history:",
+    error_clear_history: "Failed to clear alert history:"
   },
   deploy_errors: {
     not_reachable: "Could not reach the server. Check the URL and your network connection.",
@@ -7998,18 +9090,18 @@ export const ko = {
     oauth_expired: "OAuth token has expired. Please re-authorize.",
     url_empty: "Please enter the orchestrator URL.",
     api_key_empty: "Please enter your API key.",
-    token_empty: "Please enter your GitLab personal access token.",
+    token_empty: "Please enter your GitLab personal access token."
   },
   tiers: {
     starter_label: "Simple",
     starter_desc: "Core features for everyday use",
     team_label: "Power",
-    team_desc: "Full feature set",
+    team_desc: "Full feature set"
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus",
+    opus: "Opus"
   },
   error_explanation: {
     action_go_to_vault: "Go to Vault",
@@ -8053,7 +9145,7 @@ export const ko = {
     guidance_import_invalid: "The import file is empty or damaged. Try re-exporting from the source and importing again.",
     guidance_circular_chain: "This would create a loop where agents trigger each other endlessly. Review your agent chain and remove the circular reference.",
     guidance_parse_error: "The response was not in the expected format. This may indicate an API change or malformed data.",
-    guidance_process_exit: "The underlying process reported a failure. Check the execution log for more details.",
+    guidance_process_exit: "The underlying process reported a failure. Check the execution log for more details."
   },
   process_labels: {
     n8n_transform: "n8n Transform",
@@ -8067,10 +9159,11 @@ export const ko = {
     lab_run: "Lab Run",
     connector_test: "Connector Test",
     creative_session: "Creative Session",
+    feedback_chat: "피드백 채팅",
     complete_suffix: "Complete",
     failed_suffix: "Failed",
     pending_reviews_one: "{count} pending review awaiting approval",
-    pending_reviews_other: "{count} pending reviews awaiting approval",
+    pending_reviews_other: "{count} pending reviews awaiting approval"
   },
   eval_strategies: {
     keyword_match_label: "Output Quality",
@@ -8082,7 +9175,7 @@ export const ko = {
     confusion_detect_label: "Confusion Detection",
     confusion_detect_description: "Checks for known confusion/failure phrases",
     composite_label: "Composite",
-    composite_description: "Weighted combination of all strategies",
+    composite_description: "Weighted combination of all strategies"
   },
   drift_labels: {
     kind_error_pattern: "Error Pattern",
@@ -8110,7 +9203,7 @@ export const ko = {
     suggestion_error_handling: "Review errorHandling section and add handling for this failure pattern.",
     suggestion_near_timeout: "Consider increasing timeout or simplifying the agent's task scope in instructions.",
     suggestion_high_cost: "Tighten instructions to reduce token usage, or consider using a smaller model.",
-    suggestion_repeated_failure: "Consider running a new design analysis to rebuild the agent configuration.",
+    suggestion_repeated_failure: "Consider running a new design analysis to rebuild the agent configuration."
   },
   feedback_labels: {
     accurate_prompt: "Accurate Prompt",
@@ -8123,13 +9216,13 @@ export const ko = {
     over_engineered: "Over-Engineered",
     under_specified: "Under-Specified",
     wrong_triggers: "Wrong Triggers",
-    credential_issues: "Credential Issues",
+    credential_issues: "Credential Issues"
   },
   protocol_labels: {
     manual_review: "Manual Review",
     user_message: "User Notifications",
     agent_memory: "Agent Memory",
-    emit_event: "Event Emission",
+    emit_event: "Event Emission"
   },
   execution: {
     budget_exceeded: "Monthly budget exceeded for this agent. Override the budget pause in the agent settings or increase the budget to continue.",
@@ -8146,6 +9239,11 @@ export const ko = {
     waiting_for_output: "Waiting for output...",
     no_output: "No output",
     background: "Background",
+    needs_credential: "자격 증명 필요",
+    run_preview: "실행 미리보기",
+    close_preview: "미리보기 닫기",
+    budget_limit: "예산 한도",
+    run_agent: "에이전트 실행"
   },
   gitlab: {
     integration_title: "GitLab Integration",
@@ -8260,6 +9358,10 @@ export const ko = {
     play_sound: "Play sound",
     cicd_agent_templates: "CI/CD Agent Templates",
     your_tier: "(yours)",
+    trigger_on: "on:",
+    connecting_to_gitlab: "GitLab에 연결 중...",
+    deploying_to_gitlab: "페르소나를 GitLab에 배포 중...",
+    pipeline_hash: "파이프라인 #"
   },
   pipeline: {
     agent_teams: "Agent Teams",
@@ -8407,6 +9509,11 @@ export const ko = {
     run_pipeline_or_add: "Run a pipeline or add one manually",
     load_more: "Load more",
     showing_count: "Showing {shown} of {total}",
+    no_timeline_data: "타임라인 데이터 없음",
+    clear_filter: "필터 지우기",
+    filter_to_run: "이 실행으로 필터링",
+    new_memories_one: "새 메모리 {count}개",
+    new_memories_other: "새 메모리 {count}개"
   },
   composition: {
     select_persona: "Select Persona",
@@ -8455,10 +9562,10 @@ export const ko = {
     add_input_node: "Add Input node",
     add_persona_node: "Add Persona node",
     add_output_node: "Add Output node",
-    run: "Run",
+    run: "Run"
   },
   auth: {
-    login_timed_out: "Login timed out. Please try again.",
+    login_timed_out: "Login timed out. Please try again."
   },
   shared: {
     blast_checking_impact: "Checking impact...",
@@ -8557,7 +9664,7 @@ export const ko = {
     toggle_enabled: "Enabled",
     toggle_disabled: "Disabled",
     design_drop_file: "Drop file here",
-    design_placeholder: "Describe what this persona should do...\\n\\nExamples:\\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\\n  - Watch GitHub webhooks and post summaries to Slack\\n  - Analyze our API logs daily and flag anomalies",
+    design_placeholder: "Describe what this persona should do...\\\n\\\nExamples:\\\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\\\n  - Watch GitHub webhooks and post summaries to Slack\\\n  - Analyze our API logs daily and flag anomalies",
     design_attach: "Attach",
     design_references: "References",
     design_files_attached_one: "{count} file attached",
@@ -8593,6 +9700,15 @@ export const ko = {
     cmd_select: "select",
     cmd_commands: "commands",
     draft_editor: {
+      edit_tabs_label: "초안 편집 탭",
+      request_ai_adjustments: "AI 조정 요청",
+      edit_raw_json_hint: "원시 JSON을 편집하세요. 변경 사항은 폼 필드를 재정의합니다.",
+      no_custom_sections: "아직 사용자 지정 섹션이 없습니다",
+      no_content_to_preview: "미리볼 콘텐츠가 없습니다",
+      edit_raw: "원시 편집",
+      credential_links: "자격 증명 링크",
+      view_full_prompt: "전체 프롬프트 보기",
+      hide_full_prompt: "전체 프롬프트 숨기기",
       persona_name_placeholder: "Persona name...",
       description_placeholder: "Brief description...",
       refine_placeholder: "Example: Make error handling stricter, add retry logic...",
@@ -8613,55 +9729,108 @@ export const ko = {
       design_context_json: "Design context JSON...",
       click_next: "Click next to proceed with the transform.",
       configure_transform: "Configure Transform",
-      select: "Select...",
+      select: "Select..."
     },
     forms_extra: {
+      color_hex_placeholder: "#8b5cf6",
+      attach_file_title: "파일 첨부 (API 사양, 스키마, MCP 설정)",
+      add_references_title: "참조 URL 또는 연결 문자열 추가",
+      no_matches: "일치하는 항목 없음",
+      all_prefix: "전체 (",
       references: "References",
       references_placeholder: "Paste URLs, connection strings, API keys, or any reference info (one per line)",
       remove_file: "Remove file",
       choose_color: "Choose color",
       choose_icon: "Choose icon",
       filter_placeholder: "Filter...",
-      reset_to_default: "Reset to default",
+      reset_to_default: "Reset to default"
     },
     reasoning_trace: {
+      heartbeat_silent: "초 (무음",
+      waiting: "실행 이벤트 대기 중...",
+      tool_call_label: "도구 호출:",
       system_init: "System Init",
       reasoning: "Reasoning",
       tool_call: "Tool Call: {name}",
       result: "Result",
       complete: "Complete",
-      error: "Error",
+      error: "Error"
     },
     sidebar_extra: {
+      clear_completed_title: "완료 및 대기 중인 항목 지우기",
+      no_credentials: "아직 자격 증명이 없습니다",
+      ai_setup_wizard: "AI 설정 마법사",
+      all_personas: "모든 페르소나",
+      no_scheduled_agents: "스케줄이 있는 에이전트 없음",
+      all_agents_label: "모든 에이전트",
+      draft_builds: "초안 빌드",
+      dev_tools_label: "개발 도구",
+      obsidian_brain: "Obsidian Brain",
+      active_twin: "활성 트윈",
+      research_lab: "연구 랩",
       agents: "Agents",
       schedules: "Schedules",
       remove_favorites: "Remove from favorites",
       add_favorites: "Add to favorites",
-      active_project: "Active Project",
+      active_project: "Active Project"
     },
     execution_detail: {
+      running: "실행 중...",
+      rerun: "재실행",
+      retry_prefix: "재시도 #",
+      importance_prefix: "중요도:",
+      confidence_suffix: "% 신뢰도",
       copy: "Copy",
       suggested_actions: "Suggested Actions",
       knowledge_insight: "Knowledge Insight",
       outcome_assessment: "Outcome Assessment",
-      blockers: "Blockers",
+      blockers: "Blockers"
     },
     progress_extra: {
+      continue_working: "계속 작업할 수 있습니다 -- 초안이 준비되면 알려드리겠습니다.",
+      draft_ready: "페르소나 초안이 검토 및 편집할 준비가 되었습니다.",
+      click_generate: "시작하려면 \\u201c페르소나 초안 생성\\u201d을 클릭하세요.",
+      skip_configuration: "구성 건너뛰기",
+      no_config_questions: "구성 질문이 필요하지 않습니다.",
+      answer_questions: "페르소나 생성을 사용자 지정하려면 이 질문에 답하세요.",
+      no_output: "아직 출력이 없습니다...",
+      s_elapsed: "초 경과",
+      s_remaining: "초 남음",
+      show_cli_output: "CLI 출력 표시",
+      hide_cli_output: "CLI 출력 숨기기",
       taking_longer: "Taking longer than expected",
       complete: "Complete",
       resuming: "Resuming previous transformation session...",
       cancel_transformation: "Cancel transformation",
       draft_generated: "Draft generated successfully",
       transformation_failed: "Transformation failed",
-      waiting_to_start: "Waiting to start transformation...",
+      waiting_to_start: "Waiting to start transformation..."
     },
     terminal_extra: {
+      connecting: "공급자에 연결 중",
+      queued_at: "대기열 위치",
+      new_line: "새 줄",
+      new_lines: "새 줄",
+      below: "아래",
+      lines_suffix: "줄)",
+      search_and_filter: "검색 및 필터",
       press_enter: "Press Enter or click Play to start",
       connection_failed: "Connection failed -- check provider settings and retry",
       search_output: "Search output...",
-      dismiss: "Dismiss",
+      dismiss: "Dismiss"
     },
     use_cases_extra: {
+      input_placeholder: "이 사용 사례를 실행할 입력을 입력하세요…",
+      model_placeholder: "예: claude-3-5-sonnet-latest",
+      use_case_singular: "사용 사례",
+      window_prefix: "(창:",
+      loading_history: "이력 로딩 중...",
+      no_executions: "아직 실행이 없습니다",
+      run_to_see_history: "실행 이력, 타이밍, 비용을 보려면 이 사용 사례를 실행하세요.",
+      run_use_case: "이 사용 사례 실행",
+      custom_model: "사용자 지정 모델",
+      no_results: "결과를 찾을 수 없습니다",
+      ctrl_enter: "Ctrl+Enter",
       example_output: "Example output",
       input_data: "Input Data",
       rerun_input: "Re-run with this input",
@@ -8669,7 +9838,7 @@ export const ko = {
       error_prefix: "Error: ",
       output_prefix: "Output: ",
       toggle_history: "Toggle execution history",
-      configure_model: "Configure model, notifications & subscriptions",
+      configure_model: "Configure model, notifications & subscriptions"
     },
     json_valid: "Valid JSON",
     json_invalid: "Invalid JSON",
@@ -8677,6 +9846,85 @@ export const ko = {
     json_format_tooltip: "Format JSON",
     agent_icon_label: "agent icon",
     breadcrumb_label: "Breadcrumb",
-    breadcrumb_show_hidden: "Show hidden breadcrumbs",
+    breadcrumb_show_hidden: "Show hidden breadcrumbs"
   },
+  releases: {
+    whats_new: {
+      title: "새 소식",
+      subtitle_roadmap: "지금 만들고 있는 것과 다음에 올 것.",
+      subtitle_changelog: "Personas 버전의 새로운 기능.",
+      nav_bar_roadmap_label: "로드맵",
+      empty: "아직 이 릴리스에 공유할 내용이 없습니다 — 곧 다시 확인하세요.",
+      status_released: "출시됨",
+      status_active: "현재",
+      status_planned: "계획됨",
+      status_roadmap: "로드맵",
+      type_feature: "신규",
+      type_fix: "수정됨",
+      type_security: "보안",
+      type_docs: "문서",
+      type_chore: "작업",
+      type_breaking: "호환성 변경",
+      item_status_in_progress: "진행 중",
+      item_status_planned: "계획됨",
+      item_status_completed: "완료",
+      priority_now: "지금",
+      priority_next: "다음",
+      priority_later: "나중에",
+      summary_in_progress: "{count}개 진행 중",
+      summary_next: "{count}개 다음",
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "Personas의 첫 번째 프리뷰.",
+      release_0_0_1_item_1_title: "첫 번째 공개 프리뷰",
+      release_0_0_1_item_1_description: "AI 에이전트를 설계하고, 스케줄 또는 트리거로 실행하며, 데스크톱에서 실시간으로 작업을 지켜보세요.",
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "Personas를 다른 AI 도구에 연결하고 앱을 떠나지 않고 새로운 소식을 읽어보세요.",
+      release_0_0_2_item_1_title: "에이전트를 다른 AI 도구에 개방",
+      release_0_0_2_item_1_description: "Personas는 이제 공유 프로토콜을 통해 다른 AI 도구와 통신할 수 있습니다. 공유할 에이전트를 정확하게 선택하고, 당신이 제어하는 액세스 키로 보호하세요 — 개인 에이전트는 기본적으로 비공개로 유지됩니다.",
+      release_0_0_2_item_2_title: "데스크톱 앱을 위한 더 안전한 액세스",
+      release_0_0_2_item_2_description: "데스크톱 앱은 시작할 때마다 자체 단기 액세스 키를 생성하므로 승인하지 않은 내용을 노출하지 않고 백그라운드 서비스와 통신할 수 있습니다.",
+      release_0_0_2_item_3_title: "앱 내부의 릴리스 노트",
+      release_0_0_2_item_3_description: "앱을 떠나지 않고 모든 Personas 릴리스의 새 소식을 보세요. 한곳에서 과거 버전, 현재 릴리스, 장기 로드맵 간을 전환하세요.",
+      release_0_0_2_item_4_title: "에이전트가 모든 세션에서 학습",
+      release_0_0_2_item_4_description: "Personas는 이제 각 에이전트 세션에서 교훈을 캡처하여 재사용 가능한 지식으로 증류하고 다음 실행으로 전달합니다. 사용할수록 에이전트가 더 똑똑해집니다 — 수동 학습이 필요하지 않습니다.",
+      release_0_0_2_item_5_title: "모든 문서를 청취 가능한 브리핑으로 전환",
+      release_0_0_2_item_5_description: "연구 보고서, 회의 녹취록, 긴 기사를 이동 중에 들을 수 있는 5-15분 2인 호스트 오디오 대화로 전환하는 새 템플릿. 스타일을 선택하고 — 캐주얼, 공식, 뉴스, 임원 — 목소리가 생성되기 전에 스크립트를 검토하세요.",
+      release_0_0_2_item_6_title: "Stanford 교육을 받은 작문 편집기",
+      release_0_0_2_item_6_description: "Stanford의 \"Writing in the Sciences\" 방법으로 초안을 검토하는 새 템플릿. 수동태, 불필요한 표현, 전문 용어를 플래그하고 — 제안된 모든 변경이 문장을 더 명확하게 만드는 이유를 설명합니다. 수락하거나 거부한 편집에서 당신의 목소리를 학습합니다.",
+      release_0_0_2_item_7_title: "20시간의 YouTube 제작을 3시간으로 단축",
+      release_0_0_2_item_7_description: "촬영을 제외한 모든 작업을 처리하여 전체 YouTube 비디오 사이클을 약 3시간으로 압축하는 새 템플릿. 틈새 시장이 추구할 가치가 있는지 확인하고, 당신의 목소리로 훅 우선 스크립트를 작성하며, 승인된 스크립트를 정답으로 사용하여 원시 영상에서 재촬영을 자동으로 제거합니다 — 자연스럽게 촬영하고, 자유롭게 더듬거리며, 계속 진행할 수 있습니다.",
+      release_0_0_2_item_8_title: "에이전트에서 Apify 스크레이퍼 실행",
+      release_0_0_2_item_8_description: "Apify 플랫폼의 모든 actor — YouTube 스크레이퍼, Twitter 스크레이퍼, 브라우저 자동화, 수백 가지 기타 — 를 에이전트에 직접 연결하세요. 공식 API가 도달할 수 없는 데이터가 필요한 연구 워크플로를 잠금 해제합니다.",
+      release_0_0_2_item_9_title: "X (Twitter)가 이제 커넥터로",
+      release_0_0_2_item_9_description: "최근 트윗을 검색하고, 트렌드 주제를 추적하며, 에이전트에서 직접 게시하세요. Personas를 떠나지 않고 콘텐츠 조사, 소셜 리스닝, 마케팅 자동화에 유용합니다.",
+      release_0_0_2_item_10_title: "에이전트에서 YouTube 시청",
+      release_0_0_2_item_10_description: "Personas의 첫 번째 비디오 플랫폼 커넥터. YouTube에서 일어나고 있는 일을 이해해야 하는 에이전트에서 비디오 검색, 채널 통계 가져오기, 트렌드 콘텐츠 가져오기, 경쟁사 분석을 직접 수행하세요.",
+      release_0_0_2_item_11_title: "Deepgram으로 오디오를 텍스트로 변환",
+      release_0_0_2_item_11_description: "단어 수준 타이밍으로 오디오 파일이나 URL을 전사하는 새로운 음성-텍스트 커넥터. YouTube 크리에이터 어시스턴트의 자동 편집을 지원하고, 모든 에이전트에 음성 노트, 회의 녹음, 팟캐스트 콘텐츠를 처리할 수 있는 기능을 제공합니다.",
+      release_0_0_2_item_12_title: "다른 AI 도구가 에이전트를 확인하고 중지할 수 있음",
+      release_0_0_2_item_12_description: "다른 AI 도구가 공유된 에이전트 중 하나를 호출할 때, 이제 실행 중에 '아직 실행 중인가?' 및 '지금 중지해 주세요'를 요청할 수 있습니다. 긴 연구 작업은 더 이상 연결을 계속 열어 둘 필요가 없으며, 멈춘 실행은 호출 측에서 깔끔하게 취소할 수 있습니다. 각 에이전트는 자신의 실행만 볼 수 있으므로 에이전트 간에 유출되지 않습니다.",
+      release_0_0_2_item_13_title: "새 커넥터: Humbalytics 분석",
+      release_0_0_2_item_13_description: "코드를 건드리지 않고도 트래픽을 추적하고, A/B 실험을 실행하며, 랜딩 페이지 카피를 교체하세요. Personas는 이제 Humbalytics에서 히트 맵과 전환 데이터를 가져와서 실험을 안내할 수 있습니다.",
+      release_0_0_2_item_14_title: "새 커넥터: Firecrawl 웹 스크레이핑",
+      release_0_0_2_item_14_description: "에이전트는 이제 모든 웹사이트 — 현대적인 JavaScript 중심 웹사이트까지도 — 를 깨끗하고 구조화된 콘텐츠로 읽을 수 있습니다. 연구, 시장 인텔리전스, 콘텐츠 모니터링 에이전트에 유용합니다.",
+      release_0_0_2_item_15_title: "A/B 테스트를 실제로 실행하는 마케팅 에이전트",
+      release_0_0_2_item_15_description: "헤드라인 변형을 제안하고, 승인을 받아 배포하며, 통계적 유의성을 기다리고, 승자를 자동으로 승격시키는 새 템플릿. 모든 변경은 라이브가 되기 전에 사람의 검토를 거치고, 각 실험은 결과가 실제로 의미를 갖도록 충분히 오래 실행됩니다.",
+      release_0_0_2_item_16_title: "에이전트에서 팀의 BI 대시보드 읽기",
+      release_0_0_2_item_16_description: "Personas는 이제 저장된 Redash 쿼리와 대시보드에서 결과를 가져올 수 있습니다. 팀이 이미 공유 대시보드를 유지하고 있다면, 에이전트는 사람들이 보는 것과 동일한 숫자를 읽습니다 — SQL 재작성, CSV 내보내기, 복사-붙여넣기가 필요 없습니다.",
+      release_0_0_2_item_17_title: "Metabase가 이제 커넥터로",
+      release_0_0_2_item_17_description: "에이전트는 저장된 Metabase 질문을 실행하고 워크스페이스에서 직접 대시보드를 읽을 수 있습니다. Metabase Pro, Enterprise, 모든 자체 호스팅 인스턴스에서 작동합니다.",
+      release_0_0_2_item_18_title: "매일 BI 다이제스트를 받아보세요",
+      release_0_0_2_item_18_description: "Redash 또는 Metabase에 이미 유지하고 있는 저장된 쿼리를 선택하고, 매일 아침 최신 숫자를 요약하며, 주별 이상 플래그와 함께 평이한 언어의 다이제스트를 게시하는 새 템플릿. 아무도 열지 않아도 대시보드가 유용하게 유지됩니다.",
+      release_roadmap_label: "로드맵",
+      release_roadmap_summary: "지금 만들고 있는 것과 다음에 올 것.",
+      release_roadmap_item_2_title: "클라우드 통합",
+      release_roadmap_item_2_description: "에이전트를 클라우드에서 24/7 실행하고 작업을 데스크톱에 실시간으로 스트리밍하세요.",
+      release_roadmap_item_3_title: "웹 앱",
+      release_roadmap_item_3_description: "모든 브라우저에서 계정, 결제, 에이전트 관리를 위한 웹 동반자.",
+      release_roadmap_item_4_title: "당신의 언어로 Personas 사용",
+      release_roadmap_item_4_description: "오른쪽에서 왼쪽 레이아웃과 언어별 글꼴을 포함한 전체 다국어 지원.",
+      release_roadmap_item_6_title: "팀 워크스페이스",
+      release_roadmap_item_6_description: "팀과 함께 에이전트를 구축하세요 — 공유 공간, 역할 권한, 라이브 대시보드."
+    }
+  }
 };

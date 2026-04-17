@@ -1,5 +1,4 @@
 export const es = {
-
   common: {
     loading: "Cargando...",
     saving: "Guardando...",
@@ -48,6 +47,7 @@ export const es = {
     error: "Error",
     success: "Éxito",
     required: "obligatorio",
+    optional: "opcional",
     select: "-- seleccionar --",
     no_results: "No se encontraron resultados",
     active: "Activo",
@@ -143,9 +143,7 @@ export const es = {
     command_palette_navigate: "navegar",
     command_palette_select: "seleccionar",
     command_palette_commands: "comandos",
-    loading_label: "Cargando",
-    // @llm-translated 2026-04-17
-    optional: "opcional",
+    loading_label: "Cargando"
   },
   chrome: {
     app_title: "Personas",
@@ -165,7 +163,7 @@ export const es = {
     sign_in_google: "Iniciar sesion con Google",
     signed_in: "Sesion iniciada",
     sign_out: "Cerrar sesion",
-    offline: "Sin conexion",
+    offline: "Sin conexion"
   },
   sidebar: {
     home: "Inicio",
@@ -211,6 +209,8 @@ export const es = {
     engine: "Motor",
     byom: "BYOM",
     data: "Datos",
+    quality_gates: "Filtros de contenido",
+    config_resolution: "Configuración del agente",
     admin: "Administración",
     create: "Crear",
     all_agents: "Todos los agentes",
@@ -234,11 +234,7 @@ export const es = {
     unread_messages_sr: "{count} mensaje sin leer",
     unread_messages_sr_other: "{count} mensajes sin leer",
     pending_events_sr: "{count} evento pendiente",
-    pending_events_sr_other: "{count} eventos pendientes",
-    // @llm-translated 2026-04-17
-    quality_gates: "Filtros de contenido",
-    // @llm-translated 2026-04-17
-    config_resolution: "Configuración del agente",
+    pending_events_sr_other: "{count} eventos pendientes"
   },
   home: {
     welcome: "Bienvenido",
@@ -263,7 +259,7 @@ export const es = {
       priority_next: "Siguiente",
       priority_later: "Después",
       in_progress_count: "{count} en progreso",
-      next_count: "{count} siguiente",
+      next_count: "{count} siguiente"
     },
     setup: {
       choose_role: "Elige tu rol",
@@ -291,45 +287,45 @@ export const es = {
       role_manager_hint: "Planificación y coordinación",
       role: "Rol",
       tool: "Herramienta",
-      goal: "Objetivo",
+      goal: "Objetivo"
     },
     nav: {
       overview: {
         label: "Resumen",
-        description: "Analíticas del panel, historial de ejecuciones y monitoreo del sistema en tiempo real de todos los agentes",
+        description: "Analíticas del panel, historial de ejecuciones y monitoreo del sistema en tiempo real de todos los agentes"
       },
       personas: {
         label: "Agentes",
-        description: "Crea, configura y gestiona agentes de IA con comportamientos y capacidades personalizadas",
+        description: "Crea, configura y gestiona agentes de IA con comportamientos y capacidades personalizadas"
       },
       events: {
         label: "Eventos",
-        description: "Configura disparadores de eventos, receptores de webhook y automatizaciones programadas",
+        description: "Configura disparadores de eventos, receptores de webhook y automatizaciones programadas"
       },
       credentials: {
         label: "Credenciales",
-        description: "Gestiona credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados",
+        description: "Gestiona credenciales de API, conexiones a bases de datos, tokens OAuth y secretos cifrados"
       },
       "design-reviews": {
         label: "Plantillas",
-        description: "Importa flujos de n8n, explora la galería de plantillas y genera planos de agentes",
+        description: "Importa flujos de n8n, explora la galería de plantillas y genera planos de agentes"
       },
       team: {
         label: "Equipos",
-        description: "Construye pipelines de equipos multi-agente con orquestación visual y enrutamiento",
+        description: "Construye pipelines de equipos multi-agente con orquestación visual y enrutamiento"
       },
       cloud: {
         label: "Nube",
-        description: "Despliega agentes en infraestructura en la nube, gestiona programaciones e integra GitLab CI",
+        description: "Despliega agentes en infraestructura en la nube, gestiona programaciones e integra GitLab CI"
       },
       settings: {
         label: "Ajustes",
-        description: "Preferencias de cuenta, temas de apariencia, reglas de notificación y configuración del motor",
+        description: "Preferencias de cuenta, temas de apariencia, reglas de notificación y configuración del motor"
       },
       plugins: {
         label: "Plugins",
-        description: "Amplía tus agentes con plugins de terceros y extensiones personalizadas",
-      },
+        description: "Amplía tus agentes con plugins de terceros y extensiones personalizadas"
+      }
     },
     learning: {
       title: "Centro de aprendizaje",
@@ -346,7 +342,7 @@ export const es = {
       pro_tip: "Consejo profesional: ",
       cat_agent_craft: "Diseño de agentes",
       cat_observability: "Observabilidad y eventos",
-      cat_platform: "Plataforma y configuración",
+      cat_platform: "Plataforma y configuración"
     },
     setup_stepper: {
       your_profile: "Tu perfil",
@@ -362,18 +358,18 @@ export const es = {
       ready_to_save: "Listo para guardar",
       back: "Atrás",
       next: "Siguiente",
-      finish: "Finalizar",
+      finish: "Finalizar"
     },
     welcome_layout: {
       get_started: "Comenzar",
-      language: "Idioma",
+      language: "Idioma"
     },
     icon_showcase: {
       lucide_tab: "Lucide (Biblioteca)",
       personas_tab: "Personas (Animado)",
       lucide_footer: "lucide-react -- biblioteca de íconos genérica -- estático",
-      personas_footer: "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema",
-    },
+      personas_footer: "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
+    }
   },
   agents: {
     title: "Personas",
@@ -384,12 +380,12 @@ export const es = {
       subtitle_other: "{count} agentes -- ordenados por relevancia",
       needs_attention: "Requiere atención",
       active: "Activos",
-      idle: "Inactivos",
+      idle: "Inactivos"
     },
     sidebar: {
       no_match: "Ningún agente coincide con tus filtros",
       clear_filters: "Limpiar todos los filtros",
-      empty: "Aún no hay agentes",
+      empty: "Aún no hay agentes"
     },
     preview: {
       sensitive_hidden: "Vista previa sensible oculta",
@@ -404,7 +400,7 @@ export const es = {
       triggers_active_one: "{count} disparador activo",
       triggers_active_other: "{count} disparadores activos",
       no_triggers: "Sin disparadores",
-      custom_model: "Personalizado",
+      custom_model: "Personalizado"
     },
     creation: {
       heading: "Nuevo agente",
@@ -421,7 +417,7 @@ export const es = {
       no_group: "Sin grupo",
       create_button: "Crear agente",
       creating_button: "Creando...",
-      name_required: "Introduce un nombre para continuar",
+      name_required: "Introduce un nombre para continuar"
     },
     editor: {
       tabs: {
@@ -432,7 +428,7 @@ export const es = {
         design: "Diseño",
         health: "Salud",
         settings: "Ajustes",
-        model: "Modelo",
+        model: "Modelo"
       },
       no_persona: "Ningún agente seleccionado",
       save_failed: "Error al guardar {tabs}",
@@ -446,13 +442,13 @@ export const es = {
       cloud_banner_connect: "Conecta un orquestador en la nube para ejecutar agentes de forma remota",
       cloud_banner_signin: "Inicia sesión para desbloquear funciones en la nube y ejecución remota",
       sign_in: "Iniciar sesión",
-      set_up_cloud: "Configurar nube",
+      set_up_cloud: "Configurar nube"
     },
     header: {
       no_triggers_warning: "No hay disparadores ni suscripciones a eventos configurados",
       missing_credentials: "Credenciales faltantes: {credentials}",
       toggle_failed: "Error al cambiar el estado del agente -- verifica tu conexión",
-      cannot_enable: "No se puede habilitar el agente",
+      cannot_enable: "No se puede habilitar el agente"
     },
     sr_card: "{name}, {status}",
     filters: {
@@ -473,7 +469,7 @@ export const es = {
       selected: "{count} seleccionados",
       remove_from_favorites: "Quitar de favoritos",
       add_to_favorites: "Agregar a favoritos",
-      filter_by: "Filtrar por {label}",
+      filter_by: "Filtrar por {label}"
     },
     status: {
       draft: "Borrador",
@@ -481,7 +477,7 @@ export const es = {
       healthy: "Saludable",
       degraded: "Degradado",
       failing: "Fallando",
-      building: "Construyendo",
+      building: "Construyendo"
     },
     executions: {
       no_persona_selected: "Ninguna persona seleccionada",
@@ -722,6 +718,10 @@ export const es = {
       loading_dream_replay: "Cargando repetición de sueño...",
       no_dream_trace: "No hay datos de traza disponibles para la repetición de sueño",
       frame_count: "Fotograma {index}/{total}",
+      depth_label: "Profundidad:",
+      active_count_label: "Activo ({count})",
+      completed_count_label: "Completado ({count})",
+      metadata_section: "Metadatos",
       phase_initializing: "Inicializando",
       phase_thinking: "Pensando",
       phase_calling_tools: "Ejecutando herramientas",
@@ -749,32 +749,15 @@ export const es = {
       offset_prefix: "desp:",
       step_tooltip: "Paso {step}: {name}",
       ms_into_stage: "{ms}ms en la etapa",
-      // @llm-translated 2026-04-17
-      depth_label: "Profundidad:",
-      // @llm-translated 2026-04-17
-      active_count_label: "Activo ({count})",
-      // @llm-translated 2026-04-17
-      completed_count_label: "Completado ({count})",
-      // @llm-translated 2026-04-17
-      metadata_section: "Metadatos",
-      // @llm-translated 2026-04-17
       chain_id_prefix: "Cadena: {id}",
-      // @llm-translated 2026-04-17
       chain_total_duration: "Total: {duration}",
-      // @llm-translated 2026-04-17
       zero_ms: "0ms",
-      // @llm-translated 2026-04-17
       tool_calls_count: "{count} llamada a herramienta",
-      // @llm-translated 2026-04-17
       tool_calls_count_other: "{count} llamadas a herramientas",
-      // @llm-translated 2026-04-17
       unique_tools_count: "({count} únicas)",
-      // @llm-translated 2026-04-17
       prev_error_nav: "Error anterior (Shift+E)",
-      // @llm-translated 2026-04-17
       next_error_nav: "Siguiente error (E)",
-      // @llm-translated 2026-04-17
-      runner_input_placeholder: "{\"key\": \"value\"}",
+      runner_input_placeholder: "{\"key\": \"value\"}"
     },
     lab: {
       mode_arena: "Arena",
@@ -908,9 +891,7 @@ export const es = {
       quality_label: "Calidad",
       speed_label: "Velocidad",
       cost_label: "Costo",
-      // @llm-translated 2026-04-17
       objective_warning: "Problema con el objetivo de aptitud",
-      // @llm-translated 2026-04-17
       objective_fallback_toast: "La evolución utilizó pesos de aptitud predeterminados — verifica la configuración del objetivo",
       genome_breeding: "Cruce de genomas",
       genome_breeding_subtitle: "Cruza personas de alto rendimiento para descubrir configuraciones novedosas",
@@ -1028,7 +1009,7 @@ export const es = {
       quality_score_inline: "Puntuación: {score} | {coverage} escenarios",
       cancel_default: "Cancelar",
       hide_impact: "Ocultar impacto",
-      show_impact: "Mostrar impacto",
+      show_impact: "Mostrar impacto"
     },
     design: {
       select_agent: "Selecciona un agente para iniciar el análisis de diseño",
@@ -1038,7 +1019,7 @@ export const es = {
       compile_from_examples: "Compilar desde ejemplos",
       compile_intent: "Compilar intención",
       analyze_build: "Analizar y construir",
-      intent_placeholder: "Describe lo que quieres que haga este agente en lenguaje sencillo...\\n\\np. ej. \\\"Monitorear nuestra cuenta de Stripe para pagos fallidos mayores a $100 y notificar al equipo de finanzas en Slack con un resumen\\\"",
+      intent_placeholder: "Describe lo que quieres que haga este agente en lenguaje sencillo...\\\n\\\np. ej. \\\"Monitorear nuestra cuenta de Stripe para pagos fallidos mayores a $100 y notificar al equipo de finanzas en Slack con un resumen\\\"",
       intent_submit_hint: "Presiona Enter para enviar, Shift+Enter para nueva línea.",
       intent_detail: "El compilador generará una configuración completa: prompt, herramientas, disparadores, casos de uso, recomendación de modelo y escenarios de prueba.",
       example_context_placeholder: "Opcional: agrega contexto o restricciones (p. ej. \\\"siempre priorizar tickets P1\\\", \\\"publicar en el canal #alerts\\\")",
@@ -1094,14 +1075,15 @@ export const es = {
       msg_count_one: "{count} msg",
       msg_count_other: "{count} msgs",
       resume: "Reanudar",
+      conv_controls_aria: "Controles de conversación de diseño",
       design_drift: "Deriva de diseño",
       design_sessions: "Sesiones de diseño",
       example_n: "Ejemplo {index}",
       remove_example: "Eliminar ejemplo",
       input_label: "Entrada — lo que recibe el agente",
       output_label: "Salida — lo que quieres que produzca el agente",
-      input_placeholder: "Pega una entrada real...\\n\\np. ej. un cuerpo de correo, un mensaje de Slack, una solicitud entrante, una fila de CSV",
-      output_placeholder: "Describe o pega la salida deseada...\\n\\np. ej. \\\"Crear un ticket de Jira con título del asunto, prioridad P2, asignado al equipo de backend\\\"",
+      input_placeholder: "Pega una entrada real...\\\n\\\np. ej. un cuerpo de correo, un mensaje de Slack, una solicitud entrante, una fila de CSV",
+      output_placeholder: "Describe o pega la salida deseada...\\\n\\\np. ej. \\\"Crear un ticket de Jira con título del asunto, prioridad P2, asignado al equipo de backend\\\"",
       example_instructions: "Pega una entrada real (correo, solicitud, mensaje) y muestra la salida que deseas. El compilador reverse-engineering la configuración completa del agente desde tus ejemplos.",
       add_first_example: "Agrega tu primer ejemplo de entrada -> salida",
       current_config_preserved: "La configuración actual se conservará. Describe qué cambiar.",
@@ -1112,9 +1094,7 @@ export const es = {
       next: "Siguiente",
       go_back_hint: "Vuelve y responde las preguntas para configurar tu agente.",
       additional_instructions: "Instrucciones o contexto adicional (opcional)",
-      additional_instructions_placeholder: "Agrega requisitos específicos, conocimiento del dominio o restricciones...",
-      // @llm-translated 2026-04-17
-      conv_controls_aria: "Controles de conversación de diseño",
+      additional_instructions_placeholder: "Agrega requisitos específicos, conocimiento del dominio o restricciones..."
     },
     connectors: {
       connectors_label: "Conectores",
@@ -1179,12 +1159,6 @@ export const es = {
       auto_show_advanced: "Mostrar configuración avanzada",
       auto_hide_advanced: "Ocultar configuración avanzada",
       auto_input_schema: "Esquema de entrada",
-      // @llm-translated 2026-04-17
-      auto_input_schema_placeholder: "{ \"file_url\": \"string\" }",
-      // @llm-translated 2026-04-17
-      auto_github_token_needs: "Tu token necesita el(los) alcance(s) {scopes}. Actualiza tu token en github.com/settings/tokens.",
-      // @llm-translated 2026-04-17
-      auto_fallback_title: "Recurre al conector directo en caso de fallo",
       auto_on_failure: "En caso de fallo",
       auto_timeout: "Tiempo de espera",
       auto_seconds: "segundos",
@@ -1206,6 +1180,9 @@ export const es = {
       auto_event_type: "Tipo de evento: {eventType}",
       auto_zapier_hint: "El catch hook se validará y conectará.",
       auto_custom_hint: "Se requiere configuración manual. La automatización se guardará como borrador.",
+      auto_input_schema_placeholder: "{ \"file_url\": \"string\" }",
+      auto_github_token_needs: "Tu token necesita el(los) alcance(s) {scopes}. Actualiza tu token en github.com/settings/tokens.",
+      auto_fallback_title: "Recurre al conector directo en caso de fallo",
       ch_title: "Canales de notificación",
       ch_add: "Agregar canal",
       ch_all_added: "Todos los tipos de canal agregados",
@@ -1281,7 +1258,7 @@ export const es = {
       sub_confirm: "¿Confirmar?",
       sub_triggers_title: "Disparadores y suscripciones",
       sub_suggested: "{count} sugerida(s)",
-      sub_filter: "filtro: {filter}",
+      sub_filter: "filtro: {filter}"
     },
     editor_chrome: {
       tab_activity: "Actividad",
@@ -1314,7 +1291,7 @@ export const es = {
       latency_label: "Latencia",
       cost_run_label: "Costo/ejecución",
       last_run_label: "Última ejecución",
-      rank: "Rango",
+      rank: "Rango"
     },
     model_config: {
       model_provider: "Modelo y proveedor",
@@ -1377,7 +1354,6 @@ export const es = {
       model_name_placeholder_litellm: "p. ej. anthropic/claude-sonnet-4-20250514",
       model_name_placeholder_ollama: "p. ej. llama3.1:8b",
       model_name_placeholder_custom: "Identificador del modelo",
-      // @llm-translated 2026-04-17
       model_name_placeholder_override: "p. ej. claude-sonnet-4-20250514",
       base_url_hint: "El endpoint API de tu proveedor de modelo. Debe incluir el protocolo (http/https) y el puerto si no es estándar.",
       base_url_example: "http://localhost:11434",
@@ -1419,7 +1395,7 @@ export const es = {
       latency: "Latencia",
       cost: "Costo",
       output_previews: "Vistas previas de salida",
-      no_output: "Sin salida",
+      no_output: "Sin salida"
     },
     use_cases: {
       no_persona: "Ninguna persona seleccionada",
@@ -1514,7 +1490,7 @@ export const es = {
       cron_field_hour: "hora",
       cron_field_day: "día",
       cron_field_month: "mes",
-      cron_field_weekday: "día sem.",
+      cron_field_weekday: "día sem."
     },
     tools: {
       no_persona: "Ninguna persona seleccionada",
@@ -1553,11 +1529,11 @@ export const es = {
       credential: "Credencial",
       linked: "— vinculado",
       cred_missing: "— faltante",
-      often_used: "Usado frecuentemente con",
+      often_used: "Usado frecuentemente con"
     },
     chat_thread: {
       welcome: "Dime qué necesitas que haga este agente. Construiré la configuración completa — prompt, herramientas, disparadores — desde tu descripción.",
-      welcome_example: "Monitorear mis PRs de GitHub y publicar un resumen en Slack cada mañana",
+      welcome_example: "Monitorear mis PRs de GitHub y publicar un resumen en Slack cada mañana"
     },
     assign: {
       assign_to: "Asignar a {role}",
@@ -1568,50 +1544,50 @@ export const es = {
       no_saved_credentials: "No hay credenciales guardadas aún",
       no_credentials_match: "No hay credenciales que coincidan con tu búsqueda",
       vault_hint: "Guarda las credenciales en el Bóveda, o usa la pestaña Conectores",
-      no_connectors_match: "No hay conectores que coincidan con tu búsqueda",
+      no_connectors_match: "No hay conectores que coincidan con tu búsqueda"
     },
     credential_coverage: "{matched}/{total} credenciales",
     role_card: {
       no_credential: "Sin credencial",
       edit_tables: "editar",
       select_tables: "seleccionar tablas",
-      assign: "Asignar",
+      assign: "Asignar"
     },
     channel_picker: {
       in_app_messaging: "Mensajería en la aplicación",
-      vault_hint: "Guarda credenciales de comunicación (Slack, Email, etc.) en el Bóveda para verlas aquí.",
+      vault_hint: "Guarda credenciales de comunicación (Slack, Email, etc.) en el Bóveda para verlas aquí."
     },
     connector_picker: {
       no_connectors: "No hay conectores disponibles",
       search: "Buscar conectores...",
-      no_match: "No hay conectores que coincidan con \\\"{search}\\\"",
+      no_match: "No hay conectores que coincidan con \\\"{search}\\\""
     },
     policy_picker: {
       error_handling: "Manejo de errores",
-      manual_review: "Revisión manual",
+      manual_review: "Revisión manual"
     },
     table_selector: {
       title: "Seleccionar tablas",
       subtitle: "{label} — elige las tablas a monitorear",
       tables_selected_one: "{count} tabla seleccionada",
       tables_selected_other: "{count} tablas seleccionadas",
-      no_tables_selected: "Sin tablas seleccionadas — el agente monitorea todas",
+      no_tables_selected: "Sin tablas seleccionadas — el agente monitorea todas"
     },
     trigger_popover: {
       trigger: "Disparador",
-      clear_override: "Limpiar anulación",
+      clear_override: "Limpiar anulación"
     },
     use_case: {
       add: "Agregar caso de uso",
       title_placeholder: "Título del caso de uso — p. ej. Gestionar solicitudes de reembolso, Resumir tickets diarios",
-      description_placeholder: "Describe los pasos — p. ej. Cuando llegue una solicitud de reembolso, verificar el pedido, revisar la política y enviar aprobación o denegación",
+      description_placeholder: "Describe los pasos — p. ej. Cuando llegue una solicitud de reembolso, verificar el pedido, revisar la política y enviar aprobación o denegación"
     },
     builder_action: {
       processing: "Procesando...",
       error_retry: "Algo salió mal. Por favor intenta de nuevo.",
       enhancing: "Mejorando...",
       enhance_with_ai: "Mejorar con IA",
-      describe_agent: "Describe lo que debe hacer tu agente",
+      describe_agent: "Describe lo que debe hacer tu agente"
     },
     builder_preview: {
       title: "Vista previa",
@@ -1625,7 +1601,7 @@ export const es = {
       schedule: "Programación",
       manual_only: "Solo manual",
       errors: "Errores",
-      review: "Revisión",
+      review: "Revisión"
     },
     dry_run: {
       ready: "Listo",
@@ -1637,7 +1613,7 @@ export const es = {
       issues: "Problemas",
       apply_fix: "Aplicar corrección: {label}",
       manual_action_needed: "Se requiere acción manual",
-      no_issues: "No se encontraron problemas. La configuración del agente se ve bien.",
+      no_issues: "No se encontraron problemas. La configuración del agente se ve bien."
     },
     identity_preview: {
       title: "Vista previa",
@@ -1648,7 +1624,7 @@ export const es = {
       components: "Componentes",
       schedule_label: "Programación:",
       errors_label: "Errores:",
-      review_label: "Revisión:",
+      review_label: "Revisión:"
     },
     build_review: {
       agent_name: "Nombre del agente",
@@ -1657,7 +1633,7 @@ export const es = {
       connectors_ready: "Conectores listos",
       promote_agent: "Promover agente",
       testing: "Probando...",
-      test_agent: "Probar agente",
+      test_agent: "Probar agente"
     },
     connectors_cell: {
       add_in_keys: "Agregar en Claves",
@@ -1667,7 +1643,7 @@ export const es = {
       swap_to: "Cambiar a:",
       recalculating: "Recalculando...",
       recalculate_dimensions: "Recalcular dimensiones",
-      rebuilding: "Reconstruyendo con nuevo conector...",
+      rebuilding: "Reconstruyendo con nuevo conector..."
     },
     dimension_edit: {
       add_item: "Agregar elemento...",
@@ -1693,7 +1669,7 @@ export const es = {
       fully_automated: "Totalmente automatizado",
       cron_label: "Cron:",
       every_label: "Cada:",
-      done: "Listo",
+      done: "Listo"
     },
     quick_config: {
       title: "Configuración rápida",
@@ -1707,7 +1683,7 @@ export const es = {
       monthly: "Mensual",
       days: "Días",
       day_of_month: "Día del mes",
-      time: "Hora",
+      time: "Hora"
     },
     events_panel: {
       source_agent: "Agente origen",
@@ -1716,23 +1692,23 @@ export const es = {
       select_agent: "Selecciona un agente",
       loading_events: "Cargando eventos...",
       no_subscriptions: "No se encontraron suscripciones a eventos",
-      choose_agent: "Elige un agente para ver sus eventos",
+      choose_agent: "Elige un agente para ver sus eventos"
     },
     matrix_cred_picker: {
       no_stored: "No hay credenciales almacenadas",
       best_match: "Mejor coincidencia",
-      other: "Otro",
+      other: "Otro"
     },
     services_panel: {
       no_connectors: "No se encontraron conectores con claves API saludables. Agrega credenciales en el Bóveda primero.",
-      select_table: "Seleccionar tabla",
+      select_table: "Seleccionar tabla"
     },
     spatial_question: {
       agent_configuration: "Configuración del agente",
       or_custom_answer: "O escribe una respuesta personalizada",
       type_answer: "Escribe tu respuesta...",
       submit: "Enviar",
-      press_to_select: "Presiona 1-{count} para seleccionar instantáneamente",
+      press_to_select: "Presiona 1-{count} para seleccionar instantáneamente"
     },
     table_picker: {
       title: "Seleccionar tabla",
@@ -1740,12 +1716,12 @@ export const es = {
       loading: "Cargando tablas...",
       no_tables: "No se encontraron tablas para este conector",
       clear_selection: "Limpiar selección",
-      no_match: "No hay tablas que coincidan con \\\"{search}\\\"",
+      no_match: "No hay tablas que coincidan con \\\"{search}\\\""
     },
     matrix_entry: {
       new_agent: "Nuevo agente",
       failed_to_create: "Error al crear agente borrador.",
-      build_failed: "Error al iniciar la construcción. Verifica la configuración del CLI.",
+      build_failed: "Error al iniciar la construcción. Verifica la configuración del CLI."
     },
     workflow_upload: {
       build_hint: "Presiona Construir para transformar este flujo de trabajo en un agente persona.",
@@ -1753,22 +1729,22 @@ export const es = {
       parse: "Analizar",
       drop_file: "Suelta un archivo de flujo de trabajo aquí",
       file_types: "n8n, Zapier, Make o GitHub Actions (.json, .yaml)",
-      paste_json: "O pega el JSON directamente",
+      paste_json: "O pega el JSON directamente"
     },
     config_popup: {
       load_error: "No se pudieron cargar los valores guardados — puede que necesites volver a ingresarlos.",
       fill_hint: "Completa al menos un campo para guardar",
-      failed_to_save: "Error al guardar la configuración",
+      failed_to_save: "Error al guardar la configuración"
     },
     onboarding: {
       setup_complete: "Configuración {score}% completa",
       steps_done: "{completed}/{total} pasos completados",
-      dismiss_checklist: "Descartar lista de verificación",
+      dismiss_checklist: "Descartar lista de verificación"
     },
     template_picker: {
       title: "Elegir una plantilla",
       subtitle: "Elige una plantilla para pre-completar tu agente, o empieza desde cero.",
-      start_from_scratch: "Empezar desde cero",
+      start_from_scratch: "Empezar desde cero"
     },
     persona_overview: {
       no_match: "Ninguna persona coincide",
@@ -1777,26 +1753,26 @@ export const es = {
       description_copied: "Descripción copiada al portapapeles",
       failed_copy: "Error al copiar la descripción",
       no_connectors_configured: "Sin conectores configurados",
-      click_to_copy: "Haz clic para copiar",
+      click_to_copy: "Haz clic para copiar"
     },
     overview_empty: {
       title: "Ninguna persona coincide con estos filtros",
       subtitle: "Intenta ajustar tu búsqueda o los chips de filtro, o restablece la vista para ver todas las personas.",
-      clear_all_filters: "Limpiar todos los filtros",
+      clear_all_filters: "Limpiar todos los filtros"
     },
     overview_batch: {
-      selected: "{count} seleccionado(s)",
+      selected: "{count} seleccionado(s)"
     },
     overview_menu: {
       more_actions: "Más acciones",
-      settings: "Configuración",
+      settings: "Configuración"
     },
     overview_toolbar: {
       search_placeholder: "Buscar personas...",
       show_all: "Mostrar todas las personas",
       show_favorites: "Mostrar solo favoritos",
       favorites: "Favoritos",
-      clear_search: "Limpiar búsqueda",
+      clear_search: "Limpiar búsqueda"
     },
     overview_columns: {
       persona: "Persona",
@@ -1811,10 +1787,10 @@ export const es = {
       building_drafts: "Construyendo / Borradores",
       all_health: "Toda la salud",
       all_connectors: "Todos los conectores",
-      active_triggers: "{count} disparador(es) activo(s)",
+      active_triggers: "{count} disparador(es) activo(s)"
     },
     health_indicator: {
-      last: "último {count}",
+      last: "último {count}"
     },
     view_presets: {
       views: "Vistas",
@@ -1831,7 +1807,7 @@ export const es = {
       needs_attention: "Necesita atención",
       failing_agents: "Agentes con fallos",
       my_favorites: "Mis favoritos",
-      recently_active: "Activo recientemente",
+      recently_active: "Activo recientemente"
     },
     activity: {
       title: "Actividad",
@@ -1854,7 +1830,7 @@ export const es = {
       modal_execution_title: "{name} - Ejecución",
       modal_execution_subtitle: "ID: {id}",
       modal_review_title: "Revisión: {title}",
-      modal_review_subtitle: "Gravedad: {severity} · Estado: {status}",
+      modal_review_subtitle: "Gravedad: {severity} · Estado: {status}"
     },
     chat: {
       select_persona: "Selecciona una persona para comenzar a chatear",
@@ -1873,7 +1849,7 @@ export const es = {
       confirm_delete: "¿Eliminar?",
       processing: "Procesando...",
       delete_conversation: "Eliminar conversación",
-      confirm_delete_conversation: "Confirmar eliminar conversación",
+      confirm_delete_conversation: "Confirmar eliminar conversación"
     },
     advisory: {
       how_can_improve: "¿Cómo puede funcionar mejor este agente para ti?",
@@ -1888,7 +1864,7 @@ export const es = {
       analyze_desc: "Revisa tendencias y patrones de rendimiento",
       test_run: "Ejecución de prueba",
       test_run_desc: "Ejecuta el agente y evalúa el resultado",
-      test_input_label: "Entrada de prueba (opcional)",
+      test_input_label: "Entrada de prueba (opcional)"
     },
     ops: {
       sessions: "Sesiones",
@@ -1916,21 +1892,21 @@ export const es = {
       reviews: "Revisiones",
       reviews_desc: "Aprobaciones y decisiones pendientes",
       versions: "Versiones",
-      versions_desc: "Historial de versiones de prompt y reversión",
+      versions_desc: "Historial de versiones de prompt y reversión"
     },
     ops_run: {
       execute_agent: "Ejecutar agente",
       running: "Ejecutando...",
       recent: "Reciente",
       no_executions: "Sin ejecuciones aún",
-      refresh_executions: "Actualizar ejecuciones",
+      refresh_executions: "Actualizar ejecuciones"
     },
     ops_lab: {
       history: "Historial",
       no_lab_runs: "Sin ejecuciones de lab aún",
       refresh_lab: "Actualizar historial del lab",
       arena: "Arena",
-      improve: "Mejorar",
+      improve: "Mejorar"
     },
     ops_health: {
       no_health_data: "Sin datos de salud",
@@ -1942,22 +1918,22 @@ export const es = {
       run_check_aria: "Ejecutar control de salud",
       healthy: "Saludable",
       degraded: "Degradado",
-      unhealthy: "No saludable",
+      unhealthy: "No saludable"
     },
     ops_assertions: {
       active_count: "{enabled}/{total} activa(s)",
       no_assertions: "Sin aserciones configuradas",
       refresh_assertions: "Actualizar aserciones",
       enable_assertion: "Habilitar {name}",
-      disable_assertion: "Deshabilitar {name}",
+      disable_assertion: "Deshabilitar {name}"
     },
     health_tab: {
       title: "Control de salud",
-      description: "Ejecuta un análisis en seco de la configuración actual del agente para detectar credenciales faltantes, conectores desconectados, combinaciones de herramientas incompatibles y casos de uso subespecificados. Los problemas se muestran como tarjetas de acción con correcciones de un clic.",
+      description: "Ejecuta un análisis en seco de la configuración actual del agente para detectar credenciales faltantes, conectores desconectados, combinaciones de herramientas incompatibles y casos de uso subespecificados. Los problemas se muestran como tarjetas de acción con correcciones de un clic."
     },
     matrix_tab: {
       loading: "Cargando matriz",
-      no_data: "No hay datos de matriz disponibles. Construye o reconstruye esta persona para generar dimensiones.",
+      no_data: "No hay datos de matriz disponibles. Construye o reconstruye esta persona para generar dimensiones."
     },
     settings_status: {
       saving: "Guardando {sections}...",
@@ -1981,23 +1957,19 @@ export const es = {
       health_watch: "Monitoreo de salud",
       health_watch_active: "Monitoreo de salud activo (cada 6h)",
       health_watch_enable: "Habilitar monitoreo continuo de salud",
-      // @llm-translated 2026-04-17
       speak_as: "Hablar como",
-      // @llm-translated 2026-04-17
       no_twins_configured: "No hay gemelos configurados. Abre el plugin Gemelo para crear uno — esta persona podrá adoptarlo.",
-      // @llm-translated 2026-04-17
-      twin_profile_aria: "Perfil gemelo que esta persona adopta",
+      twin_profile_aria: "Perfil gemelo que esta persona adopta"
     },
     tool_runner: {
       no_tools: "No hay herramientas asignadas a esta persona.",
       input_json: "JSON de entrada",
-      // @llm-translated 2026-04-17
-      input_json_placeholder: "{ \"key\": \"value\" }",
       run: "Ejecutar",
       running: "Ejecutando...",
       success: "Éxito",
       failed: "Fallido",
       error: "Error",
+      input_json_placeholder: "{ \"key\": \"value\" }"
     },
     health_check: {
       title: "Control de salud del agente",
@@ -2014,7 +1986,7 @@ export const es = {
       rerun: "Volver a ejecutar",
       capabilities: "Capacidades",
       all_healthy: "Todos los sistemas saludables",
-      all_healthy_detail: "No se detectaron problemas en la configuración del agente",
+      all_healthy_detail: "No se detectaron problemas en la configuración del agente"
     },
     health_digest: {
       title: "Resumen de salud del agente",
@@ -2029,16 +2001,16 @@ export const es = {
       agents_checked_other: "{count} agentes verificados",
       issues_one: "{count} problema",
       issues_other: "{count} problemas",
-      last_run: "Última ejecución: {time}",
+      last_run: "Última ejecución: {time}"
     },
     health_issue: {
       apply_fix: "Aplicar corrección: {label}",
-      manual_action: "Se requiere acción manual",
+      manual_action: "Se requiere acción manual"
     },
     health_score: {
       healthy: "Saludable",
       degraded: "Degradado",
-      unhealthy: "No saludable",
+      unhealthy: "No saludable"
     },
     prompt_editor: {
       no_persona: "Ninguna persona seleccionada",
@@ -2046,8 +2018,7 @@ export const es = {
       new_section: "Nueva sección",
       saved: "Guardado",
       sections: "secciones",
-      // @llm-translated 2026-04-17
-      sections_aria: "Secciones del prompt",
+      sections_aria: "Secciones del prompt"
     },
     custom_sections: {
       title: "Secciones personalizadas",
@@ -2057,7 +2028,7 @@ export const es = {
       remove_section: "Eliminar sección",
       title_placeholder: "Título de la sección...",
       content_placeholder: "Contenido de la sección...",
-      custom_section: "Sección personalizada",
+      custom_section: "Sección personalizada"
     },
     activity_filters: {
       all: "Todos",
@@ -2065,7 +2036,7 @@ export const es = {
       events: "Eventos",
       memories: "Memorias",
       reviews: "Revisiones",
-      messages: "Mensajes",
+      messages: "Mensajes"
     },
     overview_actions: {
       delete_agent: "Eliminar agente",
@@ -2073,7 +2044,7 @@ export const es = {
       delete_agents: "Eliminar {count} agente(s)",
       delete_agents_message: "{count} agente(s) y toda su configuración serán eliminados permanentemente.",
       delete_drafts: "Eliminar {count} borrador(es)",
-      delete_drafts_message: "{count} agente(s) borrador(es) serán eliminados permanentemente.",
+      delete_drafts_message: "{count} agente(s) borrador(es) serán eliminados permanentemente."
     },
     persona_list: {
       all_personas: "Todas las personas",
@@ -2101,7 +2072,7 @@ export const es = {
       show_only_favorites: "Mostrar solo favoritos",
       clear_search: "Limpiar búsqueda",
       col_persona: "Persona",
-      no_connectors_configured: "Sin conectores configurados",
+      no_connectors_configured: "Sin conectores configurados"
     },
     design_preview: {
       preview: "Vista previa",
@@ -2115,7 +2086,7 @@ export const es = {
       activating: "Activando...",
       activate_agent: "Activar agente",
       create_agent: "Crear agente",
-      min_completeness: "Agrega más detalles para alcanzar un 40% de completitud",
+      min_completeness: "Agrega más detalles para alcanzar un 40% de completitud"
     },
     editor_ui: {
       max_budget_label: "Presupuesto máximo (USD)",
@@ -2239,8 +2210,8 @@ export const es = {
       cost_per_run: "Costo/ejecución",
       last_run: "Última ejecución",
       rank: "Rango",
-      view_in_leaderboard: "Ver en la tabla de clasificación",
-    },
+      view_in_leaderboard: "Ver en la tabla de clasificación"
+    }
   },
   vault: {
     title: "Bóveda",
@@ -2252,7 +2223,7 @@ export const es = {
     health: {
       healthy: "saludable",
       needs_attention: "requiere atención",
-      untested: "sin probar",
+      untested: "sin probar"
     },
     list: {
       no_credentials: "No se detectaron servicios autenticados. Selecciona uno manualmente a continuación.",
@@ -2261,8 +2232,7 @@ export const es = {
       no_dependencies: "Ningún agente depende de esta credencial. Se puede modificar o eliminar con seguridad.",
       affected_agents: "Agentes afectados",
       affected_events: "Eventos afectados",
-      // @llm-translated 2026-04-17
-      sort_label: "Ordenar:",
+      sort_label: "Ordenar:"
     },
     import: {
       title: "Origen de importación",
@@ -2277,24 +2247,16 @@ export const es = {
         min30: "30 min",
         hour1: "1 hora",
         hour6: "6 horas",
-        day1: "24 horas",
+        day1: "24 horas"
       },
-      // @llm-translated 2026-04-17
       parse_secrets: "Analizar secretos",
-      // @llm-translated 2026-04-17
       selected_for_import: "seleccionados para importar",
-      // @llm-translated 2026-04-17
       auto_detected: "Detectado automáticamente",
-      // @llm-translated 2026-04-17
       sync_supported: "Sincronización compatible",
-      // @llm-translated 2026-04-17
       secrets_found_one: "{count} secreto encontrado",
-      // @llm-translated 2026-04-17
       secrets_found_other: "{count} secretos encontrados",
-      // @llm-translated 2026-04-17
       import_secrets_one: "Importar {count} secreto",
-      // @llm-translated 2026-04-17
-      import_secrets_other: "Importar {count} secretos",
+      import_secrets_other: "Importar {count} secretos"
     },
     features: {
       anomaly_detected: "Anomalía detectada: la credencial está fallando repentinamente después de un éxito previo. Posible revocación.",
@@ -2318,7 +2280,7 @@ export const es = {
         remove_failed: "Error al eliminar la política: {error}",
         update_failed: "Error al actualizar el período de rotación: {error}",
         enable_failed: "Error al habilitar la rotación: {error}",
-        last_rotated: "Última rotación {time}",
+        last_rotated: "Última rotación {time}"
       },
       anomaly: {
         healthy: "Saludable",
@@ -2330,13 +2292,13 @@ export const es = {
         samples: "{count} verificaciones",
         permanent: "Persistente: {rate}",
         transient: "Temporal: {rate}",
-        tolerance: "Tolerancia: {rate}",
+        tolerance: "Tolerancia: {rate}"
       },
       rotation_badge: {
         disabled: "Desactivado",
         perm_errors: "Errores persistentes",
         degrading: "Empeorando",
-        backoff: "Esperando reintento",
+        backoff: "Esperando reintento"
       },
       audit: {
         empty: "Sin entradas de auditoría aún. Las operaciones se registrarán conforme ocurran.",
@@ -2345,13 +2307,13 @@ export const es = {
         op_updated: "Actualizado",
         op_deleted: "Eliminado",
         op_healthcheck: "Prueba de conexión",
-        filter_all: "todos",
+        filter_all: "todos"
       },
       intelligence: {
         operation: "Operación",
         detail: "Detalle",
-        time: "Hora",
-      },
+        time: "Hora"
+      }
     },
     negotiator: {
       title: "Negociador de credenciales IA",
@@ -2379,15 +2341,14 @@ export const es = {
       open_in_browser: "Abrir en el navegador",
       step_complete_captured: "Paso completado -- valores capturados",
       mark_complete: "Marcar como completado",
-      completed: "Completado",
+      completed: "Completado"
     },
     card: {
       scope_mismatch: "Discrepancia de alcance",
       scope_missing_one: "{count} alcance solicitado no concedido: ",
       scope_missing_other: "{count} alcances solicitados no concedidos: ",
       reauthorize: "Reautorizar",
-      // @llm-translated 2026-04-17
-      reauthorize_scopes: "Reautorizar con alcances adicionales",
+      reauthorize_scopes: "Reautorizar con alcances adicionales"
     },
     forms: {
       auth_oauth: "OAuth",
@@ -2405,30 +2366,18 @@ export const es = {
       configure_fields: "Configurar campos de credencial",
       detect: "Detectar",
       auto_add: "Agregar automáticamente",
-      // @llm-translated 2026-04-17
       connection_test_heading: "Prueba de conexión",
-      // @llm-translated 2026-04-17
       test_connection_btn: "Probar conexión",
-      // @llm-translated 2026-04-17
       credential_fields_heading: "Campos de credencial",
-      // @llm-translated 2026-04-17
       how_to_get_connector: "Cómo obtener credenciales de {connectorLabel}",
-      // @llm-translated 2026-04-17
       authorization_complete: "Autorización completada",
-      // @llm-translated 2026-04-17
       copied_to_clipboard: "Copiado al portapapeles",
-      // @llm-translated 2026-04-17
       credential_name: "Nombre de credencial",
-      // @llm-translated 2026-04-17
       credential_name_placeholder: "Etiqueta esta credencial — p. ej. Mi cuenta de {label}, {label} Producción",
-      // @llm-translated 2026-04-17
       authorizing_with: "Autorizando con {label}...",
-      // @llm-translated 2026-04-17
       authorize_with: "Autorizar con {label}",
-      // @llm-translated 2026-04-17
       oauth_consent_hint: "Abre {label} en tu navegador. Concede acceso y regresa aquí.",
-      // @llm-translated 2026-04-17
-      oauth_connected_at: "{label} conectado a las {time}",
+      oauth_connected_at: "{label} conectado a las {time}"
     },
     type_picker: {
       title: "Agregar credencial",
@@ -2457,7 +2406,7 @@ export const es = {
       workspace_connect: "Conexión de espacio de trabajo",
       workspace_connect_hint: "Un inicio de sesión de Google crea credenciales de Gmail, Calendar, Drive y Sheets automáticamente",
       auto_discover: "Auto-descubrir credenciales",
-      auto_discover_hint: "Escanea tu sistema de archivos en busca de claves API existentes, perfiles AWS, variables de entorno y más",
+      auto_discover_hint: "Escanea tu sistema de archivos en busca de claves API existentes, perfiles AWS, variables de entorno y más"
     },
     body: {
       authorizing: "Autorizando con {name}...",
@@ -2465,12 +2414,12 @@ export const es = {
       authorize_hint: "Abre el inicio de sesión de {name} y guarda tu acceso después de que lo apruebes.",
       consent_completed: "Consentimiento de {name} completado a las {time}",
       update_failed: "Error al actualizar la credencial",
-      delete_credential: "Eliminar credencial",
+      delete_credential: "Eliminar credencial"
     },
     connector: {
       filter_all: "Todos",
       filter_connected: "Conectado",
-      filter_available: "Disponible",
+      filter_available: "Disponible"
     },
     auto_cred: {
       guided_setup: "Configuración guiada",
@@ -2502,22 +2451,14 @@ export const es = {
       open_in_browser: "Abrir en el navegador",
       completed_step: "He completado esto",
       input_requested: "Entrada requerida",
-      // @llm-translated 2026-04-17
       cancel_session: "Cancelar sesión",
-      // @llm-translated 2026-04-17
       test_connection: "Probar conexión",
-      // @llm-translated 2026-04-17
       testing: "Probando...",
-      // @llm-translated 2026-04-17
       re_run_browser: "Volver a ejecutar navegador",
-      // @llm-translated 2026-04-17
       discard: "Descartar",
-      // @llm-translated 2026-04-17
       save_credential: "Guardar credencial",
-      // @llm-translated 2026-04-17
       save_procedure: "Guardar procedimiento",
-      // @llm-translated 2026-04-17
-      procedure_saved: "Procedimiento guardado",
+      procedure_saved: "Procedimiento guardado"
     },
     vector: {
       documents_tab: "Documentos",
@@ -2549,7 +2490,7 @@ export const es = {
       documents: "Documentos",
       chunks: "Secciones",
       local_embedding: "Búsqueda local",
-      local_embedding_hint: "La indexación de búsqueda se ejecuta localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23MB) se descarga en el primer uso y se guarda localmente.",
+      local_embedding_hint: "La indexación de búsqueda se ejecuta localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23MB) se descarga en el primer uso y se guarda localmente."
     },
     design_modal: {
       title: "Diseñar credencial",
@@ -2564,12 +2505,12 @@ export const es = {
       how_to_fix: "Cómo solucionar esto",
       original_request: "Tu solicitud original (preservada):",
       start_over: "Empezar de nuevo",
-      try_again_with: "Intentar de nuevo con tu solicitud",
+      try_again_with: "Intentar de nuevo con tu solicitud"
     },
     desktop: {
       installed: "Instalado",
       running: "Ejecutando",
-      not_installed: "No instalado",
+      not_installed: "No instalado"
     },
     graph: {
       no_dependencies: "Sin dependencias",
@@ -2579,7 +2520,7 @@ export const es = {
       dep_count_other: "{count} deps",
       not_tested: "No probado",
       healthy: "Saludable",
-      unhealthy: "No saludable",
+      unhealthy: "No saludable"
     },
     wizard: {
       detected: "Detectado ({count})",
@@ -2589,7 +2530,7 @@ export const es = {
       already_added_badge: "Ya agregado",
       local: "Local",
       cli_auth: "Auth CLI",
-      session: "Sesión",
+      session: "Sesión"
     },
     playground: {
       tab_overview: "Resumen",
@@ -2619,7 +2560,7 @@ export const es = {
       query_parameters: "Parámetros de consulta",
       headers: "Encabezados",
       body: "Cuerpo",
-      empty_response: "(respuesta vacía)",
+      empty_response: "(respuesta vacía)"
     },
     playground_extra: {
       add_tag: "Agregar etiqueta...",
@@ -2640,11 +2581,11 @@ export const es = {
       query_parameters: "Parámetros de consulta",
       recipes_title: "Recetas guardadas",
       truncated_warning: "Respuesta truncada para visualización",
-      value_col: "Valor",
+      value_col: "Valor"
     },
     ingest: {
       save_name: "Guardar nombre",
-      rename_credential: "Renombrar credencial",
+      rename_credential: "Renombrar credencial"
     },
     databases: {
       col_database: "Base de datos",
@@ -2758,10 +2699,8 @@ export const es = {
       filter_tables: "Filtrar tablas...",
       refresh: "Actualizar",
       introspection_unavailable: "La introspección de tablas no está disponible para este tipo de conector.",
-      // @llm-translated 2026-04-17
       not_null: "NOT NULL",
-      // @llm-translated 2026-04-17
-      ctrl_enter: "Ctrl+Enter",
+      ctrl_enter: "Ctrl+Enter"
     },
     dependencies: {
       simulate_revocation: "Simular revocación",
@@ -2807,17 +2746,14 @@ export const es = {
       daily_execs_lost: "Ejecuciones diarias perdidas",
       daily_cost_impact: "Impacto diario en el costo",
       sim_low: "Ninguna persona ni flujo de trabajo depende de esta credencial. Es seguro revocarla.",
-      // @llm-translated 2026-04-17
       sim_critical: "Revocar {credentialName} interrumpiría {workflows} flujo{workflowPlural} de trabajo y detendría {personas} persona{personaPlural}.",
-      // @llm-translated 2026-04-17
       sim_high: "Revocar {credentialName} afectaría a {personas} persona{personaPlural} en tu espacio de trabajo.",
-      // @llm-translated 2026-04-17
       sim_medium: "Revocar {credentialName} tiene un radio de impacto limitado.",
-      // @llm-translated 2026-04-17
-      per_day: "/día",
+      per_day: "/día"
     },
     shared: {
       add: "Agregar",
+      copied: "Copiado",
       no_connector_available: "No hay definición de conector disponible para este tipo de credencial.",
       request_builder: "Constructor de solicitudes",
       close: "Cerrar",
@@ -2944,38 +2880,21 @@ export const es = {
       no_documents_description: "Suelta archivos aquí, pega texto o escanea un directorio para comenzar a construir tu base de conocimiento.",
       delete_document: "Eliminar documento",
       chunks_label: "{count} fragmentos",
-      // @llm-translated 2026-04-17
-      copied: "Copiado",
-      // @llm-translated 2026-04-17
       kb_count_summary: "— {docs} docs, {chunks} fragmentos",
-      // @llm-translated 2026-04-17
       default_patterns: "Predeterminado:",
-      // @llm-translated 2026-04-17
       add_pattern_placeholder: "*.pdf",
-      // @llm-translated 2026-04-17
       distance_label: "distancia:",
-      // @llm-translated 2026-04-17
       chunk_label: "fragmento:",
-      // @llm-translated 2026-04-17
       copy_credential_id: "Copiar ID de credencial",
-      // @llm-translated 2026-04-17
       request_body: "Cuerpo de la solicitud",
-      // @llm-translated 2026-04-17
       add_tag_title: "Agregar etiqueta",
-      // @llm-translated 2026-04-17
       local_embedding_hint: "Los embeddings se generan localmente usando {model} ({dims} dim). Ningún dato sale de tu máquina. El modelo (~23 MB) se descarga en el primer uso y se guarda en caché localmente.",
-      // @llm-translated 2026-04-17
       api_path_placeholder: "/api/v1/resource",
-      // @llm-translated 2026-04-17
       json_body_placeholder: "{\"key\": \"value\"}",
-      // @llm-translated 2026-04-17
       sending: "Enviando...",
-      // @llm-translated 2026-04-17
       send: "Enviar",
-      // @llm-translated 2026-04-17
       search_results_one: "{count} resultado para \"{query}\"",
-      // @llm-translated 2026-04-17
-      search_results_other: "{count} resultados para \"{query}\"",
+      search_results_other: "{count} resultados para \"{query}\""
     },
     manager: {
       title: "Credenciales",
@@ -2995,26 +2914,23 @@ export const es = {
       test_all_credentials: "Probar todas las credenciales",
       test_all: "Probar todas",
       daily_progress: "Diario {done}/{total}",
-      testing_progress: "Probando {done}/{total}",
+      testing_progress: "Probando {done}/{total}"
     },
     bulk_healthcheck: {
       title: "Resultados de verificación de salud",
       needs_attention: "Necesita atención",
       slowest_responses: "Respuestas más lentas",
-      // @llm-translated 2026-04-17
       passed_count: "{count} aprobadas",
-      // @llm-translated 2026-04-17
       failed_count: "{count} fallidas",
-      // @llm-translated 2026-04-17
-      total_count: "{count} total",
+      total_count: "{count} total"
     },
     health_bar: {
       healthy: "saludable",
       needs_attention: "necesita atención",
-      untested: "sin probar",
+      untested: "sin probar"
     },
     breadcrumb: {
-      aria_label: "Navegación del Bóveda",
+      aria_label: "Navegación del Bóveda"
     },
     credential_card: {
       deleting: "Eliminando {name}...",
@@ -3030,7 +2946,7 @@ export const es = {
       remove_tag: "Eliminar etiqueta \\\"{tag}\\\"",
       copy_credential_id: "Copiar ID de credencial",
       refresh_oauth: "Actualizar token OAuth ahora",
-      refresh: "Actualizar",
+      refresh: "Actualizar"
     },
     vault_badge: {
       needs_attention: "Necesita atención",
@@ -3053,21 +2969,21 @@ export const es = {
       encrypt_now_other: "Cifrar {count} credenciales sin cifrar ahora",
       encrypt_done_one: "Listo — {migrated} credencial cifrada.",
       encrypt_done_other: "Listo — {migrated} credenciales cifradas.",
-      encrypt_partial: "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación.",
+      encrypt_partial: "Cifradas {migrated}, fallidas {failed}. Intenta de nuevo o reinicia la aplicación."
     },
     delete_dialog: {
       title: "Eliminar credencial",
       cannot_undo: "Esta acción no se puede deshacer.",
       label_name: "Nombre",
       label_type: "Tipo",
-      unverified_warning: "No se pudieron verificar todas las dependencias. Es posible que algunos agentes o automatizaciones conectados no se muestren.",
+      unverified_warning: "No se pudieron verificar todas las dependencias. Es posible que algunos agentes o automatizaciones conectados no se muestren."
     },
     card_body: {
       failed_update: "Error al actualizar la credencial",
       authorizing_with: "Autorizando con {name}...",
       authorize_with: "Autorizar con {name}",
       authorize_hint: "Inicia el consentimiento de {name} gestionado por la aplicación y actualiza el token de actualización después de la aprobación.",
-      consent_completed: "Consentimiento de {name} completado a las {time}",
+      consent_completed: "Consentimiento de {name} completado a las {time}"
     },
     card_details: {
       tab_intelligence: "Inteligencia",
@@ -3075,7 +2991,7 @@ export const es = {
       tab_token_lifetime: "Vida útil del token",
       tab_services: "Servicios ({count})",
       tab_events: "Eventos ({count})",
-      tab_audit: "Auditoría",
+      tab_audit: "Auditoría"
     },
     intelligence_tab: {
       loading: "Cargando datos de inteligencia",
@@ -3096,7 +3012,7 @@ export const es = {
       dependents_warning_other: "Cambiar o eliminar esta credencial afectará a {count} personas:",
       link_structural: "estructural",
       link_observed: "observado",
-      via_connector: "vía {connector}",
+      via_connector: "vía {connector}"
     },
     token_metrics: {
       loading: "Cargando métricas...",
@@ -3108,8 +3024,11 @@ export const es = {
       avg_drift: "Deriva promedio",
       recent_ttls: "TTLs recientes del proveedor (más reciente primero)",
       recent_refreshes: "Actualizaciones recientes",
-      // @llm-translated 2026-04-17
-      fallback_used: "Reserva ({fallback}s) utilizada en el {rate}% de las actualizaciones ({count}/{total}) — el proveedor omite",
+      fallback_used: "Reserva ({fallback}s) utilizada en el {rate}% de las actualizaciones ({count}/{total}) — el proveedor omite"
+    },
+    reauth_banner: {
+      access_revoked: ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
+      reconnect: "Reconectar"
     },
     rotation_section: {
       corrupted_warning: "Los metadatos de verificación de salud están dañados. Las puntuaciones de anomalía no están disponibles hasta que la próxima verificación exitosa sobrescriba los datos incorrectos.",
@@ -3130,15 +3049,7 @@ export const es = {
       enabling: "Habilitando...",
       enable_rotation: "Habilitar rotación",
       enable_failed: "Error al habilitar la rotación: {error}",
-      // @llm-translated 2026-04-17
-      last_rotated: "Última rotación {time}",
-    },
-    // @llm-translated 2026-04-17
-    reauth_banner: {
-      // @llm-translated 2026-04-17
-      access_revoked: ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
-      // @llm-translated 2026-04-17
-      reconnect: "Reconectar",
+      last_rotated: "Última rotación {time}"
     },
     event_config: {
       event_triggers: "Disparadores de eventos",
@@ -3165,8 +3076,7 @@ export const es = {
       minutes_10: "10 minutos",
       healthcheck_auto_rotate: "La rotación se activará automáticamente cuando una credencial previamente saludable comience a fallar en su verificación de salud.",
       last_evaluated: "Última evaluación: {time}",
-      // @llm-translated 2026-04-17
-      loading: "Cargando eventos...",
+      loading: "Cargando eventos..."
     },
     credential_forms: {
       encrypted_keychain: "Cifrado con llavero del SO",
@@ -3180,14 +3090,10 @@ export const es = {
       new_credential: "Nueva credencial de {label}",
       configure_fields: "Configurar campos de credencial",
       oauth_required: "Usa el botón de autorización de abajo para conectar esta credencial.",
-      // @llm-translated 2026-04-17
       open_to_generate: "Abre {label} para generar una clave API o token",
-      // @llm-translated 2026-04-17
       already_configured: "Credencial ya configurada — actualiza abajo para reemplazar",
-      // @llm-translated 2026-04-17
       setup_instructions_label: "Instrucciones de configuración",
-      // @llm-translated 2026-04-17
-      no_fields_defined: "No hay campos de credencial definidos para este conector.",
+      no_fields_defined: "No hay campos de credencial definidos para este conector."
     },
     cli_panel: {
       credential_name: "Credential Name",
@@ -3208,30 +3114,21 @@ export const es = {
       test_connection: "Test Connection",
       cancel: "Cancel",
       save_connection: "Save Connection",
-      save_failed: "Failed to capture credential from CLI",
+      save_failed: "Failed to capture credential from CLI"
     },
     audit_log: {
       empty: "Sin entradas de auditoría aún",
       empty_hint: "Las operaciones se registrarán conforme ocurran.",
       access_events_hint: "Los eventos de acceso aparecerán aquí.",
-      // @llm-translated 2026-04-17
       loading: "Cargando historial de auditoría...",
-      // @llm-translated 2026-04-17
       total_accesses: "{count} total",
-      // @llm-translated 2026-04-17
       personas_one: "{count} persona",
-      // @llm-translated 2026-04-17
       personas_other: "{count} personas",
-      // @llm-translated 2026-04-17
       accesses_24h: "{count} en 24h",
-      // @llm-translated 2026-04-17
       anomalies_one: "{count} anomalía",
-      // @llm-translated 2026-04-17
       anomalies_other: "{count} anomalías",
-      // @llm-translated 2026-04-17
       no_anomalies: "Sin anomalías",
-      // @llm-translated 2026-04-17
-      show_all: "Mostrar todas las {count} entradas",
+      show_all: "Mostrar todas las {count} entradas"
     },
     credential_import: {
       import_from: "Importar desde {source}",
@@ -3240,18 +3137,12 @@ export const es = {
       enable_sync: "Habilitar modo de sincronización",
       source_ref: "Referencia de origen",
       poll_interval: "Intervalo de sondeo",
-      // @llm-translated 2026-04-17
       sync_hint: "Monitorea la bóveda externa para detectar cambios y actualiza automáticamente las credenciales mediante sondeo.",
-      // @llm-translated 2026-04-17
       interval_15min: "15 min",
-      // @llm-translated 2026-04-17
       interval_30min: "30 min",
-      // @llm-translated 2026-04-17
       interval_1hr: "1 hora",
-      // @llm-translated 2026-04-17
       interval_6hr: "6 horas",
-      // @llm-translated 2026-04-17
-      interval_24hr: "24 horas",
+      interval_24hr: "24 horas"
     },
     empty_state: {
       heading: "Conecta tu primer servicio",
@@ -3260,11 +3151,11 @@ export const es = {
       catalog_description: "Elige un servicio conocido como Slack, GitHub u OpenAI. Campos preconfigurados y verificaciones de salud.",
       ai_heading: "Credencial diseñada con IA",
       ai_description: "Describe cualquier servicio y la IA configurará los campos, el tipo de autenticación y la verificación de salud por ti.",
-      works_with_any: "Funciona con cualquier API",
+      works_with_any: "Funciona con cualquier API"
     },
     credential_list: {
       no_match: "Ninguna credencial coincide",
-      no_match_hint: "Intenta ajustar tus filtros o término de búsqueda",
+      no_match_hint: "Intenta ajustar tus filtros o término de búsqueda"
     },
     wizard_detect: {
       no_services: "No hay servicios que coincidan con \\\"{search}\\\"",
@@ -3276,24 +3167,15 @@ export const es = {
       batch_complete: "Configuración por lotes completa",
       skip_service: "Omitir este servicio",
       no_filter_match: "Intenta con un término de búsqueda diferente o limpia tu filtro.",
-      // @llm-translated 2026-04-17
       set_up_credentials: "Configurar credenciales",
-      // @llm-translated 2026-04-17
       clear_selection: "Limpiar selección",
-      // @llm-translated 2026-04-17
       set_up_services: "Configurar {count} servicio{plural}",
-      // @llm-translated 2026-04-17
       setting_up: "Configurando {current} de {total}",
-      // @llm-translated 2026-04-17
       wizard_title: "Asistente de configuración de credenciales",
-      // @llm-translated 2026-04-17
       choose_service: "Elige un servicio para configurar",
-      // @llm-translated 2026-04-17
       ai_walk_description: "La IA te guiará paso a paso para obtener las credenciales de API.",
-      // @llm-translated 2026-04-17
       wizard_subtitle: "Configuración de credenciales guiada por IA",
-      // @llm-translated 2026-04-17
-      wizard_subtitle_batch: "Configurando {count} servicio{plural}",
+      wizard_subtitle_batch: "Configurando {count} servicio{plural}"
     },
     autopilot: {
       title: "Piloto automático API",
@@ -3317,40 +3199,23 @@ export const es = {
       query_parameters: "Parámetros de consulta",
       param_name_placeholder: "Nombre del parámetro",
       request_body: "Cuerpo de la solicitud (JSON)",
-      // @llm-translated 2026-04-17
       from_url: "Desde URL",
-      // @llm-translated 2026-04-17
       paste_content: "Pegar contenido",
-      // @llm-translated 2026-04-17
       openapi_spec_url: "URL de especificación OpenAPI",
-      // @llm-translated 2026-04-17
       openapi_format_hint: "Formato JSON o YAML",
-      // @llm-translated 2026-04-17
       parsing_spec: "Analizando especificación...",
-      // @llm-translated 2026-04-17
       parse_analyze: "Analizar y examinar",
-      // @llm-translated 2026-04-17
       connector_in_catalog: "Conector en el catálogo",
-      // @llm-translated 2026-04-17
       generated_tools: "Herramientas generadas",
-      // @llm-translated 2026-04-17
       credential_fields: "Campos de credencial",
-      // @llm-translated 2026-04-17
       open_playground: "Abrir área de pruebas",
-      // @llm-translated 2026-04-17
       copy_connector_id: "Copiar ID del conector",
-      // @llm-translated 2026-04-17
       go_to_catalog: "Ir al catálogo",
-      // @llm-translated 2026-04-17
       response_headers: "Encabezados de respuesta",
-      // @llm-translated 2026-04-17
       base_url_placeholder: "https://api.ejemplo.com",
-      // @llm-translated 2026-04-17
       openapi_url_placeholder: "https://api.ejemplo.com/openapi.json",
-      // @llm-translated 2026-04-17
       auth_schemes: "Esquemas de autenticación",
-      // @llm-translated 2026-04-17
-      body_placeholder: "{\"key\": \"value\"}",
+      body_placeholder: "{\"key\": \"value\"}"
     },
     foraging: {
       no_credentials_found: "No se encontraron credenciales",
@@ -3367,78 +3232,44 @@ export const es = {
       step_done: "Listo",
       step_completed: "(completado)",
       step_current: "(actual)",
-      // @llm-translated 2026-04-17
       start_scan: "Iniciar escaneo",
-      // @llm-translated 2026-04-17
       checking_env: "Verificando variables de entorno, archivos de configuración y credenciales de herramientas de desarrollo",
-      // @llm-translated 2026-04-17
       importing: "Importando credenciales a la bóveda...",
-      // @llm-translated 2026-04-17
       scan_again: "Escanear de nuevo",
-      // @llm-translated 2026-04-17
       back_to_vault: "Volver a la bóveda",
-      // @llm-translated 2026-04-17
       already_in_vault: "Ya está en la bóveda",
-      // @llm-translated 2026-04-17
       imported: "Importado",
-      // @llm-translated 2026-04-17
       to_vault: "a la bóveda",
-      // @llm-translated 2026-04-17
       credentials_found_one: "{count} credencial encontrada",
-      // @llm-translated 2026-04-17
       credentials_found_other: "{count} credenciales encontradas",
-      // @llm-translated 2026-04-17
       selected: "seleccionadas",
-      // @llm-translated 2026-04-17
       import_to_vault_one: "Importar {count} credencial a la bóveda",
-      // @llm-translated 2026-04-17
       import_to_vault_other: "Importar {count} credenciales a la bóveda",
-      // @llm-translated 2026-04-17
       env_var_one: "{count} var de entorno",
-      // @llm-translated 2026-04-17
       env_var_other: "{count} vars de entorno",
-      // @llm-translated 2026-04-17
       import_server: "Importar",
-      // @llm-translated 2026-04-17
       sources_in: "fuentes en",
-      // @llm-translated 2026-04-17
       progress_aria: "Progreso de búsqueda",
-      // @llm-translated 2026-04-17
-      scanned_sources: "Escaneadas {count} fuentes en {ms}ms",
+      scanned_sources: "Escaneadas {count} fuentes en {ms}ms"
     },
     desktop_discovery: {
       title: "Aplicaciones de escritorio",
       allowed_binaries: "Binarios permitidos: ",
-      // @llm-translated 2026-04-17
       connect_description: "Conecta aplicaciones locales o importa servidores MCP de Claude Desktop",
-      // @llm-translated 2026-04-17
       detected_apps_tab: "Apps detectadas ({count})",
-      // @llm-translated 2026-04-17
       claude_mcp_tab: "Claude MCP ({count})",
-      // @llm-translated 2026-04-17
       scanning: "Buscando apps de escritorio...",
-      // @llm-translated 2026-04-17
       detected_on_system: "Detectado en tu sistema",
-      // @llm-translated 2026-04-17
       not_detected: "No detectado",
-      // @llm-translated 2026-04-17
       no_apps: "No se detectaron apps de escritorio. Intenta actualizar.",
-      // @llm-translated 2026-04-17
       reading_config: "Leyendo configuración de Claude Desktop...",
-      // @llm-translated 2026-04-17
       mcp_servers_found_one: "Se encontró {count} servidor MCP en la configuración de Claude Desktop. Impórtalo como credencial para usarlo con tus agentes.",
-      // @llm-translated 2026-04-17
       mcp_servers_found_other: "Se encontraron {count} servidores MCP en la configuración de Claude Desktop. Impórtalos como credenciales para usarlos con tus agentes.",
-      // @llm-translated 2026-04-17
       no_mcp_config: "No se encontró configuración de MCP en Claude Desktop.",
-      // @llm-translated 2026-04-17
       mcp_config_hint: "Si tienes Claude Desktop instalado, asegúrate de que tenga servidores MCP configurados en su configuración.",
-      // @llm-translated 2026-04-17
       permission_required: "Permiso requerido",
-      // @llm-translated 2026-04-17
       approve_description: "solicita las siguientes capacidades. Revisa y aprueba para habilitar este conector.",
-      // @llm-translated 2026-04-17
-      approve_connect: "Aprobar y conectar",
+      approve_connect: "Aprobar y conectar"
     },
     picker_section: {
       no_connectors: "No se encontraron conectores",
@@ -3449,46 +3280,29 @@ export const es = {
       filter_purpose: "Propósito",
       filter_category: "Categoría",
       filter_license: "Licencia",
-      // @llm-translated 2026-04-17
       credential_name: "Nombre de la credencial",
-      // @llm-translated 2026-04-17
       add_project_first: "Añade primero un proyecto en Herramientas de desarrollo para conectar una base de código a tus agentes.",
-      // @llm-translated 2026-04-17
       go_to_dev_tools: "Ir a Herramientas de desarrollo",
-      // @llm-translated 2026-04-17
       workspace_connect_description: "Un inicio de sesión de Google crea automáticamente credenciales para Gmail, Calendar, Drive y Sheets",
-      // @llm-translated 2026-04-17
       foraging_description: "Escanea tu sistema de archivos en busca de claves API, perfiles AWS, variables de entorno y más",
-      // @llm-translated 2026-04-17
       no_setup_guide: "No hay guía de configuración disponible para este conector. Visita el enlace de documentación a continuación para obtener instrucciones.",
-      // @llm-translated 2026-04-17
-      open_setup_page: "Abrir página de configuración de {label}",
+      open_setup_page: "Abrir página de configuración de {label}"
     },
     cli_capture: {
-      // @llm-translated 2026-04-17
       cta: "Importar desde CLI local",
-      // @llm-translated 2026-04-17
       hint: "Usa un CLI local ya autenticado en lugar de pegar una clave API.",
-      // @llm-translated 2026-04-17
       running: "Ejecutando CLI local...",
-      // @llm-translated 2026-04-17
       success: "Credenciales capturadas desde CLI",
-      // @llm-translated 2026-04-17
       token_ttl_notice: "Este token expira en {seconds}s y se renovará automáticamente.",
-      // @llm-translated 2026-04-17
       source_label: "CLI",
-      // @llm-translated 2026-04-17
       missing_binary: "`{binary}` no está instalado o no se encuentra en una ubicación permitida.",
-      // @llm-translated 2026-04-17
       unauthenticated: "No has iniciado sesión en {binary}. {instruction}",
-      // @llm-translated 2026-04-17
       capture_failed: "Error al capturar desde CLI: {detail}",
-      // @llm-translated 2026-04-17
-      timeout: "La captura desde CLI ha expirado. Intenta ejecutar el comando manualmente primero.",
+      timeout: "La captura desde CLI ha expirado. Intenta ejecutar el comando manualmente primero."
     },
     schemas: {
       none_configured: "Ninguno configurado.",
-      required_badge: "REQ",
+      required_badge: "REQ"
     },
     design_phases: {
       saving: "Guardando credencial...",
@@ -3521,50 +3335,32 @@ export const es = {
       mark_done: "Marcar como completado",
       mark_step_complete: "Marcar paso como completado",
       copy_to_clipboard: "Copiar al portapapeles",
-      // @llm-translated 2026-04-17
       credential_saved_message: "La credencial {label} ha sido guardada de forma segura.",
-      // @llm-translated 2026-04-17
       revision_count: "(revisión {count})",
-      // @llm-translated 2026-04-17
       connector_added_to_catalog: "conector añadido a tu catálogo -- ahora disponible para otras personas y adopción de plantillas.",
-      // @llm-translated 2026-04-17
       view_credential: "Ver credencial",
-      // @llm-translated 2026-04-17
       refine_hint: "¿Necesitas ajustar alcances, añadir campos o modificar la configuración?",
-      // @llm-translated 2026-04-17
       refine_placeholder: "p. ej. añadir alcances de escritura, añadir entorno de pruebas...",
-      // @llm-translated 2026-04-17
       refine: "Refinar",
-      // @llm-translated 2026-04-17
       linked_to_existing: "Tu credencial se vinculará a la definición de conector existente.",
-      // @llm-translated 2026-04-17
       no_existing_connector: "-- no se encontró ningún conector {name} en tu catálogo.",
-      // @llm-translated 2026-04-17
       new_connector_will_be_registered: "Al guardar esta credencial, la definición de conector generada por IA se registrará automáticamente en tu catálogo de conectores -- haciéndola reutilizable para otras personas y adopción de plantillas.",
-      // @llm-translated 2026-04-17
       refine_request: "¿No es del todo correcto? Refina tu solicitud",
-      // @llm-translated 2026-04-17
       auto_provision_hint: "-- deja que la IA te guíe paso a paso para obtener tus credenciales de {label}.",
-      // @llm-translated 2026-04-17
       credential_name_label: "Nombre de la credencial",
-      // @llm-translated 2026-04-17
       credentials_secure_notice: "Las credenciales se almacenan de forma segura en la bóveda de la aplicación y están disponibles para la ejecución de herramientas del agente.",
-      // @llm-translated 2026-04-17
       tested_successfully_at: "Probado con éxito a las {time}",
-      // @llm-translated 2026-04-17
       setup_instructions: "Instrucciones de configuración",
-      // @llm-translated 2026-04-17
       all_steps_complete: "Todos los pasos completados -- rellena los campos a continuación y prueba tu conexión.",
-      // @llm-translated 2026-04-17
       use_template: "Usar",
-      // @llm-translated 2026-04-17
       recipe_used_one: "-- usado {count} vez",
-      // @llm-translated 2026-04-17
       recipe_used_other: "-- usado {count} veces",
-      // @llm-translated 2026-04-17
-      instruction_placeholder: "p. ej. Slack, OpenAI, GitHub, Stripe...",
+      instruction_placeholder: "p. ej. Slack, OpenAI, GitHub, Stripe..."
     },
     auto_cred_extra: {
+      browser_automation_warning: "La automatización del navegador está en ejecución. No interactúes con la ventana — se reanudará al completarse.",
+      desktop_bridge_title: "{{label}} requiere la aplicación de escritorio",
+      desktop_bridge_hint: "Este conector utiliza una sesión nativa del navegador que solo funciona en la aplicación de escritorio Personas.",
       preparing_guided: "Preparando instrucciones de configuración guiada...",
       starting_browser: "Iniciando sesión del navegador...",
       no_log_output: "No se capturó salida del registro.",
@@ -3595,48 +3391,26 @@ export const es = {
       step_browser_review: "Regresar aquí para tu revisión antes de guardar",
       step_guided_review: "Revisar y guardar la credencial",
       setup_context: "Contexto de configuración del análisis de diseño:",
-      // @llm-translated 2026-04-17
-      browser_automation_warning: "La automatización del navegador está en ejecución. No interactúes con la ventana — se reanudará al completarse.",
-      // @llm-translated 2026-04-17
-      desktop_bridge_title: "{{label}} requiere la aplicación de escritorio",
-      // @llm-translated 2026-04-17
-      desktop_bridge_hint: "Este conector utiliza una sesión nativa del navegador que solo funciona en la aplicación de escritorio Personas.",
-      // @llm-translated 2026-04-17
       review_extracted: "Revisar credenciales extraídas",
-      // @llm-translated 2026-04-17
       review_extracted_hint: "Valores extraídos del navegador -- verifica antes de guardar",
-      // @llm-translated 2026-04-17
       completeness_partial: "{filled} de {total} campos obligatorios completados. Completa los campos faltantes antes de guardar.",
-      // @llm-translated 2026-04-17
       universal_auto_setup: "Configuración automática universal",
-      // @llm-translated 2026-04-17
       universal_auto_setup_hint: "Proporciona una URL y descripción, y la IA navegará el sitio para descubrir y crear credenciales API automáticamente.",
-      // @llm-translated 2026-04-17
       service_url_label: "URL del servicio",
-      // @llm-translated 2026-04-17
       service_url_placeholder: "https://app.ejemplo.com o https://developer.ejemplo.com",
-      // @llm-translated 2026-04-17
       what_do_you_need: "¿Qué necesitas?",
-      // @llm-translated 2026-04-17
       description_placeholder: "p. ej. Necesito una clave API para su API REST para leer y escribir datos. El portal del desarrollador tiene una sección de claves API en Configuración.",
-      // @llm-translated 2026-04-17
       discover_credentials: "Descubrir credenciales",
-      // @llm-translated 2026-04-17
       discovered_label: "Descubierto: {label}",
-      // @llm-translated 2026-04-17
       fields_discovered_one: "{count} campo descubierto",
-      // @llm-translated 2026-04-17
       fields_discovered_other: "{count} campos descubiertos",
-      // @llm-translated 2026-04-17
       extracted_values_label: "Valores extraídos",
-      // @llm-translated 2026-04-17
       no_fields_discovered: "No se descubrieron campos. Intenta de nuevo con una descripción más específica.",
-      // @llm-translated 2026-04-17
       fields_captured_partial: "{filled}/{total} campos capturados",
-      // @llm-translated 2026-04-17
-      credential_stored: "La credencial {label} ha sido almacenada de forma segura.",
+      credential_stored: "La credencial {label} ha sido almacenada de forma segura."
     },
     negotiator_extra: {
+      panel_title: "Negociador de credenciales IA",
       checking_auth: "Verificando autenticaciones existentes...",
       auto_provisioning: "Aprovisionamiento automático de clave API",
       generating_plan: "Generando plan de aprovisionamiento...",
@@ -3645,10 +3419,7 @@ export const es = {
       need_help: "¿Necesitas ayuda con este paso?",
       hide_help: "Ocultar ayuda",
       ask_question: "Haz una pregunta sobre este paso...",
-      // @llm-translated 2026-04-17
-      panel_title: "Negociador de credenciales IA",
-      // @llm-translated 2026-04-17
-      planning_description: "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso...",
+      planning_description: "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso..."
     },
     workspace_panel: {
       select_services: "Seleccionar servicios para conectar",
@@ -3656,24 +3427,15 @@ export const es = {
       creating_credentials: "Creando credenciales...",
       all_created: "Todas las credenciales creadas",
       some_failed: "Algunas credenciales fallaron",
-      // @llm-translated 2026-04-17
       selected_count: "{selected} de {total} seleccionados",
-      // @llm-translated 2026-04-17
       select_all: "Seleccionar todos",
-      // @llm-translated 2026-04-17
       connect_services_one: "Conectar {count} servicio con un inicio de sesión",
-      // @llm-translated 2026-04-17
       connect_services_other: "Conectar {count} servicios con un inicio de sesión",
-      // @llm-translated 2026-04-17
       granting_access_one: "Esto otorgará acceso a {count} servicio",
-      // @llm-translated 2026-04-17
       granting_access_other: "Esto otorgará acceso a {count} servicios",
-      // @llm-translated 2026-04-17
       credentials_created_one: "{count} credencial creada con un solo inicio de sesión.",
-      // @llm-translated 2026-04-17
       credentials_created_other: "{count} credenciales creadas con un solo inicio de sesión.",
-      // @llm-translated 2026-04-17
-      sign_in_browser: "Inicia sesión con tu cuenta de Google en la ventana del navegador.",
+      sign_in_browser: "Inicia sesión con tu cuenta de Google en la ventana del navegador."
     },
     gateway: {
       gateway_members: "{name} — miembros del gateway",
@@ -3690,7 +3452,7 @@ export const es = {
       display_name: "Nombre de visualización (prefijo de herramienta)",
       display_name_placeholder: "p. ej. arcade, herramientas_investigacion, docs",
       adding: "Agregando…",
-      add_member: "Agregar miembro",
+      add_member: "Agregar miembro"
     },
     pending_auth: {
       title: "Se requiere autorización",
@@ -3704,13 +3466,13 @@ export const es = {
       open_first: "Abre la URL y otorga el consentimiento primero",
       retrying: "Reintentando…",
       retry_authorized: "He autorizado — reintentar",
-      retry_failed: "Reintento fallido",
+      retry_failed: "Reintento fallido"
     },
     rotation_insight: {
       perm_errors: "Errores permanentes detectados — rotación intentada, alerta enviada.",
       degrading: "Degradación sostenida — rotación preventiva activada.",
-      backoff: "Fallos transitorios — retroceso exponencial activo.",
-    },
+      backoff: "Fallos transitorios — retroceso exponencial activo."
+    }
   },
   deployment: {
     title: "Despliegue",
@@ -3728,7 +3490,7 @@ export const es = {
       token_available: "Token disponible",
       no_token: "No hay token configurado",
       no_token_configured: "Sin token configurado",
-      no_status: "No hay datos de estado disponibles.",
+      no_status: "No hay datos de estado disponibles."
     },
     api_playground: {
       title: "Área de pruebas API",
@@ -3738,10 +3500,12 @@ export const es = {
       sending: "Enviando...",
       empty_response: "(respuesta vacía)",
       snippets: "Fragmentos",
+      request_body_placeholder: "Tu prompt aquí..."
     },
     connection: {
       orchestrator_url_label: "URL del servidor en la nube",
       orchestrator_prefix: "https://",
+      orchestrator_url_placeholder: "https://tu-orquestador.ejemplo.com",
       enter_api_key: "Ingresar clave API",
       connect: "Conectar",
       connected: "Conectado",
@@ -3751,16 +3515,28 @@ export const es = {
       diagnostics_title: "Diagnósticos",
       url_protocol_error: "La URL debe usar http o https",
       url_hostname_error: "La URL no tiene nombre de host",
-      url_invalid: "URL inválida",
+      url_invalid: "URL inválida"
     },
     deployments_panel: {
       deploy_persona: "Desplegar persona",
       select_persona: "Selecciona una persona para desplegar",
       all_deployed: "Todas las personas ya están desplegadas",
+      no_deployments_yet: "Aún no hay despliegues. Selecciona una persona arriba para desplegarla como endpoint de API en la nube.",
+      active_deployments: "Despliegues Activos"
     },
     exec_detail: {
       fetching_output: "Obteniendo salida...",
       no_output: "Sin salida",
+      label_status: "Estado:",
+      label_duration: "Duración:",
+      label_cost: "Costo:",
+      label_tokens: "Tokens:",
+      label_started: "Iniciado:",
+      label_completed: "Completado:",
+      label_input: "Entrada:",
+      view_output: "Ver Salida",
+      output_prefix: "Salida (",
+      output_lines_suffix: "líneas)"
     },
     oauth_panel: {
       connect_anthropic: "Conectar cuenta de Anthropic",
@@ -3772,6 +3548,13 @@ export const es = {
       token_unknown: "Estado del token desconocido",
       expires: "Expira",
       scopes: "Alcances",
+      open_auth_window: "Abrir ventana de autorización",
+      complete_authorization: "Completar Autorización",
+      refresh_token: "Refrescar Token",
+      open_authorization_window: "Abrir Ventana de Autorización",
+      token_unknown_msg: "No se pudo verificar la validez del token. Refresca el token para confirmar que siga activo.",
+      connect_anthropic_msg: "Conecta tu cuenta de Anthropic para habilitar la autenticación basada en OAuth para ejecuciones en la nube.",
+      token_expired_msg_prefix: "Este token OAuth ha caducado"
     },
     trigger_form: {
       new_cloud_trigger: "Nuevo disparador en la nube",
@@ -3781,9 +3564,15 @@ export const es = {
       schedule_cron: "Programación (cron)",
       create_trigger: "Crear disparador",
       creating: "Creando...",
+      cron_expression: "Expresión Cron",
+      utc_suffix: "(UTC)",
+      webhook_info: "Se creará un endpoint webhook para este disparador. Puedes configurar el filtrado de payload después de la creación."
     },
     chart: {
       daily_executions: "Ejecuciones diarias",
+      tooltip_runs: "Ejecuciones:",
+      tooltip_cost: "Costo:",
+      tooltip_success: "Éxito:"
     },
     deploy_card: {
       test_deployment: "Probar despliegue",
@@ -3792,6 +3581,10 @@ export const es = {
       remove_deployment: "Eliminar despliegue",
       copy_endpoint: "Copiar endpoint",
       open_endpoint: "Abrir endpoint",
+      budget_label: "Presupuesto:",
+      label_invocations: "Invocaciones:",
+      label_last_called: "Última llamada:",
+      label_created: "Creado:"
     },
     tabs: {
       connection: "Conexión",
@@ -3799,7 +3592,7 @@ export const es = {
       oauth: "OAuth",
       deployments: "Despliegues",
       schedules: "Programaciones",
-      history: "Historial",
+      history: "Historial"
     },
     cloud_execution: "Ejecución en la nube",
     cloud_status: {
@@ -3811,7 +3604,7 @@ export const es = {
       queue_length: "Longitud de la cola",
       active_executions: "Ejecuciones activas",
       active_execution: "Ejecución activa",
-      claude_token: "Token de Claude",
+      claude_token: "Token de Claude"
     },
     history: {
       just_now: "Justo ahora",
@@ -3831,6 +3624,8 @@ export const es = {
       last_30_days: "Últimos 30 días",
       last_90_days: "Últimos 90 días",
       top_errors: "Errores principales",
+      clear_filters: "Limpiar filtros",
+      execution_history: "Historial de Ejecuciones"
     },
     schedules: {
       header: "Disparadores en la nube ({count})",
@@ -3840,6 +3635,12 @@ export const es = {
       empty: "Aún no hay disparadores en la nube. Crea uno para programar ejecuciones automatizadas.",
       recent_firings: "Activaciones recientes",
       no_firings: "Sin activaciones recientes",
+      label_type: "Tipo:",
+      label_status: "Estado:",
+      label_last_triggered: "Último disparo:",
+      label_next_trigger: "Próximo disparo:",
+      label_cron: "Cron:",
+      loading_firings: "Cargando..."
     },
     dashboard: {
       title: "Despliegues",
@@ -3894,7 +3695,7 @@ export const es = {
       stage_generating: "Generando",
       stage_completed: "Completado",
       stage_failed: "Fallido",
-      tool_calls: "{count} llamadas a herramientas",
+      tool_calls: "{count} llamadas a herramientas"
     },
     cloud_trigger_schedule: "Programado (Cron)",
     cloud_trigger_polling: "Sondeo",
@@ -3909,7 +3710,7 @@ export const es = {
     cron_daily_midnight: "Diario a medianoche UTC",
     cron_daily_9am: "Diario a las 9am UTC",
     cron_weekdays_9am: "Días hábiles a las 9am UTC",
-    cron_weekly_sun: "Semanal (dom. medianoche UTC)",
+    cron_weekly_sun: "Semanal (dom. medianoche UTC)"
   },
   sharing: {
     export_title: "Exportar paquete",
@@ -3987,6 +3788,7 @@ export const es = {
     persistence_denied: "Denegada",
     capabilities_label: "Capacidades:",
     capabilities_none: "Ninguna",
+    enclave_hash_label: "Hash:",
     network_sharing_title: "Red y compartición",
     network_sharing_subtitle: "Gestiona tu identidad, pares de confianza y recursos compartidos",
     exposed_resources: "Recursos expuestos",
@@ -4050,8 +3852,17 @@ export const es = {
     no_shared_resources: "Sin recursos compartidos. Sincroniza el manifiesto para verificar.",
     discovered_peers: "Pares descubiertos",
     refresh: "Actualizar",
+    refresh_peer_list: "Refrescar lista de pares",
     scanning_network: "Escaneando la red local...",
     lan_hint: "Otras instancias de Personas en la misma LAN aparecerán aquí automáticamente.",
+    peer_list_stale: "La lista de pares puede estar desactualizada \\u2014",
+    network_data_stale: "Los datos de red pueden estar desactualizados \\u2014",
+    peer_id_footer: "ID del par",
+    remove_exposure: "Eliminar exposición",
+    revoke_trust: "Revocar confianza",
+    remove_peer: "Eliminar par",
+    share_link_tooltip: "Generar un enlace de uso único (expira en 24h)",
+    copy_clipboard_tooltip: "Copiar paquete como base64 al portapapeles (máx 256 KB)",
     message_throughput: "Rendimiento de mensajes",
     sent: "Enviados",
     received: "Recibidos",
@@ -4067,7 +3878,7 @@ export const es = {
     sync_rounds: "Rondas de sincronización",
     success_fail: "Éxito / Fallo",
     avg_sync_duration: "Duración promedio de sincronización",
-    entries_received: "Entradas recibidas",
+    entries_received: "Entradas recibidas"
   },
   overview: {
     title: "Resumen",
@@ -4077,7 +3888,7 @@ export const es = {
     filters: {
       start_date: "Fecha de inicio",
       end_date: "Fecha de fin",
-      all_personas: "Todos los agentes",
+      all_personas: "Todos los agentes"
     },
     messages: {
       loading: "Cargando mensajes...",
@@ -4088,7 +3899,7 @@ export const es = {
         title: "Título",
         priority: "Prioridad",
         status: "Estado",
-        created: "Creado",
+        created: "Creado"
       },
       content_header: "Contenido",
       priority_high: "Alta",
@@ -4105,6 +3916,9 @@ export const es = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "Escritorio",
+      id_label: "ID:",
+      confirm_delete_title: "Confirmar eliminación",
+      close_message: "Cerrar detalle del mensaje"
     },
     realtime: {
       idle: "Inactivo -- haz clic en {action} para simular tráfico",
@@ -4112,7 +3926,7 @@ export const es = {
       events_per_min: "eventos/min",
       pending: "pendientes",
       success: "exitosos",
-      in_window: "en ventana",
+      in_window: "en ventana"
     },
     observability: {
       title: "Observabilidad",
@@ -4125,12 +3939,18 @@ export const es = {
       manual_fix: "(corrección manual aplicada)",
       metrics_unavailable: "Métricas no disponibles -- los datos mostrados pueden estar desactualizados",
       no_open_issues: "Sin problemas abiertos",
-      run_analysis: "Ejecuta un análisis para buscar problemas.",
+      run_analysis: "Ejecuta un análisis para buscar problemas."
     },
     memories: {
       title: "Memorias",
       created_success: "Memoria creada exitosamente",
       no_memories: "Aún no hay memorias",
+      no_memories_hint: "Cuando los agentes se ejecutan, pueden almacenar notas y aprendizajes valiosos aquí.",
+      no_memories_match: "Ninguna memoria coincide con los filtros actuales",
+      list_aria_label: "Lista de memorias",
+      add_memory_btn: "Agregar Memoria",
+      search_placeholder: "Buscar memorias...",
+      no_filter_match: "Ninguna memoria coincide con tus filtros. Prueba ajustando tu búsqueda.",
       form: {
         agent: "Agente",
         category: "Categoría",
@@ -4138,8 +3958,13 @@ export const es = {
         content: "Contenido",
         importance: "Importancia",
         tags: "Etiquetas",
-        tags_hint: "(separadas por comas)",
-      },
+        tags_hint: "(separadas por comas)"
+      }
+    },
+    memory_review: {
+      all_conflicts_resolved: "Todos los conflictos resueltos",
+      keep_prefix: "Mantener “",
+      keep_suffix: "”"
     },
     executions: {
       title: "Ejecuciones",
@@ -4147,7 +3972,7 @@ export const es = {
       no_agents: "Aún no se han creado agentes",
       create_first: "Crea tu primer agente para ver la actividad de ejecución aquí",
       no_executions: "Aún no hay ejecuciones",
-      run_agent: "Ejecuta un agente para ver la actividad de ejecución aquí",
+      run_agent: "Ejecuta un agente para ver la actividad de ejecución aquí"
     },
     workflows: {
       loading: "Cargando flujos de trabajo...",
@@ -4158,7 +3983,7 @@ export const es = {
       all_types: "Todos los tipos",
       no_filter_match: "Ningún trabajo coincide con los filtros actuales",
       auto_refreshing: "Actualización automática mientras hay trabajos en ejecución",
-      cancel_failed: "Error al cancelar el trabajo del flujo",
+      cancel_failed: "Error al cancelar el trabajo del flujo"
     },
     schedules: {
       title: "Línea de tiempo de programaciones",
@@ -4189,7 +4014,7 @@ export const es = {
       change_frequency: "Cambiar frecuencia",
       pause_schedule: "Pausar programación",
       resume_schedule: "Reanudar programación",
-      headless_badge: "sin interfaz",
+      headless_badge: "sin interfaz"
     },
     frequency_editor: {
       title: "Cambiar frecuencia",
@@ -4199,7 +4024,7 @@ export const es = {
       interval_seconds: "Intervalo (segundos)",
       previewing: "Previsualizando...",
       next_runs: "Próximas ejecuciones",
-      invalid_cron: "Expresión cron inválida",
+      invalid_cron: "Expresión cron inválida"
     },
     recovery: {
       agents_missed_one: "{count} agente perdió ejecuciones",
@@ -4213,7 +4038,7 @@ export const es = {
       run_once_tooltip: "Ejecutar una vez ahora",
       skip_tooltip: "Omitir -- no recuperar",
       dismiss_all: "Descartar todo",
-      recover_selected: "Recuperar {count} seleccionados",
+      recover_selected: "Recuperar {count} seleccionados"
     },
     sla: {
       title: "SLA de fiabilidad de agentes",
@@ -4238,7 +4063,7 @@ export const es = {
       metric_cost: "Costo",
       metric_mtbf: "MTBF",
       metric_auto_healed: "Auto-recuperadas",
-      metric_cancelled: "Canceladas",
+      metric_cancelled: "Canceladas"
     },
     knowledge: {
       title: "Grafo de conocimiento",
@@ -4263,14 +4088,14 @@ export const es = {
       failures: "Fallos",
       avg_cost: "Costo promedio",
       avg_duration: "Duración promedio",
-      pattern_data: "Datos del patrón",
+      pattern_data: "Datos del patrón"
     },
     conflicts: {
       dismissed: "Conflicto descartado",
       resolved: "Conflicto resuelto",
       resolve_failed: "Error al resolver el conflicto",
       conflict_count_one: "{count} conflicto",
-      conflict_count_other: "{count} conflictos",
+      conflict_count_other: "{count} conflictos"
     },
     dashboard: {
       title: "Panel de control",
@@ -4286,7 +4111,7 @@ export const es = {
       empty_title: "Bienvenido a Personas",
       empty_subtitle: "Crea tu primer agente para empezar a ver métricas de ejecución, gráficos de tráfico y actividad aquí.",
       create_persona: "Crear Persona",
-      from_templates: "Desde Plantillas",
+      from_templates: "Desde Plantillas"
     },
     execution_metrics: {
       title: "Métricas de Ejecución",
@@ -4304,7 +4129,7 @@ export const es = {
       cost_spike: "Pico de costo",
       above_avg: "sobre promedio",
       top_executions: "Principales ejecuciones:",
-      executions_label: "{count} ejecuciones",
+      executions_label: "{count} ejecuciones"
     },
     execution_list: {
       recorded: "{count} ejecuciones registradas",
@@ -4329,7 +4154,7 @@ export const es = {
       no_agents: "Sin agentes creados aún",
       no_agents_hint: "Crea tu primer agente para ver la actividad de ejecución aquí.",
       unknown_persona: "Desconocido",
-      healing_retry: "Reintento de curación #{count}",
+      healing_retry: "Reintento de curación #{count}"
     },
     review: {
       title: "Revisiones Manuales",
@@ -4393,7 +4218,7 @@ export const es = {
       table_tooltip: "Solo tabla",
       review_detail: "Detalle de Revisión",
       select_review: "Selecciona una revisión para ver",
-      technical_context: "Contexto Técnico",
+      technical_context: "Contexto Técnico"
     },
     messages_view: {
       title: "Mensajes",
@@ -4441,7 +4266,7 @@ export const es = {
       improve_placeholder: "Describe cómo podría mejorarse este resultado...",
       submit_improvement: "Enviar Mejora",
       starting: "Iniciando...",
-      unknown_persona: "Desconocido",
+      unknown_persona: "Desconocido"
     },
     events: {
       title: "Eventos",
@@ -4479,7 +4304,7 @@ export const es = {
       source: "Origen",
       processed: "Procesado",
       event_data: "Datos del Evento",
-      error: "Error",
+      error: "Error"
     },
     health: {
       title: "Salud del Agente",
@@ -4509,18 +4334,26 @@ export const es = {
       status_page: "Página de Estado",
       operational: "Operacional",
       degraded: "Degradado",
-      outage: "Interrupción",
+      outage: "Interrupción"
     },
     leaderboard: {
       title: "Clasificación de Agentes",
       subtitle: "Rankings de rendimiento en todos los agentes",
       no_data: "Sin datos de clasificación disponibles",
       no_data_hint: "Ejecuta tus agentes para comenzar a construir rankings de rendimiento",
+      fleet_avg: "Promedio de flota:",
+      refresh_label: "Refrescar clasificación",
+      computing_scores: "Calculando puntuaciones de agentes...",
+      single_agent_has_data: "tiene datos.",
+      add_more_agents: "Agrega más agentes para ver clasificaciones. Actualmente sólo {name}",
+      open_agent: "Abrir Agente",
+      no_agent_data_title: "Aún no hay datos de agentes",
+      no_agent_data_hint: "Ejecuta algunos agentes para ver clasificaciones de rendimiento. La tabla necesita historial de ejecución y datos de salud para calcular las puntuaciones.",
       reliability: "Confiabilidad",
       speed: "Velocidad",
       efficiency: "Eficiencia",
       cost_effectiveness: "Relación Costo-Beneficio",
-      overall: "General",
+      overall: "General"
     },
     analytics: {
       title: "Análisis",
@@ -4537,25 +4370,25 @@ export const es = {
       saved_views: "Vistas Guardadas",
       create_view: "Crear Vista",
       health_issues: "Problemas de Salud",
-      rotation_overview: "Resumen de Rotación",
+      rotation_overview: "Resumen de Rotación"
     },
     usage: {
       title: "Uso",
       subtitle: "Costo y consumo de recursos",
       chart_error: "Error al cargar el gráfico",
       chart_error_hint: "Se produjo un error al renderizar este gráfico",
-      try_again: "Intentar de nuevo",
+      try_again: "Intentar de nuevo"
     },
     cron_agents: {
       title: "Agentes Programados",
       subtitle: "Agentes que se ejecutan en horarios automáticos",
       no_agents: "Sin agentes programados",
-      no_agents_hint: "Agrega un disparador cron a cualquier agente para verlo aquí",
+      no_agents_hint: "Agrega un disparador cron a cualquier agente para verlo aquí"
     },
     timeline: {
       title: "Línea de Tiempo de Actividad",
       subtitle: "Vista unificada de toda la actividad de agentes",
-      no_activity: "Sin actividad reciente",
+      no_activity: "Sin actividad reciente"
     },
     realtime_viz: {
       title: "Bus de Eventos",
@@ -4572,7 +4405,7 @@ export const es = {
       timestamp: "Marca de Tiempo",
       payload: "Carga útil",
       saved_views: "Vistas Guardadas",
-      save_current: "Guardar Actual",
+      save_current: "Guardar Actual"
     },
     observability_extra: {
       auto_refresh_on: "Actualización automática activada",
@@ -4598,7 +4431,7 @@ export const es = {
       ipc_channel: "Canal IPC",
       avg_duration: "Duración Promedio",
       call_count: "Cantidad de Llamadas",
-      error_rate: "Tasa de Error",
+      error_rate: "Tasa de Error"
     },
     widgets: {
       recent_activity: "Actividad Reciente",
@@ -4615,7 +4448,7 @@ export const es = {
       executions_badge: "Ejecuciones",
       success_badge: "Éxito",
       alerts_badge: "Alertas",
-      agents_badge: "Agentes",
+      agents_badge: "Agentes"
     },
     cards: {
       fleet_optimization: "Optimización de Flota",
@@ -4624,7 +4457,7 @@ export const es = {
       remote_subtitle: "Acciones rápidas para gestión de agentes",
       resume_setup: "Continuar Configuración",
       resume_subtitle: "Retoma donde lo dejaste",
-      knowledge_hub: "Centro de Conocimiento",
+      knowledge_hub: "Centro de Conocimiento"
     },
     activity: {
       title: "Actividad",
@@ -4670,7 +4503,7 @@ export const es = {
       create_persona: "Crear Persona",
       from_templates: "Desde Plantillas",
       execution_label: "Ejecución",
-      unknown: "Desconocido",
+      unknown: "Desconocido"
     },
     analytics_dashboard: {
       title: "Análisis",
@@ -4729,7 +4562,7 @@ export const es = {
       issues_count: "{count} problemas",
       issues_count_one: "{count} problema",
       never: "nunca",
-      fail_count: "{count}x fallo",
+      fail_count: "{count}x fallo"
     },
     cron: {
       title: "Agentes Cron",
@@ -4748,7 +4581,7 @@ export const es = {
       no_schedule: "sin horario",
       every_interval: "cada {interval}",
       next: "próximo",
-      last: "último",
+      last: "último"
     },
     activity_timeline: {
       title: "Línea de Tiempo de Actividad",
@@ -4757,7 +4590,7 @@ export const es = {
       events: "Eventos",
       messages: "Mensajes",
       no_activity: "Sin actividad aún",
-      high: "Alto",
+      high: "Alto"
     },
     sla_card: {
       successful: "Exitoso",
@@ -4769,7 +4602,7 @@ export const es = {
       auto_healed: "Auto-Recuperado",
       cancelled: "Cancelado",
       failing: "{count} fallando",
-      healed: "{count} recuperados",
+      healed: "{count} recuperados"
     },
     realtime_page: {
       title: "Monitor de Bus de Eventos",
@@ -4823,7 +4656,7 @@ export const es = {
       galaxy: "Galaxia",
       galaxy_desc: "Constelación orbital con rastros de cometas",
       lanes: "Carriles",
-      lanes_desc: "Diagrama de flujo horizontal con carriles",
+      lanes_desc: "Diagrama de flujo horizontal con carriles"
     },
     memory_form: {
       agent: "Agente",
@@ -4840,25 +4673,25 @@ export const es = {
       saving: "Guardando...",
       created_success: "Memoria creada exitosamente",
       fill_required: "Completa todos los campos requeridos para guardar",
-      saving_memory: "Guardando memoria...",
+      saving_memory: "Guardando memoria..."
     },
     memory_filter: {
       search_placeholder: "Buscar memorias...",
       all_agents: "Todos los agentes",
-      all_categories: "Todas las categorías",
+      all_categories: "Todas las categorías"
     },
     memory_actions: {
       dismiss_suggestion: "Descartar sugerencia",
       memory_insights: "Perspectivas de Memoria",
       suggestions: "{count} sugerencias",
-      suggestions_one: "{count} sugerencia",
+      suggestions_one: "{count} sugerencia"
     },
     memory_conflict: {
       memory_a: "Memoria A",
       memory_b: "Memoria B",
       merge: "Combinar",
       keep: "Conservar",
-      vs: "vs",
+      vs: "vs"
     },
     observability_charts: {
       cost_over_time: "Costo a lo Largo del Tiempo",
@@ -4870,7 +4703,7 @@ export const es = {
       anomaly_detected: "{count} anomalía de costo detectada",
       anomaly_click_hint: "Haz clic en un marcador de diamante en el gráfico para investigar",
       clear_traces: "Limpiar trazas completadas",
-      all_operations: "Todas las operaciones",
+      all_operations: "Todas las operaciones"
     },
     health_extra: {
       success: "Éxito",
@@ -4886,6 +4719,11 @@ export const es = {
       predicted_failure: "Pico de fallos previsto en",
       loading_status: "Cargando datos de la página de estado...",
       no_personas: "No hay personas para mostrar.",
+      score_prefix: "Puntuación:",
+      uptime_30d_prefix: "Disponibilidad 30d:",
+      updated_prefix: "Actualizado",
+      consecutive_failures_one: "{count} falla consecutiva",
+      consecutive_failures_other: "{count} fallas consecutivas",
       score_label: "Puntuación",
       uptime_30d: "Disponibilidad 30d",
       updated: "Actualizado {time}",
@@ -4902,7 +4740,7 @@ export const es = {
       open: "{count} abiertos",
       sla_compliance: "Cumplimiento de SLA",
       consecutive_failures: "{count} fallos consecutivos",
-      consecutive_failure: "{count} fallo consecutivo",
+      consecutive_failure: "{count} fallo consecutivo"
     },
     system_health: {
       title: "Verificaciones del Sistema",
@@ -4916,7 +4754,7 @@ export const es = {
       save_configuration: "Guardar Configuración",
       litellm_footer: "Estos ajustes se almacenan localmente y se comparten con todos los agentes configurados para usar el proveedor LiteLLM.",
       ipc_error: "El puente de la aplicación no responde. Intenta reiniciar la aplicación. Aún puedes explorar la interfaz.",
-      issues_warning: "Algunas verificaciones reportaron problemas. Puedes continuar, pero algunas funciones podrían no funcionar correctamente.",
+      issues_warning: "Algunas verificaciones reportaron problemas. Puedes continuar, pero algunas funciones podrían no funcionar correctamente."
     },
     review_extra: {
       add_note: "Agregar una nota (opcional)...",
@@ -4928,7 +4766,7 @@ export const es = {
       quick_actions: "Acciones Rápidas",
       accepted: "{count} aceptados",
       rejected: "{count} rechazados",
-      undecided: "{count} sin decidir",
+      undecided: "{count} sin decidir"
     },
     widgets_extra: {
       execution_health_chart: "Salud de Ejecución",
@@ -4937,29 +4775,147 @@ export const es = {
       failed: "Fallido",
       close: "Cerrar",
       dismiss_help: "Descartar ayuda",
-      skip_tour: "Saltar recorrido completo",
+      skip_tour: "Saltar recorrido completo"
+    },
+    burn_rate_extra: {
+      active_personas_subtitle: "{count} personas activas · límite mensual local",
+      title: "Proyecciones de Tasa de Consumo",
+      daily_burn: "Consumo Diario",
+      projected_monthly: "Proyectado Mensual",
+      at_risk: "En Riesgo",
+      top_cost_drivers: "Principales Impulsores de Costo",
+      budget_exhaustion_warnings: "Advertencias de Agotamiento de Presupuesto",
+      exhausted: "Agotado",
+      days_left: "{days}d restantes"
+    },
+    predictive_alerts_extra: {
+      per_month: "/mes",
+      confidence_pct: "% conf",
+      title: "Alertas Predictivas",
+      all_nominal: "Todos los sistemas nominales",
+      no_alerts: "Sin alertas predictivas — todas las personas dentro de parámetros saludables.",
+      budget_exhausted: "Presupuesto Agotado",
+      budget_exhaustion_in: "Agotamiento del presupuesto en {days}d",
+      failure_spike_predicted: "Pico de tasa de fallos previsto en {days}d",
+      excessive_healing: "Actividad excesiva de auto-recuperación",
+      critical_health: "Estado de salud crítico",
+      byom_recommendations: "Recomendaciones de Enrutamiento BYOM"
+    },
+    annotate_modal: {
+      annotation_placeholder: "p. ej. La verificación del webhook de Stripe requiere el cuerpo crudo de la solicitud, no el JSON analizado",
+      title: "Agregar Anotación de Conocimiento",
+      persona_label: "Persona de Atribución",
+      scope_label: "Ámbito",
+      tool_name: "Nombre de Herramienta",
+      connector_type: "Tipo de Conector / Servicio",
+      annotation_label: "Anotación",
+      cancel: "Cancelar",
+      saving: "Guardando...",
+      save_annotation: "Guardar Anotación"
+    },
+    knowledge_row: {
+      execution_trend_label: "Tendencia de ejecución",
+      annotation: "Anotación",
+      successes: "Éxitos",
+      failures: "Fallos",
+      avg_cost: "Costo Promedio",
+      avg_duration: "Duración Promedio",
+      pattern_data: "Datos de Patrón",
+      collapse_details: "Contraer detalles",
+      expand_details: "Expandir detalles",
+      verify_annotation: "Verificar anotación",
+      dismiss_annotation: "Descartar anotación"
+    },
+    knowledge_graph: {
+      mock_pattern: "Patrón Simulado",
+      seed_tooltip: "Sembrar un patrón simulado (solo dev)",
+      all_types: "Todos los Tipos",
+      all_scopes: "Todos los Alcances",
+      failure_drilldown_prefix: "Análisis de fallos:",
+      failure_date_filter: "Mostrando patrones de fallo activos el {date} o después",
+      data_unavailable: "Datos de conocimiento no disponibles",
+      loading_patterns: "Cargando patrones de conocimiento...",
+      drilldown_toggle_title: "Mostrar/ocultar análisis de fallos",
+      no_patterns_yet: "Aún no hay patrones de conocimiento",
+      no_patterns_yet_hint: "Ejecuta agentes para construir patrones de conocimiento. Los agentes se vuelven más inteligentes con el tiempo.",
+      no_patterns_match: "Ningún patrón coincide con los filtros actuales",
+      recent_learnings: "Aprendizajes Recientes",
+      curating_manually: "¿Curando documentos manualmente?",
+      obsidian_tip: "Para menos de ~1000 notas, un conector de Obsidian puede sincronizar tu bóveda directamente."
+    },
+    focused_decision: {
+      video_not_supported: "Tu navegador no soporta la reproducción de video.",
+      reject_this: "Rechazar esto",
+      accept_this: "Aceptar esto",
+      accept: "Aceptar",
+      reject: "Rechazar",
+      media_unavailable: "Medios no disponibles"
+    },
+    review_focus: {
+      video_not_supported: "Tu navegador no soporta la reproducción de video.",
+      all_caught_up: "Todo al día",
+      no_pending: "No hay revisiones pendientes por procesar.",
+      queue: "Cola",
+      clear: "Limpiar",
+      clear_all_verdicts: "Limpiar todos los veredictos",
+      quick_actions: "Acciones Rápidas",
+      reject_all: "Rechazar todo",
+      accept_all: "Aceptar todo",
+      retry_with_changes: "Reintentar con cambios"
+    },
+    bulk_action_bar: {
+      pending_reviews_selected_one: "{count} revisión pendiente seleccionada",
+      pending_reviews_selected_other: "{count} revisiones pendientes seleccionadas"
+    },
+    review_inbox: {
+      drag_to_resize: "Arrastra para redimensionar"
+    },
+    healing_issues_panel: {
+      ai_healing_title: "Sanación por IA",
+      diagnosis_label: "Diagnóstico:",
+      fixes_applied: "Correcciones Aplicadas",
+      alert_history_title: "Historial de Alertas",
+      all_agents_global: "Todos los agentes (global)",
+      add_rule: "Agregar Regla",
+      no_rules_configured: "No hay reglas de alerta configuradas. Agrega una regla para comenzar a monitorear.",
+      confidence_pct_suffix: "% confianza",
+      spike_on: "pico en",
+      correlated_events_prefix: "Eventos Correlacionados (",
+      circuit_breaker_label: "interruptor de circuito",
+      auto_disabled_message: "Esta persona fue deshabilitada automáticamente como respuesta de interruptor de circuito ante fallos repetidos.",
+      execution_label: "Ejecución:",
+      issue_marked_as: "Este problema está marcado como",
+      retry_in_progress: "Reintento en progreso — el estado se actualizará al completarse.",
+      resolve_issue_title: "Marcar problema como resuelto",
+      title: "Problemas de Salud",
+      analyzing: "Analizando...",
+      run_analysis: "Ejecutar Análisis",
+      no_open_issues: "Sin problemas abiertos",
+      run_analysis_hint: "Ejecuta el análisis para verificar problemas.",
+      healing_audit_log: "Registro de Auditoría de Recuperación",
+      no_silent_failures: "No se registraron fallos silenciosos."
     },
     remote_control_card: {
       connect_to_desktop: "Conectar al Escritorio",
       connect_description: "Ejecuta agentes usando tu CLI de escritorio mediante Control Remoto. Inicia {command} en tu computadora y luego conecta aquí.",
-      requires_subscription: "Requiere suscripción Claude Pro o Max",
+      requires_subscription: "Requiere suscripción Claude Pro o Max"
     },
     resume_setup_card: {
       resume_tour: "Reanudar Recorrido",
       left_off_at: "Te quedaste en",
       steps_completed: "{completed}/{total} pasos completados",
       skip_tour: "Saltar recorrido completo",
-      continue_label: "Continuar",
+      continue_label: "Continuar"
     },
     detail_modal: {
-      close: "Cerrar",
+      close: "Cerrar"
     },
     metric_help_popover: {
       help_for: "Ayuda para {label}",
       dismiss_help: "Descartar ayuda",
       healthy: "Saludable:",
       click: "Clic:",
-      got_it: "Entendido, no mostrar de nuevo",
+      got_it: "Entendido, no mostrar de nuevo"
     },
     install_button: {
       install_node: "Instalar Node.js",
@@ -4970,7 +4926,7 @@ export const es = {
       installation_failed: "Instalación fallida",
       try_manually: "Intenta ejecutar manualmente:",
       retry: "Reintentar",
-      official_page: "Página oficial",
+      official_page: "Página oficial"
     },
     section_card: {
       checking: "Verificando {section}...",
@@ -4981,12 +4937,12 @@ export const es = {
       sign_in_google: "Iniciar sesión con Google",
       working: "Trabajando...",
       connect_claude: "Conectar a Claude Desktop",
-      disconnect: "Desconectar",
+      disconnect: "Desconectar"
     },
     metrics_cards: {
       cost_spike: "Pico de costo",
       above_avg: "por encima del promedio",
-      top_executions: "Principales ejecuciones:",
+      top_executions: "Principales ejecuciones:"
     },
     event_log_item: {
       event_id: "ID de Evento",
@@ -4998,75 +4954,15 @@ export const es = {
       copied: "Copiado",
       copy: "Copiar",
       error: "Error",
-      system: "Sistema",
-    },
-    burn_rate_extra: {
-      title: "Proyecciones de Tasa de Consumo",
-      daily_burn: "Consumo Diario",
-      projected_monthly: "Proyectado Mensual",
-      at_risk: "En Riesgo",
-      top_cost_drivers: "Principales Impulsores de Costo",
-      budget_exhaustion_warnings: "Advertencias de Agotamiento de Presupuesto",
-      exhausted: "Agotado",
-      days_left: "{days}d restantes",
+      system: "Sistema"
     },
     cascade: {
       title: "Mapa de Cascada en Cadena",
-      no_chains: "No se detectaron cadenas — todas las personas operan independientemente",
-    },
-    predictive_alerts_extra: {
-      title: "Alertas Predictivas",
-      all_nominal: "Todos los sistemas nominales",
-      no_alerts: "Sin alertas predictivas — todas las personas dentro de parámetros saludables.",
-      budget_exhausted: "Presupuesto Agotado",
-      budget_exhaustion_in: "Agotamiento del presupuesto en {days}d",
-      failure_spike_predicted: "Pico de tasa de fallos previsto en {days}d",
-      excessive_healing: "Actividad excesiva de auto-recuperación",
-      critical_health: "Estado de salud crítico",
-      byom_recommendations: "Recomendaciones de Enrutamiento BYOM",
-    },
-    annotate_modal: {
-      title: "Agregar Anotación de Conocimiento",
-      persona_label: "Persona de Atribución",
-      scope_label: "Ámbito",
-      tool_name: "Nombre de Herramienta",
-      connector_type: "Tipo de Conector / Servicio",
-      annotation_label: "Anotación",
-      cancel: "Cancelar",
-      saving: "Guardando...",
-      save_annotation: "Guardar Anotación",
-    },
-    knowledge_row: {
-      annotation: "Anotación",
-      successes: "Éxitos",
-      failures: "Fallos",
-      avg_cost: "Costo Promedio",
-      avg_duration: "Duración Promedio",
-      pattern_data: "Datos de Patrón",
-      collapse_details: "Contraer detalles",
-      expand_details: "Expandir detalles",
-      verify_annotation: "Verificar anotación",
-      dismiss_annotation: "Descartar anotación",
-    },
-    focused_decision: {
-      accept: "Aceptar",
-      reject: "Rechazar",
-      media_unavailable: "Medios no disponibles",
-    },
-    review_focus: {
-      all_caught_up: "Todo al día",
-      no_pending: "No hay revisiones pendientes por procesar.",
-      queue: "Cola",
-      clear: "Limpiar",
-      clear_all_verdicts: "Limpiar todos los veredictos",
-      quick_actions: "Acciones Rápidas",
-      reject_all: "Rechazar todo",
-      accept_all: "Aceptar todo",
-      retry_with_changes: "Reintentar con cambios",
+      no_chains: "No se detectaron cadenas — todas las personas operan independientemente"
     },
     memory_card: {
       confirm: "Confirmar",
-      cancel: "Cancelar",
+      cancel: "Cancelar"
     },
     memory_detail: {
       title_label: "Título",
@@ -5076,7 +4972,7 @@ export const es = {
       tags_label: "Etiquetas",
       view_source_execution: "Ver Ejecución de Origen",
       delete_memory: "Eliminar Memoria",
-      close: "Cerrar",
+      close: "Cerrar"
     },
     memory_table: {
       agent: "Agente",
@@ -5084,11 +4980,11 @@ export const es = {
       category: "Categoría",
       priority: "Prioridad",
       tags: "Etiquetas",
-      created: "Creado",
+      created: "Creado"
     },
     review_results: {
       title: "Revisión de Memoria IA",
-      review_failed: "Revisión fallida",
+      review_failed: "Revisión fallida"
     },
     anomaly_drilldown_extra: {
       title: "Análisis Detallado de Anomalías",
@@ -5097,7 +4993,7 @@ export const es = {
       correlating: "Correlacionando eventos...",
       likely_root_causes: "Causas Raíz Probables",
       correlated_events: "Eventos Correlacionados",
-      no_correlated: "No se encontraron eventos correlacionados en la ventana de ±24h.",
+      no_correlated: "No se encontraron eventos correlacionados en la ventana de ±24h."
     },
     healing_issue_modal: {
       issue_resolved: "Problema Resuelto",
@@ -5112,23 +5008,14 @@ export const es = {
       auto_resolved: "Este problema fue resuelto automáticamente",
       close: "Cerrar",
       resolving: "Resolviendo…",
-      mark_resolved: "Marcar como Resuelto",
-    },
-    healing_issues_panel: {
-      title: "Problemas de Salud",
-      analyzing: "Analizando...",
-      run_analysis: "Ejecutar Análisis",
-      no_open_issues: "Sin problemas abiertos",
-      run_analysis_hint: "Ejecuta el análisis para verificar problemas.",
-      healing_audit_log: "Registro de Auditoría de Recuperación",
-      no_silent_failures: "No se registraron fallos silenciosos.",
+      mark_resolved: "Marcar como Resuelto"
     },
     healing_timeline: {
       loading: "Cargando línea de tiempo...",
       no_events: "Sin eventos de recuperación",
       no_events_hint: "Ejecuta el análisis para construir la línea de tiempo de resiliencia.",
       knowledge_base: "Base de Conocimiento",
-      patterns_hint: "Patrones que influyen en las decisiones de recuperación",
+      patterns_hint: "Patrones que influyen en las decisiones de recuperación"
     },
     ipc_panel: {
       title: "Rendimiento IPC",
@@ -5137,29 +5024,29 @@ export const es = {
       command: "Comando",
       calls_header: "Llamadas",
       duration_header: "Duración",
-      when_header: "Cuándo",
+      when_header: "Cuándo"
     },
     system_trace_extra: {
       no_traces: "No se registraron trazas del sistema",
       no_traces_hint: "Las trazas aparecen cuando se ejecutan operaciones de diseño, credenciales o plantillas",
       all_operations: "Todas las operaciones",
       clear_completed: "Limpiar trazas completadas",
-      span: "Intervalo",
+      span: "Intervalo"
     },
     event_log_sidebar: {
       title: "Registro de Eventos",
       no_events: "Aún no hay eventos",
-      open_detail_drawer: "Abrir en panel de detalles",
+      open_detail_drawer: "Abrir en panel de detalles"
     },
     chart_error: {
-      chart_unavailable: "Gráfico no disponible",
+      chart_unavailable: "Gráfico no disponible"
     },
     realtime_idle: {
-      idle: "Inactivo",
+      idle: "Inactivo"
     },
     day_range: {
-      apply: "Aplicar",
-    },
+      apply: "Aplicar"
+    }
   },
   templates: {
     gallery: {
@@ -5175,13 +5062,14 @@ export const es = {
       triggers: "Disparadores",
       no_flows: "Sin flujos",
       readiness_tooltip: "{percent}% de conectores listos",
+      template_details_tabs_aria: "Detalles de plantilla"
     },
     actions: {
       view_details: "Ver detalles",
       adopt: "Adoptar",
       try_it: "Probar",
       adopt_as_persona: "Adoptar como agente",
-      delete: "Eliminar",
+      delete: "Eliminar"
     },
     detail: {
       tab_overview: "Resumen",
@@ -5193,14 +5081,14 @@ export const es = {
       review_error: "Error",
       used_references: "Usó patrones de referencia",
       no_design_data: "No hay datos de diseño disponibles",
-      no_design_data_hint: "Datos de diseño no disponibles para esta plantilla.",
+      no_design_data_hint: "Datos de diseño no disponibles para esta plantilla."
     },
     detail_overview: {
       use_case_flows: "Flujos de casos de uso",
       suggested_adjustment: "Ajuste sugerido",
       adjustment_attempt: "(intento {attempt}/3)",
       dimension_completion: "Completitud de dimensiones",
-      dimensions_score: "({score}/9 dimensiones)",
+      dimensions_score: "({score}/9 dimensiones)"
     },
     adoption: {
       title: "Adoptar plantilla",
@@ -5209,7 +5097,7 @@ export const es = {
       step_credentials: "Vincular credenciales",
       step_preferences: "Establecer preferencias",
       step_generate: "Generar agente",
-      step_review: "Revisar y guardar",
+      step_review: "Revisar y guardar"
     },
     choose: {
       select_use_cases: "Seleccionar casos de uso",
@@ -5219,7 +5107,7 @@ export const es = {
       components: "Componentes",
       examples: "Ejemplos",
       tools: "Herramientas",
-      none_selected: "No hay casos de uso seleccionados -- selecciona al menos uno para continuar",
+      none_selected: "No hay casos de uso seleccionados -- selecciona al menos uno para continuar"
     },
     connect: {
       all_set: "No se necesitan conectores -- ¡todo listo!",
@@ -5232,7 +5120,7 @@ export const es = {
       select_credential: "Seleccionar credencial...",
       create_new: "+ Crear nueva credencial",
       design_custom: "+ Diseñar conector personalizado",
-      add_credential: "Agregar credencial",
+      add_credential: "Agregar credencial"
     },
     build: {
       title: "Construir agente",
@@ -5249,7 +5137,7 @@ export const es = {
       close_hint: "Puedes cerrar este diálogo -- el procesamiento continúa en segundo plano.",
       adjustments_label: "Solicitar ajustes (opcional)",
       adjustments_placeholder: "Ejemplo: Cambiar la programación para ejecutar a las 9 AM, eliminar la integración de ClickUp, agregar notificaciones de Slack",
-      discard_draft: "Descartar borrador y empezar de nuevo",
+      discard_draft: "Descartar borrador y empezar de nuevo"
     },
     quick_adopt: {
       all_matched: "Todos los conectores coinciden",
@@ -5257,7 +5145,7 @@ export const es = {
       missing_prefix: "Faltantes: ",
       add_in_catalog: "agregar en el catálogo de credenciales",
       build_persona: "Construir agente",
-      full_wizard: "Asistente completo",
+      full_wizard: "Asistente completo"
     },
     data: {
       title: "Configuración de datos",
@@ -5266,7 +5154,7 @@ export const es = {
       tables_found: "{tables} encontradas en la base de datos integrada.",
       create_new: "Crear tablas nuevas",
       use_existing: "Usar tablas existentes",
-      complete: "Configuración de datos completada",
+      complete: "Configuración de datos completada"
     },
     tune: {
       title: "Configurar agente",
@@ -5285,7 +5173,7 @@ export const es = {
       check_interval: "Intervalo de verificación",
       check_interval_placeholder: "Cada 5 minutos",
       manual_hint: "Se activa manualmente -- no se necesita configuración",
-      system_hint: "Se activa por eventos del sistema -- no se necesita configuración",
+      system_hint: "Se activa por eventos del sistema -- no se necesita configuración"
     },
     review_policy: {
       title: "Revisión humana",
@@ -5302,7 +5190,7 @@ export const es = {
       timeout_1h: "1 hora",
       timeout_4h: "4 horas",
       timeout_24h: "24 horas",
-      timeout_none: "Sin tiempo límite",
+      timeout_none: "Sin tiempo límite"
     },
     memory: {
       title: "Memoria",
@@ -5315,7 +5203,7 @@ export const es = {
       scope_patterns: "Patrones de ejecución",
       scope_errors: "Resoluciones de errores",
       scope_custom: "Alcance personalizado...",
-      scope_custom_placeholder: "Describe qué recordar...",
+      scope_custom_placeholder: "Describe qué recordar..."
     },
     create: {
       use_cases: "Casos de uso",
@@ -5340,12 +5228,12 @@ export const es = {
       safety_issues: "Problemas de seguridad",
       safety_acknowledge_one: "Reconozco {count} hallazgo de seguridad crítico y acepto el riesgo",
       safety_acknowledge_other: "Reconozco {count} hallazgos de seguridad críticos y acepto el riesgo",
-      edit_details: "Editar detalles",
+      edit_details: "Editar detalles"
     },
     review: {
       use_cases_header: "Casos de uso ({count})",
       tools_header: "Herramientas ({count})",
-      triggers_header: "Disparadores ({count})",
+      triggers_header: "Disparadores ({count})"
     },
     matrix: {
       preparing: "Preparando compilación...",
@@ -5385,6 +5273,19 @@ export const es = {
       build_complete: "Compilación Completada",
       adjust_placeholder: "Ajusta cualquier cosa...",
       answer_placeholder: "Tu respuesta...",
+      answer_cell: "Respuesta: {cell}",
+      working_on: "Trabajando en: {cells}",
+      draft_ready_label: "Borrador Listo",
+      editing_cell: "Editando: {cell}",
+      protocol_active: "Protocolo Activo",
+      matrix_unavailable: "Datos de matriz no disponibles.",
+      persona_matrix_title: "Matriz de Personas",
+      cell_status_analyzing: "Analizando",
+      cell_status_answered: "Respondido",
+      cell_status_resolved: "Resuelto",
+      cell_status_input_needed: "Se necesita entrada",
+      cell_status_missing_credential: "Credencial faltante",
+      cell_status_error: "Error"
     },
     sandbox: {
       restriction_events: "Emisión de eventos deshabilitada",
@@ -5400,12 +5301,12 @@ export const es = {
       desc_unverified: "Esta plantilla proviene de una fuente desconocida y no ha sido verificada. Se ejecutará con capacidades restringidas para proteger tu sistema.",
       desc_community: "Esta plantilla comunitaria no ha sido verificada oficialmente. Se ejecutará en modo entorno aislado con capacidades restringidas.",
       badge_unverified: "No verificada",
-      badge_sandbox: "Modo entorno aislado",
+      badge_sandbox: "Modo entorno aislado"
     },
     page: {
       title: "Plantillas de Agentes",
       subtitle_one: "{count} plantilla disponible",
-      subtitle_other: "{count} plantillas disponibles",
+      subtitle_other: "{count} plantillas disponibles"
     },
     explore: {
       ready_to_deploy: "Listo para Implementar",
@@ -5426,7 +5327,7 @@ export const es = {
       role_templates: "Plantillas de {role}",
       by_role: "Por Rol",
       by_need: "Por Necesidad",
-      classic: "Clásico",
+      classic: "Clásico"
     },
     opportunities: {
       title: "Oportunidades de Automatización",
@@ -5434,15 +5335,15 @@ export const es = {
       ready_now: "Listo ahora",
       add_connector: "Agregar",
       unlock_more: "para desbloquear {count} más",
-      explore_templates: "Explorar plantillas de {label}",
+      explore_templates: "Explorar plantillas de {label}"
     },
     recommended: {
       title: "Recomendado para Ti",
       subtitle: "Basado en tus conectores",
-      no_recommendations: "Aún no hay recomendaciones disponibles.",
+      no_recommendations: "Aún no hay recomendaciones disponibles."
     },
     trending: {
-      title: "Más Adoptadas Esta Semana",
+      title: "Más Adoptadas Esta Semana"
     },
     empty: {
       no_templates: "Aún no hay plantillas generadas",
@@ -5451,7 +5352,7 @@ export const es = {
       no_search_results_hint: "Intenta ajustar tus términos de búsqueda o filtros para encontrar lo que buscas.",
       clear_search: "Limpiar búsqueda",
       waiting_for_draft: "Esperando borrador de persona",
-      waiting_for_draft_hint: "La IA está generando un borrador según tus selecciones. Esto suele tardar unos segundos.",
+      waiting_for_draft_hint: "La IA está generando un borrador según tus selecciones. Esto suele tardar unos segundos."
     },
     banners: {
       draft_prefix: "Borrador: ",
@@ -5464,7 +5365,7 @@ export const es = {
       status_completed: "Completado",
       status_failed: "Fallido",
       click_to_view_result: "Haz clic para ver el resultado",
-      click_to_view_output: "Haz clic para ver la salida",
+      click_to_view_output: "Haz clic para ver la salida"
     },
     search: {
       switch_to_keyword: "Cambiar a búsqueda por palabras clave",
@@ -5504,17 +5405,21 @@ export const es = {
       autocomplete_difficulty: "Dificultad",
       autocomplete_setup_time: "Tiempo de Configuración",
       autocomplete_suggestions: "Sugerencias",
+      coverage_filter_aria: "Filtro de cobertura",
+      search_suggestions_aria: "Sugerencias de búsqueda",
+      clear_search_aria: "Limpiar búsqueda",
+      search_with_ai_aria: "Buscar con IA"
     },
     list: {
       template_name: "Nombre de Plantilla",
       components: "Componentes",
-      adoptions: "Adopciones",
+      adoptions: "Adopciones"
     },
     row_actions: {
       row_actions_label: "Acciones de fila",
       view_details: "Ver Detalles",
       rebuild: "Reconstruir",
-      delete_template: "Eliminar plantilla",
+      delete_template: "Eliminar plantilla"
     },
     connector_readiness: {
       click_to_add: "haz clic para agregar credencial",
@@ -5524,14 +5429,14 @@ export const es = {
       needs_setup: "Necesita configuración",
       not_ready: "No listo",
       needs_credential: "necesita credencial",
-      not_installed: "no instalado",
+      not_installed: "no instalado"
     },
     detail_modal: {
       adopted: "{count} adoptados",
       reference_patterns: "Patrones de referencia",
       adopt_as_persona: "Adoptar como Persona",
       try_it: "Probarlo",
-      design_unavailable: "Datos de diseño no disponibles para esta plantilla.",
+      design_unavailable: "Datos de diseño no disponibles para esta plantilla."
     },
     overview_tab: {
       loading_metrics: "Cargando métricas de rendimiento...",
@@ -5551,7 +5456,7 @@ export const es = {
       suggested_adjustment: "Ajuste Sugerido",
       adjustment_attempt: "(intento {attempt}/3)",
       dimension_completion: "Compleción de Dimensiones",
-      dimensions_score: "({score}/9 dimensiones)",
+      dimensions_score: "({score}/9 dimensiones)"
     },
     review_detail: {
       design_unavailable: "Datos de diseño no disponibles para esta plantilla.",
@@ -5561,7 +5466,7 @@ export const es = {
       adopt_as_new_persona: "Adoptar como Nueva Persona",
       view_raw_json: "Ver JSON sin procesar",
       hide_raw_json: "Ocultar JSON sin procesar",
-      used_references: "Esta plantilla utilizó patrones de referencia de revisiones aprobadas anteriores",
+      used_references: "Esta plantilla utilizó patrones de referencia de revisiones aprobadas anteriores"
     },
     rebuild_modal: {
       title: "Reconstruir Plantilla",
@@ -5578,7 +5483,7 @@ export const es = {
       unknown_error: "Ocurrió un error desconocido durante la reconstrucción.",
       start_rebuild: "Iniciar Reconstrucción",
       cancel_rebuild: "Cancelar Reconstrucción",
-      run_in_background: "Ejecutar en Segundo Plano",
+      run_in_background: "Ejecutar en Segundo Plano"
     },
     preview_modal: {
       preview_title: "Vista previa: {name}",
@@ -5592,7 +5497,7 @@ export const es = {
       completed: "Completado",
       execution_failed: "Ejecución fallida",
       run_again: "Ejecutar de Nuevo",
-      close_test_continues: "Puedes cerrar — la prueba continuará en segundo plano",
+      close_test_continues: "Puedes cerrar — la prueba continuará en segundo plano"
     },
     expanded: {
       adopt: "Adoptar",
@@ -5602,7 +5507,7 @@ export const es = {
       architecture: "Arquitectura",
       events: "Eventos",
       reviews_label: "Revisiones",
-      notifications: "Notificaciones",
+      notifications: "Notificaciones"
     },
     matrix_cmd: {
       identity: "Identidad",
@@ -5621,7 +5526,7 @@ export const es = {
       build_label: "Compilar",
       adjust_placeholder: "Ajusta cualquier cosa...",
       test_agent: "Probar Agente",
-      save_version: "Guardar Versión",
+      save_version: "Guardar Versión"
     },
     questionnaire: {
       header: "{label} — Pregunta {current} de {total}",
@@ -5638,6 +5543,11 @@ export const es = {
       answer_remaining: "Responder restantes ({count})",
       next: "Siguiente",
       setup: "Configuración",
+      previous_question: "Pregunta anterior",
+      next_question: "Siguiente pregunta",
+      go_to_question: "Ir a la pregunta {number}",
+      question_answered_suffix: " (respondida)",
+      question_unanswered_suffix: " (sin responder)"
     },
     sandbox_banner: {
       community_sandbox: "Plantilla de la Comunidad — Modo Sandbox",
@@ -5648,7 +5558,7 @@ export const es = {
       human_review_required: "Revisión humana requerida",
       budget_cap_enforced: "Límite de presupuesto aplicado",
       max_concurrent_one: "Máx. {max} ejecución concurrente",
-      max_concurrent_other: "Máx. {max} ejecuciones concurrentes",
+      max_concurrent_other: "Máx. {max} ejecuciones concurrentes"
     },
     n8n: {
       credential_label: "Credencial: {name}",
@@ -5735,18 +5645,26 @@ export const es = {
       drop_file_here: "Suelta tu archivo de flujo de trabajo aquí",
       import_from_any_platform: "Importa un flujo de trabajo de cualquier plataforma",
       click_to_browse: "Haz clic para explorar o arrastra y suelta tu flujo de trabajo exportado",
+      dropzone_aria: "Suelta el archivo de flujo de trabajo o haz clic para explorar",
       continue_btn: "Continuar",
       press_enter_or_click: "Presiona Enter o haz clic para continuar",
       paste_workflow_json: "Pegar JSON del flujo de trabajo",
       paste_placeholder: "Pega aquí el JSON de tu flujo de trabajo exportado...",
+      paste_aria: "Contenido JSON del flujo de trabajo",
       import_btn: "Importar",
       import_from_url: "Importar desde URL",
       url_description: "Pega una URL a un archivo JSON de flujo de trabajo sin procesar. Admite URLs sin procesar de GitHub, enlaces de Gist y endpoints JSON directos.",
       fetching: "Obteniendo",
       fetch: "Obtener",
       accepts_label: "Acepta:",
+      url_aria: "URL del flujo de trabajo",
+      url_placeholder: "https://raw.githubusercontent.com/.../workflow.json",
+      url_format_github: "github.com/*/blob/*",
+      url_format_gist: "gist.github.com/*",
+      url_format_raw: "endpoint JSON crudo",
       customize_persona: "Algunas preguntas para personalizar tu persona",
       answer_then_generate: "Responde a continuación y haz clic en Generar",
+      question_view_mode_aria: "Modo de vista de preguntas",
       list_view: "Lista",
       focus_view: "Enfoque",
       no_config_needed: "No se necesita configuración",
@@ -5767,13 +5685,16 @@ export const es = {
       analyzing_btn: "Analizando...",
       upload_step: "Cargar",
       analyze_step: "Analizar",
+      wizard_progress_aria: "Progreso del asistente de importación",
+      wizard_steps_aria: "Pasos del asistente",
       streaming_sections: "Transmitiendo Secciones",
       awaiting_next_section: "Esperando la siguiente sección...",
+      transform_progress_aria: "Progreso de transformación",
       analyze_phase: "Analizar",
       questions_phase: "Preguntas",
       generate_phase: "Generar",
       type_your_answer: "Escribe tu respuesta...",
-      navigate_hint: "Usa las teclas de flecha para navegar",
+      navigate_hint: "Usa las teclas de flecha para navegar"
     },
     diagram: {
       no_flow_data: "Sin datos de flujo disponibles",
@@ -5783,7 +5704,7 @@ export const es = {
       decisions_count: "{count} decisión(es)",
       error_label: "Error",
       request_label: "Solicitud",
-      response_label: "Respuesta",
+      response_label: "Respuesta"
     },
     design: {
       connectors_and_tools: "Conectores y Herramientas",
@@ -5800,7 +5721,7 @@ export const es = {
       feasibility_assessment: "Evaluación de Viabilidad",
       confirmed_capabilities: "Capacidades Confirmadas",
       issues_label: "Problemas",
-      suggested_next_steps: "Próximos Pasos Sugeridos",
+      suggested_next_steps: "Próximos Pasos Sugeridos"
     },
     card: {
       use_cases_label: "Casos de Uso",
@@ -5809,7 +5730,7 @@ export const es = {
       no_flows: "Sin flujos",
       none_label: "Ninguno",
       more_count: "+{count} más",
-      system_prompt: "Indicador del Sistema",
+      system_prompt: "Indicador del Sistema"
     },
     matrix_grid: {
       prerequisites: "Requisitos Previos",
@@ -5819,7 +5740,7 @@ export const es = {
       credential_configured: "Credencial configurada",
       connector_not_installed: "Conector no instalado",
       needs_credential: "Necesita credencial",
-      setup_btn: "Configurar",
+      setup_btn: "Configurar"
     },
     adopt_modal: {
       adopt_template: "Adoptar Plantilla",
@@ -5834,6 +5755,49 @@ export const es = {
       credential_required: "No se encontró ninguna credencial de {category} en tu bóveda. Agrega una para continuar.",
       add_credential: "Agregar credencial",
       blocked_blocking_submit: "{count} pregunta(s) necesitan credenciales antes de que puedas continuar",
+      credentials_required_title: "Credenciales requeridas",
+      credentials_required_body: "Esta plantilla necesita al menos una credencial de cada categoría a continuación antes de que la adopción pueda continuar. Haz clic en \"Agregar credencial\" — volverás aquí automáticamente una vez completada la configuración.",
+      answered_of_total: "{answered} / {total} respondidas",
+      blocked_count: "{count} bloqueadas",
+      question_number_of: "Pregunta {current} de {total}",
+      question_number_aria: "Pregunta {number}",
+      navigate_hint: "para navegar",
+      enter_to_advance: "para avanzar",
+      previous: "Anterior",
+      next: "Siguiente",
+      live_preview: "Vista previa en vivo",
+      persona_label: "Persona",
+      untitled_agent: "Agente sin título",
+      not_yet_set: "Aún no establecido",
+      auto_badge: "auto",
+      jump_to_question_hint: "Haz clic en cualquier fila arriba para saltar a esa pregunta. Los valores auto-detectados se infieren de tus credenciales conectadas.",
+      hide_explanation: "Ocultar explicación",
+      show_explanation: "Mostrar explicación",
+      all_option: "Todos",
+      add_custom: "Agregar",
+      custom_prefix: "+ Personalizado…",
+      custom_plain: "Personalizado…",
+      type_your_answer: "Escribe tu respuesta...",
+      describe_in_detail: "Describe en detalle...",
+      select_directory: "Selecciona un directorio...",
+      type_a_value: "Escribe un valor…",
+      preparing: "Preparando…",
+      waiting_for_parent: "Esperando respuesta anterior…",
+      loading_from_service: "Cargando opciones desde {service}…",
+      loaded_live_from: "Cargado en vivo desde {service}",
+      no_items_found: "No se encontró {item}. Crea uno en {service} primero.",
+      retry: "Reintentar",
+      source_local: "Archivo o carpeta local",
+      source_codebase: "Base de código",
+      source_database: "Base de datos",
+      source_local_hint: "Pega una ruta local completa a un archivo o carpeta.",
+      source_codebase_hint: "Elige un proyecto registrado en Dev Tools.",
+      source_database_hint: "Elige una credencial de base de datos de tu bóveda.",
+      source_local_placeholder: "/Users/me/proyecto/diseno.md",
+      source_no_codebases: "No se encontraron proyectos de Dev Tools. Registra uno en Dev Tools primero.",
+      source_no_databases: "No se encontraron credenciales de base de datos. Agrega una en la Bóveda primero.",
+      source_pick_codebase: "Selecciona una base de código…",
+      source_pick_database: "Selecciona una base de datos…"
     },
     scan: {
       scanning_draft: "Escaneando borrador de persona...",
@@ -5847,7 +5811,7 @@ export const es = {
       critical_label: "Crítico",
       warnings_label: "Advertencias",
       informational_label: "Informativo",
-      source_label: "Origen:",
+      source_label: "Origen:"
     },
     team_synthesis: {
       title: "Sintetizar Equipo",
@@ -5859,7 +5823,7 @@ export const es = {
       synthesizing: "Sintetizando...",
       synthesize_team: "Sintetizar Equipo",
       personas_created: "{count} personas creadas y conectadas",
-      done: "Listo",
+      done: "Listo"
     },
     matrix_variants: {
       processing: "Procesando...",
@@ -5873,6 +5837,17 @@ export const es = {
       testing_agent: "Probando agente...",
       approve_and_promote: "Aprobar y Promover",
       view_agent_btn: "Ver Agente",
+      command_center_header: "CENTRO DE COMANDO // BUILD v1.0",
+      phase_label: "[FASE: {phase}]",
+      your_answer_placeholder: "Tu respuesta...",
+      testing_background_hint: "Esto puede tardar algunos minutos. Puedes salir de esta página y volver más tarde — las pruebas continúan en segundo plano.",
+      cancel_test: "Cancelar Prueba",
+      missing_keys: "Claves faltantes:",
+      approve_anyway: "Aprobar de Todos Modos",
+      delete_draft_title: "Descartar este borrador de persona y cerrar",
+      delete_draft: "Eliminar Borrador",
+      agent_promoted: "Agente Promovido",
+      view_agent: "Ver Agente"
     },
     diagrams: {
       no_flow_data: "Sin datos de flujo disponibles",
@@ -5880,6 +5855,7 @@ export const es = {
       edges_count: "{count} conexiones",
       connectors_count: "{count} conector(es)",
       decisions_count: "{count} decisión(es)",
+      close_dialog: "Cerrar diálogo"
     },
     generation: {
       create_template: "Crear Plantilla",
@@ -5902,6 +5878,51 @@ export const es = {
       start_review_custom: "Iniciar Revisión ({count} caso{plural})",
       copy_log: "Copiar Registro",
       copied_log: "¡Copiado!",
+      back: "Atrás",
+      generate_template: "Generar Plantilla",
+      view_draft: "Ver Borrador",
+      saving: "Guardando...",
+      save_template: "Guardar Plantilla",
+      template_saved: "Plantilla Guardada",
+      template_name_label_step: "Nombre de Plantilla",
+      template_name_placeholder: "Nombre de plantilla...",
+      description_label: "Descripción",
+      description_placeholder: "Describe qué debe hacer esta persona, a qué servicios se conecta y cómo debe comportarse. Sé específico sobre herramientas, disparadores e integraciones necesarias.\n\nEjemplo: Una persona que monitorea una bandeja de entrada de Gmail en busca de correos importantes, los clasifica por prioridad, envía notificaciones a Slack para los urgentes y crea un resumen diario.",
+      description_hint: "La IA generará una plantilla completa de persona incluyendo prompt del sistema, herramientas, disparadores, conectores y variables de plantilla.",
+      terminal_aria_label: "Salida de revisión de diseño",
+      terminal_placeholder: "La salida aparecerá aquí cuando comience la revisión",
+      terminal_running: "Ejecutándose...",
+      result_passed: "{count} aprobadas",
+      result_failed: "{count} fallidas",
+      result_errored: "{count} errores",
+      result_total: "{count} pruebas totales",
+      mode_predefined: "Predefinido (5)",
+      mode_custom: "Personalizado",
+      mode_batch: "Lote",
+      mode_batch_count: "Lote ({count})",
+      batch_upload_hint: "Sube un archivo list.md con entradas de plantilla numeradas para generar plantillas en lote vía Claude CLI.",
+      batch_upload_btn: "Subir list.md",
+      batch_format_hint: "Formato esperado:",
+      batch_all: "Todos ({count})",
+      batch_count: "{count} plantilla{plural} se generarán vía Claude CLI (~45s cada una)",
+      batch_clear: "Limpiar",
+      batch_format_example: "**1. Nombre de Plantilla**",
+      custom_count: "Define casos de uso de plantilla ({count} listos)",
+      custom_load_file_title: "Cargar desde archivo .txt o .md",
+      custom_load_file: "Cargar archivo",
+      custom_add: "Agregar",
+      custom_case_name_placeholder: "Nombre de plantilla (p. ej. Filtro Inteligente de Gmail)",
+      custom_instruction_placeholder: "Describe qué debe hacer esta persona, qué servicios integrar y qué disparadores deberían activarla...",
+      custom_short_instruction: "{current}/{min} caracteres mínimos",
+      custom_category_default: "Categoría...",
+      custom_trigger_default: "Disparador...",
+      custom_connectors_placeholder: "Conectores (p. ej. gmail, slack)",
+      custom_detail_hint: "Más detalle = mejores resultados. Incluye servicios, disparadores y comportamiento esperado.",
+      custom_show_example: "Mostrar ejemplo",
+      custom_hide_example: "Ocultar ejemplo",
+      custom_example_title: "Ejemplo: Filtro Inteligente de Gmail",
+      custom_example_body: "\"Crea un agente que monitoree Gmail en busca de correos importantes, los categorice por remitente y urgencia, aplique etiquetas, y reenvíe los urgentes a Slack. Usa un disparador de sondeo con conectores de gmail y slack.\"",
+      predefined_intro: "Ejecuta {count} casos de uso predefinidos a través del motor de diseño:"
     },
     connector_edit: {
       credential: "Credencial",
@@ -5917,22 +5938,24 @@ export const es = {
       existing_table_label: "Tabla Existente",
       schema: "Esquema",
       table_name: "Nombre de tabla",
+      table_name_placeholder: "p. ej. persona_data",
       in_app_messages: "Mensajes en la Aplicación",
       not_connected: "no conectado",
       no_connectors: "No se requieren conectores",
       linked: "Vinculado",
       set_up: "Configurar",
-      more_connectors: "+{count} más",
+      more_connectors: "+{count} más"
     },
     trigger_edit: {
       schedule: "Horario",
       schedule_placeholder: "Todos los días de semana a las 9am",
       schedule_hint: "Lenguaje natural o cron (p. ej. \"0 9 * * 1-5\")",
       webhook_url: "URL de Webhook",
+      webhook_url_placeholder: "https://...",
       check_interval: "Intervalo de Verificación",
       check_interval_placeholder: "Cada 5 minutos",
       no_config_needed: "No se necesita configuración",
-      manual_only: "Solo ejecución manual",
+      manual_only: "Solo ejecución manual"
     },
     preset_edit: {
       select_review: "Seleccionar política de revisión...",
@@ -5944,7 +5967,7 @@ export const es = {
       retry_once: "Reintentar una vez",
       retry_3x: "Reintentar 3 veces",
       notify_continue: "Notificar y continuar",
-      skip_failed: "Omitir paso fallido",
+      skip_failed: "Omitir paso fallido"
     },
     test_report: {
       title: "Informe de Prueba",
@@ -5970,8 +5993,8 @@ export const es = {
       response_preview: "Vista Previa de Respuesta",
       error_detail: "Detalle del Error",
       copy: "Copiar",
-      copied: "Copiado",
-    },
+      copied: "Copiado"
+    }
   },
   triggers: {
     title: "Disparadores y cadenas",
@@ -6013,7 +6036,7 @@ export const es = {
       show_sidebar: "Mostrar barra lateral",
       source: "Origen",
       source_personas: "Personas de origen",
-      use_template: "Usar plantilla",
+      use_template: "Usar plantilla"
     },
     studio: {
       building_blocks: "Bloques de Construcción",
@@ -6029,7 +6052,7 @@ export const es = {
       remove_from_chain: "Eliminar de la cadena",
       studio_title: "Estudio de Disparadores",
       trigger_sources: "Fuentes de Disparadores",
-      unsaved_changes: "Cambios sin guardar",
+      unsaved_changes: "Cambios sin guardar"
     },
     subscription_list: {
       active: "Activo",
@@ -6043,10 +6066,10 @@ export const es = {
       error: "Error",
       never: "Nunca",
       no_active_subs: "Sin suscripciones activas",
-      unsubscribe: "Cancelar suscripción",
+      unsubscribe: "Cancelar suscripción"
     },
     type_selector: {
-      trigger_type: "Tipo de Disparador",
+      trigger_type: "Tipo de Disparador"
     },
     tab_triggers: "Disparadores",
     tab_chains: "Cadenas",
@@ -6122,11 +6145,11 @@ export const es = {
       cron_daily_midnight: "Diario a medianoche",
       cron_weekly_monday: "Semanal el lunes",
       next_runs: "Próximas ejecuciones",
-      invalid_cron: "Expresión de horario inválida",
+      invalid_cron: "Expresión de horario inválida"
     },
     add: {
       create_trigger: "Crear Disparador",
-      creating: "Creando...",
+      creating: "Creando..."
     },
     detail: {
       test_fire: "Disparo de Prueba",
@@ -6149,7 +6172,7 @@ export const es = {
       last_fired: "Último disparo",
       never_fired: "Nunca disparado",
       fire_count_one: "Disparado {count} vez",
-      fire_count_other: "Disparado {count} veces",
+      fire_count_other: "Disparado {count} veces"
     },
     list: {
       empty_title: "Aún no hay disparadores configurados",
@@ -6159,28 +6182,28 @@ export const es = {
       budget_unavailable: "Datos de presupuesto no disponibles",
       unknown_budget: "Presupuesto Desconocido",
       budget_exceeded: "Presupuesto mensual excedido — disparador pausado",
-      budget: "Presupuesto",
+      budget: "Presupuesto"
     },
     config: {
       no_persona: "Ninguna persona seleccionada",
       title: "Disparadores",
       add_trigger: "Agregar Disparador",
-      empty: "Sin disparadores configurados. Agrega uno para automatizar esta persona.",
+      empty: "Sin disparadores configurados. Agrega uno para automatizar esta persona."
     },
     countdown: {
       due_now: "Vence ahora",
-      fires_in: "Se activa en {time}",
+      fires_in: "Se activa en {time}"
     },
     polling: {
       endpoint_label: "URL a Verificar",
       endpoint_placeholder: "https://api.example.com/status",
       check_interval: "Verificar cada {interval}",
-      content_hash: "Detectar solo cambios",
+      content_hash: "Detectar solo cambios"
     },
     webhook: {
       url_label: "URL de Webhook",
       secret_label: "Clave de Seguridad (opcional)",
-      secret_placeholder: "Clave secreta para verificar datos entrantes",
+      secret_placeholder: "Clave secreta para verificar datos entrantes"
     },
     file_watcher: {
       paths_label: "Rutas a Vigilar",
@@ -6192,7 +6215,7 @@ export const es = {
       event_delete: "Eliminar",
       recursive: "Recursivo",
       glob_filter: "Patrón de Archivo",
-      glob_placeholder: "*.json",
+      glob_placeholder: "*.json"
     },
     clipboard: {
       content_type: "Tipo de Contenido",
@@ -6200,7 +6223,7 @@ export const es = {
       type_image: "Imagen",
       pattern_label: "Patrón de Coincidencia",
       pattern_placeholder: "p. ej. https?://.*",
-      interval_label: "Intervalo de Verificación (segundos)",
+      interval_label: "Intervalo de Verificación (segundos)"
     },
     app_focus: {
       app_names_label: "Nombres de Aplicación",
@@ -6208,20 +6231,20 @@ export const es = {
       add_app: "Agregar aplicación",
       title_pattern: "Patrón de Título de Ventana",
       title_placeholder: "p. ej. .*GitHub.*",
-      interval_label: "Intervalo de Verificación (segundos)",
+      interval_label: "Intervalo de Verificación (segundos)"
     },
     event_listener: {
       event_type_label: "Tipo de Evento",
       event_type_placeholder: "p. ej. persona.execution.completed",
       source_filter_label: "Filtro de Origen",
-      source_filter_placeholder: "p. ej. persona:abc123",
+      source_filter_placeholder: "p. ej. persona:abc123"
     },
     composite: {
       conditions_label: "Condiciones",
       add_condition: "Agregar condición",
       operator_all: "Todas las condiciones deben coincidir",
       operator_any: "Cualquier condición puede coincidir",
-      window_label: "Ventana de Tiempo (segundos)",
+      window_label: "Ventana de Tiempo (segundos)"
     },
     rate_limit: {
       title: "Límites de Velocidad",
@@ -6230,14 +6253,14 @@ export const es = {
       window_seconds: "{seconds}s",
       window_minutes: "{minutes}m",
       window_hours: "{hours}h",
-      currently_limited: "Actualmente pausado (límite alcanzado)",
+      currently_limited: "Actualmente pausado (límite alcanzado)"
     },
     dry_run: {
       title: "Resultado de Ejecución de Prueba",
       would_fire: "Se activaría",
       would_not_fire: "No se activaría",
       matched_conditions: "Condiciones cumplidas",
-      payload_preview: "Vista previa de datos",
+      payload_preview: "Vista previa de datos"
     },
     tab_live_stream: "Transmisión en Vivo",
     tab_live_stream_subtitle: "Centro de eventos en tiempo real — los agentes publican y se suscriben a eventos a través de este bus compartido",
@@ -6401,6 +6424,186 @@ export const es = {
     loading_catalog: "Cargando catálogo...",
     no_feeds: "Aún no hay feeds de eventos compartidos disponibles",
     no_feeds_hint: "Haz clic en Actualizar para obtener los últimos feeds de la nube",
+    cron_colon: "Cron:",
+    interval_colon: "Intervalo:",
+    event_colon: "Evento:",
+    endpoint_colon: "Endpoint:",
+    listens_for_colon: "Escucha:",
+    source_filter_colon: "Filtro de origen:",
+    hmac_colon: "HMAC:",
+    paths_colon: "Rutas:",
+    events_colon: "Eventos:",
+    recursive_yes: "Recursivo: sí",
+    filter_colon: "Filtro:",
+    watches_colon: "Observa:",
+    pattern_colon: "Patrón:",
+    poll_every: "Sondeo: cada",
+    apps_colon: "Aplicaciones:",
+    title_colon: "Título:",
+    operator_colon: "Operador:",
+    window_colon: "Ventana:",
+    id_colon: "ID:",
+    type_colon: "Tipo:",
+    status_colon: "Estado:",
+    target_colon: "Objetivo:",
+    retry_hash: "reintento #",
+    model_colon: "modelo:",
+    next_run_colon: "próxima ejecución:",
+    local_label: "(local)",
+    then_every: ", luego cada",
+    source_colon: "origen:",
+    dry_run_target_colon: "objetivo:",
+    matched_subscriptions_count: "Suscripciones Coincidentes ({count})",
+    last_label: "Último:",
+    loading_history: "Cargando...",
+    zero_unlimited: "0 = ilimitado",
+    category_section_label: "Categoría de Disparador",
+    no_persona_selected: "Ninguna persona seleccionada",
+    quick_templates_label: "Plantillas Rápidas",
+    quick_presets_label: "Preajustes Rápidos",
+    cron_expression_label: "Expresión Cron",
+    this_persona_will: "Esta persona",
+    starting_from: ", a partir de cuando la habilites.",
+    per_day: "por día.",
+    last_poll_label: "Último sondeo:",
+    deployed_persona_label: "Persona Desplegada",
+    fired_at_label: "Disparado en",
+    webhook_last_label: "Último:",
+    relay_last_label: "Último:",
+    optional_label: "(opcional)",
+    optional_comma_separated: "(opcional, separado por comas)",
+    get_channel_url_from: "Obtén una URL de canal desde",
+    setup_step1: "Visita smee.io/new para crear un canal relay gratuito",
+    setup_step2: "Agrega el relay aquí con una etiqueta y la URL del canal",
+    setup_step3: "Pega la URL del canal como webhook en GitHub / Stripe / cualquier servicio",
+    setup_step4: "Los eventos aparecen en Live Stream y se enrutan a tus agentes automáticamente",
+    studio_empty_desc: "Compón flujos de eventos reactivos entre tus personas. Usa tipos de disparadores como bloques de construcción, agrega ramificación condicional y fan-out paralelo para crear cadenas inteligentes de automatización.",
+    studio_step1: "1. Agrega fuentes de disparadores desde la barra lateral (Programación, Webhook, ...)",
+    studio_step2: "2. Agrega pasos de persona para procesar eventos",
+    studio_step3: "3. Conéctalos para construir cadenas reactivas",
+    studio_step4: "4. Usa puertas de condición para lógica de enrutamiento",
+    gate_if_else: "Si / Sino",
+    gate_if_else_desc: "Rama condicional binaria",
+    gate_classifier_desc: "Enrutamiento múltiple (soporte, ventas, ...)",
+    gate_fan_out: "Fan-Out (Paralelo)",
+    gate_fan_out_desc: "Ejecutar múltiples ramas en paralelo",
+    palette_help: "Conecta fuentes de disparadores con pasos de persona para construir cadenas reactivas. Agrega puertas de condición para lógica de ramificación y fan-out paralelo.",
+    toolbar_title_auto_layout: "Auto Disposición",
+    toolbar_title_add_note: "Agregar Nota Adhesiva",
+    toolbar_title_start_dry_run: "Iniciar Dry Run",
+    toolbar_title_stop_dry_run: "Detener Dry Run",
+    toolbar_title_assistant: "Asistente de Canvas",
+    toolbar_dry_run: "Dry Run",
+    canvas_assistant_title: "Asistente de Canvas",
+    try_asking_hint: "Prueba a preguntar",
+    assistant_placeholder: "Describe tu topología de eventos...",
+    disconnect_persona_title: "¿Desconectar persona?",
+    disconnect_will_no_longer: "ya no reaccionará a",
+    disconnect_events_reconnect: "eventos. Puedes reconectar más tarde.",
+    rename_also_updates: "También actualiza eventos históricos, manejadores de eventos de persona y metadatos de auditoría del disparador.",
+    delete_connection_label: "Eliminar conexión",
+    search_personas_placeholder: "Buscar personas...",
+    no_matching_personas_found: "No se encontraron personas coincidentes",
+    clear_search_label: "Limpiar búsqueda",
+    dead_letter_source: "Origen:",
+    dead_letter_id: "ID:",
+    event_data_label: "Datos del Evento",
+    shared_prefix: "compartido:",
+    nl_type_colon: "Tipo:",
+    nl_cron_colon: "\\u00b7 Cron:",
+    nl_interval_colon: "\\u00b7 Intervalo:",
+    nl_filter_colon: "\\u00b7 Filtro:",
+    nl_could_not_parse: "No se pudo analizar un disparador de esa descripción. Intenta algo como",
+    active_hours_every_day: "Todos los días",
+    event_type_to_listen: "Tipo de Evento a Escuchar",
+    event_type_input_placeholder: "p. ej. file_changed, execution_completed",
+    event_type_helper: "Escribe para buscar tipos de eventos registrados, o ingresa un tipo personalizado.",
+    source_filter_optional_label: "(opcional)",
+    wildcard_hint: "\\u2014 se admite prefijo comodín con * al final",
+    window_title_pattern_label: "Patrón de Título de Ventana",
+    optional_regex_label: "(regex opcional)",
+    text_pattern_label: "Patrón de Texto",
+    credential_event_label: "Evento de Credencial",
+    refresh_label: "Refrescar",
+    copy_webhook_url_title: "Copiar URL de webhook",
+    copy_webhook_secret_title: "Copiar secreto de webhook",
+    delete_webhook_title: "Eliminar disparador de webhook",
+    status_col_label: "Estado",
+    duration_col_label: "Duración",
+    cost_col_label: "Costo",
+    dead_letter_refresh: "Refrescar",
+    dead_letter_loading: "Cargando...",
+    dead_letter_retry: "Reintentar",
+    dead_letter_discard: "Descartar",
+    dead_letter_payload: "Payload",
+    event_data_section_label: "Datos del Evento",
+    copy_event_data_title: "Copiar datos del evento",
+    copied_label: "Copiado",
+    error_section_label: "Error",
+    meta_event_id: "ID de Evento",
+    meta_project: "Proyecto",
+    meta_processed: "Procesado",
+    clear_stream: "Limpiar",
+    clear_stream_title: "Limpiar buffer de transmisión",
+    col_type: "Tipo",
+    col_source: "Origen",
+    col_target_agent: "Agente Destino",
+    col_status: "Estado",
+    col_time: "Hora",
+    queued_bare: "en cola",
+    pause_tooltip: "Pausar eventos entrantes",
+    resume_tooltip: "Reanudar actualizaciones en vivo",
+    relay_label_field: "Etiqueta",
+    relay_channel_url_field: "URL del Canal",
+    relay_route_to_agent: "Enrutar al Agente",
+    optional_suffix: "(opcional)",
+    relay_event_filter_field: "Filtro de Evento",
+    relay_event_filter_note: "(opcional, separado por comas)",
+    relay_confirm_delete: "Confirmar",
+    setup_guide_step2: "Agrega el relay aquí con una etiqueta y la URL del canal",
+    setup_guide_step3: "Pega la URL del canal como webhook en GitHub / Stripe / cualquier servicio",
+    setup_guide_step4: "Los eventos aparecen en Live Stream y se enrutan a tus agentes automáticamente",
+    get_channel_url_prompt: "Obtén una URL de canal desde",
+    gate_if_else_label: "Si / Sino",
+    gate_if_else_description: "Rama condicional binaria",
+    gate_classifier_label: "Clasificador",
+    gate_classifier_description: "Enrutamiento múltiple (soporte, ventas, ...)",
+    gate_fan_out_label: "Fan-Out (Paralelo)",
+    gate_fan_out_description: "Ejecutar múltiples ramas en paralelo",
+    palette_help_text: "Conecta fuentes de disparadores con pasos de persona para construir cadenas reactivas. Agrega puertas de condición para lógica de ramificación y fan-out paralelo.",
+    test_event_type_placeholder: "p. ej. build_complete, deploy, file_changed",
+    result_id_prefix: "ID:",
+    result_type_prefix: "Tipo:",
+    result_status_prefix: "Estado:",
+    result_target_prefix: "Objetivo:",
+    tab_loading: "Cargando...",
+    smee_open_new_title: "Abrir smee.io/new para crear un canal",
+    relay_label_placeholder: "p. ej. GitHub — mi-repo",
+    relay_channel_url_placeholder: "https://smee.io/tu-id-de-canal",
+    relay_filter_placeholder: "github_push, github_pull_request",
+    dead_letter_retry_exhausted_title: "Límite de reintentos agotado — descarta o investiga la causa raíz",
+    dead_letter_discard_title: "Descartar este evento permanentemente",
+    dead_letter_retry_title: "Reintentar este evento",
+    replay_button_title: "Re-disparar con el mismo payload de entrada",
+    interval_seconds_placeholder: "Segundos (mín 60)",
+    cron_expression_placeholder: "* * * * *  (min hora dom mes dow)",
+    app_focus_window_placeholder: "p. ej. .*.rs$ o Proyecto - Visual Studio",
+    app_focus_process_placeholder: "p. ej. Code.exe o firefox",
+    field_optional: "(opcional)",
+    source_filter_input_placeholder: "p. ej. watcher-* o id-exacto-de-origen",
+    meta_source: "Origen",
+    relay_last_event: "Último:",
+    relay_delete_title: "Eliminar relay",
+    setup_guide_step1: "Crea un canal en smee.io/new",
+    clipboard_pattern_placeholder: "p. ej. https?://.* o error|exception",
+    composite_event_type_placeholder: "Tipo de evento (p. ej. file_changed)",
+    composite_debounce_placeholder: "300",
+    file_watcher_path_placeholder: "C:/Users/me/projects o /home/me/src",
+    file_watcher_pattern_placeholder: "p. ej. *.py, *.{ts,tsx}, Dockerfile",
+    polling_endpoint_placeholder: "https://api.example.com/poll",
+    more_tools_title: "Más herramientas",
+    validate_and_fire_title: "Validar configuración del disparador, luego disparar",
+    simulate_trigger_title: "Simular disparador sin ejecutar"
   },
   teams: {
     title: "Equipos de agentes",
@@ -6408,10 +6611,11 @@ export const es = {
     auto_team: "Equipo automático",
     new_team: "Nuevo equipo",
     starter_templates: "Plantillas iniciales",
-    use_template: "Usar plantilla",
+    use_template: "Usar plantilla"
   },
   settings: {
     title: "Ajustes",
+    settings_saved: "Guardado",
     account: {
       title: "Cuenta",
       subtitle: "Gestiona tu inicio de sesión y perfil",
@@ -6429,6 +6633,7 @@ export const es = {
       telemetry_on: "Los informes de fallos y el análisis de uso están activos.",
       telemetry_off: "La telemetría está desactivada. No se envían datos a Sentry.",
       telemetry_restart: "Reinicia la aplicación para que este cambio surta efecto",
+      telemetry_toggle_aria: "Alternar telemetría"
     },
     appearance_extra: {
       simple: "Simple",
@@ -6436,7 +6641,7 @@ export const es = {
       full: "Completo",
       full_hint: "Mostrar la interfaz completa",
       dev: "Dev",
-      dev_hint: "Desbloquear herramientas de desarrollo",
+      dev_hint: "Desbloquear herramientas de desarrollo"
     },
     appearance: {
       title: "Apariencia",
@@ -6467,6 +6672,7 @@ export const es = {
       applied: "Aplicado",
       reset: "Restablecer",
       enter_theme_name: "Ingresa un nombre de tema",
+      reset_to_auto: "Restablecer a automático",
       preview_dashboard: "Panel",
       preview_action: "Acción",
       preview_card_title: "Título de Tarjeta",
@@ -6481,7 +6687,7 @@ export const es = {
       coverage_hint: "Cobertura de traducción — haz clic para exportar",
       contribute_title: "Contribuir traducciones",
       contribute_hint: "Ayuda a traducir Personas a tu idioma. Exporta un archivo de idioma arriba, traduce los valores y envíalo a través de GitHub.",
-      contribute_github: "Contribuir en GitHub",
+      contribute_github: "Contribuir en GitHub"
     },
     notifications: {
       title: "Notificaciones",
@@ -6499,7 +6705,7 @@ export const es = {
       digest_description: "Notificación semanal que resume problemas de salud de todos los agentes con una puntuación de salud total",
       healing_alerts_hint: "Controla qué alertas de recuperación generan notificaciones",
       healing_severity: "Severidad de alertas de recuperación",
-      notification_hint: "Las notificaciones de escritorio usan el sistema de notificaciones nativo del SO. Los avisos dentro de la app aparecen para problemas de severidad crítica y alta independientemente de estos ajustes.",
+      notification_hint: "Las notificaciones de escritorio usan el sistema de notificaciones nativo del SO. Los avisos dentro de la app aparecen para problemas de severidad crítica y alta independientemente de estos ajustes."
     },
     engine: {
       title: "Motor",
@@ -6517,6 +6723,7 @@ export const es = {
       legend_not_installed: "No instalado",
       defaults_heading: "Valores predeterminados de pruebas de integración",
       defaults_description: "El mapa predeterminado se deriva de las pruebas de integración de nivel empresarial de la Ronda 9 que validan cada proveedor contra los esquemas JSON exactos que analiza el backend. Habilitar un proveedor para una operación que falló puede causar respuestas no analizables. Claude Code es el único proveedor que pasó todas las operaciones al 100%.",
+      engine_not_capable: "{provider} no ha pasado las pruebas de integración para esta operación. Los resultados pueden ser inanalizables."
     },
     ambient: {
       title: "Fusión de Contexto Ambiental",
@@ -6552,7 +6759,7 @@ export const es = {
       cancel: "Cancelar",
       create_rule: "Crear Regla",
       no_rules: "Sin reglas de contexto definidas",
-      all_sources: "todas las fuentes",
+      all_sources: "todas las fuentes"
     },
     byom: {
       title: "Trae Tu Propio Modelo",
@@ -6604,6 +6811,7 @@ export const es = {
       complexity: "Complejidad",
       provider: "Proveedor",
       model_optional: "Modelo (opcional)",
+      model_placeholder: "p. ej. claude-haiku-4-5-20251001",
       compliance_title: "Restricciones de Cumplimiento",
       compliance_hint: "Restringe proveedores para tipos de flujo de trabajo específicos (p. ej. HIPAA, SOC2)",
       compliance_empty: "Sin reglas de cumplimiento configuradas. Agrega reglas para restringir proveedores en flujos de trabajo sensibles.",
@@ -6620,7 +6828,7 @@ export const es = {
       audit_status: "Estado",
       audit_cost: "Costo",
       audit_time: "Hora",
-      failover: "failover",
+      failover: "failover"
     },
     admin: {
       title: "Administración",
@@ -6646,7 +6854,7 @@ export const es = {
       consent_not_accepted: "No aceptado",
       storage_key: "Clave de Almacenamiento",
       reset_consent: "Restablecer Consentimiento",
-      reload_modal: "Recargar para Mostrar Modal",
+      reload_modal: "Recargar para Mostrar Modal"
     },
     portability: {
       title: "Portabilidad de Datos",
@@ -6674,12 +6882,17 @@ export const es = {
       passphrase_optional: "Frase de contraseña (opcional)",
       import_complete: "Importación Completada",
       warnings: "Advertencias:",
+      import_personas: "{count} persona(s)",
+      import_teams: "{count} equipo(s)",
+      import_tools: "{count} herramienta(s)",
+      import_groups: "{count} grupo(s)",
+      import_credentials_count: "{count} credencial(es)",
       export_title: "Exportar Espacio de Trabajo",
       export_subtitle: "Elige qué incluir en tu exportación",
       close: "Cerrar",
       loading_data: "Cargando datos del espacio de trabajo...",
-      select_all: "Seleccionar Todo",
       deselect_all: "Deseleccionar Todo",
+      select_all: "Seleccionar Todo",
       items_selected: "{selected} de {total} elementos seleccionados",
       of_selected: "{count} de {total} seleccionados",
       encrypt_passphrase: "Cifrar credenciales con frase de contraseña",
@@ -6709,7 +6922,7 @@ export const es = {
       cred_import_complete: "Importación de Credenciales Completada",
       cred_imported: "{count} importadas",
       cred_skipped: ", {count} omitidas",
-      cred_replaced: ", {count} reemplazadas",
+      cred_replaced: ", {count} reemplazadas"
     },
     config: {
       title: "Resolución de Configuración",
@@ -6722,7 +6935,7 @@ export const es = {
       overrides_inherited: "Anula el heredado",
       agent: "Agente",
       loading_agents: "Cargando agentes...",
-      no_agents: "No se encontraron agentes",
+      no_agents: "No se encontraron agentes"
     },
     quality_gates: {
       title: "Puertas de Calidad",
@@ -6740,11 +6953,12 @@ export const es = {
       rules_count_plural: "{count} reglas",
       reset_defaults: "Restablecer valores predeterminados",
       confirm_reset: "¿Confirmar restablecimiento?",
-      rules_hint: "Las reglas se cargan desde la base de datos en cada despacho. Los cambios surten efecto inmediatamente.",
-    },
+      rules_hint: "Las reglas se cargan desde la base de datos en cada despacho. Los cambios surten efecto inmediatamente."
+    }
   },
   design: {
     no_persona: "Ningún agente seleccionado",
+    conversation_truncated: "Esta conversación alcanzó el límite de mensajes. Los mensajes antiguos se eliminaron — considera iniciar una nueva conversación para preservar el contexto.",
     stages: {
       assembling_label: "Ensamblando prompt",
       assembling_desc: "Construyendo el prompt del LLM a partir de la configuración e instrucciones del agente",
@@ -6755,8 +6969,8 @@ export const es = {
       checking_label: "Verificando viabilidad",
       checking_desc: "Validando que las herramientas y conectores sugeridos estén disponibles",
       saving_label: "Guardando resultado",
-      saving_desc: "Escribiendo el diseño compilado en la base de datos",
-    },
+      saving_desc: "Escribiendo el diseño compilado en la base de datos"
+    }
   },
   prompt_lab: {
     title: "Versiones de prompt",
@@ -6792,7 +7006,7 @@ export const es = {
       running: "Ejecutando prueba A/B...",
       run: "Ejecutar prueba A/B",
       failed: "Prueba A/B fallida",
-      completed: "Prueba A/B completada exitosamente",
+      completed: "Prueba A/B completada exitosamente"
     },
     rollback: {
       title: "Monitor de tasa de errores",
@@ -6800,7 +7014,7 @@ export const es = {
       rollback_hint: "Si la tasa de errores supera el 50% después de un cambio de prompt, revierte a la versión de producción usando la lista de versiones de arriba.",
       waiting: "Esperando datos de ejecución",
       waiting_hint: "Ejecuta tu agente varias veces para comenzar a rastrear tasas de error. El monitor necesita al menos una ejecución para calcular la salud.",
-      check_again: "Verificar de nuevo",
+      check_again: "Verificar de nuevo"
     },
     performance: {
       cost_per_execution: "Costo por ejecución",
@@ -6809,8 +7023,8 @@ export const es = {
       latency_distribution: "Distribución de latencia",
       latency_delta: "Delta de latencia",
       error_rate_trend: "Tendencia de tasa de errores",
-      error_delta: "Delta de errores",
-    },
+      error_delta: "Delta de errores"
+    }
   },
   tests: {
     title: "Ejecutor de pruebas en entorno aislado",
@@ -6835,15 +7049,15 @@ export const es = {
       rerun_tooltip: "Re-ejecutar esta suite",
       rename_tooltip: "Renombrar",
       delete_tooltip: "Eliminar suite",
-      no_scenarios: "No hay escenarios en esta suite",
+      no_scenarios: "No hay escenarios en esta suite"
     },
     progress: {
       generating: "Generando escenarios de prueba...",
       testing: "Probando {model} -- {scenario}",
       tool_prefix: "Herramienta: ",
       output_prefix: "Salida: ",
-      protocol_prefix: "Protocolo: ",
-    },
+      protocol_prefix: "Protocolo: "
+    }
   },
   onboarding: {
     title: "Comenzar",
@@ -6967,7 +7181,7 @@ export const es = {
     agent_promoted_hint: "Tu primer agente está activo. ¡El recorrido está casi completo!",
     skip_build: "Saltar compilación por ahora",
     dark_themes: "Temas Oscuros",
-    light_themes: "Temas Claros",
+    light_themes: "Temas Claros"
   },
   system_health: {
     title: "Verificaciones del sistema",
@@ -7004,7 +7218,7 @@ export const es = {
     official_page: "Página oficial",
     edit_key: "Editar clave",
     edit_config: "Editar configuración",
-    signing_in: "Iniciando sesión...",
+    signing_in: "Iniciando sesión..."
   },
   command_palette: {
     placeholder: "Buscar agentes, navegar... (escribe \\\\\\\">\\\\\\\" para comandos)",
@@ -7017,7 +7231,7 @@ export const es = {
     key_esc: "ESC",
     hint_navigate: "navegar",
     hint_select: "seleccionar",
-    hint_commands: "comandos",
+    hint_commands: "comandos"
   },
   errors: {
     boundary_title: "Algo inesperado ocurrió en {name}",
@@ -7039,7 +7253,7 @@ export const es = {
     database: "Error de base de datos -- por favor reinicia la aplicación",
     internal: "Ocurrió un error inesperado",
     cloud_error: "Error del servicio en la nube: {detail}",
-    gitlab_error: "Error de GitLab: {detail}",
+    gitlab_error: "Error de GitLab: {detail}"
   },
   error_registry: {
     network_offline_message: "Parece que estás sin conexión.",
@@ -7111,7 +7325,7 @@ export const es = {
     severity_critical: "Necesita atención inmediata",
     severity_high: "Problema importante",
     severity_medium: "Problema menor",
-    severity_low: "Informativo",
+    severity_low: "Informativo"
   },
   empty_states: {
     credentials_title: "Tus agentes necesitan credenciales para ejecutarse",
@@ -7128,11 +7342,11 @@ export const es = {
     tools_title: "No hay herramientas ni conectores configurados",
     tools_subtitle: "Vincula servicios externos para que tu agente pueda realizar acciones y acceder a datos.",
     use_cases_title: "Aún no se han definido casos de uso",
-    use_cases_subtitle: "Define qué debe hacer este agente -- importa desde un flujo de trabajo o descríbelo en lenguaje natural.",
+    use_cases_subtitle: "Define qué debe hacer este agente -- importa desde un flujo de trabajo o descríbelo en lenguaje natural."
   },
   cli: {
     idle: "Sin salida de CLI aún.",
-    waiting: "Esperando salida de Claude CLI\\\\u2026",
+    waiting: "Esperando salida de Claude CLI\\\\u2026"
   },
   validation: {
     required: "{field} es obligatorio",
@@ -7143,7 +7357,7 @@ export const es = {
     passphrase_min: "La contraseña debe tener al menos 8 caracteres",
     passphrase_prompt: "Por favor ingresa la contraseña utilizada durante la exportación",
     at_least_one: "Se requiere al menos un {field}",
-    fill_one_field: "Completa al menos un campo para guardar",
+    fill_one_field: "Completa al menos un campo para guardar"
   },
   toasts: {
     copied: "Copiado al portapapeles",
@@ -7203,7 +7417,7 @@ export const es = {
     scheduled_agents_failed: "Error al cargar agentes programados",
     design_start_failed: "Error al iniciar conversación de diseño",
     recipe_save_failed: "Error al guardar receta",
-    recipe_test_failed: "Prueba rápida fallida",
+    recipe_test_failed: "Prueba rápida fallida"
   },
   consent: {
     title: "Bienvenido a Personas Desktop",
@@ -7270,7 +7484,7 @@ export const es = {
     checkbox: "Entiendo que esta aplicación envía datos a proveedores de IA, accede a recursos del sistema (portapapeles, sistema de archivos, red) y ejecuta procesos en mi nombre. Acepto la responsabilidad de cómo la configuro y uso.",
     checkbox_telemetry: "Ayuda a mejorar Personas enviando informes de fallos anónimos y análisis de uso. No se incluyen datos personales. Puedes cambiar esto más tarde en Ajustes.",
     source_link: "Ver código fuente y licencia",
-    accept_button: "Entiendo, continuar",
+    accept_button: "Entiendo, continuar"
   },
   schedules: {
     title: "Línea de Tiempo de Horarios",
@@ -7310,17 +7524,26 @@ export const es = {
     overlap_warning: "Este horario se superpone con {count} otra(s) ejecución(es) en los próximos 7 días. Los agentes concurrentes compiten por la cuota de API y los recursos del sistema.",
     agents_missed: "{count} agente(s) perdieron ejecuciones",
     total_skipped: "~{count} ejecuciones totales omitidas mientras la aplicación estaba sin conexión",
+    missed_since: "{count} perdidos desde {time}",
+    every_interval: "cada {interval}",
     recover: "Recuperar",
+    mark_for_recovery: "Marcar para recuperación",
+    run_once_now: "Ejecutar una vez ahora",
     run_1x: "Ejecutar 1x",
     skip: "Omitir",
+    skip_dont_recover: "Omitir -- no recuperar",
     dismiss_all: "Descartar todo",
     recover_selected: "Recuperar {count} seleccionados",
+    overlaps_with: "Se superpone con",
+    refresh_schedules: "Refrescar programaciones",
+    seed_mock_tooltip: "Sembrar una programación simulada (solo dev)",
+    schedule_view_aria: "Vista de programación",
     today: "Hoy",
     projected: "Proyectado",
     success: "Éxito",
     overlap: "Superposición",
     week: "Semana",
-    month: "Mes",
+    month: "Mes"
   },
   recipes: {
     no_match: "No hay recetas coincidentes",
@@ -7374,6 +7597,8 @@ export const es = {
     saved_mock_values: "Valores de Simulación Guardados",
     no_mock_values: "No hay valores de simulación guardados",
     free_input_placeholder: "Introduce JSON de entrada o texto simple...",
+    recipe_label: "Receta:",
+    executed_label: "Ejecutado:",
     rendered_prompt: "Indicador Renderizado",
     execution_result: "Resultado de Ejecución",
     rendering_prompt: "Renderizando indicador...",
@@ -7403,7 +7628,7 @@ export const es = {
     no_matching: "No se encontraron recetas coincidentes.",
     loading_linked: "Cargando recetas vinculadas...",
     no_linked: "Aún no hay recetas vinculadas. Haz clic en \"Agregar\" para vincular recetas de la biblioteca.",
-    run: "Ejecutar",
+    run: "Ejecutar"
   },
   execution_status: {
     queued: "En cola",
@@ -7411,7 +7636,7 @@ export const es = {
     completed: "Completado",
     failed: "Fallido",
     cancelled: "Cancelado",
-    error: "Error",
+    error: "Error"
   },
   status_tokens: {
     execution: {
@@ -7420,61 +7645,61 @@ export const es = {
       completed: "Completado",
       failed: "Fallido",
       cancelled: "Cancelado",
-      error: "Error",
+      error: "Error"
     },
     event: {
       pending: "Pendiente",
       processing: "Procesando",
       processed: "Procesado",
       failed: "Fallido",
-      retrying: "Reintentando",
+      retrying: "Reintentando"
     },
     automation: {
       pending: "Pendiente",
       running: "En Ejecución",
       completed: "Completado",
       failed: "Fallido",
-      timeout: "Tiempo Agotado",
+      timeout: "Tiempo Agotado"
     },
     severity: {
       info: "Info",
       low: "Bajo",
       medium: "Medio",
       high: "Alto",
-      critical: "Crítico",
+      critical: "Crítico"
     },
     priority: {
       low: "Bajo",
       normal: "Normal",
       high: "Alto",
-      urgent: "Urgente",
+      urgent: "Urgente"
     },
     healing_status: {
       open: "Abierto",
       auto_fixed: "Corregido Automáticamente",
       acknowledged: "Reconocido",
-      resolved: "Resuelto",
+      resolved: "Resuelto"
     },
     healing_category: {
       config: "Configuración",
       auth: "Autenticación",
       network: "Red",
       timeout: "Tiempo Agotado",
-      quota: "Cuota",
+      quota: "Cuota"
     },
     connector_status: {
       ready: "Listo",
       untested: "Sin Probar",
       failed: "Fallido",
       no_credential: "Sin Credencial",
-      testing: "Probando",
+      testing: "Probando"
     },
     test: {
       generating: "Generando",
       running: "En Ejecución",
       completed: "Completado",
       failed: "Fallido",
-      pending: "Pendiente",
+      pending: "Pendiente"
     },
     dev: {
       open: "Abierto",
@@ -7483,8 +7708,8 @@ export const es = {
       blocked: "Bloqueado",
       queued: "En Cola",
       running: "En Ejecución",
-      failed: "Fallido",
-    },
+      failed: "Fallido"
+    }
   },
   project_overview: {
     codebase: "Base de Código",
@@ -7514,7 +7739,7 @@ export const es = {
     failed_to_load: "No se pudieron cargar las estadísticas",
     retry: "Reintentar",
     no_project_selected: "Ningún proyecto seleccionado",
-    select_project_hint: "Selecciona un proyecto dev para ver su resumen.",
+    select_project_hint: "Selecciona un proyecto dev para ver su resumen."
   },
   plugins: {
     title: "Plugins",
@@ -7523,12 +7748,98 @@ export const es = {
     artist_desc: "Genera modelos 3D con Blender, crea imágenes con Leonardo AI y gestiona activos creativos.",
     dev_tools_label: "Herramientas Dev",
     dev_tools_desc: "Gestión de proyectos, mapeo de contexto, escaneo de ideas, clasificación y utilidades de ejecutor de tareas.",
-    doc_signing_label: "Firma de Documentos",
-    doc_signing_desc: "Firma y verifica documentos con firmas digitales directamente desde tu espacio de trabajo.",
     obsidian_brain_label: "Obsidian Brain",
     obsidian_brain_desc: "Conecta tu vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
-    ocr_label: "OCR",
-    ocr_desc: "Extrae texto de imágenes y PDFs usando Gemini Vision o Claude multimodal.",
+    drive_label: "Drive",
+    drive_desc: "Sistema de archivos local administrado donde los agentes guardan exportaciones. Explora archivos en una UI estilo Finder; sobrevive actualizaciones de la app.",
+    drive: {
+      title: "Drive",
+      subtitle: "Sistema de archivos local administrado para exportaciones de agentes",
+      root_label: "Raíz de Drive",
+      dev_badge: "Dev",
+      back: "Atrás",
+      forward: "Adelante",
+      up: "Arriba",
+      refresh: "Refrescar",
+      search_placeholder: "Buscar en esta carpeta...",
+      view_list: "Lista",
+      view_icons: "Iconos",
+      view_columns: "Columnas",
+      new_folder: "Nueva Carpeta",
+      new_file: "Nuevo Archivo",
+      reveal_in_os: "Mostrar en el gestor de archivos",
+      open_in_os: "Abrir",
+      sidebar_root: "Drive",
+      sidebar_recent: "Recientes",
+      sidebar_storage: "Almacenamiento",
+      storage_used: "{used} usado \\u2022 {count} elementos",
+      empty_folder: "Esta carpeta está vacía",
+      empty_hint: "Los agentes que exporten a Drive Local guardarán archivos aquí.",
+      empty_cta: "Crear carpeta",
+      col_name: "Nombre",
+      col_size: "Tamaño",
+      col_kind: "Tipo",
+      col_modified: "Modificado",
+      folder_kind: "Carpeta",
+      ctx_open: "Abrir",
+      ctx_rename: "Renombrar",
+      ctx_duplicate: "Duplicar",
+      ctx_delete: "Eliminar",
+      ctx_copy: "Copiar",
+      ctx_cut: "Cortar",
+      ctx_paste: "Pegar",
+      ctx_new_folder: "Nueva carpeta",
+      ctx_new_file: "Nuevo archivo",
+      ctx_reveal: "Mostrar en el gestor de archivos",
+      ctx_copy_path: "Copiar ruta",
+      rename_title: "Renombrar",
+      rename_placeholder: "Nuevo nombre",
+      new_folder_title: "Nueva carpeta",
+      new_folder_placeholder: "Nombre de carpeta",
+      new_file_title: "Nuevo archivo",
+      new_file_placeholder: "nombre.txt",
+      delete_confirm_title: "¿Eliminar {count} elemento(s)?",
+      delete_confirm_body: "Esta acción no se puede deshacer. Los archivos eliminados se pierden permanentemente.",
+      confirm: "Confirmar",
+      cancel: "Cancelar",
+      details_title: "Detalles",
+      details_path: "Ruta",
+      details_size: "Tamaño",
+      details_kind: "Tipo",
+      details_modified: "Modificado",
+      details_items: "Elementos",
+      details_preview: "Vista previa",
+      preview_unavailable: "Vista previa no disponible",
+      preview_binary: "Archivo binario \\u2014 abre en el gestor de archivos del SO para inspeccionar.",
+      preview_too_large: "El archivo es demasiado grande para previsualizar en línea.",
+      loading: "Cargando...",
+      error_prefix: "Error:",
+      items_selected: "{count} seleccionados",
+      items_total: "{count} elementos",
+      signatures_button: "Firmas",
+      ctx_sign_file: "Firmar archivo\\u2026",
+      ctx_verify_file: "Verificar firma\\u2026",
+      ctx_extract_text: "Extraer texto (OCR)\\u2026",
+      ctx_extract_text_no_gemini: "Extraer texto \\u2014 conecta Gemini para habilitar",
+      ocr_title: "Extraer texto con Gemini",
+      ocr_subtitle: "OCR por visión vía Google Gemini 3 Flash Preview",
+      ocr_model_label: "Modelo",
+      ocr_connector_ready: "Conector de Gemini listo",
+      ocr_connector_missing: "No se encontró credencial de Gemini en la bóveda. Conecta Google Gemini para habilitar OCR.",
+      ocr_prompt_label: "Prompt opcional",
+      ocr_prompt_placeholder: "p. ej. Extrae solo el total de la factura y los ítems",
+      ocr_extract: "Extraer texto",
+      ocr_running: "Extrayendo\\u2026",
+      ocr_done: "Extracción completa",
+      ocr_save: "Guardar como .ocr.txt",
+      ocr_saved: "Guardado",
+      ocr_saved_to: "Guardado en",
+      ocr_copied: "Copiado al portapapeles",
+      select_file_or_folder: "Selecciona un archivo o carpeta para ver sus detalles.",
+      download_aria: "Descargar",
+      download_title: "Descargar",
+      sign_reason_placeholder: "Razón para firmar…"
+    },
     artist: {
       title: "Artista",
       subtitle: "Genera modelos 3D, crea imágenes y gestiona activos creativos",
@@ -7590,6 +7901,31 @@ export const es = {
       viewer_3d: "Visor 3D",
       viewer_3d_hint: "Instala @react-three/fiber y @react-three/drei para habilitar vistas previas 3D interactivas con controles de órbita.",
       tags_label: "Etiquetas:",
+      status_partial: "Parcial",
+      status_not_checked: "No verificado",
+      blender_label: "Blender",
+      blender_mcp_label: "Blender MCP",
+      session_cancelled: "Sesión cancelada.",
+      imported_assets_one: "Se importó 1 nuevo activo a la galería.",
+      imported_assets_other: "Se importaron {count} nuevos activos a la galería.",
+      scan_result_one: "Se encontraron {scanned} activos, se importó 1 nuevo.",
+      scan_result_other: "Se encontraron {scanned} activos, se importaron {imported} nuevos.",
+      tool_blender: "Blender",
+      tool_leonardo: "Leonardo",
+      tool_gemini: "Gemini",
+      tag_editor_hint: "Enter o coma para agregar, Retroceso para eliminar la última etiqueta.",
+      tag_editor_placeholder: "etiqueta, otra-etiqueta",
+      send_to_media_studio: "Enviar a Media Studio",
+      sent_to_media_studio: "En cola para Media Studio",
+      session_history: "Historial",
+      session_history_empty: "Las sesiones que ejecutes aparecerán aquí.",
+      session_tools_label: "Herramientas:",
+      session_status_running: "Ejecutándose",
+      session_status_completed: "Completada",
+      session_status_failed: "Fallida",
+      session_status_cancelled: "Cancelada",
+      replay_session: "Reproducir",
+      delete_session: "Eliminar sesión"
     },
     dev_tools: {
       no_project_configured: "Sin proyecto dev configurado",
@@ -7631,6 +7967,8 @@ export const es = {
       task: "Tarea",
       pick_winner: "Elegir ganador",
       winner: "Ganador",
+      disqualified_label: "Descalificado",
+      elapsed_label: "transcurrido",
       cancel_competition: "Cancelar competición",
       no_goals_constellation: "Aún no hay objetivos. Crea objetivos en la pestaña Proyectos para ver la constelación.",
       your_turn: "Tu Turno",
@@ -7735,6 +8073,8 @@ export const es = {
       task_depth: "Profundidad de Tarea",
       goal_link: "Vínculo de Objetivo",
       create_task: "Crear Tarea",
+      partial_context: "Contexto parcial",
+      context_warnings_title: "Advertencias de contexto — la tarea se ejecutó con información faltante",
       campaign: "Campaña",
       deep_build: "Compilación Profunda",
       idea_evolution: "Evolución de Ideas",
@@ -7749,6 +8089,8 @@ export const es = {
       edit: "Editar",
       save: "Guardar",
       file_empty: "El archivo está vacío o no se pudo cargar.",
+      file_load_failed: "No se pudo cargar el archivo. La edición está deshabilitada para prevenir pérdida de datos.",
+      file_load_failed_hint: "Intenta refrescar o volver a seleccionar la habilidad.",
       effort: "Esfuerzo",
       risk: "Riesgo",
       quick_wins: "Victorias Rápidas",
@@ -7763,6 +8105,155 @@ export const es = {
       add_condition: "+ Agregar condición",
       accept: "Aceptar",
       reject: "Rechazar",
+      triage_title: "Triaje de Ideas",
+      triage_subtitle: "Evalúa y prioriza ideas generadas",
+      accepted_badge: "{count} aceptadas",
+      rejected_badge: "{count} rechazadas",
+      pending_badge: "{count} pendientes",
+      sidebar_category: "Categoría",
+      sidebar_scan_type: "Tipo de Escaneo",
+      sidebar_all: "Todos ({count})",
+      remaining_count: "{count} restantes",
+      reviewed_count: "{done} / {total} revisados",
+      empty_no_ideas: "No hay ideas para triar",
+      empty_no_ideas_hint: "Ejecuta primero el Escáner de Ideas para generar ideas.",
+      empty_all_reviewed: "¡Todas las ideas revisadas!",
+      empty_all_reviewed_summary: "{accepted} aceptadas, {rejected} rechazadas",
+      swipe_reject: "Rechazar",
+      swipe_accept: "Aceptar",
+      reasoning_label: "Razonamiento",
+      hint_reject: "Rechazar",
+      hint_accept: "Aceptar",
+      shortcuts_title: "Atajos de Teclado",
+      shortcuts_reject: "Rechazar idea",
+      shortcuts_accept: "Aceptar idea",
+      shortcuts_toggle: "Alternar este overlay",
+      shortcuts_close: "Cerrar overlay",
+      shortcuts_dismiss_hint: "Presiona ? o Esc para cerrar",
+      shortcuts_open_title: "Atajos de teclado (?)",
+      shortcuts_btn_reject_title: "Rechazar (Flecha izquierda / A)",
+      shortcuts_btn_accept_title: "Aceptar (Flecha derecha / Z)",
+      shortcuts_btn_delete_title: "Eliminar",
+      pr_bridge_title: "Enviar como PR Borrador",
+      pr_bridge_subtitle: "Rama, commit y PR pre-rellenado — el razonamiento del agente se traslada a la descripción.",
+      pr_bridge_branch: "Rama",
+      pr_bridge_commit_msg: "Mensaje de commit",
+      pr_bridge_pr_title: "Título del PR",
+      pr_bridge_pr_body: "Cuerpo del PR",
+      pr_bridge_agent_citation: "Propuesto por {label} {emoji}",
+      pr_bridge_no_github: "Vincula un repositorio de GitHub a este proyecto para habilitar flujos de PR.",
+      pr_bridge_link_project: "Abrir configuración del proyecto",
+      pr_bridge_unsupported_host: "El auto-llenado solo funciona con GitHub por ahora. Copia el cuerpo del PR y ábrelo manualmente.",
+      pr_bridge_copy_body: "Copiar cuerpo del PR",
+      pr_bridge_copy_all: "Copiar todo",
+      pr_bridge_prepare: "Preparar rama y commit",
+      pr_bridge_open_github: "Abrir PR borrador en GitHub",
+      pr_bridge_expand: "Mostrar vista previa del PR",
+      pr_bridge_collapse: "Ocultar vista previa del PR",
+      pr_bridge_copied: "Cuerpo del PR copiado al portapapeles",
+      pr_bridge_copy_failed: "No se pudo copiar al portapapeles",
+      pr_bridge_branch_prepared: "Rama preparada: {branch}",
+      pr_bridge_branch_failed: "Falló la preparación de la rama: {message}",
+      pr_bridge_opening: "Abriendo GitHub...",
+      pr_bridge_open_failed: "No se pudo abrir la URL externa",
+      pr_bridge_draft_hint: "Consejo: en la página de GitHub, usa el menú desplegable junto a \"Create pull request\" para marcarlo como borrador.",
+      scoreboard_title: "Rendimiento de Agentes",
+      scoreboard_subtitle: "Tasas de aceptación e implementación por agente de escaneo para este proyecto.",
+      scoreboard_toggle_show: "Mostrar marcador",
+      scoreboard_toggle_hide: "Ocultar marcador",
+      scoreboard_empty: "Aún no hay datos — ejecuta un escaneo y tría algunas ideas para poblar el marcador.",
+      scoreboard_col_agent: "Agente",
+      scoreboard_col_ideas: "Ideas",
+      scoreboard_col_accept_rate: "Aceptación %",
+      scoreboard_col_impl_rate: "Impl %",
+      scoreboard_col_avg_impact: "Impacto prom.",
+      scoreboard_col_avg_effort: "Esfuerzo prom.",
+      scoreboard_tip_ideas: "Total de ideas que este agente ha generado en todos los escaneos.",
+      scoreboard_tip_accept_rate: "Aceptadas / (Aceptadas + Rechazadas). Las ideas pendientes se excluyen del denominador.",
+      scoreboard_tip_impl_rate: "Tareas completadas / tareas creadas a partir de las ideas de este agente.",
+      scoreboard_tip_avg_impact: "Puntaje medio de impacto (1-10) de todas las ideas generadas por este agente.",
+      scoreboard_tip_avg_effort: "Puntaje medio de esfuerzo (1-10) de todas las ideas generadas por este agente.",
+      scoreboard_no_signal: "—",
+      scoreboard_n_pending: "{n} pendientes",
+      scoreboard_top_performer: "Mejor rendimiento",
+      zoom_in: "Acercar",
+      zoom_out: "Alejar",
+      reset_view: "Restablecer vista",
+      goals_label: "objetivos,",
+      connections_label: "conexiones",
+      legend_parent: "━━ padre",
+      legend_dependency: "┄┄ dependencia",
+      competitors_dot: "competidores ·",
+      of_4_selected: "/4 seleccionados",
+      status_label: "Estado:",
+      wt_label: "pes:",
+      winning_insight: "Insight ganador",
+      completed_in: "Completado en",
+      achievements_label: "Logros:",
+      output_lines: "líneas de salida",
+      loading_diff: "Cargando diff...",
+      first_slot_bias: "El primer slot tiene sesgo hacia el enfoque del ganador anterior.",
+      start_competition_prefix: "Iniciar Competencia (",
+      slots_suffix: "slots)",
+      strategy_leaderboard: "Clasificación de Estrategias",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "Agregado a través de competencias resueltas. Mayor gana.",
+      capture_winning_insight: "Capturar el insight ganador",
+      capture_insight_desc: "¿Qué hizo que este enfoque ganara? Esta nota se almacena con el ganador y se usa para sembrar futuras competencias.",
+      insight_placeholder: "Describe qué hizo que este enfoque tuviera éxito…",
+      confirm_winner: "Confirmar ganador",
+      github_required_title: "Se requiere repositorio de GitHub",
+      folder_required_title: "Se requiere carpeta de proyecto",
+      requirements_met_title: "Todos los requisitos cumplidos",
+      can_still_adopt: "Aún puedes adoptar ahora — agrega la URL de GitHub y la carpeta del proyecto más tarde en la configuración del proyecto.",
+      active_triggers_prefix: "Disparadores Activos (",
+      lifecycle_readiness: "Preparación del Ciclo de Vida —",
+      goals_tab_no_goals: "Aún no hay objetivos. Crea objetivos en el Gestor de Proyectos.",
+      goal_constellation_prefix: "Constelación de Objetivos (",
+      sync_to_obsidian: "Sincronizar con Obsidian",
+      select_or_create: "Selecciona un proyecto abajo o crea uno nuevo.",
+      all_projects_prefix: "Todos los Proyectos (",
+      percent_overall: "% general",
+      task_queue_prefix: "Cola de Tareas (",
+      project_created_title: "Proyecto Creado",
+      generate_context_map_desc: "Escanea tu base de código para identificar lógica de negocio, puntos de entrada y estructuras de datos.",
+      source_label: "Origen:",
+      auto_filled_hint: "(auto-rellenado desde la carpeta)",
+      project_type_optional: "(opcional, solo visual)",
+      optional_label: "(opcional)",
+      implementation_log_label: "Registro de Implementación",
+      cross_project_desc_btn: "Agregado a partir de los mapas de contexto existentes. Haz clic en cualquier proyecto para expandir.",
+      generate_metadata_prompt: "para analizar los mapas de contexto de todos los proyectos y extraer patrones compartidos.",
+      projects_count_prefix: "Proyectos (",
+      entry_points_header: "Puntos de Entrada",
+      db_tables_header: "Tablas de Base de Datos",
+      entry_points_count: "puntos de entrada",
+      db_tables_count: "tablas de bd",
+      run_context_map_scan: "Ejecuta el escaneo de Mapa de Contexto para este proyecto para poblar metadatos.",
+      active_goals_label: "objetivos activos",
+      no_goals_add_below: "Aún no hay objetivos. Agrega uno abajo.",
+      goal_title_placeholder: "Título del objetivo…",
+      loading_repos: "Cargando repositorios...",
+      github_url_label: "URL de GitHub",
+      github_repo_label: "Repositorio de GitHub",
+      idea_evolution_title: "Evolución de Ideas",
+      fitness_ranking_label: "Ranking de Aptitud",
+      similar_to_rejected: "Similar a rechazadas:",
+      percent_similar: "% similar",
+      scanning_with: "Escaneando con",
+      scanning_subtitle: "Analizando patrones de la base de código y generando grupos de contexto…",
+      no_previous_scans: "No hay escaneos anteriores.",
+      run_scan_prefix: "Ejecutar Escaneo (",
+      automated_context_scan: "Escaneo de Contexto Automatizado",
+      results_prefix: "Resultados (",
+      scan_history_prefix: "Historial de Escaneos (",
+      action_label: "Acción:",
+      self_healing_title: "Auto-Sanación",
+      heal_all_prefix: "Sanar Todo (",
+      task_title_placeholder: "Título de tarea…",
+      task_details_placeholder: "Detalles de la tarea o pega una especificación…",
+      goal_link_placeholder: "Selecciona un objetivo…",
+      no_tasks_queued_sub: "Crea tareas manualmente o en lote desde ideas aceptadas."
     },
     doc_signing: {
       title: "Firma de Documentos",
@@ -7801,7 +8292,7 @@ export const es = {
       no_signatures: "Aún no hay firmas",
       no_signatures_hint: "Firma un documento para verlo aquí.",
       export_sig: "Exportar .sig.json",
-      delete_signature: "Eliminar firma",
+      delete_signature: "Eliminar firma"
     },
     obsidian_brain: {
       title: "Obsidian Brain",
@@ -7809,6 +8300,7 @@ export const es = {
       tab_setup: "Configuración",
       tab_sync: "Sincronización",
       tab_browse: "Explorar Vault",
+      tab_graph: "Grafo",
       tab_cloud: "Nube",
       filter_notes: "Filtrar notas...",
       vault_empty: "El vault está vacío",
@@ -7878,7 +8370,7 @@ export const es = {
       sync_log: "Registro de Sincronización",
       no_sync_activity: "Aún sin actividad de sincronización. Envía u obtén para comenzar.",
       select_note: "Seleccionar una Nota",
-      select_note_hint: "Elige una nota del árbol de la izquierda para previsualizar su contenido.",
+      select_note_hint: "Elige una nota del árbol de la izquierda para previsualizar su contenido."
     },
     ocr: {
       title: "OCR",
@@ -7905,8 +8397,292 @@ export const es = {
       comparison_stats: "Estadísticas de Comparación",
       history_heading: "Historial de OCR",
       no_results: "Aún no hay resultados de OCR",
-      no_results_hint: "Extrae texto de un documento para verlo aquí.",
+      no_results_hint: "Extrae texto de un documento para verlo aquí."
     },
+    artist_gallery: {
+      loading_viewer: "Cargando visor…",
+      loading_model: "Cargando modelo...",
+      could_not_load_model: "No se pudo cargar el modelo"
+    },
+    artist_media_studio: {
+      drag_drop_hint: "— arrastra y suelta archivos en cualquier lugar",
+      keyboard_shortcuts: "Espacio / Supr / Flechas",
+      px_per_second: "px/s",
+      running_loudnorm: "Ejecutando ffmpeg loudnorm dry-run…"
+    },
+    dev_context: {
+      files_header: "Archivos (",
+      filter_groups_placeholder: "Filtrar grupos…",
+      rescan_title: "Re-escanear",
+      scanning_with: "Escaneando con",
+      scanning_subtitle: "Analizando patrones de la base de código y generando grupos de contexto…",
+      no_previous_scans: "No hay escaneos anteriores.",
+      run_scan: "Ejecutar Escaneo (",
+      auto_scan: "Auto-Escaneo",
+      automated_context_scan: "Escaneo de Contexto Automatizado",
+      results: "Resultados (",
+      scan_history: "Historial de Escaneos ("
+    },
+    dev_lifecycle: {
+      start_a_competition: "Iniciar una Competencia",
+      start_a_competition_desc: "Genera 2–4 competidores con diferentes estrategias para abordar la misma tarea. El enfoque del ganador se promueve.",
+      task_title: "Título de la tarea",
+      task_title_placeholder: "p. ej. Refactorizar el módulo de autenticación",
+      task_description: "Descripción de la tarea (opcional)",
+      task_description_placeholder: "Describe cómo se ve el éxito…",
+      strategy_slots: "Slots de estrategia (elige 2–4)",
+      of_4_selected: "/4 seleccionados",
+      cost_warning: "Advertencia de costo:",
+      cost_warning_desc: "cada competidor ejecuta la tarea completa de forma independiente — esto usa {count}× más tokens.",
+      start_competition: "Iniciar Competencia",
+      competitors_dot: "competidores ·",
+      loading_competitors: "Cargando competidores...",
+      failed_to_load_detail: "Falló la carga del detalle.",
+      status_label: "Estado:",
+      weight_label: "pes:",
+      pick_winner: "Elegir ganador",
+      cancel_competition: "Cancelar competencia",
+      select_project_for_competitions: "Selecciona un proyecto para ver competencias.",
+      new_competition: "Nueva Competencia",
+      no_competitions_yet: "Aún no hay competencias. Inicia una para que 2–4 estrategias compitan por resolver una tarea.",
+      no_goals_yet_project: "Aún no hay objetivos. Crea objetivos en el Gestor de Proyectos para rastrear el progreso.",
+      zoom_in_title: "Acercar",
+      zoom_out_title: "Alejar",
+      reset_view_title: "Restablecer vista",
+      goals_label: "objetivos,",
+      legend_parent: "━━ padre",
+      legend_dependency: "┄┄ dependencia",
+      no_goals_kanban: "Aún no hay objetivos. Crea objetivos para verlos aquí.",
+      no_goals_here: "No hay objetivos aquí",
+      auto_setup_title: "Ejecutar configuración automatizada del ciclo de vida",
+      auto_setup: "Auto-Configurar",
+      loading_lifecycle: "Cargando estado del ciclo de vida...",
+      no_project_click_to_create: "Sin proyecto — haz clic para crear",
+      no_repo: "sin repositorio",
+      baseline_label: "Baseline:",
+      ts_errors_label: "Errores TS:",
+      cargo_errors_label: "Errores Cargo:",
+      tests_label: "Pruebas:",
+      git_label: "Git:",
+      winning_insight: "Insight ganador",
+      completed_in: "Completado en",
+      achievements_label: "Logros:",
+      output_lines: "líneas de salida",
+      expand_slot_title: "Expandir slot",
+      collapse_slot_title: "Contraer slot",
+      copy_diff_title: "Copiar diff",
+      loading_diff: "Cargando diff...",
+      new_competition_modal_title: "Iniciar una Competencia",
+      first_slot_bias: "El primer slot tiene sesgo hacia el enfoque del ganador anterior.",
+      start_competition_slots: "Iniciar Competencia (",
+      slots_suffix: "slots)",
+      strategy_leaderboard: "Clasificación de Estrategias",
+      dq_title: "Descalificado",
+      dq_label: "DQ x",
+      leaderboard_subtitle: "Agregado a través de competencias resueltas. Mayor gana.",
+      capture_winning_insight: "Capturar el insight ganador",
+      capture_insight_desc: "¿Qué hizo que este enfoque ganara? Esta nota se almacena con el ganador y se usa para sembrar futuras competencias.",
+      insight_placeholder: "Describe qué hizo que este enfoque tuviera éxito…",
+      confirm_winner: "Confirmar ganador",
+      competition_title_placeholder: "p. ej. Agregar rate limiting a /api/auth/login",
+      competition_desc_placeholder: "Criterios de aceptación, archivos objetivo, restricciones...",
+      regenerate_strategies_title: "Regenerar estrategias",
+      start_dev_server_title: "Iniciar servidor de desarrollo en este worktree",
+      stop_dev_server_title: "Detener servidor de desarrollo",
+      open_worktree_title: "Abrir directorio worktree",
+      adopt_dev_clone: "Adoptar Clon de Desarrollo",
+      dev_clone_desc: "Dev Clone es una persona desarrolladora autónoma que gestiona el ciclo de vida de tu proyecto — compitiendo estrategias, sanando errores y entregando código.",
+      github_required_title: "Se requiere repositorio de GitHub",
+      folder_required_title: "Se requiere carpeta de proyecto",
+      requirements_met_title: "Todos los requisitos cumplidos",
+      can_still_adopt: "Aún puedes adoptar ahora — agrega la URL de GitHub y la carpeta del proyecto más tarde en la configuración del proyecto.",
+      active_triggers: "Disparadores Activos (",
+      lifecycle_readiness: "Preparación del Ciclo de Vida —",
+      goals_tab_no_goals: "Aún no hay objetivos. Crea objetivos en el Gestor de Proyectos.",
+      goal_constellation: "Constelación de Objetivos (",
+      sync_to_obsidian: "Sincronizar con Obsidian"
+    },
+    dev_projects: {
+      active_goals: "objetivos activos",
+      run_context_map_scan: "Ejecuta el escaneo de Mapa de Contexto para este proyecto para poblar metadatos.",
+      entry_points: "puntos de entrada",
+      db_tables: "tablas de bd",
+      top_keywords: "Palabras Clave Principales",
+      entry_points_header: "Puntos de Entrada",
+      db_tables_header: "Tablas de Base de Datos",
+      api_surface: "Superficie de API",
+      hot_directories: "Directorios Calientes",
+      cross_project_map_title: "Mapa de Metadatos entre Proyectos",
+      cross_project_map_subtitle: "Agregado a partir de los mapas de contexto existentes. Haz clic en cualquier proyecto para expandir.",
+      tech_distribution: "Distribución Tecnológica",
+      shared_keywords: "Palabras Clave Compartidas (",
+      shared_keywords_subtitle: "Conceptos presentes en múltiples proyectos — pueden indicar arquitectura compartida.",
+      project_similarity: "Similitud de Proyectos",
+      projects_header: "Proyectos (",
+      cross_project_map_btn: "Mapa entre Proyectos",
+      new_project: "Nuevo Proyecto",
+      select_or_create: "Selecciona un proyecto abajo o crea uno nuevo.",
+      all_projects: "Todos los Proyectos (",
+      no_projects_yet: "Aún no hay proyectos",
+      create_first_project: "Crear Primer Proyecto",
+      tech_stack: "Stack Tecnológico",
+      edit_project: "Editar Proyecto",
+      no_goals_add_below: "Aún no hay objetivos. Agrega uno abajo.",
+      goal_title_placeholder: "Título del objetivo…",
+      project_folder: "Carpeta del Proyecto",
+      select_folder: "Selecciona una carpeta...",
+      project_name: "Nombre del Proyecto",
+      auto_filled_from_folder: "(auto-rellenado desde la carpeta)",
+      project_name_placeholder: "Mi Proyecto",
+      project_type: "Tipo de Proyecto",
+      project_type_optional: "(opcional, solo visual)",
+      project_created: "Proyecto Creado",
+      project_ready_desc: "está listo. ¿Quieres generar un mapa de contexto ahora?",
+      generate_context_map: "Generar Mapa de Contexto",
+      generate_context_map_desc: "Escanea tu base de código para identificar lógica de negocio, puntos de entrada y estructuras de datos.",
+      skip_for_now: "Omitir por ahora",
+      scan_codebase: "Escanear Base de Código",
+      loading_repositories: "Cargando repositorios...",
+      github_url_label: "URL de GitHub",
+      optional: "(opcional)",
+      github_url_placeholder: "https://github.com/owner/repo",
+      github_repository: "Repositorio de GitHub",
+      select_repository: "Selecciona un repositorio...",
+      no_repositories_found: "No se encontraron repositorios",
+      implementation_log: "Registro de Implementación",
+      loading_metadata: "Cargando...",
+      no_metadata_yet: "Aún no se ha generado mapa de metadatos",
+      generate_metadata_prompt: "para analizar los mapas de contexto de todos los proyectos y extraer patrones compartidos."
+    },
+    dev_runner: {
+      self_healing: "Auto-Sanación",
+      auto_heal: "Auto-sanar",
+      heal_all: "Sanar Todo (",
+      task_title_placeholder: "Título de tarea…",
+      task_details_placeholder: "Detalles de la tarea o pega una especificación…",
+      task_depth: "Profundidad de Tarea",
+      goal_link: "Enlace a Objetivo",
+      optional: "(opcional)",
+      goal_link_placeholder: "Selecciona un objetivo…",
+      create_task: "Crear Tarea",
+      source_label: "Origen:",
+      new_task: "Nueva Tarea",
+      batch_from_accepted: "Lote desde Aceptadas",
+      start_batch: "Iniciar Lote",
+      cancel_all: "Cancelar Todo",
+      batch_progress: "Progreso del Lote",
+      percent_overall: "% general",
+      task_queue: "Cola de Tareas (",
+      no_tasks_queued: "No hay tareas en cola",
+      no_tasks_queued_sub: "Crea tareas manualmente o en lote desde ideas aceptadas."
+    },
+    dev_scanner: {
+      idea_evolution: "Evolución de Ideas",
+      fitness_ranking: "Ranking de Aptitud",
+      similar_to_rejected: "Similar a rechazadas:",
+      synthesis_suggestions: "Sugerencias de Síntesis",
+      percent_similar: "% similar",
+      potential_duplicates: "Posibles Duplicados",
+      scanning_with: "Escaneando con",
+      analyzing_codebase: "Analizando base de código...",
+      no_previous_scans: "Aún no hay escaneos anteriores.",
+      auto_scan: "Auto-Escaneo",
+      automated_context_scan: "Escaneo de Contexto Automatizado",
+      run_scan_prefix: "Ejecutar:",
+      results_prefix: "Resultados:",
+      scan_history_prefix: "Historial de Escaneos",
+      idea_scanner_title: "Escáner de Ideas",
+      idea_scanner_subtitle: "Ejecuta agentes especializados para generar ideas de mejora",
+      run_scan_btn: "Ejecutar Escaneo (",
+      results_header: "Resultados (",
+      scan_history_header: "Historial de Escaneos ("
+    },
+    dev_triage: {
+      auto_triage_rules: "Reglas de Triaje Automático",
+      add_condition: "+ Agregar condición",
+      action_label: "Acción:",
+      new_rule: "Nueva Regla",
+      run_rules: "Ejecutar Reglas"
+    },
+    obsidian: {
+      saved_vaults: "Bóvedas Guardadas",
+      remove_vault_title: "Eliminar bóveda guardada",
+      vault_is_empty: "La bóveda está vacía",
+      failed_to_load: "Falló la carga",
+      open_in_obsidian: "Abrir en Obsidian",
+      copy_path_title: "Copiar ruta",
+      disconnect_title: "Desconectar Google Drive",
+      sign_in_to_enable: "Inicia sesión para habilitar la sincronización en la nube",
+      sign_in_subtitle: "Inicia sesión con tu cuenta de Google para respaldar tu bóveda en Google Drive.",
+      refresh_title: "Refrescar estado de sincronización",
+      drive_connected: "Drive Conectado",
+      files_synced: "archivos sincronizados a Drive",
+      connect_drive_desc: "Conecta Google Drive para respaldar tu bóveda en la nube.",
+      step_connect_drive: "Conectar Google Drive",
+      step_connect_drive_desc: "Otorga a Personas acceso para crear archivos en tu Google Drive.",
+      step_push_vault: "Sube tu bóveda",
+      step_push_vault_desc: "Las notas de la bóveda se suben como archivos markdown a Google Drive.",
+      step_sync_devices: "Sincroniza entre dispositivos",
+      step_sync_devices_desc: "Descarga en otro dispositivo para bajar los archivos. Tu bóveda son tus datos.",
+      push_title: "Subir bóveda a Google Drive",
+      push_desc: "Subir envía los cambios locales de la bóveda a Google Drive.",
+      last_sync_result: "Último Resultado de Sincronización",
+      pull_title: "Descargar bóveda desde Google Drive",
+      connect_google_drive: "Conectar Google Drive",
+      connect_drive_btn_desc: "Otorga a Personas acceso para crear archivos en tu Google Drive.",
+      no_stats_yet: "Aún no hay estadísticas.",
+      search_title: "Buscar notas",
+      search_placeholder: "Buscar notas…",
+      no_matches: "Sin coincidencias.",
+      no_orphan_notes: "No hay notas huérfanas — cada nota está enlazada desde al menos otra.",
+      no_mocs: "No se detectaron MOCs — prueba a bajar el umbral de enlaces.",
+      quick_capture_title: "Captura rápida con IA",
+      note_search_placeholder: "Busca notas o haz una pregunta…",
+      append_to_today: "Anexar a Hoy",
+      append_content_placeholder: "Contenido a anexar…",
+      save_meeting_title: "Guardar nota de reunión",
+      meeting_attendees_placeholder: "Asistentes…",
+      meeting_summary_placeholder: "Resumen de la reunión…",
+      meeting_action_items_placeholder: "Acciones a realizar…",
+      meeting_decisions_placeholder: "Decisiones…",
+      save_meeting_note: "Guardar Nota de Reunión",
+      remove_vault_setup_title: "Eliminar",
+      detected_vaults: "Bóvedas detectadas:",
+      connected_to: "Conectado a \"",
+      notes_found: "notas encontradas",
+      scan_for_vaults_title: "Escanear bóvedas",
+      manual_path_title: "Introducir ruta manualmente",
+      preview_label: "Vista previa:",
+      vault_path_agent_placeholder: "/NombreAgente/",
+      vault_path_note_example: "/fact/titulo-de-memoria.md",
+      disconnect_sync_title: "Desconectar",
+      active_vault: "Bóveda activa:",
+      refresh_stats_title: "Refrescar estadísticas",
+      select_personas: "Selecciona personas para subir",
+      select_all: "Seleccionar todo",
+      no_personas_found: "No se encontraron personas",
+      last_push_result: "Último Resultado de Subida",
+      app_version: "Versión de la App",
+      vault_version: "Versión de la Bóveda",
+      keep_app: "Mantener App",
+      keep_vault: "Mantener Bóveda",
+      clear_history_title: "Limpiar historial",
+      no_sync_activity: "Aún no hay actividad de sincronización. Sube o descarga para comenzar."
+    },
+    research_lab: {
+      review_before_saving: "Revisa antes de guardar. Desmarca cualquiera que no quieras agregar.",
+      re_run: "Re-ejecutar",
+      search_placeholder: "Buscar…",
+      filter_title: "Filtro",
+      query_placeholder: "Escribe una consulta y presiona Enter para buscar en todos los paneles…",
+      close_panel_title: "Cerrar panel",
+      md_extension: ".md",
+      edit_note_aria: "Editar nota"
+    },
+    doc_signing_label: "Firma de Documentos",
+    doc_signing_desc: "Firma y verifica documentos con firmas digitales directamente desde tu espacio de trabajo.",
+    ocr_label: "OCR",
+    ocr_desc: "Extrae texto de imágenes y PDFs usando Gemini Vision o Claude multimodal."
   },
   media_studio: {
     title: "Estudio de Medios",
@@ -7968,10 +8744,32 @@ export const es = {
     empty_title: "Empieza a componer",
     empty_hint: "Agrega clips de video o audio a la línea de tiempo para comenzar.",
     split: "Dividir en el cabezal",
+    undo: "Deshacer",
+    redo: "Rehacer",
     import_media: "Importar medios",
     supported_video: "Archivos de video",
     supported_audio: "Archivos de audio",
     supported_images: "Archivos de imagen",
+    clip_actions: "Acciones del clip",
+    action_split: "Dividir en el cabezal",
+    action_extract_audio: "Extraer audio",
+    action_strip_audio: "Quitar audio",
+    action_keep_audio: "Mantener audio",
+    action_save_thumbnail: "Guardar cuadro como imagen",
+    action_trim_to_file: "Recortar a archivo nuevo",
+    extracting_audio: "Extrayendo pista de audio...",
+    extract_audio_done: "Pista de audio extraída",
+    saving_thumbnail: "Guardando cuadro...",
+    thumbnail_saved: "Cuadro guardado",
+    trimming_file: "Recortando archivo...",
+    trim_done: "Recorte guardado",
+    effects: "Efectos",
+    speed: "Velocidad",
+    fade_in: "Fundido de entrada",
+    fade_out: "Fundido de salida",
+    normalize: "Normalizar sonoridad",
+    normalize_hint: "EBU R128 aplicado en exportación; la vista previa es una aproximación",
+    strip_audio_hint: "Silencia el audio de este clip al exportar"
   },
   research_lab: {
     dashboard: "Panel",
@@ -7981,20 +8779,29 @@ export const es = {
     experiments: "Experimentos",
     findings: "Hallazgos",
     reports: "Informes",
+    graph: "Grafo",
     active: "activo",
     sources: "Fuentes",
     sources_count: "fuentes",
+    recent_projects: "Proyectos recientes",
+    view_all: "Ver todo",
     no_projects: "Aún no hay proyectos de investigación",
     no_projects_hint: "Crea un proyecto de investigación para empezar a organizar tu literatura, hipótesis y experimentos.",
     create_project: "Nuevo Proyecto",
+    edit_project: "Editar proyecto",
+    save_changes: "Guardar cambios",
     project_name: "Nombre del proyecto",
+    project_name_placeholder: "p. ej. Fidelidad de cadena de pensamiento en LLM",
     project_description: "Descripción",
+    project_description_placeholder: "Resumen breve de lo que investiga este proyecto",
     project_thesis: "Pregunta de investigación o tesis",
+    project_thesis_placeholder: "La afirmación o pregunta central que estás probando",
     project_domain: "Dominio",
     project_scope: "Restricciones de alcance",
     obsidian_vault: "Vault de Obsidian",
     obsidian_vault_hint: "Vincula un vault de Obsidian para sincronizar experimentos y hallazgos",
     select_vault: "Seleccionar vault",
+    clear_vault: "Limpiar",
     vault_connected: "Vault conectado",
     sync_to_obsidian: "Sincronizar con Obsidian",
     syncing: "Sincronizando...",
@@ -8010,13 +8817,42 @@ export const es = {
     status_writing: "Redacción",
     status_review: "Revisión",
     status_complete: "Completo",
+    domain_cs: "Ciencias de la Computación",
+    domain_biology: "Biología",
+    domain_chemistry: "Química",
+    domain_physics: "Física",
+    domain_mathematics: "Matemáticas",
+    domain_business: "Negocios",
+    domain_medicine: "Medicina",
+    domain_general: "General",
     select_project_first: "Selecciona un proyecto de investigación primero",
     no_sources: "Aún no hay fuentes",
     no_sources_hint: "Busca en arXiv, Semantic Scholar o PubMed para encontrar artículos relevantes, o agrega fuentes manualmente.",
+    no_matching_sources: "Ninguna fuente coincide con tu filtro",
+    filter_sources_placeholder: "Filtrar por título o autor…",
     relevance: "Relevancia",
     search_sources: "Buscar fuentes",
     ingest: "Incorporar",
     ingesting: "Incorporando...",
+    source_title: "Título",
+    source_title_placeholder: "Título del artículo",
+    source_type: "Tipo de fuente",
+    source_year: "Año",
+    source_year_placeholder: "p. ej. 2024",
+    source_authors: "Autores",
+    source_authors_placeholder: "Autor 1, Autor 2, …",
+    source_url: "URL",
+    source_url_placeholder: "https://arxiv.org/abs/…",
+    source_doi: "DOI",
+    source_doi_placeholder: "10.xxxx/…",
+    source_abstract: "Resumen",
+    source_abstract_placeholder: "Resumen del artículo…",
+    source_type_arxiv: "arXiv",
+    source_type_scholar: "Semantic Scholar",
+    source_type_pubmed: "PubMed",
+    source_type_web: "Página web",
+    source_type_pdf: "PDF",
+    source_type_manual: "Entrada manual",
     no_hypotheses: "Aún no hay hipótesis",
     no_hypotheses_hint: "Agrega hipótesis manualmente o deja que un agente de IA las genere a partir de tu corpus bibliográfico.",
     add_hypothesis: "Agregar hipótesis",
@@ -8024,23 +8860,58 @@ export const es = {
     confidence: "Confianza",
     supporting: "Apoya",
     counter: "Contra",
+    hypothesis_statement: "Enunciado",
+    hypothesis_statement_placeholder: "Una afirmación comprobable — p. ej. El Prompt X mejora la precisión sobre la línea base en >5%",
+    hypothesis_rationale: "Justificación",
+    hypothesis_rationale_placeholder: "Por qué vale la pena probar esta hipótesis",
     no_experiments: "Aún no hay experimentos",
     no_experiments_hint: "Diseña un experimento para probar una hipótesis.",
     create_experiment: "Nuevo experimento",
+    experiment_name: "Nombre del experimento",
+    experiment_name_placeholder: "p. ej. Comparar base vs. fine-tuned en GSM8K",
     methodology: "Metodología",
+    methodology_placeholder: "¿Cómo se ejecutará este experimento?",
     success_criteria: "Criterios de éxito",
+    success_criteria_placeholder: "¿Qué resultado confirmaría la hipótesis?",
+    linked_hypothesis: "Hipótesis vinculada",
+    no_linked_hypothesis: "No hay hipótesis vinculada",
+    linked_persona: "Persona vinculada",
+    no_linked_persona: "No hay persona vinculada",
+    run_input: "Entrada de ejecución (opcional)",
+    run_input_placeholder: "Texto de entrada que se pasará a la persona en cada ejecución.",
+    pass_pattern: "Patrón de aprobación (regex)",
+    pass_pattern_placeholder: "p. ej. PASSED|success|score\\s*>\\s*0\\.8",
     run_experiment: "Ejecutar",
+    running_experiment: "Ejecutando…",
     run_count: "ejecuciones",
+    view_runs: "Ver ejecuciones",
+    no_runs_yet: "Aún no hay ejecuciones",
+    run_passed: "Aprobada",
+    run_failed: "Fallida",
+    run_duration: "Duración",
+    run_cost: "Costo",
+    run_number: "Ejecución #",
+    runs_history: "Historial de ejecuciones",
     no_findings: "Aún no hay hallazgos",
     no_findings_hint: "Los hallazgos son extraídos de los resultados de experimentos por agentes de análisis.",
+    create_finding: "Nuevo hallazgo",
+    finding_title: "Título",
+    finding_title_placeholder: "Titular breve del hallazgo",
+    finding_description: "Descripción",
+    finding_description_placeholder: "¿Qué observaste y por qué importa?",
+    finding_category: "Categoría",
+    finding_category_placeholder: "p. ej. rendimiento, limitación, sorpresa",
     no_reports: "Aún no hay informes",
     no_reports_hint: "Crea un informe para compilar tus hallazgos en un documento estructurado.",
     create_report: "Nuevo informe",
+    report_title: "Título",
+    report_title_placeholder: "p. ej. Resumen de Investigación Q2",
     report_type: "Tipo de informe",
+    report_format: "Formato",
     literature_review: "Revisión bibliográfica",
     experiment_report: "Informe de experimento",
     full_paper: "Artículo completo",
-    executive_summary: "Resumen ejecutivo",
+    executive_summary: "Resumen ejecutivo"
   },
   event_types: {
     webhook_received_label: "Webhook Recibido",
@@ -8115,7 +8986,7 @@ export const es = {
     source_filter_no_regex: "Solo se admite * al final (sin regex, sin comodines ?)",
     source_filter_no_source_id: "Si source_filter está establecido pero el evento no tiene source_id, el filtro no coincidirá",
     source_filter_allowed_chars: "Caracteres permitidos: letras, números, _, -, :, . y *",
-    source_filter_max_length: "Máximo 120 caracteres, máximo 3 caracteres comodín",
+    source_filter_max_length: "Máximo 120 caracteres, máximo 3 caracteres comodín"
   },
   connector_roles: {
     chat_messaging: "Chat y Mensajería",
@@ -8182,12 +9053,12 @@ export const es = {
     purpose_ecommerce: "E-Commerce",
     purpose_scheduling: "Programación",
     purpose_forms: "Formularios",
-    purpose_ai: "IA",
+    purpose_ai: "IA"
   },
   connector_licensing: {
     personal: "Personal",
     paid: "De pago",
-    enterprise: "Empresarial",
+    enterprise: "Empresarial"
   },
   alerts: {
     metric_error_rate: "Tasa de Errores",
@@ -8203,7 +9074,7 @@ export const es = {
     error_delete_rule: "No se pudo eliminar la regla de alerta:",
     error_toggle_rule: "No se pudo cambiar el estado de la regla de alerta:",
     error_dismiss: "No se pudo descartar la alerta:",
-    error_clear_history: "No se pudo limpiar el historial de alertas:",
+    error_clear_history: "No se pudo limpiar el historial de alertas:"
   },
   deploy_errors: {
     not_reachable: "No se pudo llegar al servidor. Verifica la URL y tu conexión de red.",
@@ -8218,18 +9089,18 @@ export const es = {
     oauth_expired: "El token OAuth ha expirado. Por favor vuelve a autorizar.",
     url_empty: "Por favor ingresa la URL del orquestador.",
     api_key_empty: "Por favor ingresa tu clave de API.",
-    token_empty: "Por favor ingresa tu token de acceso personal de GitLab.",
+    token_empty: "Por favor ingresa tu token de acceso personal de GitLab."
   },
   tiers: {
     starter_label: "Simple",
     starter_desc: "Funciones principales para uso cotidiano",
     team_label: "Avanzado",
-    team_desc: "Conjunto completo de funciones",
+    team_desc: "Conjunto completo de funciones"
   },
   models: {
     haiku: "Haiku",
     sonnet: "Sonnet",
-    opus: "Opus",
+    opus: "Opus"
   },
   error_explanation: {
     action_go_to_vault: "Ir a la Bóveda",
@@ -8273,7 +9144,7 @@ export const es = {
     guidance_import_invalid: "El archivo de importación está vacío o dañado. Intenta volver a exportar desde el origen e importar de nuevo.",
     guidance_circular_chain: "Esto crearía un bucle donde los agentes se activan entre sí sin fin. Revisa tu cadena de agentes y elimina la referencia circular.",
     guidance_parse_error: "La respuesta no estaba en el formato esperado. Esto puede indicar un cambio de API o datos mal formados.",
-    guidance_process_exit: "El proceso subyacente reportó un fallo. Revisa el registro de ejecución para más detalles.",
+    guidance_process_exit: "El proceso subyacente reportó un fallo. Revisa el registro de ejecución para más detalles."
   },
   process_labels: {
     n8n_transform: "Transformación n8n",
@@ -8287,10 +9158,11 @@ export const es = {
     lab_run: "Ejecución de Lab",
     connector_test: "Prueba de Conector",
     creative_session: "Sesión Creativa",
+    feedback_chat: "Chat de Retroalimentación",
     complete_suffix: "Completado",
     failed_suffix: "Fallido",
     pending_reviews_one: "{count} revisión pendiente esperando aprobación",
-    pending_reviews_other: "{count} revisiones pendientes esperando aprobación",
+    pending_reviews_other: "{count} revisiones pendientes esperando aprobación"
   },
   eval_strategies: {
     keyword_match_label: "Calidad de Salida",
@@ -8302,7 +9174,7 @@ export const es = {
     confusion_detect_label: "Detección de Confusión",
     confusion_detect_description: "Verifica frases conocidas de confusión/fallo",
     composite_label: "Compuesto",
-    composite_description: "Combinación ponderada de todas las estrategias",
+    composite_description: "Combinación ponderada de todas las estrategias"
   },
   drift_labels: {
     kind_error_pattern: "Patrón de Error",
@@ -8330,7 +9202,7 @@ export const es = {
     suggestion_error_handling: "Revisa la sección errorHandling y agrega manejo para este patrón de fallo.",
     suggestion_near_timeout: "Considera aumentar el tiempo límite o simplificar el alcance de la tarea del agente en las instrucciones.",
     suggestion_high_cost: "Ajusta las instrucciones para reducir el uso de tokens, o considera usar un modelo más pequeño.",
-    suggestion_repeated_failure: "Considera ejecutar un nuevo análisis de diseño para reconstruir la configuración del agente.",
+    suggestion_repeated_failure: "Considera ejecutar un nuevo análisis de diseño para reconstruir la configuración del agente."
   },
   feedback_labels: {
     accurate_prompt: "Indicador Preciso",
@@ -8343,13 +9215,13 @@ export const es = {
     over_engineered: "Sobreingeniería",
     under_specified: "Insuficientemente Especificado",
     wrong_triggers: "Disparadores Incorrectos",
-    credential_issues: "Problemas de Credenciales",
+    credential_issues: "Problemas de Credenciales"
   },
   protocol_labels: {
     manual_review: "Revisión Manual",
     user_message: "Notificaciones de Usuario",
     agent_memory: "Memoria del Agente",
-    emit_event: "Emisión de Eventos",
+    emit_event: "Emisión de Eventos"
   },
   execution: {
     budget_exceeded: "Presupuesto mensual excedido para este agente. Anula la pausa de presupuesto en los ajustes del agente o aumenta el presupuesto para continuar.",
@@ -8366,6 +9238,11 @@ export const es = {
     waiting_for_output: "Esperando salida...",
     no_output: "Sin salida",
     background: "Segundo plano",
+    needs_credential: "necesita credencial",
+    run_preview: "Vista Previa de Ejecución",
+    close_preview: "Cerrar vista previa",
+    budget_limit: "Límite de presupuesto",
+    run_agent: "Ejecutar Agente"
   },
   gitlab: {
     integration_title: "Integración de GitLab",
@@ -8480,6 +9357,10 @@ export const es = {
     play_sound: "Reproducir sonido",
     cicd_agent_templates: "Plantillas de Agentes CI/CD",
     your_tier: "(el tuyo)",
+    trigger_on: "en:",
+    connecting_to_gitlab: "Conectando a GitLab...",
+    deploying_to_gitlab: "Desplegando persona a GitLab...",
+    pipeline_hash: "Pipeline #"
   },
   pipeline: {
     agent_teams: "Equipos de Agentes",
@@ -8627,6 +9508,11 @@ export const es = {
     run_pipeline_or_add: "Ejecuta un pipeline o agrega uno manualmente",
     load_more: "Cargar más",
     showing_count: "Mostrando {shown} de {total}",
+    no_timeline_data: "No hay datos de línea de tiempo",
+    clear_filter: "Limpiar filtro",
+    filter_to_run: "Filtrar a esta ejecución",
+    new_memories_one: "{count} nueva memoria",
+    new_memories_other: "{count} nuevas memorias"
   },
   composition: {
     select_persona: "Seleccionar Persona",
@@ -8675,10 +9561,10 @@ export const es = {
     add_input_node: "Agregar nodo de Entrada",
     add_persona_node: "Agregar nodo de Persona",
     add_output_node: "Agregar nodo de Salida",
-    run: "Ejecutar",
+    run: "Ejecutar"
   },
   auth: {
-    login_timed_out: "Tiempo de inicio de sesión agotado. Por favor intenta de nuevo.",
+    login_timed_out: "Tiempo de inicio de sesión agotado. Por favor intenta de nuevo."
   },
   shared: {
     blast_checking_impact: "Verificando impacto...",
@@ -8813,6 +9699,15 @@ export const es = {
     cmd_select: "seleccionar",
     cmd_commands: "comandos",
     draft_editor: {
+      edit_tabs_label: "Pestañas de edición del borrador",
+      request_ai_adjustments: "Solicitar Ajustes de IA",
+      edit_raw_json_hint: "Editar JSON crudo. Los cambios sobrescriben los campos del formulario.",
+      no_custom_sections: "Aún no hay secciones personalizadas",
+      no_content_to_preview: "No hay contenido para previsualizar",
+      edit_raw: "Editar Crudo",
+      credential_links: "Enlaces de Credenciales",
+      view_full_prompt: "Ver Prompt Completo",
+      hide_full_prompt: "Ocultar Prompt Completo",
       persona_name_placeholder: "Nombre de persona...",
       description_placeholder: "Breve descripción...",
       refine_placeholder: "Ejemplo: Hacer el manejo de errores más estricto, agregar lógica de reintento...",
@@ -8833,55 +9728,108 @@ export const es = {
       design_context_json: "JSON del contexto de diseño...",
       click_next: "Haz clic en siguiente para proceder con la transformación.",
       configure_transform: "Configurar Transformación",
-      select: "Seleccionar...",
+      select: "Seleccionar..."
     },
     forms_extra: {
+      color_hex_placeholder: "#8b5cf6",
+      attach_file_title: "Adjuntar archivo (spec de API, esquema, configuración MCP)",
+      add_references_title: "Agregar URLs de referencia o cadenas de conexión",
+      no_matches: "Sin coincidencias",
+      all_prefix: "Todos (",
       references: "Referencias",
       references_placeholder: "Pega URLs, cadenas de conexión, claves de API o cualquier información de referencia (una por línea)",
       remove_file: "Eliminar archivo",
       choose_color: "Elegir color",
       choose_icon: "Elegir ícono",
       filter_placeholder: "Filtrar...",
-      reset_to_default: "Restablecer al predeterminado",
+      reset_to_default: "Restablecer al predeterminado"
     },
     reasoning_trace: {
+      heartbeat_silent: "s (silencio",
+      waiting: "Esperando eventos de ejecución...",
+      tool_call_label: "Llamada a Herramienta:",
       system_init: "Inicialización del Sistema",
       reasoning: "Razonamiento",
       tool_call: "Llamada a Herramienta: {name}",
       result: "Resultado",
       complete: "Completado",
-      error: "Error",
+      error: "Error"
     },
     sidebar_extra: {
+      clear_completed_title: "Limpiar elementos completados y en cola",
+      no_credentials: "Aún no hay credenciales",
+      ai_setup_wizard: "Asistente de Configuración con IA",
+      all_personas: "Todas las personas",
+      no_scheduled_agents: "No hay agentes con programaciones",
+      all_agents_label: "Todos los Agentes",
+      draft_builds: "Borradores en construcción",
+      dev_tools_label: "Dev Tools",
+      obsidian_brain: "Cerebro de Obsidian",
+      active_twin: "Gemelo Activo",
+      research_lab: "Laboratorio de Investigación",
       agents: "Agentes",
       schedules: "Horarios",
       remove_favorites: "Eliminar de favoritos",
       add_favorites: "Agregar a favoritos",
-      active_project: "Proyecto Activo",
+      active_project: "Proyecto Activo"
     },
     execution_detail: {
+      running: "Ejecutándose...",
+      rerun: "Re-ejecutar",
+      retry_prefix: "Reintento #",
+      importance_prefix: "importancia:",
+      confidence_suffix: "% de confianza",
       copy: "Copiar",
       suggested_actions: "Acciones Sugeridas",
       knowledge_insight: "Perspectiva de Conocimiento",
       outcome_assessment: "Evaluación de Resultado",
-      blockers: "Bloqueadores",
+      blockers: "Bloqueadores"
     },
     progress_extra: {
+      continue_working: "Puedes continuar trabajando -- te avisaremos cuando el borrador esté listo.",
+      draft_ready: "Tu borrador de persona está listo para revisión y edición.",
+      click_generate: "Haz clic en \\u201cGenerar Borrador de Persona\\u201d para comenzar.",
+      skip_configuration: "Omitir configuración",
+      no_config_questions: "No se necesitan preguntas de configuración.",
+      answer_questions: "Responde estas preguntas para personalizar la generación de la persona.",
+      no_output: "Aún no hay salida...",
+      s_elapsed: "s transcurridos",
+      s_remaining: "s restantes",
+      show_cli_output: "Mostrar salida de CLI",
+      hide_cli_output: "Ocultar salida de CLI",
       taking_longer: "Tomando más tiempo de lo esperado",
       complete: "Completado",
       resuming: "Reanudando sesión de transformación anterior...",
       cancel_transformation: "Cancelar transformación",
       draft_generated: "Borrador generado exitosamente",
       transformation_failed: "Transformación fallida",
-      waiting_to_start: "Esperando para iniciar la transformación...",
+      waiting_to_start: "Esperando para iniciar la transformación..."
     },
     terminal_extra: {
+      connecting: "Conectando al proveedor",
+      queued_at: "En cola en la posición",
+      new_line: "nueva línea",
+      new_lines: "nuevas líneas",
+      below: "abajo",
+      lines_suffix: "líneas)",
+      search_and_filter: "Buscar y Filtrar",
       press_enter: "Presiona Enter o haz clic en Reproducir para iniciar",
       connection_failed: "Conexión fallida — verifica la configuración del proveedor y reintenta",
       search_output: "Buscar en salida...",
-      dismiss: "Descartar",
+      dismiss: "Descartar"
     },
     use_cases_extra: {
+      input_placeholder: "Escribe entrada para ejecutar este caso de uso…",
+      model_placeholder: "p. ej. claude-3-5-sonnet-latest",
+      use_case_singular: "caso de uso",
+      window_prefix: "(ventana:",
+      loading_history: "Cargando historial...",
+      no_executions: "Aún no hay ejecuciones",
+      run_to_see_history: "Ejecuta este caso de uso para ver historial de ejecuciones, tiempos y costos aquí.",
+      run_use_case: "Ejecutar este caso de uso",
+      custom_model: "Modelo personalizado",
+      no_results: "No se encontraron resultados",
+      ctrl_enter: "Ctrl+Enter",
       example_output: "Salida de ejemplo",
       input_data: "Datos de Entrada",
       rerun_input: "Volver a ejecutar con esta entrada",
@@ -8889,7 +9837,7 @@ export const es = {
       error_prefix: "Error: ",
       output_prefix: "Salida: ",
       toggle_history: "Alternar historial de ejecución",
-      configure_model: "Configurar modelo, notificaciones y suscripciones",
+      configure_model: "Configurar modelo, notificaciones y suscripciones"
     },
     json_valid: "JSON válido",
     json_invalid: "JSON inválido",
@@ -8897,6 +9845,85 @@ export const es = {
     json_format_tooltip: "Formatear JSON",
     agent_icon_label: "ícono del agente",
     breadcrumb_label: "Ruta de navegación",
-    breadcrumb_show_hidden: "Mostrar rutas de navegación ocultas",
+    breadcrumb_show_hidden: "Mostrar rutas de navegación ocultas"
   },
+  releases: {
+    whats_new: {
+      title: "Novedades",
+      subtitle_roadmap: "Lo que estamos construyendo ahora y lo que viene después.",
+      subtitle_changelog: "Novedades de tu versión de Personas.",
+      nav_bar_roadmap_label: "Hoja de Ruta",
+      empty: "Aún no hay nada que compartir para este lanzamiento — vuelve pronto.",
+      status_released: "Publicado",
+      status_active: "Actual",
+      status_planned: "Planificado",
+      status_roadmap: "Hoja de Ruta",
+      type_feature: "Nuevo",
+      type_fix: "Arreglado",
+      type_security: "Seguridad",
+      type_docs: "Docs",
+      type_chore: "Tarea",
+      type_breaking: "Ruptura",
+      item_status_in_progress: "En Progreso",
+      item_status_planned: "Planificado",
+      item_status_completed: "Hecho",
+      priority_now: "Ahora",
+      priority_next: "Siguiente",
+      priority_later: "Después",
+      summary_in_progress: "{count} En Progreso",
+      summary_next: "{count} Siguientes",
+      release_0_0_1_label: "Alpha 1",
+      release_0_0_1_summary: "La primera vista previa de Personas.",
+      release_0_0_1_item_1_title: "Primera vista previa pública",
+      release_0_0_1_item_1_description: "Diseña agentes de IA, ejecútalos en un horario o mediante disparador y observa su trabajo en vivo en tu escritorio.",
+      release_0_0_2_label: "Alpha 2",
+      release_0_0_2_summary: "Conecta Personas con otras herramientas de IA y lee las novedades sin salir de la app.",
+      release_0_0_2_item_1_title: "Abre tus agentes a otras herramientas de IA",
+      release_0_0_2_item_1_description: "Personas ahora puede comunicarse con otras herramientas de IA a través de un protocolo compartido. Elige exactamente qué agentes quieres compartir y protégelos con claves de acceso que tú controlas — tus agentes privados permanecen privados por defecto.",
+      release_0_0_2_item_2_title: "Acceso más seguro para la app de escritorio",
+      release_0_0_2_item_2_description: "La app de escritorio crea su propia clave de acceso de corta duración en cada inicio, para poder comunicarse con sus servicios en segundo plano sin exponer nada que no hayas aprobado.",
+      release_0_0_2_item_3_title: "Notas de versión dentro de la app",
+      release_0_0_2_item_3_description: "Consulta las novedades de cada lanzamiento de Personas sin salir de la app. Cambia entre versiones anteriores, el lanzamiento actual y la hoja de ruta a largo plazo desde un solo lugar.",
+      release_0_0_2_item_4_title: "Tus agentes aprenden de cada sesión",
+      release_0_0_2_item_4_description: "Personas ahora captura las lecciones de cada sesión de agente, las destila en conocimiento reutilizable y las lleva a la siguiente ejecución. Tus agentes se vuelven más inteligentes cuanto más los usas — sin necesidad de entrenamiento manual.",
+      release_0_0_2_item_5_title: "Convierte cualquier documento en un briefing escuchable",
+      release_0_0_2_item_5_description: "Una nueva plantilla que transforma informes de investigación, transcripciones de reuniones o artículos largos en una conversación de audio de 5 a 15 minutos entre dos presentadores que puedes escuchar donde quieras. Tú eliges el estilo — casual, formal, noticia o ejecutivo — y revisas el guion antes de que se generen las voces.",
+      release_0_0_2_item_6_title: "Un editor entrenado por Stanford para tu escritura",
+      release_0_0_2_item_6_description: "Una nueva plantilla que revisa tus borradores usando el método \"Writing in the Sciences\" de Stanford. Marca la voz pasiva, las frases sin peso y la jerga — y explica exactamente por qué cada sugerencia hace que la oración sea más clara. Aprende tu voz a partir de las ediciones que aceptas o rechazas.",
+      release_0_0_2_item_7_title: "Convierte 20 horas de producción de YouTube en 3",
+      release_0_0_2_item_7_description: "Una nueva plantilla comprime un ciclo completo de video de YouTube a unas tres horas manejando todo excepto la filmación. Verifica que tu nicho valga la pena, redacta un guion con gancho inicial en tu voz y elimina automáticamente las tomas repetidas del material bruto usando el guion aprobado como verdad — para que puedas filmar con naturalidad, tropezar libremente y seguir adelante.",
+      release_0_0_2_item_8_title: "Ejecuta scrapers de Apify desde tus agentes",
+      release_0_0_2_item_8_description: "Conecta cualquier actor de la plataforma Apify — scrapers de YouTube, scrapers de Twitter, automatización de navegador y cientos más — directamente a tus agentes. Desbloquea flujos de investigación que necesitan datos que las APIs oficiales no pueden alcanzar.",
+      release_0_0_2_item_9_title: "X (Twitter) ahora es un conector",
+      release_0_0_2_item_9_description: "Busca tweets recientes, rastrea temas tendencia y publica directamente desde tus agentes. Útil para investigación de contenido, escucha social y automatización de marketing sin salir de Personas.",
+      release_0_0_2_item_10_title: "Mira YouTube desde tus agentes",
+      release_0_0_2_item_10_description: "El primer conector de plataforma de video en Personas. Busca videos, obtén estadísticas de canales, extrae contenido tendencia y analiza competidores directamente desde cualquier agente que necesite entender lo que sucede en YouTube.",
+      release_0_0_2_item_11_title: "Convierte audio a texto con Deepgram",
+      release_0_0_2_item_11_description: "Un nuevo conector de voz a texto que transcribe archivos de audio o URLs con marcas de tiempo a nivel de palabra. Potencia al asistente de creadores de YouTube para auto-edición, y da a cualquier agente la capacidad de procesar notas de voz, grabaciones de reuniones o contenido de podcast.",
+      release_0_0_2_item_12_title: "Otras herramientas de IA pueden consultar y detener tus agentes",
+      release_0_0_2_item_12_description: "Cuando otra herramienta de IA llama a uno de tus agentes compartidos, ahora puede preguntar '¿sigue en ejecución?' y 'detente ahora' a mitad de camino. Los trabajos largos de investigación ya no tienen que mantener la conexión abierta todo el tiempo, y las ejecuciones atascadas pueden cancelarse limpiamente desde el lado que las llamó. Cada agente sólo ve sus propias ejecuciones, así que nada se filtra entre agentes.",
+      release_0_0_2_item_13_title: "Nuevo conector: Humbalytics analytics",
+      release_0_0_2_item_13_description: "Rastrea tráfico, ejecuta experimentos A/B e intercambia textos de landing page sin tocar tu código. Personas ahora puede extraer mapas de calor y datos de conversión de Humbalytics y usarlos para guiar tus experimentos.",
+      release_0_0_2_item_14_title: "Nuevo conector: scraping web con Firecrawl",
+      release_0_0_2_item_14_description: "Los agentes ahora pueden leer cualquier sitio web — incluso los modernos con mucho JavaScript — como contenido estructurado y limpio. Útil para agentes de investigación, inteligencia de mercado y monitoreo de contenido.",
+      release_0_0_2_item_15_title: "Un agente de marketing que realmente ejecuta tus pruebas A/B",
+      release_0_0_2_item_15_description: "Una nueva plantilla que propone variantes de titulares, las despliega con tu aprobación, espera significancia estadística y promueve a los ganadores automáticamente. Cada cambio se valida con un humano antes de publicarse, y cada experimento se ejecuta el tiempo suficiente para que los resultados realmente signifiquen algo.",
+      release_0_0_2_item_16_title: "Lee los dashboards de BI de tu equipo desde cualquier agente",
+      release_0_0_2_item_16_description: "Personas ahora puede extraer resultados de consultas y dashboards guardados de Redash. Si tu equipo ya mantiene dashboards compartidos, tus agentes leen los mismos números que ven los humanos — sin reescritura de SQL, sin exportaciones CSV, sin copiar y pegar.",
+      release_0_0_2_item_17_title: "Metabase ahora es un conector",
+      release_0_0_2_item_17_description: "Tus agentes pueden ejecutar preguntas guardadas de Metabase y leer dashboards directamente desde tu workspace. Funciona con Metabase Pro, Enterprise y cualquier instancia auto-alojada.",
+      release_0_0_2_item_18_title: "Resumen diario de BI entregado a ti",
+      release_0_0_2_item_18_description: "Una nueva plantilla toma las consultas guardadas que ya mantienes en Redash o Metabase, resume los números más recientes cada mañana y publica un resumen en lenguaje sencillo con marcadores de anomalías semana a semana. Tus dashboards siguen siendo útiles incluso cuando nadie los abre.",
+      release_roadmap_label: "Hoja de Ruta",
+      release_roadmap_summary: "Lo que estamos construyendo ahora y lo que viene después.",
+      release_roadmap_item_2_title: "Integración en la Nube",
+      release_roadmap_item_2_description: "Ejecuta tus agentes 24/7 en la nube y transmite su trabajo de vuelta a tu escritorio en tiempo real.",
+      release_roadmap_item_3_title: "App Web",
+      release_roadmap_item_3_description: "Un complemento web para cuentas, facturación y gestión de agentes desde cualquier navegador.",
+      release_roadmap_item_4_title: "Usa Personas en tu idioma",
+      release_roadmap_item_4_description: "Soporte multi-idioma completo, incluyendo disposiciones de derecha a izquierda y fuentes específicas por idioma.",
+      release_roadmap_item_6_title: "Espacios de Trabajo en Equipo",
+      release_roadmap_item_6_description: "Construye agentes junto a tu equipo — espacios compartidos, permisos por rol y dashboards en vivo."
+    }
+  }
 };
