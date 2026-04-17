@@ -13,6 +13,8 @@ interface ExecutionSummaryCardProps {
 
 function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]; uniqueTools: string[] }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
 
   if (toolCalls.length === 0) return null;
 
@@ -24,9 +26,9 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Wrench className="w-3 h-3" />
-        <span>{toolCalls.length} tool call{toolCalls.length !== 1 ? 's' : ''}</span>
+        <span>{tx(toolCalls.length === 1 ? e.tool_calls_count : e.tool_calls_count_other, { count: toolCalls.length })}</span>
         <span className="text-foreground">
-          ({uniqueTools.length} unique)
+          {tx(e.unique_tools_count, { count: uniqueTools.length })}
         </span>
       </button>
       {expanded && (

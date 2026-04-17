@@ -15,7 +15,7 @@ export function OutputDiffSection({
   rightId: string;
   personaId: string;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const [logLeft, setLogLeft] = useState<string | null>(null);
   const [logRight, setLogRight] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function OutputDiffSection({
         {e.terminal_output_diff}
         {diff.length > 0 && (
           <span className="typo-body text-foreground">
-            ({diff.filter(d => d.type !== 'same').length} differences)
+            {tx(e.differences_count, { count: diff.filter(d => d.type !== 'same').length })}
           </span>
         )}
       </button>

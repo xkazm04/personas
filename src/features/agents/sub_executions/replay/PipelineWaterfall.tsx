@@ -103,7 +103,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
             {e.stage}
           </div>
           <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-            <span>0ms</span>
+            <span>{e.zero_ms}</span>
             <span>{formatDuration(totalDurationMs)}</span>
           </div>
           <div className="typo-code text-foreground uppercase tracking-wider text-right">

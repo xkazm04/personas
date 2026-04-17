@@ -181,9 +181,9 @@ export function ChainCascadeTimeline({
 
             {/* Chain summary */}
             <div className="px-4 pb-3 flex items-center gap-3 text-[10px] font-mono text-foreground">
-              <span>Chain: {chainTraceId.slice(0, 8)}</span>
-              <span>Total: {formatDuration(chainDurationMs)}</span>
-              <span>Depth: {sortedTraces.length}</span>
+              <span>{tx(e.chain_id_prefix, { id: chainTraceId.slice(0, 8) })}</span>
+              <span>{tx(e.chain_total_duration, { duration: formatDuration(chainDurationMs) })}</span>
+              <span>{e.depth_label} {sortedTraces.length}</span>
             </div>
           </div>
         )}

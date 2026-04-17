@@ -183,8 +183,8 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                                   </div>
                                 )}
                                 <div className="flex items-center gap-3 text-[10px] font-mono text-foreground">
-                                  <span>Category: {issue.category}</span>
-                                  <span>Status: {issue.status}</span>
+                                  <span>{tx(e.category_label, { category: issue.category })}</span>
+                                  <span>{tx(e.status_label, { status: issue.status })}</span>
                                 </div>
                               </div>
                             </div>

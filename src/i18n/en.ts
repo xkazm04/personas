@@ -4095,7 +4095,11 @@ export const en = {
       // The <em> portion is handled in JSX; this is the plain-text description part
       universal_auto_setup_hint: "Provide a URL and description, and AI will navigate the site to discover and create API credentials automatically.",
       service_url_label: "Service URL",
+      // Placeholder for the service URL input
+      service_url_placeholder: "https://app.example.com or https://developer.example.com",
       what_do_you_need: "What do you need?",
+      // Placeholder for the description textarea
+      description_placeholder: "e.g. I need an API key for their REST API to read and write data. The developer portal has an API Keys section under Settings.",
       discover_credentials: "Discover Credentials",
       // UniversalAutoCredReview header
       // {label} = discovered service name
@@ -6901,6 +6905,106 @@ export const en = {
       start_review_custom: "Start Review ({count} case{plural})",
       copy_log: "Copy Log",
       copied_log: "Copied!",
+
+      // -- CreateTemplateModal footer buttons --
+      // Back button in the create-template wizard footer
+      back: "Back",
+      // Primary CTA on the Describe step — triggers AI generation
+      generate_template: "Generate Template",
+      // Button shown after generation completes — opens the review step
+      view_draft: "View Draft",
+      // Save button shown while save is in progress
+      saving: "Saving...",
+      // Save button shown when draft is ready to save
+      save_template: "Save Template",
+      // Confirmation label shown after a template has been saved
+      template_saved: "Template Saved",
+
+      // -- CreateTemplateSteps (DescribeStep) --
+      // Label for the template name input field
+      template_name_label_step: "Template Name",
+      // Placeholder for template name input
+      template_name_placeholder: "Template name...",
+      // Label for the description textarea
+      description_label: "Description",
+      // Placeholder for the description textarea
+      description_placeholder: "Describe what this persona should do, what services it connects to, and how it should behave. Be specific about tools, triggers, and integrations needed.\n\nExample: A persona that monitors a Gmail inbox for important emails, classifies them by priority, sends Slack notifications for urgent ones, and creates a daily digest summary.",
+      // Hint below the description textarea explaining what the AI will generate
+      description_hint: "The AI will generate a full persona template including system prompt, tools, triggers, connectors, and template variables.",
+
+      // -- DesignReviewTerminal --
+      // Placeholder shown in terminal area before review starts
+      terminal_placeholder: "Output will appear here when the review starts",
+      // Running indicator shown at bottom of terminal while review is active
+      terminal_running: "Running...",
+      // Result summary: passed count
+      result_passed: "{count} passed",
+      // Result summary: failed count
+      result_failed: "{count} failed",
+      // Result summary: errored count
+      result_errored: "{count} errors",
+      // Result summary: total tests
+      result_total: "{count} total tests",
+
+      // -- ModeTabBar --
+      // Tab label for predefined run mode (5 built-in test cases)
+      mode_predefined: "Predefined (5)",
+      // Tab label for custom run mode
+      mode_custom: "Custom",
+      // Tab label for batch run mode; no count suffix when empty
+      mode_batch: "Batch",
+      // Batch tab label when templates are loaded; {count} is number of templates
+      mode_batch_count: "Batch ({count})",
+
+      // -- BatchSourceView --
+      // Instruction text shown before uploading batch file
+      batch_upload_hint: "Upload a list.md file with numbered template entries to batch-generate templates via Claude CLI.",
+      // Upload button label
+      batch_upload_btn: "Upload list.md",
+      // Format hint shown below upload button
+      batch_format_hint: "Expected format:",
+      // "All" filter chip label with count
+      batch_all: "All ({count})",
+      // Batch generation count label; {count} is number of templates filtered
+      batch_count: "{count} template{plural} will be generated via Claude CLI (~45s each)",
+      // Clear button to remove all loaded batch templates
+      batch_clear: "Clear",
+
+      // -- CustomSourceView --
+      // Header describing how many cases are ready
+      custom_count: "Define template use cases ({count} ready)",
+      // Title attribute on the file upload button
+      custom_load_file_title: "Load from .txt or .md file",
+      // Load file button label
+      custom_load_file: "Load file",
+      // Add case button label
+      custom_add: "Add",
+      // Placeholder for individual case name input; example in parentheses
+      custom_case_name_placeholder: "Template name (e.g. Gmail Smart Filter)",
+      // Placeholder for case instruction textarea
+      custom_instruction_placeholder: "Describe what this persona should do, which services to integrate, and what triggers should activate it...",
+      // Validation hint when instruction is too short; {current}/{min} character counts
+      custom_short_instruction: "{current}/{min} characters minimum",
+      // Category dropdown default option
+      custom_category_default: "Category...",
+      // Trigger dropdown default option
+      custom_trigger_default: "Trigger...",
+      // Connectors input placeholder
+      custom_connectors_placeholder: "Connectors (e.g. gmail, slack)",
+      // Guidance hint below the cases list
+      custom_detail_hint: "More detail = better results. Include services, triggers, and expected behavior.",
+      // Toggle to expand/collapse the example
+      custom_show_example: "Show example",
+      // Toggle to hide the expanded example
+      custom_hide_example: "Hide example",
+      // Example card title
+      custom_example_title: "Example: Gmail Smart Filter",
+      // Example card body text
+      custom_example_body: "\"Create an agent that monitors Gmail for important emails, categorizes them by sender and urgency, applies labels, and forwards urgent ones to Slack. Use polling trigger with gmail and slack connectors.\"",
+
+      // -- TemplateSourcePanel (PredefinedView) --
+      // Intro text showing how many predefined cases will run
+      predefined_intro: "Runs {count} predefined use cases through the design engine:",
     },
 
     // Connector edit cell
@@ -7723,6 +7827,15 @@ export const en = {
     result_target_prefix: "Target:",
     // Loading text in lazy-loaded tab areas
     tab_loading: "Loading...",
+
+    // Tooltip for the 'smee.io/new' external link button
+    smee_open_new_title: "Open smee.io/new to create a channel",
+    // Placeholder for relay label input field
+    relay_label_placeholder: "e.g. GitHub — my-repo",
+    // Placeholder for smee relay channel URL input field
+    relay_channel_url_placeholder: "https://smee.io/your-channel-id",
+    // Placeholder for event filter input field in smee relay form
+    relay_filter_placeholder: "github_push, github_pull_request",
     // Tooltip on validate-and-fire trigger button in drawer
     validate_and_fire_title: "Validate trigger config, then fire",
     // Tooltip on dry-run trigger button in drawer
