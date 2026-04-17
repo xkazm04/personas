@@ -81,17 +81,31 @@ export class InvokeTimeoutError extends Error {
 const inflightByKey = new Map<string, Promise<unknown>>();
 
 /**
- * Recursively walks an args object and converts every `undefined` value to
- * `null` so that Rust `Option<T>` fields deserialise correctly.  Arrays and
- * nested objects are handled; non-plain values are left untouched.
+ * Recursively walks an args object (or array) and converts every `undefined`
+ * value to `null` so that Rust `Option<T>` fields deserialise correctly.
+ * Arrays are recursed element-by-element; plain objects are recursed
+ * key-by-key; Date instances and primitives are left untouched.
+ *
+ * @internal — exported for unit tests only; not part of the public API.
  */
-function coerceArgs(args: InvokeArgs): InvokeArgs {
-  if (Array.isArray(args)) return args;
+export function coerceArgs(args: InvokeArgs): InvokeArgs {
+  if (Array.isArray(args)) {
+    return args.map((item) => {
+      if (item === undefined) return null;
+      if (item !== null && typeof item === "object" && !(item instanceof Date)) {
+        // Covers both plain objects and nested arrays — recurse into both.
+        return coerceArgs(item as InvokeArgs);
+      }
+      return item;
+    }) as InvokeArgs;
+  }
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args as Record<string, unknown>)) {
     if (v === undefined) {
       out[k] = null;
-    } else if (v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+    } else if (Array.isArray(v)) {
+      out[k] = coerceArgs(v as InvokeArgs);
+    } else if (v !== null && typeof v === "object" && !(v instanceof Date)) {
       out[k] = coerceArgs(v as InvokeArgs);
     } else {
       out[k] = v;
