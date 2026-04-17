@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Eye, Pencil } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SectionEditorProps {
   value: string;
@@ -41,6 +42,7 @@ function HighlightedSource({ value }: { value: string }) {
 }
 
 export function SectionEditor({ value, onChange, label, placeholder, disabled }: SectionEditorProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'edit' | 'preview'>('preview');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
@@ -123,7 +125,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
             {value.trim() ? (
               <MarkdownRenderer content={value} />
             ) : (
-              <p className="typo-body text-foreground italic">No content to preview</p>
+              <p className="typo-body text-foreground italic">{t.shared.draft_editor.no_content_to_preview}</p>
             )}
           </div>
         )}

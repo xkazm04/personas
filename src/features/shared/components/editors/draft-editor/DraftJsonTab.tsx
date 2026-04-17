@@ -5,6 +5,7 @@ import json from 'highlight.js/lib/languages/json';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/hooks/n8nTypes';
 import { sanitizeHljsHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { useTranslation } from '@/i18n/useTranslation';
 
 hljs.registerLanguage('json', json);
 
@@ -16,6 +17,7 @@ interface DraftJsonTabProps {
 }
 
 export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange }: DraftJsonTabProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -67,7 +69,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
         <div className="flex items-center gap-2">
           <Code className="w-3.5 h-3.5 text-foreground" />
           <p className="typo-body text-foreground">
-            Edit raw JSON. Changes override form fields.
+            {t.shared.draft_editor.edit_raw_json_hint}
           </p>
         </div>
         <button

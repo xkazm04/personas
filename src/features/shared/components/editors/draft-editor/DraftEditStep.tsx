@@ -116,7 +116,7 @@ export function DraftEditStep({
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label="Draft edit tabs">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label={t.shared.draft_editor.edit_tabs_label}>
         {allTabs.map((tab) => (
           <button
             key={tab.id}
@@ -191,7 +191,7 @@ export function DraftEditStep({
         <div className="border-t border-primary/10 pt-4 space-y-2 flex-shrink-0">
           <label className="typo-heading text-foreground uppercase tracking-wider flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
-            Request AI Adjustments
+            {t.shared.draft_editor.request_ai_adjustments}
           </label>
           <div className="flex gap-2">
             <textarea

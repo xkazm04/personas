@@ -61,7 +61,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             }`}
           >
             <Pencil className="w-3 h-3" />
-            Edit Raw
+            {t.shared.draft_editor.edit_raw}
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <Link className="w-3.5 h-3.5 text-foreground" />
                   <p className="typo-heading text-foreground uppercase tracking-wider">
-                    Credential Links
+                    {t.shared.draft_editor.credential_links}
                   </p>
                 </div>
                 <div className="space-y-1.5">

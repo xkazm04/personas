@@ -5700,13 +5700,50 @@ export const en = {
     section_card: { checking: "Checking {section}...", edit_key: "Edit Key", configure: "Configure", edit_config: "Edit Config", signing_in: "Signing in...", sign_in_google: "Sign in with Google", working: "Working...", connect_claude: "Connect to Claude Desktop", disconnect: "Disconnect" },
     metrics_cards: { cost_spike: "Cost spike", above_avg: "above avg", top_executions: "Top executions:" },
     event_log_item: { event_id: "Event ID", project: "Project", source: "Source", processed: "Processed", event_data: "Event Data", copy_event_data: "Copy event data", copied: "Copied", copy: "Copy", error: "Error", system: "System" },
-    burn_rate_extra: { title: "Burn Rate Projections", daily_burn: "Daily Burn", projected_monthly: "Projected Monthly", at_risk: "At Risk", top_cost_drivers: "Top Cost Drivers", budget_exhaustion_warnings: "Budget Exhaustion Warnings", exhausted: "Exhausted", days_left: "{days}d left" },
+    burn_rate_extra: { title: "Burn Rate Projections", daily_burn: "Daily Burn", projected_monthly: "Projected Monthly", at_risk: "At Risk", top_cost_drivers: "Top Cost Drivers", budget_exhaustion_warnings: "Budget Exhaustion Warnings", exhausted: "Exhausted", days_left: "{days}d left",
+      // Subtitle showing count of active personas — keep concise
+      active_personas_subtitle: "{count} active personas · local month boundary",
+    },
     cascade: { title: "Chain Cascade Map", no_chains: "No chains detected -- all personas operating independently" },
-    predictive_alerts_extra: { title: "Predictive Alerts", all_nominal: "All systems nominal", no_alerts: "No predictive alerts -- all personas within healthy parameters.", budget_exhausted: "Budget Exhausted", budget_exhaustion_in: "Budget exhaustion in {days}d", failure_spike_predicted: "Failure rate spike predicted in {days}d", excessive_healing: "Excessive self-healing activity", critical_health: "Critical health status", byom_recommendations: "BYOM Routing Recommendations" },
-    annotate_modal: { title: "Add Knowledge Annotation", persona_label: "Attribution Persona", scope_label: "Scope", tool_name: "Tool Name", connector_type: "Connector / Service Type", annotation_label: "Annotation", cancel: "Cancel", saving: "Saving...", save_annotation: "Save Annotation" },
-    knowledge_row: { annotation: "Annotation", successes: "Successes", failures: "Failures", avg_cost: "Avg Cost", avg_duration: "Avg Duration", pattern_data: "Pattern Data", collapse_details: "Collapse details", expand_details: "Expand details", verify_annotation: "Verify annotation", dismiss_annotation: "Dismiss annotation" },
-    focused_decision: { accept: "Accept", reject: "Reject", media_unavailable: "Media unavailable" },
-    review_focus: { all_caught_up: "All caught up", no_pending: "No pending reviews to process.", queue: "Queue", clear: "Clear", clear_all_verdicts: "Clear all verdicts", quick_actions: "Quick Actions", reject_all: "Reject all", accept_all: "Accept all", retry_with_changes: "Retry with changes" },
+    predictive_alerts_extra: { title: "Predictive Alerts", all_nominal: "All systems nominal", no_alerts: "No predictive alerts -- all personas within healthy parameters.", budget_exhausted: "Budget Exhausted", budget_exhaustion_in: "Budget exhaustion in {days}d", failure_spike_predicted: "Failure rate spike predicted in {days}d", excessive_healing: "Excessive self-healing activity", critical_health: "Critical health status", byom_recommendations: "BYOM Routing Recommendations",
+      // /mo abbreviation suffix after a cost figure — "saving $X/mo"
+      per_month: "/mo",
+      // % conf abbreviation after a confidence figure — "95% conf"
+      confidence_pct: "% conf",
+    },
+    annotate_modal: { title: "Add Knowledge Annotation", persona_label: "Attribution Persona", scope_label: "Scope", tool_name: "Tool Name", connector_type: "Connector / Service Type", annotation_label: "Annotation", cancel: "Cancel", saving: "Saving...", save_annotation: "Save Annotation",
+      // Placeholder for annotation textarea — example annotation text
+      annotation_placeholder: "e.g. Stripe webhook verification requires the raw request body, not the parsed JSON",
+    },
+    knowledge_row: { annotation: "Annotation", successes: "Successes", failures: "Failures", avg_cost: "Avg Cost", avg_duration: "Avg Duration", pattern_data: "Pattern Data", collapse_details: "Collapse details", expand_details: "Expand details", verify_annotation: "Verify annotation", dismiss_annotation: "Dismiss annotation",
+      // aria-label for the inline execution trend sparkline SVG
+      execution_trend_label: "Execution trend",
+    },
+    // Dev-only seed button in the knowledge graph dashboard
+    knowledge_graph: {
+      mock_pattern: "Mock Pattern",
+      // tooltip for the dev-only seed button
+      seed_tooltip: "Seed a mock pattern (dev only)",
+    },
+    focused_decision: { accept: "Accept", reject: "Reject", media_unavailable: "Media unavailable",
+      // Fallback content inside <video> element when browser lacks video support
+      video_not_supported: "Your browser does not support video playback.",
+    },
+    review_focus: { all_caught_up: "All caught up", no_pending: "No pending reviews to process.", queue: "Queue", clear: "Clear", clear_all_verdicts: "Clear all verdicts", quick_actions: "Quick Actions", reject_all: "Reject all", accept_all: "Accept all", retry_with_changes: "Retry with changes",
+      // Fallback content inside <video> element when browser lacks video support
+      video_not_supported: "Your browser does not support video playback.",
+    },
+    // Bulk action bar — selected-item count label
+    bulk_action_bar: {
+      // {count} = number of selected pending reviews
+      pending_reviews_selected_one: "{count} pending review selected",
+      pending_reviews_selected_other: "{count} pending reviews selected",
+    },
+    // Review inbox panel
+    review_inbox: {
+      // tooltip on the resize drag handle between panels
+      drag_to_resize: "Drag to resize",
+    },
     memory_card: { confirm: "Confirm", cancel: "Cancel" },
     memory_detail: { title_label: "Title", content_label: "Content", category_label: "Category", importance_label: "Importance", tags_label: "Tags", view_source_execution: "View Source Execution", delete_memory: "Delete Memory", close: "Close" },
     memory_table: { agent: "Agent", title: "Title", category: "Category", priority: "Priority", tags: "Tags", created: "Created" },
@@ -6659,6 +6696,10 @@ export const en = {
       testing_agent: "Testing agent...",
       approve_and_promote: "Approve & Promote",
       view_agent_btn: "View Agent",
+      // Header label in the Blueprint schematic command center
+      command_center_header: "COMMAND CENTER // BUILD v1.0",
+      // Phase label prefix in the Blueprint schematic — {phase} is the current build phase token
+      phase_label: "[PHASE: {phase}]",
     },
 
     // Activity diagram modal
@@ -7282,6 +7323,110 @@ export const en = {
     loading_catalog: "Loading catalog...",
     no_feeds: "No shared event feeds available yet",
     no_feeds_hint: "Click Refresh to fetch the latest feeds from the cloud",
+
+    // ---- Inline label prefixes shown in TriggerConfigSection ----
+    cron_colon: "Cron:",
+    interval_colon: "Interval:",
+    event_colon: "Event:",
+    endpoint_colon: "Endpoint:",
+    listens_for_colon: "Listens for:",
+    source_filter_colon: "Source filter:",
+    hmac_colon: "HMAC:",
+    paths_colon: "Paths:",
+    events_colon: "Events:",
+    recursive_yes: "Recursive: yes",
+    filter_colon: "Filter:",
+    watches_colon: "Watches:",
+    pattern_colon: "Pattern:",
+    poll_every: "Poll: every",
+    apps_colon: "Apps:",
+    title_colon: "Title:",
+    operator_colon: "Operator:",
+    window_colon: "Window:",
+    id_colon: "ID:",
+    type_colon: "Type:",
+    status_colon: "Status:",
+    target_colon: "Target:",
+    retry_hash: "retry #",
+    model_colon: "model:",
+    next_run_colon: "next run:",
+    local_label: "(local)",
+    then_every: ", then every",
+    source_colon: "source:",
+    dry_run_target_colon: "target:",
+    matched_subscriptions_count: "Matched Subscriptions ({count})",
+    last_label: "Last:",
+    loading_history: "Loading...",
+    zero_unlimited: "0 = unlimited",
+    category_section_label: "Trigger Category",
+    no_persona_selected: "No persona selected",
+    quick_templates_label: "Quick Templates",
+    quick_presets_label: "Quick Presets",
+    cron_expression_label: "Cron Expression",
+    this_persona_will: "This persona will",
+    starting_from: ", starting from when you enable it.",
+    per_day: "per day.",
+    last_poll_label: "Last poll:",
+    deployed_persona_label: "Deployed Persona",
+    fired_at_label: "Fired At",
+    webhook_last_label: "Last:",
+    relay_last_label: "Last:",
+    optional_label: "(optional)",
+    optional_comma_separated: "(optional, comma-separated)",
+    get_channel_url_from: "Get a channel URL from",
+    setup_step1: "Visit smee.io/new to create a free relay channel",
+    setup_step2: "Add the relay here with a label and the channel URL",
+    setup_step3: "Paste the channel URL as a webhook in GitHub / Stripe / any service",
+    setup_step4: "Events appear in Live Stream and route to your agents automatically",
+    studio_empty_desc: "Compose reactive event flows across your personas. Use trigger types as building blocks, add conditional branching and parallel fan-out to create intelligent automation chains.",
+    studio_step1: "1. Add trigger sources from the sidebar (Schedule, Webhook, ...)",
+    studio_step2: "2. Add persona steps to process events",
+    studio_step3: "3. Connect them to build reactive chains",
+    studio_step4: "4. Use condition gates for routing logic",
+    gate_if_else: "If / Else",
+    gate_if_else_desc: "Binary conditional branch",
+    gate_classifier_desc: "Multi-way routing (support, sales, ...)",
+    gate_fan_out: "Fan-Out (Parallel)",
+    gate_fan_out_desc: "Run multiple branches in parallel",
+    palette_help: "Connect trigger sources to persona steps to build reactive chains. Add condition gates for branching logic and parallel fan-out.",
+    toolbar_title_auto_layout: "Auto Layout",
+    toolbar_title_add_note: "Add Sticky Note",
+    toolbar_title_start_dry_run: "Start Dry Run",
+    toolbar_title_stop_dry_run: "Stop Dry Run",
+    toolbar_title_assistant: "Canvas Assistant",
+    toolbar_dry_run: "Dry Run",
+    canvas_assistant_title: "Canvas Assistant",
+    try_asking_hint: "Try asking",
+    assistant_placeholder: "Describe your event topology...",
+    disconnect_persona_title: "Disconnect persona?",
+    disconnect_will_no_longer: "will no longer react to",
+    disconnect_events_reconnect: "events. You can reconnect later.",
+    rename_also_updates: "Also updates historical events, persona event handlers, and trigger audit metadata.",
+    delete_connection_label: "Delete connection",
+    search_personas_placeholder: "Search personas...",
+    no_matching_personas_found: "No matching personas found",
+    clear_search_label: "Clear search",
+    dead_letter_source: "Source:",
+    dead_letter_id: "ID:",
+    event_data_label: "Event Data",
+    shared_prefix: "shared:",
+    nl_type_colon: "Type:",
+    nl_cron_colon: "\u00b7 Cron:",
+    nl_interval_colon: "\u00b7 Interval:",
+    nl_filter_colon: "\u00b7 Filter:",
+    nl_could_not_parse: "Could not parse a trigger from that description. Try something like",
+    active_hours_every_day: "Every day",
+    event_type_to_listen: "Event Type to Listen For",
+    event_type_input_placeholder: "e.g. file_changed, execution_completed",
+    event_type_helper: "Type to search registered event types, or enter a custom type.",
+    source_filter_optional_label: "(optional)",
+    source_filter_input_placeholder: "e.g. watcher-* or exact-source-id",
+    wildcard_hint: "\u2014 trailing * prefix wildcard supported",
+    window_title_pattern_label: "Window Title Pattern",
+    optional_regex_label: "(optional regex)",
+    text_pattern_label: "Text Pattern",
+    credential_event_label: "Credential Event",
+    field_optional: "(optional)",
   },
 
   // -------------------------------------------------------------------
@@ -10118,6 +10263,18 @@ export const en = {
     no_output: "No output",
     // Label for the background executions section
     background: "Background",
+
+    // -- PreRunPreview --
+    // Badge shown on tool row when tool requires a credential that's missing
+    needs_credential: "needs credential",
+    // Header of the pre-run preview panel
+    run_preview: "Run Preview",
+    // aria-label for the close button in the pre-run preview panel
+    close_preview: "Close preview",
+    // Label for the budget limit row in pre-run preview
+    budget_limit: "Budget limit",
+    // Run button label in pre-run preview footer
+    run_agent: "Run Agent",
   },
 
   // -------------------------------------------------------------------
@@ -10843,6 +11000,8 @@ export const en = {
     cmd_select: "select",
     cmd_commands: "commands",
     draft_editor: { persona_name_placeholder: "Persona name...", description_placeholder: "Brief description...", refine_placeholder: "Example: Make error handling stricter, add retry logic...", name_label: "Name", name_input_placeholder: "Give your persona a name...", description_label: "Description", description_input_placeholder: "A brief description of what this persona does...", system_prompt_placeholder: "The core instructions for this persona...", custom_sections: "Custom Sections", remove_section: "Remove section", key_placeholder: "key", label_placeholder: "label", content_placeholder: "Section content...", icon_label: "Icon", color_label: "Color", design_context: "Design Context", design_context_placeholder: "Additional context about how this persona was designed...", design_context_json: "Design context JSON...", click_next: "Click next to proceed with the transform.", configure_transform: "Configure Transform", select: "Select...",
+      // DraftEditStep — accessible aria-label for the tab list element
+      edit_tabs_label: "Draft edit tabs",
       // DraftEditStep — label above the adjustment request textarea
       request_ai_adjustments: "Request AI Adjustments",
       // DraftJsonTab — description shown above the syntax-highlighted JSON editor
@@ -10855,8 +11014,10 @@ export const en = {
       edit_raw: "Edit Raw",
       // DesignContextViewer — heading for the credential links list
       credential_links: "Credential Links",
-      // PromptTabsPreview — toggle button suffix that shows/hides the full prompt
-      full_prompt: "Full Prompt",
+      // PromptTabsPreview — toggle button label when full prompt is hidden
+      view_full_prompt: "View Full Prompt",
+      // PromptTabsPreview — toggle button label when full prompt is visible
+      hide_full_prompt: "Hide Full Prompt",
     },
     forms_extra: { references: "References", references_placeholder: "Paste URLs, connection strings, API keys, or any reference info (one per line)", remove_file: "Remove file", choose_color: "Choose color", choose_icon: "Choose icon", filter_placeholder: "Filter...", reset_to_default: "Reset to default",
       // ColorPicker — placeholder for the hex color text input

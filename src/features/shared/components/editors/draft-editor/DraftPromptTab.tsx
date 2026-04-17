@@ -113,7 +113,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
 
             {editable.customSections.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <p className="typo-body text-foreground">No custom sections yet</p>
+                <p className="typo-body text-foreground">{t.shared.draft_editor.no_custom_sections}</p>
               </div>
             ) : (
               <div className="flex flex-1 min-h-0 gap-2">
