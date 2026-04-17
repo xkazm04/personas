@@ -2,13 +2,14 @@
  * Roadmap timeline view — the unique "as-is" UI for the special `roadmap`
  * release entry. Visual is unchanged from the legacy `HomeRoadmap` component;
  * the only difference is that items are now sourced from `releases.json`
- * (structure) + `releases/i18n/{lang}.ts` (titles + descriptions + labels)
- * so one config drives both the changelog tabs and this view.
+ * (structure) + `src/i18n/en.ts` → `releases.whats_new.*` (titles +
+ * descriptions + labels) so one config drives both the changelog tabs and
+ * this view.
  *
  * Per project convention, no English strings live in this file directly —
  * status labels, priority labels, and the summary pill counts are all
- * looked up from `useReleasesTranslation`. See `.claude/CLAUDE.md` →
- * "Internationalization".
+ * looked up from `useReleasesTranslation` (backed by the main i18n system).
+ * See `.claude/CLAUDE.md` → "Internationalization".
  */
 import type { Release, ReleaseItem, ReleaseItemPriority, ReleaseItemStatus } from '@/data/releases';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';

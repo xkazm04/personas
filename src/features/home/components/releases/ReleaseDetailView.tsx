@@ -2,9 +2,9 @@
  * Standard changelog view for a single release.
  *
  * Item titles, descriptions, release labels, summaries, status badges, type
- * badges, and section group headers are all looked up from the per-feature
- * i18n folder via `useReleasesTranslation`. The structural metadata (status,
- * type, dates, item ids) lives in `releases.json`.
+ * badges, and section group headers are all looked up via `useReleasesTranslation`
+ * (backed by `src/i18n/en.ts` → `releases.whats_new.*`). The structural
+ * metadata (status, type, dates, item ids) lives in `releases.json`.
  *
  * Items are grouped by `type` (feature / fix / security / ...). Within each
  * group they keep their `releases.json` ordering — newest entries should be

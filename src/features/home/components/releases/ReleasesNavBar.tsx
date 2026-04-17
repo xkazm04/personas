@@ -5,9 +5,10 @@
  * release shows a "Current" status badge; the special roadmap entry uses an
  * outline arrow to signal it's a forward-looking view rather than a release.
  *
- * All labels are looked up from the per-feature i18n folder via
- * `useReleasesTranslation`. Per project convention, no English strings live
- * in this file directly. See `.claude/CLAUDE.md` → "Internationalization".
+ * All labels are looked up via `useReleasesTranslation` (backed by the main
+ * i18n system at `src/i18n/en.ts` → `releases.whats_new.*`). Per project
+ * convention, no English strings live in this file directly.
+ * See `.claude/CLAUDE.md` → "Internationalization".
  */
 import { ArrowRight } from 'lucide-react';
 import type { Release } from '@/data/releases';
