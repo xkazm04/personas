@@ -4086,6 +4086,9 @@ export const en = {
       mcp_config_hint: "If you have Claude Desktop installed, ensure it has MCP servers configured in its settings.",
       // CapabilityApprovalCard
       permission_required: "Permission Required",
+      // {appLabel} = the detected app name
+      approve_description: "requests the following capabilities. Review and approve to enable this connector.",
+      approve_connect: "Approve & Connect",
     },
     // Picker
     picker_section: {
@@ -4275,6 +4278,8 @@ export const en = {
     },
     // Negotiator extra strings
     negotiator_extra: {
+      // Panel header title
+      panel_title: "AI Credential Negotiator",
       checking_auth: "Checking existing authentications...",
       auto_provisioning: "Automated API key provisioning",
       generating_plan: "Generating provisioning plan...",
@@ -4283,6 +4288,8 @@ export const en = {
       need_help: "Need help with this step?",
       hide_help: "Hide help",
       ask_question: "Ask a question about this step...",
+      // Planning phase description
+      planning_description: "AI is analyzing the developer portal and generating a step-by-step provisioning plan...",
     },
     // Workspace connect panel
     workspace_panel: {
@@ -7174,6 +7181,24 @@ export const en = {
       command_center_header: "COMMAND CENTER // BUILD v1.0",
       // Phase label prefix in the Blueprint schematic — {phase} is the current build phase token
       phase_label: "[PHASE: {phase}]",
+      // MatrixCommandCenterParts — questionnaire input placeholder
+      your_answer_placeholder: "Your answer...",
+      // TestRunningIndicator — description text shown while test runs in background
+      testing_background_hint: "This may take a few minutes. You can leave this page and come back later — testing continues in the background.",
+      // TestRunningIndicator — cancel button label
+      cancel_test: "Cancel Test",
+      // TestResultsPanel — missing connector keys warning prefix
+      missing_keys: "Missing keys:",
+      // TestResultsPanel — force-promote button label
+      approve_anyway: "Approve Anyway",
+      // TestResultsPanel — title attribute on delete draft button
+      delete_draft_title: "Discard this draft persona and close",
+      // TestResultsPanel — delete draft button label
+      delete_draft: "Delete Draft",
+      // PromotionSuccessIndicator — success label
+      agent_promoted: "Agent Promoted",
+      // PromotionSuccessIndicator — view agent button label
+      view_agent: "View Agent",
     },
 
     // Activity diagram modal
@@ -7998,13 +8023,11 @@ export const en = {
     event_type_input_placeholder: "e.g. file_changed, execution_completed",
     event_type_helper: "Type to search registered event types, or enter a custom type.",
     source_filter_optional_label: "(optional)",
-    source_filter_input_placeholder: "e.g. watcher-* or exact-source-id",
     wildcard_hint: "\u2014 trailing * prefix wildcard supported",
     window_title_pattern_label: "Window Title Pattern",
     optional_regex_label: "(optional regex)",
     text_pattern_label: "Text Pattern",
     credential_event_label: "Credential Event",
-    field_optional: "(optional)",
     // Button tooltip for refreshing cloud webhook trigger list
     refresh_label: "Refresh",
     // Tooltip for copy webhook URL button in cloud webhooks tab
@@ -8045,8 +8068,6 @@ export const en = {
     meta_event_id: "Event ID",
     // MetaCell label: project identifier
     meta_project: "Project",
-    // MetaCell label: event source
-    meta_source: "Source",
     // MetaCell label: when event was processed
     meta_processed: "Processed",
     // Button to clear the live stream buffer
@@ -8083,16 +8104,6 @@ export const en = {
     relay_event_filter_note: "(optional, comma-separated)",
     // Confirmation button for inline delete in relay list
     relay_confirm_delete: "Confirm",
-    // Last-event relative time prefix in relay list — e.g. 'Last: 2 min ago'
-    relay_last_event: "Last:",
-    // Tooltip for pause relay button
-    relay_pause_title: "Pause relay",
-    // Tooltip for resume relay button
-    relay_resume_title: "Resume relay",
-    // Tooltip for delete relay button
-    relay_delete_title: "Delete relay",
-    // Setup guide step 1 — visiting smee.io
-    setup_guide_step1: "Visit smee.io/new to create a free relay channel",
     // Setup guide step 2 — adding relay in the app
     setup_guide_step2: "Add the relay here with a label and the channel URL",
     // Setup guide step 3 — pasting the channel URL into an external service
@@ -8158,8 +8169,6 @@ export const en = {
     interval_seconds_placeholder: "Seconds (min 60)",
     // Placeholder for cron expression input in schedule config
     cron_expression_placeholder: "* * * * *  (min hour dom mon dow)",
-    // Placeholder for app focus config: process name input
-    app_focus_process_placeholder: "e.g. Code.exe, chrome.exe, Figma.exe",
     // Placeholder for app focus config: window title pattern input
     app_focus_window_placeholder: "e.g. .*.rs$ or Project - Visual Studio",
     // Placeholder for clipboard config: text pattern input
@@ -8525,7 +8534,6 @@ export const en = {
       export_subtitle: "Choose what to include in your export",
       close: "Close",
       loading_data: "Loading workspace data...",
-      select_all: "Select All",
       deselect_all: "Deselect All",
       items_selected: "{selected} of {total} items selected",
       of_selected: "{count} of {total} selected",
@@ -10211,9 +10219,7 @@ export const en = {
       optional_label: "(optional)",
       implementation_log_label: "Implementation Log",
       cross_project_desc_btn: "Aggregated from existing context maps. Click any project to expand.",
-      shared_keywords_subtitle: "Concepts present in multiple projects — may indicate shared architecture.",
       generate_metadata_prompt: "to analyze all projects' context maps and extract shared patterns.",
-      shared_keywords_prefix: "Shared Keywords (",
       projects_count_prefix: "Projects (",
       entry_points_header: "Entry Points",
       db_tables_header: "Database Tables",
@@ -10800,8 +10806,6 @@ export const en = {
       idea_scanner_subtitle: "AI-powered idea analysis and evolution",
     },
 
-    // ---------------------------------------------------------------
-    //  dev-tools.triage — idea triage rules panel
     // ---------------------------------------------------------------
     dev_triage: {
       // Section header for the auto-triage rules panel
