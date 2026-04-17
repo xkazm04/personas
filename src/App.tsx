@@ -11,6 +11,9 @@ import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from "@/lib/log";
+
+const appLogger = createLogger("App");
 
 /**
  * Silent error boundary for invisible components (renders null on error).
@@ -30,7 +33,7 @@ class SilentErrorBoundary extends Component<
   static getDerivedStateFromError() { return { hasError: true }; }
 
   componentDidCatch(error: Error) {
-    console.error(`[${this.props.name}] silently failed (attempt ${this.state.retryCount + 1}):`, error);
+    appLogger.error(`silently failed (attempt ${this.state.retryCount + 1})`, { name: this.props.name, error: error instanceof Error ? error.message : String(error) });
 
     if (this.state.retryCount < SilentErrorBoundary.MAX_RETRIES) {
       const delay = SilentErrorBoundary.BACKOFF_MS[this.state.retryCount] ?? 45_000;
@@ -78,7 +81,7 @@ export default function App() {
       import("@/lib/eventBridge").then(m => m.initAllListeners()),
       import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
     ]).catch((err) => {
-      console.error("[App] Critical startup module failed to initialize:", err);
+      appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.

@@ -23,6 +23,9 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('EditorBody');
 
 export function EditorBody() {
   const { t } = useTranslation();
@@ -98,7 +101,7 @@ export function EditorBody() {
       }
       setShowDeleteConfirm(false);
     } catch (err) {
-      console.error("[EditorBody] Failed to delete persona:", err);
+      logger.error("Failed to delete persona", { error: err instanceof Error ? err.message : String(err) });
       const msg = err instanceof Error ? err.message : String(err);
       useToastStore.getState().addToast(t.agents.editor_ui.delete_failed.replace('{message}', msg), 'error');
       // Keep the delete confirmation dialog open so the user can retry

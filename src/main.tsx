@@ -140,7 +140,7 @@ if (root) {
       </React.StrictMode>
     );
   } catch (e) {
-    console.error("[main] Render with error boundary failed:", e);
+    globalErrorLogger.error("Render with error boundary failed", { error: e instanceof Error ? e.message : String(e) });
     ReactDOM.createRoot(root).render(
       <React.StrictMode>
         <App />
@@ -148,7 +148,7 @@ if (root) {
     );
   }
 } else {
-  console.error("[main] #root element not found");
+  globalErrorLogger.error("#root element not found");
 }
 
 // -- Async setup (Sentry, analytics) -----------------------------------------
