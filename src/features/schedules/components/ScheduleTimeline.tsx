@@ -214,7 +214,7 @@ export default function ScheduleTimeline() {
               onClick={() => fetchCronAgents()}
               disabled={loading}
               className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-foreground transition-all disabled:opacity-40"
-              title="Refresh schedules"
+              title={t.schedules.refresh_schedules}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -231,7 +231,7 @@ export default function ScheduleTimeline() {
             <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
               <Filter className="w-3.5 h-3.5 shrink-0" />
               <span>
-                Showing schedules for <span className="font-semibold">{agent.persona_name}</span>
+                {t.schedules.showing_for} <span className="font-semibold">{agent.persona_name}</span>
               </span>
               <button
                 onClick={() => {
@@ -327,7 +327,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
     <div
       ref={tablistRef}
       role="tablist"
-      aria-label="Schedule view"
+      aria-label={t.schedules.schedule_view_aria}
       className="flex rounded-card border border-primary/15 overflow-hidden bg-secondary/20"
       onKeyDown={handleKeyDown}
     >

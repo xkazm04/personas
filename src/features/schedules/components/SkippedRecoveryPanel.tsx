@@ -73,10 +73,10 @@ export default function SkippedRecoveryPanel({
         </div>
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-amber-400/90">
-            {visibleSkipped.length} agent{visibleSkipped.length !== 1 ? 's' : ''} missed executions
+            {t.schedules.agents_missed.replace('{count}', String(visibleSkipped.length))}
           </p>
           <p className="typo-caption text-foreground">
-            ~{totalMissed} total runs skipped while app was offline
+            {t.schedules.total_skipped.replace('{count}', String(totalMissed))}
           </p>
         </div>
         <ChevronDown className={`w-4 h-4 text-amber-400/60 transition-transform ${expanded ? 'rotate-0' : '-rotate-90'}`} />
@@ -105,11 +105,11 @@ export default function SkippedRecoveryPanel({
                     </span>
                     <div className="flex items-center gap-1.5 text-[11px] text-foreground mt-0.5">
                       <Clock className="w-3 h-3" />
-                      <span>{missedCount} missed since {formatRelative(missedAt.toISOString())}</span>
+                      <span>{t.schedules.missed_since.replace('{count}', String(missedCount)).replace('{time}', formatRelative(missedAt.toISOString()))}</span>
                       {agent.interval_seconds && (
                         <>
                           <span className="text-foreground">·</span>
-                          <span className="font-mono">every {formatInterval(agent.interval_seconds)}</span>
+                          <span className="font-mono">{t.schedules.every_interval.replace('{interval}', formatInterval(agent.interval_seconds))}</span>
                         </>
                       )}
                     </div>
@@ -130,7 +130,7 @@ export default function SkippedRecoveryPanel({
                           ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
                           : 'bg-secondary/30 border-primary/10 text-foreground hover:text-emerald-400 hover:bg-emerald-500/10'
                         }`}
-                      title="Mark for recovery"
+                      title={t.schedules.mark_for_recovery}
                     >
                       {isRecovering ? (
                         <LoadingSpinner size="xs" />
@@ -139,26 +139,26 @@ export default function SkippedRecoveryPanel({
                       ) : (
                         <Play className="w-3 h-3" />
                       )}
-                      Recover
+                      {t.schedules.recover}
                     </button>
 
                     <button
                       onClick={() => onManualExecute(agent)}
                       disabled={isRecovering}
                       className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
-                      title="Run once now"
+                      title={t.schedules.run_once_now}
                     >
                       <Play className="w-3 h-3" />
-                      Run 1x
+                      {t.schedules.run_1x}
                     </button>
 
                     <button
                       onClick={() => handleDismiss(agent.trigger_id)}
                       className="flex items-center gap-1 px-2 py-1 text-[11px] rounded-input border bg-secondary/30 border-primary/10 text-foreground hover:text-muted-foreground/90 transition-colors"
-                      title="Skip -- don't recover"
+                      title={t.schedules.skip_dont_recover}
                     >
                       <SkipForward className="w-3 h-3" />
-                      Skip
+                      {t.schedules.skip}
                     </button>
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export default function SkippedRecoveryPanel({
                   ) : (
                     <Play className="w-3 h-3" />
                   )}
-                  Recover {recoverableAgents.length} selected
+                  {t.schedules.recover_selected.replace('{count}', String(recoverableAgents.length))}
                 </button>
               )}
             </div>

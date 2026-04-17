@@ -52,7 +52,7 @@ export function EventTooltip({
           <div className="flex items-start gap-1 mt-1 pt-1 border-t border-primary/10 text-amber-400/90">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
             <span>
-              Overlaps with {otherConflicts.slice(0, 3).join(', ')}
+              {st.overlaps_with} {otherConflicts.slice(0, 3).join(', ')}
               {otherConflicts.length > 3 && ` +${otherConflicts.length - 3} more`}
             </span>
           </div>

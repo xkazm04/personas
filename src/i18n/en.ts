@@ -6869,6 +6869,10 @@ export const en = {
       // N8nStepIndicator
       upload_step: "Upload",
       analyze_step: "Analyze",
+      // aria-label for the import wizard progress nav
+      wizard_progress_aria: "Import wizard progress",
+      // aria-label for the wizard steps list
+      wizard_steps_aria: "Wizard steps",
       // StreamingSections
       streaming_sections: "Streaming Sections",
       awaiting_next_section: "Awaiting next section...",
@@ -9264,6 +9268,8 @@ export const en = {
     total_skipped: "~{count} total runs skipped while app was offline",
     // {count} = number of missed runs, {time} = relative time label
     missed_since: "{count} missed since {time}",
+    // {interval} = human-readable interval (e.g. "5 minutes")
+    every_interval: "every {interval}",
     recover: "Recover",
     // Tooltip for the recover button
     mark_for_recovery: "Mark for recovery",

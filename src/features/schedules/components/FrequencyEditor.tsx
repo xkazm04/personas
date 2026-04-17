@@ -109,7 +109,7 @@ export default function FrequencyEditor({
         <div className="px-6 py-5 space-y-5">
           {/* Current schedule */}
           <div className="typo-caption text-foreground">
-            Current: <span className="font-mono text-foreground">{currentSchedule}</span>
+            {t.schedules.current_prefix}<span className="font-mono text-foreground">{currentSchedule}</span>
           </div>
 
           {/* Quick presets */}
@@ -142,7 +142,7 @@ export default function FrequencyEditor({
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
             >
-              Cron expression <span className="text-amber-400/60 font-medium">({tzLabel})</span>
+              {t.schedules.cron_expression} <span className="text-amber-400/60 font-medium">({tzLabel})</span>
             </button>
             <button
               onClick={() => setMode('preset')}
@@ -152,7 +152,7 @@ export default function FrequencyEditor({
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
               }`}
             >
-              Interval (seconds)
+              {t.schedules.interval_seconds}
             </button>
           </div>
 
@@ -181,7 +181,7 @@ export default function FrequencyEditor({
                       <p className="font-medium">{preview.description}</p>
                       {preview.next_runs.length > 0 && (
                         <div className="mt-1 space-y-0.5">
-                          <p className="text-foreground text-[10px] uppercase tracking-wider">Next runs ({tzLabel})</p>
+                          <p className="text-foreground text-[10px] uppercase tracking-wider">{t.schedules.next_runs} ({tzLabel})</p>
                           {preview.next_runs.slice(0, 3).map((run, i) => (
                             <p key={i} className="font-mono text-[11px] text-foreground">
                               {timezone === 'utc'
@@ -218,8 +218,7 @@ export default function FrequencyEditor({
           <div className="mx-6 mb-1 flex items-start gap-2 p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 typo-caption text-amber-400/90">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
-              This schedule overlaps with {overlapCount} other execution{overlapCount > 1 ? 's' : ''} in the next 7 days.
-              Concurrent agents compete for API quota and system resources.
+              {t.schedules.overlap_warning.replace('{count}', String(overlapCount))}
             </span>
           </div>
         )}
