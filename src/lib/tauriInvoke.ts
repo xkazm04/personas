@@ -2,6 +2,9 @@ import { invoke, type InvokeArgs, type InvokeOptions } from "@tauri-apps/api/cor
 import { recordIpcCall } from "./ipcMetrics";
 import type { CommandName as RegisteredCommand } from "./commandNames.generated";
 import type { UnregisteredCommand } from "./commandNames.overrides";
+import { createLogger } from "./log";
+
+const logger = createLogger("tauriInvoke");
 
 /** All valid command names: registered + known-unregistered forward-references. */
 export type CommandName = RegisteredCommand | UnregisteredCommand;
@@ -193,7 +196,7 @@ function _invokeCore<T>(
   _inflight++;
   if (_inflight > IPC_STAMPEDE_THRESHOLD && !_stampedWarned) {
     _stampedWarned = true;
-    console.error(`[tauriInvoke] IPC stampede: ${_inflight} concurrent calls in-flight (cmd=${cmd})`);
+    logger.error(`IPC stampede: ${_inflight} concurrent calls in-flight`, { cmd, inflight: _inflight });
   }
 
   // Wait for the IPC session token before invoking.

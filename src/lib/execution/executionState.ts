@@ -13,6 +13,9 @@
  */
 
 import type { ExecutionState as RustExecutionState } from '@/lib/bindings/ExecutionState';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('ExecutionState');
 
 // ── Canonical type ──────────────────────────────────────────────────────
 // Re-export the Rust-generated type + the frontend-only 'unknown' fallback.
@@ -81,7 +84,7 @@ export function parseExecutionState(s: string | null | undefined): ExecutionStat
   if (!s) return 'queued';
   if (s === 'pending') return 'queued';
   if (isExecutionState(s)) return s;
-  console.error(`[ExecutionState] Unknown status "${s}" — displaying as unknown`);
+  logger.error(`Unknown status "${s}" — displaying as unknown`, { status: s });
   return 'unknown';
 }
 

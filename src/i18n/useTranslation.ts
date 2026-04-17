@@ -72,7 +72,9 @@ function preload(lang: Language) {
           setTimeout(() => attempt(true), 1000);
           return;
         }
-        console.error(`[i18n] Failed to load "${lang}" bundle after retry — falling back to English`, err);
+        import('@/lib/log').then(({ createLogger }) => {
+          createLogger('i18n').error(`Failed to load "${lang}" bundle after retry — falling back to English`, { error: err instanceof Error ? err.message : String(err) });
+        });
       })
       .finally(() => {
         loadingSet.delete(lang);
