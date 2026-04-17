@@ -60,7 +60,7 @@ export default function AccountSettings() {
                     hover:bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign out
+                  {st.sign_out}
                 </button>
               </div>
             </>
@@ -78,7 +78,7 @@ export default function AccountSettings() {
                   transition-colors disabled:opacity-50"
               >
                 <Globe className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
-                Sign in with Google
+                {st.sign_in_google}
               </button>
             </div>
           )}

@@ -120,7 +120,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <input
                         value={rule.model || ''}
                         onChange={(e) => onUpdate(idx, { model: e.target.value || null })}
-                        placeholder="e.g. claude-haiku-4-5-20251001"
+                        placeholder={s.model_placeholder}
                         className="w-full typo-body p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground"
                       />
                     </div>

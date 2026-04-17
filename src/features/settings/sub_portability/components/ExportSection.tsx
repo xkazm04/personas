@@ -127,19 +127,19 @@ export function ExportSection({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-6 gap-2 typo-body text-foreground">
             {importResult.personas_created > 0 && (
-              <span>{importResult.personas_created} persona(s)</span>
+              <span>{s.import_personas.replace('{count}', String(importResult.personas_created))}</span>
             )}
             {importResult.teams_created > 0 && (
-              <span>{importResult.teams_created} team(s)</span>
+              <span>{s.import_teams.replace('{count}', String(importResult.teams_created))}</span>
             )}
             {importResult.tools_created > 0 && (
-              <span>{importResult.tools_created} tool(s)</span>
+              <span>{s.import_tools.replace('{count}', String(importResult.tools_created))}</span>
             )}
             {importResult.groups_created > 0 && (
-              <span>{importResult.groups_created} group(s)</span>
+              <span>{s.import_groups.replace('{count}', String(importResult.groups_created))}</span>
             )}
             {importResult.credentials_created > 0 && (
-              <span>{importResult.credentials_created} credential(s)</span>
+              <span>{s.import_credentials.replace('{count}', String(importResult.credentials_created))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

@@ -3687,6 +3687,27 @@ export const en = {
       no_documents_description: "Drop files here, paste text, or scan a directory to start building your knowledge base.",
       delete_document: "Delete document",
       chunks_label: "{count} chunks",
+      // Summary shown in VectorKbModal header -- {docs}/{chunks} = counts
+      kb_count_summary: "-- {docs} docs, {chunks} chunks",
+      // IngestDirectoryPicker default patterns label
+      default_patterns: "Default:",
+      // IngestDirectoryPicker add-pattern placeholder
+      add_pattern_placeholder: "*.pdf",
+      // SearchResultCard metadata labels
+      distance_label: "distance:",
+      chunk_label: "chunk:",
+      // OverviewTab credential ID copy button title
+      copy_credential_id: "Copy credential ID",
+      // EndpointRow request body section heading
+      request_body: "Request Body",
+      // PlaygroundHeader add tag button title
+      add_tag_title: "Add tag",
+      // SettingsTab local embedding hint -- {model} = model name, {dims} = dimensions
+      local_embedding_hint: "Embeddings are generated locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.",
+      // RequestBuilder placeholder and send button labels
+      api_path_placeholder: "/api/v1/resource",
+      sending: "Sending...",
+      send: "Send",
     },
     // Credential manager header / toolbar
     manager: {
@@ -4751,6 +4772,10 @@ export const en = {
       channel_slack: "Slack",
       channel_telegram: "Telegram",
       channel_desktop: "Desktop",
+      // MessageDetailModal ID label
+      id_label: "ID:",
+      // title for the close button in MessageDetailModal
+      close_message: "Close message detail",
     },
     realtime: {
       // {action} = a clickable action name (e.g. "Test Flow")
@@ -4778,6 +4803,12 @@ export const en = {
       title: "Memories",
       created_success: "Memory created successfully",
       no_memories: "No memories yet",
+      // Hint below the "no memories" empty state
+      no_memories_hint: "When agents run, they can store valuable notes and learnings here.",
+      // Message when search/filter has no results
+      no_memories_match: "No memories match current filters",
+      // aria-label for the memory list container
+      list_aria_label: "Memory list",
       form: {
         agent: "Agent",
         category: "Category",
@@ -4787,6 +4818,13 @@ export const en = {
         tags: "Tags",
         tags_hint: "(comma-separated)",
       },
+    },
+    memory_review: {
+      // Shown when all memory conflicts have been resolved
+      all_conflicts_resolved: "All conflicts resolved",
+      // Button label prefix when keeping a memory value: Keep "{value}"
+      keep_prefix: "Keep “",
+      keep_suffix: "”",
     },
     executions: {
       title: "Executions",
@@ -5279,6 +5317,21 @@ export const en = {
       subtitle: "Performance rankings across all agents",
       no_data: "No leaderboard data available",
       no_data_hint: "Run your agents to start building performance rankings",
+      // Fleet average score label in the header strip
+      fleet_avg: "Fleet avg:",
+      // aria-label and title for the refresh button
+      refresh_label: "Refresh leaderboard",
+      // Status while scores are loading
+      computing_scores: "Computing agent scores...",
+      // Empty state when only one agent exists
+      single_agent_has_data: "has data.",
+      // CTA text for single-agent empty state, {name} = agent name
+      add_more_agents: "Add more agents to see rankings. Currently only {name}",
+      // "Open Agent" link on the leaderboard card
+      open_agent: "Open Agent",
+      // No-data empty state messages
+      no_agent_data_title: "No agent data yet",
+      no_agent_data_hint: "Run some agents to see performance rankings. The leaderboard needs execution history and health data to compute scores.",
       // Metrics
       reliability: "Reliability",
       speed: "Speed",
@@ -5761,6 +5814,15 @@ export const en = {
       // Status page
       loading_status: "Loading status page data...",
       no_personas: "No personas to display.",
+      // Short "Score:" prefix label before score value
+      score_prefix: "Score:",
+      // Short "30d uptime:" prefix label
+      uptime_30d_prefix: "30d uptime:",
+      // "Updated" prefix before the refresh timestamp  
+      updated_prefix: "Updated",
+      // Consecutive failures suffix (pluralization)
+      consecutive_failures_one: "{count} consecutive failure",
+      consecutive_failures_other: "{count} consecutive failures",
       score_label: "Score",
       uptime_30d: "30d uptime",
       updated: "Updated {time}",
@@ -5859,10 +5921,33 @@ export const en = {
       mock_pattern: "Mock Pattern",
       // tooltip for the dev-only seed button
       seed_tooltip: "Seed a mock pattern (dev only)",
+      // Type filter option
+      all_types: "All Types",
+      // Scope filter option
+      all_scopes: "All Scopes",
+      // Failure drill-down section header
+      failure_drilldown_prefix: "Failure drill-down:",
+      // {date} = cutoff date
+      failure_date_filter: "Showing failure patterns active on or after {date}",
+      // Empty/loading states
+      data_unavailable: "Knowledge data unavailable",
+      loading_patterns: "Loading knowledge patterns...",
+      // Title attr for the drill-down toggle button
+      drilldown_toggle_title: "Show/hide failure drill-down",
+      // Empty state when filters match nothing
+      no_patterns_match: "No patterns match current filters",
+      // Section heading
+      recent_learnings: "Recent Learnings",
+      // Manual curation tip
+      curating_manually: "Curating documents manually?",
+      obsidian_tip: "For fewer than ~1000 notes, an Obsidian connector can sync your vault directly.",
     },
     focused_decision: { accept: "Accept", reject: "Reject", media_unavailable: "Media unavailable",
       // Fallback content inside <video> element when browser lacks video support
       video_not_supported: "Your browser does not support video playback.",
+      // aria-label on reject/accept buttons in ReviewFocusFlow
+      reject_this: "Reject this",
+      accept_this: "Accept this",
     },
     review_focus: { all_caught_up: "All caught up", no_pending: "No pending reviews to process.", queue: "Queue", clear: "Clear", clear_all_verdicts: "Clear all verdicts", quick_actions: "Quick Actions", reject_all: "Reject all", accept_all: "Accept all", retry_with_changes: "Retry with changes",
       // Fallback content inside <video> element when browser lacks video support
@@ -5885,7 +5970,32 @@ export const en = {
     review_results: { title: "AI Memory Review", review_failed: "Review failed" },
     anomaly_drilldown_extra: { title: "Anomaly Drill-Down", value_label: "Value:", baseline_label: "Baseline:", correlating: "Correlating events...", likely_root_causes: "Likely Root Causes", correlated_events: "Correlated Events", no_correlated: "No correlated events found in the \u00b124h window." },
     healing_issue_modal: { issue_resolved: "Issue Resolved", analysis: "Analysis", suggested_fix: "Suggested Fix", copied: "Copied", copy_fix: "Copy Fix", persona_auto_disabled: "Persona auto-disabled", persona_auto_disabled_desc: "This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.", marking_resolved_note: "Marking resolved means you have addressed this issue outside the healing system.", retry_in_progress: "Retry in progress -- status will update when complete", auto_resolved: "This issue was automatically resolved", close: "Close", resolving: "Resolving\u2026", mark_resolved: "Mark as Resolved" },
-    healing_issues_panel: { title: "Health Issues", analyzing: "Analyzing...", run_analysis: "Run Analysis", no_open_issues: "No open issues", run_analysis_hint: "Run analysis to check for problems.", healing_audit_log: "Healing Audit Log", no_silent_failures: "No silent failures recorded.", analysis_complete_prefix: "Analysis complete:" },
+    healing_issues_panel: { title: "Health Issues", analyzing: "Analyzing...", run_analysis: "Run Analysis", no_open_issues: "No open issues", run_analysis_hint: "Run analysis to check for problems.",
+      // AiHealingStreamOverlay panel title
+      ai_healing_title: "AI Healing",
+      // AiHealingStreamOverlay diagnosis prefix
+      diagnosis_label: "Diagnosis:",
+      // AiHealingStreamOverlay fixes count heading
+      fixes_applied: "Fixes Applied",
+      // AlertHistoryPanel title
+      alert_history_title: "Alert History",
+      // AlertRulesPanel all-agents option
+      all_agents_global: "All agents (global)",
+      // AlertRulesPanel add button label
+      add_rule: "Add Rule",
+      // AlertRulesPanel empty state
+      no_rules_configured: "No alert rules configured. Add a rule to start monitoring.",
+      // AnomalyDrilldownPanel labels
+      confidence_pct_suffix: "% confidence",
+      spike_on: "spike on",
+      correlated_events_prefix: "Correlated Events (",
+      // HealingIssueModal labels
+      circuit_breaker_label: "circuit breaker",
+      auto_disabled_message: "This persona was automatically disabled as a circuit-breaker response to repeated failures.",
+      execution_label: "Execution:",
+      issue_marked_as: "This issue is marked as",
+      retry_in_progress: "Retry in progress — status will update when complete.",
+      resolve_issue_title: "Mark issue resolved", healing_audit_log: "Healing Audit Log", no_silent_failures: "No silent failures recorded.", analysis_complete_prefix: "Analysis complete:" },
     healing_timeline: { loading: "Loading timeline...", no_events: "No healing events", no_events_hint: "Run analysis to build the resilience timeline.", knowledge_base: "Knowledge Base", patterns_hint: "Patterns influencing healing decisions", retry_badge: "retry #{count}" },
     ipc_panel: { title: "IPC Performance", by_command: "By Command", slowest_calls: "Slowest Calls", command: "Command", calls_header: "Calls", duration_header: "Duration", when_header: "When", commands_table_label: "IPC command performance", slowest_table_label: "Slowest IPC calls", error_rate: "Error rate:", timeout_rate: "Timeout rate:" },
     system_trace_extra: { no_traces: "No system traces recorded", no_traces_hint: "Traces appear when design, credential, or template operations run", all_operations: "All operations", clear_completed: "Clear completed traces", span: "Span", zero_ms: "0ms" },
@@ -8149,6 +8259,8 @@ export const en = {
       complexity: "Complexity",
       provider: "Provider",
       model_optional: "Model (optional)",
+      // Placeholder for the optional model input in routing rules
+      model_placeholder: "e.g. claude-haiku-4-5-20251001",
       // Compliance rules
       compliance_title: "Compliance-Driven Restrictions",
       compliance_hint: "Restrict providers for specific workflow types (e.g., HIPAA, SOC2)",

@@ -66,7 +66,7 @@ export default function AccountSettings() {
               }`}
               role="switch"
               aria-checked={telemetryOn}
-              aria-label="Toggle telemetry"
+              aria-label={s.telemetry_toggle_aria}
             >
               <span
                 className={`inline-block h-4 w-4 rounded-full bg-white shadow-elevation-1 transition-transform ${

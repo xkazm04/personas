@@ -141,7 +141,7 @@ export default function AdminSettings() {
                     hover:bg-violet-500/25 transition-colors"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Force Start Tour
+                  {st.force_start}
                 </button>
 
                 <button
@@ -155,12 +155,12 @@ export default function AdminSettings() {
                   {confirmReset ? (
                     <>
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Confirm Reset
+                      {st.confirm_reset}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-3.5 h-3.5" />
-                      Reset State
+                      {st.reset_state}
                     </>
                   )}
                 </button>
@@ -174,7 +174,7 @@ export default function AdminSettings() {
                         hover:bg-emerald-500/20 transition-colors"
                     >
                       <Check className="w-3.5 h-3.5" />
-                      Force Complete
+                      {st.force_complete}
                     </button>
                     <button
                       onClick={() => dismissTour()}
@@ -183,7 +183,7 @@ export default function AdminSettings() {
                         hover:bg-amber-500/20 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Force Dismiss
+                      {st.force_dismiss}
                     </button>
                   </>
                 )}

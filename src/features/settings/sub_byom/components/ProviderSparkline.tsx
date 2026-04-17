@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProviderSparklineProps {
   data: number[];
@@ -19,6 +20,7 @@ export function ProviderSparkline({
   color = '#10b981',
   label,
 }: ProviderSparklineProps) {
+  const { t } = useTranslation();
   const path = useMemo(() => {
     if (data.length < 2) return '';
     const max = Math.max(...data, 1);
@@ -49,7 +51,7 @@ export function ProviderSparkline({
   if (data.length < 2) {
     return (
       <span className="text-[10px] text-foreground italic">
-        No trend data
+        {t.settings.byom.no_trend_data}
       </span>
     );
   }

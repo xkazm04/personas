@@ -95,7 +95,7 @@ export function CredentialPortability({
             <div className="flex items-center gap-2">
               <input
                 type="password"
-                placeholder="Passphrase (min 8 chars)"
+                placeholder={s.passphrase_min}
                 value={credExportPassphrase}
                 onChange={(e) => setCredExportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredExport()}
@@ -156,10 +156,10 @@ export function CredentialPortability({
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2 typo-body font-medium text-amber-400">
             <AlertTriangle className="w-4 h-4" />
-            {conflicts.length} credential{conflicts.length > 1 ? 's' : ''} already exist
+            {conflicts.length > 1 ? s.credentials_exist_plural.replace('{count}', String(conflicts.length)) : s.credentials_exist.replace('{count}', String(conflicts.length))}
           </div>
           <p className="typo-caption text-foreground">
-            Choose how to handle each conflict:
+            {s.conflict_hint}
           </p>
           <div className="space-y-2">
             {conflicts.map((c) => (
@@ -218,7 +218,7 @@ export function CredentialPortability({
           </p>
           {credImportResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="typo-body font-medium text-amber-400">Warnings:</p>
+              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
               {credImportResult.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">- {w}</p>
               ))}

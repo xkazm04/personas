@@ -349,7 +349,7 @@ export function AmbientContextPanel() {
               <input
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
-                placeholder="Rule name (e.g. &quot;Crash debug helper&quot;)"
+                placeholder={s.rule_name_placeholder}
                 className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
               />
 
@@ -375,7 +375,7 @@ export function AmbientContextPanel() {
               <input
                 value={ruleSummaryContains}
                 onChange={(e) => setRuleSummaryContains(e.target.value)}
-                placeholder="Summary contains (e.g. &quot;error&quot;, &quot;Code.exe&quot;)"
+                placeholder={s.summary_contains_placeholder}
                 className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
               />
 
@@ -383,13 +383,13 @@ export function AmbientContextPanel() {
                 <input
                   value={rulePathGlob}
                   onChange={(e) => setRulePathGlob(e.target.value)}
-                  placeholder="File glob (e.g. *.rs)"
+                  placeholder={s.file_glob_placeholder}
                   className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
                 />
                 <input
                   value={ruleAppFilter}
                   onChange={(e) => setRuleAppFilter(e.target.value)}
-                  placeholder="App filter (e.g. Code.exe)"
+                  placeholder={s.app_filter_placeholder}
                   className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
                 />
               </div>

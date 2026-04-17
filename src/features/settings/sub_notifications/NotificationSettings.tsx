@@ -86,7 +86,7 @@ function WeeklyDigestToggle() {
         <div className="space-y-0.5">
           <span className="typo-body font-medium text-foreground">{st.digest_title}</span>
           <p className="typo-body text-foreground">
-            Weekly notification summarizing health issues across all agents with a total health score
+            {st.digest_description}
           </p>
         </div>
         <button
@@ -188,7 +188,7 @@ export default function NotificationSettings() {
           <WeeklyDigestToggle />
 
           <p className="typo-body text-foreground">
-            Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.
+            {st.notification_hint}
           </p>
         </div>
       </ContentBody>

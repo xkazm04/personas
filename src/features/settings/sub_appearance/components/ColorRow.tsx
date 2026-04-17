@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -18,6 +19,7 @@ export function ColorRow({
   derivedValue: string | undefined;
   onChange: (color: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -48,7 +50,7 @@ export function ColorRow({
           type="button"
           onClick={() => onChange(null)}
           className="p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
-          title="Reset to auto"
+          title={t.settings.appearance.reset_to_auto}
         >
           <X className="w-3 h-3" />
         </button>
