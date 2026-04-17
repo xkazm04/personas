@@ -1,13 +1,19 @@
-import { useEffect, useState, lazy, Suspense, useMemo } from 'react';
-import { FlaskConical, Trash2, Target, ClipboardList } from 'lucide-react';
+import { useEffect, useState, lazy, Suspense, useMemo, useCallback } from 'react';
+import { FlaskConical, Trash2, Target, ClipboardList, Play, History, Loader2, Bot } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import { SectionHeader } from '../_shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
+import { parseExperimentConfig, evaluatePass } from '../_shared/experimentConfig';
+import { runPersonaAndWait } from '../_shared/runPersona';
+import { createExperimentRun } from '@/api/researchLab/researchLab';
 import type { ResearchExperiment } from '@/api/researchLab/researchLab';
 
 const AddExperimentForm = lazy(() => import('./AddExperimentForm'));
+const ExperimentRunsDrawer = lazy(() => import('./ExperimentRunsDrawer'));
 
 export default function ExperimentsPanel() {
   const { t } = useTranslation();
@@ -19,8 +25,14 @@ export default function ExperimentsPanel() {
   const hypotheses = useSystemStore((s) => s.researchHypotheses);
   const fetchHypotheses = useSystemStore((s) => s.fetchResearchHypotheses);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [showForm, setShowForm] = useState(false);
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const [runsDrawer, setRunsDrawer] = useState<ResearchExperiment | null>(null);
+  const [runsRefresh, setRunsRefresh] = useState(0);
 
   useEffect(() => {
     if (activeProjectId) {
@@ -28,6 +40,10 @@ export default function ExperimentsPanel() {
       fetchHypotheses(activeProjectId);
     }
   }, [activeProjectId, fetchExperiments, fetchHypotheses]);
+
+  useEffect(() => {
+    if (personas.length === 0) fetchPersonas();
+  }, [personas.length, fetchPersonas]);
 
   const projectExperiments = useMemo(
     () => experiments.filter((e) => e.projectId === activeProjectId),
@@ -38,6 +54,42 @@ export default function ExperimentsPanel() {
     () => Object.fromEntries(hypotheses.map((h) => [h.id, h])),
     [hypotheses],
   );
+
+  const personaMap = useMemo(
+    () => Object.fromEntries(personas.map((p) => [p.id, p])),
+    [personas],
+  );
+
+  const handleRun = useCallback(async (e: React.MouseEvent, exp: ResearchExperiment) => {
+    e.stopPropagation();
+    const config = parseExperimentConfig(exp.inputSchema);
+    if (!config.linkedPersonaId) return;
+
+    setRunningId(exp.id);
+    try {
+      const { execution, output, passed: statusPassed } = await runPersonaAndWait({
+        personaId: config.linkedPersonaId,
+        input: config.inputDataTemplate ?? '',
+      });
+
+      const passed = evaluatePass(output, config.passPattern, statusPassed);
+
+      const metrics = JSON.stringify({
+        status: execution.status,
+        inputTokens: execution.input_tokens,
+        outputTokens: execution.output_tokens,
+        passBy: config.passPattern ? 'pattern' : 'status',
+      });
+
+      await createExperimentRun(exp.id, output ?? undefined, metrics, passed);
+      addToast(passed ? t.research_lab.run_passed : t.research_lab.run_failed, passed ? 'success' : 'error');
+      setRunsRefresh((n) => n + 1);
+    } catch (err) {
+      toastCatch("ExperimentsPanel:run")(err);
+    } finally {
+      setRunningId(null);
+    }
+  }, [t, addToast]);
 
   if (!activeProjectId) {
     return (
@@ -80,6 +132,9 @@ export default function ExperimentsPanel() {
         <div className="space-y-3">
           {projectExperiments.map((exp: ResearchExperiment) => {
             const linked = exp.hypothesisId ? hypothesisMap[exp.hypothesisId] : null;
+            const config = parseExperimentConfig(exp.inputSchema);
+            const persona = config.linkedPersonaId ? personaMap[config.linkedPersonaId] : null;
+            const isRunning = runningId === exp.id;
             return (
               <div
                 key={exp.id}
@@ -97,6 +152,13 @@ export default function ExperimentsPanel() {
                       </p>
                     )}
 
+                    {persona && (
+                      <p className="flex items-center gap-1.5 typo-caption text-emerald-300/80 mt-1.5">
+                        <Bot className="w-3 h-3" />
+                        <span className="truncate">{persona.name}</span>
+                      </p>
+                    )}
+
                     {exp.methodology && (
                       <div className="mt-2">
                         <p className="typo-micro text-foreground/40 uppercase tracking-wide">{t.research_lab.methodology}</p>
@@ -111,13 +173,32 @@ export default function ExperimentsPanel() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
                       <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary/60">
                         {exp.status.replace(/_/g, ' ')}
                       </span>
                       {!linked && (
                         <span className="typo-micro text-foreground/30">{t.research_lab.no_linked_hypothesis}</span>
                       )}
+                      {persona && (
+                        <button
+                          onClick={(e) => handleRun(e, exp)}
+                          disabled={isRunning}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
+                        >
+                          {isRunning
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <Play className="w-3 h-3" />}
+                          {isRunning ? t.research_lab.running_experiment : t.research_lab.run_experiment}
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setRunsDrawer(exp); }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground transition-colors"
+                      >
+                        <History className="w-3 h-3" />
+                        {t.research_lab.view_runs}
+                      </button>
                     </div>
                   </div>
                   <button
@@ -138,6 +219,16 @@ export default function ExperimentsPanel() {
       {showForm && (
         <Suspense fallback={null}>
           <AddExperimentForm projectId={activeProjectId} onClose={() => setShowForm(false)} />
+        </Suspense>
+      )}
+
+      {runsDrawer && (
+        <Suspense fallback={null}>
+          <ExperimentRunsDrawer
+            experiment={runsDrawer}
+            onClose={() => setRunsDrawer(null)}
+            refreshToken={runsRefresh}
+          />
         </Suspense>
       )}
     </div>

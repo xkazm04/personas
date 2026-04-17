@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
 import { TextField, TextAreaField, SelectField } from '../_shared/FormField';
+import { serializeExperimentConfig } from '../_shared/experimentConfig';
 
 interface Props {
   projectId: string;
@@ -14,6 +16,7 @@ export default function AddExperimentForm({ projectId, onClose }: Props) {
   const { t } = useTranslation();
   const createExperiment = useSystemStore((s) => s.createResearchExperiment);
   const hypotheses = useSystemStore((s) => s.researchHypotheses);
+  const personas = useAgentStore((s) => s.personas);
 
   const projectHypotheses = hypotheses.filter((h) => h.projectId === projectId);
 
@@ -21,6 +24,9 @@ export default function AddExperimentForm({ projectId, onClose }: Props) {
   const [methodology, setMethodology] = useState('');
   const [successCriteria, setSuccessCriteria] = useState('');
   const [hypothesisId, setHypothesisId] = useState<string>('');
+  const [linkedPersonaId, setLinkedPersonaId] = useState<string>('');
+  const [inputDataTemplate, setInputDataTemplate] = useState('');
+  const [passPattern, setPassPattern] = useState('');
   const [saving, setSaving] = useState(false);
 
   const hypothesisOptions: ReadonlyArray<{ value: string; label: string }> = [
@@ -31,17 +37,31 @@ export default function AddExperimentForm({ projectId, onClose }: Props) {
     })),
   ];
 
+  const personaOptions: ReadonlyArray<{ value: string; label: string }> = [
+    { value: '', label: '—' },
+    ...[...personas].sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({
+      value: p.id,
+      label: p.name,
+    })),
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
     try {
+      const inputSchema = serializeExperimentConfig({
+        linkedPersonaId: linkedPersonaId || undefined,
+        inputDataTemplate: inputDataTemplate.trim() || undefined,
+        passPattern: passPattern.trim() || undefined,
+      });
       await createExperiment({
         projectId,
         name: name.trim(),
         methodology: methodology.trim() || undefined,
         successCriteria: successCriteria.trim() || undefined,
         hypothesisId: hypothesisId || undefined,
+        inputSchema,
       });
       onClose();
     } catch (err) {
@@ -77,6 +97,13 @@ export default function AddExperimentForm({ projectId, onClose }: Props) {
         />
       )}
 
+      <SelectField
+        label={t.research_lab.linked_persona}
+        value={linkedPersonaId}
+        onChange={setLinkedPersonaId}
+        options={personaOptions}
+      />
+
       <TextAreaField
         label={t.research_lab.methodology}
         value={methodology}
@@ -92,6 +119,24 @@ export default function AddExperimentForm({ projectId, onClose }: Props) {
         placeholder={t.research_lab.success_criteria_placeholder}
         rows={2}
       />
+
+      {linkedPersonaId && (
+        <>
+          <TextAreaField
+            label={t.research_lab.run_input}
+            value={inputDataTemplate}
+            onChange={setInputDataTemplate}
+            placeholder={t.research_lab.run_input_placeholder}
+            rows={3}
+          />
+          <TextField
+            label={t.research_lab.pass_pattern}
+            value={passPattern}
+            onChange={setPassPattern}
+            placeholder={t.research_lab.pass_pattern_placeholder}
+          />
+        </>
+      )}
     </ResearchLabFormModal>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, lazy, Suspense, useMemo } from 'react';
-import { Lightbulb, Trash2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Lightbulb, Trash2, ThumbsUp, ThumbsDown, Sparkles } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { SectionHeader } from '../_shared/SectionHeader';
@@ -8,6 +9,7 @@ import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
 import type { ResearchHypothesis } from '@/api/researchLab/researchLab';
 
 const AddHypothesisForm = lazy(() => import('./AddHypothesisForm'));
+const GenerateHypothesesModal = lazy(() => import('./GenerateHypothesesModal'));
 
 function ConfidenceBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(1, value));
@@ -33,12 +35,31 @@ export default function HypothesesPanel() {
   const fetchHypotheses = useSystemStore((s) => s.fetchResearchHypotheses);
   const deleteHypothesis = useSystemStore((s) => s.deleteResearchHypothesis);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
+  const projects = useSystemStore((s) => s.researchProjects);
+  const sources = useSystemStore((s) => s.researchSources);
+  const fetchSources = useSystemStore((s) => s.fetchResearchSources);
+  const personas = useAgentStore((s) => s.personas);
+  const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
   const [showForm, setShowForm] = useState(false);
+  const [showGenerate, setShowGenerate] = useState(false);
 
   useEffect(() => {
-    if (activeProjectId) fetchHypotheses(activeProjectId);
-  }, [activeProjectId, fetchHypotheses]);
+    if (activeProjectId) {
+      fetchHypotheses(activeProjectId);
+      // sources are used as context for the generator
+      if (sources.length === 0) fetchSources(activeProjectId);
+    }
+  }, [activeProjectId, fetchHypotheses, fetchSources, sources.length]);
+
+  useEffect(() => {
+    if (personas.length === 0) fetchPersonas();
+  }, [personas.length, fetchPersonas]);
+
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === activeProjectId) ?? null,
+    [projects, activeProjectId],
+  );
 
   const projectHypotheses = useMemo(
     () => hypotheses.filter((h) => h.projectId === activeProjectId),
@@ -75,7 +96,21 @@ export default function HypothesesPanel() {
         title={t.research_lab.hypotheses}
         actionLabel={t.research_lab.add_hypothesis}
         onAction={() => setShowForm(true)}
-        extra={<span className="typo-caption text-foreground/40">{projectHypotheses.length}</span>}
+        extra={
+          <>
+            <span className="typo-caption text-foreground/40">{projectHypotheses.length}</span>
+            {activeProject && personas.length > 0 && (
+              <button
+                onClick={() => setShowGenerate(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors"
+                title={t.research_lab.generate_hypotheses}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {t.research_lab.generate_hypotheses}
+              </button>
+            )}
+          </>
+        }
       />
 
       {loading && projectHypotheses.length === 0 ? (
@@ -145,6 +180,12 @@ export default function HypothesesPanel() {
       {showForm && (
         <Suspense fallback={null}>
           <AddHypothesisForm projectId={activeProjectId} onClose={() => setShowForm(false)} />
+        </Suspense>
+      )}
+
+      {showGenerate && activeProject && (
+        <Suspense fallback={null}>
+          <GenerateHypothesesModal project={activeProject} onClose={() => setShowGenerate(false)} />
         </Suspense>
       )}
     </div>

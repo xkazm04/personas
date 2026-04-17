@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense, useMemo } from 'react';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, Eye } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -9,6 +9,7 @@ import type { ResearchReport } from '@/api/researchLab/researchLab';
 import type { Translations } from '@/i18n/en';
 
 const AddReportForm = lazy(() => import('./AddReportForm'));
+const ReportPreviewDrawer = lazy(() => import('./ReportPreviewDrawer'));
 
 function reportTypeLabel(t: Translations, type: string | null): string {
   if (!type) return '';
@@ -31,6 +32,7 @@ export default function ReportsPanel() {
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
 
   const [showForm, setShowForm] = useState(false);
+  const [previewing, setPreviewing] = useState<ResearchReport | null>(null);
 
   useEffect(() => {
     if (activeProjectId) fetchReports(activeProjectId);
@@ -83,7 +85,8 @@ export default function ReportsPanel() {
           {projectReports.map((r: ResearchReport) => (
             <div
               key={r.id}
-              className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group"
+              onClick={() => setPreviewing(r)}
+              className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group cursor-pointer"
             >
               <div className="flex items-start gap-3">
                 <FileText className="w-4 h-4 text-pink-400/80 mt-1 flex-shrink-0" />
@@ -105,14 +108,24 @@ export default function ReportsPanel() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={(e) => handleDelete(e, r.id)}
-                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all flex-shrink-0"
-                  title={t.common.delete}
-                  aria-label={t.common.delete}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setPreviewing(r); }}
+                    className="p-1 rounded hover:bg-primary/10 text-primary/60 hover:text-primary transition-colors"
+                    title="Preview"
+                    aria-label="Preview"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(e, r.id); }}
+                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all"
+                    title={t.common.delete}
+                    aria-label={t.common.delete}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -122,6 +135,12 @@ export default function ReportsPanel() {
       {showForm && (
         <Suspense fallback={null}>
           <AddReportForm projectId={activeProjectId} onClose={() => setShowForm(false)} />
+        </Suspense>
+      )}
+
+      {previewing && (
+        <Suspense fallback={null}>
+          <ReportPreviewDrawer report={previewing} onClose={() => setPreviewing(null)} />
         </Suspense>
       )}
     </div>

@@ -121,7 +121,7 @@ export default function TrainingPage() {
     followupSpawnedFor.current = new Set();
 
     const groundingBlock = groundingFacts.length > 0
-      ? `\n\nAlready known about ${activeTwin.name} (do NOT re-ask these — build on or around them):\n${groundingFacts.map((f, i) => `- ${f.slice(0, 200)}${f.length > 200 ? '…' : ''}`).join('\n')}`
+      ? `\n\nAlready known about ${activeTwin.name} (do NOT re-ask these — build on or around them):\n${groundingFacts.map((f) => `- ${f.slice(0, 200)}${f.length > 200 ? '…' : ''}`).join('\n')}`
       : '';
 
     try {
@@ -139,7 +139,7 @@ Output ONLY the questions, one per line, numbered 1-5. No other text.`;
       const result = await callAi(prompt);
 
       const lines = result.split('\n')
-        .map((l) => l.replace(/^\d+[\.\)]\s*/, '').trim())
+        .map((l) => l.replace(/^\d+[.)]\s*/, '').trim())
         .filter((l) => l.length > 10);
 
       const qaPairs: QAPair[] = lines.slice(0, 5).map((q, i) => ({
@@ -185,7 +185,7 @@ Their (terse) answer: "${parentAnswer}"
 
 Ask ONE concise follow-up question that gets them to elaborate — pick the most interesting unexplored angle. Output the question only, no preamble.`;
       const raw = await callAi(followupPrompt);
-      const cleaned = raw.split('\n').map((l) => l.replace(/^\d+[\.\)]\s*/, '').trim()).find((l) => l.length > 5);
+      const cleaned = raw.split('\n').map((l) => l.replace(/^\d+[.)]\s*/, '').trim()).find((l) => l.length > 5);
       return cleaned ?? null;
     } catch {
       return null;

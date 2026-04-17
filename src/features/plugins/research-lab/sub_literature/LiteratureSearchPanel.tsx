@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense, useMemo } from 'react';
-import { BookOpen, ExternalLink, Trash2, Database } from 'lucide-react';
+import { BookOpen, ExternalLink, Trash2, Database, Search } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -9,6 +9,7 @@ import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
 import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../_shared/tokens';
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
+const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
 
 export default function LiteratureSearchPanel() {
   const { t } = useTranslation();
@@ -23,6 +24,7 @@ export default function LiteratureSearchPanel() {
   const addToast = useToastStore((s) => s.addToast);
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showArxiv, setShowArxiv] = useState(false);
   const [filter, setFilter] = useState('');
   const [ingestingId, setIngestingId] = useState<string | null>(null);
 
@@ -77,9 +79,19 @@ export default function LiteratureSearchPanel() {
         actionLabel={t.research_lab.search_sources}
         onAction={() => setShowAddForm(true)}
         extra={
-          <span className="typo-caption text-foreground/40">
-            {filtered.length} / {sources.length} {t.research_lab.sources_count}
-          </span>
+          <>
+            <span className="typo-caption text-foreground/40">
+              {filtered.length} / {sources.length} {t.research_lab.sources_count}
+            </span>
+            <button
+              onClick={() => setShowArxiv(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
+              title="Search arXiv"
+            >
+              <Search className="w-3.5 h-3.5" />
+              arXiv
+            </button>
+          </>
         }
       />
 
@@ -184,6 +196,12 @@ export default function LiteratureSearchPanel() {
       {showAddForm && activeProjectId && (
         <Suspense fallback={null}>
           <AddSourceForm projectId={activeProjectId} onClose={() => setShowAddForm(false)} />
+        </Suspense>
+      )}
+
+      {showArxiv && activeProjectId && (
+        <Suspense fallback={null}>
+          <ArxivSearchModal projectId={activeProjectId} onClose={() => setShowArxiv(false)} />
         </Suspense>
       )}
     </div>
