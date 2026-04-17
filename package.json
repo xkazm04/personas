@@ -1,9 +1,27 @@
 {
   "name": "personas-desktop",
-  "version": "0.0.1",
+  "version": "0.1.0-ff.1",
   "private": true,
   "type": "module",
+  "description": "Local-first desktop app for building, orchestrating, and monitoring AI agent personas — encrypted credentials, visual pipelines, real-time observability.",
+  "author": "Personas contributors",
   "license": "MIT",
+  "homepage": "https://github.com/xkazm04/personas#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkazm04/personas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xkazm04/personas/issues"
+  },
+  "keywords": [
+    "tauri",
+    "desktop",
+    "ai-agents",
+    "local-first",
+    "personas",
+    "automation"
+  ],
   "engines": {
     "node": ">=20.0.0"
   },

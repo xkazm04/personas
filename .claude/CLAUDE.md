@@ -195,7 +195,10 @@ After significant feature work, run `/guide-sync` to keep the marketing site gui
 
 ## Pre-existing Issues (Do Not Fix Unless Asked)
 
-- `AccountSettings.tsx` has TS errors (missing Sparkles, TIERS, TIER_LABELS imports)
-- ~159 pre-existing TS errors across DualBatchPanel, commandHandlers, Social module, DebtPrediction (varies by branch state)
-- Git post-commit hook warning about `git_hook.py` is harmless
-- Lint baseline (post-2026-04-17 react-hooks pass): 23,419 warnings and 0 errors (up from 23,159 after adding eslint-plugin-react-hooks@7.1.0); 21 `react-hooks/rules-of-hooks` violations (conditional hooks + hooks called outside components) across 7 files are at warn-level pending triage.
+- Git post-commit hook warning about `git_hook.py` is harmless.
+- Lint baseline (as of 2026-04-17 ship-ready pass): **0 errors, ~10,086 warnings**. The warnings are almost entirely `custom/no-raw-*-classes` (design-token migration) and `custom/no-hardcoded-jsx-text` (i18n extraction) — both are known incremental migrations. Follow CLAUDE.md's fix-as-you-touch policy; do not bulk-migrate.
+- `react-hooks/rules-of-hooks` violations (conditional hooks, hooks called outside components): ~21 remain across ~7 files, at warn-level pending triage. Not a ship-blocker; fix opportunistically when touching those files.
+
+### Historical (for context; no longer active on `master`)
+
+- The "~159 pre-existing TS errors" and the `AccountSettings.tsx` missing-import list from earlier versions of this document **no longer apply**. The 2026-04-17 ship-ready pass resolved all TS errors; `npx tsc --noEmit` now exits clean on `master`. If you see TS errors on a branch, treat them as regressions introduced on that branch.
