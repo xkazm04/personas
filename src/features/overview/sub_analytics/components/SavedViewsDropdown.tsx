@@ -134,14 +134,14 @@ export function SavedViewsDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-all"
       >
         <Bookmark className="w-4 h-4" />
         <span className="hidden sm:inline">{t.overview.analytics_dashboard.saved_views}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-modal shadow-elevation-3 z-50 overflow-hidden flex flex-col">
           {isSaving ? (
             <div className="p-2 flex items-center gap-2 border-b border-primary/10">
               <input

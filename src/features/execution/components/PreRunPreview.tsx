@@ -63,7 +63,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 4, scale: 0.98 }}
       transition={{ duration: 0.15 }}
-      className="absolute top-full right-0 mt-2 w-72 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 overflow-hidden"
+      className="absolute top-full right-0 mt-2 w-72 bg-background border border-primary/20 rounded-modal shadow-elevation-3 z-50 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/20">
@@ -137,7 +137,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
 
         {/* Warnings */}
         {check.reasons.length > 0 && (
-          <div className="rounded-lg bg-amber-500/5 border border-amber-500/15 px-2.5 py-2">
+          <div className="rounded-card bg-amber-500/5 border border-amber-500/15 px-2.5 py-2">
             {check.reasons.map((r, i) => (
               <p key={i} className="typo-caption text-amber-400/80 flex items-start gap-1.5">
                 <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
@@ -160,7 +160,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
         <button
           type="button"
           onClick={onConfirm}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-sm font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
         >
           <Play className="w-3 h-3" />
           Run Agent

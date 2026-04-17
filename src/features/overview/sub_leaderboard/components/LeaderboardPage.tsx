@@ -102,7 +102,7 @@ export default function LeaderboardPage() {
 
             {/* Right: radar + detail */}
             <div className="w-64 flex-shrink-0 space-y-4">
-              <div className="p-4 rounded-xl border border-primary/[0.08] bg-secondary/[0.03]">
+              <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03]">
                 <h4 className="text-xs font-medium text-muted-foreground/60 mb-3 text-center">
                   {selectedEntry ? selectedEntry.personaName : 'Top Agent'}
                 </h4>

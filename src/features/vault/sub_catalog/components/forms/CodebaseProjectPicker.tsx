@@ -111,7 +111,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         <button
           type="button"
           onClick={goToDevTools}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-card text-sm font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
         >
           Go to Dev Tools
           <ArrowRight className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             value={credentialName ?? ''}
             onChange={(e) => onCredentialNameChange(e.target.value)}
             placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </div>
       )}
@@ -166,14 +166,14 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 rounded-card text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors"
+          className="px-4 py-2 rounded-card text-sm text-muted-foreground/60 hover:text-foreground/70 transition-colors"
         >
           Cancel
         </button>

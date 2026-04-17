@@ -101,7 +101,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
       {/* Full scrollable log */}
       <div
         ref={scrollRef}
-        className="max-h-[40rem] overflow-y-auto rounded-xl border border-primary/10 bg-black/20 p-3 space-y-2"
+        className="max-h-[40rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/20 p-3 space-y-2"
       >
         {annotatedItems.map((item) => {
           if (item.kind === 'divider') {
@@ -154,7 +154,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-xl border border-red-500/15 hover:bg-red-500/10 transition-colors"
+          className="px-4 py-2 text-sm text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"
         >
           Cancel Session
         </button>

@@ -38,10 +38,10 @@ export default function CronAgentsPage() {
         subtitle={t.overview.cron.subtitle}
         actions={
           <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-            <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <span className="px-2 py-0.5 rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               {tx(t.overview.cron.scheduled_count, { count: cronAgents.length })}
             </span>
-            <span className="px-2 py-0.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <span className="px-2 py-0.5 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
               {tx(t.overview.cron.headless_count, { count: headless.length })}
             </span>
           </div>
@@ -119,7 +119,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
   const disabled = !agent.trigger_enabled || !agent.persona_enabled;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${disabled
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border transition-colors ${disabled
         ? 'border-primary/5 bg-primary/[0.02] opacity-60'
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'
       }`}>

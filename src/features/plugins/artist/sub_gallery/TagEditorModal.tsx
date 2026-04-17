@@ -92,13 +92,13 @@ export default function TagEditorModal({
         </p>
 
         <div
-          className="flex flex-wrap items-center gap-1.5 min-h-[52px] p-2 rounded-xl bg-secondary/30 border border-primary/10 focus-within:border-rose-500/30 transition-colors cursor-text"
+          className="flex flex-wrap items-center gap-1.5 min-h-[52px] p-2 rounded-modal bg-secondary/30 border border-primary/10 focus-within:border-rose-500/30 transition-colors cursor-text"
           onClick={() => inputRef.current?.focus()}
         >
           {tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md bg-rose-500/15 text-rose-400 text-md"
+              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-input bg-rose-500/15 text-rose-400 text-md"
             >
               {tag}
               <button

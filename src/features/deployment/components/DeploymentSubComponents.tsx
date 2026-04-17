@@ -36,8 +36,8 @@ export function SummaryCard({
   connected?: boolean;
 }) {
   return (
-    <div className="px-3 py-2.5 rounded-xl bg-secondary/30 border border-primary/10 flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-lg bg-secondary/50 border border-primary/15 flex items-center justify-center flex-shrink-0">
+    <div className="px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-card bg-secondary/50 border border-primary/15 flex items-center justify-center flex-shrink-0">
         <Icon className={`w-4 h-4 ${color}`} />
       </div>
       <div className="min-w-0">
@@ -114,7 +114,7 @@ export function ActionButton({
       title={title}
       onClick={onClick}
       disabled={busy}
-      className={`p-1.5 rounded-lg text-muted-foreground/50 ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
+      className={`p-1.5 rounded-card text-muted-foreground/50 ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
     >
       {busy ? <LoadingSpinner size="sm" /> : <Icon className="w-3.5 h-3.5" />}
     </button>

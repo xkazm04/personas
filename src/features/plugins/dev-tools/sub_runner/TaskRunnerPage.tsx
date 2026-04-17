@@ -146,7 +146,7 @@ function TaskModal({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Task title..."
-                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
               />
             </div>
             <div>
@@ -156,7 +156,7 @@ function TaskModal({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what this task should accomplish..."
                 rows={3}
-                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
+                className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
               />
             </div>
 
@@ -173,7 +173,7 @@ function TaskModal({
                       key={opt.value}
                       type="button"
                       onClick={() => setDepth(opt.value)}
-                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border bg-secondary/30 transition-all ${ring}`}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
                     >
                       <Icon className={`w-4 h-4 ${selected ? `text-${opt.color}-400` : 'text-foreground'}`} />
                       <span className={`text-xs font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
@@ -196,7 +196,7 @@ function TaskModal({
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}
                   placeholder="Goal ID or name..."
-                  className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                  className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
                 />
               </div>
             </div>
@@ -244,7 +244,7 @@ function TaskCard({
 
   return (
     <div
-      className={`animate-fade-slide-in border rounded-xl overflow-hidden transition-colors ${
+      className={`animate-fade-slide-in border rounded-modal overflow-hidden transition-colors ${
         hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
       }`}
     >
@@ -317,7 +317,7 @@ function TaskCard({
 
       {/* Context warnings banner */}
       {hasWarnings && expanded && (
-        <div className="mx-4 mb-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+        <div className="mx-4 mb-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
           <div className="flex items-center gap-1.5 mb-1">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span className="text-[10px] font-medium text-amber-400">{t.plugins.dev_tools.context_warnings_title}</span>
@@ -343,7 +343,7 @@ function TaskCard({
                   isRunning={task.status === 'running'}
                 />
               ) : task.output ? (
-                <pre className="text-[11px] text-foreground bg-primary/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
+                <pre className="text-[11px] text-foreground bg-primary/5 rounded-card p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
                   {task.output}
                 </pre>
               ) : null}
@@ -498,7 +498,7 @@ export default function TaskRunnerPage() {
         <div className="space-y-5">
           {/* Batch progress header */}
           {totalCount > 0 && (
-            <div className="border border-primary/10 rounded-xl p-4 bg-primary/5">
+            <div className="border border-primary/10 rounded-modal p-4 bg-primary/5">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="typo-section-title">Batch Progress</h3>
                 <div className="flex items-center gap-3 text-[10px] text-foreground">
@@ -553,7 +553,7 @@ export default function TaskRunnerPage() {
             </h3>
 
             {tasks.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-primary/10 rounded-xl">
+              <div className="text-center py-20 border border-dashed border-primary/10 rounded-modal">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <Play className="w-7 h-7 text-amber-400/50" />
                 </div>

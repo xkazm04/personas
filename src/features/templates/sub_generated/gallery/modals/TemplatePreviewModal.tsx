@@ -111,7 +111,7 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <DimensionRadial designResult={designResult} size={36} />
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
               <X className="w-5 h-5 text-muted-foreground/70" />
             </button>
           </div>
@@ -122,7 +122,7 @@ export function TemplatePreviewModal({
           {phase === 'idle' && !hasStarted ? (
             /* Pre-run state */
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-12">
-              <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
                 <Play className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-center max-w-md">
@@ -136,7 +136,7 @@ export function TemplatePreviewModal({
               <button
                 onClick={handleRun}
                 disabled={!designResult}
-                className="px-4 py-2.5 typo-body rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                className="px-4 py-2.5 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <Play className="w-4 h-4" />
                 {t.templates.preview_modal.run_preview}
@@ -186,7 +186,7 @@ export function TemplatePreviewModal({
             {isDone && (
               <button
                 onClick={handleRetry}
-                className="px-3.5 py-2 typo-body rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                className="px-3.5 py-2 typo-body rounded-modal bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 {t.templates.preview_modal.run_again}
@@ -199,7 +199,7 @@ export function TemplatePreviewModal({
             )}
             <button
               onClick={onClose}
-              className="px-3.5 py-2 typo-body rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+              className="px-3.5 py-2 typo-body rounded-modal text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
             >
               {t.common.close}
             </button>

@@ -120,7 +120,7 @@ export function ChatTab() {
   const showPresets = messages.length === 0 && !chatStreaming;
 
   return (
-    <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-xl border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
+    <div className="flex h-[calc(100vh-200px)] min-h-[400px] rounded-modal border border-primary/[0.08] overflow-hidden bg-background" data-testid="chat-tab">
       <OpsSidebar personaId={personaId} onNewSession={handleNewSession} badges={opsBadges} />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -178,7 +178,7 @@ export function ChatTab() {
                 placeholder={chatStreaming ? t.agents.chat.waiting : t.agents.chat.ask_anything}
                 disabled={chatStreaming || isExecuting}
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
+                className="flex-1 resize-none rounded-modal border border-primary/10 bg-background px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/20 disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                 style={{ height: 'auto', overflow: 'auto' }}
                 onInput={(e) => {
                   const el = e.currentTarget;
@@ -190,7 +190,7 @@ export function ChatTab() {
                 data-testid="chat-send-btn"
                 onClick={() => void handleSend()}
                 disabled={!inputValue.trim() || chatStreaming || isExecuting}
-                className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-shrink-0 w-10 h-10 rounded-modal bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {chatStreaming ? <LoadingSpinner /> : <Send className="w-4 h-4" />}
               </button>

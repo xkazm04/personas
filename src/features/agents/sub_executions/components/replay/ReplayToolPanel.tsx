@@ -44,7 +44,7 @@ export function ReplayToolPanel({
           return (
             <div
               key={step.step_index}
-              className={`relative rounded-xl border px-3 py-2 transition-all ${
+              className={`relative rounded-modal border px-3 py-2 transition-all ${
                 isFork
                   ? 'border-amber-400/50 bg-amber-500/10 ring-1 ring-amber-400/30'
                   : isActive
@@ -84,7 +84,7 @@ export function ReplayToolPanel({
               {(isCompleted || isActive) && (
                 <button
                   onClick={() => onFork(isFork ? null : step.step_index)}
-                  className="absolute inset-0 rounded-lg"
+                  className="absolute inset-0 rounded-card"
                   title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index + 1 })}
                 />
               )}

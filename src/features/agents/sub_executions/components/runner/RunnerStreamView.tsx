@@ -46,7 +46,7 @@ export function RunnerPhaseTimeline({
                 const minGrow = totalDur > 0 ? totalDur * 0.06 : 1;
 
                 return (
-                  <div className="flex w-full h-7 rounded-lg overflow-hidden gap-px" data-testid="phase-timeline-bar">
+                  <div className="flex w-full h-7 rounded-card overflow-hidden gap-px" data-testid="phase-timeline-bar">
                     {phases.map((phase, i) => {
                       const isActive = i === phases.length - 1 && isExecuting;
                       const meta = PHASE_META[phase.id];

@@ -60,7 +60,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
     <div className="space-y-3">
       {/* Trend warning */}
       {summary.lifetimeTrendingShorter && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           <span>{t.vault.token_metrics.trend_warning}</span>
         </div>
@@ -115,7 +115,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
               return (
                 <div
                   key={i}
-                  className={`flex-1 rounded-sm transition-all ${isDecreasing ? 'bg-amber-400/60' : 'bg-emerald-400/40'}`}
+                  className={`flex-1 rounded-interactive transition-all ${isDecreasing ? 'bg-amber-400/60' : 'bg-emerald-400/40'}`}
                   style={{ height: `${Math.max(pct, 8)}%` }}
                   title={`${formatDuration(secs)} (${secs}s)`}
                 />
@@ -133,7 +133,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
             {recentMetrics.slice(0, 5).map((m) => (
               <div
                 key={m.id}
-                className={`flex items-center justify-between text-sm px-2 py-1 rounded-lg ${
+                className={`flex items-center justify-between text-sm px-2 py-1 rounded-card ${
                   m.success
                     ? 'bg-secondary/20 text-foreground/80'
                     : 'bg-red-500/10 border border-red-500/20 text-red-400'
@@ -169,7 +169,7 @@ export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string 
 
 function StatBox({ label, value, icon, alert }: { label: string; value: string; icon: React.ReactNode; alert?: boolean }) {
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-modal border ${
       alert ? 'bg-amber-500/10 border-amber-500/20' : 'bg-secondary/20 border-primary/8'
     }`}>
       <div className={alert ? 'text-amber-400' : 'text-muted-foreground/60'}>{icon}</div>

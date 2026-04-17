@@ -60,7 +60,7 @@ export function TriggersPage() {
               useOverviewStore.getState().setOverviewTab('events')
             );
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
           title={t.triggers.full_event_log}
         >
           <ExternalLink className="w-3 h-3" />

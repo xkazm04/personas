@@ -58,7 +58,7 @@ export function StepExpandedContent({
       {step.visual_hint && (
         <motion.div
           variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
-          className="px-3 py-2 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground/90"
+          className="px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground/90"
           data-testid={`negotiator-step-${stepIndex}-visual-hint`}
         >
           {step.visual_hint}
@@ -70,7 +70,7 @@ export function StepExpandedContent({
         <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} className="space-y-1">
           <button
             onClick={handleOpenUrl}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-modal bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm hover:bg-violet-500/20 transition-colors"
             data-testid={`negotiator-step-${stepIndex}-open-url-btn`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -84,7 +84,7 @@ export function StepExpandedContent({
       {step.wait_for && !isCompleted && (
         <motion.div
           variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
-          className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20"
           data-testid={`negotiator-step-${stepIndex}-wait-for`}
         >
           <LoadingSpinner size="sm" className="text-amber-400 mt-0.5 shrink-0" />
@@ -122,7 +122,7 @@ export function StepExpandedContent({
           <button
             onClick={onComplete}
             disabled={step.field_fills ? !allFieldsCaptured : false}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-modal bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-sm font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid={`negotiator-step-${stepIndex}-complete-btn`}
           >
             <Check className="w-3.5 h-3.5" />
@@ -131,7 +131,7 @@ export function StepExpandedContent({
         )}
         {isCompleted && (
           <span
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-emerald-500/10 text-emerald-400 text-sm"
             data-testid={`negotiator-step-${stepIndex}-completed-badge`}
           >
             <CheckCircle className="w-3 h-3" />

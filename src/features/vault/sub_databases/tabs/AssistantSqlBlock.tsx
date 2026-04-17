@@ -30,7 +30,7 @@ export function AssistantSqlBlock({
         <p className="text-sm text-foreground/70">{msg.explanation}</p>
       )}
 
-      <div className="rounded-xl border border-primary/10 overflow-hidden">
+      <div className="rounded-modal border border-primary/10 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
           <span className="text-xs font-medium text-muted-foreground/50 uppercase tracking-wide">
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
@@ -62,7 +62,7 @@ export function AssistantSqlBlock({
       {(msg.status === 'ready' || msg.status === 'done') && (
         <button
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >
           <Play className="w-3 h-3" />
           {msg.result ? db.rerun_query : db.run_query}
@@ -77,7 +77,7 @@ export function AssistantSqlBlock({
       )}
 
       {msg.error && msg.status === 'done' && (
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
+        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
           {msg.error}
         </div>
       )}

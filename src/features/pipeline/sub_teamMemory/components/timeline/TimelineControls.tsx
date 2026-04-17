@@ -32,7 +32,7 @@ export function RunMarker({
       {/* Run header */}
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-colors text-left ${
+        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal border transition-colors text-left ${
           isFiltered
             ? 'bg-violet-500/15 border-violet-500/25'
             : 'bg-primary/5 border-primary/10 hover:border-primary/20'

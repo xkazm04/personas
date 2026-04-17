@@ -152,7 +152,7 @@ export function ProjectModal({
                   <div className="flex gap-2">
                     <div
                       onClick={isEdit ? undefined : handleSelectFolder}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl min-w-0 ${
+                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal min-w-0 ${
                         isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 transition-colors'
                       }`}
                     >
@@ -184,7 +184,7 @@ export function ProjectModal({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       placeholder="My Awesome App"
-                      className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
+                      className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
                     />
                     <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
                   </div>
@@ -201,7 +201,7 @@ export function ProjectModal({
                       <button
                         key={pt.id}
                         onClick={() => setProjectType(pt.id)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card border transition-all ${
                           projectType === pt.id
                             ? `${pt.color} ring-1 ring-current/20 scale-105`
                             : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
@@ -247,7 +247,7 @@ export function ProjectModal({
                   Would you like to generate a context map now?
                 </p>
 
-                <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mb-6 text-left">
+                <div className="bg-primary/5 border border-primary/10 rounded-modal p-4 mb-6 text-left">
                   <div className="flex items-start gap-3">
                     <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>

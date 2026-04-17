@@ -64,14 +64,14 @@ export default function MemoryPanelList({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/40" />
           <input
-            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-xl pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/20"
+            className="w-full text-sm bg-primary/5 border border-primary/10 rounded-modal pl-6 pr-2 py-1.5 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/20"
             placeholder={t.pipeline.search_memories}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         {activeRunFilter && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-violet-500/10 border border-violet-500/20">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-violet-500/10 border border-violet-500/20">
             <GitCommitVertical className="w-3 h-3 text-violet-400 flex-shrink-0" />
             <span className="text-sm text-violet-400 font-mono truncate flex-1">
               Run {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
@@ -114,7 +114,7 @@ export default function MemoryPanelList({
               <button
                 onClick={onLoadMore}
                 disabled={loadingMore}
-                className="w-full py-1.5 text-sm text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="w-full py-1.5 text-sm text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-card transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {loadingMore ? (<><LoadingSpinner size="xs" />{t.common.loading}</>) : <>{t.pipeline.load_more}</>}
               </button>

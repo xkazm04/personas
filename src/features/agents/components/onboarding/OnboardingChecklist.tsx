@@ -98,7 +98,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
   };
 
   return (
-    <div className="mx-4 mb-3 rounded-xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
+    <div className="mx-4 mb-3 rounded-modal border border-violet-500/20 bg-violet-500/5 overflow-hidden">
       {/* Summary bar */}
       <div className="flex items-center gap-2.5 px-3 py-2">
         <ProgressRing score={checklist.score} size={28} strokeWidth={3} />
@@ -115,13 +115,13 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/50 transition-colors"
+          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/50 transition-colors"
         >
           {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
         <button
           onClick={handleDismiss}
-          className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/40 transition-colors"
+          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/40 transition-colors"
           title={t.agents.onboarding.dismiss_checklist}
         >
           <X className="w-3.5 h-3.5" />
@@ -135,7 +135,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
             <button
               key={item.id}
               onClick={() => handleItemClick(item.tab)}
-              className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-left transition-colors ${
+              className={`w-full flex items-center gap-2 px-2 py-1 rounded-card text-left transition-colors ${
                 item.done
                   ? 'text-muted-foreground/50'
                   : 'text-foreground/80 hover:bg-violet-500/10'

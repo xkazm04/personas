@@ -37,12 +37,12 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
     <div ref={containerRef} className="relative">
       {children({ requestConfirm: () => setOpen(true) })}
       {open && (
-        <div className="absolute right-0 bottom-full mb-1 z-50 rounded-lg border border-border bg-background shadow-elevation-3 p-2.5 min-w-[180px]">
+        <div className="absolute right-0 bottom-full mb-1 z-50 rounded-card border border-border bg-background shadow-elevation-3 p-2.5 min-w-[180px]">
           <p className="text-xs text-foreground mb-2">{message}</p>
           <div className="flex gap-1.5 justify-end">
             <button
               onClick={() => setOpen(false)}
-              className="px-2 py-1 text-[11px] rounded-md border border-border hover:bg-secondary/50 text-muted-foreground"
+              className="px-2 py-1 text-[11px] rounded-input border border-border hover:bg-secondary/50 text-muted-foreground"
             >
               {st.cancel}
             </button>
@@ -51,7 +51,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
                 setOpen(false);
                 onConfirm();
               }}
-              className="px-2 py-1 text-[11px] rounded-md bg-red-500/90 text-white hover:bg-red-500"
+              className="px-2 py-1 text-[11px] rounded-input bg-red-500/90 text-white hover:bg-red-500"
             >
               {st.confirm}
             </button>

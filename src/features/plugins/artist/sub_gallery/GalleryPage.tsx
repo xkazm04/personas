@@ -55,7 +55,7 @@ export default function GalleryPage() {
             <button
               key={m.id}
               onClick={() => setGalleryMode(m.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md transition-colors ${
                 galleryMode === m.id
                   ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                   : 'text-foreground hover:bg-secondary/40 border border-transparent'
@@ -76,7 +76,7 @@ export default function GalleryPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.plugins.artist.search}
-            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 w-48"
+            className="pl-8 pr-3 py-1.5 rounded-card bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 w-48"
           />
         </div>
 
@@ -84,13 +84,13 @@ export default function GalleryPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground"
+          className="px-2 py-1.5 rounded-card bg-background/80 border border-primary/10 text-md text-foreground"
         >
           <option value="date">{t.plugins.artist.sort_date}</option>
           <option value="name">{t.plugins.artist.sort_name}</option>
           <option value="size">{t.plugins.artist.sort_size}</option>
         </select>
-        <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-foreground">
+        <button onClick={toggleSort} className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground">
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
         </button>
 
@@ -98,7 +98,7 @@ export default function GalleryPage() {
         <button
           onClick={() => artistFolder && scanAndImport(artistFolder)}
           disabled={scanning || !artistFolder}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-40"
         >
           <FolderSearch className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : ''}`} />
           {scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}

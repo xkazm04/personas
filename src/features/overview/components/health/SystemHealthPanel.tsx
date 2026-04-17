@@ -110,7 +110,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
           </div>
 
           {import.meta.env.DEV && (
-            <div className="rounded-xl border-2 border-amber-500/30 p-0.5">
+            <div className="rounded-modal border-2 border-amber-500/30 p-0.5">
               <CrashLogsSection />
             </div>
           )}

@@ -71,7 +71,7 @@ export function ServicesPanel({
         <button
           type="button"
           onClick={() => setActiveCategory('all')}
-          className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+          className={`px-2.5 py-1 rounded-input text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
             activeCategory === 'all'
               ? 'bg-primary/15 text-primary'
               : 'text-muted-foreground/40 hover:text-muted-foreground/60'
@@ -84,7 +84,7 @@ export function ServicesPanel({
             key={cat}
             type="button"
             onClick={() => setActiveCategory(cat)}
-            className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+            className={`px-2.5 py-1 rounded-input text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
               activeCategory === cat
                 ? 'bg-primary/15 text-primary'
                 : 'text-muted-foreground/40 hover:text-muted-foreground/60'
@@ -106,7 +106,7 @@ export function ServicesPanel({
               <button
                 type="button"
                 onClick={() => onToggle(c.name)}
-                className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-200 ${
+                className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-modal transition-all duration-200 ${
                   isSelected
                     ? 'bg-primary/10 border border-primary/25 shadow-elevation-1 shadow-primary/10'
                     : 'bg-secondary/10 border border-transparent hover:border-primary/15 hover:bg-secondary/20'

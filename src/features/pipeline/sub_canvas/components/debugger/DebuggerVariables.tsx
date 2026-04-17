@@ -18,7 +18,7 @@ export default function DebuggerVariables({
   const { t } = useTranslation();
   return (
     <div
-      className="animate-fade-slide-in mx-4 mb-2 rounded-xl bg-secondary/90 backdrop-blur-md border border-primary/15 shadow-elevation-4 overflow-hidden max-h-[280px]"
+      className="animate-fade-slide-in mx-4 mb-2 rounded-modal bg-secondary/90 backdrop-blur-md border border-primary/15 shadow-elevation-4 overflow-hidden max-h-[280px]"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
@@ -26,7 +26,7 @@ export default function DebuggerVariables({
           <span className="text-sm font-semibold text-foreground/90">
             {agentName}
           </span>
-          <span className={`px-1.5 py-0.5 text-sm font-mono rounded-lg ${
+          <span className={`px-1.5 py-0.5 text-sm font-mono rounded-card ${
             inspectedData.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
             inspectedData.status === 'running' ? 'bg-blue-500/15 text-blue-400' :
             'bg-secondary/40 text-muted-foreground'
@@ -37,13 +37,13 @@ export default function DebuggerVariables({
         <div className="flex items-center gap-1">
           <button
             onClick={onCollapse}
-            className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
+            className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
           >
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
+            className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

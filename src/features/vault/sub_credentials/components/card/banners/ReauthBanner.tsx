@@ -46,7 +46,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
         <div
           key={entry.credentialId}
           role="alert"
-          className="flex items-center gap-2.5 px-4 py-3 bg-amber-600/10 border border-amber-500/25 rounded-xl text-sm text-amber-300"
+          className="flex items-center gap-2.5 px-4 py-3 bg-amber-600/10 border border-amber-500/25 rounded-modal text-sm text-amber-300"
         >
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
           <span className="flex-1">

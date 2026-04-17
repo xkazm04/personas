@@ -58,7 +58,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] ${
+      className={`group relative px-4 py-3 rounded-modal bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] ${
         isGhost
           ? 'opacity-40 border-dashed border-indigo-500/40 pointer-events-none'
           : `cursor-grab active:cursor-grabbing hover:shadow-elevation-3 hover:shadow-indigo-500/10 ${borderStyles}`
@@ -67,7 +67,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       {/* Running spin-ring overlay */}
       {effectiveStatus === 'running' && (
         <div
-          className="absolute inset-[-3px] rounded-xl border-2 border-transparent border-t-blue-400 pointer-events-none"
+          className="absolute inset-[-3px] rounded-modal border-2 border-transparent border-t-blue-400 pointer-events-none"
           style={{ animation: 'spin-ring 1.5s linear infinite' }}
         />
       )}
@@ -135,7 +135,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
           <div className="text-sm font-semibold text-foreground/90 truncate max-w-[140px]" title={name}>
             {name}
           </div>
-          <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
+          <div className={`inline-flex items-center mt-0.5 px-1.5 py-0.5 text-sm font-mono uppercase rounded-card border ${roleDef.bg} ${roleDef.text} ${roleDef.border}`}>
             {role}
           </div>
         </div>

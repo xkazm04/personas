@@ -17,7 +17,7 @@ export function ResultsTable({ result, error, executing, language }: ResultsTabl
       {error && (
         <div
           key="error"
-          className="animate-fade-slide-in p-3 rounded-xl bg-red-500/8 border border-red-500/15 text-sm text-red-400/90 whitespace-pre-wrap font-mono leading-relaxed"
+          className="animate-fade-slide-in p-3 rounded-modal bg-red-500/8 border border-red-500/15 text-sm text-red-400/90 whitespace-pre-wrap font-mono leading-relaxed"
         >
           {error}
         </div>

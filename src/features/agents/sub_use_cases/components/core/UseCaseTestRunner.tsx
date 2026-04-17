@@ -108,7 +108,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
         {uc.test}
       </h5>
 
-      <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/30 border border-primary/10 rounded-modal p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground/70 min-w-0">
             {uc.run_with} <span className="text-foreground/80 font-medium">{resolved.label}</span>
@@ -126,7 +126,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
 
         {/* Show active fixture inputs preview */}
         {selectedFixture && Object.keys(selectedFixture.inputs).length > 0 && (
-          <div className="px-2.5 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15 text-xs">
+          <div className="px-2.5 py-2 rounded-card bg-amber-500/5 border border-amber-500/15 text-xs">
             <span className="text-amber-400/70 font-medium">{uc.fixture_inputs}</span>
             <pre className="mt-1 text-muted-foreground/70 whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
               {JSON.stringify(selectedFixture.inputs, null, 2)}
@@ -139,7 +139,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
             <button
               onClick={handleCancel}
               disabled={!canCancel}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium text-sm bg-red-500/80 hover:bg-red-500 text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               title={!canCancel ? uc.waiting_for_test : uc.cancel_test}
             >
               <Square className="w-3.5 h-3.5" /> {t.common.cancel}
@@ -174,7 +174,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
           <button
             onClick={handleRun}
             disabled={!hasPrompt || !resolved.config}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-3.5 h-3.5" /> {uc.test_use_case}
           </button>

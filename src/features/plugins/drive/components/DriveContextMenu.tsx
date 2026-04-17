@@ -109,7 +109,7 @@ export function DriveContextMenu({
           onClose();
         }
       }}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-md mx-1 ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-input mx-1 ${
         opts.disabled
           ? "text-foreground cursor-not-allowed"
           : opts.danger
@@ -134,7 +134,7 @@ export function DriveContextMenu({
   return (
     <div
       ref={ref}
-      className="fixed z-[9999] w-56 rounded-xl border border-primary/20 bg-background/95 backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6),0_0_30px_-8px_rgba(34,211,238,0.25)] py-1.5"
+      className="fixed z-[9999] w-56 rounded-modal border border-primary/20 bg-background/95 backdrop-blur-md shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6),0_0_30px_-8px_rgba(34,211,238,0.25)] py-1.5"
       style={{ left: x, top: y }}
     >
       {entry ? (

@@ -18,7 +18,7 @@ export function EmptyState({ icon: Icon, title, hint, actionLabel, onAction }: P
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >
           <Plus className="w-4 h-4" />
           {actionLabel}
@@ -43,7 +43,7 @@ export function NoActiveProject({ icon: Icon, message, onGoToProjects, goToProje
       {onGoToProjects && goToProjectsLabel && (
         <button
           onClick={onGoToProjects}
-          className="px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+          className="px-3 py-1.5 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >
           {goToProjectsLabel}
         </button>

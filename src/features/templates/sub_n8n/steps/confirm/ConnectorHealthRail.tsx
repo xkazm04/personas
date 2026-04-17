@@ -13,7 +13,7 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
   if (connectorRailItems.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/15 overflow-hidden mb-2" data-testid="connector-health-rail">
+    <div className="rounded-modal border border-primary/10 bg-secondary/15 overflow-hidden mb-2" data-testid="connector-health-rail">
       {/* Summary bar */}
       <div className="flex items-center gap-3 px-3.5 py-2.5 bg-secondary/25 border-b border-primary/[0.06]" data-testid="connector-health-summary">
         <span className="text-sm text-muted-foreground/80">

@@ -21,7 +21,7 @@ export function ForagingIdle({ onScan }: ForagingIdleProps) {
   return (
     <div
       key="idle"
-      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
+      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
     >
       <EmptyIllustration
         icon={Radar}
@@ -52,7 +52,7 @@ export function ForagingScanning() {
   return (
     <div
       key="scanning"
-      className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
     >
       <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
       <p className="text-sm text-foreground/80">{t.vault.foraging.scanning}</p>
@@ -73,7 +73,7 @@ export function ForagingImporting({ forage }: ForagingImportingProps) {
       key="importing"
       className="animate-fade-slide-in space-y-3"
     >
-      <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
+      <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
         <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
         <p className="text-sm text-foreground/80">
           Importing credentials to vault...
@@ -111,7 +111,7 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
   return (
     <div
       key="done"
-      className="animate-fade-slide-in rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
     >
       <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
       <div>
@@ -155,7 +155,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
   return (
     <div
       key="error"
-      className="animate-fade-slide-in rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
+      className="animate-fade-slide-in rounded-modal border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
     >
       <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
       <div>

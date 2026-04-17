@@ -82,7 +82,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center border"
+          className="w-10 h-10 rounded-modal flex items-center justify-center border"
           style={{
             backgroundColor: `${connector.color}15`,
             borderColor: `${connector.color}30`,
@@ -102,7 +102,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors"
         >
           <X className="w-4 h-4 text-muted-foreground/60" />
         </button>
@@ -137,7 +137,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
             <p className="text-sm text-muted-foreground/50 mb-2">{t.vault.picker_section.required_fields}</p>
             <div className="flex flex-wrap gap-1.5">
               {connector.fields.filter((f) => f.required).map((f) => (
-                <span key={f.key} className="text-sm px-2 py-0.5 rounded-lg bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
+                <span key={f.key} className="text-sm px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 text-foreground/70 font-mono">
                   {f.label}
                 </span>
               ))}
@@ -156,7 +156,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
                 data-cli-busy={cliBusy ? 'true' : 'false'}
                 onClick={runCliCapture}
                 disabled={cliBusy}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {cliBusy ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" data-testid="cli-capture-busy" />
@@ -178,7 +178,7 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
           {docsUrl && (
             <button
               onClick={handleOpenDocs}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-sm font-medium transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Open {connector.label} setup page

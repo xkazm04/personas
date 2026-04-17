@@ -31,7 +31,7 @@ export function MessagesSection({
         {channels.map((channel, chIdx) => {
           const isSelected = selectedChannelIndices.has(chIdx);
           return (
-            <div key={`ch-${chIdx}`} className="bg-secondary/20 border border-primary/10 rounded-xl p-3.5">
+            <div key={`ch-${chIdx}`} className="bg-secondary/20 border border-primary/10 rounded-modal p-3.5">
               <div className="flex items-start gap-3">
                 {!readOnly && (
                   <div className="mt-0.5">
@@ -42,7 +42,7 @@ export function MessagesSection({
                     />
                   </div>
                 )}
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
                   {(() => { const { Icon, color } = channelIconMeta(channel.type); return <Icon className={`w-4 h-4 ${color}`} />; })()}
                 </div>
                 <div className="flex-1 min-w-0">

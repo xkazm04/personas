@@ -52,7 +52,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
               key={opt.value}
               onClick={() => handleSelect(opt.value)}
               title={opt.label}
-              className={`${btnPad} rounded-lg border transition-colors ${
+              className={`${btnPad} rounded-card border transition-colors ${
                 isActive
                   ? `${opt.activeBg} ${opt.activeColor}`
                   : 'border-transparent text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-secondary/30'
@@ -66,7 +66,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
         {selected !== undefined && !saved && (
           <button
             onClick={handleSave}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
+            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card text-xs font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
           >
             <Send className="w-3 h-3" />
             Save
@@ -84,7 +84,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           value={feedback}
           onChange={(e) => { setFeedback(e.target.value); setSaved(false); }}
           placeholder={t.agents.lab.what_went_wrong}
-          className={`w-full rounded-lg border border-primary/10 bg-secondary/20 text-sm text-foreground/80 placeholder:text-muted-foreground/40 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'text-xs' : ''}`}
+          className={`w-full rounded-card border border-primary/10 bg-secondary/20 text-sm text-foreground/80 placeholder:text-muted-foreground/40 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/30 ${compact ? 'text-xs' : ''}`}
         />
       )}
     </div>

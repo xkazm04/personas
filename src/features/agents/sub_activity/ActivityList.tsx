@@ -19,7 +19,7 @@ function useColumns(): TableColumn<ActivityItem>[] {
       render: (item) => {
         const info = TYPE_ICONS[item.type] ?? TYPE_ICONS.execution!;
         return (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${info.bg}`} title={item.type}>
+          <div className={`w-7 h-7 rounded-card flex items-center justify-center ${info.bg}`} title={item.type}>
             <info.icon className={`w-3.5 h-3.5 ${info.color}`} />
           </div>
         );

@@ -61,7 +61,7 @@ export function PersonaSettingsTab({
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_name}</label>
             <input
@@ -110,7 +110,7 @@ export function PersonaSettingsTab({
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.execution}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           {!isSimple && (
             <div className="flex gap-3">
               <div className="flex-1">

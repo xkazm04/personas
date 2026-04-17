@@ -44,7 +44,7 @@ export function EventsSection({
         <span className="text-sm font-normal text-muted-foreground/80 ml-1">{t.templates.design.what_activates}</span>
       </div>
 
-      <div className="bg-secondary/20 border border-primary/10 rounded-xl overflow-hidden divide-y divide-primary/[0.06]">
+      <div className="bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden divide-y divide-primary/[0.06]">
         {/* Triggers */}
         {hasTriggers && (
           <div className="p-3.5 space-y-2">

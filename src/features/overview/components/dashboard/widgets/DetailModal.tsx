@@ -37,7 +37,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/90 transition-colors focus-ring"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground/90 transition-colors focus-ring"
           aria-label={t.overview.detail_modal.close}
         >
           <X className="w-4 h-4" />

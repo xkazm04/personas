@@ -22,7 +22,7 @@ export function MetricDeltaCard({
 }) {
   const pct = pctChange(leftVal, rightVal);
   return (
-    <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2.5 space-y-1">
+    <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2.5 space-y-1">
       <div className="typo-code uppercase tracking-wider text-muted-foreground/60">{label}</div>
       <div className="flex items-center gap-3">
         <span className="typo-code text-foreground/80">{format(leftVal)}</span>

@@ -34,7 +34,7 @@ function SearchChipInputImpl({
   const showAutocomplete = !!autocompletePrefix && !aiSearchMode;
 
   return (
-    <div className={`relative flex-1 min-w-0 flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-xl transition-all ${
+    <div className={`relative flex-1 min-w-0 flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-modal transition-all ${
       aiSearchMode
         ? 'border-indigo-500/20 focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20'
         : 'border-primary/10 focus-within:border-violet-500/30 focus-within:ring-1 focus-within:ring-violet-500/20'
@@ -116,7 +116,7 @@ function SearchChipInputImpl({
             )}
             <button onClick={() => onAiSearchSubmit?.(inputValue.trim())}
               disabled={!inputValue.trim() || aiSearchLoading}
-              className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="p-1.5 rounded-card bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               aria-label="Search with AI">
               {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>

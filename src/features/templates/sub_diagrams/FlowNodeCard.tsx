@@ -15,7 +15,7 @@ export default function FlowNodeCard({
   const meta = NODE_TYPE_META[node.type] ?? DEFAULT_NODE_META;
   const Icon = meta.Icon;
 
-  const baseClasses = 'cursor-pointer px-4 py-2.5 rounded-xl border min-w-[140px] max-w-[220px] text-center transition-all hover:scale-105';
+  const baseClasses = 'cursor-pointer px-4 py-2.5 rounded-modal border min-w-[140px] max-w-[220px] text-center transition-all hover:scale-105';
 
   const truncatedLabel = node.label.length > 30 ? node.label.slice(0, 28) + '\u2026' : node.label;
 

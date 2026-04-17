@@ -69,7 +69,7 @@ export function DayTimeGrid({
                 key={day.key}
                 type="button"
                 onClick={() => onToggleDay(day.key)}
-                className={`py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                className={`py-1.5 rounded-card text-sm font-medium transition-all border ${
                   active
                     ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                     : 'bg-secondary/20 text-muted-foreground/50 border-primary/10 hover:border-primary/20 hover:text-foreground/70'
@@ -92,7 +92,7 @@ export function DayTimeGrid({
             <select
               value={hour}
               onChange={(e) => onHourChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-card border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {HOURS.map((h) => (
                 <option key={h} value={h}>
@@ -110,7 +110,7 @@ export function DayTimeGrid({
             <select
               value={minute}
               onChange={(e) => onMinuteChange(parseInt(e.target.value))}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
+              className="w-full appearance-none pl-3 pr-8 py-2 rounded-card border border-primary/20 bg-secondary/25 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 cursor-pointer"
             >
               {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
                 <option key={m} value={m}>
@@ -134,7 +134,7 @@ export function DayTimeGrid({
               key={h}
               type="button"
               onClick={() => onHourChange(h)}
-              className={`flex-1 h-5 rounded-sm transition-all ${
+              className={`flex-1 h-5 rounded-interactive transition-all ${
                 h === hour
                   ? 'bg-amber-400 shadow-elevation-1 shadow-amber-400/30'
                   : h >= 9 && h <= 17

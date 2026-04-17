@@ -84,7 +84,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
     <div
       key="wizard-inline"
       data-testid="vault-wizard-container"
-      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl overflow-hidden"
+      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-modal overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
@@ -92,11 +92,11 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
           <button
             onClick={phase === 'batch' ? handleBack : handleClose}
             data-testid={phase === 'batch' ? 'vault-wizard-next' : 'vault-wizard-cancel'}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="w-8 h-8 rounded-xl bg-violet-500/15 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-violet-500/15 flex items-center justify-center">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
           <div>

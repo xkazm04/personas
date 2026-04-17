@@ -46,7 +46,7 @@ export function ExportSection({
   };
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.export_import_title} />
       <p className="text-sm text-muted-foreground/70">
         {s.export_import_hint}
@@ -56,7 +56,7 @@ export function ExportSection({
         <button
           onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal text-sm font-medium
             bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
             transition-colors disabled:opacity-50"
         >
@@ -78,7 +78,7 @@ export function ExportSection({
           <button
             onClick={() => setShowImportInput(true)}
             disabled={importStatus === 'loading'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal text-sm font-medium
               bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
               transition-colors disabled:opacity-50"
           >
@@ -93,7 +93,7 @@ export function ExportSection({
               value={importPassphrase}
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
-              className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
+              className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm
                 text-foreground/90 placeholder:text-muted-foreground/40 outline-none
                 focus-visible:border-blue-500/30 w-56"
               autoFocus
@@ -101,7 +101,7 @@ export function ExportSection({
             <button
               onClick={handleImport}
               disabled={importStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-card text-sm font-medium
                 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
                 transition-colors disabled:opacity-50"
             >
@@ -120,7 +120,7 @@ export function ExportSection({
 
       {/* Import result */}
       {importResult && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+        <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
             <PackageCheck className="w-4 h-4" />
             {s.import_complete}

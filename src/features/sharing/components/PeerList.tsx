@@ -103,7 +103,7 @@ export function PeerList() {
           <button
             onClick={() => doFetch()}
             title="Refresh peer list"
-            className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             {st.refresh}
@@ -117,7 +117,7 @@ export function PeerList() {
       </div>
 
       {networkError && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Peer list may be stale &mdash; {networkError}</span>
         </div>
@@ -229,7 +229,7 @@ function RadarEmptyState() {
 
   return (
     <div
-      className="animate-fade-slide-in flex flex-col items-center gap-3 rounded-xl border border-border/50 p-6"
+      className="animate-fade-slide-in flex flex-col items-center gap-3 rounded-modal border border-border/50 p-6"
     >
       <canvas
         ref={canvasRef}
@@ -265,7 +265,7 @@ function PeerScanSkeleton() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="relative overflow-hidden rounded-xl border border-border bg-secondary/20 p-3 flex items-center gap-3"
+            className="relative overflow-hidden rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3"
           >
             {/* Avatar circle */}
             <div className="w-8 h-8 rounded-full bg-secondary/50 flex-shrink-0" />

@@ -27,7 +27,7 @@ export function MonthView({
   }
 
   return (
-    <div className="border border-primary/10 rounded-xl overflow-hidden">
+    <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b border-primary/10 bg-primary/[0.02]">
         {Array.from({ length: 7 }, (_, i) => (

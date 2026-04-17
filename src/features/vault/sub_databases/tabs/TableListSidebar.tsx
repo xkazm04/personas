@@ -77,7 +77,7 @@ export function TableListSidebar({
 
         {error && (
           <div className="space-y-2">
-            <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
+            <div className="p-2.5 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
               {error}
             </div>
             {credentialId && <SidebarTestConnection credentialId={credentialId} />}
@@ -106,7 +106,7 @@ export function TableListSidebar({
           return (
             <div
               key={table.table_name}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/20'
                   : 'hover:bg-secondary/40 border border-transparent'
@@ -143,7 +143,7 @@ export function TableListSidebar({
           return (
             <div
               key={keyInfo.key}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-modal cursor-pointer transition-colors ${
                 isSelected
                   ? 'bg-primary/10 border border-primary/20'
                   : 'hover:bg-secondary/40 border border-transparent'

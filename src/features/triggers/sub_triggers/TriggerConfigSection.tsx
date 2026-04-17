@@ -44,12 +44,12 @@ export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigS
       {config.type === 'webhook' && (
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center gap-1.5">
-            <div className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-xl cursor-text select-all" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/50 border border-primary/10 rounded-modal cursor-text select-all" onClick={(e) => e.stopPropagation()}>
               <span className="text-sm text-muted-foreground/90 font-mono break-all">{getWebhookUrl(trigger.id)}</span>
             </div>
             <button
               onClick={detail.copyWebhookUrl}
-              className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${detail.copiedUrl ? 'bg-emerald-500/15 text-emerald-400' : 'hover:bg-secondary/60 text-muted-foreground/90 hover:text-muted-foreground'}`}
+              className={`flex-shrink-0 p-1.5 rounded-card transition-all ${detail.copiedUrl ? 'bg-emerald-500/15 text-emerald-400' : 'hover:bg-secondary/60 text-muted-foreground/90 hover:text-muted-foreground'}`}
               title="Copy webhook URL"
             >
               {detail.copiedUrl ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

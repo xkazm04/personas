@@ -111,7 +111,7 @@ function QuestionModal({
         {/* Header with dimension color accent */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center`}>
+            <div className={`w-9 h-9 rounded-card bg-primary/10 border border-primary/15 flex items-center justify-center`}>
               <HelpCircle className={`w-5 h-5 ${dimensionColor}`} />
             </div>
             <div>
@@ -125,7 +125,7 @@ function QuestionModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-foreground/[0.06] transition-colors"
+            className="p-2 rounded-card hover:bg-foreground/[0.06] transition-colors"
           >
             <X className="w-4 h-4 text-muted-foreground/50" />
           </button>
@@ -146,11 +146,11 @@ function QuestionModal({
                   key={option}
                   type="button"
                   onClick={() => onAnswer(question.cellKey, option)}
-                  className="w-full flex items-start gap-3 rounded-xl border border-primary/12 bg-card-bg px-4 py-3 text-left transition-all hover:bg-primary/8 hover:border-primary/25 hover:shadow-elevation-2 hover:shadow-primary/5 group"
+                  className="w-full flex items-start gap-3 rounded-modal border border-primary/12 bg-card-bg px-4 py-3 text-left transition-all hover:bg-primary/8 hover:border-primary/25 hover:shadow-elevation-2 hover:shadow-primary/5 group"
                   data-testid={`option-button-${idx}`}
                 >
                   {/* Number badge */}
-                  <span className="flex-shrink-0 w-6 h-6 rounded-md bg-primary/10 border border-primary/15 flex items-center justify-center text-[11px] font-bold text-primary/70 group-hover:bg-primary/20 group-hover:text-primary transition-colors mt-0.5">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-input bg-primary/10 border border-primary/15 flex items-center justify-center text-[11px] font-bold text-primary/70 group-hover:bg-primary/20 group-hover:text-primary transition-colors mt-0.5">
                     {idx + 1}
                   </span>
                   <span className="text-sm text-foreground/80 leading-relaxed">{option}</span>
@@ -186,14 +186,14 @@ function QuestionModal({
               }}
               placeholder={t.agents.spatial_question.type_answer}
               rows={2}
-              className="w-full resize-none rounded-xl border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground/25 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
+              className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 text-sm text-foreground/90 placeholder:text-foreground/25 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
               data-testid="freetext-input"
             />
             <button
               type="button"
               onClick={handleFreeTextSubmit}
               disabled={!freeText.trim()}
-              className="self-end inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="self-end inline-flex items-center gap-2 rounded-modal bg-primary text-primary-foreground px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               data-testid="submit-button"
             >
               <Send className="w-3.5 h-3.5" />

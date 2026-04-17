@@ -32,7 +32,7 @@ export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: 
     <div className="relative">
       <button
         onClick={() => setExpanded(prev => !prev)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
       >
         <Zap className="w-3.5 h-3.5 text-amber-400" />
         <span className="text-[11px] font-medium text-muted-foreground">{t.triggers.builder.events}</span>
@@ -53,7 +53,7 @@ export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: 
       >
         <div
           ref={contentRef}
-          className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-card border border-primary/10 shadow-elevation-3 w-max max-w-[600px]"
+          className="flex flex-wrap items-center gap-1.5 p-3 rounded-modal bg-card border border-primary/10 shadow-elevation-3 w-max max-w-[600px]"
         >
           {allTemplates.map(t => (
             <SourceChip
@@ -85,7 +85,7 @@ function SourceChip({ template: t, isOnCanvas, onStartPointerDrag }: {
       }}
       onClick={() => setPendingItem('event', t.eventType)}
       className={`
-        flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+        flex items-center gap-1.5 px-2.5 py-1.5 rounded-card
         cursor-grab active:cursor-grabbing
         bg-secondary/40 hover:bg-secondary/70 border border-primary/5 hover:border-primary/15
         transition-colors select-none
@@ -104,13 +104,13 @@ function CustomEventChip() {
   const [value, setValue] = useState('');
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-dashed border-primary/10 hover:border-primary/20 transition-colors">
+    <div className="flex items-center gap-1 rounded-card border border-dashed border-primary/10 hover:border-primary/20 transition-colors">
       <input
         type="text"
         value={value}
         onChange={e => setValue(e.target.value)}
         placeholder={t.triggers.builder.custom_event_placeholder}
-        className="w-24 px-2 py-1.5 text-[10px] rounded-lg bg-transparent text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:w-32 transition-all"
+        className="w-24 px-2 py-1.5 text-[10px] rounded-card bg-transparent text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:w-32 transition-all"
       />
       {value.trim() && (
         <button

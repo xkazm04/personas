@@ -42,7 +42,7 @@ export function PersonaSettingsTab({
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1">{t.agents.settings_status.label_name}</label>
             <input
@@ -89,7 +89,7 @@ export function PersonaSettingsTab({
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.execution}
         </h4>
-        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+        <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-sm font-medium text-foreground/80 mb-1">
@@ -185,7 +185,7 @@ export function PersonaSettingsTab({
         {!showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {t.common.delete}
@@ -198,13 +198,13 @@ export function PersonaSettingsTab({
             </span>
             <button
               onClick={onDelete}
-              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-sm font-medium transition-colors"
+              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal text-sm font-medium transition-colors"
             >
               {t.common.confirm}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-xl text-sm transition-colors hover:bg-secondary/70"
+              className="px-3 py-1.5 bg-secondary/50 text-foreground/80 rounded-modal text-sm transition-colors hover:bg-secondary/70"
             >
               {t.common.cancel}
             </button>

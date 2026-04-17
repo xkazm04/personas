@@ -37,7 +37,7 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
         {history.map((run, idx) => (
           <div
             key={`${run.executed_at}-${idx}`}
-            className="rounded-lg border border-border/40 bg-card/30 overflow-hidden"
+            className="rounded-card border border-border/40 bg-card/30 overflow-hidden"
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-muted/10">
               <span className="text-sm text-muted-foreground">
@@ -62,7 +62,7 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
             {run.llm_output && (
               <div className="px-3 py-2 border-t border-border/20">
                 <p className="text-sm text-muted-foreground/60 mb-1">LLM Output</p>
-                <div className="rounded-lg border border-border/40 bg-card/30 p-3 max-h-40 overflow-y-auto">
+                <div className="rounded-card border border-border/40 bg-card/30 p-3 max-h-40 overflow-y-auto">
                   <MarkdownRenderer content={
                     (() => {
                       const trimmed = run.llm_output!.trim();

@@ -69,12 +69,12 @@ export function TemplateFormBody({
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={`Label this credential — e.g. My ${selectedConnector.label} Account, Production ${selectedConnector.label}`}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
       {variants && variants.length > 1 && (
-        <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
+        <div className="flex gap-1.5 p-1 bg-secondary/15 border border-primary/8 rounded-card">
           {variants.map((v) => (
             <Button
               key={v.id}

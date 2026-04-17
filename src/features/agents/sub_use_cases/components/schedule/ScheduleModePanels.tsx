@@ -22,7 +22,7 @@ export function PresetPanel({ cronExpression, onSelect }: PresetPanelProps) {
               key={preset.cron}
               type="button"
               onClick={() => onSelect(preset.cron)}
-              className={`text-left px-2.5 py-2 rounded-xl text-sm transition-all border ${
+              className={`text-left px-2.5 py-2 rounded-modal text-sm transition-all border ${
                 active
                   ? 'bg-amber-500/12 text-amber-300 border-amber-500/25 font-medium'
                   : 'bg-secondary/20 text-muted-foreground/70 border-primary/10 hover:border-primary/20 hover:text-foreground/80'
@@ -81,7 +81,7 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
           value={cronExpression}
           onChange={(e) => onCronChange(e.target.value)}
           placeholder={t.agents.use_cases.cron_placeholder}
-          className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
+          className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 transition-all ${
             cronPreview && !cronPreview.valid
               ? 'border-red-500/30 ring-1 ring-red-500/20 focus-visible:ring-red-500/30'
               : 'border-primary/20 focus-visible:ring-amber-500/30'

@@ -83,12 +83,12 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
           </>
         )}
         {anomalyCount > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-card border ${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
             <AlertTriangle className="w-3 h-3" />
             {anomalyCount} anomal{anomalyCount === 1 ? 'y' : 'ies'}
           </span>
         ) : entries.length > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-card border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}>
             <Shield className="w-3 h-3" />
             No anomalies
           </span>
@@ -111,7 +111,7 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
       {!showAll && timeline.length > 30 && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full text-center text-xs text-muted-foreground/70 hover:text-foreground/80 py-1.5 rounded-lg hover:bg-secondary/20 transition-colors"
+          className="w-full text-center text-xs text-muted-foreground/70 hover:text-foreground/80 py-1.5 rounded-card hover:bg-secondary/20 transition-colors"
         >
           Show all {timeline.length} entries
         </button>

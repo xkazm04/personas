@@ -291,7 +291,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             value={eventSearch}
             onChange={e => setEventSearch(e.target.value)}
             placeholder={t.triggers.builder.filter_events_placeholder}
-            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
           />
         </div>
 
@@ -302,14 +302,14 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
           <button
             onClick={() => void handleInitializeHandlers()}
             disabled={isBackfilling}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={t.triggers.builder.init_handlers_title}
           >
             <Wand2 className={`w-4 h-4 ${isBackfilling ? 'animate-pulse' : ''}`} />
           </button>
           <button
             onClick={() => void reload()}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
             title={t.triggers.builder.refresh}
           >
             <RefreshCw className="w-4 h-4" />
@@ -399,7 +399,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
 
               {/* Event info */}
               <div className="w-[300px] min-w-[300px] flex-shrink-0 flex items-center gap-2.5 pl-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${row.template ? 'bg-cyan-500/10' : 'bg-violet-500/10'}`}>
+                <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${row.template ? 'bg-cyan-500/10' : 'bg-violet-500/10'}`}>
                   <Icon className={`w-4 h-4 ${row.template?.color ?? 'text-violet-400'}`} />
                 </div>
                 <div className="min-w-0">
@@ -435,7 +435,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
               <div className="w-10 flex-shrink-0 flex items-center justify-center relative">
                 <button
                   onClick={() => setActionMenuRow(isActionOpen ? null : row.eventType)}
-                  className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/40 hover:text-foreground transition-colors"
                 >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
@@ -443,7 +443,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                 {isActionOpen && (
                   <div
                     ref={actionMenuRef}
-                    className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
+                    className="absolute right-0 top-full mt-1 w-52 rounded-modal bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
                   >
                     <button
                       onClick={() => {

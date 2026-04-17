@@ -192,7 +192,7 @@ export function AmbientContextPanel() {
 
       {/* Live snapshot */}
       {ambientEnabled && ambientSnapshot && (
-        <div className="border border-primary/10 rounded-lg bg-secondary/20 p-3 space-y-2">
+        <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground/80">{s.live_context}</span>
             <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
@@ -266,7 +266,7 @@ export function AmbientContextPanel() {
               <button
                 key={key}
                 onClick={() => handlePolicyChange(key, !localPolicy[key])}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors ${
+                className={`flex flex-col items-center gap-1 p-2 rounded-card border text-xs transition-colors ${
                   localPolicy[key]
                     ? 'border-blue-500/30 bg-blue-500/5 text-blue-400'
                     : 'border-primary/10 bg-secondary/20 text-muted-foreground/60'
@@ -345,7 +345,7 @@ export function AmbientContextPanel() {
 
           {/* Rule creation form */}
           {showRuleForm && (
-            <div className="border border-primary/10 rounded-lg bg-secondary/20 p-3 space-y-2.5">
+            <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2.5">
               <input
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
@@ -429,7 +429,7 @@ export function AmbientContextPanel() {
                 <button
                   onClick={handleAddRule}
                   disabled={!ruleName.trim()}
-                  className="px-2.5 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs rounded-md transition-colors disabled:opacity-50"
+                  className="px-2.5 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs rounded-input transition-colors disabled:opacity-50"
                 >
                   {s.create_rule}
                 </button>
@@ -445,7 +445,7 @@ export function AmbientContextPanel() {
               {contextRules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="flex items-center justify-between px-2.5 py-1.5 border border-primary/10 rounded-lg bg-secondary/10"
+                  className="flex items-center justify-between px-2.5 py-1.5 border border-primary/10 rounded-card bg-secondary/10"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-muted-foreground/40'}`} />

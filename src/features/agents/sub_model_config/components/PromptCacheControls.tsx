@@ -36,7 +36,7 @@ export function PromptCacheControls({ value, onChange }: PromptCacheControlsProp
               key={p.value}
               type="button"
               onClick={() => onChange(p.value)}
-              className={`flex-1 py-1.5 px-2 rounded-lg border text-sm font-medium transition-all ${
+              className={`flex-1 py-1.5 px-2 rounded-card border text-sm font-medium transition-all ${
                 selected
                   ? 'border-primary/40 bg-primary/10 text-foreground/90'
                   : 'border-primary/10 bg-secondary/30 text-muted-foreground/60 hover:border-primary/20 hover:bg-secondary/40'

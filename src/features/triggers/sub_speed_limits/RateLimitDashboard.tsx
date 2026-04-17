@@ -46,8 +46,8 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
   // Show empty state when no rate limits configured
   if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0) {
     return (
-      <div className="mx-6 mt-4 rounded-xl border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
-        <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center">
+      <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
+        <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/10 flex items-center justify-center">
           <Shield className="w-5 h-5 text-muted-foreground/40" />
         </div>
         <div>
@@ -61,7 +61,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
   }
 
   return (
-    <div className="mx-6 mt-4 rounded-xl border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3">
+    <div className="mx-6 mt-4 rounded-modal border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3">
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-1.5 text-muted-foreground/70">
           <Shield className="w-3.5 h-3.5" />

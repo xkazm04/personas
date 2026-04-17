@@ -128,7 +128,7 @@ export function ConfigurationPopup({
 
         <div className="px-4 py-4 space-y-3">
           {loadError && (
-            <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+            <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-card px-3 py-2">
               {t.agents.config_popup.load_error}
             </p>
           )}
@@ -146,7 +146,7 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : 'Loading\u2026'}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-secondary/40 border border-primary/20 rounded-modal text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
               />
             </div>
           ))}
@@ -161,14 +161,14 @@ export function ConfigurationPopup({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm font-medium rounded-xl text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
+              className="px-3 py-1.5 text-sm font-medium rounded-modal text-muted-foreground/80 hover:bg-secondary/60 transition-colors"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
-              className={`px-3 py-1.5 text-sm font-medium rounded-xl ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`px-3 py-1.5 text-sm font-medium rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {saving ? t.common.saving : saveLabel}
             </button>

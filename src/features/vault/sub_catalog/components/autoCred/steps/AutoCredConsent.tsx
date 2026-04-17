@@ -34,11 +34,11 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
-      <div className={`flex items-start gap-4 p-4 rounded-xl border ${
+      <div className={`flex items-start gap-4 p-4 rounded-modal border ${
         isGuided ? 'border-violet-500/20 bg-violet-500/5' : 'border-cyan-500/20 bg-cyan-500/5'
       }`}>
         <div
-          className="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0"
+          className="w-12 h-12 rounded-modal border flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${designResult.connector.color}15`, borderColor: `${designResult.connector.color}30` }}
         >
           <Globe className="w-6 h-6" style={{ color: designResult.connector.color }} />
@@ -82,7 +82,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
-        <div className="p-3 rounded-lg border border-primary/10 bg-secondary/20">
+        <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
           <p className="text-sm font-medium text-muted-foreground/60 mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
@@ -92,7 +92,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       )}
 
       {/* Pre-login tip */}
-      <div className="flex items-start gap-2.5 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+      <div className="flex items-start gap-2.5 p-3 rounded-card border border-blue-500/20 bg-blue-500/5">
         <LogIn className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
         <div className="text-sm text-muted-foreground/80">
           <span className="font-medium text-blue-400/90">{t.vault.auto_cred.log_in_first}</span>{' '}
@@ -102,7 +102,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       </div>
 
       {/* Security notice */}
-      <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+      <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
         <Shield className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
         <div className="text-sm text-muted-foreground/80">
           <span className="font-medium text-amber-400/90">{t.vault.auto_cred.your_consent}</span>{' '}
@@ -128,13 +128,13 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onConsent}
-          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 ${
+          className={`flex items-center gap-2 px-5 py-2.5 text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 ${
             isGuided
               ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20'
               : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/20'

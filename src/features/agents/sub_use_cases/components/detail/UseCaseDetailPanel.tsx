@@ -97,7 +97,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             <button
               onClick={handleCancelTest}
               disabled={!canCancel}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={!canCancel ? uc.waiting_for_test : uc.stop_test}
             >
               <Square className="w-3.5 h-3.5" /> {uc.stop}
@@ -106,7 +106,7 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
             <button
               onClick={handleRunTest}
               disabled={!hasPrompt || !modelConfig}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={!hasPrompt ? uc.no_prompt_configured : uc.test_this_use_case}
             >
               <Play className="w-3.5 h-3.5" /> {uc.test}

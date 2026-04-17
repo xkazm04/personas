@@ -42,7 +42,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+            <div className={`w-9 h-9 rounded-modal flex items-center justify-center border ${
               allPassed ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'
             }`}>
               {allPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-amber-400" />}
@@ -63,7 +63,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={onClose} className="p-2 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-muted-foreground/60" />
           </button>
         </div>
@@ -188,7 +188,7 @@ function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: stri
   const matched = connectors.filter((c) => c.has_credential);
   const missing = connectors.filter((c) => !c.has_credential);
   return (
-    <div className="rounded-xl border border-primary/10 bg-primary/[0.02] px-4 py-3">
+    <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         <Key className="w-4 h-4 text-primary/50" />
         <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Connector Credentials</h4>
@@ -278,7 +278,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
 
 function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-primary/10 bg-primary/[0.02] px-4 py-3">
+    <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{label}</h4>
@@ -293,7 +293,7 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
   return (
     <div className="space-y-3">
       {passed.length > 0 && (
-        <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
+        <div className="rounded-modal border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Connected Successfully</h4></div>
           <div className="space-y-1">{passed.map((r) => (
             <div key={r.tool_name} className="flex items-center justify-between text-sm">
@@ -304,14 +304,14 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
         </div>
       )}
       {credentialMissing.length > 0 && (
-        <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><Key className="w-4 h-4 text-amber-400" /><h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Needs Credentials</h4></div>
           <div className="space-y-1">{credentialMissing.map((r) => <div key={r.tool_name} className="text-sm text-foreground/70">{toolLabel(r)}{r.connector ? <span className="text-muted-foreground/40 ml-1.5">({r.connector})</span> : null}</div>)}</div>
           <p className="text-[11px] text-amber-400/60 mt-2">Add the required API keys in the Keys section to enable these tools.</p>
         </div>
       )}
       {failed.length > 0 && (
-        <div className="rounded-xl border border-red-500/15 bg-red-500/5 px-4 py-3">
+        <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider">Connection Failed</h4></div>
           <div className="space-y-1">{failed.map((r) => {
             const hint = r.http_status ? httpStatusHint(r.http_status) : null;
@@ -320,7 +320,7 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
         </div>
       )}
       {skipped.length > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 px-4 py-3">
+        <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-muted-foreground/40" /><h4 className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">Built-in (No Test Needed)</h4></div>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5">{skipped.map((r) => <span key={r.tool_name} className="text-sm text-muted-foreground/50">{toolLabel(r)}</span>)}</div>
         </div>
@@ -383,7 +383,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
 
   return (
     <div className="space-y-4">
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${
         isPassed ? 'bg-emerald-500/5 border-emerald-500/15' : isSkipped ? 'bg-secondary/30 border-primary/10' : result.status === 'credential_missing' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'
       }`}>
         {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
@@ -417,7 +417,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
             <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Response Preview</h4>
             <InlineCopyButton text={result.output_preview} />
           </div>
-          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+          <div className="rounded-card bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
             <FormattedPreview text={result.output_preview} />
           </div>
         </div>
@@ -429,7 +429,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
             <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Error Detail</h4>
             <InlineCopyButton text={result.error} />
           </div>
-          <div className="rounded-lg bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
+          <div className="rounded-card bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
             {result.error}
           </div>
         </div>

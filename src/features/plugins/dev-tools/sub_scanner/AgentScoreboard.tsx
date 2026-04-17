@@ -147,7 +147,7 @@ export function AgentScoreboard() {
   const topAgent = sortedRows[0];
 
   return (
-    <div className="border border-primary/10 rounded-xl overflow-hidden">
+    <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Collapsible header */}
       <button
         type="button"
@@ -250,7 +250,7 @@ function ScoreboardTable({
   );
 
   return (
-    <div className="border border-primary/10 rounded-lg overflow-hidden">
+    <div className="border border-primary/10 rounded-card overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-[1.6fr_0.5fr_0.7fr_0.7fr_0.7fr_0.7fr] gap-3 px-3 py-2 bg-primary/5 border-b border-primary/10 items-center">
         <span className="text-[10px] uppercase tracking-wider font-medium text-primary">{labels.agent}</span>
@@ -272,7 +272,7 @@ function ScoreboardTable({
           >
             {/* Agent cell */}
             <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-lg ${tw.bg} border ${tw.border} flex items-center justify-center text-md flex-shrink-0`}>
+              <div className={`w-7 h-7 rounded-card ${tw.bg} border ${tw.border} flex items-center justify-center text-md flex-shrink-0`}>
                 {row.agent.emoji}
               </div>
               <div className="min-w-0">

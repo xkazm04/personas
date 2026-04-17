@@ -29,7 +29,7 @@ export const TeamCard = memo(function TeamCard({
   return (
     <div
       key={team.id}
-      className="animate-fade-slide-in group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+      className="animate-fade-slide-in group relative p-4 rounded-modal bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
       onClick={() => onSelect(team.id)}
     >
       {/* Color accent bar */}
@@ -41,7 +41,7 @@ export const TeamCard = memo(function TeamCard({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center border"
+            className="w-10 h-10 rounded-modal flex items-center justify-center border"
             style={{
               backgroundColor: colorWithAlpha(team.color || '#6366f1', 0.08),
               borderColor: colorWithAlpha(team.color || '#6366f1', 0.19),
@@ -67,7 +67,7 @@ export const TeamCard = memo(function TeamCard({
           <button
             onClick={() => onClone(team.id)}
             title={t.pipeline.fork_team}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-indigo-500/15 text-muted-foreground/80 hover:text-indigo-400 transition-all"
           >
             <GitFork className="w-3.5 h-3.5" />
           </button>
@@ -81,13 +81,13 @@ export const TeamCard = memo(function TeamCard({
                     onDelete(team.id);
                     onConfirmDelete(null);
                   }}
-                  className="px-2 py-1 text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                  className="px-2 py-1 text-sm font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-card transition-colors"
                 >
                   {t.common.delete}
                 </button>
                 <button
                   onClick={() => onConfirmDelete(null)}
-                  className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-lg transition-colors"
+                  className="px-2 py-1 text-sm font-medium text-muted-foreground/90 hover:text-foreground/95 rounded-card transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -96,7 +96,7 @@ export const TeamCard = memo(function TeamCard({
               <button
                 key="trash"
                 onClick={() => onConfirmDelete(team.id)}
-                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
+                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-card hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

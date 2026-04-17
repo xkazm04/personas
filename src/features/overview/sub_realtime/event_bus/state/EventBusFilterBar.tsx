@@ -78,7 +78,7 @@ export default function EventBusFilterBar({
           type="text" value={filter.searchText}
           onChange={(e) => onFilterChange({ ...filter, searchText: e.target.value })}
           placeholder={t.overview.realtime_page.search_events}
-          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
+          className="w-full pl-8 pr-3 py-1.5 text-sm rounded-card border border-primary/10 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/20"
         />
       </div>
 
@@ -124,7 +124,7 @@ export default function EventBusFilterBar({
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground/60 font-mono">{filteredCount}/{totalCount}</span>
           <button onClick={() => onFilterChange(EMPTY_FILTER)}
-            className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg border border-red-500/15 text-red-400/80 hover:bg-red-500/10 transition-colors">
+            className="flex items-center gap-1 px-2 py-1 text-xs rounded-card border border-red-500/15 text-red-400/80 hover:bg-red-500/10 transition-colors">
             <X className="w-3 h-3" />{t.overview.realtime_page.clear}
           </button>
         </div>

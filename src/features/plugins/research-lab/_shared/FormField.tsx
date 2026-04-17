@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 
 const FIELD_CLASS =
-  'w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40';
+  'w-full px-3 py-2 rounded-card bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40';
 
 interface FieldProps {
   label: string;

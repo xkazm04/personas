@@ -47,7 +47,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
     return (
       <button
         onClick={loadPreview}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg bg-secondary/40 text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-card bg-secondary/40 text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
         title="Preview execution cost and prompt"
       >
         <Eye className="w-3 h-3" />
@@ -83,7 +83,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
   const nearBudget = budgetPct > 80;
 
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-card border border-primary/10 bg-secondary/20 overflow-hidden">
       {/* Compact summary row */}
       <button
         onClick={() => setExpanded((v) => !v)}
@@ -145,7 +145,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
           {/* Prompt preview (first 500 chars) */}
           <div>
             <span className="text-muted-foreground/50 uppercase tracking-wider text-[10px]">{e.prompt_preview}</span>
-            <pre className="mt-1 text-[11px] font-mono text-muted-foreground/60 leading-relaxed bg-black/10 rounded-md p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
+            <pre className="mt-1 text-[11px] font-mono text-muted-foreground/60 leading-relaxed bg-black/10 rounded-input p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
               {preview.prompt_preview.slice(0, 500)}{preview.prompt_preview.length > 500 ? '...' : ''}
             </pre>
           </div>

@@ -143,7 +143,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterPersona}
           onChange={(e) => setFilterPersona(e.target.value)}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">{dt.history.all_personas}</option>
           {personas.map((p) => (
@@ -154,7 +154,7 @@ export function CloudHistoryPanel() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value="">{dt.history.all_statuses}</option>
           <option value="completed">{dt.history.completed}</option>
@@ -165,7 +165,7 @@ export function CloudHistoryPanel() {
         <select
           value={period}
           onChange={(e) => setPeriod(Number(e.target.value))}
-          className="px-3 py-1.5 text-sm rounded-xl bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+          className="px-3 py-1.5 text-sm rounded-modal bg-secondary/40 border border-primary/15 text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
         >
           <option value={7}>{dt.history.last_7_days}</option>
           <option value={30}>{dt.history.last_30_days}</option>
@@ -184,7 +184,7 @@ export function CloudHistoryPanel() {
         <button
           onClick={fetchData}
           disabled={isLoading}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -196,7 +196,7 @@ export function CloudHistoryPanel() {
         <div className="space-y-2">
           <SectionHeading className="text-xs">Top Errors</SectionHeading>
           {stats.top_errors.map((err, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+            <div key={i} className="flex items-center gap-2 text-xs p-2 rounded-card bg-red-500/5 border border-red-500/10">
               <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
               <span className="text-muted-foreground/80 truncate flex-1">{err.message}</span>
               <span className="text-red-400 font-medium shrink-0">{err.count}x</span>

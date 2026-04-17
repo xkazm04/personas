@@ -17,7 +17,7 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
   const catColor = CATEGORY_COLORS[memory.category] ?? 'text-muted-foreground/50';
 
   return (
-    <div className={`px-2 py-1.5 rounded-lg border ${borderColor} ${bgColor}`}>
+    <div className={`px-2 py-1.5 rounded-card border ${borderColor} ${bgColor}`}>
       <p className="text-xs font-medium text-foreground/80 truncate">{memory.title}</p>
       <p className="text-xs text-muted-foreground/60 line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
@@ -40,7 +40,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
   return (
     <div className="animate-fade-slide-in space-y-2">
       {/* Summary bar */}
-      <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-primary/5 border border-primary/10">
         <div className="flex items-center gap-1 text-xs">
           <span className="text-muted-foreground/50">{diff.totalA}</span>
           <ArrowRight className="w-3 h-3 text-muted-foreground/50" />

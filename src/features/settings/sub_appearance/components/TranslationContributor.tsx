@@ -122,11 +122,11 @@ export default function TranslationContributor() {
   const currentPct = TOTAL_KEYS > 0 ? Math.round((currentCoverage / TOTAL_KEYS) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title={s.language_translations} icon={<Languages />} />
 
       {/* Current language display */}
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-primary/10">
+      <div className="flex items-center gap-3 p-3 rounded-card bg-secondary/30 border border-primary/10">
         <span className="text-lg">{currentLang?.flag}</span>
         <div>
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
@@ -161,7 +161,7 @@ export default function TranslationContributor() {
                 type="button"
                 onClick={() => handleExport(lang.code)}
                 disabled={isExportingThis}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-left group ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-card border transition-colors text-left group ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/8 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'

@@ -178,7 +178,7 @@ export function VersionsPanel() {
         {compareA && compareB && (
           <button
             onClick={() => { setAbPreselect(compareAId, compareBId); setLabMode('ab'); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
+            className="flex items-center gap-2 px-4 py-2 rounded-modal bg-primary/10 text-primary/80 hover:bg-primary/15 transition-colors text-sm self-start"
           >
             {t.agents.lab.run_ab_versions}
           </button>
@@ -186,7 +186,7 @@ export function VersionsPanel() {
 
         {/* Regression nudge */}
         {baselinePin && promptVersions.some((v) => v.version_number > baselinePin.versionNumber && v.tag !== 'archived') && (
-          <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/15 bg-blue-500/5">
+          <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal border border-blue-500/15 bg-blue-500/5">
             <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="typo-heading text-blue-400">Newer versions since baseline v{baselinePin.versionNumber}</p>
@@ -196,7 +196,7 @@ export function VersionsPanel() {
             </div>
             <button
               onClick={() => setLabMode('regression')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors focus-ring flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors focus-ring flex-shrink-0"
             >
               <Star className="w-3 h-3" />
               {t.agents.lab.run_check}
@@ -208,7 +208,7 @@ export function VersionsPanel() {
         <ScoreTrendCard personaId={personaId} />
 
         {/* Error rate monitor */}
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4 space-y-3">
+        <div className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-emerald-400" />
             <h4 className="text-sm font-medium text-foreground/80">{t.agents.lab.error_rate_monitor}</h4>
@@ -235,7 +235,7 @@ export function VersionsPanel() {
             <button
               onClick={() => void handleRefreshHealth()}
               disabled={healthLoading}
-              className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+              className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
               title="Refresh error rate"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
@@ -254,10 +254,10 @@ export function VersionsPanel() {
 
 function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: VersionView) => void }) {
   return (
-    <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/[0.06]">
+    <div className="inline-flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-primary/[0.06]">
       <button
         onClick={() => onChange('timeline')}
-        className={`p-1.5 rounded-md transition-colors ${
+        className={`p-1.5 rounded-input transition-colors ${
           view === 'timeline' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
         }`}
         title="Timeline view"
@@ -267,7 +267,7 @@ function ViewToggle({ view, onChange }: { view: VersionView; onChange: (v: Versi
       </button>
       <button
         onClick={() => onChange('list')}
-        className={`p-1.5 rounded-md transition-colors ${
+        className={`p-1.5 rounded-input transition-colors ${
           view === 'list' ? 'bg-primary/12 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'
         }`}
         title="List view"

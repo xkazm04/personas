@@ -56,9 +56,9 @@ export function UniversalAutoCredReview({
   return (
     <div className="animate-fade-slide-in space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3 p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5">
+      <div className="flex items-center gap-3 p-3 rounded-modal border border-indigo-500/20 bg-indigo-500/5">
         <div
-          className="w-10 h-10 rounded-xl border flex items-center justify-center"
+          className="w-10 h-10 rounded-modal border flex items-center justify-center"
           style={{
             backgroundColor: `${discoveredConnector?.color ?? '#6366f1'}15`,
             borderColor: `${discoveredConnector?.color ?? '#6366f1'}30`,
@@ -76,7 +76,7 @@ export function UniversalAutoCredReview({
           </p>
         </div>
         {isPartial && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/10 border border-amber-500/20">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span className="text-xs font-medium text-amber-400">{t.vault.auto_cred_extra.partial_badge}</span>
           </div>
@@ -92,7 +92,7 @@ export function UniversalAutoCredReview({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-lg text-sm text-foreground focus:outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full px-3 py-2 bg-secondary/30 border border-primary/10 rounded-card text-sm text-foreground focus:outline-none focus:border-indigo-500/40 transition-colors"
         />
       </div>
 
@@ -138,14 +138,14 @@ export function UniversalAutoCredReview({
         <div className="flex items-center gap-2">
           <button
             onClick={onRetry}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground/70 hover:text-foreground border border-primary/10 rounded-xl hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted-foreground/70 hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
           </button>
           <button
             onClick={onCancel}
-            className="px-3 py-2 text-sm text-muted-foreground/50 hover:text-muted-foreground rounded-xl hover:bg-secondary/30 transition-colors"
+            className="px-3 py-2 text-sm text-muted-foreground/50 hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
           >
             Cancel
           </button>
@@ -153,7 +153,7 @@ export function UniversalAutoCredReview({
         <button
           onClick={onSave}
           disabled={isSaving || fields.length === 0}
-          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-emerald-600/20"
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-emerald-600/20"
         >
           {isSaving ? (
             <LoadingSpinner className="text-white" />

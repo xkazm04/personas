@@ -71,16 +71,16 @@ export default function AdminSettings() {
       <ContentBody>
         <div className="max-w-2xl mx-auto space-y-6 py-2">
           {/* Section: Guided Tour */}
-          <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+          <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
             <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/8">
-              <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
                 <Map className="w-4.5 h-4.5 text-violet-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-foreground/90">{st.guided_tour}</h3>
                 <p className="text-sm text-muted-foreground/50">{st.tour_hint}</p>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${statusColor}`}>
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-card text-[11px] font-semibold border ${statusColor}`}>
                 {statusLabel}
               </span>
             </div>
@@ -88,13 +88,13 @@ export default function AdminSettings() {
             <div className="px-5 py-4 space-y-4">
               {/* Tour state summary */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
+                <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{st.progress}</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {completedCount} / {activeTourSteps.length} steps
                   </p>
                 </div>
-                <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
+                <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-1">{st.current_step}</p>
                   <p className="text-sm font-medium text-foreground/80">
                     {tourActive ? activeTourSteps[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
@@ -103,12 +103,12 @@ export default function AdminSettings() {
               </div>
 
               {/* Step completion detail */}
-              <div className="rounded-lg bg-secondary/20 border border-primary/8 p-3">
+              <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground/60 mb-2">{st.step_status}</p>
                 <div className="space-y-1.5">
                   {activeTourSteps.map((step, i) => (
                     <div key={step.id} className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                      <div className={`w-5 h-5 rounded-input flex items-center justify-center text-[10px] font-bold ${
                         tourStepCompleted[step.id]
                           ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                           : tourActive && i === tourCurrentStepIndex
@@ -136,7 +136,7 @@ export default function AdminSettings() {
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={handleForceStart}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
                     bg-violet-500/15 text-violet-300 border border-violet-500/25
                     hover:bg-violet-500/25 transition-colors"
                 >
@@ -146,7 +146,7 @@ export default function AdminSettings() {
 
                 <button
                   onClick={handleReset}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border transition-colors ${
                     confirmReset
                       ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
                       : 'bg-secondary/30 text-muted-foreground/60 border-primary/15 hover:bg-secondary/50 hover:text-foreground/70'
@@ -169,7 +169,7 @@ export default function AdminSettings() {
                   <>
                     <button
                       onClick={() => finishTour()}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
                         bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
                         hover:bg-emerald-500/20 transition-colors"
                     >
@@ -178,7 +178,7 @@ export default function AdminSettings() {
                     </button>
                     <button
                       onClick={() => dismissTour()}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal
                         bg-amber-500/10 text-amber-400 border border-amber-500/20
                         hover:bg-amber-500/20 transition-colors"
                     >

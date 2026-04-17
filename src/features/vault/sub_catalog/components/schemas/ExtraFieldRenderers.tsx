@@ -26,7 +26,7 @@ export function ExtraFieldRenderer({
               onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.value }))}
               placeholder={def.placeholder}
               rows={def.rows ?? 4}
-              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
+              className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground text-sm font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
             />
             {def.helpText && <p className="mt-1 text-sm text-muted-foreground/60">{def.helpText}</p>}
           </div>
@@ -90,7 +90,7 @@ function KeyValueListField({
           </h4>
           <button
             onClick={() => update([...pairs, { key: '', value: '' }])}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-modal border transition-colors ${
               def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
             }`}
           >
@@ -115,7 +115,7 @@ function KeyValueListField({
                   update(next);
                 }}
                 placeholder="KEY"
-                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
               />
               <span className="text-muted-foreground/30">=</span>
               <div className="flex-1 relative">
@@ -128,7 +128,7 @@ function KeyValueListField({
                     update(next);
                   }}
                   placeholder="value"
-                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-xl text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
+                  className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal text-sm text-foreground font-mono focus-ring placeholder-muted-foreground/30"
                 />
                 <button
                   type="button"

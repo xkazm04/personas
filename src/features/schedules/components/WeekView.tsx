@@ -54,7 +54,7 @@ export function WeekView({
   }, [hourSlots]);
 
   return (
-    <div className="border border-primary/10 rounded-xl overflow-hidden">
+    <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Day headers */}
       <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-primary/10 bg-primary/[0.02]">
         <div className="px-2 py-2 text-[10px] text-muted-foreground/40" />

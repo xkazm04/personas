@@ -152,7 +152,7 @@ export default function MemoriesPage() {
             {/* Tab toggles */}
             <button
               onClick={() => setViewTab('memories')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${
                 viewTab === 'memories'
                   ? 'bg-primary/10 text-foreground border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
@@ -163,7 +163,7 @@ export default function MemoriesPage() {
             </button>
             <button
               onClick={() => setViewTab('conflicts')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${
                 viewTab === 'conflicts'
                   ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
                   : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
@@ -175,13 +175,13 @@ export default function MemoriesPage() {
 
             <div className="w-px h-6 bg-primary/10" />
 
-            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {isReviewing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {isReviewing ? 'Reviewing...' : 'Review'}
             </button>
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
             >
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add
@@ -208,7 +208,7 @@ export default function MemoriesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search memories..."
-                className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+                className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
               />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground/40 hover:text-foreground/70">
@@ -239,7 +239,7 @@ export default function MemoriesPage() {
             )}
             <span className="text-sm font-mono text-foreground/60 flex-shrink-0">{memories.length}/{memoriesTotal}</span>
             {hasFilters && (
-              <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors">
+              <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors">
                 <X className="w-3 h-3" /> Clear
               </button>
             )}
@@ -247,7 +247,7 @@ export default function MemoriesPage() {
 
           {memories.length === 0 && !hasFilters ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground/60">
-              <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-modal bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
                 <Brain className="w-8 h-8 text-violet-400/40" />
               </div>
               <div className="text-center">

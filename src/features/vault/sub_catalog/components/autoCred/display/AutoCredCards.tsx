@@ -24,7 +24,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   if (confirmed && !isLatest) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/15 bg-emerald-500/5 text-sm text-emerald-400/60">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-emerald-500/15 bg-emerald-500/5 text-sm text-emerald-400/60">
         <Check className="w-3 h-3" />
         <span className="truncate">{message}</span>
       </div>
@@ -33,7 +33,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   return (
     <div
-      className={`animate-fade-slide-in flex items-start gap-3 p-3 rounded-xl border-2 ${
+      className={`animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 ${
         confirmed ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/8'
       }`}
     >
@@ -52,7 +52,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
             {url && (
               <button
                 onClick={handleOpenUrl}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-card border border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
                 Open in Browser
@@ -60,7 +60,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
             )}
             <button
               onClick={() => setConfirmed(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-card border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
             >
               <Check className="w-3 h-3" />
               I've completed this
@@ -77,7 +77,7 @@ export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
   const { t } = useTranslation();
   return (
     <div
-      className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-xl border-2 border-violet-500/30 bg-violet-500/8"
+      className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 border-violet-500/30 bg-violet-500/8"
     >
       <div className="w-8 h-8 rounded-full bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
         <MessageSquare className="w-4 h-4 text-violet-400" />

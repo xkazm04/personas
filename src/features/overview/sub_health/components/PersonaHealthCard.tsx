@@ -42,7 +42,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
 
   return (
     <div
-      className={`relative rounded-xl border bg-gradient-to-br ${GRADE_BG[signal.grade]} to-transparent ${GRADE_BORDER[signal.grade]} bg-secondary/20 transition-all duration-200 cursor-pointer select-none`}
+      className={`relative rounded-modal border bg-gradient-to-br ${GRADE_BG[signal.grade]} to-transparent ${GRADE_BORDER[signal.grade]} bg-secondary/20 transition-all duration-200 cursor-pointer select-none`}
       onClick={() => setExpanded(!expanded)}
     >
       {/* Header — always visible */}
@@ -135,7 +135,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
 
 function MetricCell({ icon: Icon, label, value, color }: { icon: typeof Heart; label: string; value: string; color: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-secondary/30">
+    <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-card bg-secondary/30">
       <Icon className={`w-3 h-3 ${color} flex-shrink-0`} />
       <div className="min-w-0">
         <p className="text-[10px] text-muted-foreground/60 leading-none">{label}</p>

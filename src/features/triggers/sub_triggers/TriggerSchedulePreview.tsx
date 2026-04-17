@@ -49,7 +49,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
 
   return (
     <div
-      className="animate-fade-slide-in mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10"
+      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-primary/5 border border-primary/10"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
@@ -111,7 +111,7 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
 
   return (
     <div
-      className="animate-fade-slide-in mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
+      className="animate-fade-slide-in mt-3 p-3 rounded-modal bg-amber-500/5 border border-amber-500/10"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">

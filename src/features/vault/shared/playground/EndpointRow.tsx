@@ -29,7 +29,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
   const methodStyle = METHOD_STYLES[endpoint.method.toUpperCase()] || DEFAULT_METHOD_STYLE;
 
   return (
-    <div className="border border-primary/8 rounded-lg overflow-hidden transition-colors hover:border-primary/15">
+    <div className="border border-primary/8 rounded-card overflow-hidden transition-colors hover:border-primary/15">
       {/* Compact row */}
       <div
         role="row"

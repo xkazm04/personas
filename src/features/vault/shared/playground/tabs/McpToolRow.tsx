@@ -19,7 +19,7 @@ export function ToolRow({
   onRun,
 }: ToolRowProps) {
   return (
-    <div className={`border rounded-lg overflow-hidden transition-colors ${
+    <div className={`border rounded-card overflow-hidden transition-colors ${
       isSelected ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-primary/8 hover:border-primary/15'
     }`}>
       <button

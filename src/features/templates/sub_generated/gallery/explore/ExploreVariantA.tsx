@@ -108,7 +108,7 @@ export function ExploreVariantA({
                 {/* Card body */}
                 <div className={`px-4 pb-4 ${imgSrc ? '-mt-6 relative' : 'pt-4'}`}>
                   <div className="flex items-center gap-2.5 mb-2">
-                    <div className={`p-2 rounded-xl border transition-colors ${
+                    <div className={`p-2 rounded-modal border transition-colors ${
                       isActive
                         ? 'bg-primary/15 border-primary/25'
                         : 'bg-secondary/30 border-primary/10 group-hover:bg-secondary/50'
@@ -128,7 +128,7 @@ export function ExploreVariantA({
                       return (
                         <span
                           key={cat}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-secondary/30 text-muted-foreground/60"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-input text-xs bg-secondary/30 text-muted-foreground/60"
                         >
                           <meta.icon className="w-3 h-3 flex-shrink-0" style={{ color: meta.color }} />
                           {meta.label}
@@ -136,7 +136,7 @@ export function ExploreVariantA({
                       );
                     })}
                     {group.categories.length > 4 && (
-                      <span className="px-2 py-0.5 rounded-md text-xs text-muted-foreground/40">
+                      <span className="px-2 py-0.5 rounded-input text-xs text-muted-foreground/40">
                         +{group.categories.length - 4}
                       </span>
                     )}
@@ -151,7 +151,7 @@ export function ExploreVariantA({
         {roleGroup && (
           <>
             {/* Role description + category navigation */}
-            <div className="rounded-xl border border-primary/10 bg-secondary/10 p-5">
+            <div className="rounded-modal border border-primary/10 bg-secondary/10 p-5">
               <h3 className="text-base font-semibold text-foreground mb-1">
                 {t.templates.explore.role_templates.replace('{role}', roleGroup.label)}
               </h3>
@@ -167,7 +167,7 @@ export function ExploreVariantA({
                     <button
                       key={cat}
                       onClick={(e) => { e.stopPropagation(); onSelectCategory(cat); }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-secondary/40 border border-primary/10 text-foreground/70 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-sm bg-secondary/40 border border-primary/10 text-foreground/70 hover:bg-secondary/60 hover:text-foreground transition-colors"
                     >
                       <meta.icon className="w-3.5 h-3.5" style={{ color: meta.color }} />
                       {meta.label}
@@ -190,7 +190,7 @@ export function ExploreVariantA({
                     <button
                       key={tmpl.id}
                       onClick={() => onSelectTemplate(tmpl)}
-                      className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
+                      className="text-left p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
                     >
                       <div className="text-sm font-medium text-foreground/85 mb-1 group-hover/card:text-foreground transition-colors">
                         {tmpl.test_case_name}
@@ -222,7 +222,7 @@ export function ExploreVariantA({
                       <button
                         key={tmpl.id}
                         onClick={() => onSelectTemplate(tmpl)}
-                        className="w-full text-left p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+                        className="w-full text-left p-3 rounded-modal border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
                       >
                         <div className="text-sm font-medium text-foreground/85">{tmpl.test_case_name}</div>
                         <div className="text-sm text-muted-foreground/60 truncate mt-0.5">
@@ -232,7 +232,7 @@ export function ExploreVariantA({
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl border border-primary/10 bg-secondary/5 text-sm text-muted-foreground/50 text-center">
+                  <div className="p-4 rounded-modal border border-primary/10 bg-secondary/5 text-sm text-muted-foreground/50 text-center">
                     {t.templates.explore.configure_to_unlock}
                   </div>
                 )}

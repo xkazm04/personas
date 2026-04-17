@@ -37,7 +37,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               </div>
             )}
             {event.processed_at && (
-              <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
+              <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
                 <span className="text-sm font-mono text-foreground/70 font-medium">{t.overview.events.processed}</span>
                 <span className="ml-2 text-sm text-foreground">
                   {new Date(event.processed_at).toLocaleString()}
@@ -50,7 +50,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {event.payload && (
             <div>
               <span className="text-sm text-foreground/70 font-medium block mb-1">{t.overview.events.event_data}</span>
-              <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
+              <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
                 <HighlightedJson raw={event.payload} />
               </div>
             </div>
@@ -60,7 +60,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {event.error_message && (
             <div>
               <span className="text-sm text-red-400 block mb-1">{t.overview.events.error}</span>
-              <pre className="bg-red-500/5 p-2 rounded-lg text-red-400 text-sm whitespace-pre-wrap">
+              <pre className="bg-red-500/5 p-2 rounded-card text-red-400 text-sm whitespace-pre-wrap">
                 {event.error_message}
               </pre>
             </div>

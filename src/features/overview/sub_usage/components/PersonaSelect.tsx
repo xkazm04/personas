@@ -14,7 +14,7 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
         enabled
           ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
           : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'

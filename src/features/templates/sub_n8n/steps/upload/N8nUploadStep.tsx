@@ -51,12 +51,12 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
   return (
     <div>
       {/* Mode tabs */}
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg bg-secondary/30 border border-primary/8">
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-card bg-secondary/30 border border-primary/8">
         {modes.map((m) => (
           <button
             key={m.id}
             onClick={() => setMode(m.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
               mode === m.id
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-elevation-1'
                 : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
@@ -140,14 +140,14 @@ function FileUploadTab({
         tabIndex={0}
         aria-label="Drop workflow file or click to browse"
         data-testid="n8n-upload-dropzone"
-        className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
+        className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-modal border-2 border-dashed cursor-pointer transition-all duration-200 ${
           isDragging
             ? 'border-violet-400/60 bg-violet-500/10 scale-[1.01]'
             : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
         } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
       >
         <div
-          className={`animate-fade-in w-16 h-16 rounded-xl border flex items-center justify-center transition-colors duration-200 ${
+          className={`animate-fade-in w-16 h-16 rounded-modal border flex items-center justify-center transition-colors duration-200 ${
             isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'
           }`}
         >
@@ -167,7 +167,7 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+          <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>
@@ -189,7 +189,7 @@ function PasteTab({
   const { t } = useTranslation();
   return (
     <div key="paste">
-      <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 overflow-hidden">
+      <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
           <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.paste_workflow_json}</span>
@@ -211,7 +211,7 @@ function PasteTab({
           <button
             onClick={handlePasteImport}
             disabled={pastePreview?.kind !== 'valid'}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-modal text-sm font-medium transition-all ${
               pastePreview?.kind === 'valid'
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
                 : 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
@@ -242,7 +242,7 @@ function UrlTab({
   const { t } = useTranslation();
   return (
     <div key="url">
-      <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
+      <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
           <span className="text-sm font-medium text-foreground/80">{t.templates.n8n.import_from_url}</span>
@@ -258,13 +258,13 @@ function UrlTab({
             onKeyDown={(e) => { if (e.key === 'Enter' && !urlFetching) void handleUrlFetch(); }}
             aria-label="Workflow URL"
             placeholder="https://raw.githubusercontent.com/.../workflow.json"
-            className="flex-1 px-3 py-2 rounded-xl bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/15 text-sm text-foreground/80 placeholder:text-muted-foreground/40 outline-none focus-visible:border-violet-500/40 transition-colors"
             data-testid="url-input"
           />
           <button
             onClick={() => void handleUrlFetch()}
             disabled={urlFetching || !urlValue.trim()}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium transition-all ${
               urlFetching || !urlValue.trim()
                 ? 'bg-secondary/40 text-muted-foreground/60 border border-primary/10 disabled:cursor-not-allowed'
                 : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
@@ -289,7 +289,7 @@ function UrlTab({
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
+          <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-modal bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="text-sm text-muted-foreground/70">{t.templates.n8n.press_enter_or_click}</p>

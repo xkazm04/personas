@@ -95,7 +95,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
             setSelectedPersonaName(e.target.value);
             setConfirmRollback(null);
           }}
-          className="w-full rounded-xl border border-primary/15 bg-secondary/30 px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
+          className="w-full rounded-modal border border-primary/15 bg-secondary/30 px-3 py-2 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-orange-500/30"
         >
           <option value="">{t.gitlab.select_persona}</option>
           {personas.map((p) => (
@@ -109,7 +109,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
       {selectedPersonaName && (
         <>
           {/* Environment branches section */}
-          <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+          <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
             <button
               onClick={() => setShowBranches(!showBranches)}
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground/80 hover:bg-secondary/20 transition-colors"
@@ -135,7 +135,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                     </p>
                     <button
                       onClick={handleSetupBranches}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {t.gitlab.create_branches}
@@ -145,7 +145,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                   branches.map((branch) => (
                     <div
                       key={branch.name}
-                      className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/20 border border-primary/5"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/20 border border-primary/5"
                     >
                       <GitBranch className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -177,7 +177,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
             <button
               onClick={loadVersions}
               disabled={loading}
-              className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
             >
               {loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3.5 h-3.5" />}
               {t.common.refresh}
@@ -195,7 +195,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           {/* Empty state */}
           {!loading && versions.length === 0 && (
             <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Tag className="w-6 h-6 text-amber-400/60" />
               </div>
               <p className="text-sm text-muted-foreground/80">{t.gitlab.no_versions}</p>
@@ -244,7 +244,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
 
   return (
     <div
-      className={`p-3 rounded-xl border transition-colors ${
+      className={`p-3 rounded-modal border transition-colors ${
         version.isCurrent
           ? 'border-emerald-500/20 bg-emerald-500/[0.03]'
           : 'border-primary/10 bg-secondary/20'
@@ -253,7 +253,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
       <div className="flex items-start gap-3">
         {/* Version badge */}
         <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          className={`w-9 h-9 rounded-card flex items-center justify-center flex-shrink-0 ${
             version.isCurrent
               ? 'bg-emerald-500/10 border border-emerald-500/20'
               : 'bg-amber-500/10 border border-amber-500/20'
@@ -273,13 +273,13 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               {version.version}
             </span>
             {version.isCurrent && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-emerald-500/20 bg-emerald-500/10 text-xs font-medium text-emerald-400">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border border-emerald-500/20 bg-emerald-500/10 text-xs font-medium text-emerald-400">
                 <Check className="w-3 h-3" />
                 {t.gitlab.current}
               </span>
             )}
             {version.environment && (
-              <span className="px-1.5 py-0.5 rounded-md border border-violet-500/20 bg-violet-500/10 text-xs font-medium text-violet-400">
+              <span className="px-1.5 py-0.5 rounded-input border border-violet-500/20 bg-violet-500/10 text-xs font-medium text-violet-400">
                 {version.environment}
               </span>
             )}
@@ -306,7 +306,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                 <button
                   onClick={onRollback}
                   disabled={rollingBack}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
                 >
                   {rollingBack ? (
                     <LoadingSpinner size="xs" />
@@ -318,7 +318,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                 <button
                   onClick={onCancelRollback}
                   disabled={rollingBack}
-                  className="px-2 py-1.5 text-xs rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                  className="px-2 py-1.5 text-xs rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                 >
                   {t.common.cancel}
                 </button>
@@ -326,7 +326,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
             ) : (
               <button
                 onClick={onRollback}
-                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-muted-foreground/60 hover:text-amber-400 transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-muted-foreground/60 hover:text-amber-400 transition-colors"
                 title={tx(t.gitlab.rollback_to_version, { version: version.version })}
               >
                 <RotateCcw className="w-3.5 h-3.5" />

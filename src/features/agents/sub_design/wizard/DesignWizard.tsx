@@ -76,7 +76,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
       {/* Step content */}
       <div
           key={currentStep.id}
-          className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/10 p-4"
+          className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/10 p-4"
         >
           {/* Step header */}
           <div className="mb-4">
@@ -93,7 +93,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   {summary.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-start gap-3 px-3 py-2 rounded-xl bg-secondary/30 border border-primary/10"
+                      className="flex items-start gap-3 px-3 py-2 rounded-modal bg-secondary/30 border border-primary/10"
                     >
                       <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/80 w-24 flex-shrink-0 mt-0.5">
                         {item.label}
@@ -118,7 +118,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                   onChange={(e) => setAdditionalContext(e.target.value)}
                   placeholder={t.agents.design.additional_instructions_placeholder}
                   rows={4}
-                  className="w-full bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
+                  className="w-full bg-background/50 border border-primary/20 rounded-modal px-3 py-2 text-sm text-foreground resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:border-violet-500/30 transition-all placeholder-muted-foreground/30"
                 />
               </div>
             </div>
@@ -146,7 +146,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               Back
@@ -158,7 +158,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
           type="button"
           onClick={handleNext}
           disabled={!canProceed()}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-modal font-medium text-sm transition-all ${
             isLastStep
               ? !canProceed() || summary.length === 0
                 ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'

@@ -18,7 +18,7 @@ const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme
   return (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
       <div
-        className="w-[140px] rounded-lg overflow-hidden flex flex-col"
+        className="w-[140px] rounded-card overflow-hidden flex flex-col"
         style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
       >
         {/* Mini UI preview */}
@@ -26,7 +26,7 @@ const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
+            <div className="w-3 h-3 rounded-interactive" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
           </div>
           <div className="flex gap-1">
             <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
@@ -68,7 +68,7 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
       onClick={onSelect}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border ${
+      className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal border ${
         active
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -108,10 +108,10 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
 }) {
   const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <div className="flex items-center justify-between">
         <SectionHeading title={labels.theming} icon={<Palette />} />
-        <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+        <div className="flex rounded-card border border-primary/15 overflow-hidden">
           <button
             onClick={() => setThemeTab('default')}
             className={`px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -204,7 +204,7 @@ export default function AppearanceSettings() {
       <ContentBody centered>
         <div className="space-y-6">
           {/* Interface mode */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
             <p className="text-xs text-muted-foreground/60">
               {s.interface_mode_hint}
@@ -220,7 +220,7 @@ export default function AppearanceSettings() {
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors ${
                       isActive
                         ? `border-${color}-500/30 bg-${color}-500/5`
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -239,7 +239,7 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Text sizing */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.text_size} icon={<Type />} />
             <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
@@ -252,7 +252,7 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={scale.id}
                     onClick={() => setTextScale(scale.id as TextScale)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -281,7 +281,7 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Timezone */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.timezone} icon={<Globe />} />
             <p className="text-xs text-muted-foreground/60">
               {s.timezone_hint}
@@ -294,7 +294,7 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={tz.value}
                     onClick={() => setTimezone(tz.value as TimezoneMode)}
-                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-1.5 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -319,13 +319,13 @@ export default function AppearanceSettings() {
 
           {/* Language & Translation Contributions — dev only */}
           {import.meta.env.DEV && (
-            <div className="rounded-xl border-2 border-amber-500/50 ring-1 ring-amber-500/20">
+            <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20">
               <TranslationContributor />
             </div>
           )}
 
           {/* Brightness */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.brightness} icon={<Sun />} />
             <p className="text-sm text-muted-foreground/60">
               {s.brightness_hint}
@@ -339,7 +339,7 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={level.id}
                     onClick={() => setBrightness(level.id as BrightnessLevel)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'

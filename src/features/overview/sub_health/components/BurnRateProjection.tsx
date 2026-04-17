@@ -20,9 +20,9 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
   }, [signals]);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 p-4">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 p-4">
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
           <DollarSign className="w-4 h-4 text-emerald-400" />
         </div>
         <div>
@@ -35,15 +35,15 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
 
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="px-3 py-2 rounded-lg bg-secondary/40">
+        <div className="px-3 py-2 rounded-card bg-secondary/40">
           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.daily_burn}</p>
           <p className="typo-heading-lg text-emerald-400">${projections.totalDailyBurn.toFixed(2)}</p>
         </div>
-        <div className="px-3 py-2 rounded-lg bg-secondary/40">
+        <div className="px-3 py-2 rounded-card bg-secondary/40">
           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.projected_monthly}</p>
           <p className="typo-heading-lg text-foreground/90">${projections.totalProjectedMonthly.toFixed(2)}</p>
         </div>
-        <div className="px-3 py-2 rounded-lg bg-secondary/40">
+        <div className="px-3 py-2 rounded-card bg-secondary/40">
           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{t.overview.burn_rate_extra.at_risk}</p>
           <p className={`typo-heading-lg ${projections.atRisk.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
             {projections.atRisk.length}
@@ -63,7 +63,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
 
       {/* At-risk warnings */}
       {projections.atRisk.length > 0 && (
-        <div className="mt-4 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+        <div className="mt-4 p-3 rounded-card border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-1.5 mb-2">
             <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
             <span className="typo-caption text-red-400">{t.overview.burn_rate_extra.budget_exhaustion_warnings}</span>

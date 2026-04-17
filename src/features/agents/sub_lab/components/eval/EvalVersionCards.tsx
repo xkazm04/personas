@@ -61,7 +61,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
           const c = colors[idx % colors.length]!;
           return (
             <div key={agg.versionId} data-testid={`eval-version-card-${agg.versionNumber}`}
-              className={`rounded-xl border overflow-hidden transition-all animate-fade-slide-in ${
+              className={`rounded-modal border overflow-hidden transition-all animate-fade-slide-in ${
                 isWinner
                   ? `${c.border} shadow-elevation-3 shadow-primary/5 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20' : ''}`
                   : 'border-primary/10'
@@ -70,7 +70,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
               {/* Card header */}
               <div className={`px-4 py-2.5 bg-gradient-to-r ${isWinner ? c.gradient : 'from-secondary/40 to-secondary/20'}`}>
                 <div className="flex items-center justify-between">
-                  <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
+                  <span className={`px-2 py-0.5 rounded-input text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
                   {isWinner && (
                     <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
                       <Trophy className="w-2.5 h-2.5" /> {t.agents.lab.best_badge}
@@ -81,7 +81,7 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
 
               {/* Scores */}
               <div className="px-4 py-3 space-y-3 bg-background/40">
-                <div className={`flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
+                <div className={`flex items-center gap-3 p-2.5 rounded-card bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
                   <span className={`text-2xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                   <div>
                     <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>

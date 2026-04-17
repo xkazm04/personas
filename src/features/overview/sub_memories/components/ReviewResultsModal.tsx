@@ -28,7 +28,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/90 hover:text-foreground/95 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -36,7 +36,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
           {reviewError ? (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+            <div className="flex items-start gap-3 p-4 rounded-modal bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="typo-heading text-red-300">{t.overview.review_results.review_failed}</p>
@@ -46,11 +46,11 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
           ) : reviewResult ? (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="typo-heading text-emerald-300">{reviewResult.updated} kept</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-red-500/10 border border-red-500/20">
                   <Trash2 className="w-3.5 h-3.5 text-red-400" />
                   <span className="typo-heading text-red-300">{reviewResult.deleted} pruned</span>
                 </div>
@@ -61,11 +61,11 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                   {reviewResult.details.map((d) => (
                     <div
                       key={d.id}
-                      className={`flex items-start gap-3 px-3 py-2 rounded-xl border ${
+                      className={`flex items-start gap-3 px-3 py-2 rounded-modal border ${
                         d.action === 'deleted' ? 'bg-red-500/5 border-red-500/15' : 'bg-emerald-500/5 border-emerald-500/15'
                       }`}
                     >
-                      <span className={`typo-heading px-1.5 py-0.5 rounded-lg flex-shrink-0 mt-0.5 ${
+                      <span className={`typo-heading px-1.5 py-0.5 rounded-card flex-shrink-0 mt-0.5 ${
                         d.score >= 7 ? 'bg-emerald-500/15 text-emerald-400' : d.score >= 4 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400'
                       }`}>
                         {d.score}/10

@@ -228,7 +228,7 @@ export function GenomeBreedingPanel() {
                 id="generations-select"
                 value={generations}
                 onChange={(e) => setGenerations(Number(e.target.value))}
-                className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1.5 text-foreground"
+                className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-input px-2 py-1.5 text-foreground"
               >
                 {[1, 2, 3, 4, 5].map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -240,7 +240,7 @@ export function GenomeBreedingPanel() {
           <button
             onClick={handleStartBreeding}
             disabled={isBreeding || selectedParents.length < 2}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-card bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isBreeding ? (
               <>

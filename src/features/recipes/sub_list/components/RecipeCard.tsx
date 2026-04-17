@@ -68,10 +68,10 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
   }, [showDeleteConfirm]);
 
   return (
-    <div className="group relative rounded-xl border border-border/60 bg-card/50 p-4 hover:border-border hover:bg-card/80 transition-colors">
+    <div className="group relative rounded-modal border border-border/60 bg-card/50 p-4 hover:border-border hover:bg-card/80 transition-colors">
       {/* Header */}
       <div className="flex items-start gap-3 mb-2">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${CATEGORY_CONTAINER_COLORS[recipe.category?.toLowerCase() ?? ''] ?? 'bg-primary/10 border-primary/20'}`}>
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-card border ${CATEGORY_CONTAINER_COLORS[recipe.category?.toLowerCase() ?? ''] ?? 'bg-primary/10 border-primary/20'}`}>
           {(() => { const Icon = getCategoryIcon(recipe.category); return <Icon className={`w-4 h-4 ${CATEGORY_ICON_COLORS[recipe.category?.toLowerCase() ?? ''] ?? 'text-primary'}`} />; })()}
         </div>
         <div className="min-w-0 flex-1">
@@ -85,14 +85,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
       {/* Category & Tags */}
       <div className="flex flex-wrap gap-1.5 mt-3">
         {recipe.category && (
-          <span className={`inline-flex items-center rounded-lg border px-1.5 py-0.5 text-sm font-medium ${getCategoryStyle(recipe.category)}`}>
+          <span className={`inline-flex items-center rounded-card border px-1.5 py-0.5 text-sm font-medium ${getCategoryStyle(recipe.category)}`}>
             {recipe.category}
           </span>
         )}
         {tags.slice(0, 3).map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center rounded-lg border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-muted-foreground"
+            className="inline-flex items-center rounded-card border border-border/50 bg-muted/30 px-1.5 py-0.5 text-sm text-muted-foreground"
           >
             {tag}
           </span>
@@ -104,7 +104,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         {recipe.sample_inputs && onQuickTest && (
           <button
             onClick={() => onQuickTest(recipe.id)}
-            className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-lg text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
+            className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-card text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
             title={t.recipes.run_quick_test}
           >
             <Play className="w-3.5 h-3.5" />
@@ -112,14 +112,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         )}
         <button
           onClick={() => onEdit(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.edit_recipe}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => onPlayground(recipe.id)}
-          className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
+          className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.open_settings}
         >
           <Settings className="w-3.5 h-3.5" />
@@ -131,14 +131,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
         <div className="relative">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="min-w-8 min-h-8 flex items-center justify-center rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
+            className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
             title={t.recipes.delete_recipe}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           {showDeleteConfirm && (
-            <div className="absolute bottom-full right-0 mb-2 z-50 w-56 rounded-xl border border-border/60 bg-card p-3 shadow-elevation-3 transition-all duration-150">
+            <div className="absolute bottom-full right-0 mb-2 z-50 w-56 rounded-modal border border-border/60 bg-card p-3 shadow-elevation-3 transition-all duration-150">
               <p className="text-sm text-foreground mb-1">
                 Delete <span className="font-semibold">{recipe.name}</span>?
               </p>
@@ -146,13 +146,13 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="rounded-lg px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                  className="rounded-card px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => { setShowDeleteConfirm(false); onDelete(recipe.id); }}
-                  className="rounded-lg px-2.5 py-1 text-sm font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+                  className="rounded-card px-2.5 py-1 text-sm font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
                 >
                   Confirm Delete
                 </button>

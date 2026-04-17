@@ -48,7 +48,7 @@ export function ProjectSelector() {
   // No projects at all — prompt to create one
   if (projects.length === 0) {
     return (
-      <div className="mx-4 mt-3 mb-1 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center gap-3">
+      <div className="mx-4 mt-3 mb-1 px-4 py-3 rounded-modal bg-amber-500/5 border border-amber-500/20 flex items-center gap-3">
         <AlertCircle className="w-4 h-4 text-amber-400/60 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-xs text-foreground">{dt.no_project_configured}</p>
@@ -56,7 +56,7 @@ export function ProjectSelector() {
         </div>
         <button
           onClick={() => setDevToolsTab('projects')}
-          className="px-3 py-1.5 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors flex-shrink-0"
+          className="px-3 py-1.5 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-card hover:bg-amber-500/20 transition-colors flex-shrink-0"
         >
           {dt.create_project}
         </button>
@@ -67,7 +67,7 @@ export function ProjectSelector() {
   // Single project — just show it
   if (projects.length === 1 && activeProject) {
     return (
-      <div className="mx-4 mt-3 mb-1 px-3 py-2 rounded-xl bg-primary/5 border border-primary/10 flex items-center gap-2.5">
+      <div className="mx-4 mt-3 mb-1 px-3 py-2 rounded-modal bg-primary/5 border border-primary/10 flex items-center gap-2.5">
         <FolderKanban className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         <span className="text-xs text-foreground font-medium truncate">{activeProject.name}</span>
         <span className="text-[10px] text-foreground truncate">{activeProject.root_path}</span>
@@ -84,7 +84,7 @@ export function ProjectSelector() {
           onChange={(e) => {
             if (e.target.value) setActiveProject(e.target.value);
           }}
-          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground bg-primary/5 border border-primary/10 rounded-xl cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
+          className="w-full appearance-none px-3 py-2 pl-9 pr-8 text-xs font-medium text-foreground bg-primary/5 border border-primary/10 rounded-modal cursor-pointer hover:bg-primary/8 focus-ring transition-colors"
         >
           <option value="" disabled>{dt.select_project}</option>
           {projects.map((p) => (

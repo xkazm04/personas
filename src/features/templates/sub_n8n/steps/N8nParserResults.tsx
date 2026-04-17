@@ -64,14 +64,14 @@ export function N8nParserResults({
       {/* Analyzing overlay */}
       {isAnalyzing && (
           <div
-            className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-xl"
+            className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-modal"
           >
             <div className="flex flex-col items-center gap-4 p-6">
               <div className="relative">
                 <div
-                  className="animate-fade-in absolute inset-0 w-14 h-14 rounded-xl bg-violet-500/20"
+                  className="animate-fade-in absolute inset-0 w-14 h-14 rounded-modal bg-violet-500/20"
                 />
-                <div className="w-14 h-14 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                   <Sparkles className="w-7 h-7 text-violet-400" />
                 </div>
               </div>
@@ -93,7 +93,7 @@ export function N8nParserResults({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-modal bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
             {platform === 'github-actions'
               ? <FileCode2 className="w-5 h-5 text-cyan-400" />
               : <FileJson className="w-5 h-5 text-cyan-400" />
@@ -115,7 +115,7 @@ export function N8nParserResults({
           variant="secondary"
           size="sm"
           onClick={onReset}
-          className="rounded-xl border-primary/15 text-muted-foreground/80"
+          className="rounded-modal border-primary/15 text-muted-foreground/80"
         >
           Import Another
         </Button>
@@ -124,7 +124,7 @@ export function N8nParserResults({
       {/* Platform confirmation banner */}
       {platformNeedsConfirmation && platform && platform !== 'unknown' && (
         <div
-          className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5"
+          className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-modal border border-amber-500/20 bg-amber-500/5"
         >
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <p className="flex-1 text-sm text-amber-300/90">
@@ -135,7 +135,7 @@ export function N8nParserResults({
               variant="ghost"
               size="sm"
               onClick={onConfirmPlatform}
-              className="rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+              className="rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
             >
               Yes, that's right
             </Button>
@@ -143,7 +143,7 @@ export function N8nParserResults({
               variant="ghost"
               size="sm"
               onClick={onReset}
-              className="rounded-lg border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50"
+              className="rounded-card border border-primary/15 text-muted-foreground/70 hover:bg-secondary/50"
             >
               No, re-upload
             </Button>
@@ -154,13 +154,13 @@ export function N8nParserResults({
       {/* Selection summary */}
       {hasSelection && (
         <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
-          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.blue}`}>
+          <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
             {toolCount} tools
           </span>
-          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.amber}`}>
+          <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.amber}`}>
             {triggerCount} triggers
           </span>
-          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.emerald}`}>
+          <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.emerald}`}>
             {connectorCount} connectors
           </span>
           <span className="text-muted-foreground/80 ml-1">{t.templates.n8n.selected_for_import}</span>
@@ -168,7 +168,7 @@ export function N8nParserResults({
       )}
 
       {/* Sections */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
         <ToolsSection
           tools={parsedResult.suggested_tools}
           selectedToolIndices={selectedToolIndices}

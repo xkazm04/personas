@@ -41,7 +41,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/30">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
             <Workflow className="w-5 h-5 text-violet-400" />
           </div>
           <div>
@@ -51,7 +51,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
+        <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
           <X className="w-4 h-4 text-muted-foreground/80" />
         </button>
       </div>
@@ -67,7 +67,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 setInspectedNode(null);
                 setPopoverPos(null);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium transition-all whitespace-nowrap ${
                 index === activeFlowIndex
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
                   : 'bg-secondary/40 border border-transparent text-muted-foreground/80 hover:bg-secondary/60 hover:text-muted-foreground'

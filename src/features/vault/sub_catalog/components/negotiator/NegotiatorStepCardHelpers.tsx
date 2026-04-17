@@ -161,13 +161,13 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                 placeholder={t.vault.negotiator_extra.ask_question}
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button
                 onClick={handleAskHelp}
                 disabled={!helpQuestion.trim() || isLoadingHelp}
-                className={`px-3 py-1.5 rounded-xl text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
+                className={`px-3 py-1.5 rounded-modal text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
                 {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
@@ -175,7 +175,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && (
               <div
-                className={`px-3 py-2 rounded-xl text-sm text-foreground/80 ${AI_STATUS.bg} border ${AI_STATUS.border}`}
+                className={`px-3 py-2 rounded-modal text-sm text-foreground/80 ${AI_STATUS.bg} border ${AI_STATUS.border}`}
                 data-testid={`negotiator-step-${stepIndex}-help-answer`}
               >
                 {stepHelp.answer}

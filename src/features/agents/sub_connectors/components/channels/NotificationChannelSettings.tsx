@@ -123,7 +123,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const existingTypes = new Set(effectiveChannels.map(c => c.type));
 
   return (
-    <div className={`bg-secondary/40 backdrop-blur-sm border ${TOOLS_BORDER} rounded-xl p-4`}>
+    <div className={`bg-secondary/40 backdrop-blur-sm border ${TOOLS_BORDER} rounded-modal p-4`}>
       <SectionHeader className="mb-6" icon={<Bell className="w-3.5 h-3.5" />} label={t.agents.connectors.ch_title} />
       <ChannelList
         channels={effectiveChannels} credentials={credentials} connectorDefinitions={connectorDefinitions}
@@ -135,12 +135,12 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       {!isDraftMode && isDirty && (
         <button onClick={handleSave} disabled={isSaving}
           title={isSaving ? t.agents.connectors.ch_saving : undefined}
-          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-xl font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
+          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-modal font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
           {isSaving ? t.agents.connectors.ch_saving : t.agents.connectors.ch_save}
         </button>
       )}
       {saveError && (
-        <div className="px-3 py-2 mt-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+        <div className="px-3 py-2 mt-2 rounded-modal border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
           {saveError}
         </div>
       )}

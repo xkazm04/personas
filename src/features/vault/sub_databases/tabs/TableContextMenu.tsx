@@ -48,7 +48,7 @@ export function TableContextMenu({ menu, onCopyQuery, onCopyName, onClose }: Tab
   };
 
   return (
-    <div ref={ref} style={style} className="min-w-[180px] py-1 rounded-lg bg-background border border-primary/15 shadow-elevation-3">
+    <div ref={ref} style={style} className="min-w-[180px] py-1 rounded-card bg-background border border-primary/15 shadow-elevation-3">
       <button
         className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground/70 hover:bg-secondary/50 transition-colors text-left"
         onClick={() => { onCopyQuery(menu.tableName); onClose(); }}

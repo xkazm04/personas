@@ -36,7 +36,7 @@ export default function OptimizerPanel({
       {/* Toggle button */}
       <motion.button
         onClick={() => setExpanded(!expanded)}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl border backdrop-blur-md transition-all text-left ${
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-modal border backdrop-blur-md transition-all text-left ${
           hasSuggestions
             ? 'bg-indigo-500/8 border-indigo-500/20 hover:border-indigo-500/35'
             : 'bg-secondary/60 border-primary/15 hover:border-primary/25'
@@ -75,7 +75,7 @@ export default function OptimizerPanel({
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className="overflow-hidden"
           >
-            <div className="mt-1.5 rounded-xl border border-primary/15 bg-secondary/70 backdrop-blur-md overflow-hidden">
+            <div className="mt-1.5 rounded-modal border border-primary/15 bg-secondary/70 backdrop-blur-md overflow-hidden">
               {/* Stats bar */}
               {hasData && (
                 <div className="px-3 py-2 border-b border-primary/10 flex items-center gap-3">
@@ -94,7 +94,7 @@ export default function OptimizerPanel({
                   <div className="flex-1" />
                   <button
                     onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-                    className="p-1 rounded-lg hover:bg-primary/10 transition-colors"
+                    className="p-1 rounded-card hover:bg-primary/10 transition-colors"
                     title={pt.refresh_analytics}
                   >
                     <RotateCcw className={`w-3 h-3 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />

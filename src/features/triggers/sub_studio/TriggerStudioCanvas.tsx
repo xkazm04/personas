@@ -408,7 +408,7 @@ function TriggerStudioInner() {
         <div className="absolute top-2 left-2 z-30 flex items-center gap-1 flex-wrap">
           <button
             onClick={() => dispatch({ type: 'TOGGLE_PALETTE' })}
-            className="p-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
+            className="p-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
             title={cs.paletteCollapsed ? t.triggers.builder.show_sidebar : t.triggers.builder.hide_sidebar}
           >
             {cs.paletteCollapsed
@@ -419,7 +419,7 @@ function TriggerStudioInner() {
 
           <button
             onClick={handleAutoLayout}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
             title={t.triggers.builder.auto_layout}
           >
             <LayoutGrid className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.builder.layout}</span>
@@ -427,7 +427,7 @@ function TriggerStudioInner() {
 
           <button
             onClick={handleExport}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
             title={t.triggers.studio.export_chain}
           >
             <Download className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.export}</span>
@@ -435,7 +435,7 @@ function TriggerStudioInner() {
 
           <button
             onClick={handleImport}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground"
             title={t.triggers.studio.import_chain}
           >
             <Upload className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.import}</span>
@@ -443,7 +443,7 @@ function TriggerStudioInner() {
 
           <button
             onClick={handleClear}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-red-500/10 transition-colors text-muted-foreground hover:text-red-400"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-input bg-card border border-primary/10 hover:bg-red-500/10 transition-colors text-muted-foreground hover:text-red-400"
             title={t.triggers.studio.clear_canvas}
           >
             <Trash2 className="w-3.5 h-3.5" /><span className="text-[10px]">{t.triggers.studio.clear}</span>
@@ -458,7 +458,7 @@ function TriggerStudioInner() {
 
         {/* Stats bar */}
         {!isEmpty && (
-          <div className="absolute top-2 right-2 z-30 flex items-center gap-3 px-3 py-1.5 rounded-lg bg-card/80 border border-primary/10">
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-3 px-3 py-1.5 rounded-card bg-card/80 border border-primary/10">
             <span className="text-[10px] text-muted-foreground">
               <span className="text-amber-400 font-medium">{nodes.filter(n => n.type === NODE_TYPE_TRIGGER_SOURCE).length}</span> triggers
             </span>
@@ -512,7 +512,7 @@ function TriggerStudioInner() {
         {/* Context menu */}
         {contextMenu && (
           <div
-            className="fixed z-[100] min-w-[160px] rounded-lg bg-card border border-primary/20 shadow-elevation-4 py-1"
+            className="fixed z-[100] min-w-[160px] rounded-card bg-card border border-primary/20 shadow-elevation-4 py-1"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
@@ -528,7 +528,7 @@ function TriggerStudioInner() {
         {/* Empty state */}
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-            <div className="text-center max-w-md px-8 py-6 rounded-xl bg-card/80 border border-primary/10">
+            <div className="text-center max-w-md px-8 py-6 rounded-modal bg-card/80 border border-primary/10">
               <h3 className="text-sm font-semibold text-foreground/80 mb-2">{t.triggers.studio.studio_title}</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Compose reactive event flows across your personas. Use trigger types as building blocks,

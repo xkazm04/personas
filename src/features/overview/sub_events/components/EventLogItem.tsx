@@ -46,7 +46,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
   }, [raw]);
 
   return (
-    <pre className="bg-background/60 p-3 rounded-lg overflow-auto flex-1 text-sm font-mono leading-relaxed">
+    <pre className="bg-background/60 p-3 rounded-card overflow-auto flex-1 text-sm font-mono leading-relaxed">
       {colored || <span className="text-foreground">{raw}</span>}
     </pre>
   );
@@ -82,7 +82,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
           </div>
         )}
         {event.processed_at && (
-          <div className="rounded-xl border border-primary/10 bg-background/30 px-2.5 py-2">
+          <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
             <span className="text-sm font-mono text-foreground/70 font-medium">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 text-sm text-foreground">
               {new Date(event.processed_at).toLocaleString()}
@@ -104,7 +104,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
                   setTimeout(() => setCopiedPayload(false), 2000);
                 }).catch(() => { /* intentional */ });
               }}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.event_log_item.copy_event_data}
             >
               {copiedPayload ? (
@@ -114,7 +114,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
               )}
             </button>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-primary/10 bg-secondary/20 p-3">
+          <div className="flex-1 min-h-0 flex flex-col rounded-modal border border-primary/10 bg-secondary/20 p-3">
             <HighlightedJson raw={event.payload} />
           </div>
         </div>
@@ -123,7 +123,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       {event.error_message && (
         <div>
           <span className="text-sm text-red-400 block mb-1">{t.overview.event_log_item.error}</span>
-          <pre className="bg-red-500/5 p-2 rounded-lg text-red-400 text-sm whitespace-pre-wrap">
+          <pre className="bg-red-500/5 p-2 rounded-card text-red-400 text-sm whitespace-pre-wrap">
             {event.error_message}
           </pre>
         </div>
@@ -187,7 +187,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
         )}
       </td>
       <td className="px-4 py-2.5">
-        <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+        <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
               : event.status === 'processing' ? <LoadingSpinner size="xs" />
@@ -250,7 +250,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         )}
       </div>
       <div className="px-4 py-2.5 flex items-center">
-        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
               : event.status === 'processing' ? <LoadingSpinner size="xs" />

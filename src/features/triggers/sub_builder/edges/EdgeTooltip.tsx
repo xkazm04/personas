@@ -31,7 +31,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
   return (
     <div
       ref={ref}
-      className="fixed z-[100] w-[220px] rounded-xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
+      className="fixed z-[100] w-[220px] rounded-modal bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
       style={{ left: clampedX, top: clampedY }}
     >
       {/* Header */}
@@ -49,7 +49,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
           <button
             key={key}
             onClick={() => onChangeType(key)}
-            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-left transition-colors ${
+            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-card text-left transition-colors ${
               currentType === key ? 'bg-primary/10 ring-1 ring-primary/20' : 'hover:bg-secondary/50'
             }`}
           >
@@ -74,7 +74,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
       <div className="px-2 pb-2">
         <button
           onClick={onDelete}
-          className="flex items-center gap-2 w-full px-2.5 py-2 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/15"
+          className="flex items-center gap-2 w-full px-2.5 py-2 rounded-card text-xs text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/15"
         >
           <Trash2 className="w-3 h-3" />
           Delete connection

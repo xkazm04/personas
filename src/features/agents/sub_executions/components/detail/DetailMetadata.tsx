@@ -27,7 +27,7 @@ function HighlightedJsonBlock({ raw }: { raw: string | null }) {
 
   if (!html) {
     return (
-      <pre className="p-4 bg-background/50 border border-border/30 rounded-xl typo-code text-foreground/90 overflow-x-auto">
+      <pre className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code text-foreground/90 overflow-x-auto">
         {raw ?? ''}
       </pre>
     );
@@ -35,7 +35,7 @@ function HighlightedJsonBlock({ raw }: { raw: string | null }) {
 
   return (
     <pre
-      className="json-highlight p-4 bg-background/50 border border-border/30 rounded-xl typo-code overflow-x-auto"
+      className="json-highlight p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -118,7 +118,7 @@ export function DetailMemories({ execution }: { execution: PersonaExecution }) {
           <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {
               return (
-                <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-xl">
+                <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-modal">
                   <div className="flex items-center gap-2 mb-1">
                     <CategoryChip category={mem.category} />
                     <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
@@ -169,15 +169,15 @@ export function DetailLogSection({ execution }: { execution: PersonaExecution })
       {showLog && (
           <div>
             {logLoading && (
-              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
+              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-modal typo-body text-muted-foreground/80">
                 <Loader2 className="w-4 h-4 animate-spin" />{e.loading_log}
               </div>
             )}
             {logError && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl typo-code text-red-300/80">{logError}</div>
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">{logError}</div>
             )}
             {logContent !== null && !logLoading && (
-              <div className="p-4 bg-background/50 border border-border/30 rounded-xl typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+              <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
                 {logContent.split('\n').map((line, i) => {
                   const style = classifyLine(line);
                   const cls = TERMINAL_STYLE_MAP[style];

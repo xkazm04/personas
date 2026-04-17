@@ -35,12 +35,12 @@ function TriggerPopup({
   const isPolling = trigger.trigger_type === 'polling';
 
   const inputClass =
-    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
+    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
 
   return (
     <div
       ref={popupRef}
-      className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-2.5"
+      className="absolute left-0 right-0 top-full mt-1 z-50 rounded-modal border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-2.5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">

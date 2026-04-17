@@ -75,7 +75,7 @@ export function OutputDiffSection({
             ) : diff.length === 0 ? (
               <p className="typo-body text-muted-foreground/50 py-3">{e.no_log_data}</p>
             ) : (
-              <div className="max-h-64 overflow-y-auto rounded-lg border border-primary/10 bg-background/50 typo-code">
+              <div className="max-h-64 overflow-y-auto rounded-card border border-primary/10 bg-background/50 typo-code">
                 {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
                   (acc, d, i) => {
                     const ln = d.type === 'added' ? undefined : ++acc.leftLine;

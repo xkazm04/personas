@@ -31,7 +31,7 @@ export function ReviewFilterTrailing({
   return (
     <div className="ml-auto flex items-center gap-2">
       {isCloudConnected && (
-        <div className="flex items-center rounded-xl border border-primary/15 overflow-hidden text-xs">
+        <div className="flex items-center rounded-modal border border-primary/15 overflow-hidden text-xs">
           {(['all', 'local', 'cloud'] as SourceFilter[]).map((src) => (
             <button
               key={src}
@@ -53,7 +53,7 @@ export function ReviewFilterTrailing({
       {selectablePendingCount > 0 && (
         <button
           onClick={onToggleSelectAll}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm text-muted-foreground/90 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
         >
           {activeSelectionCount === selectablePendingCount ? (
             <CheckSquare className="w-3.5 h-3.5" />

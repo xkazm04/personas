@@ -113,14 +113,14 @@ export function NegotiatorGuidingPhase({
       <div className="flex items-center justify-between pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors"
         >
           Cancel
         </button>
         {allDone && (
           <button
             onClick={onFinish}
-            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors"
+            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal text-sm font-medium transition-colors"
           >
             Apply credentials
           </button>

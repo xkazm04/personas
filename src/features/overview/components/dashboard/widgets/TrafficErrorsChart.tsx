@@ -35,7 +35,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
       <div className="flex items-center justify-between relative z-10">
         <h3 className="typo-label text-foreground/80 flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+          <div className="p-1.5 rounded-card bg-cyan-500/10 text-cyan-400">
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
           {t.overview.widgets.traffic_errors_chart}

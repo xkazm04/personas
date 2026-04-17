@@ -206,7 +206,7 @@ export default function GraphPanel() {
                 return (
                   <div
                     key={s.label}
-                    className="px-3 py-3 rounded-xl bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1"
+                    className="px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1"
                   >
                     <Icon className={`w-3.5 h-3.5 ${s.color}`} />
                     <p className={`typo-heading-lg ${s.color}`}>{s.value}</p>
@@ -234,13 +234,13 @@ export default function GraphPanel() {
                     if (e.key === 'Enter') runSearch();
                   }}
                   placeholder="Search your vault..."
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
                 />
               </div>
               <button
                 onClick={runSearch}
                 disabled={searching || !query.trim()}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {searching ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
                 Search
@@ -252,7 +252,7 @@ export default function GraphPanel() {
                 {searchHits.map((hit) => (
                   <div
                     key={hit.path}
-                    className="px-3 py-2.5 rounded-xl border border-primary/10 hover:border-primary/20 hover:bg-secondary/20 transition-colors"
+                    className="px-3 py-2.5 rounded-modal border border-primary/10 hover:border-primary/20 hover:bg-secondary/20 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="typo-heading typo-card-label truncate">{hit.title}</p>
@@ -277,7 +277,7 @@ export default function GraphPanel() {
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
-                  <div key={o.path} className="px-2.5 py-1.5 rounded-lg bg-secondary/20 typo-caption text-foreground truncate" title={o.path}>
+                  <div key={o.path} className="px-2.5 py-1.5 rounded-card bg-secondary/20 typo-caption text-foreground truncate" title={o.path}>
                     {o.title}
                   </div>
                 ))}
@@ -291,7 +291,7 @@ export default function GraphPanel() {
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
-                  <div key={m.path} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/20" title={m.path}>
+                  <div key={m.path} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card bg-secondary/20" title={m.path}>
                     <span className="typo-caption text-foreground truncate">{m.title}</span>
                     <span className="typo-caption text-emerald-400/70 flex-shrink-0">{m.outgoingLinkCount} →</span>
                   </div>
@@ -310,12 +310,12 @@ export default function GraphPanel() {
                 value={journalSection}
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder="Section heading"
-                className="w-48 px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
               />
               <button
                 onClick={appendJournal}
                 disabled={journalSaving || !journalBody.trim()}
-                className="ml-auto flex items-center gap-2 px-5 py-2 rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="ml-auto flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {journalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
                 Append to Today
@@ -326,7 +326,7 @@ export default function GraphPanel() {
               onChange={(e) => setJournalBody(e.target.value)}
               placeholder="What happened? What did you learn? Drop it here and it ends up in today's daily note."
               rows={4}
-              className="w-full px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
             />
           </div>
         </SectionCard>
@@ -339,7 +339,7 @@ export default function GraphPanel() {
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder="Meeting title"
-              className="w-full px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
             />
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
@@ -348,7 +348,7 @@ export default function GraphPanel() {
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder="Attendees, comma-separated (becomes [[wikilinks]])"
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
               />
             </div>
             <textarea
@@ -356,12 +356,12 @@ export default function GraphPanel() {
               onChange={(e) => setMeetingBody(e.target.value)}
               placeholder="Agenda, decisions, action items..."
               rows={5}
-              className="w-full px-3 py-2 rounded-xl bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
             />
             <button
               onClick={writeMeeting}
               disabled={meetingSaving || !meetingTitle.trim() || !meetingBody.trim()}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+              className="flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {meetingSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
               Save Meeting Note

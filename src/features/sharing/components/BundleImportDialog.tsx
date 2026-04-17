@@ -218,7 +218,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 flex items-start gap-2">
+          <div className="rounded-card border border-red-500/20 bg-red-500/5 p-3 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <span className="text-xs text-red-400">{error}</span>
           </div>
@@ -229,18 +229,18 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
           phase === 'pick' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}>
           <div className="overflow-hidden">
-            <div className="rounded-xl border border-dashed border-border p-8 text-center space-y-3">
+            <div className="rounded-modal border border-dashed border-border p-8 text-center space-y-3">
               <Download className="w-8 h-8 mx-auto mb-1 text-muted-foreground/40" />
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={handlePickFile}
-                  className="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90"
+                  className="px-4 py-2 text-sm rounded-card bg-primary text-white hover:bg-primary/90"
                 >
                   {st.choose_file}
                 </button>
                 <button
                   onClick={handlePasteFromClipboard}
-                  className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 text-sm rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
                   <ClipboardPaste className="w-4 h-4" />
                   {st.paste_from_clipboard}
@@ -255,13 +255,13 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
                     onChange={(e) => setShareLinkInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleImportShareLink(); }}
                     placeholder={st.share_link_placeholder}
-                    className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border border-border bg-background focus-ring"
+                    className="w-full pl-7 pr-2 py-1.5 text-xs rounded-card border border-border bg-background focus-ring"
                   />
                 </div>
                 <button
                   onClick={() => handleImportShareLink()}
                   disabled={!shareLinkInput.trim()}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="px-3 py-1.5 text-xs rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {st.open}
                 </button>
@@ -342,7 +342,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <button
             onClick={handleClose}
-            className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
+            className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50"
           >
             {phase === 'done' || isEnclave ? st.close : st.cancel}
           </button>
@@ -350,7 +350,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
             preview.signature_valid ? (
               <button
                 onClick={handleImport}
-                className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5"
               >
                 <Download className="w-3.5 h-3.5" />
                 {st.import_btn}
@@ -359,7 +359,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
               <button
                 onClick={dangerConfirmed ? handleImport : undefined}
                 disabled={!dangerConfirmed}
-                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs rounded-card bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <ShieldOff className="w-3.5 h-3.5" />
                 {st.import_anyway}

@@ -87,14 +87,14 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
 
             {/* Quick test loading */}
             {quickTestLoading[recipe.id] && (
-              <div className="mt-2 flex items-center gap-2 rounded-xl border border-border/40 bg-card/30 px-3 py-2 text-sm text-muted-foreground">
+              <div className="mt-2 flex items-center gap-2 rounded-modal border border-border/40 bg-card/30 px-3 py-2 text-sm text-muted-foreground">
                 <RecipePageFlipLoader className="text-primary" /> {t.recipes.running_quick_test}
               </div>
             )}
 
             {/* Quick test result */}
             {quickTestResults[recipe.id] && (
-              <div className="mt-2 rounded-lg border border-border/40 bg-card/30 p-3 space-y-2">
+              <div className="mt-2 rounded-card border border-border/40 bg-card/30 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button

@@ -240,7 +240,7 @@ export function LiveStreamTab() {
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
         return (
-          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {event.status}
           </span>
         );
@@ -296,7 +296,7 @@ export function LiveStreamTab() {
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => isPaused ? handleResume() : setIsPaused(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium border transition-colors ${
               isPaused
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
                 : 'bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground'
@@ -309,7 +309,7 @@ export function LiveStreamTab() {
           <button
             onClick={handleClear}
             disabled={events.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium border bg-secondary/30 text-foreground/70 border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Clear stream buffer"
           >
             <Trash2 className="w-3 h-3" />

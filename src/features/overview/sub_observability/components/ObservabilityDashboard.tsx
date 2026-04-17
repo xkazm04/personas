@@ -48,7 +48,7 @@ function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: 
 
         if (hasError) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-red-500/10 text-red-400 border border-red-500/20">
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-red-500/10 text-red-400 border border-red-500/20">
               <AlertCircle className="w-3 h-3" />
               {label}: {errorRecovery.panel_failed}
             </span>
@@ -56,7 +56,7 @@ function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: 
         }
         if (isStale) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <AlertCircle className="w-3 h-3" />
               {label}: {errorRecovery.panel_stale}
             </span>
@@ -64,7 +64,7 @@ function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: 
         }
         if (hasFetched) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-3 h-3" />
               {label}
             </span>
@@ -136,7 +136,7 @@ export default function ObservabilityDashboard() {
           <>
             <button
               onClick={() => setShowAlerts(!showAlerts)}
-              className={`relative p-1.5 rounded-lg border transition-colors ${
+              className={`relative p-1.5 rounded-card border transition-colors ${
                 showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-muted-foreground/90 hover:bg-secondary/50'
               }`}
               title={t.overview.observability.alert_rules}
@@ -150,14 +150,14 @@ export default function ObservabilityDashboard() {
             </button>
             <button
               onClick={d.refreshAll}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+              className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.observability.refresh_metrics}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => d.setAutoRefresh(!d.autoRefresh)}
-              className={`p-1.5 rounded-lg border transition-colors ${
+              className={`p-1.5 rounded-card border transition-colors ${
                 d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
               }`}
               title={d.autoRefresh ? t.overview.observability_extra.auto_refresh_on : t.overview.observability_extra.auto_refresh_off}
@@ -216,13 +216,13 @@ export default function ObservabilityDashboard() {
             style={{ overflow: "hidden" }}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20">
+              <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20">
                 <div className="flex items-center justify-end mb-2">
                   <StalenessIndicator fetchedAt={pipelineFetchedAt.alertRules} hasError={!!pipelineErrors.alertRules} label="Alert rules" />
                 </div>
                 <AlertRulesPanel />
               </div>
-              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20">
+              <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20">
                 <div className="flex items-center justify-end mb-2">
                   <StalenessIndicator fetchedAt={pipelineFetchedAt.alertHistory} hasError={!!pipelineErrors.alertHistory} label="Alert history" />
                 </div>
@@ -246,7 +246,7 @@ export default function ObservabilityDashboard() {
       <IpcPerformancePanel />
 
       {/* System Trace Timeline */}
-      <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20 space-y-3">
+      <div className="p-4 rounded-modal border border-primary/10 bg-secondary/20 space-y-3">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-cyan-400" />
           <h3 className="typo-heading text-foreground/90">{t.overview.observability_extra.system_trace}</h3>

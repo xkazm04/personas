@@ -69,7 +69,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors focus-ring"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors focus-ring"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -91,7 +91,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <MetaCell icon={SourceIcon ?? Hash} iconColor={sourceConfig?.color} label="Source">
                 <div className="flex items-center gap-1.5">
                   {event.source_type && (
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-md bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground/70'}`}>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground/70'}`}>
                       {event.source_type}
                     </span>
                   )}
@@ -119,7 +119,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                 {/* Improvement #10: Copy button with improved hover/animation */}
                 <button
                   onClick={handleCopy}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card text-xs font-medium transition-all duration-200 ${
                     copiedPayload
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/60 border border-transparent hover:border-primary/10'

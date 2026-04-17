@@ -279,7 +279,7 @@ function LatencyBadge({ ms }: { ms: number }) {
 
   return (
     <span
-      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border ${bg} ${border} ${color}`}
+      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
       title={`Health-check round-trip latency: ${ms}ms`}
     >
       <Activity className="w-3 h-3" />

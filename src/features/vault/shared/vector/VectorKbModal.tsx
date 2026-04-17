@@ -101,7 +101,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
         <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15"
+          className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15"
           style={{ backgroundColor: `${color}15` }}
         >
           <Brain className="w-5 h-5" style={{ color }} />
@@ -121,7 +121,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   }}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
@@ -157,7 +157,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
         </button>

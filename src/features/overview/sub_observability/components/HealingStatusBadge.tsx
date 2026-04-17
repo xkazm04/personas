@@ -18,7 +18,7 @@ export function HealingStatusBadge({ issue, variant = 'compact' }: HealingStatus
 
   if (isCircuitBreaker) {
     return (
-      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-lg border ${variant === 'full' ? `${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}` : 'bg-red-500/15 text-red-400 border-red-500/25'}`}>
+      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-card border ${variant === 'full' ? `${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text} ${SEVERITY_STYLES.error.border}` : 'bg-red-500/15 text-red-400 border-red-500/25'}`}>
         <Zap className="w-3 h-3" /> {variant === 'full' ? 'circuit breaker' : 'breaker'}
       </span>
     );
@@ -26,7 +26,7 @@ export function HealingStatusBadge({ issue, variant = 'compact' }: HealingStatus
 
   if (isAutoFixPending) {
     return (
-      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-lg border bg-amber-500/15 text-amber-400 border-amber-500/20`}>
+      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-card border bg-amber-500/15 text-amber-400 border-amber-500/20`}>
         <LoadingSpinner size="xs" /> retrying
       </span>
     );
@@ -34,7 +34,7 @@ export function HealingStatusBadge({ issue, variant = 'compact' }: HealingStatus
 
   if (isAutoFixed) {
     return (
-      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-lg border bg-emerald-500/15 text-emerald-400 border-emerald-500/20`}>
+      <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-card border bg-emerald-500/15 text-emerald-400 border-emerald-500/20`}>
         {variant === 'full' && <CheckCircle className="w-3 h-3" />} {variant === 'full' ? 'auto-fixed' : 'fixed'}
       </span>
     );
@@ -42,7 +42,7 @@ export function HealingStatusBadge({ issue, variant = 'compact' }: HealingStatus
 
   const sevBadge = SEVERITY_COLORS[issue.severity] ?? SEVERITY_COLORS.medium!;
   return (
-    <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-lg border ${variant === 'full' ? `${sevBadge.bg} ${sevBadge.text} ${sevBadge.border}` : badgeClass(sevBadge)} ${issue.severity === 'critical' ? 'animate-pulse' : ''}`}>
+    <span className={`inline-flex items-center gap-1 ${px} ${py} typo-code uppercase rounded-card border ${variant === 'full' ? `${sevBadge.bg} ${sevBadge.text} ${sevBadge.border}` : badgeClass(sevBadge)} ${issue.severity === 'critical' ? 'animate-pulse' : ''}`}>
       {variant === 'full' && <AlertTriangle className="w-3 h-3" />} {issue.severity}
     </span>
   );

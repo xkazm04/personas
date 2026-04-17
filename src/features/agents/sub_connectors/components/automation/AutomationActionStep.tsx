@@ -63,7 +63,7 @@ export function AutomationActionStep({
       </div>
 
       {tailLines.length > 0 && (
-        <div ref={tailRef} className="px-3 py-2 rounded-xl bg-secondary/30 border border-border/60 text-sm text-muted-foreground font-mono max-h-[4.5rem] overflow-y-auto">
+        <div ref={tailRef} className="px-3 py-2 rounded-modal bg-secondary/30 border border-border/60 text-sm text-muted-foreground font-mono max-h-[4.5rem] overflow-y-auto">
           {tailLines.map((line, i) => (
             <div key={outputLinesLength - tailLines.length + i}>{line}</div>
           ))}
@@ -71,7 +71,7 @@ export function AutomationActionStep({
       )}
 
       <div className="flex justify-end">
-        <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">
+        <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors">
           {t.common.cancel}
         </button>
       </div>

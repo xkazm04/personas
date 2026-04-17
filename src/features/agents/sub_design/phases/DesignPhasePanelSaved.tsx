@@ -63,7 +63,7 @@ export function DesignPhasePanelSaved({
             value={instruction}
             onChange={(e) => onInstructionChange(e.target.value)}
             placeholder={t.agents.design.describe_changes_placeholder}
-            className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-xl px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+            className="flex-1 min-h-[60px] max-h-[120px] bg-background/50 border border-primary/20 rounded-modal px-3 py-2 text-sm text-foreground font-sans resize-y focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -74,7 +74,7 @@ export function DesignPhasePanelSaved({
           <button
             onClick={onStartAnalysis}
             disabled={!instruction.trim()}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all ${
               !instruction.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
                 : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:from-primary/90 hover:to-accent/90'

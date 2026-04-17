@@ -23,7 +23,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
   const fullText = lines.join('\n');
 
   return (
-    <div className="mt-2 border border-border/20 rounded-lg overflow-hidden bg-background/80">
+    <div className="mt-2 border border-border/20 rounded-card overflow-hidden bg-background/80">
       <div className="flex items-center justify-between px-2.5 py-1 bg-secondary/30 border-b border-border/15">
         <span className="text-[10px] font-mono text-foreground">{lines.length} lines</span>
         <div className="flex items-center gap-1.5">

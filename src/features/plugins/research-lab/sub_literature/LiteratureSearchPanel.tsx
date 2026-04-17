@@ -85,7 +85,7 @@ export default function LiteratureSearchPanel() {
             </span>
             <button
               onClick={() => setShowArxiv(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
               title="Search arXiv"
             >
               <Search className="w-3.5 h-3.5" />
@@ -101,7 +101,7 @@ export default function LiteratureSearchPanel() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder={t.research_lab.filter_sources_placeholder}
-          className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40"
+          className="w-full px-3 py-2 rounded-card bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40"
         />
       )}
 
@@ -171,7 +171,7 @@ export default function LiteratureSearchPanel() {
                     <button
                       onClick={(e) => handleIngest(e, source.id)}
                       disabled={ingestingId === source.id}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2 py-1 rounded-card text-[10px] bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
                       title={t.research_lab.ingest_to_kb}
                     >
                       <Database className="w-3 h-3" />

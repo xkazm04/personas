@@ -74,7 +74,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
       </div>
 
       {/* Table */}
-      <div className="border border-primary/10 rounded-xl overflow-hidden">
+      <div className="border border-primary/10 rounded-modal overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">

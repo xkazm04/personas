@@ -11,7 +11,7 @@ export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: Vau
   const sizeClass = variant === 'inline' ? 'px-3 py-2.5' : 'px-4 py-3';
 
   return (
-    <div role="alert" aria-live="assertive" className={`flex items-start gap-2.5 ${sizeClass} ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl text-sm ${SEVERITY_STYLES.error.text}`}>
+    <div role="alert" aria-live="assertive" className={`flex items-start gap-2.5 ${sizeClass} ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-modal text-sm ${SEVERITY_STYLES.error.text}`}>
       <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
       <span className="flex-1">{message}</span>
       {onDismiss && (

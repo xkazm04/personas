@@ -31,7 +31,7 @@ export function BudgetRecoveryCard({
 
   if (budgetStatus === 'warning') {
     return (
-      <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-amber-500/15 bg-amber-500/5">
+      <div className="flex items-center gap-2.5 px-3 py-2 rounded-modal border border-amber-500/15 bg-amber-500/5">
         <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
         <p className="typo-body text-amber-400/80">
           {e.approaching_budget}
@@ -43,7 +43,7 @@ export function BudgetRecoveryCard({
 
   if (budgetStatus === 'exceeded') {
     return (
-      <div className="rounded-xl border border-red-500/20 bg-red-500/5 overflow-hidden">
+      <div className="rounded-modal border border-red-500/20 bg-red-500/5 overflow-hidden">
         <div className="flex items-start gap-2.5 px-3.5 pt-3 pb-2">
           <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 space-y-1">
@@ -61,14 +61,14 @@ export function BudgetRecoveryCard({
             <button
               data-testid="runner-budget-override"
               onClick={onOverrideBudget}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <PlayCircle className="w-3.5 h-3.5" />
               {e.run_anyway_session}
             </button>
             <button
               onClick={() => setEditorTab('settings')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-border/30 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-border/30 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
               {e.raise_budget}
@@ -85,7 +85,7 @@ export function BudgetRecoveryCard({
 
   if (budgetStatus === 'stale') {
     return (
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 overflow-hidden">
+      <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 overflow-hidden">
         <div className="flex items-start gap-2.5 px-3.5 pt-3 pb-2">
           <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 space-y-1">
@@ -99,7 +99,7 @@ export function BudgetRecoveryCard({
           <div className="flex flex-wrap items-center gap-2 px-3.5 pb-3 pt-1">
             <button
               onClick={onOverrideStale}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-lg border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
             >
               <PlayCircle className="w-3.5 h-3.5" />
               {e.run_anyway}

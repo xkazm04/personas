@@ -76,7 +76,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
         <button
           onClick={handleRunCheck}
           disabled={healthDigestRunning}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
+          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors disabled:opacity-40"
           title={t.agents.ops_health.run_health_check}
           aria-label={t.agents.ops_health.run_check_aria}
         >
@@ -115,7 +115,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
         onClick={handleRunCheck}
         disabled={healthDigestRunning}
         data-testid="ops-health-run-btn"
-        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-card text-sm font-medium transition-all bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {healthDigestRunning ? (
           <>
@@ -134,7 +134,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
       {(errorCount > 0 || warningCount > 0 || infoCount > 0) && (
         <div className="space-y-1">
           <h4 className="text-[11px] text-muted-foreground/50 font-medium uppercase tracking-wider">{t.agents.ops_health.issues}</h4>
-          <div className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-secondary/20">
+          <div className="flex items-center gap-3 px-2.5 py-2 rounded-card bg-secondary/20">
             {errorCount > 0 && (
               <div className="flex items-center gap-1">
                 <XCircle className="w-3 h-3 text-red-400" />

@@ -21,7 +21,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
       {isLinking && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
+          <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
                 <p className="px-3 py-1.5 text-sm font-semibold text-muted-foreground/50 uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
@@ -76,7 +76,7 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
       {swapOpen && alternatives.length > 0 && (
         <div className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="mt-3 border border-sky-500/20 rounded-lg bg-background/40">
+          <div className="mt-3 border border-sky-500/20 rounded-card bg-background/40">
             <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">{t.agents.connectors.st_swap_alt}</p>
             {alternatives.map((alt) => (
               <button key={alt} onClick={() => { onSwap(statusName, alt); onClose(); }}
@@ -108,7 +108,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
         {status.linkError && (
           <div className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="mt-2.5 px-3 py-2 rounded-xl text-sm bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start gap-1.5">
+            <div className="mt-2.5 px-3 py-2 rounded-modal text-sm bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start gap-1.5">
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span className="flex-1">{status.linkError}</span>
               {onClearLinkError && (
@@ -122,7 +122,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
       </>
 
       {status.result && !status.testing && (
-        <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${
+        <div className={`mt-2.5 px-3 py-2 rounded-modal text-sm ${
           status.result.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
             : 'bg-red-500/10 border border-red-500/20 text-red-400'
         }`}>

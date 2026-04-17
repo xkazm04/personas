@@ -166,7 +166,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             {headerActions}
             <button
               onClick={() => setShowDashboard(!showDashboard)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
               title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
             >
               <BarChart3 className="w-5 h-5" />
@@ -175,7 +175,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -203,7 +203,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
           />
 
           {globalExecutionsWarning && (
-            <div className="mx-4 md:mx-6 mt-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
+            <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-300/90" role="status" aria-live="polite">
               {globalExecutionsWarning}
             </div>
           )}
@@ -265,7 +265,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
                             <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                           </div>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption flex-shrink-0 ${badgeClass(status)}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption flex-shrink-0 ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
@@ -288,7 +288,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                           <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
                         <div className="px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg typo-heading ${badgeClass(status)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-heading ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
@@ -303,7 +303,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
                 {hasMore && (
                   <div className="pt-3 pb-2 text-center">
-                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-xl border border-primary/15 transition-all">
+                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
                       {t.overview.activity.load_more}
                     </button>
                   </div>

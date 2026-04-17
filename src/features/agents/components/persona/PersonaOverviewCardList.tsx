@@ -54,7 +54,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
+        <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
           <Inbox className="w-5 h-5 text-muted-foreground/40" />
         </div>
         <p className="typo-heading text-foreground/70">{t.agents.persona_list.no_personas_match}</p>
@@ -76,7 +76,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
         return (
           <div
             key={p.id}
-            className={`rounded-xl border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
+            className={`rounded-modal border border-primary/15 bg-secondary/20 backdrop-blur-sm border-l-2 ${accent} ${
               selected ? 'ring-1 ring-primary/40 bg-primary/[0.04]' : ''
             }`}
           >
@@ -156,7 +156,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
                     <div
                       key={name}
                       title={meta.label}
-                      className="w-6 h-6 rounded-md bg-secondary/30 border border-primary/10 flex items-center justify-center"
+                      className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center"
                     >
                       <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
                     </div>

@@ -17,7 +17,7 @@ export default function IconShowcase() {
 
       {/* Switcher */}
       <div className="flex items-center justify-center gap-2">
-        <div className="flex bg-secondary/40 p-1 rounded-lg border border-border/50">
+        <div className="flex bg-secondary/40 p-1 rounded-card border border-border/50">
           <Button
             variant={mode === 'lucide' ? 'primary' : 'ghost'}
             size="sm"
@@ -46,7 +46,7 @@ export default function IconShowcase() {
               onMouseEnter={() => setHoveredIcon(icon.id)}
               onMouseLeave={() => setHoveredIcon(null)}
             >
-              <div className={`relative w-11 h-11 p-2 rounded-xl border transition-all duration-300 cursor-default ${
+              <div className={`relative w-11 h-11 p-2 rounded-modal border transition-all duration-300 cursor-default ${
                 hoveredIcon === icon.id
                   ? 'border-primary/40 bg-primary/10 shadow-elevation-3 shadow-primary/10 scale-110'
                   : 'border-primary/10 bg-secondary/20'

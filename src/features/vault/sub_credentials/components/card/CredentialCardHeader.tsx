@@ -36,14 +36,14 @@ export function CredentialCardHeader({
     <div
       role="button"
       tabIndex={0}
-      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-xl"
+      className="w-full px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors text-left focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-inset focus-visible:outline-none rounded-modal"
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
+            className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 border"
             style={{
               backgroundColor: connector ? `${connector.color}15` : undefined,
               borderColor: connector ? `${connector.color}30` : undefined,

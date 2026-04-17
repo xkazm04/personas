@@ -14,7 +14,7 @@ export function AnomalyScorePanel({ score, tolerance }: { score: AnomalyScore; t
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
   return (
-    <div className={`rounded-xl border px-3 py-2.5 space-y-2 ${rem.bg}`}>
+    <div className={`rounded-modal border px-3 py-2.5 space-y-2 ${rem.bg}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className={`w-3.5 h-3.5 ${rem.color}`} />

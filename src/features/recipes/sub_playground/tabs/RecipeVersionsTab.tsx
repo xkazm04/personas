@@ -112,7 +112,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
             onChange={(e) => setRequirements(e.target.value)}
             placeholder="e.g., Add error handling for rate limits, include retry logic..."
             rows={3}
-            className="w-full rounded-xl border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50 resize-none"
+            className="w-full rounded-modal border border-border/50 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
         </div>
 
@@ -121,7 +121,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
           <button
             onClick={handleGenerate}
             disabled={!requirements.trim()}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             {t.recipes.generate_new_version}
@@ -150,14 +150,14 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
         {/* Error */}
         {(error || versioning.error) && (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <div className="rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error || versioning.error}
           </div>
         )}
 
         {/* Draft Preview */}
         {versioning.draft && (
-          <div className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
+          <div className="rounded-card border border-border/40 bg-card/50 p-4 space-y-3">
             {versioning.lines.length > 0 && (
               <TerminalStrip
                 lastLine={versioning.lines[versioning.lines.length - 1] ?? ''}
@@ -188,7 +188,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {accepting ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                 {t.recipes.accept_apply}
@@ -199,13 +199,13 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                   handleGenerate();
                 }}
                 disabled={!requirements.trim()}
-                className="rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                className="rounded-modal px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
               >
                 Regenerate
               </button>
               <button
                 onClick={() => versioning.reset()}
-                className="rounded-xl px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                className="rounded-modal px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
               >
                 Discard
               </button>
@@ -259,14 +259,14 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                     </div>
 
                     {/* Version card */}
-                    <div className="flex-1 rounded-xl border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors">
+                    <div className="flex-1 rounded-modal border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-foreground">
                             v{version.version_number}
                           </span>
                           {isLatest && (
-                            <span className="rounded-lg bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
+                            <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-sm text-primary font-medium">
                               Latest
                             </span>
                           )}
@@ -288,7 +288,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                         <button
                           onClick={() => handleRevert(version.id)}
                           disabled={isRevertTarget}
-                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
                         >
                           {isRevertTarget ? (
                             <LoadingSpinner size="xs" />

@@ -17,7 +17,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
     return (
       <div className="flex items-center gap-2 mt-3 animate-pulse">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-6 w-20 rounded-lg bg-primary/5" />
+          <div key={i} className="h-6 w-20 rounded-card bg-primary/5" />
         ))}
       </div>
     );
@@ -110,7 +110,7 @@ function StatChip({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] ${CHIP_COLORS[color]}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border text-[11px] ${CHIP_COLORS[color]}`}
       title={`${label}: ${value}`}
     >
       {icon}

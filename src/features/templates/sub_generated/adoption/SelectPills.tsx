@@ -124,7 +124,7 @@ export function SelectPills({
           <button
             type="button"
             onClick={pickAll}
-            className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
+            className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
               isAllSelected
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                 : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
@@ -143,7 +143,7 @@ export function SelectPills({
               key={opt.value}
               type="button"
               onClick={() => togglePill(opt.value)}
-              className={`px-3.5 py-1.5 text-base rounded-lg border transition-all ${
+              className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
                 selected
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                   : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
@@ -159,7 +159,7 @@ export function SelectPills({
         {customValuesFromAnswer.map((v) => (
           <span
             key={`custom-${v}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-base rounded-lg border border-primary/30 bg-primary/15 text-primary font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-base rounded-card border border-primary/30 bg-primary/15 text-primary font-medium"
           >
             {v}
             <button
@@ -176,7 +176,7 @@ export function SelectPills({
           <button
             type="button"
             onClick={() => setShowCustomInput((v) => !v)}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+            className={`px-3 py-1.5 text-sm rounded-card border transition-all ${
               showCustomInput
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                 : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
@@ -207,14 +207,14 @@ export function SelectPills({
               if (!multi) commitCustom();
             }}
             placeholder={t.templates.adopt_modal.type_custom_value}
-            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-lg border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-card border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
           {multi && (
             <button
               type="button"
               onClick={commitCustom}
               disabled={!customDraft.trim()}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
             >
               {t.templates.adopt_modal.add_custom}
             </button>

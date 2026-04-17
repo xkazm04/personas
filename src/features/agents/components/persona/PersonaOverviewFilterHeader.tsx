@@ -82,7 +82,7 @@ export function PersonaOverviewFilterHeader({
         type="button"
         onClick={() => setOpen((v) => !v)}
         title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() })}
-        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-md text-md font-semibold uppercase tracking-wider transition-colors ${
+        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input text-md font-semibold uppercase tracking-wider transition-colors ${
           isFiltered
             ? 'text-primary bg-primary/8 hover:bg-primary/12'
             : 'text-foreground/80 hover:text-foreground hover:bg-secondary/40'
@@ -98,7 +98,7 @@ export function PersonaOverviewFilterHeader({
           <div
             ref={popRef}
             style={style}
-            className="min-w-[180px] rounded-lg border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
+            className="min-w-[180px] rounded-card border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
           >
             {options.map((opt) => {
               const selected = value === opt.value;

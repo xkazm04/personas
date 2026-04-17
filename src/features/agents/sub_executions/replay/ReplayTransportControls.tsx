@@ -88,7 +88,7 @@ export function ReplayTransportControls({
       />
 
       {/* Speed selector */}
-      <div className="ml-3 flex items-center gap-0.5 bg-secondary/30 rounded-lg border border-primary/10 p-0.5">
+      <div className="ml-3 flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
         {SPEED_OPTIONS.map((s) => (
           <Button
             key={s}

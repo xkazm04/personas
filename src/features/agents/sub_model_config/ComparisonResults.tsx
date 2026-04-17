@@ -42,7 +42,7 @@ export function ModelDropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full px-2.5 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/20
+        className="w-full px-2.5 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/20
                    text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40
                    disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
@@ -101,7 +101,7 @@ export function ComparisonResults({
     <div className="space-y-3">
       {/* Winner banner */}
       {winner && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-primary/5 border border-primary/20">
           <Trophy className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium text-foreground/90">
             {winner === 'A' ? modelA.label : modelB.label} {mc.wins}
@@ -127,7 +127,7 @@ export function ComparisonResults({
 
       {/* Per-scenario breakdown */}
       {scenarios.length > 1 && (
-        <div className="overflow-x-auto border border-primary/10 rounded-xl">
+        <div className="overflow-x-auto border border-primary/10 rounded-modal">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/30">

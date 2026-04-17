@@ -59,7 +59,7 @@ export function TwinBindingCard() {
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         Twin
       </h4>
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
         <div>
           <label className="block text-sm font-medium text-foreground/80 mb-1">
             Speak as

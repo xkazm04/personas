@@ -57,13 +57,13 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           <h3 className="typo-heading text-foreground/90">{t.overview.execution_metrics.title}</h3>
           <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
           <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
-          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
             <Timer className="w-3 h-3" />
             {m.activeRangeLabel}
           </span>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4" />
           </button>
         )}

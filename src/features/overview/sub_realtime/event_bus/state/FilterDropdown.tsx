@@ -24,7 +24,7 @@ export function FilterDropdown({
     <div className="relative">
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg border transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-card border transition-colors ${
           activeCount > 0
             ? 'border-primary/25 bg-primary/8 text-primary'
             : 'border-primary/10 text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
@@ -41,7 +41,7 @@ export function FilterDropdown({
       </button>
       {isOpen && (
           <div
-            className={`animate-fade-slide-in absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-xl border border-primary/12 bg-background/95 backdrop-blur-md shadow-elevation-3 shadow-black/20`}
+            className={`animate-fade-slide-in absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-modal border border-primary/12 bg-background/95 backdrop-blur-md shadow-elevation-3 shadow-black/20`}
           >
             {children}
           </div>
@@ -61,7 +61,7 @@ interface FilterOptionProps {
 
 export function FilterOption({ label, selected, color, onToggle }: FilterOptionProps) {
   return (
-    <label className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-secondary/30 cursor-pointer transition-colors">
+    <label className="flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-secondary/30 cursor-pointer transition-colors">
       <input
         type="checkbox"
         checked={selected}

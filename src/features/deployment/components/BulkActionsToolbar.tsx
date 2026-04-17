@@ -84,7 +84,7 @@ export function BulkActionsToolbar({
           type="button"
           onClick={() => handleBulk('pause')}
           disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 transition-colors cursor-pointer"
         >
           {busyOp === 'pause' ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
           {tx(dt.bulk_pause, { count: pausableIds.length })}
@@ -96,7 +96,7 @@ export function BulkActionsToolbar({
           type="button"
           onClick={() => handleBulk('resume')}
           disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors cursor-pointer"
         >
           {busyOp === 'resume' ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {tx(dt.bulk_resume, { count: resumableIds.length })}
@@ -117,7 +117,7 @@ export function BulkActionsToolbar({
                 handleBulk('delete');
               }}
               disabled={isBusy}
-              className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-xs font-medium transition-colors disabled:opacity-40 cursor-pointer"
+              className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal text-xs font-medium transition-colors disabled:opacity-40 cursor-pointer"
             >
               {busyOp === 'delete' ? <LoadingSpinner size="sm" /> : t.common.confirm}
             </button>
@@ -125,7 +125,7 @@ export function BulkActionsToolbar({
               type="button"
               onClick={() => setConfirmingDelete(false)}
               disabled={isBusy}
-              className="px-2.5 py-1.5 bg-secondary/50 text-foreground/80 rounded-xl text-xs transition-colors hover:bg-secondary/70 disabled:opacity-40 cursor-pointer"
+              className="px-2.5 py-1.5 bg-secondary/50 text-foreground/80 rounded-modal text-xs transition-colors hover:bg-secondary/70 disabled:opacity-40 cursor-pointer"
             >
               {t.common.cancel}
             </button>
@@ -135,7 +135,7 @@ export function BulkActionsToolbar({
             type="button"
             onClick={() => setConfirmingDelete(true)}
             disabled={isBusy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {tx(dt.bulk_delete, { count: removableIds.length })}
@@ -149,7 +149,7 @@ export function BulkActionsToolbar({
         type="button"
         onClick={onClearSelection}
         disabled={isBusy}
-        className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 disabled:opacity-40 transition-colors cursor-pointer"
+        className="p-1.5 rounded-card text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 disabled:opacity-40 transition-colors cursor-pointer"
         title={dt.clear_selection}
       >
         <X className="w-4 h-4" />

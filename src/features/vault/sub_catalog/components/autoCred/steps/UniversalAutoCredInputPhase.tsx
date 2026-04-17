@@ -31,8 +31,8 @@ export function UniversalAutoCredInputPhase({
   return (
     <div className="animate-fade-slide-in space-y-5">
       {/* Header */}
-      <div className="flex items-start gap-4 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5">
-        <div className="w-12 h-12 rounded-xl border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center shrink-0">
+      <div className="flex items-start gap-4 p-4 rounded-modal border border-indigo-500/20 bg-indigo-500/5">
+        <div className="w-12 h-12 rounded-modal border border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center shrink-0">
           <Sparkles className="w-6 h-6 text-indigo-400" />
         </div>
         <div>
@@ -57,7 +57,7 @@ export function UniversalAutoCredInputPhase({
           onChange={(e) => onServiceUrlChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="https://app.example.com or https://developer.example.com"
-          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
+          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
           autoFocus
         />
         {serviceUrl && !isValidUrl && (
@@ -77,7 +77,7 @@ export function UniversalAutoCredInputPhase({
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="e.g. I need an API key for their REST API to read and write data. The developer portal has an API Keys section under Settings."
           rows={3}
-          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 resize-none transition-colors"
+          className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 resize-none transition-colors"
         />
       </div>
 
@@ -95,14 +95,14 @@ export function UniversalAutoCredInputPhase({
       <div className="flex items-center justify-end gap-3 pt-1">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={onStart}
           disabled={!isValidUrl || !modeChecked}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-indigo-600/20"
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-indigo-600/20"
         >
           <Sparkles className="w-4 h-4" />
           Discover Credentials

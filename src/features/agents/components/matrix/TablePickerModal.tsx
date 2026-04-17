@@ -40,7 +40,7 @@ export function TablePickerModal({
       <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10">
         <div className="flex items-center gap-3">
           {conn && (
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-500/10">
+            <div className="w-7 h-7 rounded-card flex items-center justify-center bg-blue-500/10">
               <ConnectorIcon meta={conn.meta} size="w-4 h-4" />
             </div>
           )}
@@ -59,7 +59,7 @@ export function TablePickerModal({
       {/* Search */}
       {tables.length > 5 && (
         <div className="px-5 pt-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20">
             <Search className="w-3.5 h-3.5 text-muted-foreground/40" />
             <input
               type="text"
@@ -85,7 +85,7 @@ export function TablePickerModal({
               <button
                 type="button"
                 onClick={() => onSelect(null)}
-                className="w-full text-left px-3 py-2 rounded-lg text-xs text-muted-foreground/50 hover:bg-secondary/30 transition-colors italic"
+                className="w-full text-left px-3 py-2 rounded-card text-xs text-muted-foreground/50 hover:bg-secondary/30 transition-colors italic"
               >
                 {t.agents.table_picker.clear_selection}
               </button>
@@ -95,7 +95,7 @@ export function TablePickerModal({
                 key={t.id}
                 type="button"
                 onClick={() => onSelect(t.table_name)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2.5 ${
+                className={`w-full text-left px-3 py-2.5 rounded-card text-sm transition-colors flex items-center gap-2.5 ${
                   selectedTable === t.table_name
                     ? 'bg-primary/8 text-primary font-medium'
                     : 'text-foreground/70 hover:bg-secondary/30'

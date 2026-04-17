@@ -41,7 +41,7 @@ export function TemplateCardPreview({
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
           exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 8, scale: 0.98 }}
           transition={TRANSITION_NORMAL}
-          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-xl border border-primary/15 bg-background/95 backdrop-blur-sm shadow-elevation-4 hidden md:block"
+          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-modal border border-primary/15 bg-background/95 backdrop-blur-sm shadow-elevation-4 hidden md:block"
         >
           <div className={`${CARD_PADDING.standard} space-y-4`}>
             {/* Full Description */}
@@ -117,7 +117,7 @@ export function TemplateCardPreview({
                   <FileText className="w-3 h-3" />
                   System Prompt
                 </SectionLabel>
-                <p className="text-xs text-muted-foreground/60 leading-relaxed bg-primary/3 rounded-lg px-2.5 py-2 font-mono">
+                <p className="text-xs text-muted-foreground/60 leading-relaxed bg-primary/3 rounded-card px-2.5 py-2 font-mono">
                   {systemPromptPreview}
                 </p>
               </div>

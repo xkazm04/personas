@@ -19,7 +19,7 @@ export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplates
               key={tpl.id}
               type="button"
               onClick={() => onApplyTemplate(tpl.id)}
-              className="flex items-start gap-2.5 p-2.5 rounded-xl border border-primary/10 bg-background/30 hover:border-primary/25 hover:bg-secondary/30 transition-all text-left group"
+              className="flex items-start gap-2.5 p-2.5 rounded-modal border border-primary/10 bg-background/30 hover:border-primary/25 hover:bg-secondary/30 transition-all text-left group"
             >
               <Icon className={`w-4 h-4 mt-0.5 ${meta.color} shrink-0`} />
               <div className="min-w-0">

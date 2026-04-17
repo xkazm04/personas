@@ -93,13 +93,13 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
   return (
     <div
-      className={`animate-fade-slide-in rounded-xl border ${config.border} ${config.bg} overflow-hidden`}
+      className={`animate-fade-slide-in rounded-modal border ${config.border} ${config.bg} overflow-hidden`}
     >
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
       >
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
+        <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <span className="typo-heading text-foreground/90">
               {rec.title}
             </span>
-            <span className={`typo-label px-1.5 py-0.5 rounded-md ${config.badge} border`}>
+            <span className={`typo-label px-1.5 py-0.5 rounded-input ${config.badge} border`}>
               {SEVERITY_LABEL[rec.severity] ?? rec.severity}
             </span>
           </div>

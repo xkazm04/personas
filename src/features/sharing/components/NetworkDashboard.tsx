@@ -41,7 +41,7 @@ function StatCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-secondary/10 p-3">
+    <div className="rounded-card border border-border bg-secondary/10 p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
         {label}
       </div>
@@ -80,11 +80,11 @@ function MetricsSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-lg border border-border bg-secondary/10">
+    <div className="rounded-card border border-border bg-secondary/10">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/20 transition-colors rounded-lg"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/20 transition-colors rounded-card"
       >
         <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
         <span className="text-[11px] font-medium text-foreground flex-1">{title}</span>
@@ -252,14 +252,14 @@ export function NetworkDashboard() {
         {st.network_status}
       </h3>
       {networkError && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
+        <div className="flex items-center gap-2 rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 mb-2 text-xs text-amber-300">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Network data may be stale &mdash; {networkError}</span>
         </div>
       )}
 
       {!networkStatus ? (
-        <div className="rounded-lg border border-border bg-secondary/10 p-4 flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="rounded-card border border-border bg-secondary/10 p-4 flex items-center gap-3 text-sm text-muted-foreground">
           <div className="relative">
             <Wifi className="w-4 h-4 text-emerald-400/50" />
             <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />

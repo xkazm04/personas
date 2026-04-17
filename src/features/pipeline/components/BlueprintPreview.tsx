@@ -21,7 +21,7 @@ export function BlueprintPreview({ blueprint }: { blueprint: TopologyBlueprint }
       )}
 
       {pattern && (
-        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card bg-indigo-500/10 border border-indigo-500/20">
           <GitBranch className="w-3 h-3 text-indigo-400" />
           <span className="text-xs font-medium text-indigo-400 capitalize">{pattern}</span>
         </div>
@@ -31,9 +31,9 @@ export function BlueprintPreview({ blueprint }: { blueprint: TopologyBlueprint }
         {blueprint.members.map((member, i) => (
           <div
             key={i}
-            className="flex items-center gap-2.5 p-2 rounded-lg bg-secondary/30 border border-primary/10"
+            className="flex items-center gap-2.5 p-2 rounded-card bg-secondary/30 border border-primary/10"
           >
-            <div className="w-6 h-6 rounded-md bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 rounded-input bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
               <Users className="w-3 h-3 text-indigo-400" />
             </div>
             <div className="min-w-0 flex-1">

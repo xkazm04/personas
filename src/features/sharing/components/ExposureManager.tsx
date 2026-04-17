@@ -45,7 +45,7 @@ function ResourceExposureCard({
   const parsedTags: string[] = useMemo(() => parseJsonOrDefault(resource.tags, []), [resource.tags]);
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
+    <div className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground truncate">
@@ -84,7 +84,7 @@ function ResourceExposureCard({
           <button
             onClick={requestConfirm}
             title="Remove exposure"
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -128,14 +128,14 @@ function AddExposureForm({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+    <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">{st.resource_type_label}</label>
           <select
             value={resourceType}
             onChange={(e) => { setResourceType(e.target.value as ResourceType); setResourceId(''); }}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
           >
             {RESOURCE_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -147,7 +147,7 @@ function AddExposureForm({
           <select
             value={accessLevel}
             onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
           >
             {ACCESS_LEVELS.map((l) => (
               <option key={l} value={l}>{l}</option>
@@ -162,7 +162,7 @@ function AddExposureForm({
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
           >
             <option value="">{st.select_persona_placeholder}</option>
             {personas.map((p) => (
@@ -174,7 +174,7 @@ function AddExposureForm({
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
             placeholder={st.resource_id_placeholder}
-            className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+            className="w-full px-2 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
           />
         )}
       </div>
@@ -185,7 +185,7 @@ function AddExposureForm({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder={st.tags_placeholder}
-          className="w-full px-2 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+          className="w-full px-2 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
         />
       </div>
 
@@ -193,13 +193,13 @@ function AddExposureForm({
         <button
           onClick={handleSubmit}
           disabled={!resourceId}
-          className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {st.expose_resource}
         </button>
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
+          className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50"
         >
           {st.cancel}
         </button>
@@ -274,7 +274,7 @@ export default function ExposureManager() {
               </h3>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                className="px-2.5 py-1 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 {st.expose_resource}
@@ -297,7 +297,7 @@ export default function ExposureManager() {
                 {st.loading_exposed}
               </div>
             ) : exposedResources.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
                 {st.no_resources_hint}
               </div>
             ) : (

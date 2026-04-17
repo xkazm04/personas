@@ -23,7 +23,7 @@ export const ReplayEntryBar = memo(function ReplayEntryBar({
           key={opt.value}
           disabled={loading}
           onClick={() => onEnterReplay(opt.value)}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/5 border border-primary/10 text-muted-foreground/70 hover:text-foreground/80 hover:bg-primary/10 hover:border-primary/20 transition-all active:scale-[0.97] disabled:opacity-40"
         >
           {loading ? (
             <LoadingSpinner size="xs" />

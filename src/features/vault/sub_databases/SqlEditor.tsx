@@ -45,7 +45,7 @@ export function SqlEditor({ value, onChange, language = 'sql', placeholder, onEx
   }, []);
 
   return (
-    <div className="relative rounded-lg border border-primary/10 bg-secondary/20 overflow-hidden" style={{ minHeight }}>
+    <div className="relative rounded-card border border-primary/10 bg-secondary/20 overflow-hidden" style={{ minHeight }}>
       {/* Syntax-highlighted layer */}
       <pre
         ref={preRef}

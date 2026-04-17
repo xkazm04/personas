@@ -103,7 +103,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
+          className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
         />
         {input && (
           <button
@@ -118,7 +118,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
       {result && (
           <div
             key="result"
-            className={`animate-fade-slide-in flex items-center gap-3 p-2.5 rounded-xl border ${confidence!.border} ${confidence!.bg} transition-colors`}
+            className={`animate-fade-slide-in flex items-center gap-3 p-2.5 rounded-modal border ${confidence!.border} ${confidence!.bg} transition-colors`}
           >
             {meta && <meta.Icon className={`w-4 h-4 shrink-0 ${meta.color}`} />}
             <div className="flex-1 min-w-0">
@@ -126,7 +126,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
                 <span className="text-sm font-medium text-foreground/90 truncate">
                   {result.label}
                 </span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-md ${confidence!.bg} ${confidence!.text} border ${confidence!.border}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-input ${confidence!.bg} ${confidence!.text} border ${confidence!.border}`}>
                   {confidence!.label}
                 </span>
               </div>
@@ -145,7 +145,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             </div>
             <button
               onClick={handleApply}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-lg text-xs font-medium transition-colors shrink-0 border border-violet-500/20"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card text-xs font-medium transition-colors shrink-0 border border-violet-500/20"
             >
               <Check className="w-3 h-3" />
               Apply
@@ -157,7 +157,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
         {noMatch && input.trim().length >= 3 && (
           <div
             key="no-match"
-            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-xl border border-border/30 bg-secondary/20 text-xs text-muted-foreground/60"
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 text-xs text-muted-foreground/60"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>Could not parse a trigger from that description. Try something like &ldquo;{PLACEHOLDER_EXAMPLES[placeholderIdx]}&rdquo;</span>

@@ -22,7 +22,7 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 px-4 py-4">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-red-500/10 flex-shrink-0">
+          <div className="w-9 h-9 rounded-modal flex items-center justify-center bg-red-500/10 flex-shrink-0">
             <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div className="flex-1 min-w-0">
@@ -32,7 +32,7 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
               <span className="font-medium text-foreground/80">{eventLabel}</span> events. You can reconnect later.
             </p>
           </div>
-          <button onClick={onCancel} className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground flex-shrink-0">
+          <button onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-muted-foreground flex-shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -40,13 +40,13 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="px-3 py-1.5 rounded-card text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
+            className="px-3 py-1.5 rounded-card text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
           >
             Disconnect
           </button>

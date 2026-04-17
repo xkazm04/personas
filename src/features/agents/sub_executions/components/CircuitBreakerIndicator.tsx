@@ -97,7 +97,7 @@ export function CircuitBreakerIndicator() {
       : 'bg-muted-foreground/5';
 
   return (
-    <div className={`border ${borderColor} ${bgColor} rounded-xl typo-body`} data-testid="circuit-breaker-indicator">
+    <div className={`border ${borderColor} ${bgColor} rounded-modal typo-body`} data-testid="circuit-breaker-indicator">
       {/* Summary row */}
       <button
         onClick={() => setExpanded((v) => !v)}
@@ -174,7 +174,7 @@ export function CircuitBreakerIndicator() {
           })}
 
           {status.globalPaused && (
-            <div className="mt-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/15 rounded-lg typo-body text-red-400">
+            <div className="mt-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/15 rounded-card typo-body text-red-400">
               {tx(e.cb_global_paused_detail, { count: status.globalFailureCount })}
               {status.globalCooldownRemainingSecs > 0 &&
                 ` ${tx(e.cb_resuming_in, { seconds: Math.ceil(status.globalCooldownRemainingSecs) })}`}

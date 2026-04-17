@@ -49,10 +49,10 @@ export function SectionCard({
 
   return (
     <div
-      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
+      className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
     >
       <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
+        <div className={`w-8 h-8 rounded-modal flex items-center justify-center ${sectionStyle.badge}`}>
           <SectionIcon className={`w-4 h-4 ${sectionStyle.icon}`} />
         </div>
         <span className="typo-label text-foreground/90">

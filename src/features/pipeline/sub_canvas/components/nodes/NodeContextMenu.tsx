@@ -29,7 +29,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 w-48 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 py-1 overflow-hidden"
+      className="fixed z-50 w-48 rounded-modal bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 py-1 overflow-hidden"
       style={{ left: x, top: y }}
     >
       <div className="px-3 py-1.5 text-sm font-mono uppercase text-muted-foreground/80 border-b border-primary/10">
@@ -42,7 +42,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           <button
             key={role.value}
             onClick={() => { onChangeRole(role.value); onClose(); }}
-            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-xl transition-colors ${
+            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-modal transition-colors ${
               currentRole === role.value ? 'bg-indigo-500/15 text-indigo-300' : 'text-foreground/90 hover:bg-secondary/60'
             }`}
           >
@@ -57,14 +57,14 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       <div className="px-1 py-1">
         <button
           onClick={() => { onConfigure(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-xl transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-foreground/90 hover:bg-secondary/60 rounded-modal transition-colors"
         >
           <Settings className="w-3 h-3" />
           {t.pipeline.configure}
         </button>
         <button
           onClick={() => { onRemove(); onClose(); }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
         >
           <Trash2 className="w-3 h-3" />
           {t.pipeline.remove_from_team}

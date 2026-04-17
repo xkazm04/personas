@@ -45,7 +45,7 @@ export const ToolCard = memo(function ToolCard({
       whileHover={missingCredential ? undefined : { scale: 1.02 }}
       whileTap={missingCredential ? undefined : { scale: 0.98 }}
       onClick={() => !missingCredential && onToggle(tool.id, tool.name, isAssigned)}
-      className={`p-3 rounded-xl border backdrop-blur-sm transition-all focus-ring ${
+      className={`p-3 rounded-modal border backdrop-blur-sm transition-all focus-ring ${
         missingCredential
           ? `bg-secondary/20 ${TOOLS_BORDER} opacity-60 cursor-not-allowed`
           : isAssigned
@@ -93,12 +93,12 @@ export const ToolCard = memo(function ToolCard({
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {tool.category && (
-              <span className={`inline-block px-2 py-0.5 rounded-lg text-sm font-mono bg-background/50 text-muted-foreground/80 border ${TOOLS_BORDER}`}>
+              <span className={`inline-block px-2 py-0.5 rounded-card text-sm font-mono bg-background/50 text-muted-foreground/80 border ${TOOLS_BORDER}`}>
                 {tool.category}
               </span>
             )}
             {usageCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm bg-primary/5 text-muted-foreground/90 border ${TOOLS_BORDER}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-sm bg-primary/5 text-muted-foreground/90 border ${TOOLS_BORDER}`}>
                 <BarChart3 className="w-3 h-3" />
                 {tx(t.agents.tools.calls, { count: usageCount.toLocaleString() })}
               </span>
@@ -106,7 +106,7 @@ export const ToolCard = memo(function ToolCard({
             {hasImpact && (
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                className={`ml-auto inline-flex items-center gap-1 ${TOOLS_BTN_COMPACT} rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:${TOOLS_BORDER} transition-all`}
+                className={`ml-auto inline-flex items-center gap-1 ${TOOLS_BTN_COMPACT} rounded-card text-sm text-muted-foreground/60 hover:text-muted-foreground/90 hover:bg-primary/5 border border-transparent hover:${TOOLS_BORDER} transition-all`}
                 title={expanded ? 'Hide impact analysis' : 'Show impact analysis'}
               >
                 {t.agents.tools.impact_label}

@@ -34,7 +34,7 @@ export default function TourAppearanceContent() {
                 key={scale.id}
                 onClick={() => setTextScale(scale.id as TextScale)}
                 data-testid={`tour-appearance-textscale-${scale.id}`}
-                className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
+                className={`relative flex flex-col items-center gap-1 p-2 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -64,7 +64,7 @@ export default function TourAppearanceContent() {
                 key={level.id}
                 onClick={() => setBrightness(level.id as BrightnessLevel)}
                 data-testid={`tour-appearance-brightness-${level.id}`}
-                className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
+                className={`relative flex flex-col items-center gap-1 p-2 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -92,7 +92,7 @@ export default function TourAppearanceContent() {
                 key={t.id}
                 onClick={() => setTheme(t.id as ThemeId)}
                 data-testid={`tour-appearance-theme-${t.id}`}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
+                className={`flex flex-col items-center gap-1 p-2 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -124,7 +124,7 @@ export default function TourAppearanceContent() {
                 key={t.id}
                 onClick={() => setTheme(t.id as ThemeId)}
                 data-testid={`tour-appearance-theme-${t.id}`}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-colors ${
+                className={`flex flex-col items-center gap-1 p-2 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'

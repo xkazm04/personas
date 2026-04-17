@@ -103,7 +103,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
   const activeStepIndex = state.activeStep?.step_index ?? null;
 
   return (
-    <div className="flex flex-col rounded-xl border border-primary/10 bg-background/50 overflow-hidden" style={{ height: 520 }}>
+    <div className="flex flex-col rounded-modal border border-primary/10 bg-background/50 overflow-hidden" style={{ height: 520 }}>
       {/* Transport controls */}
       <div className="px-4 py-3 border-b border-primary/10 space-y-2.5">
         <TimelineScrubber

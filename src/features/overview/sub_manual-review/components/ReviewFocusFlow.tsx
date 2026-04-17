@@ -325,7 +325,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className={`w-full ${hasAnyImages ? 'max-w-5xl' : 'max-w-3xl'}`}
             >
-              <div className={`rounded-xl border border-primary/10 ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
+              <div className={`rounded-modal border border-primary/10 ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
                 {/* Severity gradient top bar */}
                 <div className={`h-0.5 bg-gradient-to-r ${sevCfg.gradient}`} />
 
@@ -390,7 +390,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {galleryImage && !hasDecisions && (
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                      <div className="rounded-lg overflow-hidden border border-primary/10 bg-black/20">
+                      <div className="rounded-card overflow-hidden border border-primary/10 bg-black/20">
                         {isVideoUrl(galleryImage) ? (
                           <video
                             src={galleryImage}
@@ -470,7 +470,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                               setActiveAction('approve');
                               setActionNotes(action);
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card text-sm text-foreground/80 bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
                             {action}

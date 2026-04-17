@@ -57,7 +57,7 @@ function StatCard({
 }) {
   const tw = STAT_COLORS[color] ?? STAT_COLORS.primary;
   return (
-    <div className="rounded-xl border border-primary/10 bg-card/30 p-4 flex items-center gap-3">
+    <div className="rounded-modal border border-primary/10 bg-card/30 p-4 flex items-center gap-3">
       <div className={`w-9 h-9 rounded-interactive ${tw.bg} border ${tw.border} flex items-center justify-center shrink-0`}>
         <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
@@ -201,7 +201,7 @@ function MonitoringLinkForm({
         <select
           value={selectedCredId}
           onChange={(e) => setSelectedCredId(e.target.value)}
-          className="w-full px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground"
+          className="w-full px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-modal text-foreground"
         >
           {credentials.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
@@ -213,7 +213,7 @@ function MonitoringLinkForm({
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           placeholder={po.project_slug_placeholder}
-          className="flex-1 px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground"
+          className="flex-1 px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground"
         />
         <Button
           variant="accent"

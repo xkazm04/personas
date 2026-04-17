@@ -50,7 +50,7 @@ export function ImportPreview({
         <div className="flex items-center gap-2">
           <button
             onClick={onBack}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -71,7 +71,7 @@ export function ImportPreview({
       </div>
 
       {errors.length > 0 && (
-        <div className="p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300 space-y-1">
+        <div className="p-2.5 rounded-card border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300 space-y-1">
           {errors.map((err, i) => (
             <div key={i} className="flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -85,7 +85,7 @@ export function ImportPreview({
         {[...groups.entries()].map(([service, groupSecrets]) => {
           const mapping = mappings.find((m) => m.detectedService === service);
           return (
-            <div key={service} className="rounded-xl border border-primary/10 bg-secondary/15 overflow-hidden">
+            <div key={service} className="rounded-modal border border-primary/10 bg-secondary/15 overflow-hidden">
               <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/8 bg-secondary/10">
                 <div
                   className="w-2 h-2 rounded-full"
@@ -148,7 +148,7 @@ export function ImportPreview({
         <button
           onClick={onImport}
           disabled={selectedCount === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Import className="w-4 h-4" />
           Import {selectedCount} Secret{selectedCount !== 1 ? 's' : ''}

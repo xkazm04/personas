@@ -117,7 +117,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             null
           ) : pipelines.length === 0 ? (
             <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-orange-400/60" />
               </div>
               <p className="text-sm text-muted-foreground/70">{t.gitlab.no_pipelines_yet}</p>
@@ -155,7 +155,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                       href={sanitizeExternalUrl(activePipeline.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                      className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                       title={t.gitlab.open_in_gitlab}
                     >
                       <ExternalLink className="w-4 h-4" />

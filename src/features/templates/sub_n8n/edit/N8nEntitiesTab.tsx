@@ -118,7 +118,7 @@ export function N8nEntitiesTab({
           {onGoToAnalyze && (
             <button
               onClick={onGoToAnalyze}
-              className="px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
             >
               {t.templates.n8n.edit_selection}
             </button>
@@ -127,7 +127,7 @@ export function N8nEntitiesTab({
             <button
               onClick={() => void cs.handleTestAll()}
               disabled={cs.testingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 hover:text-foreground/95 transition-colors disabled:opacity-40"
             >
               {cs.testingAll ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
               {t.templates.n8n.test_all}
@@ -162,7 +162,7 @@ export function N8nEntitiesTab({
 
       {/* -- General Tools (no connector required) -- */}
       {hasGeneralTools && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
+        <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
             <Wrench className="w-3 h-3" />
             {tx(t.templates.n8n.general_tools_count, { count: generalTools.length })}
@@ -171,7 +171,7 @@ export function N8nEntitiesTab({
             {generalTools.map((tool) => (
               <span
                 key={tool.name}
-                className="px-2.5 py-1 text-sm font-mono rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                className="px-2.5 py-1 text-sm font-mono rounded-modal bg-blue-500/10 text-blue-400 border border-blue-500/20"
                 title={tool.description ?? undefined}
               >
                 {tool.name}
@@ -183,7 +183,7 @@ export function N8nEntitiesTab({
 
       {/* -- Triggers -- */}
       {hasTriggers && (
-        <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
+        <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
           <h5 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider mb-2.5">
             <Zap className="w-3 h-3" />
             {tx(t.templates.n8n.triggers_count, { count: triggerItems.length })}
@@ -191,7 +191,7 @@ export function N8nEntitiesTab({
           <div className="space-y-1.5">
             {triggerItems.map((trigger, i) => (
               <div key={i} className="flex items-center gap-2 text-sm text-foreground/90">
-                <span className="px-1.5 py-0.5 text-sm font-mono rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="px-1.5 py-0.5 text-sm font-mono rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {trigger.trigger_type}
                 </span>
                 <span className="truncate">{trigger.description}</span>
@@ -203,7 +203,7 @@ export function N8nEntitiesTab({
 
       {/* Embedded credential design modal */}
       {cs.designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-xl">
+        <div className="mt-4 border border-violet-500/20 rounded-modal">
           <CredentialDesignModal
             open={cs.designOpen}
             embedded

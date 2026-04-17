@@ -112,7 +112,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
                 {coUsedTools.map((co) => (
                   <span
                     key={co.toolName}
-                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground/60`}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm bg-primary/5 border ${TOOLS_BORDER} text-foreground/60`}
                     title={`Co-used ${co.coOccurrences} time${co.coOccurrences !== 1 ? 's' : ''}`}
                   >
                     {co.toolName}
@@ -153,7 +153,7 @@ function ImpactSection({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`flex flex-col items-center px-2 py-1 rounded-lg bg-background/30 border ${TOOLS_BORDER}`}>
+    <div className={`flex flex-col items-center px-2 py-1 rounded-card bg-background/30 border ${TOOLS_BORDER}`}>
       <span className="text-sm font-mono text-foreground/70 tabular-nums">{value}</span>
       <span className="text-sm text-muted-foreground/50 uppercase tracking-wider">{label}</span>
     </div>

@@ -6,7 +6,7 @@ export function StatCard({ label, value, color }: { label: string; value: string
   };
 
   return (
-    <div className="p-3 rounded-xl bg-secondary/30 border border-primary/10 text-center">
+    <div className="p-3 rounded-modal bg-secondary/30 border border-primary/10 text-center">
       <p className="text-xs text-muted-foreground/70 mb-1">{label}</p>
       <p className={`text-lg font-semibold ${color ? colorMap[color] : 'text-foreground/90'}`}>{value}</p>
     </div>

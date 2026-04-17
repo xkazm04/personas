@@ -99,7 +99,7 @@ export function FieldCaptureRow({
           disabled={!isEditable}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`rounded-xl ${error ? 'border-red-500/50' : ''}`}
+          className={`rounded-modal ${error ? 'border-red-500/50' : ''}`}
         >
           <option value="">{placeholder || 'Select...'}</option>
           {options.map((option) => (
@@ -116,7 +116,7 @@ export function FieldCaptureRow({
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-3 py-2 border rounded-xl text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-modal text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}

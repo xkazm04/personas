@@ -22,7 +22,7 @@ export function N8nQuestionListbox({ options, value, onChange, selectedClassName
           type="button"
           onClick={toggle}
           className={[
-            'w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl border transition-all',
+            'w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-modal border transition-all',
             value && selectedClassName
               ? selectedClassName
               : 'border-primary/15 bg-background/50 text-foreground/80',

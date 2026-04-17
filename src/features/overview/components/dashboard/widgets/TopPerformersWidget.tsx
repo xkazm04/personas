@@ -30,7 +30,7 @@ export function TopPerformersWidget() {
   if (topEntries.length < 2) return null;
 
   return (
-    <div className="rounded-xl border border-primary/[0.08] bg-secondary/[0.03] p-4" data-testid="top-performers-widget">
+    <div className="rounded-modal border border-primary/[0.08] bg-secondary/[0.03] p-4" data-testid="top-performers-widget">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
@@ -62,11 +62,11 @@ function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
                      entry.compositeScore >= 40 ? 'text-amber-400' : 'text-red-400';
 
   return (
-    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-primary/[0.03] transition-colors">
+    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-card hover:bg-primary/[0.03] transition-colors">
       {/* Medal / rank */}
       <div className="w-7 flex-shrink-0 text-center">
         {medal ? (
-          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold border ${medal.bg} ${medal.border} ${medal.text}`}>
+          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-input text-[10px] font-bold border ${medal.bg} ${medal.border} ${medal.text}`}>
             {medal.label}
           </span>
         ) : (

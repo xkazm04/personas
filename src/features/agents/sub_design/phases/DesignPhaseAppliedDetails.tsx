@@ -102,10 +102,10 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
               <button
                 key={step.id}
                 onClick={step.action}
-                className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
+                className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
               >
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
+                  className="w-8 h-8 rounded-card flex items-center justify-center shrink-0 border"
                   style={{
                     backgroundColor: colorWithAlpha(step.color, 0.07),
                     borderColor: colorWithAlpha(step.color, 0.15),

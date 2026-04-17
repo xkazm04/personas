@@ -24,7 +24,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -41,10 +41,10 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
             <button
               key={source.id}
               onClick={() => onSelect(source.id)}
-              className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-all text-left group"
+              className="flex items-start gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-all text-left group"
             >
               <div
-                className="w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5"
+                className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{ backgroundColor: `${source.color}12`, borderColor: `${source.color}30` }}
               >
                 <Icon className="w-4.5 h-4.5" style={{ color: source.color }} />
@@ -55,7 +55,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                 </p>
                 <p className="text-sm text-muted-foreground/65 leading-snug">{source.description}</p>
                 {source.syncSupported && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 text-[11px] rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <span className="inline-block mt-1 px-1.5 py-0.5 text-[11px] rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                     Sync supported
                   </span>
                 )}

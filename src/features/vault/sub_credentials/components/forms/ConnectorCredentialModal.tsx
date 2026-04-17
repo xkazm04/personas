@@ -67,7 +67,7 @@ export function ConnectorCredentialModal({
             {connectorDefinition?.icon_url ? (
               <ThemedConnectorIcon url={connectorDefinition.icon_url} label={label} color={connectorDefinition.color} size="w-7 h-7" />
             ) : (
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-card bg-primary/10 flex items-center justify-center">
                 <Plug className="w-4 h-4 text-primary/60" />
               </div>
             )}
@@ -82,7 +82,7 @@ export function ConnectorCredentialModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors text-muted-foreground/90 hover:text-foreground/95"
+            className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-muted-foreground/90 hover:text-foreground/95"
           >
             <X className="w-4 h-4" />
           </button>
@@ -90,7 +90,7 @@ export function ConnectorCredentialModal({
 
         {/* Existing credential badge */}
         {existingCredential && (
-          <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm text-emerald-400">
+          <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-modal text-sm text-emerald-400">
             <Check className="w-3.5 h-3.5" />
             Credential already configured -- update below to replace
           </div>
@@ -102,7 +102,7 @@ export function ConnectorCredentialModal({
             href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl text-sm text-foreground/80 hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
+            className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-modal text-sm text-foreground/80 hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
           >
             <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-sm font-bold text-amber-400 flex-shrink-0">
               1
@@ -121,7 +121,7 @@ export function ConnectorCredentialModal({
             href={sanitizeExternalUrl(connector.setup_url)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-3.5 py-2.5 mb-4 bg-primary/5 border border-primary/15 rounded-xl text-sm text-primary/80 hover:bg-primary/10 hover:text-primary transition-colors group"
+            className="flex items-center gap-2.5 px-3.5 py-2.5 mb-4 bg-primary/5 border border-primary/15 rounded-modal text-sm text-primary/80 hover:bg-primary/10 hover:text-primary transition-colors group"
           >
             <ExternalLink className="w-4 h-4 flex-shrink-0 group-hover:scale-105 transition-transform" />
             <div className="flex-1 min-w-0">
@@ -135,7 +135,7 @@ export function ConnectorCredentialModal({
 
         {/* Setup instructions */}
         {connector.setup_instructions && (
-          <div className="mb-4 px-3.5 py-2.5 bg-secondary/60 border border-primary/10 rounded-xl">
+          <div className="mb-4 px-3.5 py-2.5 bg-secondary/60 border border-primary/10 rounded-modal">
             <p className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider mb-1.5">
               Setup Instructions
             </p>
@@ -165,7 +165,7 @@ export function ConnectorCredentialModal({
             </p>
             <button
               onClick={onClose}
-              className="mt-3 px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors"
+              className="mt-3 px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors"
             >
               Close
             </button>

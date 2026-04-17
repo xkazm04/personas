@@ -95,7 +95,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
   return (
     <div className="space-y-4 animate-fade-slide-in">
       {/* Overall verdict banner */}
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${vc.bg} ${vc.border}`}>
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${vc.bg} ${vc.border}`}>
         <VerdictIcon className={`w-5 h-5 ${vc.color}`} />
         <div className="flex-1">
           <p className={`typo-heading ${vc.color}`}>{vc.text}</p>
@@ -112,7 +112,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
           { label: t.agents.lab.output_quality, delta: summaryScores.avgOutputQuality },
           { label: t.agents.lab.protocol_compliance, delta: summaryScores.avgProtocol },
         ].map(({ label, delta }) => (
-          <div key={label} className="rounded-xl border border-primary/10 bg-secondary/20 p-3 space-y-1">
+          <div key={label} className="rounded-modal border border-primary/10 bg-secondary/20 p-3 space-y-1">
             <p className="typo-caption text-muted-foreground/50">{label}</p>
             <div className="flex items-center gap-2">
               {delta > 0 ? (
@@ -137,7 +137,7 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
           {deltas.map((d, i) => (
             <div
               key={`${d.scenario}-${d.model}-${i}`}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-card transition-colors ${
                 d.verdict === 'fail'
                   ? 'bg-red-500/5 border border-red-500/15'
                   : d.verdict === 'improved'

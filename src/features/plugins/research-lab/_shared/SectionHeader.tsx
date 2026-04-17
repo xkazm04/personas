@@ -17,7 +17,7 @@ export function SectionHeader({ title, actionLabel, onAction, extra }: Props) {
         {actionLabel && onAction && (
           <button
             onClick={onAction}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             {actionLabel}

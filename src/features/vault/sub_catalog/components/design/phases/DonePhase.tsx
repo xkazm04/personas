@@ -47,7 +47,7 @@ export function DonePhase({
       </div>
       {registeredConnectorName && (
         <div
-          className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 max-w-md"
+          className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-violet-500/10 border border-violet-500/20 max-w-md"
         >
           <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
           <p className="text-sm text-foreground/80">
@@ -60,14 +60,14 @@ export function DonePhase({
       <div className="flex items-center gap-2 mt-2">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all"
+          className="px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-modal text-sm font-medium transition-all"
         >
           Done
         </button>
         {onViewCredential && (
           <button
             onClick={onViewCredential}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal text-sm font-medium transition-all"
           >
             View Credential
             <ArrowRight className="w-3.5 h-3.5" />
@@ -93,12 +93,12 @@ export function DonePhase({
                 }
               }}
               placeholder="e.g. add write scopes, add staging environment..."
-              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+              className="flex-1 px-3 py-2 bg-secondary/40 border border-primary/10 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             />
             <button
               onClick={handleRefineSubmit}
               disabled={!refinementText.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:pointer-events-none"
+              className="flex items-center gap-1.5 px-4 py-2 bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 rounded-modal text-sm font-medium transition-all disabled:opacity-40 disabled:pointer-events-none"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Refine

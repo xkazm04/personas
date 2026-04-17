@@ -88,7 +88,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
     const platform = workflowPlatform ?? "unknown";
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 p-2.5 rounded-lg border border-primary/15 bg-primary/5">
+        <div className="flex items-center gap-2 p-2.5 rounded-card border border-primary/15 bg-primary/5">
           <Workflow className="w-4 h-4 text-primary/60 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
     return (
       <div className="space-y-2">
         <textarea
-          className="w-full min-h-[80px] max-h-[120px] rounded-lg border border-primary/15 bg-background/40 px-3 py-2 text-[12px] text-foreground/80 placeholder-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full min-h-[80px] max-h-[120px] rounded-card border border-primary/15 bg-background/40 px-3 py-2 text-[12px] text-foreground/80 placeholder-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
           placeholder={t.agents.workflow_upload.paste_placeholder}
           value={pasteValue}
           onChange={(e) => setPasteValue(e.target.value)}
@@ -158,7 +158,7 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-lg border border-dashed cursor-pointer transition-colors ${
+        className={`flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-card border border-dashed cursor-pointer transition-colors ${
           isDragging
             ? "border-primary/40 bg-primary/5"
             : "border-primary/15 bg-background/20 hover:border-primary/25 hover:bg-background/30"

@@ -46,7 +46,7 @@ export function UseCaseFixtureDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-colors ${
           selectedFixture
             ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
             : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:border-primary/30'
@@ -62,7 +62,7 @@ export function UseCaseFixtureDropdown({
 
       {isOpen && (
           <div
-            className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-elevation-3 shadow-black/30 overflow-hidden"
+            className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-64 rounded-modal bg-popover border border-primary/20 shadow-elevation-3 shadow-black/30 overflow-hidden"
           >
             {/* No fixture option */}
             <button

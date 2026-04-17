@@ -25,7 +25,7 @@ function PayloadBlock({ label, data }: { label: string; data: string | null }) {
   return (
     <div className="space-y-1">
       <div className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">{label}</div>
-      <pre className="px-2.5 py-2 rounded-lg bg-background/40 border border-primary/5 text-sm font-mono text-foreground/80 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+      <pre className="px-2.5 py-2 rounded-card bg-background/40 border border-primary/5 text-sm font-mono text-foreground/80 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
         {formatted}
       </pre>
     </div>
@@ -50,7 +50,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
   const hasPayload = exec.input_data || exec.output_data || exec.error_message;
 
   return (
-    <div className="rounded-xl bg-background/30 border border-primary/5 overflow-hidden">
+    <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
       {/* Summary row */}
       <button
         onClick={onToggle}
@@ -100,7 +100,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               {exec.error_message && (
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-red-400/70 uppercase tracking-wide">Error</div>
-                  <div className="px-2.5 py-2 rounded-lg bg-red-500/5 border border-red-500/10 text-sm text-red-400/90 font-mono whitespace-pre-wrap break-all">
+                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 text-sm text-red-400/90 font-mono whitespace-pre-wrap break-all">
                     {exec.error_message}
                   </div>
                 </div>
@@ -111,7 +111,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                 <button
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg border border-cyan-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-sm text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Re-fire with the same input payload"
                 >
                   {isReplaying

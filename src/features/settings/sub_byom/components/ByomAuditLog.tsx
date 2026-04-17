@@ -12,7 +12,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
   const s = t.settings.byom;
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.audit_title} />
         <p className="text-sm text-muted-foreground/60">
           {s.audit_hint}
@@ -23,7 +23,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
             {s.audit_empty}
           </p>
         ) : (
-          <div className="border border-primary/10 rounded-lg overflow-hidden">
+          <div className="border border-primary/10 rounded-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">

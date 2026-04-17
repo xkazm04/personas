@@ -67,7 +67,7 @@ export function CredentialCard({
   if (isPendingDelete) {
     return (
       <div
-        className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-lg overflow-hidden pointer-events-none"
+        className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-card overflow-hidden pointer-events-none"
       >
         <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
           <LoadingSpinner size="sm" />
@@ -79,7 +79,7 @@ export function CredentialCard({
 
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-primary/15 rounded-lg overflow-hidden"
+      className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-primary/15 rounded-card overflow-hidden"
     >
       <CredentialCardHeader
         credential={credential}

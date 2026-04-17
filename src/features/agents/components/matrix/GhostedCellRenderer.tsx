@@ -19,9 +19,9 @@ interface GhostedCellRendererProps {
  */
 export function GhostedCellRenderer({ label, watermark: Watermark, watermarkColor, watermarkOpacity = 'opacity-[0.08]' }: GhostedCellRendererProps) {
   return (
-    <div className="relative rounded-xl border border-card-border/20 p-4 transition-[opacity,transform,border-color,background-color] duration-500">
+    <div className="relative rounded-modal border border-card-border/20 p-4 transition-[opacity,transform,border-color,background-color] duration-500">
       {/* Watermark icon at very low opacity for subtle blueprint hint */}
-      <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden rounded-modal pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${watermarkOpacity}`}>
           <Watermark className={`w-22 h-22 ${watermarkColor}`} />
         </div>

@@ -33,7 +33,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
 
   return (
     <div
-      className={`rounded-xl border transition-all ${
+      className={`rounded-modal border transition-all ${
         isFork
           ? 'border-amber-400/50 bg-amber-500/10 ring-1 ring-amber-400/30'
           : state === 'active'
@@ -116,7 +116,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
                     {e.input}
                   </div>
-                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-lg p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
+                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.input_preview)}
                   </pre>
                 </div>
@@ -128,7 +128,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                   <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">
                     {e.output}
                   </div>
-                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-lg p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
+                  <pre className="typo-code text-foreground/70 bg-secondary/40 rounded-card p-2 overflow-x-auto max-h-32 whitespace-pre-wrap break-all">
                     {formatPreview(step.output_preview)}
                   </pre>
                 </div>
@@ -141,7 +141,7 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                     e.stopPropagation();
                     onFork(isFork ? null : step.step_index);
                   }}
-                  className={`flex items-center gap-1.5 typo-heading px-2.5 py-1 rounded-lg transition-colors${
+                  className={`flex items-center gap-1.5 typo-heading px-2.5 py-1 rounded-card transition-colors${
                     isFork
                       ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
                       : 'bg-secondary/40 text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-secondary/60'

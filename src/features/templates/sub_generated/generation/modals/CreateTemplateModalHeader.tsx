@@ -17,7 +17,7 @@ export function CreateTemplateModalHeader({
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
           <Wand2 className="w-4 h-4 text-violet-400" />
         </div>
         <div>
@@ -29,7 +29,7 @@ export function CreateTemplateModalHeader({
         <WizardStepper steps={wizardSteps} currentIndex={currentIndex} />
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
         >
           <X className="w-4 h-4 text-muted-foreground/90" />
         </button>

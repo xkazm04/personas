@@ -46,7 +46,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
   const disabled = !agent.trigger_enabled || !agent.persona_enabled;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border transition-colors ${
       disabled
         ? 'border-primary/5 bg-primary/[0.02] opacity-60'
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'

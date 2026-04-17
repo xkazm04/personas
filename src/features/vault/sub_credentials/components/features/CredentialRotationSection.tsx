@@ -33,7 +33,7 @@ export function CredentialRotationSection({
     <div className="space-y-3">
       {/* Corrupted Healthcheck Warning */}
       {rotationStatus?.healthcheck_corrupted && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-sm text-orange-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-orange-500/10 border border-orange-500/20 text-sm text-orange-400">
           <DatabaseZap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>{t.vault.rotation_section.corrupted_warning}</span>
         </div>
@@ -49,7 +49,7 @@ export function CredentialRotationSection({
 
       {/* Legacy Anomaly Warning (only if no windowed data available) */}
       {!showAnomalyPanel && rotationStatus?.anomaly_detected && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>{t.vault.rotation_section.anomaly_warning}</span>
         </div>
@@ -57,7 +57,7 @@ export function CredentialRotationSection({
 
       {/* Action error banner */}
       {actionError && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20 text-sm text-red-400">
           <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span className="flex-1">{actionError}</span>
           <button onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-red-500/10 rounded transition-colors">

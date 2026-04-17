@@ -72,7 +72,7 @@ function FileChip({
   const iconSize = Math.round(size * 0.55);
   return (
     <div
-      className={`flex items-center justify-center flex-shrink-0 rounded-lg bg-gradient-to-br ${visual.gradient} ${
+      className={`flex items-center justify-center flex-shrink-0 rounded-card bg-gradient-to-br ${visual.gradient} ${
         flat ? "border-0" : "border border-primary/10"
       }`}
       style={{ width: size, height: size }}
@@ -318,7 +318,7 @@ function IconsView({
                 if (!selected) drive.selectOnly(entry.path);
                 onContextMenu(entry, e.clientX, e.clientY);
               }}
-              className={`group flex flex-col items-center gap-2.5 p-3 rounded-xl border transition-all ${
+              className={`group flex flex-col items-center gap-2.5 p-3 rounded-modal border transition-all ${
                 selected
                   ? `bg-cyan-500/10 border-cyan-500/50 ring-2 ${visual.ring} shadow-[0_0_20px_-8px_rgba(34,211,238,0.6)]`
                   : flash
@@ -327,7 +327,7 @@ function IconsView({
               }`}
             >
               <div
-                className={`w-16 h-16 rounded-xl bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform`}
+                className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform`}
               >
                 <visual.Icon className={`w-8 h-8 ${visual.text}`} />
               </div>
@@ -567,7 +567,7 @@ function DriveEmptyState({
       <button
         type="button"
         onClick={onNewFolder}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-card bg-gradient-to-b from-cyan-500/25 to-cyan-500/10 text-cyan-100 border border-cyan-500/40 typo-body font-semibold hover:from-cyan-500/35 hover:to-cyan-500/15 shadow-[0_0_16px_-4px_rgba(34,211,238,0.5)] transition-all"
       >
         {t.plugins.drive.empty_cta}
       </button>

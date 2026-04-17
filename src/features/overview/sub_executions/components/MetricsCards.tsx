@@ -31,7 +31,7 @@ export function SummaryCard({ icon: Icon, label, value, color, numericValue, for
   const border = parts[2];
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${border} ${bg}`}>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${border} ${bg}`}>
       <Icon className={`w-4 h-4 ${textColor}`} />
       <div className="min-w-0">
         <p className="text-sm text-muted-foreground/70 truncate">{label}</p>
@@ -55,7 +55,7 @@ interface AnomalyBadgeProps {
 export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10">
+    <div className="flex items-start gap-2 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10">
       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         <p className="typo-heading text-amber-300">
@@ -92,7 +92,7 @@ export function ChartTooltipContent({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
+    <div className="bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
       <p className="text-sm text-muted-foreground/80 mb-1">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">

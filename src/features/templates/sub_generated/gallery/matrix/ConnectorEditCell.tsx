@@ -59,13 +59,13 @@ function ConnectorPopup({
   return (
     <div
       ref={popupRef}
-      className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
+      className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-modal border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center"
+            className="w-6 h-6 rounded-input flex items-center justify-center"
             style={{ backgroundColor: `${meta.color}20` }}
           >
             <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
@@ -84,7 +84,7 @@ function ConnectorPopup({
             onValueChange={(val) => { callbacks.onCredentialSelect(activeName, val); onClose(); }}
             options={availableCreds.map((c) => ({ value: c.id, label: c.name }))}
             placeholder={t.templates.connector_edit.select_credential}
-            className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+            className="!py-1.5 !px-2.5 !text-sm !rounded-card"
           />
         </div>
       )}
@@ -98,7 +98,7 @@ function ConnectorPopup({
             onValueChange={(val) => { callbacks.onConnectorSwap(rc.name, val); onClose(); }}
             options={filteredMembers.map((m) => ({ value: m, label: getConnectorMeta(m).label }))}
             placeholder={t.templates.connector_edit.switch_connector}
-            className="!py-1.5 !px-2.5 !text-sm !rounded-lg"
+            className="!py-1.5 !px-2.5 !text-sm !rounded-card"
           />
         </div>
       )}
@@ -147,7 +147,7 @@ function DatabaseRow({
       <div className="flex items-center gap-2 py-1">
         <Database className="w-4 h-4 text-primary/60 flex-shrink-0" />
         <span className="text-sm font-medium text-foreground/80 truncate flex-1">Database</span>
-        <div className="flex items-center gap-0.5 rounded-md border border-primary/10 overflow-hidden">
+        <div className="flex items-center gap-0.5 rounded-input border border-primary/10 overflow-hidden">
           <Button variant="ghost" size="xs" onClick={() => { callbacks.onPreferenceChange('databaseMode', 'create'); }}
             className={`px-2 py-0.5 text-sm font-medium ${dbMode === 'create' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground/60'}`}>
             <Plus className="w-3 h-3 inline -mt-px mr-0.5" /> New
@@ -164,7 +164,7 @@ function DatabaseRow({
             variant="ghost"
             size="sm"
             onClick={() => setShowTablePicker(!showTablePicker)}
-            className="w-full flex items-center gap-2 py-1 rounded-lg hover:bg-primary/5 text-left"
+            className="w-full flex items-center gap-2 py-1 rounded-card hover:bg-primary/5 text-left"
           >
             <Table2 className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
             <span className="text-sm text-foreground/70 truncate flex-1">
@@ -176,7 +176,7 @@ function DatabaseRow({
           {showTablePicker && (
             <div
               ref={pickerRef}
-              className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
+              className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-modal border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
@@ -190,7 +190,7 @@ function DatabaseRow({
                   value={schemaName || ''}
                   onChange={(e) => handleSetSchema(e.target.value)}
                   placeholder="public"
-                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
+                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
                 />
               </div>
               <div className="space-y-1">
@@ -200,7 +200,7 @@ function DatabaseRow({
                   value={tableName || ''}
                   onChange={(e) => handleSetTable(e.target.value)}
                   placeholder="e.g. persona_data"
-                  className="w-full rounded-lg border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
+                  className="w-full rounded-card border border-primary/15 bg-background px-2.5 py-1.5 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
                 />
               </div>
             </div>
@@ -291,7 +291,7 @@ export function ConnectorEditCell({
                 variant="ghost"
                 size="sm"
                 onClick={() => setPopupConnector(isOpen ? null : rc.name)}
-                className="w-full flex items-center gap-2 py-1 rounded-lg hover:bg-primary/5 cursor-pointer group"
+                className="w-full flex items-center gap-2 py-1 rounded-card hover:bg-primary/5 cursor-pointer group"
               >
                 <div
                   className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
@@ -329,7 +329,7 @@ export function ConnectorEditCell({
               variant="ghost"
               size="sm"
               onClick={() => setPopupConnector(isOpen ? null : rc.name)}
-              className="w-full flex items-center gap-2 py-1 rounded-lg hover:bg-primary/5 cursor-pointer group"
+              className="w-full flex items-center gap-2 py-1 rounded-card hover:bg-primary/5 cursor-pointer group"
             >
               <div
                 className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"

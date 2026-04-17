@@ -78,7 +78,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       )}
 
       {error && (
-        <div className="text-xs text-red-400/80 px-2 py-1.5 rounded-lg bg-red-500/10">{error}</div>
+        <div className="text-xs text-red-400/80 px-2 py-1.5 rounded-card bg-red-500/10">{error}</div>
       )}
 
       {diff && !loading && <DiffContent diff={diff} />}

@@ -37,11 +37,11 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
       onClose={onClose}
       titleId="recipe-playground-title"
       maxWidthClass="max-w-5xl"
-      panelClassName="flex flex-col w-[90vw] max-w-5xl h-[85vh] rounded-xl border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
+      panelClassName="flex flex-col w-[90vw] max-w-5xl h-[85vh] rounded-modal border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-primary/20">
           <BookOpen className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
@@ -52,7 +52,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
         </div>
         <button
           onClick={onClose}
-          className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center justify-center w-7 h-7 rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

@@ -49,7 +49,7 @@ function GraphNodeChip({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card text-left transition-colors cursor-pointer ${
         isSelected
           ? 'bg-primary/10 border border-primary/25'
           : 'hover:bg-secondary/40 border border-transparent'
@@ -81,7 +81,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
     : t.agents.connectors.dg_high_risk;
   return (
     <div
-      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
             <span className="text-sm font-medium text-foreground/80">{blast.credentialName}</span>
             <HealthIndicator healthy={blast.healthy} />
           </div>
-          <span className={`px-2 py-0.5 text-xs font-medium rounded-lg border ${sev.bg} ${sev.text} ${sev.border}`}>
+          <span className={`px-2 py-0.5 text-xs font-medium rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sevLabel}
           </span>
         </div>
@@ -119,7 +119,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
             <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{t.agents.connectors.dg_affected_tools}</div>
             <div className="space-y-1">
               {blast.affectedTools.map((t) => (
-                <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
+                <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                   <Wrench className="w-3 h-3 text-blue-400/60" />
                   <span className="text-xs text-foreground/80 truncate">{t.name}</span>
                 </div>
@@ -133,7 +133,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
             <div className="text-xs font-medium text-muted-foreground/60 mb-1.5">{t.agents.connectors.dg_affected_auto}</div>
             <div className="space-y-1">
               {blast.affectedAutomations.map((a) => (
-                <div key={a.id} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8">
+                <div key={a.id} className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8">
                   <Zap className="w-3 h-3 text-violet-400/60" />
                   <span className="text-xs text-foreground/80 truncate">{a.name}</span>
                 </div>
@@ -244,7 +244,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
               key={kind}
               type="button"
               onClick={() => setFilterKind(active ? 'all' : kind)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border text-xs transition-colors cursor-pointer ${
                 active
                   ? 'bg-primary/10 border-primary/25 text-foreground/90'
                   : 'bg-secondary/25 border-primary/10 text-muted-foreground/70 hover:border-primary/20 hover:bg-secondary/40'
@@ -257,7 +257,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
           );
         })}
         {brokenEdges.length > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-red-500/8 border-red-500/20 text-xs text-red-400">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border bg-red-500/8 border-red-500/20 text-xs text-red-400">
             <AlertTriangle className="w-3 h-3" />
             <span>{tx(t.agents.connectors.dg_broken, { count: brokenEdges.length })}</span>
           </div>
@@ -269,7 +269,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
         {/* Left: node groups */}
         <div className="lg:col-span-2 space-y-2">
           {groupedNodes.map(({ kind, label, nodes }) => (
-            <div key={kind} className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+            <div key={kind} className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
               <div className="text-xs font-medium text-muted-foreground/60 mb-2">
                 {label} ({nodes.length})
               </div>
@@ -300,7 +300,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
             ) : selectedNodeId ? (
               <div
                 key={selectedNodeId}
-                className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+                className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
                   <span className="text-sm font-medium text-foreground/85">{t.agents.connectors.dg_dependencies}</span>
@@ -321,7 +321,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                           key={edge.id}
                           type="button"
                           onClick={() => handleNodeClick(otherId)}
-                          className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
                         >
                           <OtherIcon className="w-3 h-3 flex-shrink-0" style={{ color: other.color }} />
                           <span className="text-xs text-foreground/80 truncate flex-1">{other.label}</span>
@@ -335,7 +335,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
             ) : (
               <div
                 key="empty"
-                className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-6 text-center"
+                className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-6 text-center"
               >
                 <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
                 <p className="text-xs text-muted-foreground/50">
@@ -346,7 +346,7 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
 
           {/* Relationships */}
           {filteredEdges.length > 0 && (
-            <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+            <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
               <div className="text-xs font-medium text-muted-foreground/60 mb-2">
                 {tx(t.agents.connectors.dg_relationships, { count: filteredEdges.length })}
               </div>

@@ -60,7 +60,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
-        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${trendBg}`}>
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-card ${trendBg}`}>
           <TrendIcon className={`w-3 h-3 ${trendColor}`} />
           <span className={`font-medium ${trendColor}`}>{trendLabel}</span>
         </div>

@@ -109,7 +109,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
     <div className="space-y-3 py-1">
       {/* Feasibility badge */}
       <div className="flex items-center gap-3">
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${colors.bg} border ${colors.border}`}>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-modal ${colors.bg} border ${colors.border}`}>
           <Icon className={`w-4 h-4 ${colors.text}`} />
           <span className={`text-sm font-medium ${colors.text}`}>{meta.label}</span>
         </div>

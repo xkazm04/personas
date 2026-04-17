@@ -88,10 +88,10 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="animate-fade-slide-in mx-4 md:mx-6 mb-1 mt-4 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
+      className="animate-fade-slide-in mx-4 md:mx-6 mb-1 mt-4 p-4 rounded-modal bg-secondary/40 backdrop-blur-sm border border-violet-500/20 relative overflow-hidden"
     >
       {showSuccess && (
-          <div className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-secondary/80 backdrop-blur-sm rounded-xl">
+          <div className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-secondary/80 backdrop-blur-sm rounded-modal">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
               <span className="typo-heading text-emerald-300">{t.overview.memory_form.created_success}</span>
@@ -115,7 +115,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
                 const isActive = category === cat;
                 return (
                   <button key={cat} type="button" onClick={() => setCategory(cat)} aria-pressed={isActive}
-                    className={`rounded-lg transition-all ${isActive ? 'ring-1 ring-offset-1 ring-offset-background ring-current' : 'opacity-50 hover:opacity-80'}`}
+                    className={`rounded-card transition-all ${isActive ? 'ring-1 ring-offset-1 ring-offset-background ring-current' : 'opacity-50 hover:opacity-80'}`}
                   >
                     <CategoryChip category={cat} colors={colors} />
                   </button>
@@ -127,12 +127,12 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
         <div>
           <label htmlFor={titleId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">{t.overview.memory_form.title}</label>
-          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" autoFocus />
+          <input id={titleId} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.overview.memory_form.title_placeholder} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" autoFocus />
         </div>
 
         <div>
           <label htmlFor={contentId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">{t.overview.memory_form.content}</label>
-          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none" />
+          <textarea id={contentId} value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.overview.memory_form.content_placeholder} rows={3} aria-required="true" className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80 resize-none" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -142,13 +142,13 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
           </fieldset>
           <div>
             <label htmlFor={tagsId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">{t.overview.memory_form.tags} <span className="normal-case text-muted-foreground/80">{t.overview.memory_form.tags_hint}</span></label>
-            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-xl outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" />
+            <input id={tagsId} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t.overview.memory_form.tags_placeholder} className="w-full px-3 py-2 text-sm bg-background/60 border border-primary/15 rounded-modal outline-none focus-visible:border-violet-500/40 text-foreground/80 placeholder:text-muted-foreground/80" />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm text-muted-foreground/80 hover:text-foreground/95 transition-colors">{t.common.cancel}</button>
-          <button type="submit" disabled={!canSave || saving} title={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined} className="px-4 py-1.5 typo-heading rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</button>
+          <button type="submit" disabled={!canSave || saving} title={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined} className="px-4 py-1.5 typo-heading rounded-modal bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</button>
         </div>
       </form>
     </div>

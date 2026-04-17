@@ -67,7 +67,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 {/* Viewer controls */}
                 <button
                   onClick={toggleAutoRotate}
-                  className={`p-1.5 rounded-lg text-md transition-colors ${
+                  className={`p-1.5 rounded-card text-md transition-colors ${
                     autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
                   }`}
                   title={t.plugins.artist.auto_rotate}
@@ -76,7 +76,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 </button>
                 <button
                   onClick={toggleWireframe}
-                  className={`p-1.5 rounded-lg text-md transition-colors ${
+                  className={`p-1.5 rounded-card text-md transition-colors ${
                     wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
                   }`}
                   title={t.plugins.artist.wireframe}
@@ -86,7 +86,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <select
                   value={lightingPreset}
                   onChange={(e) => setLightingPreset(e.target.value as 'studio' | 'outdoor' | 'soft')}
-                  className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground"
+                  className="px-2 py-1 rounded-card bg-background/80 border border-primary/10 text-md text-foreground"
                 >
                   <option value="studio">{ t.plugins.artist.lighting_studio}</option>
                   <option value="outdoor">{ t.plugins.artist.lighting_outdoor}</option>
@@ -94,7 +94,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 </select>
                 <button
                   onClick={() => setSelectedIndex(null)}
-                  className="p-1.5 rounded-lg text-foreground hover:bg-secondary/40 ml-2"
+                  className="p-1.5 rounded-card text-foreground hover:bg-secondary/40 ml-2"
                 >
                   <X className="w-4 h-4" />
                 </button>

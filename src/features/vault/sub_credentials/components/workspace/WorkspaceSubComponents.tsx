@@ -21,25 +21,25 @@ export function ServiceCheckbox({
       disabled={disabled}
       variant="ghost"
       size="md"
-      className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left w-full ${
+      className={`flex items-center gap-3 p-3 rounded-modal border transition-all text-left w-full ${
         checked
           ? 'bg-secondary/50 border-primary/25'
           : 'bg-secondary/15 border-primary/10 opacity-60'
       } ${disabled ? 'cursor-not-allowed' : 'hover:bg-secondary/60 hover:border-primary/30'}`}
     >
       <div
-        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+        className={`w-5 h-5 rounded-input border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
           checked ? 'border-blue-500 bg-blue-500' : 'border-primary/25 bg-transparent'
         }`}
       >
         {checked && <Check className="w-3 h-3 text-white" />}
       </div>
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+        className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0"
         style={{ backgroundColor: `${service.color}15` }}
       >
         <div
-          className="w-4 h-4 rounded-sm"
+          className="w-4 h-4 rounded-interactive"
           style={{ backgroundColor: service.color }}
         />
       </div>
@@ -57,7 +57,7 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
       {states.map((s) => (
         <div
           key={s.service.serviceType}
-          className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20"
+          className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20"
         >
           <div className="flex-shrink-0">
             {s.status === 'pending' && <LoadingSpinner className="text-blue-400" />}
@@ -69,7 +69,7 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
             style={{ backgroundColor: `${s.service.color}15` }}
           >
             <div
-              className="w-3 h-3 rounded-sm"
+              className="w-3 h-3 rounded-interactive"
               style={{ backgroundColor: s.service.color }}
             />
           </div>

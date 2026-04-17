@@ -294,7 +294,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
           type="button"
           onClick={(e) => { e.stopPropagation(); handleRecalculate(); }}
           disabled={recalculating}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+          className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`w-3 h-3 ${recalculating ? 'animate-spin' : ''}`} />
           {recalculating ? t.agents.connectors_cell.recalculating : t.agents.connectors_cell.recalculate_dimensions}

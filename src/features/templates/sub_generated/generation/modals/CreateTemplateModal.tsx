@@ -75,7 +75,7 @@ export function CreateTemplateModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Wand2 className="w-4 h-4 text-violet-400" />
             </div>
             <div>
@@ -87,7 +87,7 @@ export function CreateTemplateModal({
             <WizardStepper steps={createWizardSteps} currentIndex={createStepIndex} />
             <button
               onClick={handleClose}
-              className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+              className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground/90" />
             </button>
@@ -136,7 +136,7 @@ export function CreateTemplateModal({
           <button
             onClick={handleBack}
             disabled={!canGoBack}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal border border-primary/15 text-muted-foreground/80 hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
@@ -153,7 +153,7 @@ export function CreateTemplateModal({
               <button
                 onClick={handleStartGenerate}
                 disabled={!state.templateName.trim() || !state.description.trim()}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
                 Generate Template
@@ -164,7 +164,7 @@ export function CreateTemplateModal({
               <button
                 onClick={() => reducer.goToStep('review')}
                 disabled={!state.draft}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowRight className="w-4 h-4" />
                 View Draft
@@ -175,7 +175,7 @@ export function CreateTemplateModal({
               <button
                 onClick={handleSaveTemplate}
                 disabled={state.saving || !state.draft}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {state.saving ? (
                   <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</>

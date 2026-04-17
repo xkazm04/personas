@@ -18,7 +18,7 @@ export function UseCaseModelOverrideForm({ visible, customConfig, onFieldChange 
         <div
           className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="bg-secondary/30 border border-primary/10 rounded-xl p-3 space-y-2">
+          <div className="bg-secondary/30 border border-primary/10 rounded-modal p-3 space-y-2">
             <div>
               <label className="block text-sm font-medium text-foreground/80 mb-1">{mc.provider}</label>
               <ThemedSelect

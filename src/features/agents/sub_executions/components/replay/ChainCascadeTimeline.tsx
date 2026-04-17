@@ -86,7 +86,7 @@ export function ChainCascadeTimeline({
   const chainDurationMs = chainEndMs - chainStartMs;
 
   return (
-    <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 overflow-hidden">
+    <div className="rounded-modal border border-orange-500/20 bg-orange-500/5 overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}

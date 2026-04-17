@@ -21,13 +21,13 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
   const scorePercent = Math.round(result.score * 100);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/15 hover:bg-secondary/25 transition-colors">
+    <div className="rounded-modal border border-primary/10 bg-secondary/15 hover:bg-secondary/25 transition-colors">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="text-xs font-mono text-muted-foreground/40 w-5 text-right shrink-0">
           {rank}
         </span>
-        <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
+        <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
           <FileText className="w-3.5 h-3.5 text-violet-400/70" />
         </div>
         <div className="flex-1 min-w-0">
@@ -74,7 +74,7 @@ function ScoreBadge({ score }: { score: number }) {
   else if (score >= 60) colorClass = 'bg-amber-500/10 text-amber-400/80 border-amber-500/15';
 
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-lg border font-mono ${colorClass}`}>
+    <span className={`text-xs px-2 py-0.5 rounded-card border font-mono ${colorClass}`}>
       {score}%
     </span>
   );

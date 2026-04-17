@@ -133,7 +133,7 @@ export function FilterChips({
               const target = e.currentTarget.querySelector<HTMLElement>(`[data-value="${nextValue}"]`);
               target?.focus();
             }}
-            className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0"
+            className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
           >
             {([
               { value: 'all', label: 'All', color: 'violet', countKey: 'all' as const },

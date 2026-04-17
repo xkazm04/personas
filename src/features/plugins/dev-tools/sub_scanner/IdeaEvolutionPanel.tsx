@@ -31,7 +31,7 @@ export function IdeaEvolutionPanel() {
 
       {/* Fitness ranking */}
       {fitness.length > 0 && (
-        <div className="rounded-xl border border-primary/10 overflow-hidden">
+        <div className="rounded-modal border border-primary/10 overflow-hidden">
           <div className="px-4 py-2.5 bg-primary/5 border-b border-primary/10 flex items-center justify-between">
             <span className="text-md font-medium text-foreground">Fitness Ranking</span>
             <div className="flex items-center gap-3 text-md text-foreground">
@@ -76,13 +76,13 @@ export function IdeaEvolutionPanel() {
 
       {/* Synthesis suggestions */}
       {syntheses.length > 0 && (
-        <div className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-4 space-y-3">
+        <div className="rounded-modal border border-violet-500/15 bg-violet-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-violet-400" />
             <span className="text-md font-medium text-foreground">Synthesis Suggestions</span>
           </div>
           {syntheses.map((s, i) => (
-            <div key={i} className="rounded-lg border border-violet-500/10 bg-background/30 p-3">
+            <div key={i} className="rounded-card border border-violet-500/10 bg-background/30 p-3">
               <p className="text-md font-medium text-foreground">{s.suggestedTitle}</p>
               <p className="text-md text-foreground mt-1">{s.reasoning}</p>
               <div className="flex items-center gap-2 mt-2 text-md text-violet-400/60">
@@ -97,7 +97,7 @@ export function IdeaEvolutionPanel() {
 
       {/* Duplicate detection */}
       {similarPairs.length > 0 && (
-        <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4 space-y-2">
+        <div className="rounded-modal border border-amber-500/15 bg-amber-500/5 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
             <span className="text-md font-medium text-foreground">Potential Duplicates</span>

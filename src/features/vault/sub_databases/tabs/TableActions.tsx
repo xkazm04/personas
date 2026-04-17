@@ -13,7 +13,7 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
       <button
         onClick={checkStored}
         disabled={isHealthchecking}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
       >
         {isHealthchecking ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -25,7 +25,7 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
 
       {result && !isHealthchecking && (
         <div
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-card text-sm ${
             result.success
               ? 'bg-emerald-500/10 text-emerald-400'
               : 'bg-red-500/10 text-red-400'

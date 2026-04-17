@@ -37,7 +37,7 @@ export function ExecutionListFilters({
         <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
           <button
             onClick={() => setShowRaw(!showRaw)}
-            className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
+            className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showRaw
                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -51,7 +51,7 @@ export function ExecutionListFilters({
       {hasEnoughToCompare && (
         <button
           onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
-          className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
+          className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
             compareMode
               ? 'bg-primary/15 text-primary/80 border border-primary/20'
               : 'text-muted-foreground/50 hover:text-muted-foreground/70 border border-transparent'
@@ -64,7 +64,7 @@ export function ExecutionListFilters({
 
       {/* Compare mode toolbar */}
       {compareMode && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl typo-body col-span-full">
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-modal typo-body col-span-full">
           <ArrowLeftRight className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
           <span className="text-muted-foreground/70">
             {!compareLeft
@@ -87,7 +87,7 @@ export function ExecutionListFilters({
           {canCompare && (
             <button
               onClick={onShowComparison}
-              className="ml-2 px-2.5 py-1 typo-heading rounded-xl bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
+              className="ml-2 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
               Compare
             </button>

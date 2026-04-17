@@ -31,7 +31,7 @@ export function ModelDropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full px-2.5 py-2 text-sm rounded-xl bg-secondary/40 border border-primary/20
+        className="w-full px-2.5 py-2 text-sm rounded-modal bg-secondary/40 border border-primary/20
                    text-foreground/80 focus-visible:outline-none focus-visible:border-indigo-500/40
                    disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >

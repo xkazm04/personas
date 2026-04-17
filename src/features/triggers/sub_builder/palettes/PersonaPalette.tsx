@@ -67,14 +67,14 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
       <div className="flex items-center border-b border-primary/5 px-1.5 pt-2 pb-1.5 gap-1 flex-shrink-0">
         <button
           onClick={() => setView('personas')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
           <Bot className="w-3 h-3" />{t.triggers.builder.personas}
         </button>
         <button
           onClick={() => setView('marketplace')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-input transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
             }`}
         >
           <Store className="w-3 h-3" />{t.triggers.builder.marketplace}
@@ -93,7 +93,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={t.triggers.builder.filter_personas_placeholder}
-                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-md bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-full pl-7 pr-2 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                     }}
                     onClick={() => setPendingItem('persona', p.id, p.name)}
                     className={`
-                      flex items-center gap-2 px-2 py-[7px] rounded-lg transition-colors group
+                      flex items-center gap-2 px-2 py-[7px] rounded-card transition-colors group
                       cursor-grab active:cursor-grabbing hover:bg-secondary/60
                       ${onCanvasPersonaIds.has(p.id) ? 'opacity-50' : ''}
                       ${!p.enabled ? 'opacity-40' : ''}
@@ -164,7 +164,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                               setPendingItem('event', ev.eventType);
                             }}
                             className={`
-                              flex items-center gap-1.5 px-1.5 py-1 rounded-md transition-colors text-[10px]
+                              flex items-center gap-1.5 px-1.5 py-1 rounded-input transition-colors text-[10px]
                               cursor-grab active:cursor-grabbing hover:bg-secondary/50
                               ${onCanvasEventTypes.has(ev.eventType) ? 'opacity-50' : ''}
                             `}

@@ -59,7 +59,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
             {t.agents.lab.scenario_breakdown}
             <span className="text-xs font-normal text-muted-foreground/50 ml-1">{t.agents.lab.click_cell_details}</span>
           </h4>
-          <div className="overflow-x-auto border border-primary/10 rounded-xl">
+          <div className="overflow-x-auto border border-primary/10 rounded-modal">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/30">
@@ -94,7 +94,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                         {currentRows.length > 0 ? (
                           <button
                             onClick={() => setSelectedCell(isCurrentSelected ? null : { scenario, variant: 'current' })}
-                            className={`w-full flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 transition-colors ${
+                            className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1 transition-colors ${
                               isCurrentSelected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/30'
                             }`}
                           >
@@ -108,7 +108,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                         {draftRows.length > 0 ? (
                           <button
                             onClick={() => setSelectedCell(isDraftSelected ? null : { scenario, variant: 'draft' })}
-                            className={`w-full flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 transition-colors ${
+                            className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1 transition-colors ${
                               isDraftSelected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/30'
                             }`}
                           >
@@ -163,7 +163,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
       {run.status === 'completed' && !run.draftAccepted && run.draftPromptJson && (
         <div className="flex items-center gap-3 pt-2">
           <button onClick={() => void acceptDraft(run.id)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
+            className="flex items-center gap-2 px-4 py-2.5 rounded-modal font-medium text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors">
             <Check className="w-4 h-4" />{t.agents.lab.accept_draft}
           </button>
           <p className="text-sm text-muted-foreground/60">
@@ -172,7 +172,7 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
         </div>
       )}
       {run.draftAccepted && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-400">
           <Check className="w-4 h-4" />{t.agents.lab.draft_accepted}
         </div>
       )}

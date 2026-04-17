@@ -62,7 +62,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
             <div
               key={step.id}
               data-testid={`tour-coach-substep-${step.id}`}
-              className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] transition-all ${
+              className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-card text-[11px] transition-all ${
                 isComplete
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : isCurrent
@@ -78,7 +78,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       </div>
 
       {/* Build phase indicator */}
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/20 border border-primary/8" data-testid="tour-coach-phase">
+      <div className="flex items-center gap-2 p-2 rounded-card bg-secondary/20 border border-primary/8" data-testid="tour-coach-phase">
         <div className={`w-2 h-2 rounded-full ${
           buildPhase === 'promoted' ? 'bg-emerald-400' :
           buildPhase === 'test_complete' ? (buildTestPassed ? 'bg-emerald-400' : 'bg-red-400') :
@@ -100,7 +100,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           <div className="space-y-1.5">
             <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">{t.onboarding.example_intents_label}</span>
             {EXAMPLE_INTENTS.map((intent, i) => (
-              <div key={i} className="px-3 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-sm text-emerald-300/70">
+              <div key={i} className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/10 text-sm text-emerald-300/70">
                 "{intent}"
               </div>
             ))}
@@ -117,7 +117,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
             {t.onboarding.analyzing_hint}
           </p>
           {pendingQuestions.length > 0 && (
-            <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
+            <div className="p-3 rounded-modal bg-amber-500/5 border border-amber-500/15">
               <p className="text-sm text-amber-300/80 font-medium">
                 {tx(pendingQuestions.length === 1 ? t.onboarding.questions_waiting_one : t.onboarding.questions_waiting_other, { count: pendingQuestions.length })}
               </p>
@@ -148,7 +148,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
                 <div
                   key={dim.key}
                   data-testid={`tour-coach-matrix-cell-${dim.key}`}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] ${
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card text-[11px] ${
                     isResolved ? 'bg-emerald-500/5' : 'bg-secondary/10'
                   }`}
                 >
@@ -168,14 +168,14 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       {effectiveSubStep === 3 && (
         <div className="space-y-3">
           {buildTestPassed === true ? (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
               <p className="text-sm text-emerald-300 font-medium">{t.onboarding.all_tests_passed}</p>
               <p className="text-[11px] text-muted-foreground/50 mt-1">
                 {t.onboarding.promote_hint}
               </p>
             </div>
           ) : buildTestPassed === false ? (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+            <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20">
               <p className="text-sm text-red-300 font-medium">{t.onboarding.some_tests_failed}</p>
               <p className="text-[11px] text-muted-foreground/50 mt-1">
                 {t.onboarding.refine_hint}
@@ -186,7 +186,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
               <p className="text-sm text-muted-foreground/70">
                 {t.onboarding.testing_description}
               </p>
-              <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+              <div className="p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/15">
                 <div className="flex items-center gap-2">
                   <FlaskConical className="w-4 h-4 text-emerald-400" />
                   <p className="text-sm text-emerald-300/80 font-medium">{t.onboarding.what_testing_checks}</p>
@@ -204,7 +204,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           )}
 
           {buildPhase === 'promoted' && (
-            <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/25">
+            <div className="p-3 rounded-modal bg-emerald-500/15 border border-emerald-500/25">
               <div className="flex items-center gap-2">
                 <Rocket className="w-4 h-4 text-emerald-400" />
                 <p className="text-sm text-emerald-300 font-medium">{t.onboarding.agent_promoted}</p>

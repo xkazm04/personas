@@ -16,12 +16,12 @@ export function AuthMethodTabs({
   if (authMethods.length <= 1) return null;
 
   return (
-    <div className="flex gap-1 p-1 bg-secondary/15 border border-primary/8 rounded-lg">
+    <div className="flex gap-1 p-1 bg-secondary/15 border border-primary/8 rounded-card">
       {authMethods.map((method) => (
         <button
           key={method.id}
           onClick={() => onMethodChange(method)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-colors ${
             activeAuthMethodId === method.id
               ? `border ${getAuthBadgeClasses(method)}`
               : 'text-muted-foreground/80 hover:bg-secondary/40 border border-transparent'

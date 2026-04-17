@@ -51,7 +51,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
         return (
           <div className="relative group my-2">
             <code
-              className={`block p-3 bg-background/60 border border-primary/10 rounded-lg text-sm font-mono overflow-x-auto ${className || ''}`}
+              className={`block p-3 bg-background/60 border border-primary/10 rounded-card text-sm font-mono overflow-x-auto ${className || ''}`}
               {...props}
             >
               {children}

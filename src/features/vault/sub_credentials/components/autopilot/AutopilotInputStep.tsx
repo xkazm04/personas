@@ -33,7 +33,7 @@ export function AutopilotInputStep({
       <div className="flex gap-2">
         <button
           onClick={() => setInputMode('url')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-card border text-sm transition-all ${
             inputMode === 'url'
               ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
               : 'bg-secondary/25 border-primary/15 text-muted-foreground hover:bg-secondary/40'
@@ -44,7 +44,7 @@ export function AutopilotInputStep({
         </button>
         <button
           onClick={() => setInputMode('paste')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-card border text-sm transition-all ${
             inputMode === 'paste'
               ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
               : 'bg-secondary/25 border-primary/15 text-muted-foreground hover:bg-secondary/40'
@@ -75,7 +75,7 @@ export function AutopilotInputStep({
             }}
             placeholder="https://api.example.com/openapi.json"
             data-testid="vault-autopilot-url-input"
-            className={`w-full px-3 py-2.5 bg-secondary/30 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 ${
+            className={`w-full px-3 py-2.5 bg-secondary/30 border rounded-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 ${
               urlValidation.validationState === 'error' ? 'border-red-500/40' :
               urlValidation.validationState === 'valid' ? 'border-emerald-500/30' :
               'border-primary/15'
@@ -97,7 +97,7 @@ export function AutopilotInputStep({
             onChange={(e) => setSpecContent(e.target.value)}
             placeholder={'{\n  "openapi": "3.0.0",\n  "info": { "title": "My API", ... },\n  "paths": { ... }\n}'}
             rows={12}
-            className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/15 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 font-mono resize-y"
+            className="w-full px-3 py-2.5 bg-secondary/30 border border-primary/15 rounded-card text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 font-mono resize-y"
           />
         </div>
       )}
@@ -106,7 +106,7 @@ export function AutopilotInputStep({
         onClick={onParse}
         disabled={isParsing || (inputMode === 'url' ? !specUrl.trim() : !specContent.trim())}
         data-testid="vault-autopilot-submit"
-        className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 rounded-card text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
         {isParsing ? 'Parsing Spec...' : 'Parse & Analyze'}

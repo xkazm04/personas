@@ -14,7 +14,7 @@ export function UniversalFieldRow({ field, value, onChange }: UniversalFieldRowP
   const isFilled = value.trim().length > 0;
 
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-lg border border-primary/8 bg-secondary/15">
+    <div className="flex items-start gap-3 p-2.5 rounded-card border border-primary/8 bg-secondary/15">
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground/90">{field.label}</span>
@@ -31,7 +31,7 @@ export function UniversalFieldRow({ field, value, onChange }: UniversalFieldRowP
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={`Enter ${field.label.toLowerCase()}`}
-            className="w-full px-2.5 py-1.5 bg-black/15 border border-primary/8 rounded-md text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/30 font-mono transition-colors"
+            className="w-full px-2.5 py-1.5 bg-black/15 border border-primary/8 rounded-input text-sm text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-indigo-500/30 font-mono transition-colors"
           />
           {isSecret && value && (
             <button

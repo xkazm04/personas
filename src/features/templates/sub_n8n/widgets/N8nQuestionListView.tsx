@@ -53,7 +53,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
             )}
 
             <div
-              className={`animate-fade-slide-in p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+              className={`animate-fade-slide-in p-4 rounded-modal border ${tone.border} ${tone.bg}`}
             >
               <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
                 {q.question}
@@ -80,7 +80,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                   value={userAnswers[q.id] ?? q.default ?? ''}
                   onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                   placeholder={q.default ?? 'Type your answer...'}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-modal border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
                 />
               )}
 
@@ -93,7 +93,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                         key={opt}
                         type="button"
                         onClick={() => onAnswerUpdated(q.id, opt)}
-                        className={`px-4 py-1.5 text-sm rounded-xl border transition-all ${
+                        className={`px-4 py-1.5 text-sm rounded-modal border transition-all ${
                           isSelected
                             ? tone.selectBg
                             : 'text-muted-foreground border-primary/10 hover:bg-secondary/30'

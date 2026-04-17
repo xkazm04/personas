@@ -39,7 +39,7 @@ export function IntervalConfig({
             key={preset.value}
             type="button"
             onClick={() => { setIntervalValue(preset.value); setCustomInterval(false); }}
-            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
               !customInterval && interval === preset.value
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -51,7 +51,7 @@ export function IntervalConfig({
         <button
           type="button"
           onClick={() => setCustomInterval(true)}
-          className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${
+          className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${
             customInterval
               ? 'bg-primary/15 text-primary border-primary/30'
               : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -73,7 +73,7 @@ export function IntervalConfig({
             placeholder="Seconds (min 60)"
             aria-invalid={!!validationError}
             aria-describedby={validationError ? 'interval-error' : undefined}
-            className={`w-full px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm focus-ring transition-all ${
+            className={`w-full px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono text-sm focus-ring transition-all ${
               validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30'
                 : 'border-primary/15 focus-visible:border-primary/40'
@@ -155,7 +155,7 @@ export function CronConfig({
               key={p.value}
               type="button"
               onClick={() => onPresetSelect(p.value)}
-              className={`px-2.5 py-1 rounded-xl text-sm transition-all border ${
+              className={`px-2.5 py-1 rounded-modal text-sm transition-all border ${
                 cronExpression === p.value
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
                   : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -180,7 +180,7 @@ export function CronConfig({
             placeholder="* * * * *  (min hour dom mon dow)"
             aria-invalid={!!(hasError || validationError)}
             aria-describedby={validationError ? 'cron-validation-error' : hasError ? 'cron-preview-error' : undefined}
-            className={`flex-1 px-3 py-2 bg-background/50 border rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all ${
+            className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all ${
               hasError || validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30'
                 : 'border-primary/15 focus-visible:border-amber-500/40'

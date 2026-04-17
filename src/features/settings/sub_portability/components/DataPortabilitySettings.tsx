@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-primary/10 bg-secondary/10 p-3 text-center">
+    <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 text-center">
       <div className="text-lg font-semibold text-foreground/90">{value}</div>
       <div className="text-xs text-muted-foreground/70">{label}</div>
     </div>
@@ -33,7 +33,7 @@ export default function DataPortabilitySettings() {
       <ContentBody centered>
         <div className="space-y-6">
           {/* Workspace overview */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.workspace_overview} />
 
             {dp.statsStatus === 'loading' && (
@@ -90,7 +90,7 @@ export default function DataPortabilitySettings() {
 
           {/* Error display */}
           {dp.errorMsg && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
+            <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-4 flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-muted-foreground/80">
                 <p className="font-medium text-red-400/90 mb-1">{s.error_label}</p>

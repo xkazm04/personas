@@ -62,7 +62,7 @@ export function DeploymentCard({
           <span className="text-sm font-medium text-foreground/90">
             {d.label || personaName}
           </span>
-          <span className={`text-xs px-2 py-0.5 rounded-lg border font-medium ${statusColor(d.status)}`}>
+          <span className={`text-xs px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
             {d.status}
           </span>
         </div>
@@ -75,7 +75,7 @@ export function DeploymentCard({
               title={dt.test_deployment}
               onClick={() => onTest(d.id, d.persona_id)}
               disabled={isBusy || testRunning}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-blue-400
+              className="p-1.5 rounded-card text-muted-foreground/70 hover:text-blue-400
                          hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {testRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
@@ -87,7 +87,7 @@ export function DeploymentCard({
               title={dt.pause_deployment}
               onClick={() => handleAction(d.id, () => onPause(d.id))}
               disabled={isBusy}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-amber-400
+              className="p-1.5 rounded-card text-muted-foreground/70 hover:text-amber-400
                          hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
@@ -99,7 +99,7 @@ export function DeploymentCard({
               title={dt.resume_deployment}
               onClick={() => handleAction(d.id, () => onResume(d.id))}
               disabled={isBusy}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-emerald-400
+              className="p-1.5 rounded-card text-muted-foreground/70 hover:text-emerald-400
                          hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
@@ -110,7 +110,7 @@ export function DeploymentCard({
             title={dt.remove_deployment}
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
-            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-red-400
+            className="p-1.5 rounded-card text-muted-foreground/70 hover:text-red-400
                        hover:bg-red-500/10 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -120,14 +120,14 @@ export function DeploymentCard({
 
       {/* Endpoint URL */}
       <div className="flex items-center gap-1.5">
-        <code className="flex-1 text-xs text-muted-foreground/80 bg-secondary/40 px-2 py-1 rounded-lg truncate border border-primary/10">
+        <code className="flex-1 text-xs text-muted-foreground/80 bg-secondary/40 px-2 py-1 rounded-card truncate border border-primary/10">
           {endpointUrl}
         </code>
         <button
           type="button"
           title={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
-          className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
+          className="p-1.5 rounded-card text-muted-foreground/70 hover:text-foreground/90
                      hover:bg-secondary/50 transition-colors cursor-pointer"
         >
           {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -138,7 +138,7 @@ export function DeploymentCard({
             target="_blank"
             rel="noopener noreferrer"
             title={dt.open_endpoint}
-            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground/90
+            className="p-1.5 rounded-card text-muted-foreground/70 hover:text-foreground/90
                        hover:bg-secondary/50 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -175,7 +175,7 @@ export function DeploymentCard({
       {/* Inline test result */}
       {testResult && (
         <div
-          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
+          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-card border text-xs ${
             testResult.status === 'pass'
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
               : 'bg-red-500/10 border-red-500/20 text-red-400'

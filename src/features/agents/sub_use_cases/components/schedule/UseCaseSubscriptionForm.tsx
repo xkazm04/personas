@@ -36,7 +36,7 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
   };
 
   return (
-    <div className="border border-primary/20 rounded-lg p-2.5 space-y-2 bg-secondary/30">
+    <div className="border border-primary/20 rounded-card p-2.5 space-y-2 bg-secondary/30">
       <div>
         <label className="block text-sm font-mono text-muted-foreground/70 uppercase mb-1">
           {uc.event_type}
@@ -61,14 +61,14 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
           value={newSourceFilter}
           onChange={(e) => setNewSourceFilter(e.target.value)}
           placeholder={uc.source_filter_placeholder}
-          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus-ring"
+          className="w-full px-2.5 py-1.5 bg-background/50 border border-primary/20 rounded-modal text-sm text-foreground placeholder:text-muted-foreground/60 focus-ring"
         />
       </div>
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={handleAdd}
           disabled={!newEventType}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all ${
             newEventType
               ? 'bg-primary hover:bg-primary/90 text-foreground'
               : 'bg-secondary/40 text-muted-foreground/70 cursor-not-allowed'

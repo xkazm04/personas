@@ -48,13 +48,13 @@ export default function EngineSettings() {
       <ContentBody centered>
         <div className="space-y-4">
           {/* Capability matrix */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading
               title={s.capability_map}
               action={
                 <button
                   onClick={resetToDefaults}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   {s.reset_defaults}
@@ -109,7 +109,7 @@ export default function EngineSettings() {
           </div>
 
           {/* Legend */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-2">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-2">
             <SectionHeading title={s.legend} />
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground/70">
               <span className="flex items-center gap-1.5">
@@ -134,12 +134,12 @@ export default function EngineSettings() {
           </div>
 
           {/* Ambient Context Fusion */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6">
             <AmbientContextPanel />
           </div>
 
           {/* Protocol warning */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
+          <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground/80">
               <p className="font-medium text-amber-400/90 mb-1">{s.defaults_heading}</p>

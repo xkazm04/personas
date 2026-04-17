@@ -33,7 +33,7 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-lg p-3">
+    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -65,7 +65,7 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 pl-4">
               {Object.entries(data).map(([k, v]) =>
                 isPrimitive(v) ? (
-                  <div key={k} className="bg-secondary/10 rounded-lg p-2">
+                  <div key={k} className="bg-secondary/10 rounded-card p-2">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{formatLabel(k)}</div>
                     <div className="text-sm font-medium text-foreground/80 break-words">{formatPrimitiveValue(v)}</div>
                   </div>
@@ -89,7 +89,7 @@ function PatternValueCard({ label, value }: { label: string; value: unknown }) {
     const allPrimitive = value.every(isPrimitive);
     if (allPrimitive) {
       return (
-        <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-lg p-3">
+        <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
           <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{label}</div>
           <div className="flex flex-wrap gap-1 mt-1">
             {value.map((item, i) => (
@@ -115,7 +115,7 @@ function PatternValueCard({ label, value }: { label: string; value: unknown }) {
     );
   }
   return (
-    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-lg p-3">
+    <motion.div variants={cardVariants} transition={cardTransition} className="bg-secondary/10 rounded-card p-3">
       <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-0.5">{label}</div>
       <div className="text-sm font-medium text-foreground/80 break-words">{formatPrimitiveValue(value)}</div>
     </motion.div>
@@ -206,7 +206,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
   };
 
   return (
-    <div className="border border-primary/8 rounded-xl bg-background/40 hover:bg-background/60 transition-colors">
+    <div className="border border-primary/8 rounded-modal bg-background/40 hover:bg-background/60 transition-colors">
       <div role="button" tabIndex={0} onClick={toggleExpanded} onKeyDown={handleRowKeyDown} className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
               <button
                 onClick={handleVerify}
                 aria-label={t.overview.knowledge_row.verify_annotation}
-                className="p-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                className="p-1 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                 title={t.overview.knowledge_row.verify_annotation}
               >
                 <CheckCircle className="w-3.5 h-3.5" />
@@ -249,7 +249,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
               <button
                 onClick={handleDismiss}
                 aria-label={t.overview.knowledge_row.dismiss_annotation}
-                className="p-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
+                className="p-1 rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
                 title={t.overview.knowledge_row.dismiss_annotation}
               >
                 <X className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                   transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
                 >
                   <div className="text-xs uppercase tracking-wider text-muted-foreground/50 mb-1">{t.overview.knowledge_row.annotation}</div>
-                  <p className="text-sm text-foreground/80 bg-secondary/20 rounded-lg p-2">{entry.annotation_text}</p>
+                  <p className="text-sm text-foreground/80 bg-secondary/20 rounded-card p-2">{entry.annotation_text}</p>
                 </motion.div>
               )}
               <motion.div

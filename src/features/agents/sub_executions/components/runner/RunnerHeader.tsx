@@ -15,7 +15,7 @@ export function MiniPlayerPinButton() {
     <Tooltip content={pinned ? e.unpin_mini_player : e.pin_to_mini_player}>
       <button
         onClick={pinned ? unpin : pin}
-        className={`p-1.5 rounded-lg typo-body transition-colors flex items-center gap-1.5 ${
+        className={`p-1.5 rounded-card typo-body transition-colors flex items-center gap-1.5 ${
           pinned
             ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'
             : 'hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/80'

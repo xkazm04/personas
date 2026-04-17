@@ -125,7 +125,7 @@ export function GitLabDeployModal({
       </div>
 
       {/* CI/CD Agent Templates */}
-      <div className="p-3 rounded-xl border border-primary/10 bg-secondary/10">
+      <div className="p-3 rounded-modal border border-primary/10 bg-secondary/10">
         <CiCdTemplatesPicker
           userTier={gitlabTier}
           onSelectTemplate={handleSelectTemplate}
@@ -139,7 +139,7 @@ export function GitLabDeployModal({
       </div>
 
       {/* Credential provisioning toggle */}
-      <div className="p-3 rounded-lg border border-primary/10 bg-primary/[0.02]">
+      <div className="p-3 rounded-card border border-primary/10 bg-primary/[0.02]">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -170,7 +170,7 @@ export function GitLabDeployModal({
       </div>
 
       {/* Version tagging toggle */}
-      <div className="p-3 rounded-lg border border-primary/10 bg-primary/[0.02]">
+      <div className="p-3 rounded-card border border-primary/10 bg-primary/[0.02]">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -197,7 +197,7 @@ export function GitLabDeployModal({
                   id="deploy-env"
                   value={selectedEnvironment}
                   onChange={(e) => setSelectedEnvironment(e.target.value)}
-                  className="w-full rounded-lg border border-primary/15 bg-secondary/30 px-2.5 py-1.5 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  className="w-full rounded-card border border-primary/15 bg-secondary/30 px-2.5 py-1.5 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
                 >
                   <option value="">{t.gitlab.no_environment}</option>
                   <option value="dev">dev</option>
@@ -214,7 +214,7 @@ export function GitLabDeployModal({
       <button
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
@@ -229,7 +229,7 @@ export function GitLabDeployModal({
 
       {/* Result */}
       {result && (
-        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+        <div className="p-4 rounded-modal bg-emerald-500/5 border border-emerald-500/20">
           <div className="flex items-start gap-2">
             <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
             <div>

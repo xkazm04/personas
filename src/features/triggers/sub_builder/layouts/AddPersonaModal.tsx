@@ -88,7 +88,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             </h3>
             <p className="text-[10px] text-muted-foreground/60">{availableCount} available</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/60 text-muted-foreground">
+          <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/60 text-muted-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -102,7 +102,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search personas..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-secondary/30 border border-primary/10 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-cyan-400/40"
               autoFocus
             />
           </div>
@@ -111,7 +111,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             <div className="flex flex-wrap gap-1">
               <button
                 onClick={() => setSelectedGroupId(null)}
-                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
+                className={`px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
               >
                 All
               </button>
@@ -119,7 +119,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                 <button
                   key={g.id}
                   onClick={() => setSelectedGroupId(selectedGroupId === g.id ? null : g.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40'}`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                   {g.name}
@@ -170,7 +170,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                   <button
                     key={p.id}
                     onClick={() => onAdd(p.id)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
                     <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />

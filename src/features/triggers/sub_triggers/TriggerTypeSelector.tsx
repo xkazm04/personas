@@ -64,7 +64,7 @@ export function TriggerTypeSelector({
                   triggerTypeRefs.current[nextIndex]?.focus();
                 }
               }}
-              className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all focus-ring ${
+              className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all focus-ring ${
                 isSelected
                   ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
                   : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'

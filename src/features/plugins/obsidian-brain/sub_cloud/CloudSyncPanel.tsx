@@ -165,7 +165,7 @@ export default function CloudSyncPanel() {
         <button
           onClick={loginWithGoogle}
           disabled={authLoading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
         >
           {authLoading ? (
             <LoadingSpinner size="sm" />
@@ -185,7 +185,7 @@ export default function CloudSyncPanel() {
         <div className="space-y-4">
           {/* User info */}
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/20 border border-primary/10">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-modal bg-secondary/20 border border-primary/10">
               {user.avatar_url ? (
                 <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
               ) : (
@@ -198,7 +198,7 @@ export default function CloudSyncPanel() {
                 <p className="typo-caption text-foreground">{user.email}</p>
               </div>
               {driveConnected ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 typo-caption">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 typo-caption">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Drive Connected
                 </span>
@@ -206,7 +206,7 @@ export default function CloudSyncPanel() {
                 <button
                   onClick={connectDrive}
                   disabled={connecting}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
+                  className="flex items-center gap-2 px-4 py-2 rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
                 >
                   {connecting ? <LoadingSpinner size="sm" /> : <LogIn className="w-4 h-4" />}
                   {connecting ? 'Connecting...' : 'Connect Google Drive'}
@@ -241,7 +241,7 @@ export default function CloudSyncPanel() {
           )}
 
           {!driveConnected && (
-            <div className="px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/15">
+            <div className="px-4 py-3 rounded-modal bg-blue-500/5 border border-blue-500/15">
               <p className="typo-body text-foreground/90">
                 Connect Google Drive to back up your vault across devices. Files are stored in your own
                 Google Drive under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
@@ -260,7 +260,7 @@ export default function CloudSyncPanel() {
               <button
                 onClick={pushToDrive}
                 disabled={pushing || pulling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
                 {pushing ? 'Pushing...' : 'Push to Drive'}
@@ -268,7 +268,7 @@ export default function CloudSyncPanel() {
               <button
                 onClick={pullFromDrive}
                 disabled={pushing || pulling}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
                 {pulling ? 'Pulling...' : 'Pull from Drive'}
@@ -311,7 +311,7 @@ export default function CloudSyncPanel() {
         <SectionCard title="How it works" status="info">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="typo-caption text-blue-400 font-medium">1</span>
               </div>
               <div>
@@ -320,7 +320,7 @@ export default function CloudSyncPanel() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="typo-caption text-blue-400 font-medium">2</span>
               </div>
               <div>
@@ -329,7 +329,7 @@ export default function CloudSyncPanel() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="typo-caption text-blue-400 font-medium">3</span>
               </div>
               <div>

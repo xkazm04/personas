@@ -46,7 +46,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
         </h3>
 
         {!loading && entries.length === 0 && (
-          <div className="text-sm text-muted-foreground/60 py-4 text-center border border-dashed border-primary/15 rounded-lg">
+          <div className="text-sm text-muted-foreground/60 py-4 text-center border border-dashed border-primary/15 rounded-card">
             No recorded activity yet
           </div>
         )}
@@ -58,7 +58,7 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
               return (
                 <div
                   key={entry.id}
-                  className="flex items-center gap-3 px-3 py-2 bg-secondary/15 border border-primary/8 rounded-lg"
+                  className="flex items-center gap-3 px-3 py-2 bg-secondary/15 border border-primary/8 rounded-card"
                 >
                   <span className={`text-sm font-mono px-1.5 py-0.5 rounded border shrink-0 ${opStyle}`}>
                     {entry.operation}

@@ -139,7 +139,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
 
       {/* Detection results banner */}
       {hasDetected && detected.length === 0 && (
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-xl">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-secondary/30 border border-primary/10 rounded-modal">
           <Radar className="w-4 h-4 text-muted-foreground/80" />
           <p className="text-sm text-muted-foreground/80">{t.vault.list.no_credentials}</p>
         </div>
@@ -153,7 +153,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.vault.wizard_detect.search_services}
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
+          className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>
 

@@ -32,7 +32,7 @@ export function EventTemplateCard({
 
   return (
     <div
-      className={`p-3 rounded-xl border transition-all ${
+      className={`p-3 rounded-modal border transition-all ${
         isEnabled
           ? 'bg-amber-500/5 border-amber-500/20'
           : 'bg-secondary/20 border-border/20'

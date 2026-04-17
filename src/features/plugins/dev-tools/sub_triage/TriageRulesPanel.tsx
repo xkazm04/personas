@@ -112,7 +112,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   };
 
   return (
-    <div className="border border-border/20 rounded-xl bg-secondary/20 overflow-hidden">
+    <div className="border border-border/20 rounded-modal bg-secondary/20 overflow-hidden">
       <button
         onClick={() => setExpanded(v => !v)}
         className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-foreground hover:text-foreground transition-colors"
@@ -129,7 +129,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
         <div className="px-3 pb-3 space-y-2 border-t border-border/15 pt-2">
           {/* Existing rules */}
           {rules.map(rule => (
-            <div key={rule.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-secondary/30 text-xs">
+            <div key={rule.id} className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-secondary/30 text-xs">
               <button onClick={() => handleToggle(rule)} className="flex-shrink-0">
                 {rule.enabled
                   ? <ToggleRight className="w-4 h-4 text-primary" />
@@ -152,7 +152,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
 
           {/* Create form */}
           {creating ? (
-            <div className="space-y-2 p-2 rounded-lg bg-secondary/40 border border-border/20">
+            <div className="space-y-2 p-2 rounded-card bg-secondary/40 border border-border/20">
               <input
                 type="text"
                 value={ruleName}

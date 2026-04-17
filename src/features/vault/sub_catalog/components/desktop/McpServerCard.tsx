@@ -11,8 +11,8 @@ interface McpServerCardProps {
 
 export function McpServerCard({ server, imported, importing, onImport }: McpServerCardProps) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20">
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20">
+    <div className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20">
+      <div className="w-8 h-8 rounded-card flex items-center justify-center border bg-cyan-500/10 border-cyan-500/20">
         <Monitor className="w-4 h-4 text-cyan-400" />
       </div>
       <div className="flex-1 min-w-0">
@@ -33,7 +33,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         <button
           onClick={onImport}
           disabled={importing}
-          className="px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-card hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
         >
           {importing ? (
             <LoadingSpinner size="sm" />

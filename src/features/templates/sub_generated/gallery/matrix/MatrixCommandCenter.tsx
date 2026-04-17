@@ -80,14 +80,14 @@ function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Adjust anything..."
-        className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+        className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onRefine(text.trim()); setText(''); } }}
       />
       <button
         type="button"
         onClick={() => { if (text.trim()) { onRefine(text.trim()); setText(''); } }}
         disabled={!text.trim()}
-        className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors"
+        className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors"
       >
         <Send className="w-3.5 h-3.5" />
       </button>
@@ -223,13 +223,13 @@ export function MatrixCommandCenter({
         )}
         <div className="flex gap-1.5">
           {onStartTest && (
-            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
+            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
               <Play className="w-3.5 h-3.5" />
               Test Agent
             </button>
           )}
           {onSaveVersion && (
-            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
+            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
               <Save className="w-3.5 h-3.5" />
               Save Version
             </button>
@@ -242,11 +242,11 @@ export function MatrixCommandCenter({
       <div className="flex flex-col gap-3 w-full h-full items-center">
         {/* Describe / Import toggle (creation mode only) */}
         {isCreation && (
-          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/20 self-stretch">
+          <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/20 self-stretch">
             <button
               type="button"
               onClick={() => setInputMode('describe')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'describe'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
                   : 'text-muted-foreground/50 hover:text-muted-foreground/70'
@@ -258,7 +258,7 @@ export function MatrixCommandCenter({
             <button
               type="button"
               onClick={() => setInputMode('import')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-input text-[11px] font-medium transition-colors ${
                 inputMode === 'import'
                   ? 'bg-primary/15 text-primary shadow-elevation-1'
                   : 'text-muted-foreground/50 hover:text-muted-foreground/70'
@@ -275,7 +275,7 @@ export function MatrixCommandCenter({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
             placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
             rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
-            className={`w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
+            className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}
         {/* Import mode: workflow upload zone */}
         {inputMode === 'import' && isCreation && (
@@ -305,7 +305,7 @@ export function MatrixCommandCenter({
       <div className="flex flex-wrap gap-1.5">
         {sections.map((section) => { const Icon = section.icon; return (
           <button key={section.key} type="button" onClick={() => setOpenSection(section)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
+            className="inline-flex items-center gap-1.5 rounded-card border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
             <Icon className={`w-3 h-3 ${section.color} flex-shrink-0`} />
             <span className="text-[13px] text-foreground/70 truncate">{section.label}</span>
           </button>

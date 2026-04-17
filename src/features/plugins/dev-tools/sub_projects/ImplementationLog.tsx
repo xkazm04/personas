@@ -54,12 +54,12 @@ export function ImplementationLog({ signals, onAddNote }: ImplementationLogProps
           onChange={(e) => setNoteText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
           placeholder={t.plugins.dev_tools.add_note_placeholder}
-          className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-lg text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="flex-1 px-2.5 py-1.5 text-xs bg-secondary/50 border border-border/30 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
           onClick={handleAddNote}
           disabled={!noteText.trim()}
-          className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1.5 text-xs font-medium rounded-card bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>

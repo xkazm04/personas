@@ -42,7 +42,7 @@ export default function TransitionPicker({
             <button
               key={tr.id}
               onClick={() => onChange(tr.id, tr.id === 'cut' ? 0 : Math.max(duration, 0.5))}
-              className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border transition-all text-center ${
+              className={`flex flex-col items-center gap-1 py-2 px-1 rounded-card border transition-all text-center ${
                 isActive
                   ? 'bg-primary/10 border-primary/30 text-foreground'
                   : 'bg-secondary/20 border-primary/10 text-foreground hover:bg-secondary/30'

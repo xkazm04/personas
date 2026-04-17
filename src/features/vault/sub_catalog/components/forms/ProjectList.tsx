@@ -24,7 +24,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
           key={project.id}
           type="button"
           onClick={() => onSelect(project.id)}
-          className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-colors ${
+          className={`w-full flex items-start gap-3 p-3 rounded-modal border text-left transition-colors ${
             isSelected(project.id)
               ? 'border-indigo-500/30 bg-indigo-500/8'
               : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
@@ -37,7 +37,7 @@ export function ProjectList({ projects, isSelected, onSelect, multiSelect }: Pro
             {project.tech_stack && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {project.tech_stack.split(',').map((t) => (
-                  <span key={t.trim()} className="text-[10px] px-1.5 py-0.5 rounded-md bg-secondary/50 text-muted-foreground/60 border border-primary/10">
+                  <span key={t.trim()} className="text-[10px] px-1.5 py-0.5 rounded-input bg-secondary/50 text-muted-foreground/60 border border-primary/10">
                     {t.trim()}
                   </span>
                 ))}

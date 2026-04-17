@@ -27,7 +27,7 @@ export function TemplateCardFooter({
             e.stopPropagation();
             onAdopt();
           }}
-          className={`px-3.5 py-2 text-sm rounded-xl border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+          className={`px-3.5 py-2 text-sm rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
         >
           <Download className="w-3.5 h-3.5" />
           Adopt
@@ -38,7 +38,7 @@ export function TemplateCardFooter({
               e.stopPropagation();
               onTryIt();
             }}
-            className={`px-3.5 py-2 text-sm rounded-xl border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
+            className={`px-3.5 py-2 text-sm rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
           >
             <Play className="w-3.5 h-3.5" />
             Try It
@@ -52,7 +52,7 @@ export function TemplateCardFooter({
               e.stopPropagation();
               onViewFlows();
             }}
-            className="px-2.5 py-1.5 text-sm rounded-xl bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
+            className="px-2.5 py-1.5 text-sm rounded-modal bg-violet-500/8 text-violet-400/70 hover:bg-violet-500/15 transition-colors inline-flex items-center gap-1.5"
           >
             <Workflow className="w-3.5 h-3.5" />
             {displayFlows.length}

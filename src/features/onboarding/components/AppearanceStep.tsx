@@ -55,7 +55,7 @@ export function AppearanceStep() {
               <button
                 key={lang.code}
                 onClick={() => setLanguage(lang.code)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors text-sm ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors text-sm ${
                   isActive
                     ? 'border-primary/30 bg-primary/5 text-foreground/90 font-medium'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-muted-foreground/70'
@@ -84,7 +84,7 @@ export function AppearanceStep() {
               <button
                 key={scale.id}
                 onClick={() => setTextScale(scale.id as TextScale)}
-                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${
+                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -109,7 +109,7 @@ export function AppearanceStep() {
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id as ThemeId)}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-colors ${
+                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -140,7 +140,7 @@ export function AppearanceStep() {
               <button
                 key={t.id}
                 onClick={() => setTheme(t.id as ThemeId)}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-colors ${
+                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -175,7 +175,7 @@ export function AppearanceStep() {
               <button
                 key={level.id}
                 onClick={() => setBrightness(level.id as BrightnessLevel)}
-                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${
+                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-modal border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'

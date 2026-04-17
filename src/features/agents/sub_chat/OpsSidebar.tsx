@@ -86,7 +86,7 @@ export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps)
               data-testid={`ops-panel-btn-${panel.id}`}
               title={panel.label}
               aria-label={tx(t.agents.ops.switch_panel, { panel: panel.label })}
-              className={`relative w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 focus-ring ${
+              className={`relative w-8 h-8 rounded-card flex items-center justify-center transition-all duration-150 focus-ring ${
                 isActive
                   ? `bg-primary/12 ${panel.color}`
                   : 'text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5'

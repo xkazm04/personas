@@ -76,7 +76,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[560px] max-h-[85vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-elevation-3">
+      <div className="w-[560px] max-h-[85vh] flex flex-col rounded-modal border border-primary/20 bg-background/95 shadow-elevation-3">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <ShieldCheck className="w-4 h-4 text-sky-400" />
           <div className="typo-heading-sm typo-section-title flex-1 truncate">
@@ -85,7 +85,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-foreground/90 hover:text-foreground hover:bg-secondary/50"
+            className="p-1 rounded-input text-foreground/90 hover:text-foreground hover:bg-secondary/50"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -94,7 +94,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {/* File info */}
-          <div className="mb-3 rounded-lg border border-primary/10 bg-secondary/30 px-3 py-2">
+          <div className="mb-3 rounded-card border border-primary/10 bg-secondary/30 px-3 py-2">
             <div className="typo-label text-foreground/90">
               {t.plugins.drive.details_path}
             </div>
@@ -106,7 +106,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           {/* Sidecar lookup status */}
           {sidecarFound !== null && phase === "input" && (
             <div
-              className={`mb-3 flex items-center gap-2 typo-body rounded-md px-3 py-2 border ${
+              className={`mb-3 flex items-center gap-2 typo-body rounded-input px-3 py-2 border ${
                 sidecarFound
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                   : "border-primary/10 bg-secondary/30 text-foreground/90"
@@ -130,7 +130,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 onChange={(e) => setSidecarJson(e.target.value)}
                 rows={6}
                 spellCheck={false}
-                className="w-full px-3 py-2 rounded-md bg-secondary/40 border border-primary/15 typo-body font-mono text-foreground placeholder:text-foreground/90 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
+                className="w-full px-3 py-2 rounded-input bg-secondary/40 border border-primary/15 typo-body font-mono text-foreground placeholder:text-foreground/90 focus:outline-none focus:ring-1 focus:ring-sky-500/50 resize-none"
                 placeholder={"{\n  \"version\": 1,\n  \"algorithm\": \"Ed25519\",\n  ...\n}"}
               />
             </div>
@@ -145,7 +145,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 transition-colors"
+              className="px-3 py-1.5 rounded-input bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 transition-colors"
             >
               {t.plugins.drive.confirm}
             </button>
@@ -155,7 +155,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={onClose}
                 disabled={phase === "verifying"}
-                className="px-3 py-1.5 rounded-md typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -163,7 +163,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-input bg-sky-500/20 text-sky-300 border border-sky-500/30 typo-body font-medium hover:bg-sky-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying
@@ -184,7 +184,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
+      className={`rounded-card border p-3 ${
         isValid
           ? "border-emerald-500/30 bg-emerald-500/10"
           : "border-rose-500/30 bg-rose-500/10"

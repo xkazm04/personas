@@ -34,7 +34,7 @@ export default function MemoryPanelHeader({
       <div className="flex items-center gap-1">
         {/* View mode toggle */}
         {hasRunData && (
-          <div className="flex items-center rounded-lg border border-primary/10 overflow-hidden mr-1">
+          <div className="flex items-center rounded-card border border-primary/10 overflow-hidden mr-1">
             <button
               onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
               className={`p-1 transition-colors ${
@@ -73,7 +73,7 @@ export default function MemoryPanelHeader({
           </div>
         )}
         <button
-          className="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground/60"
+          className="p-1 rounded-card hover:bg-primary/10 text-muted-foreground/60"
           onClick={onClose}
         >
           <ChevronDown className="w-4 h-4" />

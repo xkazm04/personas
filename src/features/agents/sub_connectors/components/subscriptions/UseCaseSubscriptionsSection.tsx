@@ -42,7 +42,7 @@ export function UseCaseSubscriptionsSection() {
       />
 
       {manager.error && (
-        <div className="px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
+        <div className="px-3 py-2 rounded-modal border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
           {manager.error}
         </div>
       )}

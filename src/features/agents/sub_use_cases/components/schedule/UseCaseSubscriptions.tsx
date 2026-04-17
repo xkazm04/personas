@@ -137,7 +137,7 @@ export function UseCaseSubscriptions({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-dashed border-primary/20 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-dashed border-primary/20 hover:border-primary/30 text-sm text-muted-foreground/70 hover:text-primary/80 transition-all w-full"
             >
               <Plus className="w-3.5 h-3.5" /> {uc.add_subscription}
             </button>

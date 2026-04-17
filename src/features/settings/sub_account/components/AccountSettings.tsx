@@ -34,12 +34,12 @@ export default function AccountSettings() {
       <ContentBody centered>
         <div className="space-y-6">
         {/* Telemetry */}
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
           <SectionHeading title={s.telemetry_title} icon={<Activity className="text-rose-400" />} />
           <p className="text-sm text-muted-foreground/60 leading-relaxed">
             {s.telemetry_description}
           </p>
-          <div className="flex items-center justify-between gap-4 rounded-lg bg-secondary/20 border border-primary/8 p-4">
+          <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground/85">{s.telemetry_toggle}</p>
               <p className="text-xs text-muted-foreground/50 mt-0.5">
@@ -77,7 +77,7 @@ export default function AccountSettings() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-6">
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">
           {isAuthenticated && user ? (
             <>
               <div className="flex items-center gap-4">
@@ -115,14 +115,14 @@ export default function AccountSettings() {
             </>
           ) : (
             <div className="text-center py-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
               <p className="text-sm text-muted-foreground/80 mb-4">{s.sign_in_prompt}</p>
 
               {/* Error display */}
               {error && (
-                <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-left">
+                <div className="max-w-sm mx-auto mb-4 flex items-start gap-2.5 p-3 rounded-modal border border-red-500/20 bg-red-500/5 text-left">
                   <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-red-300/90">{error}</p>
@@ -135,7 +135,7 @@ export default function AccountSettings() {
 
               {isLoading ? (
                 <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm font-medium
                     bg-primary/10 text-primary border border-primary/20">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     {s.waiting_sign_in}

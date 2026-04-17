@@ -58,7 +58,7 @@ export function AutomationReviewStep({
           <p className="text-sm text-muted-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
         {hasWarning && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-brand-amber/5 border border-brand-amber/15 max-w-md">
+          <div className="flex items-start gap-2 p-3 rounded-modal bg-brand-amber/5 border border-brand-amber/15 max-w-md">
             <AlertTriangle className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-brand-amber/80">{deployResult.activationWarning}</p>
           </div>
@@ -68,7 +68,7 @@ export function AutomationReviewStep({
             href={sanitizeExternalUrl(deployResult.platformUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-modal bg-accent/15 border border-accent/25 text-foreground/80 hover:bg-accent/25 transition-colors"
           >
             {t.agents.connectors.auto_view_on.replace('{platform}', PLATFORM_CONFIG[platform]?.label ?? platform)}
             <ExternalLink className="w-3 h-3" />
@@ -76,7 +76,7 @@ export function AutomationReviewStep({
         )}
         <button
           onClick={() => { onComplete(); onClose(); }}
-          className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
+          className="px-4 py-2 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
         >
           {t.agents.connectors.auto_done}
         </button>
@@ -87,7 +87,7 @@ export function AutomationReviewStep({
   // Error phase
   return (
     <div key="error" className="animate-fade-slide-in space-y-4">
-      <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-brand-rose/5 border border-brand-rose/15">
+      <div className="flex items-start gap-2.5 p-3.5 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
         <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-brand-rose/80">{t.agents.connectors.auto_design_failed}</p>
@@ -95,10 +95,10 @@ export function AutomationReviewStep({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
+        <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal border border-border text-muted-foreground hover:bg-secondary/50 transition-colors">
           {t.common.close}
         </button>
-        <button onClick={onReset} className="px-4 py-2 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
+        <button onClick={onReset} className="px-4 py-2 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
           {t.agents.connectors.auto_try_again}
         </button>
       </div>

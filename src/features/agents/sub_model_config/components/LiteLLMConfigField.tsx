@@ -12,7 +12,7 @@ export function LiteLLMConfigField() {
       field2={{ settingKey: 'litellm_master_key', placeholder: mc.litellm_master_key_placeholder, type: 'password' }}
       saveLabel={mc.litellm_save_label}
       description={mc.litellm_description}
-      containerClassName="bg-sky-500/5 border border-sky-500/15 rounded-lg p-3"
+      containerClassName="bg-sky-500/5 border border-sky-500/15 rounded-card p-3"
     />
   );
 }

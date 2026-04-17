@@ -20,7 +20,7 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
 
   return (
     <div
-      className="animate-fade-slide-in p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
+      className="animate-fade-slide-in p-3 rounded-modal bg-amber-500/5 border border-amber-500/10"
     >
       {/* Description */}
       <div className="flex items-center gap-2 mb-2.5">

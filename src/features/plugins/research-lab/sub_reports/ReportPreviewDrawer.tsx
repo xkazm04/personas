@@ -91,7 +91,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
             {project && <p className="typo-caption text-foreground truncate">{project.name}</p>}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center rounded-lg border border-border/30 overflow-hidden">
+            <div className="flex items-center rounded-card border border-border/30 overflow-hidden">
               <button
                 onClick={() => setView('preview')}
                 className={`px-3 py-1.5 typo-caption transition-colors ${view === 'preview' ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-secondary/50'}`}
@@ -107,14 +107,14 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
             </div>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
             >
               {justCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               {t.common.copy}
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               .md

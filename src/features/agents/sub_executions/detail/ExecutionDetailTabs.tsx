@@ -14,7 +14,7 @@ interface ExecutionDetailTabsProps {
 export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, executionStatus }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
   const tabClass = (tab: DetailTab, special?: boolean) =>
-    `flex items-center gap-2 px-3 py-1.5 rounded-xl typo-heading transition-all ${
+    `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
       activeTab === tab
         ? special
           ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25'
@@ -23,7 +23,7 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, exe
     }`;
 
   return (
-    <div className="flex gap-1 p-1 rounded-xl bg-secondary/40 border border-primary/10 w-fit">
+    <div className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit">
       <button onClick={() => setActiveTab('detail')} className={tabClass('detail')}>
         <ListTree className="w-3.5 h-3.5" />
         {t.agents.executions.tab_detail}

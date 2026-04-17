@@ -57,7 +57,7 @@ export function TemplatePickerStep({
             <button
               key={review.id}
               onClick={() => onSelect(review.id)}
-              className={`text-left rounded-xl border p-4 transition-all group ${
+              className={`text-left rounded-modal border p-4 transition-all group ${
                 isSelected
                   ? 'bg-violet-500/10 border-violet-500/30 shadow-elevation-2 shadow-violet-500/10'
                   : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50 hover:border-primary/20'

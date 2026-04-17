@@ -33,7 +33,7 @@ export function MatrixScoreComparison({ currentAgg, draftAgg }: MatrixScoreCompa
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         {t.agents.lab.score_comparison}
       </h4>
-      <div className="overflow-x-auto border border-primary/10 rounded-xl">
+      <div className="overflow-x-auto border border-primary/10 rounded-modal">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/30">

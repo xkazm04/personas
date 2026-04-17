@@ -22,7 +22,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
   return (
     <div
       key={pair.id}
-      className="animate-fade-slide-in rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onToggleCollapse(pair.id)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
@@ -47,7 +47,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
               disabled={disabled}
               placeholder={t.agents.design.input_placeholder}
               rows={4}
-              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+              className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />
           </div>
           <div className="flex justify-center">
@@ -64,7 +64,7 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
               disabled={disabled}
               placeholder={t.agents.design.output_placeholder}
               rows={4}
-              className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+              className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
             />
           </div>
         </div>

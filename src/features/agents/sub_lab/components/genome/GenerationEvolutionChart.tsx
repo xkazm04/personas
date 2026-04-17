@@ -117,7 +117,7 @@ export function GenerationEvolutionChart({
                 />
 
                 {/* Tooltip on hover */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-md px-2 py-1 text-xs whitespace-nowrap z-10 shadow-elevation-3">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-input px-2 py-1 text-xs whitespace-nowrap z-10 shadow-elevation-3">
                   Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>
@@ -130,13 +130,13 @@ export function GenerationEvolutionChart({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center">
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
+          <span className="w-2 h-2 rounded-interactive bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
+          <span className="w-2 h-2 rounded-interactive bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-sm bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
+          <span className="w-2 h-2 rounded-interactive bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
         </span>
       </div>
 

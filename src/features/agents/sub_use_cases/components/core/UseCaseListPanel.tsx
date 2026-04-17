@@ -39,7 +39,7 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
             key={uc.id || i}
             data-testid={`use-case-row-${uc.id}`}
             onClick={() => onSelect(uc.id)}
-            className={`w-full text-left p-2.5 rounded-xl border transition-all ${
+            className={`w-full text-left p-2.5 rounded-modal border transition-all ${
               isSelected
                 ? 'border-primary/30 bg-primary/8 ring-1 ring-primary/20'
                 : 'border-primary/10 bg-secondary/20 hover:border-primary/20 hover:bg-secondary/30'

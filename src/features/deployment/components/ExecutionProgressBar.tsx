@@ -71,7 +71,7 @@ export function ExecutionProgressBar({ executionId }: Props) {
   const isAnimated = !['completed', 'failed'].includes(progress.stage);
 
   return (
-    <div className="space-y-2 p-3 rounded-xl bg-secondary/30 border border-primary/10">
+    <div className="space-y-2 p-3 rounded-modal bg-secondary/30 border border-primary/10">
       {/* Stage pipeline */}
       <div className="flex items-center gap-1">
         {STAGES_ORDER.map((stage, idx) => {

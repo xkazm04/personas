@@ -36,7 +36,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
         <button
           onClick={onStart}
           disabled={authDetectLoading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal bg-violet-500/15 border border-violet-500/25 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {authDetectLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -81,7 +81,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
       </p>
       <button
         onClick={onFinish}
-        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors mt-1"
+        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal text-sm font-medium transition-colors mt-1"
       >
         Apply to credential form
       </button>
@@ -107,20 +107,20 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
       transition={phaseTransition}
       className="space-y-3"
     >
-      <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+      <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
         <p className="text-sm text-red-300">{error}</p>
       </div>
       <div className="flex gap-2">
         <button
           onClick={onRetry}
           disabled={authDetectLoading}
-          className="px-4 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-modal bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Try again
         </button>
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-xl text-muted-foreground/90 text-sm hover:text-foreground/95 transition-colors"
+          className="px-4 py-2 rounded-modal text-muted-foreground/90 text-sm hover:text-foreground/95 transition-colors"
         >
           Close
         </button>

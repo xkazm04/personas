@@ -148,7 +148,7 @@ export default function TeamList() {
         {/* Empty State */}
         {teams.length === 0 && !showCreate && (
           <div className="animate-fade-slide-in text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-modal bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
             <h2 className="text-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>

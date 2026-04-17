@@ -49,7 +49,7 @@ export function ReviewExpandedDetail({
     <div className="space-y-6">
       {/* 1. Summary Card */}
       {designResult.summary && (
-        <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">
+        <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
           <p className="text-sm text-foreground/90 leading-relaxed">{designResult.summary}</p>
         </div>
       )}
@@ -69,7 +69,7 @@ export function ReviewExpandedDetail({
               <button
                 key={flow.id}
                 onClick={onViewDiagram}
-                className="bg-violet-500/5 border border-violet-500/15 rounded-xl px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
+                className="bg-violet-500/5 border border-violet-500/15 rounded-modal px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
@@ -92,7 +92,7 @@ export function ReviewExpandedDetail({
 
       {/* 4. Adjustment Section */}
       {adjustment && (
-        <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3 space-y-2">
+        <div className="bg-amber-500/5 border border-amber-500/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-amber-400/80" />
@@ -108,14 +108,14 @@ export function ReviewExpandedDetail({
             <button
               onClick={() => onApplyAdjustment(adjustment.suggestion)}
               disabled={isRunning}
-              className="px-3 py-1.5 text-sm rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 text-sm rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             >
               <RotateCcw className="w-3 h-3" />
               {t.templates.review_detail.apply_rerun}
             </button>
           </div>
           <p className="text-sm text-muted-foreground/90">{adjustment.reason}</p>
-          <div className="bg-background/50 rounded-xl px-3 py-2 text-sm text-foreground/90 border border-primary/10">
+          <div className="bg-background/50 rounded-modal px-3 py-2 text-sm text-foreground/90 border border-primary/10">
             {adjustment.suggestion}
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -145,7 +145,7 @@ export function ReviewExpandedDetail({
           <button
             onClick={onAdopt}
             disabled={isAdopting}
-            className={`px-4 py-2.5 text-sm rounded-xl border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
+            className={`px-4 py-2.5 text-sm rounded-modal border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
           >
             <Download className="w-4 h-4" />
             {t.templates.review_detail.adopt_as_new_persona}
@@ -162,7 +162,7 @@ export function ReviewExpandedDetail({
       </div>
 
       {showJson && (
-        <pre className="p-3 bg-background/70 rounded-lg border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto">
+        <pre className="p-3 bg-background/70 rounded-card border border-primary/10 text-sm text-muted-foreground/90 overflow-x-auto max-h-[300px] overflow-y-auto">
           {JSON.stringify(designResult, null, 2)}
         </pre>
       )}

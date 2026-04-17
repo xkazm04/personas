@@ -53,7 +53,7 @@ export function WizardStepRenderer({ step, answers, onAnswer }: WizardStepRender
                     onClick={handleClick}
                     role={question.multiSelect ? 'checkbox' : 'radio'}
                     aria-checked={isSelected}
-                    className={`group relative flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                    className={`group relative flex items-start gap-3 px-4 py-3 rounded-modal border text-left transition-all ${
                       isSelected
                         ? 'border-violet-500/40 bg-violet-500/10 shadow-elevation-1 shadow-violet-500/5'
                         : 'border-primary/10 bg-secondary/20 hover:border-primary/20 hover:bg-secondary/40'

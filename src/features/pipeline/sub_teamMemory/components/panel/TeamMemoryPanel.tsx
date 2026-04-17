@@ -117,7 +117,7 @@ export default function TeamMemoryPanel({
     <div
       ref={panelRef}
       style={{ width: panelWidth }}
-      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-elevation-4 overflow-hidden"
+      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
     >
       {/* Resize handle */}
       <div

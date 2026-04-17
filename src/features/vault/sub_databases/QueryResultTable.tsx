@@ -57,7 +57,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
 
   return (
     <div className="space-y-2">
-      <div className="rounded-xl border border-primary/10 overflow-hidden">
+      <div className="rounded-modal border border-primary/10 overflow-hidden">
         {/* Sticky header */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

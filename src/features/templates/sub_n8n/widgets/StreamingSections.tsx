@@ -92,7 +92,7 @@ const SectionRow = memo(function SectionRow({
 
   return (
     <div
-      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
+      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2 rounded-modal border transition-colors ${
         isLatest
           ? 'border-primary/15 bg-secondary/30'
           : 'border-transparent bg-transparent'
@@ -100,7 +100,7 @@ const SectionRow = memo(function SectionRow({
     >
       {/* Icon */}
       <div
-        className={`flex-shrink-0 w-6 h-6 rounded-lg ${bg} flex items-center justify-center mt-0.5`}
+        className={`flex-shrink-0 w-6 h-6 rounded-card ${bg} flex items-center justify-center mt-0.5`}
       >
         <Icon className={`w-3 h-3 ${color}`} />
       </div>
@@ -162,7 +162,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
     <div
       aria-live="polite"
       aria-busy={isStreaming}
-      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden"
     >
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">

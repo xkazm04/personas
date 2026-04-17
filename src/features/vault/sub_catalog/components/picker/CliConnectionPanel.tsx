@@ -110,13 +110,13 @@ export function CliConnectionPanel({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-lg text-sm focus:outline-none focus:border-primary/40"
+          className="w-full px-3 py-2 bg-secondary/40 border border-primary/15 rounded-card text-sm focus:outline-none focus:border-primary/40"
           placeholder={`${connector.label} CLI`}
         />
       </div>
 
       {/* Header: binary + docs link */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-lg">
+      <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-card">
         <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-foreground">{spec.display_label}</div>
@@ -148,7 +148,7 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'not_installed' && (
-        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-lg">
+        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -177,7 +177,7 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'installed_unverified' && (
-        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-lg">
+        <div className="space-y-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -205,7 +205,7 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'unauthenticated' && (
-        <div className="space-y-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+        <div className="space-y-2 p-3 bg-red-500/5 border border-red-500/20 rounded-card">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -223,7 +223,7 @@ export function CliConnectionPanel({
       )}
 
       {state.kind === 'authenticated' && (
-        <div className="space-y-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+        <div className="space-y-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-card">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -275,7 +275,7 @@ function StateBlock({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2 p-3 bg-secondary/25 border border-primary/15 rounded-lg">
+    <div className="flex items-start gap-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
       <div className="shrink-0 mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-foreground">{title}</div>

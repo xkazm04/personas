@@ -95,7 +95,7 @@ export function CloudDeploymentsPanel({
               value={selectedPersonaId}
               onChange={(e) => setSelectedPersonaId(e.target.value)}
               disabled={isDeploying || deployablePersonas.length === 0}
-              className="w-full px-3 py-2 text-sm rounded-xl
+              className="w-full px-3 py-2 text-sm rounded-modal
                          bg-secondary/40 border border-primary/15
                          text-foreground/80 placeholder:text-muted-foreground/80
                          focus-visible:outline-none focus-visible:border-indigo-500/40
@@ -120,7 +120,7 @@ export function CloudDeploymentsPanel({
               value={selectedBudget ?? ''}
               onChange={(e) => setSelectedBudget(e.target.value ? Number(e.target.value) : undefined)}
               disabled={isDeploying}
-              className="w-full px-3 py-2 text-sm rounded-xl
+              className="w-full px-3 py-2 text-sm rounded-modal
                          bg-secondary/40 border border-primary/15
                          text-foreground/80
                          focus-visible:outline-none focus-visible:border-indigo-500/40

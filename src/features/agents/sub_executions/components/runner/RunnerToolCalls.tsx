@@ -35,7 +35,7 @@ export function HealingCard({
 
   return (
     <div
-      className={`animate-fade-slide-in rounded-xl border ${styles.border} ${styles.bg} overflow-hidden`}
+      className={`animate-fade-slide-in rounded-modal border ${styles.border} ${styles.bg} overflow-hidden`}
     >
       <div className="px-4 py-3.5 space-y-2.5">
         <div className="flex items-start gap-2.5">

@@ -38,7 +38,7 @@ export function ToolCategoryList({
     <div className="py-16 flex flex-col items-center justify-center text-center">
       <Search className="w-10 h-10 text-muted-foreground/50 mb-3" />
       <p className="text-sm text-muted-foreground">{t.agents.tools.no_matching}</p>
-      <button onClick={onClearSearch} className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/20 text-primary/80 hover:bg-primary/10 transition-colors">
+      <button onClick={onClearSearch} className="mt-3 text-sm px-2.5 py-1 rounded-modal border border-primary/20 text-primary/80 hover:bg-primary/10 transition-colors">
         {t.agents.tools.clear_filter}
       </button>
     </div>
@@ -46,7 +46,7 @@ export function ToolCategoryList({
     <div className="py-16 flex flex-col items-center justify-center text-center">
       <Wrench className="w-10 h-10 text-muted-foreground/50 mb-3" />
       <p className="text-sm text-muted-foreground">{t.agents.tools.no_assigned}</p>
-      <button onClick={onBrowseTools} className="mt-3 text-sm px-2.5 py-1 rounded-xl border border-primary/20 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors">
+      <button onClick={onBrowseTools} className="mt-3 text-sm px-2.5 py-1 rounded-modal border border-primary/20 text-muted-foreground/80 hover:text-foreground/80 hover:bg-secondary/40 transition-colors">
         {t.agents.tools.browse_tools}
       </button>
     </div>

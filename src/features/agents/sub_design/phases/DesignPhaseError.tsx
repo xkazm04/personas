@@ -39,14 +39,14 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
       >
         <button
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           {t.common.retry}
         </button>
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-modal text-sm font-medium bg-secondary/40 text-muted-foreground hover:bg-secondary/60 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           {t.common.back}

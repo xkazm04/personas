@@ -119,7 +119,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
   const config = SEVERITY_CONFIG[finding.severity];
 
   return (
-    <div className={`rounded-lg border ${config.border} ${config.bg} overflow-hidden`}>
+    <div className={`rounded-card border ${config.border} ${config.bg} overflow-hidden`}>
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
@@ -150,7 +150,7 @@ function FindingRow({ finding }: { finding: ScanFinding }) {
             <p className="text-sm uppercase tracking-wider text-muted-foreground/60 mb-1">
               Source: <span className="text-muted-foreground/60">{finding.source}</span>
             </p>
-            <pre className="text-sm text-muted-foreground/70 whitespace-pre-wrap font-mono bg-black/20 rounded-xl px-2.5 py-2 leading-relaxed">
+            <pre className="text-sm text-muted-foreground/70 whitespace-pre-wrap font-mono bg-black/20 rounded-modal px-2.5 py-2 leading-relaxed">
               {finding.context}
             </pre>
           </div>
@@ -206,7 +206,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // Scanning in progress
   if (scanning) {
     return (
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-500/15 bg-blue-500/5 ${className}`}>
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-blue-500/15 bg-blue-500/5 ${className}`}>
         <LoadingSpinner className="text-blue-400/60 flex-shrink-0" />
         <div>
           <p className="text-sm text-blue-300/80 font-medium">{t.templates.scan.scanning_draft}</p>
@@ -222,7 +222,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // All clear
   if (result.passed && result.info.length === 0) {
     return (
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
         <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
         <div>
           <p className="text-sm text-emerald-300/80 font-medium">{t.templates.scan.scan_passed}</p>
@@ -235,7 +235,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   // Passed with info only
   if (result.passed && result.info.length > 0) {
     return (
-      <div className={`rounded-xl border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
+      <div className={`rounded-modal border border-emerald-500/15 bg-emerald-500/5 ${className}`}>
         <div className="flex items-center gap-3 px-4 py-3">
           <ShieldThumbsUpIllustration className="text-emerald-400 flex-shrink-0" />
           <div className="flex-1">
@@ -265,7 +265,7 @@ export function ScanResultsBanner({ result, scanning, className = '' }: ScanResu
   const subtitleColor = hasCritical ? 'text-red-300/50' : 'text-amber-300/50';
 
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgColor} ${className}`}>
+    <div className={`rounded-modal border ${borderColor} ${bgColor} ${className}`}>
       {/* Header */}
       <div className="flex items-start gap-3 px-4 py-3">
         {hasCritical ? (

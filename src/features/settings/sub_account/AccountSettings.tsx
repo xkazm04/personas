@@ -23,7 +23,7 @@ export default function AccountSettings() {
       />
 
       <ContentBody centered>
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-6">
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">
           {isAuthenticated && user ? (
             <>
               <div className="flex items-center gap-4">
@@ -56,7 +56,7 @@ export default function AccountSettings() {
               <div className="border-t border-primary/10 pt-4">
                 <button
                   onClick={logout}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-foreground/90
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm text-foreground/90
                     hover:bg-primary/5 border border-primary/10 hover:border-primary/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -66,14 +66,14 @@ export default function AccountSettings() {
             </>
           ) : (
             <div className="text-center py-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Globe className="w-7 h-7 text-primary/60" />
               </div>
               <p className="text-sm text-muted-foreground/80 mb-4">{st.sign_in_prompt}</p>
               <button
                 onClick={loginWithGoogle}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal text-sm font-medium
                   bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                   transition-colors disabled:opacity-50"
               >

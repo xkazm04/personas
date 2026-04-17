@@ -155,7 +155,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
   return (
     <div className="flex gap-4 h-full min-h-[420px]">
       {/* Left: Queue sidebar */}
-      <div className="w-[200px] flex-shrink-0 rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden flex flex-col">
+      <div className="w-[200px] flex-shrink-0 rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-primary/8">
           <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.queue_label} ({total})</span>
         </div>
@@ -213,7 +213,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
           <div className="p-5 space-y-4">
             {/* Header */}
             <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-xl ${sev.bg} border ${sev.border} flex items-center justify-center flex-shrink-0`}>
+              <div className={`w-10 h-10 rounded-modal ${sev.bg} border ${sev.border} flex items-center justify-center flex-shrink-0`}>
                 <SevIcon className={`w-5 h-5 ${sev.color}`} />
               </div>
               <div className="flex-1 min-w-0">
@@ -243,7 +243,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
 
             {/* Context — parsed into readable format */}
             {current.context_data && !hasDecisions && (
-              <div className="rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
+              <div className="rounded-card bg-secondary/30 border border-primary/10 px-3 py-2">
                 <div className="text-xs font-mono text-foreground/50 uppercase mb-1.5">{t.overview.review.technical_context}</div>
                 <ContextDataPreview raw={current.context_data} />
               </div>
@@ -251,7 +251,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
 
             {/* Multi-decision items with accept/reject */}
             {hasDecisions && (
-              <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+              <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
                   <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
@@ -283,14 +283,14 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => toggleDecision(d.id, 'accepted')}
-                            className={`p-1 rounded-lg transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-muted-foreground/30 hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
+                            className={`p-1 rounded-card transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-muted-foreground/30 hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
                             title="Accept"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => toggleDecision(d.id, 'rejected')}
-                            className={`p-1 rounded-lg transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-muted-foreground/30 hover:text-red-400/60 hover:bg-red-500/5'}`}
+                            className={`p-1 rounded-card transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-muted-foreground/30 hover:text-red-400/60 hover:bg-red-500/5'}`}
                             title="Reject"
                           >
                             <XCircle className="w-4 h-4" />
@@ -324,7 +324,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                         key={i}
                         type="button"
                         onClick={() => setSelectedAction(isSelected ? null : a)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        className={`px-3 py-1.5 rounded-card text-xs font-medium border transition-all ${
                           isSelected
                             ? 'bg-primary/15 text-primary border-primary/30 ring-1 ring-primary/20'
                             : 'bg-secondary/20 text-foreground/80 border-primary/10 hover:border-primary/20 hover:text-foreground'
@@ -345,7 +345,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={t.overview.review.notes_placeholder}
                 rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/30"
+                className="w-full px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/30"
                 autoFocus
               />
             )}
@@ -364,7 +364,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
           </button>
           <button
             onClick={() => setShowNotes(!showNotes)}
-            className="p-2.5 rounded-xl border border-primary/15 text-foreground/40 hover:text-foreground/70 hover:bg-secondary/30 transition-colors"
+            className="p-2.5 rounded-modal border border-primary/15 text-foreground/40 hover:text-foreground/70 hover:bg-secondary/30 transition-colors"
             title={t.overview.review.add_notes}
           >
             <MessageSquare className="w-4 h-4" />

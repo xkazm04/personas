@@ -400,10 +400,10 @@ export default function IdeaScannerPage() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border border-violet-500/20 bg-violet-500/5 rounded-xl p-4"
+              className="border border-violet-500/20 bg-violet-500/5 rounded-modal p-4"
             >
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center">
                   <BrainCircuit className="w-4 h-4 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -483,7 +483,7 @@ export default function IdeaScannerPage() {
             </div>
 
             {filteredIdeas.length === 0 ? (
-              <div className="text-center py-16 border border-dashed border-primary/10 rounded-xl">
+              <div className="text-center py-16 border border-dashed border-primary/10 rounded-modal">
                 <Lightbulb className="w-8 h-8 text-foreground mx-auto mb-2" />
                 <p className="text-md text-foreground">
                   {ideas.length === 0

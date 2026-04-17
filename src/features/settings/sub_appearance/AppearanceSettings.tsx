@@ -15,7 +15,7 @@ function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   return (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 animate-expand-in pointer-events-none" style={{ zIndex: 99999 }}>
       <div
-        className="w-[140px] rounded-lg overflow-hidden flex flex-col"
+        className="w-[140px] rounded-card overflow-hidden flex flex-col"
         style={{ backgroundColor: backgroundSample, border: `1px solid ${borderColor}`, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
       >
         {/* Mini UI preview */}
@@ -23,7 +23,7 @@ function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: primaryColor }} />
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
+            <div className="w-3 h-3 rounded-interactive" style={{ backgroundColor: foregroundSample, opacity: 0.2 }} />
           </div>
           <div className="flex gap-1">
             <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: foregroundSample, opacity: 0.12 }} />
@@ -65,7 +65,7 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
       onClick={onSelect}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border ${
+      className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal border ${
         active
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -111,7 +111,7 @@ export default function AppearanceSettings() {
       <ContentBody centered>
         <div className="space-y-6">
           {/* View mode toggle */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-violet-400" />
               <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.interface_mode}</h2>
@@ -120,7 +120,7 @@ export default function AppearanceSettings() {
               <Button
                 variant="ghost"
                 onClick={() => setViewMode(VIEW_MODES.SIMPLE)}
-                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                   viewMode === VIEW_MODES.SIMPLE
                     ? 'border-violet-500/30 bg-violet-500/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -136,7 +136,7 @@ export default function AppearanceSettings() {
               <Button
                 variant="ghost"
                 onClick={() => setViewMode(VIEW_MODES.FULL)}
-                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                   viewMode === VIEW_MODES.FULL
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -152,7 +152,7 @@ export default function AppearanceSettings() {
               <Button
                 variant="ghost"
                 onClick={() => setViewMode(VIEW_MODES.DEV)}
-                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                   viewMode === VIEW_MODES.DEV
                     ? 'border-amber-500/30 bg-amber-500/5'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
@@ -168,7 +168,7 @@ export default function AppearanceSettings() {
             </div>
           </div>
           {/* Dark themes */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.dark}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {darkThemes.map((t) => (
@@ -183,7 +183,7 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Light themes */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.light}</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               {lightThemes.map((t) => (
@@ -198,7 +198,7 @@ export default function AppearanceSettings() {
           </div>
 
           {/* Text sizing */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">
               <Type className="w-4 h-4 text-muted-foreground/70" />
               <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">{st.text_size}</h2>
@@ -211,7 +211,7 @@ export default function AppearanceSettings() {
                     variant="ghost"
                     key={scale.id}
                     onClick={() => setTextScale(scale.id as TextScale)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border ${
                       isActive
                         ? 'border-primary/30 bg-primary/5'
                         : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'

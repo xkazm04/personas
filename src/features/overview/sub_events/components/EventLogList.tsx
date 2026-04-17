@@ -182,7 +182,7 @@ export default function EventLogList() {
             : event.status === 'processing' ? <LoadingSpinner size="xs" />
               : <Clock className="w-3 h-3" />;
         return (
-          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {statusIcon}
             {event.status}
           </span>
@@ -211,14 +211,14 @@ export default function EventLogList() {
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
+              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.events.mock_event}
               </button>
             )}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1.5 rounded-lg text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              className="p-1.5 rounded-card text-foreground/70 hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
               title={t.common.refresh}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -237,7 +237,7 @@ export default function EventLogList() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder={t.overview.events.search_placeholder}
-              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
             />
             {searchText && (
               <button
@@ -253,14 +253,14 @@ export default function EventLogList() {
             <>
               <button
                 onClick={() => setShowSaveDialog(true)}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
                 title="Save current filters as a view"
               >
                 <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
               </button>
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-card bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
                 title="Clear all filters"
               >
                 <X className="w-3 h-3" /> {t.common.clear}
@@ -277,7 +277,7 @@ export default function EventLogList() {
               <button
                 key={view.id}
                 onClick={() => applySavedView(view)}
-                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg border transition-colors ${activeViewId === view.id
+                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-card border transition-colors ${activeViewId === view.id
                     ? 'bg-primary/15 text-primary border-primary/30'
                     : 'bg-secondary/30 text-foreground/70 border-primary/10 hover:bg-secondary/50'
                   }`}
@@ -298,7 +298,7 @@ export default function EventLogList() {
 
         {/* Save view dialog */}
         {showSaveDialog && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/40 border border-primary/10">
+          <div className="flex items-center gap-2 p-2 rounded-card bg-secondary/40 border border-primary/10">
             <input
               type="text"
               value={viewName}
@@ -311,13 +311,13 @@ export default function EventLogList() {
             <button
               onClick={handleSaveView}
               disabled={!viewName.trim()}
-              className="px-3 py-1 text-xs rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 text-xs rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
               {t.common.save}
             </button>
             <button
               onClick={() => { setShowSaveDialog(false); setViewName(''); }}
-              className="px-2 py-1 text-xs rounded-lg text-foreground/60 hover:text-foreground transition-colors"
+              className="px-2 py-1 text-xs rounded-card text-foreground/60 hover:text-foreground transition-colors"
             >
               {t.common.cancel}
             </button>

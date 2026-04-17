@@ -35,7 +35,7 @@ export function RecommendedCarousel({
             <button
               key={tmpl.id}
               onClick={() => onSelectTemplate(tmpl)}
-              className="flex-shrink-0 w-[220px] p-3 rounded-xl bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/25 hover:bg-amber-500/10 transition-all text-left group/rec"
+              className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/25 hover:bg-amber-500/10 transition-all text-left group/rec"
             >
               <div className="text-sm font-medium text-foreground/80 group-hover/rec:text-amber-300 truncate">
                 {tmpl.test_case_name}

@@ -164,7 +164,7 @@ export default function ScheduleTimeline() {
             {schedulerStats && (
               <button
                 onClick={handleToggleScheduler}
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-card border transition-colors ${
                   schedulerStats.running
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
@@ -187,19 +187,19 @@ export default function ScheduleTimeline() {
 
             {/* Mock seed (dev only) */}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
                 <Plus className="w-3.5 h-3.5" /> {t.schedules.mock_schedule}
               </button>
             )}
 
             {/* Stats badges */}
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Zap className="w-3 h-3" />
                 {tx(t.schedules.active_count, { count: activeCount })}
               </span>
               {pausedCount > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/5 text-muted-foreground/50 border border-primary/10">
+                <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-muted-foreground/50 border border-primary/10">
                   <Pause className="w-3 h-3" />
                   {tx(t.schedules.paused_count, { count: pausedCount })}
                 </span>
@@ -213,7 +213,7 @@ export default function ScheduleTimeline() {
             <button
               onClick={() => fetchCronAgents()}
               disabled={loading}
-              className="p-2 rounded-lg border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-muted-foreground/70 transition-all disabled:opacity-40"
+              className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-muted-foreground/70 transition-all disabled:opacity-40"
               title="Refresh schedules"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -228,7 +228,7 @@ export default function ScheduleTimeline() {
         {filterPersonaId && (() => {
           const agent = cronAgents.find((a) => a.persona_id === filterPersonaId);
           return agent ? (
-            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-blue-500/[0.06] border border-blue-500/15 text-xs text-blue-400/90">
+            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 text-xs text-blue-400/90">
               <Filter className="w-3.5 h-3.5 shrink-0" />
               <span>
                 Showing schedules for <span className="font-semibold">{agent.persona_name}</span>
@@ -328,7 +328,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
       ref={tablistRef}
       role="tablist"
       aria-label="Schedule view"
-      className="flex rounded-lg border border-primary/15 overflow-hidden bg-secondary/20"
+      className="flex rounded-card border border-primary/15 overflow-hidden bg-secondary/20"
       onKeyDown={handleKeyDown}
     >
       {VIEW_OPTIONS.map((opt) => {

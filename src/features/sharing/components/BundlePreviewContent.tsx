@@ -27,7 +27,7 @@ export function BundlePreviewContent({
   return (
     <div className="space-y-3">
       {/* Signer info */}
-      <div className={`rounded-lg border p-3 space-y-2 ${
+      <div className={`rounded-card border p-3 space-y-2 ${
         !preview.signature_valid
           ? 'border-red-500/30 bg-red-500/5'
           : 'border-border bg-secondary/10'
@@ -72,7 +72,7 @@ export function BundlePreviewContent({
 
       {/* Danger: signature mismatch on a trusted peer — possible tampering */}
       {!preview.signature_valid && preview.signer_trusted && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3 space-y-2">
+        <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-red-400 space-y-1">
@@ -96,7 +96,7 @@ export function BundlePreviewContent({
 
       {/* Warning: unknown signer — signature cannot be verified */}
       {!preview.signature_valid && !preview.signer_trusted && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3 space-y-2">
+        <div className="rounded-card border border-red-500/30 bg-red-500/5 p-3 space-y-2">
           <div className="flex items-start gap-2">
             <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-red-400 space-y-1">
@@ -132,7 +132,7 @@ export function BundlePreviewContent({
 
       {/* Conflict options */}
       {hasConflicts && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+        <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
           <div className="text-xs text-amber-400 font-medium">{st.naming_conflicts_detected}</div>
           <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
             <input
@@ -150,7 +150,7 @@ export function BundlePreviewContent({
                 value={renamePrefix}
                 onChange={(e) => setRenamePrefix(e.target.value)}
                 placeholder={st.rename_prefix_placeholder}
-                className="w-full px-2 py-1 text-xs rounded-lg border border-border bg-background focus-ring"
+                className="w-full px-2 py-1 text-xs rounded-card border border-border bg-background focus-ring"
               />
             </div>
           )}
@@ -164,7 +164,7 @@ function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) 
   const { t: _t } = useTranslation();
   const st = _t.sharing;
   return (
-    <div className={`rounded-lg border p-2 flex items-center gap-2 ${
+    <div className={`rounded-card border p-2 flex items-center gap-2 ${
       resource.conflict
         ? 'border-amber-500/20 bg-amber-500/5'
         : 'border-border bg-secondary/10'

@@ -161,7 +161,7 @@ export function PeerDetailDrawer({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -182,7 +182,7 @@ export function PeerDetailDrawer({
             {isConnected ? (
               <button
                 onClick={() => onDisconnect(peer.peer_id)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
                 <NodeDisconnectedIcon className="w-3.5 h-3.5" />
                 {st.disconnect}
@@ -190,7 +190,7 @@ export function PeerDetailDrawer({
             ) : (
               <button
                 onClick={() => onConnect(peer.peer_id)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
                 <NodeConnectedIcon className="w-3.5 h-3.5" />
                 {st.connect}
@@ -201,7 +201,7 @@ export function PeerDetailDrawer({
           {/* Peer info */}
           <div className="space-y-2">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{st.peer_info}</h4>
-            <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2 text-sm">
+            <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{st.trust_label}</span>
                 <span className={isTrusted ? 'text-emerald-400' : 'text-muted-foreground'}>
@@ -260,7 +260,7 @@ export function PeerDetailDrawer({
                   onClick={handleSync}
                   disabled={syncing}
                   title={st.sync_manifest}
-                  className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  className="p-1 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {syncing ? (
                     <LoadingSpinner size="sm" />
@@ -271,7 +271,7 @@ export function PeerDetailDrawer({
               </div>
 
               {manifest.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                <div className="rounded-card border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
                   {st.no_shared_resources}
                 </div>
               ) : (
@@ -293,7 +293,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
   const parsedTags: string[] = entry.tags ?? [];
 
   return (
-    <div className="rounded-lg border border-border bg-secondary/10 p-2.5 flex items-center gap-2">
+    <div className="rounded-card border border-border bg-secondary/10 p-2.5 flex items-center gap-2">
       <Package className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

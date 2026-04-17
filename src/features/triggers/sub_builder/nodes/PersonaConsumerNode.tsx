@@ -18,7 +18,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
   return (
     <div
       className={`
-        relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
+        relative flex items-center gap-2.5 px-3 py-2.5 rounded-modal
         bg-card backdrop-blur border-2
         ${isConnectTarget
           ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.25)]'

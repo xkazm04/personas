@@ -11,7 +11,7 @@ export function HealthcheckResultDisplay({ success, message }: { success: boolea
   if (success) {
     return (
       <div
-        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-xl text-sm bg-status-success/10 border border-status-success/20 text-status-success"
+        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-modal text-sm bg-status-success/10 border border-status-success/20 text-status-success"
       >
         <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
         <span>{message}</span>
@@ -21,7 +21,7 @@ export function HealthcheckResultDisplay({ success, message }: { success: boolea
 
   return (
     <div
-      className="animate-fade-in mt-2 rounded-xl bg-status-error/10 border border-status-error/20 overflow-hidden"
+      className="animate-fade-in mt-2 rounded-modal bg-status-error/10 border border-status-error/20 overflow-hidden"
     >
       <div className="flex items-start gap-2 px-3 py-2">
         <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-status-error" />

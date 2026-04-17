@@ -42,7 +42,7 @@ export function ProviderSection({
         />
         <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            className="w-8 h-8 rounded-card flex items-center justify-center"
             style={{ backgroundColor: `${provider.color}15` }}
           >
             <Globe className="w-4 h-4" style={{ color: provider.color }} />
@@ -125,7 +125,7 @@ export function ProviderSection({
           <ProvisionProgress states={ws.provisionStates} />
 
           {isDone && (
-            <div className="flex items-center gap-2 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+            <div className="flex items-center gap-2 p-3 rounded-modal border border-emerald-500/20 bg-emerald-500/5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <p className="text-sm text-emerald-400">
                 {ws.provisionStates.filter((s) => s.status === 'created').length} credential{ws.provisionStates.filter((s) => s.status === 'created').length !== 1 ? 's' : ''} created from a single login.
@@ -134,7 +134,7 @@ export function ProviderSection({
           )}
 
           {isError && ws.error && (
-            <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+            <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
               <p className="text-sm text-red-400">{ws.error}</p>
             </div>
@@ -147,7 +147,7 @@ export function ProviderSection({
                 variant="secondary"
                 size="md"
                 block
-                className="py-2 rounded-xl"
+                className="py-2 rounded-modal"
               >
                 Done
               </Button>

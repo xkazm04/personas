@@ -103,7 +103,7 @@ export function BuildReviewPanel({
           <button
             type="button"
             onClick={onPromote}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             {t.agents.build_review.promote_agent}
@@ -113,7 +113,7 @@ export function BuildReviewPanel({
             type="button"
             onClick={onStartTest}
             disabled={!allReady || isTesting}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 disabled:opacity-40 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 disabled:opacity-40 transition-colors"
           >
             {isTesting ? t.agents.build_review.testing : t.agents.build_review.test_agent}
           </button>

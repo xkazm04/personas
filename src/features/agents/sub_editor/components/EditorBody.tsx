@@ -139,7 +139,7 @@ export function EditorBody() {
       <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
       {saveError && (
-        <div className="animate-fade-slide-in mx-6 my-2 rounded-xl px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
+        <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
           <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
           <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>
         </div>

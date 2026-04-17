@@ -125,7 +125,7 @@ export default function ConfigResolutionPanel() {
       </div>
 
       {/* Table */}
-      <div className="border border-primary/10 rounded-lg overflow-hidden bg-secondary/10">
+      <div className="border border-primary/10 rounded-card overflow-hidden bg-secondary/10">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">

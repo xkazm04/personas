@@ -77,7 +77,7 @@ export function BatchSummary({ items, doneCount, failedCount, skippedCount, onDo
         {items.map((item) => (
           <div
             key={item.connector.id}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-secondary/20"
+            className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20"
           >
             <StatusIcon status={item.status} />
             <ConnectorLabel connector={item.connector} />

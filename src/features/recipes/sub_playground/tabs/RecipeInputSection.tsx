@@ -71,7 +71,7 @@ export function RecipeInputSection({
           {recipe.sample_inputs && fields.length > 0 && (
             <button
               onClick={handleLoadMockValues}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+              className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
             >
               <Download className="w-3 h-3" /> {t.recipes.load_mock}
             </button>
@@ -79,7 +79,7 @@ export function RecipeInputSection({
           {fields.length > 0 && (
             <button
               onClick={handleSaveMockValues}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
             >
               {mockSaved ? (
                 <><Check className="w-3 h-3 text-emerald-400" /> {t.recipes.saved}</>
@@ -91,7 +91,7 @@ export function RecipeInputSection({
           <button
             onClick={onExecute}
             disabled={running || executionPhase === 'executing'}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             {running || executionPhase === 'executing' ? (
               <RecipePageFlipLoader className="text-emerald-400" />
@@ -121,7 +121,7 @@ export function RecipeInputSection({
                     <select
                       value={fieldValues[field.key] ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value)}
-                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50"
+                      className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50"
                     >
                       {field.options.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
@@ -133,7 +133,7 @@ export function RecipeInputSection({
                         <button
                           key={v}
                           onClick={() => onFieldChange(field.key, v)}
-                          className={`rounded-xl px-3 py-1 text-sm border transition-colors ${
+                          className={`rounded-modal px-3 py-1 text-sm border transition-colors ${
                             fieldValues[field.key] === v
                               ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
                               : 'border-border/60 text-muted-foreground hover:border-border'
@@ -148,7 +148,7 @@ export function RecipeInputSection({
                       type={field.type === 'number' ? 'number' : 'text'}
                       value={fieldValues[field.key] ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value)}
-                      className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50"
+                      className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50"
                     />
                   )}
                 </div>
@@ -160,7 +160,7 @@ export function RecipeInputSection({
               onChange={(e) => onFreeInputChange(e.target.value)}
               placeholder={t.recipes.free_input_placeholder}
               rows={3}
-              className="w-full rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
+              className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
             />
           )}
         </div>
@@ -168,7 +168,7 @@ export function RecipeInputSection({
         {/* Right: Saved Mock Values */}
         <div>
           <p className="text-sm font-medium text-muted-foreground/70 mb-2">{t.recipes.saved_mock_values}</p>
-          <div className="rounded-lg border border-border/40 bg-card/30 p-3 max-h-60 overflow-y-auto">
+          <div className="rounded-card border border-border/40 bg-card/30 p-3 max-h-60 overflow-y-auto">
             {mockValues ? (
               <div className="space-y-1.5">
                 {Object.entries(mockValues).map(([key, value]) => (

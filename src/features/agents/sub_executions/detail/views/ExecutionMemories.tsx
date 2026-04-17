@@ -54,7 +54,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
           <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {
               return (
-                <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-xl">
+                <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-modal">
                   <div className="flex items-center gap-2 mb-1">
                     <CategoryChip category={mem.category} />
                     <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>

@@ -50,7 +50,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   if (!trace || trace.spans.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
         <p className="typo-body text-muted-foreground/80">{e.no_pipeline_trace}</p>
@@ -96,7 +96,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       <PipelineSummary trace={trace} execution={execution} />
 
       {/* Waterfall chart */}
-      <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
+      <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
         {/* Time axis header */}
         <div className="grid grid-cols-[180px_1fr_70px] gap-2 px-3 py-1.5 border-b border-primary/10 bg-secondary/40">
           <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
@@ -174,7 +174,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
               const config = STAGE_COLORS[sk];
               const meta = STAGE_META[sk];
               return (
-                <div key={entry.span_type} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
+                <div key={entry.span_type} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
                       {meta.label}

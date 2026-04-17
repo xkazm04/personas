@@ -134,7 +134,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={onTogglePlay}
           aria-label={playing ? 'Pause replay' : 'Play replay'}
-          className="flex items-center justify-center w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all active:scale-[0.93]"
+          className="flex items-center justify-center w-7 h-7 rounded-card bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all active:scale-[0.93]"
         >
           {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
         </button>
@@ -142,7 +142,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={() => onSeek(0)}
           aria-label={t.overview.realtime_page.reset_to_start}
-          className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
+          className="flex items-center justify-center w-7 h-7 rounded-card bg-primary/5 border border-primary/10 text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/10 transition-all active:scale-[0.93]"
           title={t.overview.realtime_page.reset_to_start}
         >
           <SkipBack className="w-3.5 h-3.5" />
@@ -153,7 +153,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={cycleSpeed}
           aria-label={t.overview.realtime_page.cycle_speed}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]"
+          className="flex items-center gap-1 px-2 py-1 rounded-card bg-purple-500/8 border border-purple-500/15 text-purple-300/80 hover:bg-purple-500/15 transition-all text-sm font-bold tracking-wide active:scale-[0.97]"
           title={t.overview.realtime_page.cycle_speed}
         >
           <Gauge className="w-3 h-3" />
@@ -170,7 +170,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/5 border border-primary/8">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-primary/5 border border-primary/8">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60" />
           <span className="text-sm font-bold text-foreground/60">{emittedCount}</span>
           <span className="text-sm text-muted-foreground/40">/</span>
@@ -178,7 +178,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
           <span className="text-sm text-muted-foreground/60 ml-0.5">events</span>
         </div>
 
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider">
           <History className="w-3 h-3" />
           {range === '1d' ? '24H' : '7D'}
         </div>
@@ -186,7 +186,7 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
         <button
           onClick={onExitReplay}
           aria-label={t.overview.realtime_page.exit_replay}
-          className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]"
+          className="flex items-center justify-center w-7 h-7 rounded-card bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]"
           title={t.overview.realtime_page.exit_replay}
         >
           <X className="w-3.5 h-3.5" />

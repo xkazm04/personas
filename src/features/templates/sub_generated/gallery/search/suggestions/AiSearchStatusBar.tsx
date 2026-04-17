@@ -25,7 +25,7 @@ export function AiSearchStatusBar({
 
   return (
     <div className="px-4 pb-2">
-      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl max-w-2xl mx-auto ${
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-modal max-w-2xl mx-auto ${
         aiSearchLoading
           ? 'bg-indigo-500/8 border border-indigo-500/15'
           : aiSearchActive
@@ -61,7 +61,7 @@ export function AiSearchStatusBar({
       </div>
       {/* Collapsible CLI log panel */}
       {showCliLog && aiCliLog && aiCliLog.length > 0 && (
-        <div className="mt-1.5 max-w-2xl mx-auto rounded-lg bg-black/40 border border-primary/10 overflow-hidden">
+        <div className="mt-1.5 max-w-2xl mx-auto rounded-card bg-black/40 border border-primary/10 overflow-hidden">
           <div className="max-h-48 overflow-y-auto p-2 font-mono text-sm leading-relaxed text-muted-foreground/60 space-y-0.5">
             {aiCliLog.map((line, i) => (
               <div key={i} className="whitespace-pre-wrap break-all">

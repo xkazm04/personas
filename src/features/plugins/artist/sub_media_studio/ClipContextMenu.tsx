@@ -47,7 +47,7 @@ export default function ClipContextMenu({
   return (
     <div
       ref={ref}
-      className="fixed z-[100] min-w-[140px] py-1 bg-background border border-primary/15 rounded-xl shadow-elevation-4 animate-fade-slide-in"
+      className="fixed z-[100] min-w-[140px] py-1 bg-background border border-primary/15 rounded-modal shadow-elevation-4 animate-fade-slide-in"
       style={{ left: x, top: y }}
     >
       {items.map((item) => {

@@ -42,7 +42,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
   return (
     <div className="relative group/health">
       <span className="sr-only">{srLabel}</span>
-      <div className={`rounded-lg ${ringClass}`}>
+      <div className={`rounded-card ${ringClass}`}>
         <PersonaAvatar icon={persona.icon} name={persona.name} color={persona.color} size="md" fallbackStyle="bot" />
       </div>
       {healthStatus !== 'dormant' && (
@@ -54,7 +54,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
         </div>
       )}
       {statuses && statuses.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-elevation-3 z-20 whitespace-nowrap">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-card bg-popover border border-primary/20 shadow-elevation-3 z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
             <StatusShape
               key={si}

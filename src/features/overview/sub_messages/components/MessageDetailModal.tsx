@@ -132,7 +132,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
                 confirmTimerRef.current = setTimeout(() => setConfirmingDelete(false), 3000);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" /> {t.common.delete}
             </button>
@@ -149,7 +149,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
         {/* Improve from feedback */}
         <div className="border-t border-primary/10 pt-4">
           {improving === 'sent' ? (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span className="text-sm text-emerald-400 font-medium">{t.overview.messages_view.improvement_started}</span>
             </div>
@@ -157,7 +157,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
             <button
               type="button"
               onClick={() => setShowFeedback(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 transition-all"
             >
               <Wand2 className="w-3.5 h-3.5" />
               {t.overview.messages_view.improve_agent}
@@ -171,14 +171,14 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 placeholder={t.overview.messages_view.improve_placeholder}
                 rows={3}
                 autoFocus
-                className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none outline-none focus-visible:border-primary/30 transition-colors"
+                className="w-full px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none outline-none focus-visible:border-primary/30 transition-colors"
               />
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleImprove}
                   disabled={!feedbackText.trim() || improving === 'loading'}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-primary/15 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors"
                 >
                   {improving === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                   {improving === 'loading' ? t.overview.messages_view.starting : t.overview.messages_view.submit_improvement}
@@ -210,7 +210,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
                 const statusCfg = deliveryStatusConfig[d.status] ?? defaultStatus;
                 const StatusIcon = statusCfg.icon;
                 return (
-                  <div key={d.id} className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl border ${statusCfg.bgColor} ${statusCfg.borderColor}`}>
+                  <div key={d.id} className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-modal border ${statusCfg.bgColor} ${statusCfg.borderColor}`}>
                     <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
                     <span className="typo-heading text-foreground/90 min-w-[60px]">{channelLabels[d.channel_type] ?? d.channel_type}</span>
                     <span className={`typo-heading ${statusCfg.color}`}>{statusCfg.label}</span>

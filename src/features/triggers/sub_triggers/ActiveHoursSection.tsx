@@ -159,7 +159,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           key={d.key}
                           onClick={() => toggleDay(d.key)}
                           title={d.label}
-                          className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                          className={`w-7 h-7 rounded-card text-xs font-medium transition-colors ${
                             aw.days.includes(d.key)
                               ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
                               : 'bg-secondary/30 text-muted-foreground/50 border border-primary/5 hover:border-primary/15'
@@ -172,7 +172,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => applyPreset(WEEKDAY_PRESET)}
-                        className={`px-2 py-0.5 text-xs rounded-md transition-colors ${
+                        className={`px-2 py-0.5 text-xs rounded-input transition-colors ${
                           isWeekdays
                             ? 'bg-sky-500/15 text-sky-400'
                             : 'text-muted-foreground/50 hover:text-muted-foreground/70 bg-secondary/20'
@@ -182,7 +182,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                       </button>
                       <button
                         onClick={() => applyPreset(EVERYDAY_PRESET)}
-                        className={`px-2 py-0.5 text-xs rounded-md transition-colors ${
+                        className={`px-2 py-0.5 text-xs rounded-input transition-colors ${
                           isEveryday
                             ? 'bg-sky-500/15 text-sky-400'
                             : 'text-muted-foreground/50 hover:text-muted-foreground/70 bg-secondary/20'
@@ -202,7 +202,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const [h, m] = e.target.value.split(':').map(Number);
                         update({ start_hour: h, start_minute: m });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring"
                     />
                     <span className="text-muted-foreground/50 text-xs">to</span>
                     <input
@@ -212,7 +212,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const [h, m] = e.target.value.split(':').map(Number);
                         update({ end_hour: h, end_minute: m });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring"
                     />
                   </div>
 
@@ -227,7 +227,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         const val = e.target.value.trim();
                         update({ timezone: val || undefined });
                       }}
-                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring w-48"
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-card text-foreground/80 focus-ring w-48"
                     />
                     <span className="text-muted-foreground/40 text-xs">
                       {aw.timezone ? aw.timezone : `System: ${resolvedTimezoneLabel()}`}

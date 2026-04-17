@@ -43,7 +43,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       : 'bg-secondary/30 border-border/30';
 
   return (
-    <div className={`rounded-xl border p-2.5 space-y-2 ${bgColor}`}>
+    <div className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
         <span className={`text-sm font-medium ${color}`}>

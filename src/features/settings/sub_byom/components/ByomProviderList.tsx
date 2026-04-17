@@ -73,7 +73,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
   return (
     <div className="space-y-4">
       {/* Allowed providers */}
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.allowed_providers} />
         <p className="text-sm text-muted-foreground/60">
           {s.allowed_providers_hint}
@@ -86,7 +86,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               <div key={prov.id} className="flex flex-col gap-1.5">
                 <button
                   onClick={() => toggleProvider(prov.id, 'allowed')}
-                  className={`p-3 rounded-lg border text-left text-sm transition-all ${
+                  className={`p-3 rounded-card border text-left text-sm transition-all ${
                     isAllowed
                       ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
                       : 'border-primary/10 text-muted-foreground hover:border-primary/20'
@@ -107,7 +107,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       </div>
 
       {/* Blocked providers */}
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.blocked_providers} />
         <p className="text-sm text-muted-foreground/60">
           {s.blocked_providers_hint}
@@ -119,7 +119,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               <button
                 key={prov.id}
                 onClick={() => toggleProvider(prov.id, 'blocked')}
-                className={`p-3 rounded-lg border text-left text-sm transition-all ${
+                className={`p-3 rounded-card border text-left text-sm transition-all ${
                   isBlocked
                     ? 'border-red-500/30 bg-red-500/10 text-foreground'
                     : 'border-primary/10 text-muted-foreground hover:border-primary/20'
@@ -135,7 +135,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
 
       {/* Usage stats with sparkline trends */}
       {usageStats.length > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
           <div className="flex items-baseline gap-2">
             <SectionHeading title={s.provider_usage} />
             <span className="text-xs text-muted-foreground/40">{s.usage_trends}</span>
@@ -144,7 +144,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
             {usageStats.map((stat) => {
               const trends = trendsByEngine.get(stat.engine_kind);
               return (
-                <div key={stat.engine_kind} className="p-3 rounded-lg border border-primary/10 bg-secondary/20">
+                <div key={stat.engine_kind} className="p-3 rounded-card border border-primary/10 bg-secondary/20">
                   <div className="text-sm font-medium text-foreground mb-2">
                     {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
                   </div>
@@ -214,7 +214,7 @@ function TestConnectionButton({
           e.stopPropagation();
           onTest(providerId);
         }}
-        className="text-xs px-2.5 py-1 rounded-md border border-primary/15 text-muted-foreground
+        className="text-xs px-2.5 py-1 rounded-input border border-primary/15 text-muted-foreground
           hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
       >
         {state === 'testing' ? (

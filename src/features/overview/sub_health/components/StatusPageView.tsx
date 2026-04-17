@@ -73,9 +73,9 @@ export function StatusPageView() {
       )}
 
       {/* Global status header */}
-      <div className="flex items-center justify-between p-4 rounded-xl border border-primary/10 bg-secondary/10">
+      <div className="flex items-center justify-between p-4 rounded-modal border border-primary/10 bg-secondary/10">
         <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${globalBadge.bg}`}>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-card border ${globalBadge.bg}`}>
             <globalBadge.Icon className={`w-4 h-4 ${globalBadge.text}`} />
             <span className={`typo-heading ${globalBadge.text}`}>{globalBadge.label}</span>
           </div>
@@ -96,7 +96,7 @@ export function StatusPageView() {
           <button
             onClick={() => void refresh()}
             disabled={loading}
-            className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
             title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -143,7 +143,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
   const TrendIcon = TREND_ICON[entry.trend];
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden transition-colors hover:bg-secondary/10">
+    <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden transition-colors hover:bg-secondary/10">
       {/* Main row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -171,7 +171,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
         <TrendIcon className={`w-3.5 h-3.5 flex-shrink-0 ${TREND_COLOR[entry.trend]}`} />
 
         {/* Health badge */}
-        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${badge.bg} flex-shrink-0`}>
+        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-input border ${badge.bg} flex-shrink-0`}>
           <badge.Icon className={`w-3 h-3 ${badge.text}`} />
           <span className={`text-xs font-medium ${badge.text}`}>{entry.score}</span>
         </div>
@@ -251,7 +251,7 @@ function ScoreBreakdown({ label, score, detail }: { label: string; score: number
 function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className={`w-3 h-1.5 rounded-sm ${color}`} />
+      <span className={`w-3 h-1.5 rounded-interactive ${color}`} />
       {label}
     </span>
   );

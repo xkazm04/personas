@@ -135,18 +135,18 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <span className="text-sm font-medium text-violet-400">{review.persona_name || t.overview.review.agent}</span>
               <span className="text-sm text-foreground/60">{formatRelativeTime(review.created_at)}</span>
             </div>
-            <div className="rounded-xl bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
+            <div className="rounded-modal bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{review.content}</p>
             </div>
             {contextData && (
-              <div className="mt-2 rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
+              <div className="mt-2 rounded-card bg-secondary/30 border border-primary/10 px-3 py-2">
                 <div className="text-xs font-mono text-foreground/50 uppercase mb-1">{t.overview.review.context_label}</div>
                 <ContextDataPreview raw={contextData} />
               </div>
             )}
             {/* Multi-decision items */}
             {hasDecisions && isPending && (
-              <div className="mt-3 rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+              <div className="mt-3 rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
                   <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
@@ -187,14 +187,14 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={() => toggleDecision(d.id, 'accepted')}
-                            className={`p-1 rounded-lg transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-muted-foreground/30 hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
+                            className={`p-1 rounded-card transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-muted-foreground/30 hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
                             title="Accept"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => toggleDecision(d.id, 'rejected')}
-                            className={`p-1 rounded-lg transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-muted-foreground/30 hover:text-red-400/60 hover:bg-red-500/5'}`}
+                            className={`p-1 rounded-card transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-muted-foreground/30 hover:text-red-400/60 hover:bg-red-500/5'}`}
                             title="Reject"
                           >
                             <XCircle className="w-4 h-4" />
@@ -217,7 +217,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {suggestedActions.length > 0 && isPending && !hasDecisions && (
               <div className="mt-2 flex flex-col gap-1">
                 {suggestedActions.map((action, i) => (
-                  <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-amber-500/[0.06] text-amber-300 border border-amber-500/15 hover:bg-amber-500/[0.12] hover:border-amber-500/25 transition-colors text-left">
+                  <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-card text-sm bg-amber-500/[0.06] text-amber-300 border border-amber-500/15 hover:bg-amber-500/[0.12] hover:border-amber-500/25 transition-colors text-left">
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-amber-500/15 text-amber-400 text-xs font-mono font-bold flex-shrink-0">{i + 1}</span>
                     {action}
                   </button>
@@ -243,7 +243,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   <span className={`text-sm font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
                   <span className="text-sm text-foreground/60">{formatRelativeTime(msg.created_at)}</span>
                 </div>
-                <div className={`rounded-xl px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
+                <div className={`rounded-modal px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         })}
 
         {!isPending && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10">
             <Check className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-sm text-foreground/80">
               Review {review.status} {review.resolved_at ? `on ${new Date(review.resolved_at).toLocaleString()}` : ''}
@@ -272,11 +272,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               onKeyDown={isCloud ? undefined : handleKeyDown}
               placeholder={isCloud ? t.overview.review.cloud_reply_placeholder : t.overview.review.reply_placeholder}
               rows={1}
-              className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-xl px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus-ring focus-visible:border-primary/30 max-h-24"
+              className="flex-1 text-sm bg-background/50 border border-primary/15 rounded-modal px-3 py-2 text-foreground/80 placeholder:text-muted-foreground/50 resize-none focus-ring focus-visible:border-primary/30 max-h-24"
               style={{ minHeight: '36px' }}
             />
             {!isCloud && (
-              <button onClick={handleSend} disabled={!input.trim() || isSending} className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0" title={t.overview.review.send_message}>
+              <button onClick={handleSend} disabled={!input.trim() || isSending} className="p-2 rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0" title={t.overview.review.send_message}>
                 <Send className="w-4 h-4" />
               </button>
             )}
@@ -295,7 +295,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('approved', notes);
-              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <Check className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
               </button>
               <button onClick={() => {
@@ -308,7 +308,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('rejected', notes);
-              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <X className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : t.overview.review.reject}
               </button>
             </div>

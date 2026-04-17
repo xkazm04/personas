@@ -62,7 +62,7 @@ export function NotificationChannelCard({
 
   return (
     <div
-      className={`border rounded-xl p-2.5 ${TOOLS_INNER_SPACE} transition-colors ${
+      className={`border rounded-modal p-2.5 ${TOOLS_INNER_SPACE} transition-colors ${
         enabled ? `bg-secondary/30 ${TOOLS_BORDER}` : `bg-secondary/10 ${TOOLS_BORDER} opacity-60`
       }`}
     >
@@ -95,7 +95,7 @@ export function NotificationChannelCard({
               value={config[field.key] || ''}
               onChange={(e) => onConfigChange(field.key, e.target.value)}
               placeholder={field.placeholder}
-              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/80 focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
+              className={`w-full px-2.5 py-1.5 bg-background/50 border rounded-modal text-sm text-foreground placeholder:text-muted-foreground/80 focus-ring ${isEmpty ? 'border-red-500/50' : TOOLS_BORDER}`}
             />
           </div>
         );
@@ -121,7 +121,7 @@ export function NotificationChannelCard({
         <button
           onClick={handleTestNotification}
           disabled={!enabled || testStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-modal text-sm font-medium transition-all ${
             testStatus === 'success'
               ? 'bg-emerald-500/15 border border-emerald-500/25 text-emerald-300'
               : testStatus === 'error'

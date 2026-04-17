@@ -20,7 +20,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden border"
+      className="rounded-modal overflow-hidden border"
       style={{ borderColor: border, color: fg }}
     >
       <div
@@ -36,9 +36,9 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
           className="w-12 flex-shrink-0 flex flex-col items-center gap-2 py-3 border-r"
           style={{ backgroundColor: secondary, borderColor: border }}
         >
-          <div className="w-5 h-5 rounded-md" style={{ backgroundColor: primary, opacity: 0.9 }} />
-          <div className="w-5 h-5 rounded-md" style={{ backgroundColor: fg, opacity: 0.08 }} />
-          <div className="w-5 h-5 rounded-md" style={{ backgroundColor: fg, opacity: 0.08 }} />
+          <div className="w-5 h-5 rounded-input" style={{ backgroundColor: primary, opacity: 0.9 }} />
+          <div className="w-5 h-5 rounded-input" style={{ backgroundColor: fg, opacity: 0.08 }} />
+          <div className="w-5 h-5 rounded-input" style={{ backgroundColor: fg, opacity: 0.08 }} />
         </div>
 
         {/* Main area */}
@@ -50,7 +50,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
               <span className="text-xs font-semibold" style={{ color: fg }}>{t.settings.appearance.preview_dashboard}</span>
             </div>
             <div
-              className="px-2 py-0.5 rounded-md text-[9px] font-medium"
+              className="px-2 py-0.5 rounded-input text-[9px] font-medium"
               style={{ backgroundColor: btnPrimary, color: '#fff' }}
             >
               {t.settings.appearance.preview_action}
@@ -59,7 +59,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
 
           {/* Card mock */}
           <div
-            className="rounded-lg p-2.5 space-y-1.5 border"
+            className="rounded-card p-2.5 space-y-1.5 border"
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
           >
             <div className="flex items-center gap-1.5">

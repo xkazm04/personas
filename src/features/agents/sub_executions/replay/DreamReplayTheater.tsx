@@ -145,7 +145,7 @@ export function DreamReplayTheater({ execution }: DreamReplayTheaterProps) {
   const { currentFrame, totalFrames, currentFrameIndex } = state;
 
   return (
-    <div className="flex flex-col rounded-xl border border-violet-500/20 bg-background/60 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col rounded-modal border border-violet-500/20 bg-background/60 overflow-hidden backdrop-blur-sm">
       {/* === HEADER === */}
       <div className="px-4 py-2.5 border-b border-violet-500/15 bg-violet-500/5">
         <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ function SpanTreePanel({
             <button
               key={frame.index}
               onClick={() => onJumpToFrame(frame.index)}
-              className={`w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-lg transition-all text-[11px] font-mono ${
+              className={`w-full text-left flex items-center gap-1 px-1.5 py-1 rounded-card transition-all text-[11px] font-mono ${
                 isCurrent
                   ? 'bg-violet-500/15 border border-violet-500/25 text-foreground/90'
                   : 'hover:bg-secondary/30 text-muted-foreground/60 border border-transparent'
@@ -459,7 +459,7 @@ function FrameStatePanel({
           <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider mb-1">
             Metadata
           </div>
-          <pre className="text-[10px] font-mono text-muted-foreground/60 bg-secondary/20 rounded-lg p-2 overflow-x-auto max-h-32 overflow-y-auto">
+          <pre className="text-[10px] font-mono text-muted-foreground/60 bg-secondary/20 rounded-card p-2 overflow-x-auto max-h-32 overflow-y-auto">
             {String(JSON.stringify(frame.metadata, null, 2))}
           </pre>
         </div>
@@ -486,7 +486,7 @@ function ActiveSpansPanel({ activeSpans, currentMs }: { activeSpans: TraceSpan[]
             const elapsed = currentMs - span.start_ms;
 
             return (
-              <div key={span.span_id} className="rounded-lg border border-blue-400/20 bg-blue-500/5 px-2.5 py-1.5">
+              <div key={span.span_id} className="rounded-card border border-blue-400/20 bg-blue-500/5 px-2.5 py-1.5">
                 <div className="flex items-center gap-2">
                   <Icon className={`w-3 h-3 shrink-0 ${color}`} />
                   <span className="typo-code text-foreground/80 truncate">{span.name}</span>
@@ -531,7 +531,7 @@ function CostPanel({
       <CostBar label="Input" value={frame.cumulativeInputTokens.toLocaleString()} total={session.totalInputTokens.toLocaleString()} pct={inputPct} color="blue" />
       <CostBar label="Output" value={frame.cumulativeOutputTokens.toLocaleString()} total={session.totalOutputTokens.toLocaleString()} pct={outputPct} color="emerald" />
 
-      <div className="mt-4 p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/15">
+      <div className="mt-4 p-2.5 rounded-card bg-violet-500/5 border border-violet-500/15">
         <div className="text-[10px] font-mono text-violet-400/60 mb-1">Dream Replay Cost</div>
         <div className="typo-heading-lg font-mono text-violet-400">$0.0000</div>
         <div className="text-[10px] text-muted-foreground/40 mt-1">
@@ -566,7 +566,7 @@ function MiniSpanCard({ span, variant }: { span: TraceSpan; variant: 'active' | 
   const color = config?.color ?? 'text-muted-foreground/40';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-mono ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-[11px] font-mono ${
       variant === 'active'
         ? 'bg-blue-500/8 border border-blue-400/20'
         : 'bg-secondary/15 border border-primary/5'
@@ -602,7 +602,7 @@ function PanelTab({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-body transition-all${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body transition-all${
         active
           ? 'bg-violet-500/15 text-violet-300 border border-violet-500/20'
           : 'text-muted-foreground/50 hover:text-muted-foreground/80 border border-transparent hover:border-violet-500/10'

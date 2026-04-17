@@ -16,14 +16,14 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
   const isDone = dryRunState.currentStep >= dryRunState.totalSteps && dryRunState.totalSteps > 0;
 
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 bg-card border border-primary/15 rounded-xl shadow-elevation-3">
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 bg-card border border-primary/15 rounded-modal shadow-elevation-3">
       {/* Event selector */}
       <div className="relative">
         <select
           value={selectedEvent}
           onChange={e => setSelectedEvent(e.target.value)}
           disabled={isActive}
-          className="appearance-none pl-2.5 pr-7 py-1 text-[11px] font-medium rounded-md bg-secondary/50 border border-primary/10 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+          className="appearance-none pl-2.5 pr-7 py-1 text-[11px] font-medium rounded-input bg-secondary/50 border border-primary/10 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
         >
           {availableEventTypes.map(et => (
             <option key={et} value={et}>{et}</option>
@@ -38,7 +38,7 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
           <button
             onClick={() => onStart(selectedEvent)}
             disabled={!selectedEvent}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-input bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
           >
             <Play className="w-3 h-3" />
             Start
@@ -48,14 +48,14 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
             <button
               onClick={onStep}
               disabled={isDone}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-input bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 disabled:opacity-40 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
               Step
             </button>
             <button
               onClick={onStop}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-input bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
             >
               <Square className="w-3 h-3" />
               Stop

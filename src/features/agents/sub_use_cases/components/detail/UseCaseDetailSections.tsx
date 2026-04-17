@@ -20,7 +20,7 @@ export function InputStageSummary({ useCase }: { useCase: UseCaseItem }) {
 
   return (
     <div
-      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all min-w-0 ${
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal text-sm font-medium border transition-all min-w-0 ${
         hasAny
           ? 'bg-cyan-500/8 border-cyan-500/20 text-foreground/90'
           : 'bg-secondary/40 border-primary/10 text-muted-foreground/60'

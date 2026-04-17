@@ -36,7 +36,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
     <div className="space-y-6">
       {/* Metrics Summary Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {e.input_tokens}
@@ -46,7 +46,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {e.output_tokens}
@@ -56,7 +56,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             {e.cost}
@@ -66,7 +66,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
+        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {e.duration}
@@ -78,7 +78,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
       </div>
 
       {/* Cost Breakdown Bar */}
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4">
         <CostBreakdownBar model={model} inputTokens={execution.input_tokens} outputTokens={execution.output_tokens} />
       </div>
 
@@ -153,7 +153,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
 
       {steps.length === 0 && (
         <div className="text-center py-8">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
             <Wrench className="w-6 h-6 text-muted-foreground/80" />
           </div>
           <p className="typo-body text-muted-foreground/90">{e.no_tool_calls}</p>

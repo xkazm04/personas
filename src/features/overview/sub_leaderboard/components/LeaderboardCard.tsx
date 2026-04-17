@@ -83,7 +83,7 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
     <button
       onClick={onClick}
       data-testid={`leaderboard-card-${entry.personaId}`}
-      className={`w-full text-left p-3 rounded-xl border transition-all duration-200 ${
+      className={`w-full text-left p-3 rounded-modal border transition-all duration-200 ${
         selected
           ? 'bg-primary/8 border-primary/25 ring-1 ring-primary/15'
           : 'bg-secondary/[0.03] border-primary/[0.08] hover:bg-primary/[0.04] hover:border-primary/15'
@@ -93,7 +93,7 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
         {/* Rank */}
         <div className="w-8 flex-shrink-0 text-center">
           {medalCfg ? (
-            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold border ${medalCfg.bg} ${medalCfg.border} ${medalCfg.text}`}>
+            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-card text-xs font-bold border ${medalCfg.bg} ${medalCfg.border} ${medalCfg.text}`}>
               {medalCfg.emoji}
             </span>
           ) : (

@@ -15,17 +15,17 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
         <div
           className="animate-fade-slide-in overflow-hidden"
         >
-          <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 space-y-3">
+          <div className="rounded-modal border border-primary/15 bg-secondary/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold uppercase tracking-widest text-foreground/80 flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-400">
+                <div className="p-1.5 rounded-card bg-violet-500/10 text-violet-400">
                   <HeartPulse className="w-3.5 h-3.5" />
                 </div>
                 Healthcheck Results
               </h4>
               <button
                 onClick={onDismiss}
-                className="p-1 hover:bg-secondary/60 rounded-lg transition-colors"
+                className="p-1 hover:bg-secondary/60 rounded-card transition-colors"
                 title={t.common.dismiss}
               >
                 <X className="w-3.5 h-3.5 text-muted-foreground/60" />
@@ -56,7 +56,7 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
                 {summary.needsAttention.map((r) => (
                   <div
                     key={r.credentialId}
-                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-red-500/5 border border-red-500/10 text-sm"
+                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-modal bg-red-500/5 border border-red-500/10 text-sm"
                   >
                     <span className="text-foreground/80 truncate">{r.credentialName}</span>
                     <span className="text-red-400/70 text-sm truncate max-w-[200px]" title={r.message}>

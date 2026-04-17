@@ -34,13 +34,13 @@ export function AdminToolsDropdown({
     <div ref={ref} className="relative flex-shrink-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2 rounded-lg border border-primary/10 hover:bg-primary/5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        className="p-2 rounded-card border border-primary/10 hover:bg-primary/5 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
         title={t.templates.search.admin_tools}
       >
         <Wrench className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-elevation-4 backdrop-blur-sm">
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
           {onCleanupDuplicates && (
             <button
               onClick={() => { onCleanupDuplicates(); setOpen(false); }}

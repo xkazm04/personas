@@ -73,7 +73,7 @@ export function CronScheduleConfig({
               <button
                 key={p.value}
                 onClick={() => { setDraft(p.value); onUpdate({ cronExpression: p.value }); setEditing(false); }}
-                className={`px-2 py-0.5 rounded-lg text-sm transition-colors ${
+                className={`px-2 py-0.5 rounded-card text-sm transition-colors ${
                   draft === p.value
                     ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                     : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
@@ -89,12 +89,12 @@ export function CronScheduleConfig({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="0 0 * * *"
-              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-lg text-sm font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
+              className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card text-sm font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
             />
             <button
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}
               disabled={!draft.trim()}
-              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-card text-sm font-medium transition-colors disabled:opacity-50"
             >
               {t.common.save}
             </button>
@@ -133,7 +133,7 @@ export function ExpirationThresholdConfig({
             <button
               key={d}
               onClick={() => onUpdate({ thresholdDays: d })}
-              className={`px-2 py-0.5 rounded-lg text-sm font-mono transition-colors ${
+              className={`px-2 py-0.5 rounded-card text-sm font-mono transition-colors ${
                 thresholdDays === d
                   ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                   : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'

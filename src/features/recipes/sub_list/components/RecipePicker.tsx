@@ -38,7 +38,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
-        className="animate-fade-slide-in relative flex flex-col w-[500px] max-h-[70vh] rounded-xl border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
+        className="animate-fade-slide-in relative flex flex-col w-[500px] max-h-[70vh] rounded-modal border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
@@ -46,7 +46,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
           <h2 className="text-sm font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-6 h-6 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-center w-6 h-6 rounded-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -62,7 +62,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.recipes.search_recipes}
               autoFocus
-              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
+              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
             />
           </div>
         </div>
@@ -81,9 +81,9 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
                 <button
                   key={recipe.id}
                   onClick={() => onSelect(recipe)}
-                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-primary/10 transition-colors group"
+                  className="w-full flex items-center gap-3 rounded-modal px-3 py-2.5 text-left hover:bg-primary/10 transition-colors group"
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-primary/20">
                     <BookOpen className="w-3 h-3 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">

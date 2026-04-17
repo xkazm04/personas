@@ -55,7 +55,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
 
   return (
     <div
-      className="group relative px-2.5 py-2 rounded-xl border border-primary/5 hover:border-primary/15 transition-colors"
+      className="group relative px-2.5 py-2 rounded-modal border border-primary/5 hover:border-primary/15 transition-colors"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onDoubleClick={onEdit ? startEdit : undefined}

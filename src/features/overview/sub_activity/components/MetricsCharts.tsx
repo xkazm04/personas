@@ -33,7 +33,7 @@ export function MetricsCharts({
       {/* Cost per Day */}
       <div className="space-y-2">
         <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.cost_per_day}</h4>
-        <div className="h-48 2xl:h-56 bg-secondary/20 rounded-xl border border-primary/10 p-3">
+        <div className="h-48 2xl:h-56 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={personaCostData}>
@@ -57,7 +57,7 @@ export function MetricsCharts({
       {/* Execution Count by Status */}
       <div className="space-y-2">
         <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.executions_by_status}</h4>
-        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
+        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={comparedChartData}>
@@ -79,7 +79,7 @@ export function MetricsCharts({
       {/* Success Rate Trend */}
       <div className="space-y-2">
         <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.success_rate_trend}</h4>
-        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
+        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={comparedChartData}>
@@ -99,7 +99,7 @@ export function MetricsCharts({
       {/* Latency Distribution */}
       <div className="space-y-2">
         <h4 className="typo-heading text-muted-foreground/70">{t.overview.activity.latency_distribution}</h4>
-        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-xl border border-primary/10 p-3">
+        <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={comparedChartData}>
@@ -128,7 +128,7 @@ export function MetricsCharts({
               const maxCost = data.top_personas[0]?.total_cost || 1;
               const pct = (p.total_cost / maxCost) * 100;
               return (
-                <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-primary/10 bg-secondary/20">
+                <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-primary/10 bg-secondary/20">
                   <span className="text-sm font-mono text-muted-foreground/60 w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">

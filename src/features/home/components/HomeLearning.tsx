@@ -258,11 +258,11 @@ export default function HomeLearning() {
               <div
                 key={tour.id}
                 data-testid={`learning-tour-${tour.id}`}
-                className={`rounded-xl border ${colors.border} ${colors.bg} p-5 space-y-3 transition-all hover:shadow-elevation-2`}
+                className={`rounded-modal border ${colors.border} ${colors.bg} p-5 space-y-3 transition-all hover:shadow-elevation-2`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className={`w-8 h-8 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+                    <div className={`w-8 h-8 rounded-card ${colors.bg} border ${colors.border} flex items-center justify-center`}>
                       <Icon className={`w-4 h-4 ${colors.text}`} />
                     </div>
                     <div>
@@ -271,7 +271,7 @@ export default function HomeLearning() {
                     </div>
                   </div>
                   {isCompleted && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20">
                       <Check className="w-2.5 h-2.5" />
                       {ht.done}
                     </span>
@@ -281,7 +281,7 @@ export default function HomeLearning() {
                 <button
                   onClick={() => startTour(tour.id)}
                   data-testid={`learning-start-${tour.id}`}
-                  className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-xl ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}
+                  className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-modal ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}
                 >
                   {isCompleted ? <><RotateCcw className="w-3.5 h-3.5" /> {ht.restart}</> : <><Play className="w-3.5 h-3.5" /> {ht.start_tour}</>}
                 </button>
@@ -318,9 +318,9 @@ export default function HomeLearning() {
                     key={trick.id}
                     onClick={() => setActiveTrick(trick)}
                     data-testid={`trick-btn-${trick.id}`}
-                    className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl border border-primary/8 bg-secondary/5 hover:bg-secondary/15 hover:border-primary/12 transition-all group"
+                    className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-modal border border-primary/8 bg-secondary/5 hover:bg-secondary/15 hover:border-primary/12 transition-all group"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/50 transition-colors">
+                    <div className="w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/50 transition-colors">
                       <trick.icon className={`w-3.5 h-3.5 ${trick.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -355,7 +355,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center">
               <trick.icon className={`w-4.5 h-4.5 ${trick.color}`} />
             </div>
             <div>
@@ -365,7 +365,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
           >
             <X className="w-4 h-4" />
           </button>
@@ -374,7 +374,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Screenshot */}
-          <div className="rounded-xl overflow-hidden border border-primary/10 bg-black/20">
+          <div className="rounded-modal overflow-hidden border border-primary/10 bg-black/20">
             <img
               src={trick.screenshot}
               alt={trick.title}
@@ -402,7 +402,7 @@ function TrickModal({ trick, onClose }: { trick: Trick; onClose: () => void }) {
 
           {/* Pro tip */}
           {trick.proTip && (
-            <div className="rounded-xl bg-amber-500/5 border border-amber-500/15 px-4 py-3">
+            <div className="rounded-modal bg-amber-500/5 border border-amber-500/15 px-4 py-3">
               <p className="text-sm text-amber-300/70 leading-relaxed">
                 <span className="font-semibold text-amber-400">{ht.pro_tip}</span>{trick.proTip}
               </p>

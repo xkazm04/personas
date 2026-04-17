@@ -27,7 +27,7 @@ export function PollingConfig({
           <ThemedSelect
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="rounded-xl"
+            className="rounded-modal"
           >
             <option value="">{t.triggers.none_use_endpoint}</option>
             {credentialEventsList.map(evt => (
@@ -43,7 +43,7 @@ export function PollingConfig({
             value={endpoint}
             onChange={(e) => setEndpoint(e.target.value)}
             placeholder="https://api.example.com/poll"
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
         </TriggerFieldGroup>
       )}

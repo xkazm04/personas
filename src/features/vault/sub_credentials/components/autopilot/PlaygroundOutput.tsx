@@ -15,7 +15,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
     <>
       {/* Error */}
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-card text-sm text-red-400">
           <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -43,7 +43,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
             <summary className="text-muted-foreground/50 cursor-pointer hover:text-muted-foreground">
               Response Headers ({Object.keys(testResult.headers).length})
             </summary>
-            <div className="mt-1 p-2 bg-secondary/20 rounded-lg font-mono space-y-0.5 max-h-32 overflow-y-auto">
+            <div className="mt-1 p-2 bg-secondary/20 rounded-card font-mono space-y-0.5 max-h-32 overflow-y-auto">
               {Object.entries(testResult.headers).map(([k, v]) => (
                 <div key={k}>
                   <span className="text-blue-400">{k}</span>: <span className="text-muted-foreground/70">{v}</span>
@@ -54,7 +54,7 @@ export function PlaygroundOutput({ error, testResult }: PlaygroundOutputProps) {
 
           {/* Response Body */}
           <div className="relative">
-            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-lg text-xs font-mono text-foreground/80 overflow-auto max-h-80 whitespace-pre-wrap">
+            <pre className="p-3 bg-secondary/20 border border-primary/10 rounded-card text-xs font-mono text-foreground/80 overflow-auto max-h-80 whitespace-pre-wrap">
               {formatJson(testResult.body)}
             </pre>
           </div>

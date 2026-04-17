@@ -103,7 +103,7 @@ export function PersonaOverviewToolbar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t.agents.persona_list.search_personas}
-          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-lg text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
+          className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card text-md bg-secondary/30 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:bg-secondary/40 focus:border-primary/30 transition-all"
         />
         {search ? (
           <button
@@ -126,7 +126,7 @@ export function PersonaOverviewToolbar({
         type="button"
         onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
         title={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-md font-medium border transition-all ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md font-medium border transition-all ${
           view.favoriteOnly
             ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
             : 'border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground'

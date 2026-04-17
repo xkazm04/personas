@@ -72,12 +72,12 @@ export function BackgroundBanners({
       {/* Saved draft banner */}
       {showDraftBanner && (
         <div className="mx-4 mt-3 mb-0">
-          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/8 border border-amber-500/15">
+          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-amber-500/8 border border-amber-500/15">
             <button
               onClick={() => onResumeDraft(adoptionDraft)}
               className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
             >
-              <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-card bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                 <FileEdit className="w-4 h-4 text-amber-400" />
               </div>
               <div className="flex-1 min-w-0">
@@ -91,7 +91,7 @@ export function BackgroundBanners({
             </button>
             <button
               onClick={onDiscardDraft}
-              className="p-1 rounded-lg hover:bg-amber-500/15 text-muted-foreground/50 hover:text-amber-400 transition-colors flex-shrink-0"
+              className="p-1 rounded-card hover:bg-amber-500/15 text-muted-foreground/50 hover:text-amber-400 transition-colors flex-shrink-0"
               title={t.templates.banners.discard_draft}
             >
               <X className="w-3.5 h-3.5" />
@@ -105,9 +105,9 @@ export function BackgroundBanners({
         <div className="mx-4 mt-3 mb-0">
           <button
             onClick={onResumeAdoption}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-violet-500/8 border border-violet-500/15 hover:bg-violet-500/12 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-violet-500/8 border border-violet-500/15 hover:bg-violet-500/12 transition-colors text-left"
           >
-            <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0">
@@ -124,9 +124,9 @@ export function BackgroundBanners({
         <div className="mx-4 mt-3 mb-0">
           <button
             onClick={onResumeRebuild}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/8 border border-blue-500/15 hover:bg-blue-500/12 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-blue-500/8 border border-blue-500/15 hover:bg-blue-500/12 transition-colors text-left"
           >
-            <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 rounded-card bg-blue-500/15 flex items-center justify-center flex-shrink-0">
               <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
             </div>
             <div className="flex-1 min-w-0">
@@ -194,12 +194,12 @@ export function BackgroundBanners({
 
         return (
           <div className="mx-4 mt-3 mb-0">
-            <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border ${bgClass}`}>
+            <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-modal border ${bgClass}`}>
               <button
                 onClick={onResumePreview}
                 className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
               >
-                <div className={`w-7 h-7 rounded-lg ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-7 h-7 rounded-card ${iconBgClass} flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-4 h-4 ${iconColor} ${!isDone ? 'animate-pulse' : ''}`} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -213,7 +213,7 @@ export function BackgroundBanners({
               {isDone && (
                 <button
                   onClick={onDismissPreview}
-                  className="p-1 rounded-lg hover:bg-secondary/40 text-muted-foreground/50 hover:text-foreground/70 transition-colors flex-shrink-0"
+                  className="p-1 rounded-card hover:bg-secondary/40 text-muted-foreground/50 hover:text-foreground/70 transition-colors flex-shrink-0"
                   title="Dismiss"
                 >
                   <X className="w-3.5 h-3.5" />

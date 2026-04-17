@@ -17,7 +17,7 @@ export function SlaCard({ label, value, sub, color, icon }: {
   const cls = colorMap[color] || colorMap['emerald'];
 
   return (
-    <div className={`rounded-xl border p-4 ${cls}`}>
+    <div className={`rounded-modal border p-4 ${cls}`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className="typo-label font-mono opacity-80">{label}</span>
@@ -67,7 +67,7 @@ export function PersonaRow({ stats, expanded, onToggle }: {
 
 function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 px-3 py-2">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 px-3 py-2">
       <div className="flex items-center gap-1.5 text-muted-foreground/60 mb-0.5">
         {icon}
         <span className="text-xs">{label}</span>

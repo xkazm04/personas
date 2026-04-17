@@ -117,7 +117,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelect(role.label)}
-              className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-5 transition-all duration-300 cursor-pointer ${
+              className={`group relative flex flex-col items-center text-center rounded-modal border-2 p-5 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
                   : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
@@ -196,7 +196,7 @@ function ToolStep({
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelect(meta.label)}
-              className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-6 transition-all duration-300 cursor-pointer ${
+              className={`group relative flex flex-col items-center text-center rounded-modal border-2 p-6 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
                   : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
@@ -255,7 +255,7 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         onChange={(e) => onChange(e.target.value)}
         placeholder={ss.automate_placeholder}
         rows={5}
-        className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
+        className="w-full rounded-modal border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
         <span className="typo-body text-muted-foreground/50">
@@ -323,7 +323,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <StepIndicator current={step} completed={completed} />
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-primary/10 transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
@@ -353,7 +353,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
           <button
             onClick={goBack}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-muted-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
           >
             <ChevronLeft className="w-4 h-4" />
             {ss.back}
@@ -361,7 +361,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
           <button
             onClick={goNext}
             disabled={!canNext}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-modal typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
             {step === 2 ? ss.finish : ss.next}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
@@ -465,7 +465,7 @@ function SetupCardItem({
     >
       {/* Illustration area */}
       <div
-        className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 ${!locked ? 'group-hover:shadow-elevation-3' : ''} transition-all duration-400`}
+        className={`relative w-full h-[140px] flex-shrink-0 rounded-modal border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 ${!locked ? 'group-hover:shadow-elevation-3' : ''} transition-all duration-400`}
       >
         {/* Glow blob */}
         <div

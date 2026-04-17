@@ -10,7 +10,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
   return (
     <div className="space-y-3">
       {/* Status header */}
-      <div className={`rounded-lg border p-3 space-y-2 ${
+      <div className={`rounded-card border p-3 space-y-2 ${
         !allValid
           ? 'border-red-500/30 bg-red-500/5'
           : 'border-violet-500/20 bg-violet-500/5'
@@ -61,7 +61,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       </div>
 
       {/* Creator identity */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-1.5">
+      <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-1.5">
         <div className="text-xs text-muted-foreground font-medium">{st.creator_identity}</div>
         <div className="text-[10px] text-muted-foreground font-mono">
           {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
@@ -69,7 +69,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
       </div>
 
       {/* Policy details */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2">
+      <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2">
         <div className="text-xs text-muted-foreground font-medium">{st.execution_policy}</div>
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>

@@ -33,7 +33,7 @@ export function TriggerCategorySelector({
                 onSelectCategory(isActive ? null : cat.id);
                 if (!isActive) onSelectTriggerType(cat.types[0]!);
               }}
-              className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
                 isActive
                   ? `${cat.bgColor} ${cat.borderColor} ring-1 ring-primary/15`
                   : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'
@@ -55,7 +55,7 @@ export function TriggerCategorySelector({
             onSelectCategory('manual');
             onSelectTriggerType('manual');
           }}
-          className={`flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+          className={`flex flex-col gap-1.5 p-3 rounded-modal border text-left transition-all cursor-pointer ${
             selectedCategory === 'manual'
               ? 'bg-emerald-500/10 border-emerald-500/20 ring-1 ring-primary/15'
               : 'border-primary/15 bg-background/50 hover:border-primary/25 hover:bg-secondary/30'

@@ -79,7 +79,7 @@ export function N8nUseCasesTab({
                 const isTesting = testingUseCaseId === uc.id;
 
                 return (
-                  <div key={uc.id || i} className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+                  <div key={uc.id || i} className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                     <div className="p-3.5">
                       <div className="flex items-start gap-3">
                         <span className="text-sm font-semibold text-muted-foreground/50 mt-0.5 w-5 text-right flex-shrink-0">
@@ -89,11 +89,11 @@ export function N8nUseCasesTab({
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-foreground/95">{uc.title}</p>
                             {uc.category && catStyle && (
-                              <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
+                              <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card border ${catStyle.bg} ${catStyle.text} uppercase tracking-wider`}>
                                 {uc.category.replace('-', ' ')}
                               </span>
                             )}
-                            <span className={`px-1.5 py-0.5 text-sm font-medium rounded-lg border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
+                            <span className={`px-1.5 py-0.5 text-sm font-medium rounded-card border ${modeBadge.bg} ${modeBadge.text} uppercase tracking-wider`}>
                               {modeBadge.label}
                             </span>
                           </div>
@@ -113,7 +113,7 @@ export function N8nUseCasesTab({
                               }
                             }}
                             disabled={mode === 'non_executable'}
-                            className={`p-1.5 rounded-lg border transition-colors flex-shrink-0 ${
+                            className={`p-1.5 rounded-card border transition-colors flex-shrink-0 ${
                               isTesting
                                 ? 'bg-primary/20 border-primary/30 text-primary'
                                 : mode === 'non_executable'
@@ -152,7 +152,7 @@ export function N8nUseCasesTab({
                     {mode === 'mock' && mockViewId === uc.id && (
                       <div className="border-t border-amber-500/15 bg-amber-500/5 p-3">
                         <p className="text-sm text-amber-400/70 mb-1.5">{t.templates.n8n.example_output}</p>
-                        <pre className="text-sm font-mono text-foreground/60 bg-background/40 rounded-lg p-2.5 overflow-auto max-h-40 border border-amber-500/10">
+                        <pre className="text-sm font-mono text-foreground/60 bg-background/40 rounded-card p-2.5 overflow-auto max-h-40 border border-amber-500/10">
                           {uc.sample_input
                             ? JSON.stringify(uc.sample_input, null, 2)
                             : t.templates.n8n.no_sample_data}
@@ -179,7 +179,7 @@ export function N8nUseCasesTab({
                 return (
                   <span
                     key={cap.type}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border ${style.bg} ${style.text}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-modal border ${style.bg} ${style.text}`}
                     title={cap.context}
                   >
                     <CapIcon className="w-3 h-3" />
@@ -203,13 +203,13 @@ export function N8nUseCasesTab({
             value={adjustmentRequest}
             onChange={(e) => onAdjustmentChange(e.target.value)}
             placeholder={t.templates.n8n.adjustment_placeholder}
-            className="flex-1 h-16 p-2.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-none placeholder-muted-foreground/30"
+            className="flex-1 h-16 p-2.5 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-none placeholder-muted-foreground/30"
             disabled={disabled || transforming}
           />
           <button
             onClick={onApplyAdjustment}
             disabled={disabled || transforming || !adjustmentRequest.trim()}
-            className="self-end px-4 py-2 text-sm font-medium rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
+            className="self-end px-4 py-2 text-sm font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
           >
             Apply
           </button>

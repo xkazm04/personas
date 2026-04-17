@@ -50,7 +50,7 @@ export default function AssistantMessages({
     <>
       {/* Loading message */}
       {loading && (
-        <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
+        <div className="mx-3 mb-3 px-3 py-2 rounded-modal bg-indigo-500/8 border border-indigo-500/15 text-sm text-indigo-300/80 flex items-center gap-2">
           <LoadingSpinner size="xs" className="flex-shrink-0" />
           {t.pipeline.building_team}
         </div>
@@ -58,7 +58,7 @@ export default function AssistantMessages({
 
       {/* Error */}
       {error && (
-        <div className="mx-3 mb-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+        <div className="mx-3 mb-3 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20 text-sm text-red-400">
           {error}
         </div>
       )}
@@ -100,7 +100,7 @@ export default function AssistantMessages({
                     return (
                       <div
                         key={`${m.persona_id}-${i}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/40 border border-primary/10"
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/40 border border-primary/10"
                       >
                         <PersonaAvatar size="sm" />
                         <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ export default function AssistantMessages({
                 <button
                   onClick={onApply}
                   disabled={isApplying}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-sm font-medium transition-all disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-sm font-medium transition-all disabled:opacity-50"
                 >
                   {isApplying ? (
                     <>

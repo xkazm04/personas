@@ -91,7 +91,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === 'all'
+            className={`relative px-2.5 py-1 text-sm font-medium rounded-modal border transition-colors ${activeFilter === 'all'
                 ? 'border-primary/30 text-foreground/80'
                 : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
               }`}
@@ -99,7 +99,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             {activeFilter === 'all' && (
               <motion.div
                 layoutId="template-filter-pill"
-                className="absolute inset-0 bg-primary/10 rounded-lg"
+                className="absolute inset-0 bg-primary/10 rounded-card"
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
             )}
@@ -109,7 +109,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === cat
+              className={`relative px-2.5 py-1 text-sm font-medium rounded-modal border transition-colors ${activeFilter === cat
                   ? 'border-primary/30 text-foreground/80'
                   : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
                 }`}
@@ -117,7 +117,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
               {activeFilter === cat && (
                 <motion.div
                   layoutId="template-filter-pill"
-                  className="absolute inset-0 bg-primary/10 rounded-lg"
+                  className="absolute inset-0 bg-primary/10 rounded-card"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
@@ -139,7 +139,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   onClick={() => onSelect(template)}
-                  className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
+                  className="flex items-start gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
                 >
                   <div
                     className="icon-frame-md icon-frame-pop flex-shrink-0 border"

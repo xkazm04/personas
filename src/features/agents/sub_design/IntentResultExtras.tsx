@@ -32,7 +32,7 @@ function UseCaseCard({ uc }: { uc: IntentUseCase }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-border/20 rounded-lg bg-secondary/20 overflow-hidden">
+    <div className="border border-border/20 rounded-card bg-secondary/20 overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
@@ -71,7 +71,7 @@ function TestScenarioRow({ ts }: { ts: IntentTestScenario }) {
   const meta = CATEGORY_META[ts.category] ?? CATEGORY_META.happy_path!;
   const { Icon } = meta;
   return (
-    <div className="border border-border/10 rounded-lg overflow-hidden">
+    <div className="border border-border/10 rounded-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-secondary/20 transition-colors"
@@ -121,7 +121,7 @@ export function IntentResultExtras({ result }: IntentResultExtrasProps) {
     <div className="space-y-4">
       {/* Intent statement */}
       {intent_statement && (
-        <div className="px-3 py-2.5 rounded-xl bg-violet-500/5 border border-violet-500/15">
+        <div className="px-3 py-2.5 rounded-modal bg-violet-500/5 border border-violet-500/15">
           <div className="flex items-start gap-2">
             <Target className="w-3.5 h-3.5 text-violet-400/70 mt-0.5 shrink-0" />
             <div>
@@ -176,7 +176,7 @@ function ModelRecommendationCard({ rec }: { rec: IntentModelRecommendation }) {
   const { t } = useTranslation();
   const complexityColor = COMPLEXITY_COLOR[rec.complexity_level] ?? 'text-muted-foreground';
   return (
-    <div className="rounded-xl bg-secondary/30 border border-primary/10 p-3 space-y-2">
+    <div className="rounded-modal bg-secondary/30 border border-primary/10 p-3 space-y-2">
       <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Cpu className="w-3.5 h-3.5" />
         {t.agents.design.label_model_recommendation}

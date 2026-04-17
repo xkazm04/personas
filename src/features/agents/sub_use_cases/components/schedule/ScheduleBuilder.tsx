@@ -71,12 +71,12 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
 
   return (
     <div className="space-y-2.5">
-      <div className="flex items-center gap-1 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
+      <div className="flex items-center gap-1 p-0.5 rounded-card bg-secondary/30 border border-primary/10">
         {MODE_TABS.map((tab) => {
           const Icon = tab.icon;
           return (
             <button key={tab.key} type="button" onClick={() => setMode(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-all ${mode === tab.key ? 'bg-amber-500/12 text-amber-300 shadow-elevation-1' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40'}`}>
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-card text-sm font-medium transition-all ${mode === tab.key ? 'bg-amber-500/12 text-amber-300 shadow-elevation-1' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40'}`}>
               <Icon className="w-3 h-3" />{tab.label}
             </button>
           );
@@ -88,7 +88,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
         {mode === 'cron' && <CronPanel cronExpression={cronExpression} onCronChange={setCronExpression} cronPreview={cronPreview} cronLoading={cronLoading} />}
 
       {mode !== 'cron' && cronExpression && (
-        <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/20 border border-primary/10">
+        <div className="flex items-center gap-2 px-2 py-1 rounded-card bg-secondary/20 border border-primary/10">
           <Code2 className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
           <span className="text-sm font-mono text-muted-foreground/50 flex-1 truncate">{cronExpression}</span>
           {cronPreview?.valid && <span className="text-sm text-amber-400/70 truncate">{cronPreview.description}</span>}
@@ -117,7 +117,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
       {cronPreview?.valid && cronPreview.next_runs.length > 0 && <NextRunsPreview preview={cronPreview} />}
 
       <button onClick={handleActivate} disabled={isActivating || !isValid}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">
         {isActivating ? <LoadingSpinner size="sm" /> : <Zap className="w-3.5 h-3.5" />}
         {isActivating ? ucT.activating : ucT.activate_schedule}
       </button>

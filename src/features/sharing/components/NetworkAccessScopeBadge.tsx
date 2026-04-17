@@ -43,7 +43,7 @@ export function NetworkAccessScopeBadge({ scope }: { scope: NetworkAccessScope }
   const hasDetails = scope.domains.length > 0 || scope.tool_integrations.length > 0 || scope.api_endpoints.length > 0;
 
   return (
-    <div className={`rounded-lg border ${styles.borderClass} ${styles.bgClass}`}>
+    <div className={`rounded-card border ${styles.borderClass} ${styles.bgClass}`}>
       <button
         type="button"
         onClick={() => hasDetails && setExpanded((v) => !v)}

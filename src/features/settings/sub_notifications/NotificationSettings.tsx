@@ -77,7 +77,7 @@ function WeeklyDigestToggle() {
   if (!digestSetting.loaded) return null;
 
   return (
-    <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+    <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
         <Activity className="w-4 h-4 text-primary/60" />
         <span className="text-sm font-medium text-foreground/80">{st.weekly_digest}</span>
@@ -154,7 +154,7 @@ export default function NotificationSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          <div className="rounded-xl border border-primary/15 bg-secondary/40 overflow-hidden">
+          <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
             <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary/60" />
               <span className="text-sm font-medium text-foreground/80">{st.healing_severity}</span>

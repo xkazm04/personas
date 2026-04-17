@@ -94,7 +94,7 @@ export function RecipeManager() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.recipes.search_placeholder}
-              className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
+              className="w-full rounded-modal border border-border/50 bg-background/50 pl-8 pr-8 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/50"
             />
             {search && (
               <button

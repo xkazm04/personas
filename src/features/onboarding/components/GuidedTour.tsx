@@ -134,7 +134,7 @@ export default function GuidedTour() {
       <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
           <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+            <div className={`w-8 h-8 rounded-modal ${colors.bg} border ${colors.border} flex items-center justify-center`}>
               <Sparkles className={`w-4 h-4 ${colors.text}`} />
             </div>
             <div>

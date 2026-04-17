@@ -140,7 +140,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                             onNavigateToPersona?.(persona.id);
                           }
                         }}
-                        className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-xl cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-modal cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="flex items-start gap-2.5">
                           <Icon className={`w-4 h-4 mt-0.5 ${colorClass}`} />
@@ -150,7 +150,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               <span className={`text-sm font-medium capitalize ${colorClass}`}>
                                 {trigger.trigger_type}
                               </span>
-                              <span className={`text-sm px-1.5 py-0.5 rounded-lg font-mono ${
+                              <span className={`text-sm px-1.5 py-0.5 rounded-card font-mono ${
                                 trigger.enabled
                                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-secondary/60 text-muted-foreground/80 border border-border/20'

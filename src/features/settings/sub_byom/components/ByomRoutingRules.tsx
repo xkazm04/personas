@@ -23,13 +23,13 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
   const s = t.settings.byom;
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-4">
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-4">
         <SectionHeading
           title={s.routing_title}
           action={
             <button
               onClick={onAdd}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-modal border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               {s.add_rule}
@@ -56,7 +56,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-lg border bg-secondary/20 space-y-3 ${
+                  className={`p-4 rounded-card border bg-secondary/20 space-y-3 ${
                     worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-primary/10'
                   }`}
                 >
@@ -94,7 +94,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <select
                         value={rule.task_complexity}
                         onChange={(e) => onUpdate(idx, { task_complexity: e.target.value as TaskComplexity })}
-                        className="w-full text-sm p-2 rounded-lg border border-primary/15 bg-secondary/40 text-foreground outline-none"
+                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none"
                       >
                         {COMPLEXITY_OPTIONS.map((c) => (
                           <option key={c.id} value={c.id}>{c.label}</option>
@@ -106,7 +106,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       <select
                         value={rule.provider}
                         onChange={(e) => onUpdate(idx, { provider: e.target.value })}
-                        className={`w-full text-sm p-2 rounded-lg border bg-secondary/40 text-foreground outline-none ${
+                        className={`w-full text-sm p-2 rounded-card border bg-secondary/40 text-foreground outline-none ${
                           worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-primary/15'
                         }`}
                       >
@@ -121,7 +121,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                         value={rule.model || ''}
                         onChange={(e) => onUpdate(idx, { model: e.target.value || null })}
                         placeholder="e.g. claude-haiku-4-5-20251001"
-                        className="w-full text-sm p-2 rounded-lg border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-muted-foreground/30"
+                        className="w-full text-sm p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-muted-foreground/30"
                       />
                     </div>
                   </div>

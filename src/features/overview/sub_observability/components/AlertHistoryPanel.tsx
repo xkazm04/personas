@@ -28,7 +28,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 
   return (
     <div
-      className={`animate-fade-slide-in motion-reduce:opacity-100 flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
+      className={`animate-fade-slide-in motion-reduce:opacity-100 flex items-start gap-2.5 px-3 py-2.5 rounded-modal border transition-colors ${
         alert.dismissed ? 'border-primary/8 bg-secondary/10 opacity-50' : 'border-primary/15 bg-secondary/20'
       }`}
     >
@@ -79,7 +79,7 @@ export function AlertHistoryPanel() {
         {alertHistory.length > 0 && (
           <button
             onClick={() => { clearAlertHistory().catch(() => {}); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-lg border border-primary/15 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/20 transition-colors"
           >
             <Trash2 className="w-3 h-3" /> Clear
           </button>

@@ -33,7 +33,7 @@ export function ColumnList({
 
   if (columnsError) {
     return (
-      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
+      <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
         {columnsError}
       </div>
     );
@@ -49,7 +49,7 @@ export function ColumnList({
 
   return (
     <>
-      <div className="rounded-lg border border-primary/10 overflow-hidden">
+      <div className="rounded-card border border-primary/10 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-secondary/40 border-b border-primary/10">

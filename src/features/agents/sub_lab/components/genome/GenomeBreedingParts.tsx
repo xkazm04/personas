@@ -59,7 +59,7 @@ export function ParentSelector({
               key={p.id}
               onClick={() => onToggle(p.id)}
               aria-pressed={isSelected}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-card text-sm transition-colors text-left ${
                 isSelected
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300'
                   : 'bg-primary/5 border border-primary/10 text-muted-foreground hover:bg-primary/10'
@@ -196,7 +196,7 @@ export function OffspringCard({
 
   return (
     <div
-      className="animate-fade-slide-in border border-primary/10 rounded-lg p-3 space-y-2 bg-primary/[0.02]"
+      className="animate-fade-slide-in border border-primary/10 rounded-card p-3 space-y-2 bg-primary/[0.02]"
       role="article"
       aria-label={`Offspring: ${genome?.sourcePersonaName ?? result.id.slice(0, 6)}, generation ${result.generation}`}
     >
@@ -257,7 +257,7 @@ export function OffspringCard({
           <button
             onClick={onAdopt}
             disabled={isAdopting}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-input bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50"
           >
             {isAdopting ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -302,7 +302,7 @@ export function RunCard({
     <button
       onClick={onSelect}
       aria-current={isSelected ? 'true' : undefined}
-      className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
+      className={`w-full text-left px-3 py-2.5 rounded-card border transition-colors ${
         isSelected
           ? 'bg-violet-500/10 border-violet-500/25'
           : 'bg-primary/[0.02] border-primary/10 hover:bg-primary/5'

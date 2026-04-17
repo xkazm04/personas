@@ -107,7 +107,7 @@ function DynamicSelectBody({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white/[0.03] border border-white/[0.1] text-foreground/80 hover:bg-white/[0.06] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-white/[0.03] border border-white/[0.1] text-foreground/80 hover:bg-white/[0.06] transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             {t.templates.adopt_modal.retry}
@@ -116,7 +116,7 @@ function DynamicSelectBody({
             <button
               type="button"
               onClick={() => onAddCredential(question.vault_category!)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
             >
               <Plus className="w-3 h-3" />
               {t.templates.adopt_modal.add_credential}
@@ -129,7 +129,7 @@ function DynamicSelectBody({
           value={answer}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder={question.default ?? t.templates.adopt_modal.type_a_value}
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
         />
       </div>
     );
@@ -184,7 +184,7 @@ function BooleanToggle({
             key={opt}
             type="button"
             onClick={() => onChange(opt.toLowerCase())}
-            className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-all ${
+            className={`flex-1 px-3 py-1.5 text-xs rounded-card border transition-all ${
               selected
                 ? opt === 'Yes'
                   ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400 font-medium'
@@ -250,7 +250,7 @@ export function QuestionCard({
 
   return (
     <div
-      className={`relative rounded-lg px-3 py-2.5 transition-colors ${
+      className={`relative rounded-card px-3 py-2.5 transition-colors ${
         flash ? 'bg-emerald-500/[0.06]' : isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
       }`}
     >
@@ -291,7 +291,7 @@ export function QuestionCard({
 
       {/* Context — collapsed by default, expands on Info icon click */}
       {hasTip && tipOpen && (
-        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.05]">
+        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-input bg-white/[0.02] border border-white/[0.05]">
           <span className="text-sm text-muted-foreground/80 leading-relaxed">
             {question.context}
           </span>
@@ -307,7 +307,7 @@ export function QuestionCard({
           <button
             type="button"
             onClick={() => onAddCredential?.(question.vault_category!)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.templates.adopt_modal.add_credential}
@@ -358,7 +358,7 @@ export function QuestionCard({
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
             rows={3}
-            className="w-full max-w-lg px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
+            className="w-full max-w-lg px-3 py-2 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
           />
         ) : (
           <input
@@ -367,7 +367,7 @@ export function QuestionCard({
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.type_your_answer}
-            className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
           />
         )}
       </div>

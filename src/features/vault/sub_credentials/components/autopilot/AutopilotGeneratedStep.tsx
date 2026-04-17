@@ -17,7 +17,7 @@ export function AutopilotGeneratedStep({
   const { t } = useTranslation();
   return (
     <div className="space-y-4">
-      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-modal">
         <div className="flex items-center gap-2 mb-2">
           <Check className="w-5 h-5 text-emerald-400" />
           <h4 className="text-sm font-medium text-emerald-400">{t.vault.autopilot.connector_generated}</h4>
@@ -33,9 +33,9 @@ export function AutopilotGeneratedStep({
         <h4 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
           Generated Tools ({generatedResult.tools.length})
         </h4>
-        <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border border-primary/10 p-2 bg-secondary/15">
+        <div className="max-h-60 overflow-y-auto space-y-1 rounded-card border border-primary/10 p-2 bg-secondary/15">
           {generatedResult.tools.map((tool) => (
-            <div key={tool.toolName} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-secondary/30">
+            <div key={tool.toolName} className="flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-secondary/30">
               <MethodBadge method={tool.method} />
               <span className="text-xs font-mono text-muted-foreground/60">{tool.path}</span>
               <span className="text-xs text-foreground/80 ml-auto truncate max-w-[200px]">{tool.label}</span>
@@ -65,7 +65,7 @@ export function AutopilotGeneratedStep({
       <div className="flex gap-3">
         <button
           onClick={onPlayground}
-          className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-lg text-sm font-medium transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-card text-sm font-medium transition-all"
         >
           <Play className="w-4 h-4" />
           Open Playground
@@ -74,14 +74,14 @@ export function AutopilotGeneratedStep({
           onClick={() => {
             navigator.clipboard.writeText(generatedResult.connectorId);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 border border-primary/15 text-muted-foreground hover:text-foreground rounded-lg text-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 border border-primary/15 text-muted-foreground hover:text-foreground rounded-card text-sm transition-colors"
         >
           <Copy className="w-4 h-4" />
           Copy Connector ID
         </button>
         <button
           onClick={onComplete}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-all ml-auto"
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 rounded-card text-sm font-medium transition-all ml-auto"
         >
           <ExternalLink className="w-4 h-4" />
           Go to Catalog

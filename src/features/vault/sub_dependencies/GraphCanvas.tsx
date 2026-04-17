@@ -36,7 +36,7 @@ export function GraphCanvas({
       {/* Left: node lists */}
       <div className="lg:col-span-2 3xl:col-span-3 4xl:col-span-4 space-y-2">
         {(filterKind === 'all' || filterKind === 'credential') && (
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+          <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
             <div className="text-xs font-medium text-muted-foreground/60 mb-2">
               {tx(dep.credentials_label, { count: nodes.filter((n) => n.kind === 'credential').length })}
             </div>
@@ -65,7 +65,7 @@ export function GraphCanvas({
         )}
 
         {filterKind !== 'all' && filterKind !== 'credential' && (
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+          <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
             <div className="text-xs font-medium text-muted-foreground/60 mb-2">
               {kindLabels[filterKind]} ({filteredNodes.length})
             </div>
@@ -88,7 +88,7 @@ export function GraphCanvas({
         {detailPanel}
 
         {/* Edge summary */}
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+        <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
           <div className="text-xs font-medium text-muted-foreground/60 mb-2">
             {tx(dep.relationships, { count: filteredEdges.length })}
           </div>

@@ -48,7 +48,7 @@ function DecisionCards({ decisions }: { decisions: DecisionItem[] }) {
   return (
     <div className="space-y-2">
       {decisions.map((d) => (
-        <div key={d.id} className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-2.5">
+        <div key={d.id} className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {d.category && (
               <span className="text-xs font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>

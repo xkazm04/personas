@@ -103,7 +103,7 @@ export function DeadLetterTab() {
           </div>
           <button
             onClick={() => void loadEvents()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card text-muted-foreground/80 hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -139,7 +139,7 @@ export function DeadLetterTab() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0, overflow: 'hidden' }}
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
-                className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-2"
+                className="rounded-card border border-red-500/20 bg-red-500/5 p-4 space-y-2"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -164,7 +164,7 @@ export function DeadLetterTab() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     {evt.retry_count >= MAX_MANUAL_RETRIES ? (
                       <span
-                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-orange-500/10 text-orange-400 cursor-not-allowed"
+                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-input bg-orange-500/10 text-orange-400 cursor-not-allowed"
                         title="Retry limit exhausted — discard or investigate the root cause"
                       >
                         <Ban className="w-3 h-3" />
@@ -174,7 +174,7 @@ export function DeadLetterTab() {
                       <button
                         onClick={() => void handleRetry(evt.id)}
                         disabled={actionsInProgress.has(evt.id)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
                         title={`Retry this event (${evt.retry_count}/${MAX_MANUAL_RETRIES} attempts used)`}
                       >
                         <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
@@ -184,7 +184,7 @@ export function DeadLetterTab() {
                     <button
                       onClick={() => handleDiscard(evt)}
                       disabled={actionsInProgress.has(evt.id)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-input bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50 transition-colors"
                       title="Discard this event permanently"
                     >
                       <Trash2 className="w-3 h-3" />

@@ -95,7 +95,7 @@ export function AdoptionPrerequisitesPanel({
       {/* CTA */}
       <button
         onClick={onAdopt}
-        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors ${
+        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal border transition-colors ${
           overall === 'ready'
             ? 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
             : 'bg-violet-500/10 text-violet-300/80 border-violet-500/20 hover:bg-violet-500/20'
@@ -143,7 +143,7 @@ function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; o
 
   return (
     <div
-      className={`flex items-center gap-3 px-3 py-2 rounded-xl border transition-colors ${
+      className={`flex items-center gap-3 px-3 py-2 rounded-modal border transition-colors ${
         isReady
           ? 'border-emerald-500/15 bg-emerald-500/5'
           : 'border-amber-500/15 bg-amber-500/5'
@@ -151,7 +151,7 @@ function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; o
     >
       {/* Connector icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+        className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0"
         style={{ backgroundColor: `${meta.color}18` }}
       >
         <ConnectorIcon meta={meta} size="w-4.5 h-4.5" />
@@ -175,7 +175,7 @@ function ConnectorPrerequisiteRow({ item, onSetup }: { item: PrerequisiteItem; o
       ) : (
         <button
           onClick={onSetup}
-          className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 transition-colors flex-shrink-0"
+          className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-card bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 transition-colors flex-shrink-0"
         >
           <Plus className="w-3 h-3" />
           Setup

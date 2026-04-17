@@ -154,16 +154,16 @@ export function ModelSelector({
           {mc.model_and_provider}
         </h4>
       )}
-      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
+      <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-3 space-y-3">
         {/* Three provider columns side by side */}
         <div className="grid grid-cols-3 gap-2">
           {COLUMNS.map((col) => {
             const Logo = PROVIDER_LOGOS[col.key];
             return (
-            <div key={col.key} className="space-y-1 rounded-lg" style={{ backgroundColor: colorWithAlpha(col.color, 0.03) }}>
+            <div key={col.key} className="space-y-1 rounded-card" style={{ backgroundColor: colorWithAlpha(col.color, 0.03) }}>
               {/* Column header */}
               <div
-                className="flex items-center justify-center gap-1.5 text-sm font-semibold uppercase tracking-wider px-2 py-1.5 rounded-lg"
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold uppercase tracking-wider px-2 py-1.5 rounded-card"
                 style={{ color: col.color, backgroundColor: colorWithAlpha(col.color, 0.07) }}
               >
                 {Logo && <Logo color={col.color} />}
@@ -178,7 +178,7 @@ export function ModelSelector({
                     key={model.value}
                     type="button"
                     onClick={() => onSelectModel(model.value)}
-                    className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-lg border transition-all transition-shadow duration-300 text-left ${
+                    className={`w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-card border transition-all transition-shadow duration-300 text-left ${
                       isSelected
                         ? 'pl-2.5 border-primary/30 bg-primary/8'
                         : 'pl-2 border-transparent hover:bg-secondary/40 hover:border-primary/10'

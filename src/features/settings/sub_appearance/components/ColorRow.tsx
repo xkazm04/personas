@@ -31,7 +31,7 @@ export function ColorRow({
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-7 h-7 rounded-lg border flex-shrink-0 transition-all cursor-pointer ${
+        className={`w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
@@ -47,7 +47,7 @@ export function ColorRow({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
+          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
           title="Reset to auto"
         >
           <X className="w-3 h-3" />
@@ -59,7 +59,7 @@ export function ColorRow({
 
       {open && (
           <div
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 glass-sm rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
+            className="animate-fade-slide-in absolute top-full mt-1 left-0 glass-sm rounded-modal shadow-elevation-3 z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={displayValue}

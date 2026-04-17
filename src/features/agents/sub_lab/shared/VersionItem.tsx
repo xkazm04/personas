@@ -65,7 +65,7 @@ export function VersionItem({
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         disabled={isThis}
         data-testid={testId}
-        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card transition-colors disabled:opacity-70 ${colorClasses} ${isThis ? 'cursor-default' : 'cursor-pointer'}`}
       >
         {isThis ? <LoadingSpinner size="xs" /> : icon}
         {label}
@@ -75,7 +75,7 @@ export function VersionItem({
 
   return (
     <div
-      className={`animate-fade-slide-in group relative rounded-xl border transition-all cursor-pointer ${
+      className={`animate-fade-slide-in group relative rounded-modal border transition-all cursor-pointer ${
         isSelected
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 bg-secondary/20 hover:bg-secondary/30 hover:border-primary/20'
@@ -89,7 +89,7 @@ export function VersionItem({
       >
         <div className="flex items-center gap-2">
           <span className="text-sm font-mono font-bold text-foreground/90">v{version.version_number}</span>
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium border ${style.bg} ${style.text}`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm font-medium border ${style.bg} ${style.text}`}>
             <TagIcon className="w-2.5 h-2.5" />
             {version.tag}
           </span>
@@ -101,7 +101,7 @@ export function VersionItem({
             return rc ? <span className="text-[10px] text-muted-foreground/40">{Object.keys(rc).length} dims</span> : null;
           })()}
           {isBaseline && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
               <Star className="w-2.5 h-2.5" />
               baseline
             </span>
@@ -196,7 +196,7 @@ export function VersionItem({
                 <button
                   onClick={(e) => { e.stopPropagation(); onPinBaseline(); }}
                   data-testid={`version-pin-baseline-${version.version_number}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card transition-colors bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer"
                 >
                   <Star className="w-3 h-3" />
                   Pin as Baseline
@@ -205,7 +205,7 @@ export function VersionItem({
                 <button
                   onClick={(e) => { e.stopPropagation(); onUnpinBaseline(); }}
                   data-testid={`version-unpin-baseline-${version.version_number}`}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg transition-colors bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card transition-colors bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 cursor-pointer"
                 >
                   <StarOff className="w-3 h-3" />
                   Unpin Baseline
@@ -215,7 +215,7 @@ export function VersionItem({
 
             {/* Inline error panel */}
             {actionError && (
-              <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-elevation-1 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-modal bg-red-500/10 border border-red-500/20 shadow-elevation-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-0.5">
                   <p className="text-sm font-semibold text-red-400 uppercase tracking-tight">{t.agents.lab.operation_failed}</p>
@@ -223,7 +223,7 @@ export function VersionItem({
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDismissError(); }}
-                  className="text-red-400/40 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-500/10 flex-shrink-0"
+                  className="text-red-400/40 hover:text-red-400 transition-colors p-1 rounded-card hover:bg-red-500/10 flex-shrink-0"
                 >
                   <XCircle className="w-3.5 h-3.5" />
                 </button>

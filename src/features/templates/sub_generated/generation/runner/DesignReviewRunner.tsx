@@ -54,7 +54,7 @@ export default function DesignReviewRunner({
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                 <Play className="w-4 h-4 text-violet-400" />
               </div>
               <div>
@@ -65,7 +65,7 @@ export default function DesignReviewRunner({
               </div>
             </div>
             {!isRunning && (
-              <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-secondary/50 flex items-center justify-center transition-colors">
+              <button onClick={onClose} className="w-8 h-8 rounded-card hover:bg-secondary/50 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4 text-muted-foreground/90" />
               </button>
             )}
@@ -78,7 +78,7 @@ export default function DesignReviewRunner({
             }`}>
               {state.hasPersona ? (
                 <>
-                  <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm">AI</span>
                   </div>
                   <div className="min-w-0">
@@ -164,14 +164,14 @@ export default function DesignReviewRunner({
           {/* Footer actions */}
           <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-primary/10">
             {isRunning ? (
-              <button onClick={onCancel} className="px-4 py-2 text-sm rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-2">
+              <button onClick={onCancel} className="px-4 py-2 text-sm rounded-modal bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-2">
                 <Square className="w-3.5 h-3.5" />{t.common.cancel}
               </button>
             ) : !state.hasStarted ? (
               <button
                 onClick={state.handleStart}
                 disabled={!state.hasPersona || (state.mode === 'custom' && state.validCustomCount === 0) || (state.mode === 'batch' && state.filteredBatchTemplates.length === 0)}
-                className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-sm rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
                 {state.mode === 'predefined' ? t.templates.generation.start_review_predefined
@@ -181,12 +181,12 @@ export default function DesignReviewRunner({
             ) : (
               <div className="flex items-center gap-2">
                 {lines.length > 0 && (
-                  <button onClick={state.handleCopyLog} className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-muted-foreground/90 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
+                  <button onClick={state.handleCopyLog} className="px-4 py-2 text-sm rounded-modal bg-secondary/50 text-muted-foreground/90 border border-primary/15 hover:bg-secondary/80 hover:text-foreground/95 transition-colors flex items-center gap-2">
                     {state.copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     {state.copied ? t.templates.generation.copied_log : t.templates.generation.copy_log}
                   </button>
                 )}
-                <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl bg-primary/10 text-foreground/80 border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
+                <button onClick={onClose} className="px-4 py-2 text-sm rounded-modal bg-primary/10 text-foreground/80 border border-primary/20 hover:bg-primary/20 transition-colors">{t.common.close}</button>
               </div>
             )}
           </div>

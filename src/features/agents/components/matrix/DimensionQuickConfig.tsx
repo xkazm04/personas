@@ -97,7 +97,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
 
   return (
     <div className="w-full min-w-[1100px]">
-      <div className="rounded-xl border border-primary/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-white/[0.03] backdrop-blur-sm overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5">
           <Zap className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
           <span className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">{t.agents.quick_config.title}</span>
@@ -107,7 +107,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               <button
                 type="button"
                 onClick={() => togglePanel('conditions')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
                   openPanel === 'conditions'
                     ? 'bg-primary/15 text-primary border border-primary/25'
                     : 'bg-secondary/20 text-muted-foreground/60 border border-transparent hover:border-primary/15'
@@ -125,7 +125,7 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
               <button
                 type="button"
                 onClick={() => togglePanel('services')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-all duration-200 ${
                   openPanel === 'services'
                     ? 'bg-primary/15 text-primary border border-primary/25'
                     : 'bg-secondary/20 text-muted-foreground/60 border border-transparent hover:border-primary/15'

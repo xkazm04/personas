@@ -55,7 +55,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-left ${
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-modal border transition-all text-left ${
           expanded
             ? 'bg-primary/8 border-primary/30'
             : 'bg-secondary/40 border-primary/20 hover:border-primary/30 hover:bg-secondary/50'
@@ -73,17 +73,17 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
         {(budgetLabel || turnsLabel || cacheLabel) && (
           <span className="flex items-center gap-1.5">
             {budgetLabel && (
-              <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-muted-foreground/60">
                 <DollarSign className="w-2.5 h-2.5" />{budgetLabel.replace('$', '')}
               </span>
             )}
             {turnsLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded-card bg-secondary/50 border border-primary/10 text-muted-foreground/60">
                 {turnsLabel}
               </span>
             )}
             {cacheLabel && (
-              <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
                 {cacheLabel}
               </span>
             )}

@@ -122,7 +122,7 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
 
   return (
     <div
-      className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
+      className="rounded-modal border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
       style={{
         transform: entered ? 'scale(1)' : 'scale(0.85)',
         opacity: entered ? 1 : 0,

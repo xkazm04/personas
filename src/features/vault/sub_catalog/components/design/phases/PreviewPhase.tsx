@@ -85,7 +85,7 @@ export function PreviewPhase() {
           {!showNegotiator ? (
             <div
               key="neg-trigger"
-              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bg} ${AI_STATUS.border}`}
+              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal border ${AI_STATUS.bg} ${AI_STATUS.border}`}
             >
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
@@ -96,7 +96,7 @@ export function PreviewPhase() {
               </div>
               <button
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
+                className={`shrink-0 px-3 py-1.5 rounded-modal text-sm font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >
                 Start
               </button>
@@ -128,12 +128,12 @@ export function PreviewPhase() {
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
           placeholder={`${result.connector.label} Credential`}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
 
       {/* Security notice */}
-      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
+      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-modal border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
         <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.text}`} />
         <p className="text-sm text-foreground/80">
           Credentials are stored securely in the app vault and are available for agent tool execution.
@@ -141,7 +141,7 @@ export function PreviewPhase() {
       </div>
 
       {oauthStatusMessage && !oauthStatusMessage.success && (
-        <div className="text-sm px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+        <div className="text-sm px-3 py-2 rounded-card bg-red-500/10 border border-red-500/20 text-red-400">
           {oauthStatusMessage.message}
         </div>
       )}

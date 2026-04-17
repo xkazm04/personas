@@ -16,7 +16,7 @@ export interface CredRow {
 export function HealthBadge({ success }: { success: boolean | null }) {
   if (success === null) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium bg-secondary/60 text-foreground/60 border border-primary/15">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium bg-secondary/60 text-foreground/60 border border-primary/15">
         <HelpCircle className="w-3 h-3" />
         untested
       </span>
@@ -24,14 +24,14 @@ export function HealthBadge({ success }: { success: boolean | null }) {
   }
   if (success) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border border-emerald-600/25 dark:border-emerald-500/20">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border border-emerald-600/25 dark:border-emerald-500/20">
         <CheckCircle2 className="w-3 h-3" />
         healthy
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium bg-red-600/15 text-red-700 dark:text-red-400 border border-red-600/25 dark:border-red-500/20">
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-card font-medium bg-red-600/15 text-red-700 dark:text-red-400 border border-red-600/25 dark:border-red-500/20">
       <XCircle className="w-3 h-3" />
       failing
     </span>
@@ -73,7 +73,7 @@ export function useCredentialColumns({
             <LoadingSpinner className="text-red-400/70 flex-shrink-0" />
           ) : (
             <div
-              className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border"
+              className="w-6 h-6 rounded-input flex items-center justify-center flex-shrink-0 border"
               style={{
                 backgroundColor: row.connector ? `${row.connector.color}15` : undefined,
                 borderColor: row.connector ? `${row.connector.color}30` : undefined,
@@ -163,7 +163,7 @@ export function useCredentialColumns({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(row.credential.id); }}
-              className="p-1 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1 rounded-card text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title={t.vault.credential_card.delete_credential}
             >
               <Trash2 className="w-3.5 h-3.5" />

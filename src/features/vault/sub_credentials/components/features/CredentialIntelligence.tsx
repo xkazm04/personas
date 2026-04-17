@@ -124,13 +124,13 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
           </div>
 
           {!hasActivity && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-modal text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               {t.vault.intelligence_tab.no_usage}
             </div>
           )}
           {unusedDays !== null && unusedDays > 30 && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-modal text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               {tx(t.vault.intelligence_tab.last_accessed_days, { days: unusedDays })}
             </div>
@@ -163,12 +163,12 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
               {dependents.map((dep) => (
                 <div
                   key={dep.persona_id}
-                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-xl"
+                  className="flex items-center justify-between px-3 py-2 bg-secondary/20 border border-primary/10 rounded-modal"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
                     <span className="text-sm text-foreground/80 truncate">{dep.persona_name}</span>
-                    <span className={`text-sm px-1.5 py-0.5 rounded-lg border ${
+                    <span className={`text-sm px-1.5 py-0.5 rounded-card border ${
                       dep.link_type === 'tool_connector'
                         ? `${INFO_STATUS.bg} ${INFO_STATUS.border} ${INFO_STATUS.text}`
                         : `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`

@@ -127,7 +127,7 @@ export function SearchAutocomplete({
   return (
     <div ref={containerRef} className="absolute top-full left-0 right-0 z-50 mt-1">
       <div
-          className="animate-fade-slide-in bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden"
+          className="animate-fade-slide-in bg-background border border-primary/15 rounded-modal shadow-elevation-3 overflow-hidden"
           role="listbox"
           id="search-suggestions-listbox"
           aria-label="Search suggestions"
@@ -149,7 +149,7 @@ export function SearchAutocomplete({
                   role="option"
                   aria-selected={isFocused}
                   onClick={() => onSelect(suggestion.chip)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg outline-none ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
                     isFocused
                       ? 'bg-violet-500/10 text-foreground/90'
                       : 'text-foreground/80 hover:bg-primary/5'

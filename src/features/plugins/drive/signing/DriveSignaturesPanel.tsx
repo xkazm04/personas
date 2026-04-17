@@ -78,7 +78,7 @@ export function DriveSignaturesPanel({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-foreground/90 hover:text-foreground hover:bg-secondary/50"
+            className="p-1 rounded-input text-foreground/90 hover:text-foreground hover:bg-secondary/50"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -142,7 +142,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleExport(sig.id)}
                     title={t.plugins.doc_signing.export_sig}
-                    className="p-1.5 rounded-md text-foreground/90 hover:text-sky-300 hover:bg-sky-500/10"
+                    className="p-1.5 rounded-input text-foreground/90 hover:text-sky-300 hover:bg-sky-500/10"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -150,7 +150,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleDelete(sig.id)}
                     title={t.plugins.doc_signing.delete_signature}
-                    className="p-1.5 rounded-md text-foreground/90 hover:text-rose-300 hover:bg-rose-500/10"
+                    className="p-1.5 rounded-input text-foreground/90 hover:text-rose-300 hover:bg-rose-500/10"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

@@ -20,7 +20,7 @@ export function ScopeMismatchBanner({
   if (missing.length === 0) return null;
 
   return (
-    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+    <div className="flex items-start gap-2 px-3 py-2 rounded-card bg-amber-500/8 border border-amber-500/20">
       <ShieldAlert className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-amber-300/90 font-medium">

@@ -68,7 +68,7 @@ export function CloudConnectionForm({
 
         <button
           onClick={onDisconnect}
-          className="px-4 py-2 text-sm font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+          className="px-4 py-2 text-sm font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
         >
           {dt.disconnect}
         </button>
@@ -115,7 +115,7 @@ export function CloudConnectionForm({
         <button
           onClick={onConnect}
           disabled={isConnecting || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {isConnecting ? (
             <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
@@ -131,7 +131,7 @@ export function CloudConnectionForm({
         <button
           onClick={onDiagnose}
           disabled={isDiagnosing || !url.trim() || !apiKey.trim()}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {isDiagnosing ? (
             <span className="inline-flex items-center gap-2">
@@ -159,7 +159,7 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: CloudDiagnostics }) {
 
   return (
     <div
-      className={`p-4 rounded-xl border ${
+      className={`p-4 rounded-modal border ${
         allPassed
           ? 'bg-emerald-500/5 border-emerald-500/20'
           : 'bg-red-500/5 border-red-500/20'

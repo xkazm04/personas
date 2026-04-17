@@ -23,7 +23,7 @@ export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
         <button
           data-testid="vault-autopilot-back"
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -44,7 +44,7 @@ export function AutopilotHeader({ step, error, onBack }: AutopilotHeaderProps) {
         </div>
       </div>
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-card text-sm text-red-400">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>

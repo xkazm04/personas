@@ -30,7 +30,7 @@ export function WizardDetectConnectorRow({
         onToggle(connector.name);
       }}
       disabled={isAdded}
-      className={`group flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all text-left ${
+      className={`group flex items-center gap-3 px-3.5 py-3 rounded-modal border transition-all text-left ${
         isAdded
           ? 'border-primary/5 bg-secondary/10 opacity-40 cursor-not-allowed'
           : isSelected
@@ -57,7 +57,7 @@ export function WizardDetectConnectorRow({
 
       {/* Icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold"
+        className="w-8 h-8 rounded-card flex items-center justify-center shrink-0 text-sm font-bold"
         style={{
           backgroundColor: `${connector.color}15`,
           color: connector.color,

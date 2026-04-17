@@ -99,13 +99,13 @@ export function DesktopDiscoveryStep({
           return (
             <div
               key={app.connector_name}
-              className={`flex items-center gap-3 rounded-xl border p-3.5 transition-all ${
+              className={`flex items-center gap-3 rounded-modal border p-3.5 transition-all ${
                 isApproved
                   ? 'bg-emerald-500/5 border-emerald-500/20'
                   : 'bg-secondary/30 border-primary/10'
               }`}
             >
-              <div className="w-9 h-9 rounded-lg bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
                 <Monitor className="w-4.5 h-4.5 text-foreground/60" />
               </div>
 
@@ -129,7 +129,7 @@ export function DesktopDiscoveryStep({
               <button
                 onClick={() => onApprove(app.connector_name)}
                 disabled={isApproved || isApproving}
-                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-lg transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card transition-colors flex-shrink-0 ${
                   isApproved
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default'
                     : isApproving

@@ -52,7 +52,7 @@ export function ExamplePairCollector({
         <button
           onClick={addPair}
           disabled={disabled}
-          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded-card text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
         >
           <Plus className="w-3 h-3" />
           {t.common.add}
@@ -69,7 +69,7 @@ export function ExamplePairCollector({
           return (
             <div
               key={pair.id}
-              className="animate-fade-slide-in rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
+              className="animate-fade-slide-in rounded-modal border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center gap-2 px-3 py-2">
@@ -111,7 +111,7 @@ export function ExamplePairCollector({
                       disabled={disabled}
                       placeholder={t.agents.design.input_placeholder}
                       rows={4}
-                      className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
                   </div>
 
@@ -132,7 +132,7 @@ export function ExamplePairCollector({
                       disabled={disabled}
                       placeholder={t.agents.design.output_placeholder}
                       rows={4}
-                      className="w-full bg-background/50 border border-emerald-500/10 rounded-lg px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
+                      className="w-full bg-background/50 border border-emerald-500/10 rounded-card px-3 py-2 text-sm text-foreground font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/30 transition-all placeholder-muted-foreground/25"
                     />
                   </div>
                 </div>
@@ -145,7 +145,7 @@ export function ExamplePairCollector({
         <button
           onClick={addPair}
           disabled={disabled}
-          className="w-full flex flex-col items-center gap-2 py-6 rounded-xl border border-dashed border-emerald-500/20 hover:border-emerald-500/35 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] transition-all group"
+          className="w-full flex flex-col items-center gap-2 py-6 rounded-modal border border-dashed border-emerald-500/20 hover:border-emerald-500/35 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.04] transition-all group"
         >
           <div className="flex items-center gap-2 text-emerald-400/60 group-hover:text-emerald-400/80 transition-colors">
             <FileInput className="w-4 h-4" />

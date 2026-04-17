@@ -90,11 +90,11 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
   return (
     <div className="animate-fade-slide-in overflow-hidden">
-      <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
+      <div className="rounded-modal border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-violet-500/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-card bg-violet-500/15 flex items-center justify-center">
               <Bot className="w-4 h-4 text-violet-400" />
             </div>
             <div>
@@ -110,7 +110,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors duration-snap"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />
           </button>

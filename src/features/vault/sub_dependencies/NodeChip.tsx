@@ -18,7 +18,7 @@ export function NodeChip({ node, isSelected, onClick, extra }: NodeChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-card text-left transition-colors cursor-pointer ${
         isSelected
           ? 'bg-primary/10 border border-primary/25'
           : 'hover:bg-secondary/40 border border-transparent'

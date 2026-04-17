@@ -39,7 +39,7 @@ export function LabResultModal({
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-xs text-muted-foreground/50">{new Date(run.createdAt).toLocaleString()}</span>
-            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label="Close results" className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground transition-colors">
+            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label="Close results" className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/50 hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -48,7 +48,7 @@ export function LabResultModal({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 bg-gradient-to-b from-background/60 to-background/40">
           {run.error && (
-            <div className="flex items-start gap-2 px-3 py-2.5 mb-4 rounded-xl bg-red-500/10 border border-red-500/20">
+            <div className="flex items-start gap-2 px-3 py-2.5 mb-4 rounded-modal bg-red-500/10 border border-red-500/20">
               <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
               <span className="text-sm text-red-400">{run.error}</span>
             </div>

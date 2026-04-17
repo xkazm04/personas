@@ -32,7 +32,7 @@ export function SortDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 text-sm rounded-xl border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
+        className="px-3 py-2 text-sm rounded-modal border border-primary/15 hover:bg-secondary/50 text-muted-foreground/80 transition-colors flex items-center gap-1.5"
       >
         <ArrowUpDown className="w-3.5 h-3.5" />
         {currentOption.label}
@@ -40,7 +40,7 @@ export function SortDropdown({
       </button>
 
       {isOpen && (
-        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full right-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-elevation-3 min-w-[190px] py-1.5 overflow-hidden">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full right-0 mt-1 z-20 bg-background border border-primary/20 rounded-modal shadow-elevation-3 min-w-[190px] py-1.5 overflow-hidden">
           {SORT_OPTIONS.map((option) => {
             const optSort = option.value.replace(/_(?:asc|desc)$/, '');
             const isSelected = optSort === sortBy && option.dir === sortDir;

@@ -83,19 +83,19 @@ export default function ScheduleCalendar({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="p-1.5 rounded-card border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={goToday}
-            className="px-2.5 py-1 text-xs rounded-lg border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
+            className="px-2.5 py-1 text-xs rounded-card border border-primary/10 hover:bg-secondary/50 text-muted-foreground/70 transition-colors"
           >
             Today
           </button>
@@ -124,7 +124,7 @@ export default function ScheduleCalendar({
           </div>
 
           {/* View toggle */}
-          <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+          <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => setView('week')}
               className={`px-2.5 py-1 text-xs transition-colors ${

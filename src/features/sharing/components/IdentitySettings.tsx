@@ -98,7 +98,7 @@ export default function IdentitySettings() {
           <Fingerprint className="w-4 h-4" />
           {st.your_identity}
         </h3>
-        <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+        <div className="rounded-modal border border-border bg-secondary/20 p-4 space-y-3">
           {localIdentity ? (
             <>
               <div className="flex items-center justify-between">
@@ -110,7 +110,7 @@ export default function IdentitySettings() {
                 </div>
                 <button
                   onClick={handleCopyCard}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? t.common.copied : st.copy_identity_card}
@@ -125,12 +125,12 @@ export default function IdentitySettings() {
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-                      className="flex-1 px-2 py-1 text-sm rounded-lg border border-border bg-background focus-ring"
+                      className="flex-1 px-2 py-1 text-sm rounded-card border border-border bg-background focus-ring"
                       maxLength={64}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} className="px-2 py-1 text-xs rounded-lg bg-primary text-white hover:bg-primary/90">{st.save}</button>
-                    <button onClick={() => setEditingName(false)} className="px-2 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50">{st.cancel}</button>
+                    <button onClick={handleSaveName} className="px-2 py-1 text-xs rounded-card bg-primary text-white hover:bg-primary/90">{st.save}</button>
+                    <button onClick={() => setEditingName(false)} className="px-2 py-1 text-xs rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function IdentitySettings() {
           <h3 className="text-sm font-semibold text-foreground">{st.trusted_peers}</h3>
           <button
             onClick={() => setShowImportForm(!showImportForm)}
-            className="px-2.5 py-1 text-xs rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+            className="px-2.5 py-1 text-xs rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
             <UserPlus className="w-3.5 h-3.5" />
             {st.add_peer}
@@ -169,32 +169,32 @@ export default function IdentitySettings() {
         </div>
 
         {showImportForm && (
-          <div className="rounded-xl border border-border bg-secondary/20 p-4 mb-3 space-y-2">
+          <div className="rounded-modal border border-border bg-secondary/20 p-4 mb-3 space-y-2">
             <label className="text-xs text-muted-foreground">{st.paste_identity_card}</label>
             <textarea
               value={importInput}
               onChange={(e) => setImportInput(e.target.value)}
               placeholder={st.paste_card_placeholder}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus-ring font-mono resize-none"
+              className="w-full px-3 py-2 text-sm rounded-card border border-border bg-background focus-ring font-mono resize-none"
               rows={3}
             />
             <input
               value={importNotes}
               onChange={(e) => setImportNotes(e.target.value)}
               placeholder={st.notes_placeholder}
-              className="w-full px-3 py-1.5 text-sm rounded-lg border border-border bg-background focus-ring"
+              className="w-full px-3 py-1.5 text-sm rounded-card border border-border bg-background focus-ring"
             />
             <div className="flex gap-2 pt-1">
               <button
                 onClick={handleImportPeer}
                 disabled={!importInput.trim()}
-                className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs rounded-card bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {st.add_trusted_peer}
               </button>
               <button
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
-                className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50"
+                className="px-3 py-1.5 text-xs rounded-card border border-border hover:bg-secondary/50"
               >
                 {st.cancel}
               </button>
@@ -203,7 +203,7 @@ export default function IdentitySettings() {
         )}
 
         {trustedPeers.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-modal border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             {st.no_trusted_peers}
           </div>
         ) : (
@@ -211,7 +211,7 @@ export default function IdentitySettings() {
             {trustedPeers.map((peer) => (
               <div
                 key={peer.peer_id}
-                className="rounded-xl border border-border bg-secondary/20 p-3 flex items-center justify-between"
+                className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-sm font-medium text-foreground truncate">
@@ -246,7 +246,7 @@ export default function IdentitySettings() {
                         <button
                           onClick={requestConfirm}
                           title="Revoke trust"
-                          className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
+                          className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-amber-500 transition-colors"
                         >
                           <TrustRevokedIcon className="w-3.5 h-3.5" />
                         </button>
@@ -261,7 +261,7 @@ export default function IdentitySettings() {
                       <button
                         onClick={requestConfirm}
                         title="Remove peer"
-                        className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors"
+                        className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

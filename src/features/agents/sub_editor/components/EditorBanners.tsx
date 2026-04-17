@@ -44,7 +44,7 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
         <div
           className="animate-fade-slide-in overflow-hidden"
         >
-          <div className={`mx-6 my-2 rounded-xl p-3 flex items-center gap-3 ${palette.container}`}>
+          <div className={`mx-6 my-2 rounded-modal p-3 flex items-center gap-3 ${palette.container}`}>
             {icon}
             <span className={`typo-body flex-1 ${palette.message}`}>{message}</span>
             {actions.map((action, index) => (

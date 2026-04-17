@@ -41,7 +41,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       </div>
 
       {/* What Changed summary */}
-      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+      <div className="bg-primary/5 border border-primary/20 rounded-modal p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
           <span className="typo-heading text-foreground/70 uppercase tracking-wider">{e.what_changed}</span>
@@ -58,7 +58,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
 
       {/* Execution headers (side by side) */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
+        <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
             <span className="typo-code uppercase text-muted-foreground/50">{e.left}</span>
             <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(leftStatus)}`}>{leftStatus.label}</span>
@@ -69,7 +69,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
           <div className="typo-code text-muted-foreground/60">#{left.id.slice(0, 8)}</div>
           <div className="typo-body text-muted-foreground/60 mt-0.5">{formatTimestamp(left.started_at)}</div>
         </div>
-        <div className="bg-secondary/30 border border-primary/10 rounded-xl px-3 py-2">
+        <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2">
           <div className="flex items-center gap-2 mb-1">
             <span className="typo-code uppercase text-muted-foreground/50">{e.right}</span>
             <span className={`px-1.5 py-0.5 rounded typo-heading ${badgeClass(rightStatus)}`}>{rightStatus.label}</span>

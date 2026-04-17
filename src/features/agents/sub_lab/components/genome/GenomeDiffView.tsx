@@ -161,7 +161,7 @@ function DiffSection({
   const changeCount = entries.filter((e) => e.kind !== 'unchanged').length;
 
   return (
-    <div className="border border-primary/8 rounded-lg overflow-hidden">
+    <div className="border border-primary/8 rounded-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-primary/5 transition-colors"

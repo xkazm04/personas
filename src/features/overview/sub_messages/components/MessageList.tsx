@@ -197,11 +197,11 @@ export default function MessageList() {
         actions={
           <>
             {import.meta.env.DEV && (
-              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
+              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.messages_view.mock_message}
               </button>
             )}
-            <div className="flex items-center rounded-lg border border-primary/15 overflow-hidden">
+            <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
               <button
                 onClick={() => setViewMode('flat')}
                 className={`p-1.5 transition-colors ${viewMode === 'flat' ? 'bg-primary/10 text-primary' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
@@ -217,10 +217,10 @@ export default function MessageList() {
                 <GitBranch className="w-3.5 h-3.5" />
               </button>
             </div>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
+            <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
+            <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
               <CheckCheck className="w-3.5 h-3.5" /> {t.overview.messages_view.mark_all_read}
             </button>
           </>
@@ -280,7 +280,7 @@ export default function MessageList() {
                           {parent.title || (parent.content ?? '').slice(0, 80)}
                         </span>
                       </div>
-                      <span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading text-xs border ${parentPriority.bgColor} ${parentPriority.color} ${parentPriority.borderColor}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded-card typo-heading text-xs border ${parentPriority.bgColor} ${parentPriority.color} ${parentPriority.borderColor}`}>
                         {parentPriority.label}
                       </span>
                       {thread.replyCount > 0 && (
@@ -348,7 +348,7 @@ export default function MessageList() {
               })}
               {threadedRemaining > 0 && (
                 <div className="p-4">
-                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all">
+                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">
                     {tx(t.overview.messages_view.load_more, { count: threadedRemaining })}
                   </button>
                 </div>
@@ -418,7 +418,7 @@ export default function MessageList() {
                             <span className="text-sm text-foreground/80 truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
                           </div>
                           <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
-                          <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
+                          <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-card typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
                           <div role="gridcell" className="px-4 flex justify-center">
                             {(() => {
                               const ds = deliverySummaries.get(message.id);
@@ -437,7 +437,7 @@ export default function MessageList() {
                   </div>
                 )}
               </div>
-              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
+              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
             </div>
           )
         )}

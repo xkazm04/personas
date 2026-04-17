@@ -40,7 +40,7 @@ export function RecipeConfidenceBanner({ instruction }: RecipeConfidenceBannerPr
   if (!match) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-500/8 border-emerald-500/20 animate-fade-slide-in">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-modal border bg-emerald-500/8 border-emerald-500/20 animate-fade-slide-in">
       <BadgeCheck className="w-4 h-4 text-emerald-400 shrink-0" />
       <span className="text-sm text-emerald-300/90">
         <span className="font-medium">{t.vault.design_phases.verified_setup}</span>

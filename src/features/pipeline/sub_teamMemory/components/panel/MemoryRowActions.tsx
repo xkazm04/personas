@@ -14,7 +14,7 @@ export default function MemoryRowActions({ canEdit, onEdit, onDelete }: MemoryRo
     <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5">
       {canEdit && (
         <button
-          className="p-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+          className="p-1 rounded-card bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
           onClick={onEdit}
           title={pt.edit_memory}
         >
@@ -22,7 +22,7 @@ export default function MemoryRowActions({ canEdit, onEdit, onDelete }: MemoryRo
         </button>
       )}
       <button
-        className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+        className="p-1 rounded-card bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
         onClick={onDelete}
         title={pt.delete_memory}
       >

@@ -13,7 +13,7 @@ export function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: F
   const hasImage = !!imageUrl;
 
   return (
-    <div className={`rounded-lg border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
+    <div className={`rounded-card border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
       {hasImage ? (
         /* ---- Image + Text side-by-side layout ---- */
         <div className="flex flex-col md:flex-row">
@@ -95,8 +95,8 @@ function VerdictButtons({ verdict, onToggle, layout }: { verdict: DecisionVerdic
     : 'flex items-center gap-1.5 flex-shrink-0 pt-1';
 
   const btnBase = layout === 'full'
-    ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all'
-    : 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all';
+    ? 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-card text-sm font-medium transition-all'
+    : 'flex items-center gap-1.5 px-3 py-2 rounded-card text-sm font-medium transition-all';
 
   return (
     <div className={wrapperClass}>

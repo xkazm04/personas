@@ -110,7 +110,7 @@ export function BadgeRow({
         key: 'auth',
         label: adopted.label,
         node: (
-          <span className={`text-sm px-1.5 py-0.5 rounded-lg font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
+          <span className={`text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 ${getAuthBadgeClasses(adopted)}`}>
             {adopted.label}
           </span>
         ),
@@ -121,7 +121,7 @@ export function BadgeRow({
       key: 'service',
       label: credential.service_type,
       node: (
-        <span className="text-sm px-1.5 py-0.5 rounded-lg font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
+        <span className="text-sm px-1.5 py-0.5 rounded-card font-mono border shrink-0 bg-secondary/40 border-primary/15 text-muted-foreground/60">
           {credential.service_type}
         </span>
       ),

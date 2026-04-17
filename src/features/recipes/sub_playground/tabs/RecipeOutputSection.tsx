@@ -49,7 +49,7 @@ export function RecipeOutputSection({
     <>
       {/* Error */}
       {(error || executionError) && (
-        <div className="mx-4 mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <div className="mx-4 mt-3 rounded-modal border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error || executionError}
         </div>
       )}
@@ -86,7 +86,7 @@ export function RecipeOutputSection({
           {result ? (
             <PromptTemplateRenderer content={result.rendered_prompt} maxHeight="max-h-[400px]" className="flex-1" />
           ) : (
-            <div className="rounded-lg border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
+            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
               {running ? t.recipes.rendering_prompt : t.recipes.run_to_see_prompt}
             </div>
           )}
@@ -126,11 +126,11 @@ export function RecipeOutputSection({
               />
             </div>
           ) : llmOutput ? (
-            <div className="rounded-lg border border-border/40 bg-card/30 p-3 overflow-y-auto flex-1 max-h-[400px]">
+            <div className="rounded-card border border-border/40 bg-card/30 p-3 overflow-y-auto flex-1 max-h-[400px]">
               <MarkdownRenderer content={formatOutputForMarkdown(llmOutput)} />
             </div>
           ) : (
-            <div className="rounded-lg border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
+            <div className="rounded-card border border-border/40 bg-card/30 p-3 text-sm text-muted-foreground/50 flex-1">
               {running ? t.recipes.waiting_for_render : t.recipes.execute_to_see_output}
             </div>
           )}

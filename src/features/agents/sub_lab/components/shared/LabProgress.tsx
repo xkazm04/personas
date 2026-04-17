@@ -32,7 +32,7 @@ export function LabProgress() {
 
   return (
     <div className="animate-fade-slide-in overflow-hidden">
-      <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
+      <div className="p-4 rounded-modal bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
         {/* Phase stepper */}
         <div className="flex items-center justify-between">
           {LAB_PHASES.map((phase, i) => {

@@ -73,14 +73,14 @@ export function SearchTab({ kb }: SearchTabProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={sh.search_placeholder}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-xl text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-secondary/30 border border-primary/15 rounded-modal text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
               autoFocus
             />
           </div>
           <button
             onClick={() => void handleSearch()}
             disabled={!query.trim() || searching}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-xl bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-modal bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {searching ? (
               <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -97,7 +97,7 @@ export function SearchTab({ kb }: SearchTabProps) {
             <select
               value={topK}
               onChange={(e) => setTopK(Number(e.target.value))}
-              className="bg-secondary/40 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground/70 text-xs"
+              className="bg-secondary/40 border border-primary/10 rounded-input px-1.5 py-0.5 text-foreground/70 text-xs"
             >
               {[5, 10, 20, 50].map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -111,7 +111,7 @@ export function SearchTab({ kb }: SearchTabProps) {
       {/* Results */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {error && (
-          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400">
             {error}
           </div>
         )}

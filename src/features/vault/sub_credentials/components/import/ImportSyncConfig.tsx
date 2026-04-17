@@ -14,7 +14,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
   const [showSync, setShowSync] = useState(!!syncConfig);
 
   return (
-    <div className="rounded-xl border border-cyan-500/15 bg-cyan-500/5 p-3 space-y-2.5">
+    <div className="rounded-modal border border-cyan-500/15 bg-cyan-500/5 p-3 space-y-2.5">
       <label className="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
@@ -48,7 +48,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
                 sourceId === 'azure_keyvault' ? 'https://myvault.vault.azure.net/...' :
                 'project/config'
               }
-              className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 text-sm text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
             />
           </div>
           <div className="w-28">
@@ -56,7 +56,7 @@ export function ImportSyncConfig({ sourceId, syncConfig, onSyncConfigChange }: I
             <select
               value={syncConfig.intervalMinutes}
               onChange={(e) => onSyncConfigChange({ ...syncConfig, intervalMinutes: Number(e.target.value) })}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-cyan-500/20 bg-background/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
+              className="w-full px-2.5 py-1.5 rounded-card border border-cyan-500/20 bg-background/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/30"
             >
               <option value={15}>15 min</option>
               <option value={30}>30 min</option>

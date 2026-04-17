@@ -10,7 +10,7 @@ interface SuccessBannerProps {
 export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBannerProps) {
   return (
     <div
-      className="animate-fade-slide-in p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+      className="animate-fade-slide-in p-4 rounded-modal bg-emerald-500/10 border border-emerald-500/20 text-center"
     >
       <div
         className="animate-fade-scale-in w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3"
@@ -66,7 +66,7 @@ export function SuccessBanner({ personaName, confirmResult, onReset }: SuccessBa
       >
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-modal border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/15 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Import Another

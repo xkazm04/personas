@@ -18,7 +18,7 @@ export function RecipeListItem({
   onDelete,
 }: RecipeListItemProps) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
+    <div className="rounded-modal border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
         <button
           onClick={onToggleExpand}
@@ -30,7 +30,7 @@ export function RecipeListItem({
             <ChevronRight className="w-3.5 h-3.5" />
           )}
         </button>
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-primary/20">
           <BookOpen className="w-3 h-3 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
@@ -40,20 +40,20 @@ export function RecipeListItem({
           )}
         </div>
         {recipe.category && (
-          <span className="rounded-lg border border-border/40 bg-muted/20 px-2 py-0.5 text-sm text-muted-foreground shrink-0">
+          <span className="rounded-card border border-border/40 bg-muted/20 px-2 py-0.5 text-sm text-muted-foreground shrink-0">
             {recipe.category}
           </span>
         )}
         <button
           onClick={onOpenPlayground}
-          className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+          className="flex items-center justify-center rounded-card p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
           title="Open settings"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={onDelete}
-          className="rounded-lg p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+          className="rounded-card p-1.5 text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

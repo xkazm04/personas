@@ -29,7 +29,7 @@ export function AuditTimelineEntries({ entries }: AuditTimelineEntriesProps) {
           <div
             key={entry.id}
             className={`relative flex items-start gap-3 py-1.5 group ${
-              hasAnomaly ? 'bg-amber-500/5 -mx-2 px-2 rounded-lg border border-amber-500/10' : ''
+              hasAnomaly ? 'bg-amber-500/5 -mx-2 px-2 rounded-card border border-amber-500/10' : ''
             }`}
           >
             {/* Dot */}

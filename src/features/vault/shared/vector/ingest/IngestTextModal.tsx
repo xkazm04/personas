@@ -46,13 +46,13 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
-        <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
           <Type className="w-3.5 h-3.5 text-violet-400" />
         </div>
         <h2 id="ingest-text-title" className="text-sm font-semibold text-foreground/90 flex-1">{sh.paste_text}</h2>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
         >
           <X className="w-4 h-4" />
         </button>
@@ -67,7 +67,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={sh.title_placeholder}
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
             autoFocus
           />
         </div>
@@ -84,12 +84,12 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             onChange={(e) => setText(e.target.value)}
             placeholder={sh.content_placeholder}
             rows={12}
-            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
+            className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
           />
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400">
             {error}
           </div>
         )}
@@ -99,14 +99,14 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm rounded-lg hover:bg-secondary/50 text-foreground/70 transition-colors"
+          className="px-4 py-2 text-sm rounded-card hover:bg-secondary/50 text-foreground/70 transition-colors"
         >
           {t.common.cancel}
         </button>
         <button
           onClick={() => void handleSubmit()}
           disabled={!canSubmit}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {ingesting ? (
             <span className="flex items-center gap-2">

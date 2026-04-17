@@ -36,13 +36,13 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
   return (
     <div
-      className="bg-background/95 border border-primary/20 rounded-xl shadow-elevation-4 backdrop-blur-sm p-4 space-y-3 max-w-sm"
+      className="bg-background/95 border border-primary/20 rounded-modal shadow-elevation-4 backdrop-blur-sm p-4 space-y-3 max-w-sm"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="flex items-center gap-2">
         <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+          className="w-6 h-6 rounded-card flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${typeMeta.color}20`, border: `1px solid ${typeMeta.color}40` }}
         >
           <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} />
@@ -60,7 +60,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
       )}
 
       {node.error_message && (
-        <div className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/15">
+        <div className="px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/15">
           <div className="text-sm font-mono uppercase tracking-wider text-red-400/60 mb-1">{t.templates.diagram.error_label}</div>
           <p className="text-sm text-red-400/90 leading-relaxed">{node.error_message}</p>
         </div>
@@ -69,7 +69,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
       {requestData && (
         <div>
           <div className="text-sm font-mono uppercase tracking-wider text-blue-400/50 mb-1">{t.templates.diagram.request_label}</div>
-          <pre className="text-sm text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-xl px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <pre className="text-sm text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof requestData === 'string' ? requestData : JSON.stringify(requestData, null, 2)}
           </pre>
         </div>
@@ -78,7 +78,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
       {responseData && (
         <div>
           <div className="text-sm font-mono uppercase tracking-wider text-emerald-400/50 mb-1">{t.templates.diagram.response_label}</div>
-          <pre className="text-sm text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-xl px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <pre className="text-sm text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
           </pre>
         </div>

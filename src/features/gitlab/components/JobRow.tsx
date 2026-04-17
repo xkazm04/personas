@@ -39,7 +39,7 @@ function JobLogViewer({ log }: { log: string | null }) {
   return (
     <pre
       ref={scrollRef}
-      className="max-h-72 overflow-auto rounded-lg bg-black/40 p-3 text-xs font-mono text-foreground/80 whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
+      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 text-xs font-mono text-foreground/80 whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
     >
       {log}
     </pre>
@@ -70,7 +70,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
   };
 
   return (
-    <div className={`rounded-xl border ${statusBg(job.status)}`}>
+    <div className={`rounded-modal border ${statusBg(job.status)}`}>
       <button
         onClick={handleToggle}
         className="w-full text-left p-2.5 flex items-center gap-2.5"

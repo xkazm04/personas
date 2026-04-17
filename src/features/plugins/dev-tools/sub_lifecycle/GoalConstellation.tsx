@@ -219,7 +219,7 @@ export default function GoalConstellation() {
       </div>
 
       {/* SVG Canvas */}
-      <div className="rounded-xl border border-primary/10 bg-background/50 overflow-hidden" style={{ height: HEIGHT * zoom }}>
+      <div className="rounded-modal border border-primary/10 bg-background/50 overflow-hidden" style={{ height: HEIGHT * zoom }}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -321,7 +321,7 @@ export default function GoalConstellation() {
                 {/* Hover tooltip */}
                 {isHovered && (
                   <foreignObject x={pos.x - 100} y={pos.y - r - 50} width={200} height={40}>
-                    <div className="bg-background/95 border border-primary/20 rounded-lg px-3 py-1.5 text-center shadow-elevation-3">
+                    <div className="bg-background/95 border border-primary/20 rounded-card px-3 py-1.5 text-center shadow-elevation-3">
                       <p className="text-md font-medium text-foreground truncate">{goal.title}</p>
                       <p className="text-md text-foreground">{goal.status} &middot; {goal.progress}%</p>
                     </div>

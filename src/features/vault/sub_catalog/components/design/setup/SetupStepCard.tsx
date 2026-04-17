@@ -28,7 +28,7 @@ export function SetupStepCard({
 
   return (
     <div
-      className={`flex gap-2.5 px-3 py-2 rounded-xl transition-colors ${
+      className={`flex gap-2.5 px-3 py-2 rounded-modal transition-colors ${
         isCompleted ? 'bg-emerald-500/5' : 'bg-transparent hover:bg-secondary/20'
       }`}
     >

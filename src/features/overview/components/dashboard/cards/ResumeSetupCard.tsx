@@ -37,9 +37,9 @@ export default function ResumeSetupCard() {
   };
 
   return (
-    <div className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4">
+    <div className="animate-fade-slide-in rounded-modal border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
           <RotateCcw className="w-5 h-5 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
@@ -54,14 +54,14 @@ export default function ResumeSetupCard() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleDismiss}
-            className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/50 hover:text-foreground/70"
+            className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/50 hover:text-foreground/70"
             title={t.overview.resume_setup_card.skip_tour}
           >
             <X className="w-4 h-4" />
           </button>
           <button
             onClick={handleResume}
-            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
           >
             {t.overview.resume_setup_card.continue_label}
             <ArrowRight className="w-4 h-4" />

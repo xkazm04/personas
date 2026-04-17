@@ -66,7 +66,7 @@ function NumField({
       <span className="typo-label text-foreground">{label}</span>
       <input
         type="number"
-        className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground tabular-nums focus:outline-none focus:border-rose-500/40"
+        className="w-full rounded-card bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground tabular-nums focus:outline-none focus:border-rose-500/40"
         value={Number(value.toFixed(3))}
         step={step}
         min={min}
@@ -131,7 +131,7 @@ function ToggleRow({
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg border transition-colors text-left ${
+      className={`w-full flex items-start gap-3 px-3 py-2 rounded-card border transition-colors text-left ${
         value
           ? 'bg-rose-500/10 border-rose-500/30'
           : 'bg-secondary/20 border-primary/10 hover:bg-secondary/30'
@@ -322,7 +322,7 @@ export default function InspectorPanel({
             type="text"
             value={composition.name}
             onChange={(e) => onUpdateComposition({ name: e.target.value })}
-            className="w-full rounded-lg bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground focus:outline-none focus:border-rose-500/40"
+            className="w-full rounded-card bg-secondary/40 border border-primary/10 px-2 py-1 text-md text-foreground focus:outline-none focus:border-rose-500/40"
           />
         </label>
 
@@ -336,7 +336,7 @@ export default function InspectorPanel({
                 <button
                   key={p.label}
                   onClick={() => onUpdateComposition({ width: p.w, height: p.h })}
-                  className={`py-1.5 px-1 rounded-lg border text-md transition-all ${
+                  className={`py-1.5 px-1 rounded-card border text-md transition-all ${
                     active
                       ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
                       : 'bg-secondary/20 border-primary/10 text-foreground hover:bg-secondary/30'
@@ -368,7 +368,7 @@ export default function InspectorPanel({
             type="color"
             value={composition.backgroundColor}
             onChange={(e) => onUpdateComposition({ backgroundColor: e.target.value })}
-            className="w-full h-8 rounded-lg border border-primary/10 cursor-pointer"
+            className="w-full h-8 rounded-card border border-primary/10 cursor-pointer"
           />
         </label>
 
@@ -391,7 +391,7 @@ export default function InspectorPanel({
         {t.media_studio.inspector_title}
       </h3>
 
-      <div className="px-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/10">
+      <div className="px-2 py-1.5 rounded-card bg-secondary/30 border border-primary/10">
         <span className="text-md text-foreground truncate block">{selectedItem.label}</span>
       </div>
 
@@ -575,7 +575,7 @@ export default function InspectorPanel({
               type="color"
               value={(selectedItem as TextItem).color}
               onChange={(e) => update({ color: e.target.value } as Partial<TimelineItem>)}
-              className="w-full h-8 rounded-lg border border-primary/10 cursor-pointer"
+              className="w-full h-8 rounded-card border border-primary/10 cursor-pointer"
             />
           </label>
         </div>

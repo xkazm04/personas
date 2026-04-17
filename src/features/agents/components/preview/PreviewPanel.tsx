@@ -136,7 +136,7 @@ export function PreviewPanel({
 
               {/* Summary */}
               {result.summary && (
-                <div className="px-2 py-1.5 bg-secondary/20 rounded-lg">
+                <div className="px-2 py-1.5 bg-secondary/20 rounded-card">
                   <p className="text-sm text-muted-foreground/60 leading-relaxed">
                     {result.summary}
                   </p>
@@ -149,7 +149,7 @@ export function PreviewPanel({
           <button
             onClick={onActivate}
             disabled={isActivating || isThinking || completeness < 40}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-modal text-sm font-medium transition-all ${
               isActivating || isThinking || completeness < 40
                 ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed'
                 : completeness >= 80

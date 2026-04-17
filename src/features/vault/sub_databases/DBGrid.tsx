@@ -29,7 +29,7 @@ export function useDbGridColumns(
       render: (row) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/15 shrink-0"
+            className="w-6 h-6 rounded-input flex items-center justify-center border border-primary/15 shrink-0"
             style={{ backgroundColor: `${row.connector?.color || '#6B7280'}15` }}
           >
             {row.connector?.icon_url ? (
@@ -59,7 +59,7 @@ export function useDbGridColumns(
       width: '0.5fr',
       sortable: true,
       render: (row) => row.tableCount > 0 ? (
-        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-blue-500/10 text-blue-400/80">
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-card bg-blue-500/10 text-blue-400/80">
           <Table2 className="w-3 h-3" />
           {row.tableCount}
         </span>
@@ -73,7 +73,7 @@ export function useDbGridColumns(
       width: '0.5fr',
       sortable: true,
       render: (row) => row.queryCount > 0 ? (
-        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-400/80">
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-card bg-violet-500/10 text-violet-400/80">
           <Code2 className="w-3 h-3" />
           {row.queryCount}
         </span>

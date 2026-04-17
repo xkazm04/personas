@@ -94,12 +94,12 @@ export function TemplateCardHeader({
             e.stopPropagation();
             setMenuOpen(!menuOpen);
           }}
-          className={`p-1 rounded-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all ${motionCss}`}
+          className={`p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all ${motionCss}`}
         >
           <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/80" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-elevation-4 backdrop-blur-sm">
+          <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
             <button
               onClick={(e) => {
                 e.stopPropagation();

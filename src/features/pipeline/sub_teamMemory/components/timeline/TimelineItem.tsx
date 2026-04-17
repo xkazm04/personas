@@ -26,7 +26,7 @@ const CATEGORY_DOT: Record<string, string> = {
 
 export function MemoryEntry({ memory, isManual }: { memory: TeamMemory; isManual?: boolean }) {
   return (
-    <div className="flex items-start gap-2 px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors">
+    <div className="flex items-start gap-2 px-2 py-1 rounded-card hover:bg-primary/5 transition-colors">
       <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${CATEGORY_DOT[memory.category] ?? 'bg-gray-400'}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground/80 truncate">{memory.title}</p>

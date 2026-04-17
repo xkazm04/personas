@@ -64,7 +64,7 @@ export function TemplateCardBody({
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-md focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 >
                   <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
                   <span className="typo-body text-foreground/70 group-hover/flow:text-violet-300 truncate">
@@ -96,7 +96,7 @@ export function TemplateCardBody({
                   <Tooltip content={`${meta.label}${isReady ? '' : ' (not configured)'}`} placement="bottom">
                     <div
                       key={c}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-opacity ${
+                      className={`w-8 h-8 rounded-card flex items-center justify-center transition-opacity ${
                         isReady ? '' : 'opacity-30 grayscale'
                       }`}
                       style={{ backgroundColor: `${meta.color}18` }}

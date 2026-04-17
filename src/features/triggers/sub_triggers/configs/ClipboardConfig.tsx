@@ -25,7 +25,7 @@ export function ClipboardConfig({
               key={ct}
               type="button"
               onClick={() => setClipboardContentType(ct)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all border capitalize ${
+              className={`px-3 py-1.5 rounded-modal text-sm font-medium transition-all border capitalize ${
                 clipboardContentType === ct
                   ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
                   : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:bg-secondary/50'
@@ -45,7 +45,7 @@ export function ClipboardConfig({
           value={clipboardPattern}
           onChange={(e) => setClipboardPattern(e.target.value)}
           placeholder="e.g. https?://.* or error|exception"
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>
@@ -54,7 +54,7 @@ export function ClipboardConfig({
           value={clipboardInterval}
           onChange={(e) => setClipboardInterval(e.target.value)}
           min="2"
-          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
+          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono text-sm focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

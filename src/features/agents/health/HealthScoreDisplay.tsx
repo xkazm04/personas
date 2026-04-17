@@ -19,7 +19,7 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
   };
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold border ${gradeColors[score.grade]}`}>
+    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-modal text-sm font-semibold border ${gradeColors[score.grade]}`}>
       <Activity className="w-4 h-4" />
       <span>{score.value}</span>
       <span className="text-xs font-normal opacity-70">{gradeLabels[score.grade]}</span>

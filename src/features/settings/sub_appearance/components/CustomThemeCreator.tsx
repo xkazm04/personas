@@ -95,7 +95,7 @@ export default function CustomThemeCreator() {
   ], [primaryColor, accentColor, backgroundColor, foregroundColor, secondaryColor, borderColor, cardBgColor, mutedFgColor, baseVars]);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-5">
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-5">
       {/* Header */}
       <SectionHeading
         title={s.custom_theme}
@@ -121,7 +121,7 @@ export default function CustomThemeCreator() {
                 <button
                   key={mode}
                   onClick={() => setBaseMode(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border text-xs font-medium transition-all ${
                     active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-muted-foreground/60 hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
@@ -139,7 +139,7 @@ export default function CustomThemeCreator() {
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Custom"
             maxLength={24}
-            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-sm text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
           />
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function CustomThemeCreator() {
       {/* Color rows */}
       <div className="space-y-1">
         <label className="text-xs font-medium text-muted-foreground/80">{s.colors}</label>
-        <div className="rounded-lg border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
+        <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
           {colorRows.map((row) => (
             <ColorRow key={row.label} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
           ))}
@@ -165,7 +165,7 @@ export default function CustomThemeCreator() {
         </button>
         {showGradient && (
           <div className="pl-4 space-y-3">
-            <div className="rounded-lg border border-primary/8 bg-secondary/10 px-3 py-1">
+            <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1">
               <ColorRow label="End Color" value={backgroundEndColor} derivedValue={backgroundColor ?? baseVars['--background']} onChange={setBackgroundEndColor} />
             </div>
             <div className="flex items-center gap-3">

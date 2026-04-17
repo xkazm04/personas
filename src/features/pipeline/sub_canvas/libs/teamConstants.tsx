@@ -54,7 +54,7 @@ export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) 
 
   return (
     <div
-      className={`${s.container} rounded-lg flex items-center justify-center border shrink-0`}
+      className={`${s.container} rounded-card flex items-center justify-center border shrink-0`}
       style={{
         backgroundColor: colorWithAlpha(c, 0.08),
         borderColor: colorWithAlpha(c, 0.19),

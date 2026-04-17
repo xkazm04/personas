@@ -17,7 +17,7 @@ export function ConsoleOutput({ result, error, executing, pendingMutation, langu
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
       {error && (
-        <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
+        <div className="mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
           {error}
         </div>
       )}

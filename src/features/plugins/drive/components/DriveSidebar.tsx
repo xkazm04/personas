@@ -25,7 +25,7 @@ export function DriveSidebar({ drive }: Props) {
           className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-sky-500/5 to-transparent pointer-events-none"
         />
         <div className="relative flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/25 to-sky-500/5 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_20px_-6px_rgba(14,165,233,0.6)]">
+          <div className="w-8 h-8 rounded-card bg-gradient-to-br from-cyan-500/25 to-sky-500/5 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_20px_-6px_rgba(14,165,233,0.6)]">
             <HardDrive className="w-4 h-4 text-cyan-200" />
           </div>
           <div className="flex-1 min-w-0">
@@ -153,7 +153,7 @@ function TreeNode({ node, drive, depth, initiallyOpen = false }: TreeNodeProps) 
           if (hasChildren && !expanded) setExpanded(true);
         }}
         onDoubleClick={toggle}
-        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-md text-left typo-body transition-all ${
+        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all ${
           isActive
             ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
             : "text-foreground hover:bg-secondary/50 hover:text-foreground"

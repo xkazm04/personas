@@ -11,7 +11,7 @@ interface DensityToggleProps {
 export function DensityToggle({ density, onChange }: DensityToggleProps) {
   const { t } = useTranslation();
   return (
-    <div className="inline-flex items-center rounded-lg border border-primary/15 overflow-hidden flex-shrink-0">
+    <div className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0">
       <button
         onClick={() => onChange('comfortable')}
         className={`p-1.5 transition-colors ${

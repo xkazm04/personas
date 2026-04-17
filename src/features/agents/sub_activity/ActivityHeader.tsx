@@ -20,7 +20,7 @@ export function ActivityHeader({ itemCount, isLoading, onRefresh }: ActivityHead
       <div className="flex items-center gap-2">
         <button
           onClick={onRefresh}
-          className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+          className="p-1.5 rounded-card text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
           title={t.common.refresh}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />

@@ -50,7 +50,7 @@ export default function MemoryDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/70 hover:text-foreground transition-colors"
+            className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/70 hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -112,13 +112,13 @@ export default function MemoryDetailModal({
         <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/10">
           <button
             onClick={() => { onDelete(); onClose(); }}
-            className="px-3 py-1.5 text-xs rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            className="px-3 py-1.5 text-xs rounded-card border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
           >
             {t.overview.memory_detail.delete_memory}
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-xs rounded-lg border border-primary/15 bg-secondary/30 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
+            className="px-3 py-1.5 text-xs rounded-card border border-primary/15 bg-secondary/30 text-muted-foreground/80 hover:bg-secondary/50 transition-colors"
           >
             Close
           </button>

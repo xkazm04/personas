@@ -38,9 +38,9 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
         {/* Catalog path */}
         <button
           onClick={() => onGoToCatalog?.()}
-          className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
+          className="group text-left p-4 rounded-modal border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
         >
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
+          <div className="w-9 h-9 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
             <LayoutTemplate className="w-4.5 h-4.5 text-emerald-400" />
           </div>
           <p className="text-sm font-medium text-foreground/80 mb-1">{t.vault.empty_state.catalog_heading}</p>
@@ -75,9 +75,9 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
         <button
           data-testid="create-credential-btn"
           onClick={() => onGoToAddNew?.()}
-          className="group text-left p-4 rounded-xl border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
+          className="group text-left p-4 rounded-modal border border-primary/15 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-all"
         >
-          <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
+          <div className="w-9 h-9 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
             <Sparkles className="w-4.5 h-4.5 text-violet-400" />
           </div>
           <p className="text-sm font-medium text-foreground/80 mb-1">{t.vault.empty_state.ai_heading}</p>
@@ -94,10 +94,10 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       {onWorkspaceConnect && (
         <button
           onClick={onWorkspaceConnect}
-          className="w-full text-left p-4 rounded-xl bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
+          className="w-full text-left p-4 rounded-modal bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
               <Globe className="w-4.5 h-4.5 text-blue-400" />
             </div>
             <div>
@@ -119,7 +119,7 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
               <button
                 key={connector.id}
                 onClick={() => onQuickStart(connector)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/50 hover:border-primary/20 transition-all text-sm"
               >
                 <div
                   className="w-4.5 h-4.5 rounded flex items-center justify-center"

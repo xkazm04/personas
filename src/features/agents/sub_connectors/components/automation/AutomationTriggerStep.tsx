@@ -53,7 +53,7 @@ export function AutomationTriggerStep({
         onChange={(e) => setDescription(e.target.value)}
         rows={4}
         autoFocus
-        className="w-full px-3.5 py-3 text-sm rounded-xl border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
+        className="w-full px-3.5 py-3 text-sm rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canDesign) {
             e.preventDefault();
@@ -66,7 +66,7 @@ export function AutomationTriggerStep({
       <div className="flex items-center gap-3">
         <label className="text-sm text-muted-foreground">{t.agents.connectors.auto_target_platform}</label>
         {editAutomation ? (
-          <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-xl border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 text-sm font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
             {PLATFORM_CONFIG[platform]?.label ?? platform}
           </span>
         ) : (
@@ -75,7 +75,7 @@ export function AutomationTriggerStep({
               <button
                 key={p}
                 onClick={() => { setPlatform(p); setGithubRepo(null); }}
-                className={`px-2.5 py-1 text-sm rounded-xl border transition-colors ${
+                className={`px-2.5 py-1 text-sm rounded-modal border transition-colors ${
                   platform === p
                     ? `${PLATFORM_CONFIG[p]?.bg ?? ''} ${PLATFORM_CONFIG[p]?.color ?? ''} border-current/30`
                     : 'border-border/60 text-muted-foreground/60 hover:text-muted-foreground hover:border-border'
@@ -90,7 +90,7 @@ export function AutomationTriggerStep({
 
       {/* Credential gate */}
       {needsCredential && !hasPlatformCredential && (
-        <div className="flex items-start gap-3 p-3.5 rounded-xl bg-brand-amber/5 border border-brand-amber/15">
+        <div className="flex items-start gap-3 p-3.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
           <KeyRound className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground/80">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}</p>
@@ -98,7 +98,7 @@ export function AutomationTriggerStep({
             {platformConnector && (
               <button
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-sm font-medium rounded-xl bg-brand-amber/15 border border-brand-amber/25 text-foreground/80 hover:bg-brand-amber/25 transition-colors"
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-sm font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground/80 hover:bg-brand-amber/25 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform]?.label ?? '' })}
@@ -111,7 +111,7 @@ export function AutomationTriggerStep({
 
       {/* Credential connected */}
       {needsCredential && hasPlatformCredential && (
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-brand-emerald/5 border border-brand-emerald/15">
+        <div className="flex items-center gap-2.5 p-3 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
           <CheckCircle2 className="w-4 h-4 text-brand-emerald/70 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground/80">
@@ -134,7 +134,7 @@ export function AutomationTriggerStep({
       {platform === 'github_actions' && hasPlatformCredential && (
         <div className="space-y-2">
           {githubPerms && (!githubPerms.hasRepo || !githubPerms.hasWorkflow) && (
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-brand-rose/5 border border-brand-rose/15">
+            <div className="flex items-start gap-2.5 p-3 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
               <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
@@ -180,12 +180,12 @@ export function AutomationTriggerStep({
               {t.agents.connectors.auto_loading_zaps}
             </div>
           ) : zapierZaps.length > 0 ? (
-            <div className="max-h-36 overflow-y-auto rounded-xl border border-border/60 divide-y divide-border/40">
+            <div className="max-h-36 overflow-y-auto rounded-modal border border-border/60 divide-y divide-border/40">
               {zapierZaps.map((zap) => (
                 <div key={zap.id} className="flex items-center gap-2.5 px-3 py-2">
                   <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${zap.status === 'on' ? 'text-brand-amber' : 'text-muted-foreground/40'}`} />
                   <span className="text-sm text-foreground/80 truncate flex-1">{zap.title}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-lg ${
+                  <span className={`text-xs px-1.5 py-0.5 rounded-card ${
                     zap.status === 'on' ? 'bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/20' :
                     zap.status === 'off' ? 'bg-secondary/60 text-muted-foreground border border-border/40' :
                     'bg-brand-amber/10 text-brand-amber border border-brand-amber/20'
@@ -208,7 +208,7 @@ export function AutomationTriggerStep({
           onClick={onDesign}
           disabled={!canDesign}
           title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3.5 h-3.5" />
           {t.agents.connectors.auto_design_ai}

@@ -62,7 +62,7 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
         <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.run}</h3>
         <button
           onClick={fetchRecent}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
+          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
           title={t.common.refresh}
           aria-label={t.agents.ops_run.refresh_executions}
         >
@@ -75,7 +75,7 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
         onClick={handleExecute}
         disabled={isExecuting}
         data-testid="ops-run-execute-btn"
-        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-card text-sm font-medium transition-all bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isExecuting ? (
           <>
@@ -110,7 +110,7 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
             return (
               <div
                 key={exec.id}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded-lg ${style.bg} transition-colors`}
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-card ${style.bg} transition-colors`}
                 data-testid={`ops-run-exec-${exec.id}`}
               >
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${style.color} ${exec.status === 'running' ? 'animate-spin' : ''}`} />

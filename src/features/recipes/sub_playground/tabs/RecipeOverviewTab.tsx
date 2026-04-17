@@ -19,11 +19,11 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t.recipes.details}</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-border/40 bg-card/30 p-3">
+          <div className="rounded-card border border-border/40 bg-card/30 p-3">
             <p className="text-sm text-muted-foreground/60 mb-1">{t.recipes.category}</p>
             <p className="text-sm text-foreground">{recipe.category || 'None'}</p>
           </div>
-          <div className="rounded-lg border border-border/40 bg-card/30 p-3">
+          <div className="rounded-card border border-border/40 bg-card/30 p-3">
             <p className="text-sm text-muted-foreground/60 mb-1">{t.recipes.created}</p>
             <p className="text-sm text-foreground">{new Date(recipe.created_at).toLocaleDateString()}</p>
           </div>
@@ -38,7 +38,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (
-              <span key={tag} className="rounded-lg border border-border/50 bg-muted/30 px-2 py-0.5 text-sm text-muted-foreground">
+              <span key={tag} className="rounded-card border border-border/50 bg-muted/30 px-2 py-0.5 text-sm text-muted-foreground">
                 {tag}
               </span>
             ))}
@@ -52,7 +52,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             <FileText className="w-3 h-3" /> Input Fields
           </h3>
-          <div className="rounded-lg border border-border/40 overflow-hidden">
+          <div className="rounded-card border border-border/40 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/30 bg-muted/20">

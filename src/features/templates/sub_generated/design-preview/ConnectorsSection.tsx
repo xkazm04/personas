@@ -74,7 +74,7 @@ export function ConnectorsSection({
           const hasCredential = !isGeneral && credentialTypes.has(item.connector.name);
 
           return (
-            <div key={idx} className="bg-secondary/30 border border-primary/10 rounded-xl p-3.5 space-y-3">
+            <div key={idx} className="bg-secondary/30 border border-primary/10 rounded-modal p-3.5 space-y-3">
               {/* Connector header */}
               <div className="flex items-center gap-2.5">
                 {item.connDef?.icon_url ? (

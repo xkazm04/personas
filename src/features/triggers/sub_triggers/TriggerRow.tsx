@@ -23,7 +23,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
       <button
         type="button"
         onClick={onToggleExpand}
-        className="flex items-center gap-2.5 w-full p-3 text-left focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+        className="flex items-center gap-2.5 w-full p-3 text-left focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-modal"
       >
         <TriggerStatusSummary trigger={trigger} />
 
@@ -47,7 +47,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
             tabIndex={0}
             onClick={(e) => { e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); } }}
-            className="p-0.5 hover:bg-secondary/60 rounded-lg transition-colors"
+            className="p-0.5 hover:bg-secondary/60 rounded-card transition-colors"
             title={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}
           >
             {trigger.enabled ? (

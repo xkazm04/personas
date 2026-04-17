@@ -61,7 +61,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
 
       {/* Empty state */}
       {forage.scanResult.credentials.length === 0 && (
-        <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6">
+        <div className="rounded-modal border border-primary/15 bg-secondary/25 p-6">
           <EmptyIllustration
             icon={Radar}
             heading={t.vault.foraging.no_credentials_found}

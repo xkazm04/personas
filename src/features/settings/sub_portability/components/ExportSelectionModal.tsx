@@ -72,7 +72,7 @@ function ExportCheckbox({
       aria-checked={indeterminate ? 'mixed' : checked}
       disabled={disabled}
       onClick={onChange}
-      className={`w-[18px] h-[18px] rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+      className={`w-[18px] h-[18px] rounded-input flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
       } ${
         checked || indeterminate
@@ -127,7 +127,7 @@ function CategorySection({
   if (config.items.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden">
       {/* Category header */}
       <div className="flex items-center gap-4 px-5 py-4">
         <ExportCheckbox
@@ -140,7 +140,7 @@ function CategorySection({
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-3 flex-1 min-w-0 group"
         >
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color}`}>
+          <div className={`w-8 h-8 rounded-card flex items-center justify-center ${config.color}`}>
             {config.icon}
           </div>
           <div className="flex-1 text-left min-w-0">
@@ -171,7 +171,7 @@ function CategorySection({
           {config.items.map((item) => (
             <label
               key={item.id}
-              className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-secondary/15
+              className="flex items-center gap-4 px-3 py-2.5 rounded-card hover:bg-secondary/15
                 cursor-pointer transition-colors"
             >
               <ExportCheckbox
@@ -409,7 +409,7 @@ export function ExportSelectionModal({
             </div>
 
             {/* Passphrase for credential encryption */}
-            <div className="rounded-xl border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
+            <div className="rounded-modal border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
               <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
                 <KeyRound className="w-4 h-4 text-amber-400/70" />
                 {s.encrypt_passphrase}
@@ -420,7 +420,7 @@ export function ExportSelectionModal({
                 placeholder={s.passphrase_placeholder}
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
-                className={`px-3 py-2 rounded-lg border bg-secondary/20 text-sm
+                className={`px-3 py-2 rounded-card border bg-secondary/20 text-sm
                   text-foreground/90 placeholder:text-muted-foreground/40 outline-none w-full
                   ${!passphraseValid
                     ? 'border-red-500/30 focus-visible:border-red-500/50'
@@ -436,7 +436,7 @@ export function ExportSelectionModal({
             </div>
 
             {/* Auto-included note */}
-            <div className="flex items-start gap-2.5 px-2 py-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+            <div className="flex items-start gap-2.5 px-2 py-3 rounded-card bg-blue-500/5 border border-blue-500/10">
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground/60 leading-relaxed">
                 {s.auto_included_note}{!exportPassphrase ? s.no_passphrase_note : ''}
@@ -451,7 +451,7 @@ export function ExportSelectionModal({
         <button
           onClick={onClose}
           disabled={exporting}
-          className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground/70
+          className="px-4 py-2.5 rounded-modal text-sm font-medium text-muted-foreground/70
             hover:text-foreground/80 transition-colors disabled:opacity-50"
         >
           {s.cancel}
@@ -459,7 +459,7 @@ export function ExportSelectionModal({
         <button
           onClick={handleExport}
           disabled={exporting || totalSelected === 0 || !passphraseValid}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-modal text-sm font-medium
             bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20
             transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >

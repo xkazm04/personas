@@ -32,14 +32,14 @@ export function AutomationCardActions({
     <div className="relative">
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+        className="flex items-center justify-center w-7 h-7 rounded-card text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
       >
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
 
       {menuOpen && (
           <div
-            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-elevation-3 py-1"
+            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-card border border-border bg-background shadow-elevation-3 py-1"
           >
             <button
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}

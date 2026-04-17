@@ -12,7 +12,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
   return (
     <button
       onClick={onSelect}
-      className={`w-full text-left p-3 rounded-xl border transition-colors ${
+      className={`w-full text-left p-3 rounded-modal border transition-colors ${
         isActive
           ? 'border-orange-500/30 bg-orange-500/5'
           : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'

@@ -116,9 +116,9 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
 
   if (alerts.length === 0 && recommendations.length === 0) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-secondary/10 p-4">
+      <div className="rounded-modal border border-primary/10 bg-secondary/10 p-4">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
             <Shield className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
@@ -126,7 +126,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
             <p className="text-xs text-muted-foreground/70">{t.overview.predictive_alerts_extra.all_nominal}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-4 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+        <div className="flex items-center gap-2 px-3 py-4 rounded-card bg-emerald-500/5 border border-emerald-500/15">
           <Shield className="w-5 h-5 text-emerald-400" />
           <p className="text-sm text-emerald-400/80">{t.overview.predictive_alerts_extra.no_alerts}</p>
         </div>
@@ -135,9 +135,9 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
   }
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 p-4">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 p-4">
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-card bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
         </div>
         <div>
@@ -155,7 +155,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
             const styles = SEVERITY_STYLES[alert.severity];
             const Icon = alert.icon;
             return (
-              <div key={alert.id} className={`flex items-start gap-3 p-3 rounded-lg border ${styles.border} ${styles.bg}`}>
+              <div key={alert.id} className={`flex items-start gap-3 p-3 rounded-card border ${styles.border} ${styles.bg}`}>
                 <Icon className={`w-4 h-4 ${styles.icon} flex-shrink-0 mt-0.5`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -186,7 +186,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
           </div>
           <div className="space-y-2">
             {recommendations.map((rec) => (
-              <div key={rec.personaId} className="flex items-center gap-3 p-3 rounded-lg border border-violet-500/15 bg-violet-500/5">
+              <div key={rec.personaId} className="flex items-center gap-3 p-3 rounded-card border border-violet-500/15 bg-violet-500/5">
                 <div className="flex-1 min-w-0">
                   <p className="typo-caption text-foreground/80">{rec.personaName}</p>
                   <div className="flex items-center gap-1.5 mt-1">

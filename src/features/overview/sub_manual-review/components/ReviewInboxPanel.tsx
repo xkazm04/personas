@@ -76,7 +76,7 @@ export function ReviewInboxPanel({
       {/* View mode toggle */}
       {!IS_MOBILE && (
         <div className="flex items-center justify-end px-3 py-1.5 border-b border-primary/[0.06] bg-secondary/10">
-          <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+          <div className="flex rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => { setViewMode('default'); setSlideOverOpen(false); }}
               className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-colors ${
@@ -192,7 +192,7 @@ export function ReviewInboxPanel({
                 <span className="typo-caption text-foreground/70">{t.overview.review.review_detail}</span>
                 <button
                   onClick={handleCloseSlideOver}
-                  className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -214,7 +214,7 @@ export function ReviewInboxPanel({
             <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 flex-shrink-0">
               <button
                 onClick={() => onSelectReview(null)}
-                className="p-2 rounded-lg hover:bg-secondary/50 text-muted-foreground"
+                className="p-2 rounded-card hover:bg-secondary/50 text-muted-foreground"
               >
                 <X className="w-4 h-4" />
               </button>

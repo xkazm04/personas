@@ -38,7 +38,7 @@ export function AutomationCard({
         <AnimatePresence>
           {isTransitioning && (
             <motion.div
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-[1px]"
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-modal bg-background/60 backdrop-blur-[1px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -48,7 +48,7 @@ export function AutomationCard({
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-card bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
           <Zap className="w-3.5 h-3.5 text-accent/60" />
         </div>
         <div className="flex-1 min-w-0">
@@ -72,24 +72,24 @@ export function AutomationCard({
           {automation.deploymentStatus === 'active' && (
             <button onClick={() => onTest(automation.id)} disabled={isTesting}
               title={isTesting ? 'Test is already running' : undefined}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-modal border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
               {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
             </button>
           )}
           {automation.deploymentStatus === 'draft' && (
             <button onClick={() => onEdit(automation.id)}
-              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-xl border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
+              className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} text-sm rounded-modal border border-accent/25 text-foreground/80 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
             <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm rounded-lg border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} text-sm rounded-card border border-border text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors`}
               title={`Open in ${platformConfig.label}`}><ExternalLink className="w-3 h-3" /></a>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>
       </div>
       {testResult && !isTesting && (
-        <div className={`${TOOLS_SECTION_GAP} px-3 py-2 rounded-xl text-sm ${testResult.success ? 'bg-brand-emerald/5 border border-brand-emerald/15 text-brand-emerald' : 'bg-brand-rose/5 border border-brand-rose/15 text-brand-rose'}`}>
+        <div className={`${TOOLS_SECTION_GAP} px-3 py-2 rounded-modal text-sm ${testResult.success ? 'bg-brand-emerald/5 border border-brand-emerald/15 text-brand-emerald' : 'bg-brand-rose/5 border border-brand-rose/15 text-brand-rose'}`}>
           <div className="flex items-center gap-1.5">
             {testResult.success ? <CheckCircle2 className="w-3 h-3 flex-shrink-0" /> : <XCircle className="w-3 h-3 flex-shrink-0" />}
             <span>{testResult.message}</span>

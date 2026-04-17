@@ -41,7 +41,7 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
 
       {/* Content blocks */}
       {result.content.map((block, i) => (
-        <div key={i} className="rounded-lg border border-primary/8 overflow-hidden">
+        <div key={i} className="rounded-card border border-primary/8 overflow-hidden">
           {block.content_type !== 'text' && (
             <div className="px-3 py-1 text-sm text-muted-foreground/60 bg-secondary/20 border-b border-primary/5">
               {block.content_type}
@@ -70,7 +70,7 @@ export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
       </div>
       <button
         onClick={onDiscover}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-modal text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
         Discover Tools

@@ -131,7 +131,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
               Response
             </span>
             {sendError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
+              <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">
                 {sendError}
               </div>
             )}
@@ -147,8 +147,8 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
-      <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-xl shadow-elevation-3 p-4 space-y-3">
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
+      <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground/80">{vt.paste_spec_title}</h3>
           <Button
@@ -164,7 +164,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           value={pasteContent}
           onChange={(e) => setPasteContent(e.target.value)}
           placeholder={vt.paste_placeholder}
-          className="w-full h-[300px] p-3 rounded-lg text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
+          className="w-full h-[300px] p-3 rounded-card text-sm font-mono bg-secondary/20 border border-primary/10 text-foreground/80 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-primary/25"
         />
         <div className="flex justify-end gap-2">
           <Button

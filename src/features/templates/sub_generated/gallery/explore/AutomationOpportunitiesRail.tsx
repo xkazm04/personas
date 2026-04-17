@@ -68,10 +68,10 @@ function OpportunityCard({
   const connectorMeta = suggestedConnector ? getConnectorMeta(suggestedConnector) : null;
 
   return (
-    <div className="rounded-xl border border-amber-500/12 bg-amber-500/[0.03] p-4 hover:border-amber-500/25 transition-all">
+    <div className="rounded-modal border border-amber-500/12 bg-amber-500/[0.03] p-4 hover:border-amber-500/25 transition-all">
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-2">
-        <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/15">
+        <div className="p-1.5 rounded-card bg-amber-500/10 border border-amber-500/15">
           <GroupIcon className="w-4 h-4 text-amber-300/80" />
         </div>
         <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ function TemplateRow({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-amber-500/5 transition-colors ${
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-amber-500/5 transition-colors ${
         dimmed ? 'opacity-60' : ''
       }`}
     >

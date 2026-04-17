@@ -31,7 +31,7 @@ export function EmptyState({
   const displayDescription = description ?? t.templates.empty.no_templates_hint;
   return (
     <div className="flex flex-col items-center justify-center py-12 gap-3 animate-fade-in" role="status">
-      <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/15 flex items-center justify-center">
         <Icon className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
       </div>
       <p className="text-base font-medium text-foreground/80">{displayTitle}</p>
@@ -41,7 +41,7 @@ export function EmptyState({
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
+          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"
         >
           {action.label}
         </button>

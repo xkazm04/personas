@@ -82,7 +82,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative rounded-xl backdrop-blur-sm border transition-all min-w-[180px] max-w-[320px] ${style.bg} ${style.border} ${
+      className={`group relative rounded-modal backdrop-blur-sm border transition-all min-w-[180px] max-w-[320px] ${style.bg} ${style.border} ${
         selected ? 'ring-1 ring-primary/30 shadow-elevation-3' : ''
       }`}
       onDoubleClick={() => { if (!editing) setEditing(true); }}
@@ -134,7 +134,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             <div className="flex justify-end">
               <button
                 onClick={handleSave}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-card bg-primary/15 border border-primary/25 text-xs font-medium text-primary hover:bg-primary/25 transition-colors"
               >
                 <Check className="w-3 h-3" />
                 {pt.done}

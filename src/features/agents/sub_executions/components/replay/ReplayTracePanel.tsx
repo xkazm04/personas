@@ -159,7 +159,7 @@ function SpanCard({
     : undefined;
 
   return (
-    <div className={`rounded-lg border px-2.5 py-1.5 transition-all ${
+    <div className={`rounded-card border px-2.5 py-1.5 transition-all ${
       variant === 'active'
         ? 'border-blue-400/30 bg-blue-500/8'
         : variant === 'completed'

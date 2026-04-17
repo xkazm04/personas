@@ -21,7 +21,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
     <>
       {/* Match existing banner */}
       {result.match_existing && (
-        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${INFO_STATUS.bg} ${INFO_STATUS.border}`}>
+        <div className={`flex items-start gap-3 px-4 py-3 border rounded-modal ${INFO_STATUS.bg} ${INFO_STATUS.border}`}>
           <Plug className={`w-4 h-4 mt-0.5 shrink-0 ${INFO_STATUS.text}`} />
           <div className="text-sm">
             <span className={`${INFO_STATUS.text} font-medium`}>{t.vault.design_phases.existing_connector}</span>
@@ -35,7 +35,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
 
       {/* New connector discovery banner */}
       {!result.match_existing && (
-        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${AI_STATUS.bg} ${AI_STATUS.border}`}>
+        <div className={`flex items-start gap-3 px-4 py-3 border rounded-modal ${AI_STATUS.bg} ${AI_STATUS.border}`}>
           <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.text}`} />
           <div className="text-sm">
             <span className={`${AI_STATUS.text} font-medium`}>{t.vault.design_phases.new_connector}</span>
@@ -52,9 +52,9 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
       )}
 
       {/* Connector preview */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-secondary/40 border border-primary/10 rounded-xl">
+      <div className="flex items-center gap-3 px-4 py-3 bg-secondary/40 border border-primary/10 rounded-modal">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center border"
+          className="w-10 h-10 rounded-modal flex items-center justify-center border"
           style={{
             backgroundColor: `${result.connector.color}15`,
             borderColor: `${result.connector.color}30`,
@@ -67,20 +67,20 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
           <p className="text-sm text-muted-foreground/80">{result.summary}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <ListChecks className="w-3 h-3" />
             {fields.length}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <KeyRound className="w-3 h-3" />
             {requiredCount}
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-card bg-secondary/50 border border-primary/10 text-sm text-foreground/85">
             <CircleHelp className="w-3 h-3" />
             {optionalCount}
           </span>
         </div>
-        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 text-sm rounded-lg font-mono">
+        <span className="px-2 py-0.5 bg-primary/10 text-primary/70 text-sm rounded-card font-mono">
           {result.connector.category}
         </span>
       </div>

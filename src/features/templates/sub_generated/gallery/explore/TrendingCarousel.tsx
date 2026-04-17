@@ -30,7 +30,7 @@ export function TrendingCarousel({
           <button
             key={tmpl.id}
             onClick={() => onSelectTemplate(tmpl)}
-            className="flex-shrink-0 w-[200px] p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 hover:bg-emerald-500/10 transition-all text-left group/trend"
+            className="flex-shrink-0 w-[200px] p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 hover:bg-emerald-500/10 transition-all text-left group/trend"
           >
             <div className="text-sm font-medium text-foreground/80 group-hover/trend:text-emerald-300 truncate">
               {tmpl.test_case_name}

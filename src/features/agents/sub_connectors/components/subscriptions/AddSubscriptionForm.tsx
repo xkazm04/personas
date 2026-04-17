@@ -59,7 +59,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
   };
 
   return (
-    <div className="border border-primary/20 rounded-xl p-2.5 space-y-2 bg-secondary/30">
+    <div className="border border-primary/20 rounded-modal p-2.5 space-y-2 bg-secondary/30">
       <FormField label="Event Type" hint="The type of system event that will trigger this persona to run.">
         <ThemedSelect
           value={newEventType}
@@ -95,7 +95,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
                 <HelpCircle className="w-3 h-3" />
                 {sourceFilterHelp.title}
               </summary>
-              <div className="mt-1 p-2 rounded-lg bg-background/40 border border-primary/10 text-xs text-muted-foreground/70 space-y-1">
+              <div className="mt-1 p-2 rounded-card bg-background/40 border border-primary/10 text-xs text-muted-foreground/70 space-y-1">
                 {sourceFilterHelp.rules.map((r) => (
                   <div key={r.pattern} className="flex gap-2">
                     <code className="text-primary/80 shrink-0">{r.pattern}</code>
@@ -116,7 +116,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
         <button
           onClick={() => void handleAdd()}
           disabled={!newEventType || saving}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all ${
             newEventType && !saving
               ? 'bg-primary hover:bg-primary/90 text-foreground'
               : 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'

@@ -75,13 +75,13 @@ export function AgentCard({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onToggle}
-      className={`relative flex flex-col items-start p-3.5 rounded-xl border text-left transition-colors ${
+      className={`relative flex flex-col items-start p-3.5 rounded-modal border text-left transition-colors ${
         selected
           ? 'bg-primary/10 border-primary/20 ring-1 ring-amber-500/20'
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
       }`}
     >
-      <div className={`w-9 h-9 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
+      <div className={`w-9 h-9 rounded-card ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
         {agent.emoji}
       </div>
       <span className="text-md font-medium text-foreground mb-0.5">{agent.label}</span>
@@ -116,10 +116,10 @@ export function ScanProgress({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4"
+      className="border border-amber-500/20 bg-amber-500/5 rounded-modal p-4"
     >
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-md">
+        <div className="w-7 h-7 rounded-card bg-amber-500/15 flex items-center justify-center text-md">
           {currentAgent?.emoji ?? '...'}
         </div>
         <div className="flex-1 min-w-0">
@@ -160,10 +160,10 @@ export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * staggerDelay }}
-      className="border border-primary/10 rounded-xl p-4 hover:bg-primary/5 hover:border-primary/20 transition-colors"
+      className="border border-primary/10 rounded-modal p-4 hover:bg-primary/5 hover:border-primary/20 transition-colors"
     >
       <div className="flex items-start gap-3 mb-3">
-        <div className={`w-7 h-7 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-md flex-shrink-0`}>
+        <div className={`w-7 h-7 rounded-card ${ac.bg} border ${ac.border} flex items-center justify-center text-md flex-shrink-0`}>
           {agent?.emoji ?? '?'}
         </div>
         <div className="flex-1 min-w-0">
@@ -203,7 +203,7 @@ export function ScanHistoryTable({ history }: { history: ScanHistoryEntry[] }) {
     return <p className="text-md text-foreground">No previous scans.</p>;
   }
   return (
-    <div className="border border-primary/10 rounded-xl overflow-hidden">
+    <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Table header */}
       <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider">
         <span>Agents</span>

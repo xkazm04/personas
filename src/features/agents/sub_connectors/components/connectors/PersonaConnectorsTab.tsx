@@ -101,7 +101,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
             {connectorNames.map((name) => {
               const meta = getConnectorMeta(name);
               return (
-                <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/30 border border-primary/10" title={meta.label}>
+                <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-card bg-secondary/30 border border-primary/10" title={meta.label}>
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
                   <span className="text-xs text-foreground/70">{meta.label}</span>
                 </div>
@@ -116,7 +116,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'list' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
             title={t.agents.connectors.ct_list_view}
           >
             <List className="w-4 h-4" />
@@ -124,7 +124,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
           <button
             type="button"
             onClick={() => setViewMode('graph')}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
+            className={`p-1.5 rounded-card transition-colors cursor-pointer ${viewMode === 'graph' ? 'bg-primary/10 text-foreground/90' : 'text-muted-foreground/50 hover:text-muted-foreground/70'}`}
             title={t.agents.connectors.ct_graph_view}
           >
             <Network className="w-4 h-4" />
@@ -155,7 +155,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       )}
       <AutomationSetupModal open={automationModalOpen} personaId={selectedPersona.id} onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} editAutomationId={editingAutomationId} />
       {designOpen && (
-        <div className="mt-4 border border-violet-500/20 rounded-xl overflow-hidden">
+        <div className="mt-4 border border-violet-500/20 rounded-modal overflow-hidden">
           <CredentialDesignModal open={designOpen} embedded initialInstruction={designInstruction} onClose={() => { setDesignOpen(false); setDesignInstruction(''); }} onComplete={handleDesignComplete} />
         </div>
       )}

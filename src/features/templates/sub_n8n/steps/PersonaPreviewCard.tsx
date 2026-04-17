@@ -64,14 +64,14 @@ export function PersonaPreviewCard({
   const [showPrompt, setShowPrompt] = useState(false);
 
   return (
-    <div className="bg-secondary/20 border border-primary/10 rounded-xl p-4">
+    <div className="bg-secondary/20 border border-primary/10 rounded-modal p-4">
       <p className="text-sm font-semibold text-muted-foreground/55 uppercase tracking-wider mb-3">
         Persona Preview
       </p>
 
       <div className="flex items-center gap-4 mb-4">
         <div
-          className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-elevation-3"
+          className="animate-fade-scale-in w-14 h-14 rounded-modal flex items-center justify-center text-xl border shadow-elevation-3"
           style={{
             backgroundColor: `${color ?? '#8b5cf6'}18`,
             borderColor: `${color ?? '#8b5cf6'}30`,
@@ -135,7 +135,7 @@ export function PersonaPreviewCard({
 
       {/* Tool-credential validation warning */}
       {toolsNeedingCredentials.length > 0 && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-2">
+        <div className="flex items-start gap-2 p-3 rounded-modal bg-amber-500/5 border border-amber-500/15 mb-2">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-400/60">
             <p className="font-medium">
@@ -162,7 +162,7 @@ export function PersonaPreviewCard({
           </Button>
           {showPrompt && (
             <div
-              className="animate-fade-slide-in mt-2 p-3 rounded-lg bg-background/40 border border-primary/10 overflow-hidden"
+              className="animate-fade-slide-in mt-2 p-3 rounded-card bg-background/40 border border-primary/10 overflow-hidden"
             >
               <div className="text-sm max-h-48 overflow-y-auto leading-relaxed">
                 <MarkdownRenderer content={systemPrompt} />
@@ -195,7 +195,7 @@ function EntityCard({ icon: Icon, count, label, color }: {
   color: ColorKey;
 }) {
   return (
-    <div className={`px-2 py-3 rounded-xl border text-center ${colorMap[color]}`}>
+    <div className={`px-2 py-3 rounded-modal border text-center ${colorMap[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
       <p className="text-base font-semibold text-foreground/80 tabular-nums">{count}</p>
       <p className="text-sm text-muted-foreground/55 uppercase tracking-wider">{label}</p>

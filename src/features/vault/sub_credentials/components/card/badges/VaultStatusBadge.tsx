@@ -55,7 +55,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   // Simple mode: just a static badge, no dropdown
   if (isSimple) {
     return (
-      <span className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border ${
+      <span className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-card border ${
         hasPlaintext
           ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
           : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
@@ -67,7 +67,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
   }
   const isKeychain = vault.key_source === 'keychain';
 
-  const badgeClass = `flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border cursor-pointer transition-colors ${
+  const badgeClass = `flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-card border cursor-pointer transition-colors ${
     hasPlaintext
       ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15 hover:border-amber-500/30'
       : isKeychain
@@ -92,7 +92,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-background border border-primary/15 shadow-elevation-3 z-30 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 w-80 rounded-modal bg-background border border-primary/15 shadow-elevation-3 z-30 overflow-hidden">
           {/* Header */}
           <div className={`px-4 py-3 border-b ${
             hasPlaintext
@@ -149,7 +149,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               <button
                 onClick={handleEncryptNow}
                 disabled={isMigrating}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
                   <><LoadingSpinner size="sm" />{t.vault.vault_badge.encrypting}</>
@@ -162,7 +162,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
           {/* Migration result */}
           {migrationResult && (
-            <div className={`mx-4 mb-3 px-3 py-2 rounded-xl text-sm ${
+            <div className={`mx-4 mb-3 px-3 py-2 rounded-modal text-sm ${
               migrationResult.failed > 0
                 ? 'bg-red-500/10 border border-red-500/20 text-red-300'
                 : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'

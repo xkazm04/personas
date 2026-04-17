@@ -64,7 +64,7 @@ export function EventsPanel({
               key={p.id}
               type="button"
               onClick={() => setSelectedPersonaId(p.id === selectedPersonaId ? null : p.id)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all duration-200 ${
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card text-left transition-all duration-200 ${
                 selectedPersonaId === p.id
                   ? 'bg-primary/10 border border-primary/25'
                   : 'hover:bg-secondary/30 border border-transparent'
@@ -109,7 +109,7 @@ export function EventsPanel({
                   key={stableId}
                   type="button"
                   onClick={() => onToggleEvent(event)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-card text-left transition-all duration-200 ${
                     isSelected
                       ? 'bg-teal-500/10 border border-teal-500/25'
                       : 'bg-secondary/10 border border-transparent hover:border-primary/15'
@@ -151,7 +151,7 @@ export function EventsPanel({
                   key={t.id}
                   type="button"
                   onClick={() => onToggleEvent(event)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-card text-left transition-all duration-200 ${
                     isSelected
                       ? 'bg-teal-500/10 border border-teal-500/25'
                       : 'bg-secondary/10 border border-transparent hover:border-primary/15'

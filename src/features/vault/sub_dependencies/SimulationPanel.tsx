@@ -20,13 +20,13 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
   const sev = getSeverityStyles(t)[simulation.severity];
 
   return (
-    <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden">
+    <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-fuchsia-400/80" />
           <span className="text-sm font-medium text-foreground/85">{dep.revocation_simulation}</span>
-          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-md border ${sev.bg} ${sev.text} ${sev.border}`}>
+          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded-input border ${sev.bg} ${sev.text} ${sev.border}`}>
             {sev.label}
           </span>
         </div>
@@ -38,19 +38,19 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
       <div className="p-3 space-y-3">
         {/* Impact Summary Cards */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
+          <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedPersonas}</div>
             <div className="text-[10px] text-muted-foreground/60">{dep.personas_affected}</div>
           </div>
-          <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
+          <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.totalAffectedWorkflows}</div>
             <div className="text-[10px] text-muted-foreground/60">{dep.workflows_broken}</div>
           </div>
-          <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
+          <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
             <div className="text-[10px] text-muted-foreground/60">{dep.daily_execs_lost}</div>
           </div>
-          <div className="rounded-lg bg-secondary/40 border border-primary/8 p-2 text-center">
+          <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="text-lg font-semibold text-foreground/90">
               ${simulation.estimatedDailyRevenueLost.toFixed(2)}
             </div>

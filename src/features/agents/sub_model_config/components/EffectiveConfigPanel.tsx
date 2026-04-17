@@ -51,7 +51,7 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
 
   if (loading) {
     return (
-      <div className="bg-secondary/20 border border-primary/10 rounded-lg p-2.5 animate-pulse">
+      <div className="bg-secondary/20 border border-primary/10 rounded-card p-2.5 animate-pulse">
         <div className="h-4 bg-secondary/40 rounded w-32" />
       </div>
     );
@@ -67,7 +67,7 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
   const hasInheritance = inheritedCount > 0 || overriddenCount > 0;
 
   return (
-    <div className="bg-secondary/20 border border-primary/10 rounded-lg overflow-hidden">
+    <div className="bg-secondary/20 border border-primary/10 rounded-card overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}

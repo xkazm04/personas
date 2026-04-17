@@ -123,7 +123,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   return (
     <div
       key="auto-setup"
-      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4"
+      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-6 space-y-4"
     >
       <SetupHeader connector={connector} mode={mode} phase={phase} onCancel={handleCancel} />
 

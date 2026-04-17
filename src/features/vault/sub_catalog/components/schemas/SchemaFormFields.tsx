@@ -11,7 +11,7 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
     <div className="flex items-center gap-3">
       <button
         onClick={onBack}
-        className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+        className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
       </button>
@@ -46,7 +46,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
         aria-invalid={!!error}
         aria-describedby={error ? 'schema-form-error' : undefined}
         data-testid="vault-schema-name"
-        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
+        className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground text-sm focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
       />
     </div>
   );
@@ -75,7 +75,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
               <button
                 key={st.id}
                 onClick={() => onSubTypeChange(st.id)}
-                className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                className={`flex-1 px-4 py-2.5 rounded-modal text-sm font-medium border transition-all ${
                   subTypeId === st.id
                     ? config.subTypeActiveClass
                     : 'bg-secondary/25 border-primary/15 text-muted-foreground/80 hover:bg-secondary/40'
@@ -93,7 +93,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
             <button
               key={st.id}
               onClick={() => onSubTypeChange(st.id)}
-              className={`text-left px-3 py-2.5 rounded-xl text-sm border transition-all ${
+              className={`text-left px-3 py-2.5 rounded-modal text-sm border transition-all ${
                 subTypeId === st.id
                   ? config.subTypeActiveClass
                   : 'bg-secondary/25 border-primary/15 text-muted-foreground/80 hover:bg-secondary/40'

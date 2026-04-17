@@ -67,7 +67,7 @@ export function CredentialFilterBar({
         {openDropdown === 'health' && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
-            <div role="listbox" className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-elevation-3 py-1 min-w-[100px]">
+            <div role="listbox" className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
               {(['all', 'healthy', 'failing', 'untested'] as HealthFilter[]).map((f) => (
                 <button
                   key={f}
@@ -100,7 +100,7 @@ export function CredentialFilterBar({
         {openDropdown === 'sort' && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
-            <div role="listbox" className="absolute top-full mt-1 right-0 z-20 bg-background border border-primary/15 rounded-lg shadow-elevation-3 py-1 min-w-[110px]">
+            <div role="listbox" className="absolute top-full mt-1 right-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[110px]">
               {(['name', 'created', 'last-used', 'health'] as SortKey[]).map((s) => (
                 <button
                   key={s}

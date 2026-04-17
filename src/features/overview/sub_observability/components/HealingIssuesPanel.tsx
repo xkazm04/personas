@@ -89,23 +89,23 @@ export function HealingIssuesPanel({
   }, [auditExpanded, fetchAudit]);
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
           <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.healing_issues_panel.title}</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
+            <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {/* View mode toggle */}
-          <div className="flex items-center rounded-lg border border-primary/15 overflow-hidden">
+          <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
@@ -125,7 +125,7 @@ export function HealingIssuesPanel({
             onClick={handleRunAnalysis}
             disabled={healingRunning}
             aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
-            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           >
             {healingRunning ? (
               <>
@@ -187,7 +187,7 @@ export function HealingIssuesPanel({
               role="tab"
               aria-selected={issueFilter === chip.key}
               onClick={() => setIssueFilter(chip.key)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
                   ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -216,7 +216,7 @@ export function HealingIssuesPanel({
       ) : healingIssues.length === 0 ? (
         <div className="flex items-center justify-center py-10">
           <div className="text-center flex flex-col items-center">
-            <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+            <div className="w-14 h-14 rounded-modal bg-emerald-500/10 border border-emerald-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
             <p className="typo-heading text-foreground/80">{t.overview.healing_issues_panel.no_open_issues}</p>
@@ -272,7 +272,7 @@ export function HealingIssuesPanel({
                 {auditEntries.map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/5 typo-body"
+                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/5 typo-body"
                   >
                     <span className="shrink-0 px-1.5 py-0.5 typo-caption rounded bg-amber-500/10 text-amber-400/90 border border-amber-500/15 mt-0.5">
                       {AUDIT_EVENT_LABELS[entry.eventType] ?? entry.eventType}

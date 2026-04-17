@@ -19,7 +19,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
   );
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
       <button
         onClick={() => setToolsExpanded(!toolsExpanded)}
         aria-expanded={toolsExpanded}
@@ -52,7 +52,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                     {tools.map((tool) => (
                       <span
                         key={tool.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-primary/10 bg-secondary/20 text-foreground/80"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-modal border border-primary/10 bg-secondary/20 text-foreground/80"
                         title={tool.description ?? undefined}
                       >
                         <Wrench className="w-3 h-3 text-muted-foreground/60" />
@@ -71,7 +71,7 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                       <button
                         onClick={() => setShowRunner(!showRunner)}
                         aria-expanded={showRunner}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
                       >
                         <Play className="w-3 h-3" />
                         {showRunner ? t.agents.connectors.ts_hide_runner : tx(t.agents.connectors.ts_try_tools, { count: invocableTools.length })}

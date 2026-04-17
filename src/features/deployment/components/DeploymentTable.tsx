@@ -103,13 +103,13 @@ export function DeploymentTable({
                 <span className="font-medium text-foreground/90">{row.name}</span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-lg border ${tb.cls}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-card border ${tb.cls}`}>
                   <TargetIcon className="w-3 h-3" />
                   {tb.label}
                 </span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-lg border ${statusBadge(row.status)}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-card border ${statusBadge(row.status)}`}>
                   {statusIcon(row.status)}
                   {row.status}
                 </span>
@@ -141,7 +141,7 @@ export function DeploymentTable({
                       title={dt.test_deployment}
                       onClick={() => onTest(row.id, row.personaId!)}
                       disabled={isBusy || testState?.running}
-                      className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-blue-400
+                      className="p-1.5 rounded-card text-muted-foreground/50 hover:text-blue-400
                                  hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
                     >
                       {testState?.running ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
@@ -149,7 +149,7 @@ export function DeploymentTable({
                   )}
                   {testResult && (
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded-lg border ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded-card border ${
                         testResult.status === 'pass'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
@@ -215,7 +215,7 @@ export function DeploymentTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}
-                      className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+                      className="p-1.5 rounded-card text-muted-foreground/50 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>

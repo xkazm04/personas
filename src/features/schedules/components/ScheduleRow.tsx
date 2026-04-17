@@ -54,7 +54,7 @@ export default function ScheduleRow({
 
   return (
     <>
-      <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl border border-l-[3px] transition-all ${healthAccent} ${disabled
+      <div className={`group flex items-center gap-3 px-4 py-3 rounded-modal border border-l-[3px] transition-all ${healthAccent} ${disabled
           ? 'border-primary/5 bg-primary/[0.02] opacity-60'
           : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05] hover:border-primary/20'
         }`}>
@@ -126,7 +126,7 @@ export default function ScheduleRow({
           <button
             onClick={onManualExecute}
             disabled={isExecuting || disabled}
-            className="p-2 rounded-lg hover:bg-emerald-500/15 text-muted-foreground/70 hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-2 rounded-card hover:bg-emerald-500/15 text-muted-foreground/70 hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={t.schedules.run_now}
           >
             {isExecuting ? (
@@ -140,7 +140,7 @@ export default function ScheduleRow({
           <button
             onClick={() => setShowFreqEditor(true)}
             disabled={isEditing}
-            className="p-2 rounded-lg hover:bg-blue-500/15 text-muted-foreground/70 hover:text-blue-400 transition-colors disabled:opacity-40"
+            className="p-2 rounded-card hover:bg-blue-500/15 text-muted-foreground/70 hover:text-blue-400 transition-colors disabled:opacity-40"
             title={t.schedules.change_frequency}
           >
             <Settings2 className="w-4 h-4" />
@@ -149,7 +149,7 @@ export default function ScheduleRow({
           {/* Toggle enabled */}
           <button
             onClick={onToggleEnabled}
-            className="p-2 rounded-lg hover:bg-secondary/60 transition-colors"
+            className="p-2 rounded-card hover:bg-secondary/60 transition-colors"
             title={agent.trigger_enabled ? t.schedules.pause_schedule : t.schedules.resume_schedule}
           >
             {agent.trigger_enabled ? (

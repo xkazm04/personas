@@ -34,7 +34,7 @@ export default function OnboardingProgressBar() {
     <div
       className="animate-fade-slide-in mx-3 mb-2"
     >
-      <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 space-y-2.5">
+      <div className="rounded-modal border border-violet-500/20 bg-violet-500/5 p-3 space-y-2.5">
         {/* Header */}
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-violet-400" />

@@ -35,7 +35,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
           />
           <button
             onClick={() => batchFileInputRef.current?.click()}
-            className="px-4 py-3 rounded-xl border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-muted-foreground/90 hover:text-violet-300 transition-all flex items-center gap-2"
+            className="px-4 py-3 rounded-modal border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-muted-foreground/90 hover:text-violet-300 transition-all flex items-center gap-2"
           >
             <Upload className="w-4 h-4" />
             Upload list.md
@@ -55,7 +55,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
         <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => onCategoryFilterChange(null)}
-            className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
+            className={`px-2.5 py-1 text-sm rounded-modal border transition-all ${
               categoryFilter === null
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
                 : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
@@ -69,7 +69,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
               <button
                 key={cat}
                 onClick={() => onCategoryFilterChange(categoryFilter === cat ? null : cat)}
-                className={`px-2.5 py-1 text-sm rounded-xl border transition-all ${
+                className={`px-2.5 py-1 text-sm rounded-modal border transition-all ${
                   categoryFilter === cat
                     ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
                     : 'bg-secondary/30 border-primary/10 text-muted-foreground/80 hover:border-primary/20'
@@ -89,14 +89,14 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
           return (
             <div
               key={t.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-modal bg-secondary/20 border border-primary/5 hover:border-primary/15 transition-colors"
             >
               <span className="text-sm text-muted-foreground/80 w-6 text-right flex-shrink-0">
                 {t.id.replace('template_', '')}
               </span>
               <span className="text-sm text-foreground/90 flex-1 truncate">{t.name}</span>
               {t.category && (
-                <span className={`px-2 py-0.5 text-sm rounded-lg border flex-shrink-0 ${catStyle}`}>
+                <span className={`px-2 py-0.5 text-sm rounded-card border flex-shrink-0 ${catStyle}`}>
                   {t.category}
                 </span>
               )}
@@ -112,7 +112,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
         </p>
         <button
           onClick={onClear}
-          className="px-2 py-1 text-sm rounded-lg text-muted-foreground/80 hover:text-red-400 transition-colors"
+          className="px-2 py-1 text-sm rounded-card text-muted-foreground/80 hover:text-red-400 transition-colors"
         >
           Clear
         </button>

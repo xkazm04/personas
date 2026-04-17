@@ -56,7 +56,7 @@ export function TestTab() {
               value={testEventType}
               onChange={(e) => setTestEventType(e.target.value)}
               placeholder="e.g. build_complete, deploy, file_changed"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="w-full px-3 py-2 text-sm rounded-card border border-border/40 bg-secondary/30 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
           </div>
           <div>
@@ -65,13 +65,13 @@ export function TestTab() {
               value={testPayload}
               onChange={(e) => setTestPayload(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+              className="w-full px-3 py-2 text-sm rounded-card border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
             />
           </div>
           <button
             onClick={handleTestFire}
             disabled={isTesting || !testEventType.trim()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-card bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors"
           >
             <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
             {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
@@ -79,7 +79,7 @@ export function TestTab() {
         </div>
 
         {testResult && (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+          <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
             <p className="text-sm font-medium text-emerald-400">{t.triggers.event_published}</p>
             <div className="text-xs text-muted-foreground/70 space-y-1 font-mono">
               <p>ID: {testResult.id}</p>

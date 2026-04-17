@@ -57,7 +57,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
 
       {/* Collapsible sections: Services and Events */}
       {connector.services.length > 0 && (
-        <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <div className="border border-primary/10 rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'services' ? null : 'services')}
             variant="ghost"
@@ -74,7 +74,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
               {connector.services.map((service) => (
                 <div
                   key={service.toolName}
-                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-xl border-l-2"
+                  className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-modal border-l-2"
                   style={{ borderLeftColor: connector.color || 'transparent' }}
                 >
                   <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
@@ -90,7 +90,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {connector.events.length > 0 && (
-        <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <div className="border border-primary/10 rounded-modal overflow-hidden">
           <Button
             onClick={() => setExpandedSection(expandedSection === 'events' ? null : 'events')}
             variant="ghost"
@@ -111,7 +111,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
       )}
 
       {/* Intelligence */}
-      <div className="border border-primary/10 rounded-xl p-4">
+      <div className="border border-primary/10 rounded-modal p-4">
         <CredentialIntelligence credentialId={credential.id} />
       </div>
     </>

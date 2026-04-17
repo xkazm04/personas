@@ -30,7 +30,7 @@ export function MatrixCredentialPicker({
     <div
         className="animate-fade-slide-in overflow-hidden"
       >
-        <div className="mt-1 max-h-32 overflow-y-auto rounded-lg border border-primary/10 bg-background/40 backdrop-blur-sm">
+        <div className="mt-1 max-h-32 overflow-y-auto rounded-card border border-primary/10 bg-background/40 backdrop-blur-sm">
           {allEmpty && (
             <div className="px-2.5 py-2 text-[11px] text-muted-foreground/60 text-center">
               {t.agents.matrix_cred_picker.no_stored}

@@ -53,7 +53,7 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
   }, [trace.spans, collapsedSpans, duration]);
 
   return (
-    <div className={`rounded-lg border ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} bg-secondary/30 overflow-hidden`}>
+    <div className={`rounded-card border ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} bg-secondary/30 overflow-hidden`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/50 transition-colors text-left"
@@ -202,7 +202,7 @@ export default function SystemTraceViewer() {
   if (traces.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
         <p className="typo-body text-muted-foreground/80">{t.overview.system_trace_extra.no_traces}</p>

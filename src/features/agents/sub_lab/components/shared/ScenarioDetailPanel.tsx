@@ -66,7 +66,7 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
 }) {
   const s = score ?? 0;
   return (
-    <div className={`rounded-xl border ${borderColor} bg-background/30 overflow-hidden`}>
+    <div className={`rounded-modal border ${borderColor} bg-background/30 overflow-hidden`}>
       <div className="flex items-center gap-3 px-3 py-2.5">
         <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
   const { structured, plain } = parseRationale(result.rationale);
 
   return (
-    <div className="border border-primary/15 rounded-xl bg-gradient-to-b from-secondary/20 to-background/30 overflow-hidden">
+    <div className="border border-primary/15 rounded-modal bg-gradient-to-b from-secondary/20 to-background/30 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border-b border-primary/10">
         <div className="flex items-center gap-2 min-w-0">
@@ -117,7 +117,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       <div className="p-4 space-y-4">
         {/* Verdict banner */}
         {structured?.verdict && (
-          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">
+          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-card bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">
             <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm text-foreground/80 leading-relaxed">{structured.verdict}</p>
           </div>
@@ -172,7 +172,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
               <MessageSquare className="w-3 h-3" />
               {t.agents.lab.evaluation_notes}
             </h5>
-            <p className="text-sm text-foreground/70 leading-relaxed bg-secondary/20 rounded-lg px-3 py-2.5 border border-primary/5">
+            <p className="text-sm text-foreground/70 leading-relaxed bg-secondary/20 rounded-card px-3 py-2.5 border border-primary/5">
               {plain}
             </p>
           </div>
@@ -185,7 +185,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
               <Lightbulb className="w-3 h-3" />
               {t.agents.lab.how_to_fix}
             </h5>
-            <p className="text-sm text-foreground/70 leading-relaxed bg-amber-500/5 rounded-lg px-3 py-2.5 border border-amber-500/10">
+            <p className="text-sm text-foreground/70 leading-relaxed bg-amber-500/5 rounded-card px-3 py-2.5 border border-amber-500/10">
               {result.suggestions}
             </p>
           </div>
@@ -209,7 +209,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.agent_output}
             </summary>
-            <pre className="mt-2 text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-3 border border-primary/5 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
+            <pre className="mt-2 text-xs text-muted-foreground/80 bg-background/50 rounded-card p-3 border border-primary/5 max-h-[200px] overflow-y-auto whitespace-pre-wrap">
               {result.outputPreview}
             </pre>
           </details>
@@ -225,13 +225,13 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground/50 block mb-1">Expected</span>
-                <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                   {result.toolCallsExpected ?? t.agents.lab.none_specified}
                 </pre>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground/50 block mb-1">Actual</span>
-                <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
+                <pre className="text-xs text-muted-foreground/80 bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
                   {result.toolCallsActual ?? t.agents.lab.none_label}
                 </pre>
               </div>
@@ -241,7 +241,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
 
         {/* Error */}
         {result.errorMessage && (
-          <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 border border-red-500/20">
+          <div className="text-sm text-red-400 bg-red-500/10 rounded-card px-3 py-2 border border-red-500/20">
             {result.errorMessage}
           </div>
         )}

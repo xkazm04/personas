@@ -133,10 +133,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
   return (
     <div className="space-y-6">
       {/* Executive summary */}
-      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
@@ -161,7 +161,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             return (
               <div
                 key={agg.modelId}
-                className={`rounded-xl border overflow-hidden transition-all animate-fade-slide-in ${
+                className={`rounded-modal border overflow-hidden transition-all animate-fade-slide-in ${
                   isWinner
                     ? 'border-primary/25 shadow-elevation-3 shadow-primary/5'
                     : 'border-primary/10'
@@ -188,7 +188,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                 {/* Score section */}
                 <div className="px-4 py-3 space-y-3 bg-background/40">
                   {/* Big composite score */}
-                  <div className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
+                  <div className={`flex items-center gap-3 p-3 rounded-card bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
                     <span className={`text-3xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
@@ -234,7 +234,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           </summary>
           <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {topRationale.length > 0 && (
-              <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+              <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
                   <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
                     <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
@@ -251,7 +251,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               </div>
             )}
             {topSuggestions.length > 0 && (
-              <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
+              <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
                   <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
                     <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
@@ -276,7 +276,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
           <span className="text-[10px] text-muted-foreground/30">{t.agents.lab.click_cell_details}</span>
         </div>
-        <div className="overflow-x-auto border border-primary/10 rounded-xl">
+        <div className="overflow-x-auto border border-primary/10 rounded-modal">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
@@ -308,7 +308,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                       <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>
                         <button
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
-                          className={`w-full flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
+                          className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5 transition-all ${
                             isSelected
                               ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1'
                               : 'hover:bg-secondary/40'

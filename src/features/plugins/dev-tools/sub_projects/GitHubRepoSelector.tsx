@@ -110,7 +110,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="https://github.com/owner/repo"
-            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
           />
           {value && (
             <a
@@ -145,7 +145,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
       <button
         type="button"
         onClick={() => { setOpen(!open); setTimeout(() => searchRef.current?.focus(), 50); }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl hover:bg-secondary/60 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal hover:bg-secondary/60 transition-colors text-left"
       >
         <Github className="w-4 h-4 text-foreground flex-shrink-0" />
         {selectedRepoName ? (
@@ -159,7 +159,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
-          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
             {/* Search input */}
             <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
               <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />

@@ -74,7 +74,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
             return (
               <div
                 key={cfg.vaultPath}
-                className={`group relative rounded-xl border transition-colors ${
+                className={`group relative rounded-modal border transition-colors ${
                   active
                     ? 'border-violet-500/30 bg-violet-500/10'
                     : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
@@ -82,7 +82,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
               >
                 <button
                   onClick={() => selectConfig(cfg)}
-                  className="w-full text-left px-3 py-2.5 focus-ring rounded-xl"
+                  className="w-full text-left px-3 py-2.5 focus-ring rounded-modal"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <p
@@ -100,7 +100,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                 </button>
                 <button
                   onClick={(e) => removeConfig(e, cfg)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
+                  className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
                   title={`Remove ${cfg.vaultName}`}
                   aria-label={`Remove ${cfg.vaultName}`}
                 >

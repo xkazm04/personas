@@ -40,7 +40,7 @@ export function LabPanelShell({
 }: LabPanelShellProps) {
   return (
     <div
-      className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40"
+      className="border border-primary/20 rounded-modal overflow-hidden backdrop-blur-sm bg-secondary/40"
       data-testid={testId}
     >
       <div className="p-4 space-y-3">

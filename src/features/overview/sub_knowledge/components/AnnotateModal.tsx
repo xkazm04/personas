@@ -68,7 +68,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               placeholder={scopeType === 'tool' ? 'e.g. http_request' : 'e.g. google_workspace'}
-              className="w-full px-3 py-1.5 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+              className="w-full px-3 py-1.5 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
             />
           </div>
         )}
@@ -80,19 +80,19 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
             onChange={(e) => setText(e.target.value)}
             placeholder="e.g. Stripe webhook verification requires the raw request body, not the parsed JSON"
             rows={3}
-            className="w-full px-3 py-2 rounded-xl bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
+            className="w-full px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30 resize-none"
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-1.5 rounded-xl text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors">
+        <button onClick={onClose} className="px-4 py-1.5 rounded-modal text-sm text-muted-foreground/70 hover:text-foreground/90 transition-colors">
           {t.overview.annotate_modal.cancel}
         </button>
         <button
           onClick={() => { void handleSave(); }}
           disabled={saving || !text.trim()}
-          className="px-4 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+          className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
         >
           {saving ? t.overview.annotate_modal.saving : t.overview.annotate_modal.save_annotation}
         </button>

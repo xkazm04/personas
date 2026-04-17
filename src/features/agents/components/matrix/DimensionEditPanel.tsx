@@ -121,10 +121,10 @@ function CredentialPickerCard({
     <button
       type="button"
       onClick={onSelect}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-primary/10 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset focus-visible:outline-none"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal border border-primary/10 bg-secondary/25 hover:bg-secondary/50 hover:border-primary/25 transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset focus-visible:outline-none"
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
+        className="w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 border"
         style={{
           backgroundColor: connector ? `${connector.color}15` : undefined,
           borderColor: connector ? `${connector.color}30` : undefined,
@@ -201,7 +201,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 flex-shrink-0"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95 flex-shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -217,7 +217,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
               <button
                 type="button"
                 onClick={() => { setSidebarSection('credentials'); onClose(); }}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/20 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {t.agents.dimension_edit.open_keys}
@@ -271,7 +271,7 @@ function ConnectorCards({ connectors, onSwap }: {
   return (
     <div className="space-y-1.5 w-full">
       {!allHealthy && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/8 border border-amber-500/15 text-[10px] text-amber-400/80">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-amber-500/8 border border-amber-500/15 text-[10px] text-amber-400/80">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
           {t.agents.dimension_edit.credential_warning}
         </div>
@@ -286,7 +286,7 @@ function ConnectorCards({ connectors, onSwap }: {
           : "bg-amber-400";
 
         return (
-          <div key={c.name} className="rounded-lg border border-primary/10 bg-primary/[0.02] p-2">
+          <div key={c.name} className="rounded-card border border-primary/10 bg-primary/[0.02] p-2">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
               <div className="flex-1 min-w-0">
@@ -392,7 +392,7 @@ function TriggerCards({ triggers, onConfigChange }: {
         const hasInterval = tr.config?.interval;
 
         return (
-          <div key={i} className={`rounded-lg border p-2 ${colorClass}`}>
+          <div key={i} className={`rounded-card border p-2 ${colorClass}`}>
             <div className="flex items-center gap-2">
               <Icon className="w-3.5 h-3.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -480,7 +480,7 @@ function ReviewToggle({ items, onItemsChange }: {
       <button
         type="button"
         onClick={toggleApproval}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors w-full ${
+        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-card border text-[11px] font-medium transition-colors w-full ${
           hasApproval
             ? "border-rose-400/30 bg-rose-500/10 text-rose-400"
             : "border-emerald-400/30 bg-emerald-500/10 text-emerald-400"

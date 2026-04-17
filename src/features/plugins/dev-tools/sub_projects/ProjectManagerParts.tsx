@@ -53,14 +53,14 @@ export function ProjectRowMenu({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); setConfirming(false); }}
-        className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+        className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setConfirming(false); }} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden py-1">
+          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden py-1">
             <button
               type="button"
               onClick={handleEdit}
@@ -142,7 +142,7 @@ export function GoalBoard({
               return (
                 <div
                   key={goal.id}
-                  className={`animate-fade-slide-in group flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${
+                  className={`animate-fade-slide-in group flex items-center gap-3 px-3 py-2.5 rounded-modal border cursor-pointer transition-colors ${
                     selectedGoalId === goal.id
                       ? 'bg-primary/10 border-primary/20'
                       : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
@@ -180,7 +180,7 @@ export function GoalBoard({
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 text-md bg-secondary/30 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-ring"
+            className="flex-1 px-3 py-2 text-md bg-secondary/30 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
           />
           <Button
             variant="accent"

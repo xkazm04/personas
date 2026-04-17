@@ -58,7 +58,7 @@ export function CrashLogsSection() {
   };
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
       <div
         role="button"
         tabIndex={0}
@@ -66,7 +66,7 @@ export function CrashLogsSection() {
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary/30 transition-colors cursor-pointer"
       >
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500/10">
+        <div className="w-6 h-6 rounded-card flex items-center justify-center bg-red-500/10">
           <FileWarning className="w-3.5 h-3.5 text-red-300" />
         </div>
         <span className="typo-label text-foreground/80">
@@ -85,7 +85,7 @@ export function CrashLogsSection() {
                 void handleClear();
               }}
               disabled={clearing}
-              className="flex items-center gap-1 px-2 py-1 typo-body rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
             >
               <Trash2 className="w-3 h-3" />
               Clear
@@ -111,7 +111,7 @@ export function CrashLogsSection() {
                 const crashColor = isAutoCred ? 'text-amber-400/60' : 'text-red-400/60';
                 const CrashIcon = isAutoCred ? AlertTriangle : XCircle;
                 return (
-                <div key={log.filename} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={log.filename} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
@@ -133,7 +133,7 @@ export function CrashLogsSection() {
 
               {/* Frontend crashes persisted to SQLite */}
               {frontendDbLogs.map((log) => (
-                <div key={log.id} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={log.id} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
@@ -164,7 +164,7 @@ export function CrashLogsSection() {
 
               {/* Fallback: localStorage-only crashes not yet in SQLite */}
               {uniqueLsLogs.map((log, i) => (
-                <div key={`fe-${i}`} className="rounded-lg border border-primary/10 bg-background/40 overflow-hidden">
+                <div key={`fe-${i}`} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"

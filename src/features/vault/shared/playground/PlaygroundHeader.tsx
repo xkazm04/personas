@@ -88,7 +88,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
   return (
     <div className="flex items-center gap-3 px-6 py-3 border-b border-primary/10 bg-secondary/20 shrink-0">
       <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center border border-primary/15 shrink-0"
+        className="w-9 h-9 rounded-card flex items-center justify-center border border-primary/15 shrink-0"
         style={{ backgroundColor: `${color}15` }}
       >
         {iconUrl ? (
@@ -114,7 +114,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 }}
                 onBlur={saveName}
                 autoFocus
-                className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
               />
               <button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
@@ -180,7 +180,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 className="w-24 text-xs px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
               />
               {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-elevation-3 py-1 min-w-[100px]">
+                <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-card shadow-elevation-3 py-1 min-w-[100px]">
                   {filteredSuggestions.map((s) => (
                     <button
                       key={s}
@@ -206,7 +206,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
       </div>
       <button
         onClick={onClose}
-        className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80 shrink-0"
+        className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80 shrink-0"
       >
         <X className="w-4 h-4" />
       </button>

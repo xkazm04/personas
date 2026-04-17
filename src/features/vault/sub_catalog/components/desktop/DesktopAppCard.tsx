@@ -16,7 +16,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
     <button
       onClick={onSelect}
       disabled={disabled}
-      className={`w-full text-left p-3 rounded-xl border transition-all ${
+      className={`w-full text-left p-3 rounded-modal border transition-all ${
         disabled
           ? 'opacity-40 cursor-not-allowed border-primary/5 bg-secondary/10'
           : selected
@@ -26,7 +26,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
     >
       <div className="flex items-center gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center border"
+          className="w-8 h-8 rounded-card flex items-center justify-center border"
           style={{
             backgroundColor: `${meta.color}15`,
             borderColor: `${meta.color}30`,

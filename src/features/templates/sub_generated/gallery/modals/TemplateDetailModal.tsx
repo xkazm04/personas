@@ -140,19 +140,19 @@ export function TemplateDetailModal({
                 {review.instruction}
               </p>
               <div className="flex items-center gap-3 mt-3">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg border ${statusBadge.color}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-card border ${statusBadge.color}`}>
                   <StatusIcon className="w-3.5 h-3.5" />
                   {statusBadge.label}
                 </span>
                 {!isSimple && review.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-card bg-emerald-500/10 border border-emerald-500/15 text-emerald-400/80">
                     <Download className="w-3.5 h-3.5" />
                     {t.templates.detail_modal.adopted.replace('{count}', String(review.adoption_count))}
                   </span>
                 )}
                 {difficultyMeta && difficulty && (
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-lg border ${difficultyMeta.bgClass}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-card border ${difficultyMeta.bgClass}`}
                     title={`${tpl.complexity[difficulty]}${setupMinutes ? ` · ${tpl.complexity.minuteSetup.replace('{minutes}', String(setupMinutes))}` : ''}`}
                   >
                     <GraduationCap className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export function TemplateDetailModal({
             )}
             {!designResult && (
               <div className="flex flex-col items-center justify-center py-20 text-sm text-foreground gap-3">
-                <div className="w-12 h-12 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-muted-foreground/40" />
                 </div>
                 {t.templates.detail_modal.design_unavailable}

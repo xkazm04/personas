@@ -125,7 +125,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
   if (phase === 'error') {
     return (
       <div className="space-y-4">
-        <div className="px-4 py-3 rounded-xl bg-red-500/5 border border-red-500/20">
+        <div className="px-4 py-3 rounded-modal bg-red-500/5 border border-red-500/20">
           <div className="flex items-start gap-2">
             <XCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
             <div>
@@ -160,7 +160,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ScoreBadge score={score} />
-            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card text-xs font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
               {dryRun.status === 'ready' ? <CheckCircle2 className="w-3 h-3" /> : dryRun.status === 'blocked' ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
               {dryRun.status.charAt(0).toUpperCase() + dryRun.status.slice(1)}
             </div>
@@ -266,7 +266,7 @@ function HealthWatchToggle() {
         data-testid="health-watch-toggle"
         onClick={toggle}
         disabled={loading || !persona}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-card transition-colors ${
           enabled
             ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
             : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'

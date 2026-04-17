@@ -146,7 +146,7 @@ export function ReplayTheater({ execution }: ReplayTheaterProps) {
   const activeStepIndex = replay.activeStep?.step_index ?? null;
 
   return (
-    <div className="flex flex-col rounded-xl border border-primary/15 bg-background/60 overflow-hidden backdrop-blur-sm">
+    <div className="flex flex-col rounded-modal border border-primary/15 bg-background/60 overflow-hidden backdrop-blur-sm">
       {/* === HEADER: Pipeline Stage Indicator === */}
       <div className="px-4 py-2.5 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center gap-2 mb-2">
@@ -333,7 +333,7 @@ function PanelTab({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-body transition-all${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body transition-all${
         active
           ? 'bg-primary/15 text-foreground/90 border border-primary/20'
           : disabled

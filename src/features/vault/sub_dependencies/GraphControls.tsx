@@ -22,7 +22,7 @@ export function GraphControls({ stats, filterKind, onFilterChange }: GraphContro
             key={kind}
             type="button"
             onClick={() => onFilterChange(active ? 'all' : kind)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-modal border text-left transition-colors cursor-pointer ${
               active
                 ? 'bg-primary/10 border-primary/25 text-foreground/90'
                 : 'bg-secondary/25 border-primary/10 text-muted-foreground/70 hover:border-primary/20 hover:bg-secondary/40'

@@ -164,7 +164,7 @@ export default function ProjectManagerPage() {
               className="animate-fade-slide-in border border-primary/10 rounded-2xl p-5 bg-gradient-to-br from-amber-500/5 to-transparent"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
                   <Folder className="w-5 h-5 text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -180,7 +180,7 @@ export default function ProjectManagerPage() {
                   { label: 'Tech Stack', value: activeProject.techStack.join(', ') || 'N/A' },
                   { label: 'Created', value: activeProject.createdAt },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-primary/5 rounded-xl px-3 py-2">
+                  <div key={stat.label} className="bg-primary/5 rounded-modal px-3 py-2">
                     <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{stat.label}</p>
                     <p className="text-md text-foreground mt-0.5 truncate">{stat.value}</p>
                   </div>
@@ -230,7 +230,7 @@ export default function ProjectManagerPage() {
                 </Button>
               </div>
             ) : (
-              <div className="border border-primary/10 rounded-xl">
+              <div className="border border-primary/10 rounded-modal">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-primary uppercase tracking-wider rounded-t-xl">
                   <span>Name</span>

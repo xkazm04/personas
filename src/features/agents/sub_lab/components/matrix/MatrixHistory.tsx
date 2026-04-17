@@ -35,7 +35,7 @@ export function MatrixHistory({ runs, resultsMap, expandedRunId, onToggleExpand,
       className: 'w-[100px]',
       render: (run) =>
         run.draftAccepted
-          ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400"><Check className="w-2.5 h-2.5" />{t.agents.lab.accepted_label}</span>
+          ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card text-xs font-medium bg-emerald-500/15 text-emerald-400"><Check className="w-2.5 h-2.5" />{t.agents.lab.accepted_label}</span>
           : <span className="text-xs text-muted-foreground/50">{t.agents.lab.pending_label}</span>,
     },
   ], [t]);

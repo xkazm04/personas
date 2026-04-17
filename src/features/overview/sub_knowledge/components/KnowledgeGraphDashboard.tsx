@@ -115,7 +115,7 @@ export default function KnowledgeGraphDashboard() {
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock pattern (dev only)">
+              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock pattern (dev only)">
                 <Plus className="w-3.5 h-3.5" /> Mock Pattern
               </button>
             )}
@@ -168,7 +168,7 @@ export default function KnowledgeGraphDashboard() {
               )}
             </button>
             {showTypeDropdown && (
-              <div className="absolute mt-8 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
+              <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Types</button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
@@ -191,7 +191,7 @@ export default function KnowledgeGraphDashboard() {
               )}
             </button>
             {showScopeDropdown && (
-              <div className="absolute mt-8 z-50 min-w-[140px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
+              <div className="absolute mt-8 z-50 min-w-[140px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Scopes</button>
                 {Object.entries(SCOPE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
@@ -203,7 +203,7 @@ export default function KnowledgeGraphDashboard() {
           </div>
 
           {failureDrilldownDate && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+            <div className="rounded-modal border border-red-500/20 bg-red-500/10 px-4 py-3">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ export default function KnowledgeGraphDashboard() {
           )}
 
           {fetchError && !loading ? (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+            <div className="rounded-modal border border-red-500/20 bg-red-500/10 px-4 py-3">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
@@ -268,7 +268,7 @@ export default function KnowledgeGraphDashboard() {
               {/* Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article). */}
               {/* This dashboard surfaces auto-extracted execution knowledge. For curated docs,
                   personas also offers an Obsidian vault — cheaper and better for <1000 notes. */}
-              <div className="max-w-md text-xs text-muted-foreground/60 text-center px-4 py-2 rounded-lg bg-violet-500/5 border border-violet-500/10">
+              <div className="max-w-md text-xs text-muted-foreground/60 text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
                 <span className="font-medium text-muted-foreground/80">Curating documents manually?</span> For fewer than ~1000 notes, an Obsidian vault is usually cheaper and better than a vector store — cross-links beat chunk similarity and the content stays human-editable.
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function KnowledgeGraphDashboard() {
               <p className="text-sm text-muted-foreground/40">No patterns match current filters</p>
             </div>
           ) : (
-            <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-xl">
+            <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-modal">
               <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                 {entryVirtualizer.getVirtualItems().map((virtualRow) => {
                   const entry = allEntries[virtualRow.index]!;
@@ -302,7 +302,7 @@ export default function KnowledgeGraphDashboard() {
               <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                 <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> Recent Learnings
               </h3>
-              <div ref={recentListRef} className="overflow-y-auto max-h-[400px] rounded-xl">
+              <div ref={recentListRef} className="overflow-y-auto max-h-[400px] rounded-modal">
                 <div style={{ height: `${recentVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {recentVirtualizer.getVirtualItems().map((virtualRow) => {
                     const entry = recentLearnings[virtualRow.index]!;

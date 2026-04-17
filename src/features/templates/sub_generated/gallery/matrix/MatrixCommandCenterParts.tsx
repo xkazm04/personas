@@ -36,7 +36,7 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
       <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="text-base font-semibold text-foreground/90">{section.label}</h3></div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-muted-foreground/60" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-muted-foreground/60" /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-5"><pre className="whitespace-pre-wrap text-sm text-foreground/80 font-sans leading-relaxed">{section.content}</pre></div>
       </div>
@@ -48,7 +48,7 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
 export function CapabilityToggle({ icon: Icon, label, active, onToggle }: { icon: React.ComponentType<{ className?: string }>; label: string; active: boolean; onToggle: () => void }) {
   return (
     <button type="button" onClick={onToggle} className={[
-      'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+      'inline-flex items-center gap-1.5 rounded-card border px-2.5 py-1.5 text-[12px] font-medium transition-colors',
       active
         ? 'border-primary/30 bg-primary/15 text-primary'
         : 'border-primary/10 bg-transparent text-muted-foreground/40 hover:text-muted-foreground/60 hover:border-primary/20',
@@ -175,13 +175,13 @@ export function ActiveBuildProgress({
           type="button"
           onClick={onSubmitAnswers}
           data-testid="continue-build-btn"
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+          className="flex items-center gap-2 px-5 py-3 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
         >
           <Play className="w-4 h-4" />
           <span className="text-sm font-semibold">Continue Build</span>
         </button>
       ) : allResolved ? (
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-modal bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
         </div>
       ) : isAwaitingInput && hasUnansweredQuestions ? (
@@ -189,13 +189,13 @@ export function ActiveBuildProgress({
           type="button"
           onClick={onOpenNextQuestion}
           data-testid={`answer-button-${highlightedCellKeys[0]}`}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-modal bg-primary/15 border border-primary/25 text-primary hover:bg-primary/25 transition-colors"
         >
           <HelpCircle className="w-4 h-4" />
           <span className="text-sm font-medium">Answer: {highlightedCells[0]}</span>
         </button>
       ) : (
-        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
           <LoadingSpinner size="lg" className="text-primary/50" />
         </div>
       )}
@@ -254,7 +254,7 @@ export function AwaitingQuestionsIndicator({ questionCount, onOpenQuestions }: {
       </div>
       <span className="text-sm text-foreground/70 font-medium">Your input needed</span>
       <button type="button" onClick={onOpenQuestions}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-modal bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
         <HelpCircle className="w-3.5 h-3.5" />
         Answer {questionCount} question{questionCount !== 1 ? 's' : ''}
       </button>
@@ -332,7 +332,7 @@ export function CreationPostGeneration({
           <button
             type="button"
             onClick={onApplyEdits}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             Apply Changes
@@ -341,7 +341,7 @@ export function CreationPostGeneration({
             <button
               type="button"
               onClick={onDiscardEdits}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+              className="px-2.5 py-1.5 rounded-card text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
             >
               Discard
             </button>
@@ -355,7 +355,7 @@ export function CreationPostGeneration({
           onClick={handleTest}
           disabled={isTesting}
           data-testid="agent-test-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
         >
           {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {isTesting ? 'Starting Test...' : 'Test Agent'}
@@ -367,7 +367,7 @@ export function CreationPostGeneration({
           type="button"
           onClick={onSaveVersion}
           data-testid="save-version-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
         >
           <Save className="w-3.5 h-3.5" />
           Save Version
@@ -382,14 +382,14 @@ export function CreationPostGeneration({
             placeholder="Adjust anything..."
             data-testid="agent-refine-input"
             rows={3}
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && refineText.trim()) { e.preventDefault(); onRefine(refineText.trim()); setRefineText(''); } }}
           />
           <button
             type="button"
             onClick={() => { if (refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
             disabled={!refineText.trim()}
-            className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors self-end"
+            className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors self-end"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -409,7 +409,7 @@ export function CliOutputStream({ lines }: { lines: string[] }) {
   }, [lines.length]);
   if (lines.length === 0) return null;
   return (
-    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-lg bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
+    <div ref={containerRef} className="w-full max-h-28 overflow-y-auto rounded-card bg-black/20 border border-primary/10 px-2 py-1.5 font-mono text-[11px] text-muted-foreground/60 leading-relaxed">
       {lines.slice(-30).map((line, i) => (
         <div key={i} className="truncate">{line}</div>
       ))}
@@ -432,7 +432,7 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
         <div className="w-full space-y-1.5">
           {question.options.map((opt, i) => (
             <button key={i} type="button" onClick={() => onAnswer(opt)}
-              className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
+              className="w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 hover:bg-primary/5 hover:border-primary/25 transition-colors text-left">
               {opt}
             </button>
           ))}
@@ -440,10 +440,10 @@ export function DesignQuestionPrompt({ question, onAnswer }: { question: DesignQ
       ) : (
         <div className="w-full flex gap-1.5">
           <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer..."
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
+            className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }} />
           <button type="button" onClick={() => { if (answer.trim()) { onAnswer(answer.trim()); setAnswer(''); } }}
-            disabled={!answer.trim()} className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
+            disabled={!answer.trim()} className="p-1.5 rounded-card text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors">
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -548,7 +548,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onApprove}
             data-testid="agent-approve-btn"
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve
@@ -562,7 +562,7 @@ export function TestResultsPanel({
             title={hasConnectorGaps
               ? `Promote without credentials for: ${missingConnectors.map((c) => c.name).join(', ')}`
               : 'Promote this agent despite skipped or failed tests'}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium cursor-pointer bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-elevation-2 shadow-amber-500/20 hover:shadow-amber-500/30 hover:from-amber-500 hover:to-orange-500 transition-all"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             Approve Anyway
@@ -572,7 +572,7 @@ export function TestResultsPanel({
           <button
             type="button"
             onClick={() => setShowReport(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             Report
@@ -583,7 +583,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onReject}
             data-testid="agent-reject-btn"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Retry
@@ -595,7 +595,7 @@ export function TestResultsPanel({
             onClick={onDeleteDraft}
             data-testid="agent-delete-draft-btn"
             title="Discard this draft persona and close"
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal text-sm font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Delete Draft
@@ -630,7 +630,7 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
         <button
           type="button"
           onClick={onViewAgent}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-primary/15 text-sm text-foreground/70 hover:bg-primary/5 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal border border-primary/15 text-sm text-foreground/70 hover:bg-primary/5 transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
           View Agent

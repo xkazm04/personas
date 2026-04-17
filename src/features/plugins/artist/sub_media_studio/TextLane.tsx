@@ -52,7 +52,7 @@ function BeatEditModal({
             value={word}
             onChange={(e) => setWord(e.target.value)}
             placeholder={t.media_studio.beat_word_placeholder}
-            className="w-full px-3 py-2 text-md font-semibold bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+            className="w-full px-3 py-2 text-md font-semibold bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
             autoFocus
           />
           <textarea
@@ -60,7 +60,7 @@ function BeatEditModal({
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t.media_studio.beat_description_placeholder}
             rows={4}
-            className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 resize-none"
+            className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 resize-none"
           />
         </div>
 
@@ -146,7 +146,7 @@ function TextLaneImpl({
         {/* Beats area */}
         <div className="relative h-10 bg-amber-500/[0.02] border-b border-primary/10">
           {items.length === 0 && (
-            <div className="absolute inset-0.5 rounded-lg border border-dashed border-amber-500/15 flex items-center justify-center">
+            <div className="absolute inset-0.5 rounded-card border border-dashed border-amber-500/15 flex items-center justify-center">
               <span className="text-md text-amber-400/30">{t.media_studio.empty_lane}</span>
             </div>
           )}
@@ -159,8 +159,8 @@ function TextLaneImpl({
               zoom={zoom}
               scrollX={scrollX}
               isSelected={item.id === selectedId}
-              className="top-0.5 h-9 rounded-lg bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25"
-              selectedClassName="top-0.5 h-9 rounded-lg bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-elevation-1"
+              className="top-0.5 h-9 rounded-card bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25"
+              selectedClassName="top-0.5 h-9 rounded-card bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-elevation-1"
               onClick={() => onSelect(item.id)}
               onDoubleClick={() => setEditingItem(item)}
               onMove={(newStart) => handleMove(item.id, newStart)}

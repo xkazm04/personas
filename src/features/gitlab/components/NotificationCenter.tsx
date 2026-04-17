@@ -105,7 +105,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-xl border transition-colors cursor-default ${statusBg(notification.status)} ${
+      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
         !notification.read ? 'ring-1 ring-orange-500/20' : ''
       }`}
     >
@@ -115,7 +115,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
 
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
         aria-label="Dismiss"
       >
         <X className="w-3 h-3" />
@@ -145,7 +145,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         {redirectSection && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
           >
             <ArrowRight className="w-3 h-3" />
@@ -191,7 +191,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
   return (
     <div
       onClick={handleClick}
-      className={`animate-fade-slide-in relative group p-3 rounded-xl border transition-colors cursor-default ${statusBg(notification.status)} ${
+      className={`animate-fade-slide-in relative group p-3 rounded-modal border transition-colors cursor-default ${statusBg(notification.status)} ${
         !notification.read ? 'ring-1 ring-orange-500/20' : ''
       }`}
     >
@@ -203,7 +203,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Dismiss button */}
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
         aria-label="Dismiss"
       >
         <X className="w-3 h-3" />
@@ -231,7 +231,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.webUrl && (
           <button
             onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.open_in_gitlab}
           >
             <ExternalLink className="w-3 h-3" />
@@ -241,7 +241,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         {notification.status === 'failed' && notification.projectId && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRetry(); }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.common.retry}
           >
             <RefreshCw className="w-3 h-3" />
@@ -259,7 +259,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
               }
               markRead(notification.id);
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-card text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
             title={t.gitlab.view_logs}
           >
             <FileText className="w-3 h-3" />
@@ -313,7 +313,7 @@ export function NotificationCenter() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                     title={t.gitlab.mark_all_read}
                   >
                     <CheckCheck className="w-4 h-4" />
@@ -322,7 +322,7 @@ export function NotificationCenter() {
                 {notifications.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                    className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                     title={t.gitlab.clear_all}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -330,7 +330,7 @@ export function NotificationCenter() {
                 )}
                 <button
                   onClick={() => setOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+                  className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/50 hover:text-foreground/70 transition-colors"
                   aria-label={t.gitlab.close_notification_center}
                 >
                   <X className="w-4 h-4" />

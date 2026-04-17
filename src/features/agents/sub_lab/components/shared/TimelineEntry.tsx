@@ -72,14 +72,14 @@ export function TimelineEntry({
             </span>
 
             {/* Tag badge */}
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${style.bg} ${style.text}`}>
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input text-[10px] font-medium border ${style.bg} ${style.text}`}>
               <TagIcon className="w-2.5 h-2.5" />
               {version.tag}
             </span>
 
             {/* Baseline badge */}
             {isBaseline && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-input text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
                 <Star className="w-2.5 h-2.5" />
                 baseline
               </span>
@@ -113,7 +113,7 @@ export function TimelineEntry({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="mt-2 p-3 rounded-lg border border-primary/10 bg-secondary/[0.04] space-y-3">
+              <div className="mt-2 p-3 rounded-card border border-primary/10 bg-secondary/[0.04] space-y-3">
                 {/* Diff preview */}
                 {previousVersion ? (
                   <InlineDiffPreview older={previousVersion} newer={version} />
@@ -126,7 +126,7 @@ export function TimelineEntry({
                   {version.tag !== 'production' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                     >
                       <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
                     </button>
@@ -134,7 +134,7 @@ export function TimelineEntry({
                   {version.tag !== 'archived' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
                     >
                       <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
                     </button>
@@ -142,7 +142,7 @@ export function TimelineEntry({
                   {!isFirst && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >
                       <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
                     </button>

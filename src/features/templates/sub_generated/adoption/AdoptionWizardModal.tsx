@@ -91,7 +91,7 @@ export default function AdoptionWizardModal({
       <div className="relative h-full overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <Grid3X3 className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
@@ -103,7 +103,7 @@ export default function AdoptionWizardModal({
           </div>
           <button
             onClick={handleCloseAttempt}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95"
+            className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/80 hover:text-foreground/95"
           >
             <X className="w-4 h-4" />
           </button>

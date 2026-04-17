@@ -29,13 +29,13 @@ export function CredentialSectionContent({
   onHealthcheck,
 }: CredentialSectionContentProps) {
   return (
-    <div className="bg-secondary/10 border border-primary/6 rounded-xl p-4">
+    <div className="bg-secondary/10 border border-primary/6 rounded-modal p-4">
       {expandedSection === 'services' && (
         <div className="space-y-2">
           {connector.services.map((service) => (
             <div
               key={service.toolName}
-              className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-xl border-l-2"
+              className="flex items-center gap-3 p-3 bg-secondary/20 border border-primary/10 rounded-modal border-l-2"
               style={{ borderLeftColor: connector.color || 'transparent' }}
             >
               <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />

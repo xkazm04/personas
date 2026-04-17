@@ -149,7 +149,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
 
   return (
     <div
-      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4"
+      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-4 space-y-4"
     >
       <NlTriggerInput onApplyResult={applyNlResult} />
 
@@ -169,11 +169,11 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             <label className="block text-sm font-medium text-foreground/80 mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
               <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
                 <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
               </button>
               <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-muted-foreground/80 border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
                 <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule_mode_label}
               </button>
             </div>
@@ -193,14 +193,14 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       {triggerType === 'composite' && <CompositeConfig compositeConditions={compositeConditions} setCompositeConditions={setCompositeConditions} compositeOperator={compositeOperator} setCompositeOperator={setCompositeOperator} windowSeconds={windowSeconds} setWindowSeconds={setWindowSeconds} validationError={validationError} setValidationError={setValidationError} />}
 
       {validationError && (
-        <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+        <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card text-sm text-red-400">
           {validationError}
         </div>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">{t.common.cancel}</button>
-        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20">{t.triggers.add.create_trigger}</button>
+        <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal text-sm transition-colors">{t.common.cancel}</button>
+        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20">{t.triggers.add.create_trigger}</button>
       </div>
     </div>
   );

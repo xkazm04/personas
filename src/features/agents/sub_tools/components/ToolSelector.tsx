@@ -60,14 +60,14 @@ export function ToolSelector() {
 
       {actions.undoToast && (
           <div
-            className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-elevation-3"
+            className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-modal shadow-elevation-3"
           >
             <span className="text-sm text-foreground/80">
               {t.agents.tools.removed.split('{name}')[0]}<span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
             </span>
             <button
               onClick={actions.handleUndo}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-modal bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors"
             >
               <Undo2 className="w-3 h-3" />
               {t.agents.tools.undo}

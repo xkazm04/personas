@@ -94,7 +94,7 @@ export function PromptSectionSidebar({
               id={`prompt-tab-${tab.key}`}
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors text-left relative ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium rounded-modal transition-colors text-left relative ${
                 active
                   ? 'bg-primary/10 text-foreground/80 border border-primary/30'
                   : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'

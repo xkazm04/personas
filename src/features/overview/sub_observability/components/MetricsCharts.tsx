@@ -144,7 +144,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
 
       {/* Anomaly summary strip */}
       {costAnomalies.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-amber-500/20 bg-amber-500/5">
           <span className="text-xs text-amber-400/80 font-medium">
             {costAnomalies.length === 1 ? tx(t.overview.observability_charts.anomaly_detected, { count: 1 }) : tx(t.overview.observability_charts.anomalies_detected, { count: costAnomalies.length })}
           </span>

@@ -47,7 +47,7 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
           return (
             <div
               key={persona.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/8"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-secondary/30 border border-primary/8"
             >
               <GradeIcon className={`w-3 h-3 flex-shrink-0 ${gradeColor}`} />
               <span className="text-xs text-foreground/80 flex-1 truncate">{persona.name}</span>
@@ -84,7 +84,7 @@ export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
         {workflows.map((wf) => (
           <div
             key={wf.workflowId}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-red-500/5 border border-red-500/10"
           >
             <TrendingDown className="w-3 h-3 text-red-400/60 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -119,7 +119,7 @@ export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
         {suggestions.map((fo) => (
           <div
             key={fo.credentialId}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-emerald-500/5 border border-emerald-500/10"
           >
             {fo.healthOk === true ? (
               <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
@@ -147,7 +147,7 @@ export function MitigationSummary({ simulation }: MitigationSummaryProps) {
   if (simulation.severity === 'low') return null;
 
   return (
-    <div className="rounded-lg bg-primary/5 border border-primary/10 p-2">
+    <div className="rounded-card bg-primary/5 border border-primary/10 p-2">
       <div className="text-[10px] font-medium text-muted-foreground/60 mb-1">{dep.suggested_mitigations}</div>
       <ul className="text-xs text-muted-foreground/70 space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (

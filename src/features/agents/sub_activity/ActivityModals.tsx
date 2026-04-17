@@ -105,7 +105,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             {selectedReview.context_data && (
               <div>
                 <div className="text-sm font-mono text-muted-foreground/50 uppercase mb-1">{t.agents.activity.context}</div>
-                <pre className="text-sm text-foreground/60 bg-secondary/30 rounded-lg p-2 overflow-x-auto">{selectedReview.context_data}</pre>
+                <pre className="text-sm text-foreground/60 bg-secondary/30 rounded-card p-2 overflow-x-auto">{selectedReview.context_data}</pre>
               </div>
             )}
             {selectedReview.status === 'pending' && (
@@ -113,14 +113,14 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                 <button
                   onClick={() => handleReviewAction('approved')}
                   disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
                 >
                   {t.agents.activity.approve}
                 </button>
                 <button
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                 >
                   {t.agents.activity.reject}
                 </button>

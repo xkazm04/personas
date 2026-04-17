@@ -46,7 +46,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
   if (!open) return null;
 
   return (
-    <div className="absolute top-12 left-2 z-30 w-72 rounded-xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden flex flex-col max-h-[60vh]">
+    <div className="absolute top-12 left-2 z-30 w-72 rounded-modal bg-card border border-primary/15 shadow-elevation-4 overflow-hidden flex flex-col max-h-[60vh]">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
         <div className="flex items-center gap-1.5">
@@ -66,7 +66,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
             <button
               key={ex}
               onClick={() => setQuery(ex)}
-              className="px-2 py-1 text-[10px] rounded-md bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-foreground transition-colors"
+              className="px-2 py-1 text-[10px] rounded-input bg-secondary/40 text-muted-foreground hover:bg-secondary/70 hover:text-foreground transition-colors"
             >
               {ex}
             </button>
@@ -89,12 +89,12 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
           placeholder="Describe your event topology..."
-          className="flex-1 px-2.5 py-1.5 text-xs rounded-md bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="flex-1 px-2.5 py-1.5 text-xs rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button
           onClick={handleSubmit}
           disabled={!query.trim() || loading}
-          className="p-1.5 rounded-md bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
+          className="p-1.5 rounded-input bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
         </button>

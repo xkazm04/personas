@@ -63,7 +63,7 @@ export const TemplateCard = memo(function TemplateCard({
     >
       <motion.div
         layoutId={`template-card-${review.id}`}
-        className={`group rounded-xl border ${BORDER_DEFAULT} bg-secondary/30 hover:bg-secondary/50 hover:${BORDER_EMPHASIS} transition-colors ${MOTION.smooth.css}`}
+        className={`group rounded-modal border ${BORDER_DEFAULT} bg-secondary/30 hover:bg-secondary/50 hover:${BORDER_EMPHASIS} transition-colors ${MOTION.smooth.css}`}
       >
         <TemplateCardHeader
           name={review.test_case_name}

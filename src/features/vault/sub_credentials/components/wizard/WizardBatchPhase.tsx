@@ -118,7 +118,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
         {items.map((item, i) => (
           <div
             key={item.connector.id}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-sm shrink-0 ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-card border text-sm shrink-0 ${
               i === activeIndex
                 ? 'border-violet-500/30 bg-violet-500/10 text-violet-300'
                 : item.status === 'done'

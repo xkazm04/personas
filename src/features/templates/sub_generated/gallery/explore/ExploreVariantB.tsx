@@ -67,7 +67,7 @@ function TemplateMiniCard({ template, onClick }: { template: PersonaDesignReview
   return (
     <button
       onClick={onClick}
-      className="flex-shrink-0 w-64 p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left group/card"
+      className="flex-shrink-0 w-64 p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all text-left group/card"
     >
       <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
         {template.test_case_name}
@@ -140,9 +140,9 @@ export function ExploreVariantB({
           return (
             <div key={lane.title}>
               {/* Lane header with illustration accent */}
-              <div className="relative overflow-hidden rounded-xl mb-3">
+              <div className="relative overflow-hidden rounded-modal mb-3">
                 {imgSrc && (
-                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                  <div className="absolute inset-0 overflow-hidden rounded-modal">
                     <img
                       src={imgSrc}
                       alt=""
@@ -153,7 +153,7 @@ export function ExploreVariantB({
                 )}
                 <div className="relative flex items-center gap-2.5 px-4 py-3">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center border"
+                    className="w-8 h-8 rounded-card flex items-center justify-center border"
                     style={{ backgroundColor: `${lane.color}15`, borderColor: `${lane.color}25` }}
                   >
                     <Icon className="w-4.5 h-4.5" style={{ color: lane.color }} />
@@ -201,7 +201,7 @@ export function ExploreVariantB({
                 <button
                   key={tmpl.id}
                   onClick={() => onSelectTemplate(tmpl)}
-                  className="text-left p-4 rounded-xl border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
+                  className="text-left p-4 rounded-modal border border-primary/10 bg-secondary/10 hover:bg-secondary/20 hover:border-primary/20 transition-all group/card"
                 >
                   <div className="text-sm font-medium text-foreground/85 truncate group-hover/card:text-foreground transition-colors">
                     {tmpl.test_case_name}

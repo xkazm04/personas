@@ -128,10 +128,10 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   return (
     <div className="space-y-6" data-testid="eval-results-grid">
       {/* Summary */}
-      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
         <div className="px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
               <Grid3X3 className="w-4 h-4 text-primary" />
             </div>
             <div>
@@ -154,7 +154,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
       {(insights.length > 0 || suggestions.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {insights.length > 0 && (
-            <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+            <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
                   <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
@@ -171,7 +171,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             </div>
           )}
           {suggestions.length > 0 && (
-            <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
+            <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
               <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
                   <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
@@ -195,7 +195,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
           <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.version_model_matrix}</h4>
         </summary>
-        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
+        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-modal">
           <table className="w-full text-sm" data-testid="eval-matrix-table">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
@@ -249,7 +249,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">{t.agents.lab.scenario_breakdown}</h4>
             <span className="text-[10px] text-muted-foreground/30">{t.agents.lab.click_cell_details}</span>
           </summary>
-          <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
+          <div className="mt-3 overflow-x-auto border border-primary/10 rounded-modal">
             <table className="w-full text-sm" data-testid="eval-scenario-table">
               <thead>
                 <tr className="border-b border-primary/10 bg-secondary/20">
@@ -281,7 +281,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                           <td key={`${vId}-${mId}`} className="px-3 py-1.5">
                             <button
                               onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: vId, modelId: mId })}
-                              className={`w-full flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 transition-all ${
+                              className={`w-full flex items-center justify-center gap-1.5 rounded-card px-2 py-1.5 transition-all ${
                                 isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                               }`}
                             >

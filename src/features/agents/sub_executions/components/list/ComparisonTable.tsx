@@ -29,7 +29,7 @@ export function ToolTimelineComparison({
         return (
           <div key={i} className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
             {/* Left step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl typo-body ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body ${l ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {l ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
@@ -59,7 +59,7 @@ export function ToolTimelineComparison({
             </div>
 
             {/* Right step */}
-            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl typo-body ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-modal typo-body ${r ? 'bg-secondary/40 border border-primary/10' : 'bg-transparent'}`}>
               {r ? (
                 <>
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />

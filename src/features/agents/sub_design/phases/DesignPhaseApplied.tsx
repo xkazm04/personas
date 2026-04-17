@@ -73,7 +73,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
       {/* Failed operations banner */}
       {hasFailures && (
         <div
-          className="animate-fade-slide-in w-full max-w-sm px-3 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          className="animate-fade-slide-in w-full max-w-sm px-3 py-3 rounded-modal bg-amber-500/10 border border-amber-500/20"
         >
           <p className="text-xs font-medium text-amber-400 mb-2">
             {tx(failedOperations.length === 1 ? t.agents.design.operations_failed_one : t.agents.design.operations_failed_other, { count: failedOperations.length })}
@@ -96,7 +96,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
                 try { await onRetryFailed(); } finally { setRetrying(false); }
               }}
               disabled={retrying}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors disabled:opacity-50"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${retrying ? 'animate-spin' : ''}`} />
               {retrying ? t.agents.design.retrying : tx(t.agents.design.retry_failed, { count: failedOperations.length })}
@@ -108,7 +108,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
       {/* Generic warnings (non-structured) */}
       {!hasFailures && warnings.length > 0 && (
         <div
-          className="animate-fade-slide-in w-full max-w-sm px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          className="animate-fade-slide-in w-full max-w-sm px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20"
         >
           <ul className="space-y-1">
             {warnings.map((w, i) => (

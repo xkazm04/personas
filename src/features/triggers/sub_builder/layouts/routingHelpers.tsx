@@ -38,7 +38,7 @@ interface PersonaChipProps {
 
 export function PersonaChip({ persona, personaIdFallback, badge, onRemove }: PersonaChipProps) {
   return (
-    <div className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg bg-card border border-emerald-400/20 hover:border-emerald-400/40 group/chip transition-colors">
+    <div className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-card bg-card border border-emerald-400/20 hover:border-emerald-400/40 group/chip transition-colors">
       <PersonaIcon
         icon={persona?.icon ?? null}
         color={persona?.color ?? null}

@@ -97,7 +97,7 @@ export default function N8nImportTab() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20"
+          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-red-500/10 border border-red-500/20"
         >
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -119,7 +119,7 @@ export default function N8nImportTab() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          className="mx-6 mt-3 flex items-start gap-3 p-4 rounded-modal bg-amber-500/10 border border-amber-500/20"
           aria-live="polite"
         >
           <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />

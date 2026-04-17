@@ -17,7 +17,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
   const { t } = useTranslation();
   const dt = t.deployment.exec_detail;
   return (
-    <div className="rounded-lg bg-secondary/30 border border-primary/10 overflow-hidden">
+    <div className="rounded-card bg-secondary/30 border border-primary/10 overflow-hidden">
       {/* Row */}
       <button
         type="button"
@@ -44,14 +44,14 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             <div><span className="text-muted-foreground/60">Completed:</span> <span className="text-foreground/80">{exec.completed_at ? new Date(exec.completed_at).toLocaleString() : '-'}</span></div>
           </div>
           {exec.error_message && (
-            <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/10 text-xs text-red-400">
+            <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 text-xs text-red-400">
               {exec.error_message}
             </div>
           )}
           {exec.input_data && (
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground/60">Input:</span>
-              <pre className="text-xs text-foreground/70 bg-secondary/40 p-2 rounded-lg overflow-auto max-h-32 border border-primary/10">
+              <pre className="text-xs text-foreground/70 bg-secondary/40 p-2 rounded-card overflow-auto max-h-32 border border-primary/10">
                 {exec.input_data}
               </pre>
             </div>
@@ -64,7 +64,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                 <button
                   type="button"
                   onClick={onFetchOutput}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
                 >
                   <Terminal className="w-3 h-3" />
                   View Output
@@ -80,7 +80,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             }
             if (output.error) {
               return (
-                <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/10 text-xs text-red-400">
+                <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 text-xs text-red-400">
                   {output.error}
                 </div>
               );
@@ -104,7 +104,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                     <RefreshCw className="w-3 h-3" />
                   </button>
                 </div>
-                <pre className="text-xs text-emerald-300/80 bg-gray-950/60 p-3 rounded-lg overflow-auto max-h-64 border border-primary/10 font-mono leading-relaxed">
+                <pre className="text-xs text-emerald-300/80 bg-gray-950/60 p-3 rounded-card overflow-auto max-h-64 border border-primary/10 font-mono leading-relaxed">
                   {output.lines.join('\n')}
                 </pre>
               </div>

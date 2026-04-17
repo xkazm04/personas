@@ -117,7 +117,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           data-testid="vault-desktop-back"
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -131,17 +131,17 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/60 hover:text-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-secondary/30 rounded-lg">
+      <div className="flex gap-1 p-1 bg-secondary/30 rounded-card">
         <button
           onClick={() => setTab('apps')}
-          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
             tab === 'apps'
               ? 'bg-secondary/80 text-foreground'
               : 'text-muted-foreground/60 hover:text-foreground'
@@ -153,7 +153,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
-          className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input text-xs font-medium transition-colors ${
             tab === 'mcp-import'
               ? 'bg-secondary/80 text-foreground'
               : 'text-muted-foreground/60 hover:text-foreground'

@@ -123,7 +123,7 @@ export default function GraphPanel() {
             <button
               key={tg.kind}
               onClick={() => setVisible((v) => ({ ...v, [tg.kind]: !v[tg.kind] }))}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] transition-colors border ${
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-[11px] transition-colors border ${
                 visible[tg.kind]
                   ? 'bg-primary/15 border-primary/30 text-primary'
                   : 'bg-secondary/30 border-border/20 text-foreground hover:text-foreground'
@@ -159,11 +159,11 @@ export default function GraphPanel() {
             >
               <Background gap={24} size={1} className="opacity-20" />
               <Controls
-                className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-elevation-3 [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground"
+                className="!bg-secondary/60 !border-primary/15 !rounded-modal !shadow-elevation-3 [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground"
                 showInteractive={false}
               />
               <MiniMap
-                className="!bg-secondary/40 !border-primary/15 !rounded-xl"
+                className="!bg-secondary/40 !border-primary/15 !rounded-modal"
                 maskColor="rgba(0,0,0,0.3)"
                 nodeColor={(n) => (n.data as GraphNodeData).color}
               />
@@ -184,7 +184,7 @@ export default function GraphPanel() {
             {selected.kind !== 'project' && (
               <button
                 onClick={() => handleEntityJump(selected)}
-                className="w-full px-3 py-2 rounded-lg typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                className="w-full px-3 py-2 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
               >
                 {t.research_lab.view_all}
               </button>

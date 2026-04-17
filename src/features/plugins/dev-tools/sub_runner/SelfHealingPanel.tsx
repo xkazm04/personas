@@ -118,7 +118,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
   if (failedTasks.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-red-500/15 bg-red-500/5 overflow-hidden">
+    <div className="rounded-modal border border-red-500/15 bg-red-500/5 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/10">
         <div className="flex items-center gap-2">

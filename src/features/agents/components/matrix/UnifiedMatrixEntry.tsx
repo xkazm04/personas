@@ -386,7 +386,7 @@ export function UnifiedMatrixEntry() {
 
       {/* Error banner */}
       {(launchError || build.buildError) && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-400 flex-shrink-0">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-card border border-red-500/20 bg-red-500/5 text-sm text-red-400 flex-shrink-0">
           <span className="flex-1">{launchError || build.buildError}</span>
           <button
             type="button"

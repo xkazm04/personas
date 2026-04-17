@@ -84,12 +84,12 @@ export function N8nTransformChat({
           {/* Questions available */}
           {questions && questions.length > 0 && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               {/* Header with view mode toggle */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-card bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-violet-400" />
                   </div>
                   <div>
@@ -101,13 +101,13 @@ export function N8nTransformChat({
                     </p>
                   </div>
                 </div>
-                <div role="tablist" aria-label="Question view mode" className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/8">
+                <div role="tablist" aria-label="Question view mode" className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/30 border border-primary/8">
                   <button
                     type="button"
                     role="tab"
                     aria-selected={viewMode === 'list'}
                     onClick={() => setViewMode('list')}
-                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 text-sm rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
                         : 'text-muted-foreground/50 hover:text-foreground/70'
@@ -121,7 +121,7 @@ export function N8nTransformChat({
                     role="tab"
                     aria-selected={viewMode === 'stepper'}
                     onClick={() => setViewMode('stepper')}
-                    className={`px-2 py-1 text-sm rounded-lg flex items-center gap-1.5 transition-all ${
+                    className={`px-2 py-1 text-sm rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
                         ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
                         : 'text-muted-foreground/50 hover:text-foreground/70'
@@ -156,10 +156,10 @@ export function N8nTransformChat({
           {/* No questions */}
           {(!questions || questions.length === 0) && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-card bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400/70" />
                 </div>
                 <div>
@@ -182,7 +182,7 @@ export function N8nTransformChat({
           {/* Answer summary bubble */}
           {Object.keys(userAnswers).length > 0 && questions && questions.length > 0 && (
             <div
-              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
+              className="animate-fade-slide-in rounded-modal border border-primary/10 bg-secondary/20 p-4"
             >
               <p className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
                 Your answers
@@ -194,7 +194,7 @@ export function N8nTransformChat({
                   return (
                     <span
                       key={q.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card bg-violet-500/10 text-violet-300/80 border border-violet-500/15"
                     >
                       <CheckCircle2 className="w-2.5 h-2.5" />
                       {answer.length > 30 ? `${answer.slice(0, 30)}...` : answer}

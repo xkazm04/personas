@@ -26,28 +26,28 @@ export function DocToolbar({
       </h3>
       <button
         onClick={onRefresh}
-        className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+        className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
         title={t.vault.databases.refresh}
       >
         <RefreshCw className="w-3.5 h-3.5" />
       </button>
       <button
         onClick={onShowTextModal}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
       >
         <Type className="w-3 h-3" />
         {sh.paste_text}
       </button>
       <button
         onClick={onBrowseFiles}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
       >
         <FileSearch className="w-3 h-3" />
         {sh.browse_files}
       </button>
       <button
         onClick={onShowDirPicker}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
       >
         <FolderOpen className="w-3 h-3" />
         {sh.directory}

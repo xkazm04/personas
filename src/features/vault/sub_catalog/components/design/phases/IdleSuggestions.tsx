@@ -25,28 +25,28 @@ export function IdleSuggestions({
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   return (
-    <div className="p-3 rounded-xl border border-primary/15 bg-secondary/20 space-y-2">
+    <div className="p-3 rounded-modal border border-primary/15 bg-secondary/20 space-y-2">
       <p className="text-sm text-muted-foreground/75">{t.vault.design_phases.saved_catalog}</p>
       <input
         type="text"
         value={templateSearch}
         onChange={(e) => onTemplateSearchChange(e.target.value)}
         placeholder={t.vault.design_phases.search_catalog}
-        className="w-full px-3 py-1.5 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
+        className="w-full px-3 py-1.5 rounded-modal border border-primary/15 bg-background/40 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
       />
       {templateConnectors.length === 0 ? (
         <p className="text-sm text-muted-foreground/90">{t.vault.design_phases.no_catalog}</p>
       ) : (
         <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
           {templateConnectors.map((conn) => (
-            <div key={conn.id} className="rounded-lg border border-primary/10 bg-background/30 overflow-hidden">
+            <div key={conn.id} className="rounded-card border border-primary/10 bg-background/30 overflow-hidden">
               <div
                 onClick={() => onExpandTemplate(expandedTemplateId === conn.id ? null : conn.id)}
                 className="w-full px-2.5 py-2 flex items-center justify-between gap-2 hover:bg-secondary/40 transition-colors text-left cursor-pointer"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className="w-6 h-6 rounded-lg border flex items-center justify-center"
+                    className="w-6 h-6 rounded-card border flex items-center justify-center"
                     style={{
                       backgroundColor: `${conn.color}15`,
                       borderColor: `${conn.color}30`,
@@ -70,7 +70,7 @@ export function IdleSuggestions({
                     }
                   }}
                   disabled={applyingTemplateId === conn.id}
-                  className="px-2 py-1 text-sm rounded-lg border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                  className="px-2 py-1 text-sm rounded-card border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
                 >
                   {applyingTemplateId === conn.id ? (
                     <span className="inline-flex items-center gap-1">

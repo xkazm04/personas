@@ -21,7 +21,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
     <div
       className="animate-fade-slide-in overflow-hidden"
     >
-      <div className="p-4 rounded-xl border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent space-y-3">
+      <div className="p-4 rounded-modal border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent space-y-3">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-orange-400" />
           <h4 className="text-sm font-semibold text-foreground">
@@ -40,7 +40,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             return (
               <div
                 key={cap}
-                className="flex items-center gap-3 p-2 rounded-lg bg-secondary/20"
+                className="flex items-center gap-3 p-2 rounded-card bg-secondary/20"
               >
                 <div
                   className={`w-2 h-2 rounded-full ${
@@ -81,14 +81,14 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 px-3 py-1.5 text-xs font-medium text-muted-foreground/80 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
+            className="flex-1 px-3 py-1.5 text-xs font-medium text-muted-foreground/80 bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onApprove}
             disabled={approving}
-            className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+            className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-orange-500 rounded-card hover:bg-orange-600 transition-colors disabled:opacity-50"
           >
             {approving ? (
               <LoadingSpinner size="sm" className="mx-auto" />

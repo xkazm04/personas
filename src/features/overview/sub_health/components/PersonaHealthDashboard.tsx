@@ -101,7 +101,7 @@ export default function PersonaHealthDashboard() {
         actions={
           <>
             {/* View toggle */}
-            <div className="flex items-center border border-primary/10 rounded-lg overflow-hidden mr-2">
+            <div className="flex items-center border border-primary/10 rounded-card overflow-hidden mr-2">
               <button
                 onClick={() => setHealthView('heartbeats')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
@@ -143,7 +143,7 @@ export default function PersonaHealthDashboard() {
             <button
               onClick={handleRefresh}
               disabled={healthLoading}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-card text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
               title="Refresh health data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
@@ -180,7 +180,7 @@ export default function PersonaHealthDashboard() {
           <CircuitBreakerIndicator />
 
           {/* Global Health Summary */}
-          <div className="flex items-center gap-6 p-4 rounded-xl border border-primary/10 bg-secondary/10">
+          <div className="flex items-center gap-6 p-4 rounded-modal border border-primary/10 bg-secondary/10">
             <HeartbeatIndicator score={globalScore} grade={globalGrade} size="lg" />
             <div className="flex-1">
               <h2 className="typo-heading-lg text-foreground/90">
@@ -295,7 +295,7 @@ function GradePill({ grade, count, active, onClick }: { grade: FilterGrade; coun
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border typo-caption transition-colors ${
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card border typo-caption transition-colors ${
         active ? colors.active : `${colors.inactive} hover:bg-secondary/40`
       }`}
     >

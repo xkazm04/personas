@@ -108,7 +108,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder={uc.fixture_name_placeholder}
-            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave();
@@ -120,13 +120,13 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder={uc.description_optional}
-            className="w-full px-2.5 py-1.5 rounded-lg bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
+            className="w-full px-2.5 py-1.5 rounded-card bg-background/60 border border-primary/20 text-sm text-foreground/90 placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:border-primary/30"
           />
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               disabled={!newName.trim()}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-card text-xs font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
             >
               <Save className="w-3 h-3" /> {t.common.save}
             </button>

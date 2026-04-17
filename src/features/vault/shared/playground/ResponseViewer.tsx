@@ -71,7 +71,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {/* Truncation warning */}
       {response.truncated && (
-        <div className="px-3 py-2 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-400 text-sm">
+        <div className="px-3 py-2 rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-400 text-sm">
           {vt.truncated_warning}
         </div>
       )}
@@ -105,7 +105,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       {/* Content */}
       {subTab === 'body' && (
         prettyBody ? (
-          <div className="rounded-lg border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
+          <div className="rounded-card border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
             <MarkdownRenderer content={isJson ? '```json\n' + prettyBody + '\n```' : prettyBody} />
           </div>
         ) : (
@@ -114,7 +114,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'headers' && (
-        <div className="rounded-lg border border-primary/8 overflow-hidden">
+        <div className="rounded-card border border-primary/8 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-secondary/30 border-b border-primary/8">
@@ -138,7 +138,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'raw' && (
-        <pre className="text-sm font-mono text-muted-foreground/70 bg-secondary/15 rounded-lg border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+        <pre className="text-sm font-mono text-muted-foreground/70 bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
           {response.body || '(empty response)'}
         </pre>
       )}

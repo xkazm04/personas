@@ -383,7 +383,7 @@ export default function CompositionPreview({
     videoItems.length > 0 || imageItems.length > 0 || textItems.length > 0;
 
   return (
-    <div className="flex flex-col rounded-xl bg-card border border-primary/10 overflow-hidden w-full shadow-elevation-2">
+    <div className="flex flex-col rounded-modal bg-card border border-primary/10 overflow-hidden w-full shadow-elevation-2">
       <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
         <div
           ref={previewContainerRef}

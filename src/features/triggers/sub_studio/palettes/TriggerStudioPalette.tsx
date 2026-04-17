@@ -50,7 +50,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 <button
                   key={template.id}
                   onClick={() => onAddTriggerSource(template)}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
                 >
                   <div className={`w-6 h-6 rounded flex items-center justify-center bg-amber-500/10 ${template.color}`}>
                     <Icon className="w-3 h-3" />
@@ -84,7 +84,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
               <button
                 key={persona.id}
                 onClick={() => onAddPersonaStep(persona)}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
               >
                 <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="lg" />
                 <div className="flex flex-col items-start min-w-0">
@@ -115,7 +115,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
           <div className="px-2 pb-2 space-y-0.5">
             <button
               onClick={() => onAddConditionGate('If / Else', DEFAULT_CONDITION_BRANCHES)}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
             >
               <div className="w-6 h-6 rounded flex items-center justify-center bg-violet-500/10">
                 <GitBranch className="w-3 h-3 text-violet-400" />
@@ -132,7 +132,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 { id: 'sales', label: 'Sales', color: '#10b981' },
                 { id: 'other', label: 'Other', color: '#6b7280' },
               ])}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
             >
               <div className="w-6 h-6 rounded flex items-center justify-center bg-violet-500/10">
                 <GitBranch className="w-3 h-3 text-violet-400" />
@@ -149,7 +149,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 { id: 'parallel-2', label: 'Branch B', color: '#8b5cf6' },
                 { id: 'parallel-3', label: 'Branch C', color: '#a855f7' },
               ])}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors group"
             >
               <div className="w-6 h-6 rounded flex items-center justify-center bg-violet-500/10">
                 <GitBranch className="w-3 h-3 text-violet-400" />

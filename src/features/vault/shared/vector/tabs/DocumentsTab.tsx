@@ -101,7 +101,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         )}
 
         {error && (
-          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-center gap-2">
+          <div className="mx-6 mt-4 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
@@ -124,9 +124,9 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/30 transition-colors group"
+                  className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-modal hover:bg-secondary/30 transition-colors group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4 text-violet-400/70" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -142,7 +142,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                   <button
                     onClick={() => void handleDelete(doc.id)}
                     disabled={deletingId === doc.id}
-                    className="p-1.5 rounded-lg text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+                    className="p-1.5 rounded-card text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
                     title={t.vault.shared.delete_document}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

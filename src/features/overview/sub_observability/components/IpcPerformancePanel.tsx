@@ -101,7 +101,7 @@ export default function IpcPerformancePanel() {
     <div className={`${CARD_CONTAINER} overflow-hidden`}>
       <button onClick={toggleExpanded} className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none transition-colors">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-inner flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-indigo-500/10 border border-indigo-500/20 shadow-inner flex items-center justify-center">
             <Gauge className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-left">
@@ -127,10 +127,10 @@ export default function IpcPerformancePanel() {
       {expanded && (
         <div className="border-t border-primary/10">
           <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/5">
-            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'commands' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-card typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'commands' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Gauge className="w-3 h-3" /> {t.overview.ipc_panel.by_command}
             </button>
-            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'slowest' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-card typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'slowest' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Timer className="w-3 h-3" /> {t.overview.ipc_panel.slowest_calls}
             </button>
           </div>

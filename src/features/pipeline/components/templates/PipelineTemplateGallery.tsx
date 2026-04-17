@@ -42,7 +42,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
               className="animate-fade-slide-in relative group"
             >
               <div
-                className={`rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden ${
+                className={`rounded-modal border transition-all duration-200 cursor-pointer overflow-hidden ${
                   isExpanded
                     ? 'bg-secondary/50 border-indigo-500/25 shadow-[0_0_16px_rgba(99,102,241,0.06)]'
                     : 'bg-secondary/30 border-primary/10 hover:border-indigo-500/20 hover:bg-secondary/40'
@@ -61,7 +61,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                   {/* Header row */}
                   <div className="flex items-start gap-3">
                     {/* Mini canvas */}
-                    <div className="rounded-lg bg-background/40 border border-primary/8 p-1">
+                    <div className="rounded-card bg-background/40 border border-primary/8 p-1">
                       <MiniCanvas template={tpl} hovered={isHovered || isExpanded} />
                     </div>
 
@@ -125,7 +125,7 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                             e.stopPropagation();
                             onAdopt(tpl);
                           }}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal text-sm font-medium transition-all"
                           style={{
                             backgroundColor: colorWithAlpha(tpl.color, 0.09),
                             borderColor: colorWithAlpha(tpl.color, 0.19),

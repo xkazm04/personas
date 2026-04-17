@@ -106,9 +106,9 @@ function RoadmapCard({
 
       {/* Card */}
       <div className="flex-1 pb-6">
-        <div className="rounded-xl border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
+        <div className="rounded-modal border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/8 ring-1 ring-primary/10 font-mono text-xs font-bold text-foreground shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-card bg-primary/8 ring-1 ring-primary/10 font-mono text-xs font-bold text-foreground shrink-0">
               {item.sort_order}
             </div>
             <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ function RoadmapCard({
           </div>
         </div>
         {item.status === 'in_progress' && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 left-8 z-10 rounded-xl overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 right-0 left-8 z-10 rounded-modal overflow-hidden">
             <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
               <rect
                 x="0.5" y="0.5"

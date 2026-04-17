@@ -63,7 +63,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
         <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.assertions}</h3>
         <button
           onClick={fetchAssertions}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
+          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
           title={t.common.refresh}
           aria-label={t.agents.ops_assertions.refresh_assertions}
         >
@@ -73,7 +73,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
 
       {/* Summary */}
       {totalCount > 0 && (
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/20">
+        <div className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/20">
           <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-xs text-foreground/70 font-medium">
             {tx(t.agents.ops_assertions.active_count, { enabled: enabledCount, total: totalCount })}
@@ -98,7 +98,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
             return (
               <div
                 key={assertion.id}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-card transition-colors ${
                   assertion.enabled ? 'bg-secondary/20' : 'bg-secondary/10 opacity-50'
                 }`}
                 data-testid={`ops-assertion-${assertion.id}`}
@@ -111,7 +111,7 @@ export default function OpsAssertionsPanel({ personaId }: { personaId: string })
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground/70 truncate">{assertion.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${sevStyle}`}>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-input border ${sevStyle}`}>
                       {assertion.severity}
                     </span>
                     <span className="text-[10px] text-muted-foreground/40">{assertion.assertion_type}</span>

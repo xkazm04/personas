@@ -53,7 +53,7 @@ export function ForagingResultCard({
     <button
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
-      className={`animate-fade-slide-in w-full text-left rounded-xl border p-3 transition-all ${
+      className={`animate-fade-slide-in w-full text-left rounded-modal border p-3 transition-all ${
         isImported
           ? "border-emerald-500/30 bg-emerald-500/5 opacity-70"
           : credential.already_imported

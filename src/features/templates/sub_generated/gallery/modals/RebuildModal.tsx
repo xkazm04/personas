@@ -60,7 +60,7 @@ export function RebuildModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            <div className="p-2 rounded-modal bg-blue-500/10 border border-blue-500/20">
               <RefreshCw className={`w-4 h-4 text-blue-400 ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
             </div>
             <div className="min-w-0">
@@ -72,7 +72,7 @@ export function RebuildModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-muted-foreground/70" />
           </button>
         </div>
@@ -82,7 +82,7 @@ export function RebuildModal({
           {displayPhase === 'input' && (
             <div className="space-y-4">
               {/* Instruction context */}
-              <div className="bg-secondary/30 rounded-xl border border-primary/10 p-4">
+              <div className="bg-secondary/30 rounded-modal border border-primary/10 p-4">
                 <div className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wide mb-1.5">
                   {t.templates.rebuild_modal.template_instruction}
                 </div>
@@ -100,7 +100,7 @@ export function RebuildModal({
                   value={userDirection}
                   onChange={(e) => setUserDirection(e.target.value)}
                   placeholder={t.templates.rebuild_modal.custom_direction_placeholder}
-                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-xl text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
+                  className="w-full h-28 px-4 py-3 bg-secondary/20 border border-primary/10 rounded-modal text-sm text-foreground/90 placeholder:text-muted-foreground/40 resize-none focus-visible:outline-none focus-visible:border-violet-500/30 focus-visible:ring-1 focus-visible:ring-violet-500/20 transition-colors"
                 />
                 <p className="text-sm text-muted-foreground/60 mt-1">
                   {t.templates.rebuild_modal.custom_direction_hint}
@@ -117,7 +117,7 @@ export function RebuildModal({
               </div>
 
               {/* Streaming output */}
-              <div className="bg-[#0d1117] rounded-xl border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
+              <div className="bg-[#0d1117] rounded-modal border border-primary/10 p-4 h-64 overflow-y-auto font-mono text-sm leading-relaxed">
                 {lines.length === 0 && (
                   <span className="text-muted-foreground/60">{t.templates.rebuild_modal.waiting_for_output}</span>
                 )}
@@ -147,7 +147,7 @@ export function RebuildModal({
 
           {displayPhase === 'completed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+              <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20 mb-4">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
@@ -161,7 +161,7 @@ export function RebuildModal({
 
           {displayPhase === 'failed' && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
+              <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20 mb-4">
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-sm font-semibold text-foreground/90 mb-1">
@@ -180,13 +180,13 @@ export function RebuildModal({
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm rounded-xl text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
+                className="px-4 py-2 text-sm rounded-modal text-muted-foreground/70 hover:bg-secondary/50 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={() => onStartRebuild(userDirection)}
-                className="px-4 py-2 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-sm rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 {t.templates.rebuild_modal.start_rebuild}
@@ -198,14 +198,14 @@ export function RebuildModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-sm rounded-xl text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-sm rounded-modal text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
                 <Square className="w-3 h-3" />
                 {t.templates.rebuild_modal.cancel_rebuild}
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
+                className="px-4 py-2 text-sm rounded-modal bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
               >
                 {t.templates.rebuild_modal.run_in_background}
               </button>
@@ -215,7 +215,7 @@ export function RebuildModal({
           {(displayPhase === 'completed' || displayPhase === 'failed') && (
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
+              className="px-4 py-2 text-sm rounded-modal bg-secondary/50 text-foreground/80 hover:bg-secondary/70 transition-colors"
             >
               {t.common.close}
             </button>

@@ -119,7 +119,7 @@ function TimelineItemRow({ item }: { item: TimelineItem }) {
       animate="visible"
       exit="exit"
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="rounded-lg bg-secondary/20 border border-primary/8 hover:border-primary/15 hover:bg-secondary/30 transition-colors px-3 py-2"
+      className="rounded-card bg-secondary/20 border border-primary/8 hover:border-primary/15 hover:bg-secondary/30 transition-colors px-3 py-2"
       style={{ borderLeftWidth: 2, borderLeftColor: accentColor }}
     >
       {item.kind === 'event'
@@ -161,7 +161,7 @@ export default function UnifiedActivityTimeline() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-input text-muted-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
             title={t.common.refresh}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />

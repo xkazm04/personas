@@ -146,7 +146,7 @@ export function BuildQuestionnaireModal({
         </h3>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
           aria-label="Cancel setup"
         >
           <X className="w-4 h-4" />
@@ -180,7 +180,7 @@ export function BuildQuestionnaireModal({
               animate="center"
               exit="exit"
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className={`h-full flex flex-col p-5 rounded-xl border ${tone.border} ${tone.bg}`}
+              className={`h-full flex flex-col p-5 rounded-modal border ${tone.border} ${tone.bg}`}
             >
               {/* Top row: category + question number */}
               <div className="flex items-center justify-between mb-3">
@@ -192,7 +192,7 @@ export function BuildQuestionnaireModal({
                     </span>
                   </div>
                 ) : <div />}
-                <span className={`text-xs font-mono tabular-nums px-2 py-0.5 rounded-md bg-foreground/[0.04] text-muted-foreground/50`}>
+                <span className={`text-xs font-mono tabular-nums px-2 py-0.5 rounded-input bg-foreground/[0.04] text-muted-foreground/50`}>
                   {activeIndex + 1}/{questions.length}
                 </span>
               </div>
@@ -223,7 +223,7 @@ export function BuildQuestionnaireModal({
                           type="button"
                           data-testid={`question-option-${opt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`w-full text-left px-3.5 py-2.5 text-sm rounded-lg border transition-all flex items-center gap-2.5 ${
+                          className={`w-full text-left px-3.5 py-2.5 text-sm rounded-card border transition-all flex items-center gap-2.5 ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
                               : 'text-foreground/70 border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
@@ -252,7 +252,7 @@ export function BuildQuestionnaireModal({
                       onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                       placeholder={(q as unknown as Record<string, unknown>).placeholder as string ?? q.default ?? 'Type your answer...'}
                       autoFocus
-                      className={`w-full px-4 py-3 text-sm rounded-xl border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
+                      className={`w-full px-4 py-3 text-sm rounded-modal border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
                     />
                     {currentAnswer && currentAnswer !== q.default && (
                       <p className="text-xs text-muted-foreground/40 px-1">
@@ -273,7 +273,7 @@ export function BuildQuestionnaireModal({
                           type="button"
                           data-testid={`question-bool-${opt.toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`flex-1 py-3.5 text-sm font-medium rounded-xl border transition-all flex items-center justify-center gap-2 ${
+                          className={`flex-1 py-3.5 text-sm font-medium rounded-modal border transition-all flex items-center justify-center gap-2 ${
                             isSelected
                               ? `${tone.selectBg} shadow-elevation-1`
                               : 'text-foreground/60 border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
@@ -378,7 +378,7 @@ export function BuildQuestionnaireModal({
               goNext();
             }
           }}
-          className={`inline-flex items-center gap-2 rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-2 rounded-modal text-sm font-medium transition-all ${
             isLast
               ? allAnswered
                 ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-1'

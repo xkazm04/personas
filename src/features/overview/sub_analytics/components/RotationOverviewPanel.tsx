@@ -88,16 +88,16 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
   }
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center">
+          <div className="w-8 h-8 rounded-modal bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center">
             <RotateCw className="w-4 h-4 text-violet-400" />
           </div>
           <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">{t.overview.analytics_dashboard.credential_rotation}</h3>
           {stats.total > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-elevation-1">
+            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-elevation-1">
               {stats.total}
             </span>
           )}
@@ -106,17 +106,17 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
         {/* Summary pills */}
         <div className="flex items-center gap-2">
           {stats.active > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Shield className="w-3 h-3" />{tx(t.overview.analytics_dashboard.active_count, { count: stats.active })}
             </span>
           )}
           {stats.expiringSoon > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Clock className="w-3 h-3" />{tx(t.overview.analytics_dashboard.soon_count, { count: stats.expiringSoon })}
             </span>
           )}
           {stats.anomalies > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-card bg-red-500/10 text-red-400 border border-red-500/20">
               <AlertTriangle className="w-3 h-3" />{stats.anomalies !== 1 ? tx(t.overview.analytics_dashboard.issues_count, { count: stats.anomalies }) : tx(t.overview.analytics_dashboard.issues_count_one, { count: stats.anomalies })}
             </span>
           )}
@@ -127,7 +127,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
       {rotationOverviewList.length === 0 ? (
         <div className="flex items-center justify-center py-10">
           <div className="text-center flex flex-col items-center">
-            <div className="w-14 h-14 rounded-xl bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
+            <div className="w-14 h-14 rounded-modal bg-violet-500/10 border border-violet-500/20 shadow-inner flex items-center justify-center mb-4 opacity-70">
               <RotateCw className="w-6 h-6 text-violet-400" />
             </div>
             <p className="text-sm font-medium text-foreground/80">{t.overview.analytics_dashboard.no_rotation_policies}</p>
@@ -147,7 +147,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
               <div key={item.credentialId} className="flex items-center gap-4 px-4 py-3.5 hover:bg-white/[0.03] transition-colors group">
                 {/* Status badge */}
                 {badge && (
-                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-lg border flex-shrink-0 ${badge.classes}`}>
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-sm font-mono uppercase rounded-card border flex-shrink-0 ${badge.classes}`}>
                     <badge.Icon className="w-3 h-3" />
                     {badge.label}
                   </span>
@@ -182,7 +182,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Consecutive failures */}
                 {item.status.consecutive_failures > 0 && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono rounded-lg bg-red-500/10 text-red-400 border border-red-500/20" title={`${item.status.consecutive_failures} consecutive failures`}>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-sm font-mono rounded-card bg-red-500/10 text-red-400 border border-red-500/20" title={`${item.status.consecutive_failures} consecutive failures`}>
                     {item.status.consecutive_failures}x fail
                   </span>
                 )}

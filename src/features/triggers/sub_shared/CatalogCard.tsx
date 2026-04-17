@@ -10,11 +10,11 @@ interface Props {
 
 export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }: Props) {
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-xl bg-card/60 border border-primary/10 hover:border-primary/20 transition-colors">
+    <div className="flex flex-col gap-2 p-3 rounded-modal bg-card/60 border border-primary/10 hover:border-primary/20 transition-colors">
       {/* Header */}
       <div className="flex items-start gap-2.5">
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm"
+          className="flex-shrink-0 w-9 h-9 rounded-card flex items-center justify-center text-sm"
           style={{ backgroundColor: `${entry.color ?? '#3b82f6'}15` }}
         >
           {entry.icon ?? '📡'}
@@ -49,7 +49,7 @@ export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }:
 
         <button
           onClick={isSubscribed ? onUnsubscribe : onSubscribe}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-input transition-colors ${
             isSubscribed
               ? 'bg-emerald-500/10 text-emerald-400 hover:bg-red-500/10 hover:text-red-400'
               : 'bg-primary/10 text-primary hover:bg-primary/20'

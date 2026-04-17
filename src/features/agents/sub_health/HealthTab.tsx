@@ -17,7 +17,7 @@ export function HealthTab() {
         {t.agents.health_tab.description}
       </p>
 
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-4">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4">
         <HealthCheckPanel healthCheck={healthCheck} />
       </div>
     </div>

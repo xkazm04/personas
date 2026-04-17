@@ -74,7 +74,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
       {viewState.view === 'add-ai-guide' && (
         <div
           key="design-inline"
-          className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
+          className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-modal p-4"
         >
           <CredentialDesignModal
             open

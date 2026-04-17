@@ -18,7 +18,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="opacity-0 group-hover/bubble:opacity-100 absolute top-2 right-2 p-1 rounded-md bg-background/80 backdrop-blur-sm border border-primary/10 text-muted-foreground/50 hover:text-foreground/80 transition-all"
+      className="opacity-0 group-hover/bubble:opacity-100 absolute top-2 right-2 p-1 rounded-input bg-background/80 backdrop-blur-sm border border-primary/10 text-muted-foreground/50 hover:text-foreground/80 transition-all"
       title={t.agents.chat.copy_message}
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

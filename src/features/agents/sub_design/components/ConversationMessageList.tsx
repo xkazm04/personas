@@ -46,7 +46,7 @@ export function ConversationCard({
   const isCompleted = conversation.status === 'completed';
 
   return (
-    <div className={`rounded-lg border transition-colors ${isActive ? 'border-blue-500/40 bg-blue-500/5' : 'border-border/50 bg-card/50 hover:border-border'}`} data-testid={`conversation-card-${conversation.id}`}>
+    <div className={`rounded-card border transition-colors ${isActive ? 'border-blue-500/40 bg-blue-500/5' : 'border-border/50 bg-card/50 hover:border-border'}`} data-testid={`conversation-card-${conversation.id}`}>
       <div className="flex items-center gap-2 px-3 py-2" role="group" aria-label="Design conversation controls">
         <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
@@ -79,7 +79,7 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
   const { t } = useTranslation();
   const meta = DRIFT_KIND_META[event.kind];
   return (
-    <div className={`animate-fade-slide-in group relative rounded-lg border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
+    <div className={`animate-fade-slide-in group relative rounded-card border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
       <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />

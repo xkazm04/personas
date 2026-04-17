@@ -47,7 +47,7 @@ export function AutoCredReview({
       {/* Header */}
       <div className="flex items-center gap-3">
         <div
-          className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-modal border flex items-center justify-center shrink-0"
           style={{ backgroundColor: `${designResult.connector.color}15`, borderColor: `${designResult.connector.color}30` }}
         >
           <Plug className="w-5 h-5" style={{ color: designResult.connector.color }} />
@@ -64,7 +64,7 @@ export function AutoCredReview({
 
       {/* Partial extraction warning */}
       {(isPartial || completeness?.isPartial) && (
-        <div className="flex items-start gap-2.5 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+        <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
@@ -84,7 +84,7 @@ export function AutoCredReview({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground focus-ring"
+          className="w-full px-3 py-2 rounded-modal border border-primary/15 bg-secondary/25 text-sm text-foreground focus-ring"
         />
       </div>
 
@@ -94,7 +94,7 @@ export function AutoCredReview({
           const isEmpty = !(extractedValues[field.key] ?? '').trim();
           const isMissing = (completeness?.missingKeys.includes(field.key)) ?? (isPartial && isEmpty && field.required);
           return (
-            <div key={field.key} className={isMissing ? 'ring-1 ring-amber-500/30 rounded-lg' : ''}>
+            <div key={field.key} className={isMissing ? 'ring-1 ring-amber-500/30 rounded-card' : ''}>
               <FieldCaptureRow
                 source="auto"
                 mode="confirming"

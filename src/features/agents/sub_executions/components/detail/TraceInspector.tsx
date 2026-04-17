@@ -187,7 +187,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl typo-code text-red-300/80">
+      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
         {tx(e.failed_to_load_trace, { error })}
       </div>
     );
@@ -196,7 +196,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (!unifiedTrace || unifiedTrace.spans.length === 0) {
     return (
       <div className="text-center py-10">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/60 border border-primary/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
           <Activity className="w-6 h-6 text-muted-foreground/60" />
         </div>
         <p className="typo-body text-muted-foreground/80">{e.no_trace_data}</p>
@@ -209,7 +209,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     <div className="space-y-4">
       <TraceSummary trace={unifiedTrace} />
 
-      <div className="rounded-xl border border-primary/20 bg-secondary/30 overflow-hidden">
+      <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
         <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
           <div className="typo-code text-muted-foreground/60 uppercase tracking-wider">
             {e.span}

@@ -30,7 +30,7 @@ export function LabActionButtons({
   if (isRunning) {
     return (
       <button data-testid={cancelTestId} onClick={onCancel}
-        className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20">
+        className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-modal font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20">
         <Square className="w-4 h-4" />{resolvedCancelLabel}
       </button>
     );
@@ -42,7 +42,7 @@ export function LabActionButtons({
     <div className={`flex flex-col ${LIST_ITEM_GAP.cards}`}>
       <Tooltip content={activeGuide ? '' : disabledReason} placement="top" delay={200}>
         <button data-testid={runTestId} onClick={onStart} disabled={disabled}
-          className={runClassName ?? "w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"}>
+          className={runClassName ?? "w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-modal font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"}>
           {runIcon ?? <Play className="w-4 h-4" />}{runLabel}
         </button>
       </Tooltip>

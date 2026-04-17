@@ -54,7 +54,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
           setOpen(!open);
         }}
         title={t.agents.persona_list.more_actions}
-        className="p-1 rounded-md hover:bg-secondary/40 text-muted-foreground/40 hover:text-muted-foreground/80 transition-colors"
+        className="p-1 rounded-input hover:bg-secondary/40 text-muted-foreground/40 hover:text-muted-foreground/80 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -63,7 +63,7 @@ export function PersonaOverviewRowMenu({ persona, onDelete, onEdit }: RowActionM
           <div
             ref={menuRef}
             style={menuStyle}
-            className="min-w-[140px] rounded-lg border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 animate-fade-slide-in"
+            className="min-w-[140px] rounded-card border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 animate-fade-slide-in"
           >
             <button
               type="button"

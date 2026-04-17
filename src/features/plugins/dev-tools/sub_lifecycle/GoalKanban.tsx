@@ -55,7 +55,7 @@ function GoalCard({ goal }: { goal: DevGoal }) {
   const progressPct = goal.progress ?? 0;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-background/60 p-3 hover:border-primary/20 transition-colors">
+    <div className="rounded-modal border border-primary/10 bg-background/60 p-3 hover:border-primary/20 transition-colors">
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">

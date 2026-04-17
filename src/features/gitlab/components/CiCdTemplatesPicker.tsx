@@ -63,7 +63,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                   type="button"
                   disabled={!available}
                   onClick={() => onSelectTemplate(template)}
-                  className={`text-left p-3 rounded-xl border transition-colors ${
+                  className={`text-left p-3 rounded-modal border transition-colors ${
                     available
                       ? 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 cursor-pointer'
                       : 'border-primary/5 bg-secondary/10 opacity-50 cursor-not-allowed'

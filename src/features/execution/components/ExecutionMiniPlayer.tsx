@@ -100,7 +100,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
         <ExecutionSummaryCard summary={executionSummary} compact />
       )}
       {resultText && !executionSummary && (
-        <div className="rounded-lg bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
+        <div className="rounded-card bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
           <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">
             {resultText}
           </p>
@@ -239,7 +239,7 @@ export default function ExecutionMiniPlayer() {
           top: miniPlayerPosition.y,
           zIndex: 60,
         }}
-        className={`animate-fade-slide-in w-[360px] rounded-xl border border-primary/20 bg-background/95 backdrop-blur-lg shadow-elevation-4 shadow-black/40 overflow-hidden select-none ${
+        className={`animate-fade-slide-in w-[360px] rounded-modal border border-primary/20 bg-background/95 backdrop-blur-lg shadow-elevation-4 shadow-black/40 overflow-hidden select-none ${
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >
@@ -300,7 +300,7 @@ export default function ExecutionMiniPlayer() {
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mr-1">{t.execution.background}</span>
             {backgroundExecutions.map((bg) => (
               <Tooltip key={bg.executionId} content={`${bg.personaName} — ${bg.status}`}>
-                <div className="relative w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
+                <div className="relative w-5 h-5 rounded-input flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
                   <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} />
                   <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
                     bg.status === 'running' ? 'bg-blue-400 animate-pulse' :

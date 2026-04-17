@@ -68,7 +68,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/25 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/25 flex items-center justify-center">
               <Zap className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
@@ -99,7 +99,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
                 placeholder={t.pipeline.auto_team_placeholder}
-                className="w-full px-4 py-3 rounded-xl bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
+                className="w-full px-4 py-3 rounded-modal bg-secondary/30 border border-primary/15 text-sm text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:opacity-60 pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
                 <Button
@@ -210,7 +210,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="done"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+                <div className="p-4 rounded-modal border border-emerald-500/20 bg-emerald-500/5 space-y-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     <span className="text-sm font-medium text-emerald-400">{t.pipeline.team_created}</span>
@@ -248,7 +248,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="error"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <p className="text-sm text-red-400">{at.error}</p>
                 </div>

@@ -55,7 +55,7 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
   if (activeStats.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-secondary/30 border border-border/40">
+    <div className="flex flex-col gap-1 px-3 py-2 rounded-card bg-secondary/30 border border-border/40">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Activity className="w-3 h-3" />
         {t.agents.connectors.ch_delivery_health}

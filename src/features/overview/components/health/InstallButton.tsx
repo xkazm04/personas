@@ -64,7 +64,7 @@ export function InstallButton({
           {installState.error || t.overview.install_button.installation_failed}
         </div>
         {installState.manualCommand && (
-          <div className="bg-primary/5 rounded-lg px-2 py-1.5">
+          <div className="bg-primary/5 rounded-card px-2 py-1.5">
             <p className="typo-body text-muted-foreground/80 mb-1">{t.overview.install_button.try_manually}</p>
             <code className="typo-code text-foreground/80 select-all">
               {installState.manualCommand}
@@ -85,7 +85,7 @@ export function InstallButton({
               href={CLAUDE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2 py-1 typo-heading rounded-lg border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2 py-1 typo-heading rounded-card border border-violet-500/20 text-violet-300 hover:bg-violet-500/10 transition-colors"
             >
               {t.overview.install_button.official_page}
               <ExternalLink className="w-3 h-3" />

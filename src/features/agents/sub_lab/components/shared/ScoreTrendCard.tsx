@@ -122,7 +122,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
 
   if (dataPoints.length === 0) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3">
         <div className="flex items-center gap-2 mb-1">
           <TrendingUp className="w-3.5 h-3.5 text-muted-foreground/50" />
           <span className="text-xs font-medium text-muted-foreground/60">{t.agents.lab.score_trend}</span>
@@ -140,7 +140,7 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
     : '';
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 space-y-2">
+    <div className="rounded-modal border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <TrendingUp className="w-3.5 h-3.5 text-primary/70" />
         <span className="text-xs font-medium text-foreground/70">{t.agents.lab.score_trend}</span>

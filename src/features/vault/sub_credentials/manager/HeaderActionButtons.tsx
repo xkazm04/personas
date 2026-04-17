@@ -20,7 +20,7 @@ export function RotateAllButton({
     <button
       onClick={onRotateAll}
       disabled={isRotatingAll || rotatableCount === 0}
-      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-card text-xs font-medium border transition-colors ${
         rotatableCount === 0
           ? 'border-primary/10 text-muted-foreground/50 cursor-not-allowed'
           : rotateAllResult
@@ -66,7 +66,7 @@ export function TestAllButton({
   return (
     <button
       onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-      className={`flex items-center gap-0 rounded-lg text-xs font-medium border transition-colors overflow-hidden ${
+      className={`flex items-center gap-0 rounded-card text-xs font-medium border transition-colors overflow-hidden ${
         bulk.isRunning
           ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-600/25 dark:border-amber-500/20'
           : hasSummary

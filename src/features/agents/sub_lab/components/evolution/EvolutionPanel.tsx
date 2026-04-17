@@ -96,7 +96,7 @@ function CycleCard({ cycle }: { cycle: EvolutionCycle }) {
 
   return (
     <div className="space-y-0">
-      <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-primary/10 bg-primary/[0.02]">
+      <div className="flex items-center gap-3 px-3 py-2 rounded-card border border-primary/10 bg-primary/[0.02]">
         <CycleStatusBadge status={cycle.status} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs">
@@ -347,15 +347,15 @@ export function EvolutionPanel() {
           {/* Status summary */}
           {policy && (
             <div className="grid grid-cols-3 gap-2">
-              <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
+              <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">{policy.totalCycles}</div>
                 <div className="text-[10px] text-muted-foreground">{t.agents.lab.cycles_label}</div>
               </div>
-              <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
+              <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-emerald-400">{policy.totalPromotions}</div>
                 <div className="text-[10px] text-muted-foreground">{t.agents.lab.promotions_label}</div>
               </div>
-              <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
+              <div className="px-3 py-2 rounded-card bg-primary/5 border border-primary/10 text-center">
                 <div className="text-lg font-semibold text-foreground">
                   {eligible ? (
                     <span className="text-amber-400">{t.agents.lab.ready_label}</span>
@@ -373,7 +373,7 @@ export function EvolutionPanel() {
             <button
               onClick={handleTriggerCycle}
               disabled={isTriggering}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-card bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-40"
             >
               {isTriggering ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Evolving...</>
@@ -383,7 +383,7 @@ export function EvolutionPanel() {
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg border transition-colors ${
+              className={`p-2 rounded-card border transition-colors ${
                 showSettings
                   ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
                   : 'border-primary/10 text-muted-foreground hover:bg-primary/5'
@@ -394,7 +394,7 @@ export function EvolutionPanel() {
             </button>
             <button
               onClick={loadData}
-              className="p-2 rounded-lg border border-primary/10 text-muted-foreground hover:bg-primary/5 transition-colors"
+              className="p-2 rounded-card border border-primary/10 text-muted-foreground hover:bg-primary/5 transition-colors"
               aria-label="Refresh evolution data"
             >
               <RefreshCw className="w-4 h-4" />
@@ -435,7 +435,7 @@ export function EvolutionPanel() {
                         id="evo-variants"
                         value={variants}
                         onChange={(e) => setVariants(Number(e.target.value))}
-                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground"
+                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-input px-2 py-1 text-foreground"
                       >
                         {[2, 3, 4, 5, 6, 8].map((v) => (
                           <option key={v} value={v}>{v}</option>
@@ -470,7 +470,7 @@ export function EvolutionPanel() {
                         id="evo-min-execs"
                         value={minExecs}
                         onChange={(e) => setMinExecs(Number(e.target.value))}
-                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-md px-2 py-1 text-foreground"
+                        className="mt-1 w-full text-sm bg-primary/5 border border-primary/10 rounded-input px-2 py-1 text-foreground"
                       >
                         {[3, 5, 10, 15, 20, 30, 50].map((v) => (
                           <option key={v} value={v}>{v}</option>
@@ -482,7 +482,7 @@ export function EvolutionPanel() {
                   <button
                     onClick={handleSaveSettings}
                     disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-40"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-card bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-40"
                   >
                     {isSaving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

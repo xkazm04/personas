@@ -24,7 +24,7 @@ export function PersonaOverviewEmptyState({ onResetFilters }: PersonaOverviewEmp
       <button
         type="button"
         onClick={onResetFilters}
-        className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+        className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card text-md font-medium border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
       >
         <RotateCcw className="w-3.5 h-3.5" />
         {t.agents.persona_list.clear_all_filters}

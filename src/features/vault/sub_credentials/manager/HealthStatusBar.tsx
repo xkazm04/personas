@@ -114,7 +114,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
       {/* Test All button */}
       <button
         onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium border transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-sm font-medium border transition-colors ${
           bulk.isRunning
             ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-600/25 dark:border-amber-500/20'
             : bulk.summary

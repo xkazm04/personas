@@ -64,13 +64,13 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
 
   return (
     <div className="relative">
-      <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-xl border border-primary/20">
+      <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-modal border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => handlePresetClick(opt.value)}
             aria-pressed={!isCustomActive && value === opt.value}
-            className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
+            className={`px-3 py-1 rounded-modal text-sm font-medium transition-all ${
               !isCustomActive && value === opt.value
                 ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                 : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -83,7 +83,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
           ref={buttonRef}
           onClick={handleCustomClick}
           aria-pressed={isCustomActive}
-          className={`px-3 py-1 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1 rounded-modal text-sm font-medium transition-all flex items-center gap-1.5 ${
             isCustomActive
               ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
               : 'text-muted-foreground/80 hover:text-muted-foreground'
@@ -142,7 +142,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
     return (
       <div
         ref={ref}
-        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-elevation-3 p-4 min-w-[280px]"
+        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-modal shadow-elevation-3 p-4 min-w-[280px]"
       >
         <div className="space-y-3">
           <div>
@@ -152,7 +152,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
               value={startDate}
               max={endDate || today}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           <div>
@@ -163,7 +163,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
               min={startDate}
               max={today}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
+              className="w-full px-3 py-1.5 text-sm rounded-card bg-secondary/50 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:border-blue-400/50"
             />
           </div>
           {isValid && (
@@ -175,14 +175,14 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
             <button
               onClick={handleApply}
               disabled={!isValid}
-              className="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-1.5 text-sm font-medium rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Apply
             </button>
             {value && (
               <button
                 onClick={() => onChange(null)}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium rounded-card text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               >
                 Clear
               </button>
@@ -207,7 +207,7 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
   return (
     <button
       onClick={() => onChange(!enabled)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
         enabled
           ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
           : 'bg-secondary/40 text-muted-foreground/70 border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'

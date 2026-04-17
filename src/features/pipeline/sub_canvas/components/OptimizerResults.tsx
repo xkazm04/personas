@@ -124,7 +124,7 @@ export default function OptimizerResults({
             }`}
           >
             <div className="flex items-start gap-2">
-              <div className={`mt-0.5 p-1 rounded-lg ${colors.bg} border ${colors.border}`}>
+              <div className={`mt-0.5 p-1 rounded-card ${colors.bg} border ${colors.border}`}>
                 <Icon className={`w-3 h-3 ${colors.text}`} />
               </div>
               <div className="flex-1 min-w-0">
@@ -142,14 +142,14 @@ export default function OptimizerResults({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onAcceptSuggestion(s)}
-                      className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                      className="p-1 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                       title={pt.accept_suggestion}
                     >
                       <Check className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => onDismissSuggestion(s.id)}
-                      className="p-1 rounded-lg bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
+                      className="p-1 rounded-card bg-primary/5 text-muted-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
                       title={t.common.dismiss}
                     >
                       <X className="w-3 h-3" />

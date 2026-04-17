@@ -86,7 +86,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
 
   return (
     <div
-      className={`animate-fade-slide-in rounded-xl border ${compact ? 'p-2.5' : 'p-4'} ${presentation.border} ${presentation.bg}`}
+      className={`animate-fade-slide-in rounded-modal border ${compact ? 'p-2.5' : 'p-4'} ${presentation.border} ${presentation.bg}`}
     >
       {/* Status row */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -122,7 +122,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
       {/* Model badge */}
       {summary.model && (
         <div className="mt-1.5">
-          <span className="inline-block px-2 py-0.5 rounded-md bg-secondary/40 typo-caption text-muted-foreground/70">
+          <span className="inline-block px-2 py-0.5 rounded-input bg-secondary/40 typo-caption text-muted-foreground/70">
             {summary.model}
           </span>
         </div>
@@ -141,14 +141,14 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
             <div className="flex items-center gap-2 typo-body text-muted-foreground/90">
               <Wrench className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
               <span>{t.agents.executions.stopped_while_running}</span>
-              <code className="px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300/80 typo-code">
+              <code className="px-1.5 py-0.5 rounded-card bg-amber-500/10 text-amber-300/80 typo-code">
                 {summary.toolCalls[summary.toolCalls.length - 1]?.name}
               </code>
             </div>
           )}
           <button
             onClick={onResume}
-            className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
           >
             <RotateCw className="w-3.5 h-3.5" />
             {t.agents.executions.resume_from_here}

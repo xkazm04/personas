@@ -19,7 +19,7 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
     <>
       <div
         key={sessionState}
-        className={`animate-fade-slide-in flex items-center gap-3 p-3 rounded-xl border ${config.borderColor} ${config.bgColor}`}
+        className={`animate-fade-slide-in flex items-center gap-3 p-3 rounded-modal border ${config.borderColor} ${config.bgColor}`}
       >
         <div className="relative">
           {sessionState === 'connecting' || sessionState === 'working' ? (
@@ -52,7 +52,7 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
 
       {/* Browser hands-off warning (playwright mode only) */}
       {!isGuided && (sessionState === 'connecting' || sessionState === 'working') && (
-        <div className="flex items-start gap-2.5 px-3 py-2 rounded-lg border border-orange-500/20 bg-orange-500/5">
+        <div className="flex items-start gap-2.5 px-3 py-2 rounded-card border border-orange-500/20 bg-orange-500/5">
           <MonitorX className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
           <p className="text-sm text-muted-foreground/70">
             <span className="font-medium text-orange-400/90">{t.vault.auto_cred_extra.do_not_interact}</span>{' '}

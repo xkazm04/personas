@@ -82,14 +82,14 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         />
         <button
           onClick={() => setPickerOpen(true)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
+          className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-primary hover:bg-primary/10 transition-colors"
         >
           <Plus className="w-3 h-3" /> {t.common.edit ? 'Add' : 'Add'}
         </button>
       </div>
 
       {linkedRecipes.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
+        <div className="rounded-modal border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
           <PuzzlePieceIllustration />
           <p className="text-sm text-muted-foreground/60">
             No recipes linked yet. Click &quot;Add&quot; to link recipes from the library.
@@ -100,9 +100,9 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
           {linkedRecipes.map((recipe) => (
             <div
               key={recipe.id}
-              className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card/30 px-3 py-2.5 hover:border-border/60 transition-colors"
+              className="group flex items-center gap-3 rounded-modal border border-border/40 bg-card/30 px-3 py-2.5 hover:border-border/60 transition-colors"
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-card bg-primary/10 border border-primary/20">
                 <BookOpen className="w-3 h-3 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
@@ -112,20 +112,20 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 )}
               </div>
               {recipe.category && (
-                <span className="rounded-lg border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
+                <span className="rounded-card border border-border/40 bg-muted/20 px-1.5 py-0.5 text-sm text-muted-foreground">
                   {recipe.category}
                 </span>
               )}
               <button
                 onClick={() => setPlaygroundRecipe(recipe)}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-emerald-400 hover:bg-emerald-500/10 transition-colors"
               >
                 <Play className="w-3 h-3" /> {t.recipes.run}
               </button>
               <button
                 onClick={() => handleUnlink(recipe.id)}
                 disabled={unlinkingId === recipe.id}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-card px-2 py-1 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
               >
                 {unlinkingId === recipe.id ? (
                   <LoadingSpinner size="xs" />

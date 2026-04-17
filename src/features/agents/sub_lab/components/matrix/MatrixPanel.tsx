@@ -54,12 +54,12 @@ export function MatrixPanel() {
         runLabel={t.agents.lab.generate_test_draft}
         cancelLabel={t.agents.lab.cancel_matrix_test}
         runIcon={<Wand2 className="w-4 h-4" />}
-        runClassName="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+        runClassName="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-modal font-medium text-sm transition-all bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-500/90 hover:to-purple-500/90 text-foreground shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
         cancelTestId="matrix-cancel-btn"
         runTestId="matrix-run-btn"
       >
         {!hasPrompt && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-modal bg-amber-500/10 border border-amber-500/20">
             <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-amber-400/90">{t.agents.lab.no_prompt_warning}</p>
           </div>
@@ -70,7 +70,7 @@ export function MatrixPanel() {
           <textarea data-testid="matrix-instruction" value={instruction} onChange={(e) => setInstruction(e.target.value)}
             placeholder={t.agents.lab.describe_changes_placeholder}
 
-            className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none disabled:opacity-50" />
+            className="w-full h-28 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring resize-none disabled:opacity-50" />
           <p className="text-sm text-muted-foreground/50">
             {t.agents.lab.describe_changes_hint}
           </p>

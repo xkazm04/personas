@@ -78,7 +78,7 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
+          className="p-1.5 rounded-card hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -90,12 +90,12 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
 
       <div className="grid grid-cols-[240px_1fr] gap-4">
         {/* Tool List Sidebar */}
-        <div className="space-y-1 max-h-[70vh] overflow-y-auto rounded-lg border border-primary/10 p-2 bg-secondary/15">
+        <div className="space-y-1 max-h-[70vh] overflow-y-auto rounded-card border border-primary/10 p-2 bg-secondary/15">
           {generatedResult.tools.map((tool) => (
             <button
               key={tool.toolName}
               onClick={() => { setSelectedTool(tool); setTestResult(null); setError(null); }}
-              className={`w-full text-left px-2 py-1.5 rounded-md text-xs transition-colors ${
+              className={`w-full text-left px-2 py-1.5 rounded-input text-xs transition-colors ${
                 selectedTool?.toolName === tool.toolName
                   ? 'bg-blue-500/15 border border-blue-500/20 text-foreground'
                   : 'hover:bg-secondary/30 text-muted-foreground/70'
@@ -134,7 +134,7 @@ export function AutopilotPlayground({ parseResult, generatedResult, onBack }: Au
               <button
                 onClick={handleTest}
                 disabled={isTesting || !baseUrl.trim()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 text-violet-400 rounded-card text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 {isTesting ? 'Sending...' : 'Send Request'}

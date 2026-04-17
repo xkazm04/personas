@@ -338,7 +338,7 @@ export function QuestionnaireFormFocus({
                             onClick={() =>
                               setActiveIdx(questions.findIndex((qq) => qq.id === q.id))
                             }
-                            className={`flex items-start gap-2 w-full text-left rounded-md px-1.5 py-1 -mx-1.5 transition-colors ${
+                            className={`flex items-start gap-2 w-full text-left rounded-input px-1.5 py-1 -mx-1.5 transition-colors ${
                               isCurrent ? 'bg-primary/10' : 'hover:bg-white/[0.03]'
                             }`}
                           >
@@ -404,7 +404,7 @@ export function QuestionnaireFormFocus({
               <button
                 type="button"
                 onClick={onSubmit}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 {t.templates.adopt_modal.submit_all}
@@ -414,7 +414,7 @@ export function QuestionnaireFormFocus({
                 type="button"
                 onClick={next}
                 disabled={isAtEnd}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 {t.templates.adopt_modal.next}
                 <ChevronRight className="w-4 h-4" />

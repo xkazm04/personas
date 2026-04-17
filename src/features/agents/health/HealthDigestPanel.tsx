@@ -63,11 +63,11 @@ function PersonaDigestRow({
     <button
       type="button"
       onClick={() => onNavigate(check.personaId)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 transition-colors text-left group"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group"
     >
       {/* Persona icon */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+        className="w-8 h-8 rounded-card flex items-center justify-center text-xs font-bold flex-shrink-0"
         style={{
           backgroundColor: `${check.personaColor || '#6B7280'}20`,
           border: `1px solid ${check.personaColor || '#6B7280'}40`,
@@ -142,7 +142,7 @@ export function HealthDigestPanel() {
   // Loading state
   if (running) {
     return (
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-6">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <ContentLoader variant="panel" label={t.agents.health_digest.generating} hint="health-digest" />
       </div>
     );
@@ -151,7 +151,7 @@ export function HealthDigestPanel() {
   // No digest yet -- prompt to run
   if (!digest) {
     return (
-      <div className="rounded-xl border border-primary/20 bg-secondary/40 p-6">
+      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <div className="flex items-center gap-3 mb-4">
           <Activity className="w-5 h-5 text-primary/60" />
           <h3 className="text-sm font-semibold text-foreground/80">{t.agents.health_digest.title}</h3>
@@ -162,7 +162,7 @@ export function HealthDigestPanel() {
         <button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
         >
           <Activity className="w-4 h-4" />
           {t.agents.health_digest.run_digest}
@@ -184,7 +184,7 @@ export function HealthDigestPanel() {
   });
 
   return (
-    <div className="rounded-xl border border-primary/20 bg-secondary/40 overflow-hidden">
+    <div className="rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ export function HealthDigestPanel() {
         <button
           type="button"
           onClick={handleRunDigest}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-secondary/60 text-muted-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-card bg-secondary/60 text-muted-foreground border border-primary/20 hover:bg-secondary/80 transition-colors"
         >
           <RefreshCw className="w-3 h-3" />
           {t.agents.health_check.rerun}
@@ -246,17 +246,17 @@ export function HealthDigestPanel() {
         {totalIssues > 0 && (
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {errorCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-xs font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
                 <XCircle className="w-3 h-3" /> {errorCount}
               </span>
             )}
             {warningCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-xs font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
                 <AlertTriangle className="w-3 h-3" /> {warningCount}
               </span>
             )}
             {infoCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card text-xs font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
                 <Info className="w-3 h-3" /> {infoCount}
               </span>
             )}

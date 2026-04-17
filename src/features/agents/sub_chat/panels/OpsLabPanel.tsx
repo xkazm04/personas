@@ -76,7 +76,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
         <h3 className="typo-label text-muted-foreground/70">{t.agents.ops.lab}</h3>
         <button
           onClick={fetchLabHistory}
-          className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
+          className="p-1 rounded-input text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-primary/5 transition-colors"
           title={t.common.refresh}
           aria-label={t.agents.ops_lab.refresh_lab}
         >
@@ -94,7 +94,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
               key={mode}
               onClick={() => handleQuickLaunch(mode)}
               data-testid={`ops-lab-launch-${mode}`}
-              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-primary/10 hover:border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] transition-all`}
+              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-card border border-primary/10 hover:border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] transition-all`}
             >
               <Icon className={`w-4 h-4 ${cfg.color}`} />
               <span className="text-[11px] font-medium text-foreground/70">{cfg.label}</span>
@@ -122,7 +122,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
             return (
               <div
                 key={`${run.mode}-${i}`}
-                className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/20"
+                className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/20"
               >
                 <ModeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${modeCfg.color}`} />
                 <div className="flex-1 min-w-0">

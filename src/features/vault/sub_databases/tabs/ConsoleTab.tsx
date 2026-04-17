@@ -94,7 +94,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <button
             onClick={handleExecute}
             disabled={executing || !query.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             {executing ? db.running : db.run_query}
@@ -103,7 +103,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSafeMode((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-sm font-medium border transition-all ${
                 safeMode
                   ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
                   : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
@@ -135,7 +135,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
       {/* Mutation confirmation dialog */}
       {pendingMutation && (
-        <div className="mx-4 mb-3 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20 space-y-2.5">
+        <div className="mx-4 mb-3 p-3 rounded-modal bg-amber-500/8 border border-amber-500/20 space-y-2.5">
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
@@ -143,7 +143,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
               <p className="text-sm text-muted-foreground/60">
                 {db.modifies_data_hint}
               </p>
-              <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/30 rounded-lg px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
+              <pre className="text-sm font-mono text-muted-foreground/50 bg-secondary/30 rounded-card px-2.5 py-1.5 overflow-x-auto max-h-20 border border-primary/5">
                 {pendingMutation.length > 200 ? pendingMutation.slice(0, 200) + '...' : pendingMutation}
               </pre>
             </div>
@@ -151,13 +151,13 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-center gap-2 pl-6">
             <button
               onClick={handleConfirmMutation}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+              className="px-3 py-1.5 rounded-modal text-sm font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
             >
               {db.execute_anyway}
             </button>
             <button
               onClick={handleCancelMutation}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
+              className="px-3 py-1.5 rounded-modal text-sm font-medium text-muted-foreground/50 hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"
             >
               {t.common.cancel}
             </button>

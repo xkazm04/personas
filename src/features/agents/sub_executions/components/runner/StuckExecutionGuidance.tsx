@@ -27,7 +27,7 @@ export function StuckExecutionGuidance({
 
   return (
     <div
-      className={`animate-fade-slide-in rounded-xl border transition-colors ${
+      className={`animate-fade-slide-in rounded-modal border transition-colors ${
         isStuck
           ? 'border-red-500/30 bg-red-500/5'
           : 'border-amber-500/30 bg-amber-500/5'
@@ -91,7 +91,7 @@ export function StuckExecutionGuidance({
               {isStuck && (
                 <button
                   onClick={onCancel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
                 >
                   <XCircle className="w-3 h-3" />
                   {e.cancel_retry}
@@ -100,7 +100,7 @@ export function StuckExecutionGuidance({
               {executionId && onViewLog && (
                 <button
                   onClick={onViewLog}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card text-xs font-medium transition-colors border ${
                     isStuck
                       ? 'bg-red-500/10 hover:bg-red-500/20 text-red-300/80 border-red-500/15'
                       : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300/80 border-amber-500/15'

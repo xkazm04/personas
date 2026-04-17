@@ -41,14 +41,14 @@ export function GitLabAgentList({
   if (agents.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
           <Bot className="w-6 h-6 text-orange-400/60" />
         </div>
         <p className="text-sm text-muted-foreground/80">{t.gitlab.no_duo_agents}</p>
         <p className="text-sm text-muted-foreground/60 mt-1">{t.gitlab.deploy_persona_hint}</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-xl border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+          className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 text-sm rounded-modal border border-primary/15 text-muted-foreground/70 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
@@ -63,7 +63,7 @@ export function GitLabAgentList({
         <p className="text-sm text-muted-foreground/70">{agents.length} agent(s)</p>
         <button
           onClick={() => onFetchAgents(projectId)}
-          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-lg text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 text-sm rounded-card text-muted-foreground/60 hover:text-foreground/80 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t.common.refresh}
@@ -73,9 +73,9 @@ export function GitLabAgentList({
       {agents.map((agent) => (
         <div
           key={agent.id}
-          className="p-3 rounded-xl border border-primary/10 bg-secondary/20 flex items-center gap-3"
+          className="p-3 rounded-modal border border-primary/10 bg-secondary/20 flex items-center gap-3"
         >
-          <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 rounded-card bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
             <Bot className="w-4 h-4 text-orange-400" />
           </div>
           <div className="flex-1 min-w-0">
@@ -89,7 +89,7 @@ export function GitLabAgentList({
             <button
               onClick={() => onRedeploy(agent.name)}
               disabled={redeployingAgentId === agent.name}
-              className="p-1.5 rounded-lg hover:bg-orange-500/10 text-muted-foreground/60 hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1.5 rounded-card hover:bg-orange-500/10 text-muted-foreground/60 hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title={t.gitlab.redeploy_agent}
             >
               {redeployingAgentId === agent.name ? (
@@ -103,7 +103,7 @@ export function GitLabAgentList({
                 href={sanitizeExternalUrl(agent.webUrl)!}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                className="p-1.5 rounded-card hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                 title={t.gitlab.open_in_gitlab}
               >
                 <ExternalLink className="w-4 h-4" />
@@ -111,7 +111,7 @@ export function GitLabAgentList({
             )}
             <button
               onClick={() => onUndeploy(projectId, agent.id)}
-              className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-card hover:bg-red-500/10 text-muted-foreground/60 hover:text-red-400 transition-colors"
               title={t.gitlab.undeploy_agent}
             >
               <Trash2 className="w-4 h-4" />
@@ -171,7 +171,7 @@ function PipelineStatusBadge({ projectId }: { projectId: number }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-xs font-medium capitalize ${c.bg} ${c.text}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-xs font-medium capitalize ${c.bg} ${c.text}`}
       title={`Latest pipeline: ${latest.status}`}
     >
       {c.icon}

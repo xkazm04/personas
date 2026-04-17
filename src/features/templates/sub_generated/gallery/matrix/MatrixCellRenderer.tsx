@@ -195,7 +195,7 @@ export function MatrixCellRenderer({
   const baseSize = compact ? 'p-2.5 min-h-[80px]' : 'p-4 min-h-[200px]';
   const outerClasses = stateClasses
     ? [
-        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
+        `relative rounded-modal border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
         stateClasses.bg,
         stateClasses.border,
         stateClasses.opacity,
@@ -204,7 +204,7 @@ export function MatrixCellRenderer({
         useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
       ].filter(Boolean).join(' ')
     : [
-        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
+        `relative rounded-modal border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
         useEditRender
           ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
           : 'bg-card-bg',
@@ -224,7 +224,7 @@ export function MatrixCellRenderer({
       style={cellBuildStatus === 'highlighted' ? { cursor: 'pointer' } : undefined}
       className={outerClasses}
     >
-      <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden rounded-modal pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${watermarkOpacity} transition-opacity duration-300`}>
           <Watermark className={`${compact ? 'w-12 h-12' : 'w-22 h-22'} ${cell.watermarkColor}`} />
         </div>

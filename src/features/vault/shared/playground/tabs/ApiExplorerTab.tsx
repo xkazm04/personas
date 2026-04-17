@@ -68,7 +68,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
       </div>
 
       {state.parseError && (
-        <div className="mx-4 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
+        <div className="mx-4 mt-3 p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
           <span className="flex-1">{state.parseError}</span>
           <Button variant="ghost" size="icon-sm" onClick={() => state.setParseError(null)} className="text-red-400/50 hover:text-red-400">
             <X className="w-3 h-3" />
@@ -128,7 +128,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                     <div className="min-w-0 pl-4">
                       <span className="text-sm uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">Response</span>
                       {state.sendError && (
-                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
+                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 text-sm text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
                     </div>

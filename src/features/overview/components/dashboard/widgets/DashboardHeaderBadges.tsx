@@ -37,7 +37,7 @@ export function DashboardHeaderBadges({
       <div className="flex items-center gap-2 flex-shrink-0">
         <span
           title={`${successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading border bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         >
           <ShieldCheck className="w-3.5 h-3.5" />
           <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} /> {t.overview.widgets.success_badge}
@@ -45,7 +45,7 @@ export function DashboardHeaderBadges({
         </span>
         <span
           title={`${activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
         >
           <Cpu className="w-3.5 h-3.5" />
           <AnimatedCounter value={activeAgents} /> {t.overview.widgets.agents_badge}
@@ -61,7 +61,7 @@ export function DashboardHeaderBadges({
         whileHover={hoverScale}
         onClick={() => setOverviewTab('messages')}
         title={`${unreadMessageCount} unread messages`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-400"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border transition-colors hover:bg-blue-500/15 bg-blue-500/10 border-blue-500/20 text-blue-400"
       >
         <Mail className="w-3 h-3" />
         <AnimatedCounter value={unreadMessageCount} />
@@ -72,7 +72,7 @@ export function DashboardHeaderBadges({
         whileHover={hoverScale}
         onClick={() => setOverviewTab('manual-review')}
         title={`${pendingReviewCount} pending reviews`}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-400"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border transition-colors hover:bg-amber-500/15 bg-amber-500/10 border-amber-500/20 text-amber-400"
       >
         <ClipboardCheck className="w-3 h-3" />
         <AnimatedCounter value={pendingReviewCount} />
@@ -84,7 +84,7 @@ export function DashboardHeaderBadges({
           whileHover={hoverScale}
           onClick={() => setOverviewTab('health')}
           title={`${activeAlertCount} active alerts`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-red-500/15 bg-red-500/10 border-red-500/20 text-red-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border transition-colors hover:bg-red-500/15 bg-red-500/10 border-red-500/20 text-red-400"
         >
           <Bell className="w-3 h-3" />
           <AnimatedCounter value={activeAlertCount} />
@@ -97,7 +97,7 @@ export function DashboardHeaderBadges({
           whileHover={hoverScale}
           onClick={() => setOverviewTab('executions')}
           title={`${globalExecutionsTotal} total executions`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border transition-colors hover:bg-emerald-500/15 bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         >
           <Activity className="w-3 h-3" />
           <AnimatedCounter value={globalExecutionsTotal} formatFn={(v) => Math.round(v).toLocaleString()} />
@@ -106,7 +106,7 @@ export function DashboardHeaderBadges({
         </motion.button>
         <span
           title={`${successRate}% success rate`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border bg-violet-500/10 border-violet-500/20 text-violet-400"
         >
           <ShieldCheck className="w-3 h-3" />
           <AnimatedCounter value={successRate} formatFn={(v) => `${Math.round(v)}%`} />
@@ -115,7 +115,7 @@ export function DashboardHeaderBadges({
         </span>
         <span
           title={`${activeAgents} active agents`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border bg-rose-500/10 border-rose-500/20 text-rose-400"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-modal typo-heading border bg-rose-500/10 border-rose-500/20 text-rose-400"
         >
           <Cpu className="w-3 h-3" />
           <AnimatedCounter value={activeAgents} />

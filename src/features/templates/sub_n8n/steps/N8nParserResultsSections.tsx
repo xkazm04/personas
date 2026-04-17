@@ -26,7 +26,7 @@ export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggl
           return (
             <div
               key={tool}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal border transition-all duration-150 ${
                 isSelected
                   ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                   : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'
@@ -71,7 +71,7 @@ export function TriggersSection({ triggers, selectedTriggerIndices, hasSelection
           return (
             <div
               key={i}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all duration-150 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-modal border transition-all duration-150 ${
                 isSelected
                   ? 'bg-amber-500/5 border-amber-500/15'
                   : 'bg-secondary/20 border-primary/10 opacity-50'
@@ -125,7 +125,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
           return (
             <div
               key={conn.name}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all duration-150 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-modal border transition-all duration-150 ${
                 isSelected
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : 'bg-secondary/30 text-muted-foreground/80 border-primary/10 opacity-60'

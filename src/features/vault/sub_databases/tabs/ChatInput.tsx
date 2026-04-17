@@ -41,7 +41,7 @@ export function ChatInput({
             }
             disabled={generating}
             rows={1}
-            className="w-full resize-none rounded-xl border border-primary/15 bg-background px-4 py-2.5 pr-10 text-sm text-foreground/85 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
+            className="w-full resize-none rounded-modal border border-primary/15 bg-background px-4 py-2.5 pr-10 text-sm text-foreground/85 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 disabled:opacity-50 transition-colors"
             style={{ minHeight: '42px', maxHeight: '120px' }}
             onInput={(e) => {
               const ta = e.currentTarget;
@@ -56,7 +56,7 @@ export function ChatInput({
         <button
           onClick={generating ? onCancel : onSubmit}
           disabled={!generating && !input.trim()}
-          className={`shrink-0 p-2.5 rounded-xl border transition-colors ${
+          className={`shrink-0 p-2.5 rounded-modal border transition-colors ${
             generating
               ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
               : 'bg-violet-500/10 border-violet-500/20 text-violet-400 hover:bg-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed'

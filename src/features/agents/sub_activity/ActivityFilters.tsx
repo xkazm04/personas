@@ -39,7 +39,7 @@ export function ActivityFilters({
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="ml-auto px-2 py-1 rounded-lg border border-primary/15 bg-secondary/20 text-sm text-foreground/70 outline-none"
+          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 text-sm text-foreground/70 outline-none"
         >
           <option value="all">{t.agents.activity.all_statuses}</option>
           {availableStatuses.map((s) => (

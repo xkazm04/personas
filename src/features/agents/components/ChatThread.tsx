@@ -22,7 +22,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Welcome message */}
         {messages.length === 0 && (
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="space-y-1.5">
@@ -43,11 +43,11 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             className="animate-fade-slide-in flex items-start gap-3"
           >
             {msg.role === 'user' ? (
-              <div className="w-7 h-7 rounded-lg bg-secondary/50 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                 <User className="w-3.5 h-3.5 text-muted-foreground/60" />
               </div>
             ) : (
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5 text-primary/60" />
               </div>
             )}
@@ -60,7 +60,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
         {/* Thinking indicator */}
         {isThinking && (
           <div className="animate-fade-slide-in flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-7 h-7 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="flex items-center gap-2 pt-1.5">

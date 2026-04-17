@@ -25,7 +25,7 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
 
   return (
     <div
-      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+      className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
                 key={edge.id}
                 type="button"
                 onClick={() => onNodeClick(connNode.id)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors text-left cursor-pointer"
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/40 transition-colors text-left cursor-pointer"
               >
                 <ConnIcon className="w-3 h-3 flex-shrink-0" style={{ color: connNode.color }} />
                 <span className="text-xs text-foreground/80 truncate flex-1">{connNode.label}</span>

@@ -41,9 +41,9 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
   }
 
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgColor} p-4 ${className}`}>
+    <div className={`rounded-modal border ${borderColor} ${bgColor} p-4 ${className}`}>
       <div className="flex items-start gap-3">
-        <div className={`mt-0.5 p-1.5 rounded-lg ${isUntrusted ? 'bg-red-500/15' : 'bg-amber-500/15'}`}>
+        <div className={`mt-0.5 p-1.5 rounded-card ${isUntrusted ? 'bg-red-500/15' : 'bg-amber-500/15'}`}>
           <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
         </div>
         <div className="flex-1 min-w-0">
@@ -66,7 +66,7 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
               {restrictions.map((r) => (
                 <span
                   key={r}
-                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-lg ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded-card ${
                     isUntrusted
                       ? 'bg-red-500/10 text-red-400/70 border border-red-500/15'
                       : 'bg-amber-500/10 text-amber-400/70 border border-amber-500/15'
@@ -94,7 +94,7 @@ export function SandboxInlineWarning({ verification }: { verification: TemplateV
   const isUntrusted = verification.trustLevel === 'untrusted';
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm ${
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-sm ${
       isUntrusted
         ? 'bg-red-500/8 text-red-400/70 border border-red-500/15'
         : 'bg-amber-500/8 text-amber-400/70 border border-amber-500/15'

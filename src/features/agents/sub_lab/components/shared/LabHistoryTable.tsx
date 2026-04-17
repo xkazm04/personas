@@ -54,7 +54,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
         <span className="text-muted-foreground/50 font-normal normal-case">({runs.length})</span>
       </h4>
 
-      <div className="border border-primary/10 rounded-xl overflow-hidden">
+      <div className="border border-primary/10 rounded-modal overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/20">
@@ -93,7 +93,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                 <td className="px-2 py-2.5">
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
-                    className="p-1 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                    className="p-1 rounded-card hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-colors"
                     title={t.agents.lab.delete_run}
                     aria-label={t.agents.lab.delete_run}
                   >

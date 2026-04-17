@@ -40,7 +40,7 @@ export function RecommendedModal({
             {t.templates.recommended.subtitle}
           </span>
         </div>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary/50 transition-colors">
+        <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/50 transition-colors">
           <X className="w-4 h-4 text-muted-foreground/70" />
         </button>
       </div>

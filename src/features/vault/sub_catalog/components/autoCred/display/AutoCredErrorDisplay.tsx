@@ -31,7 +31,7 @@ export function AutoCredErrorDisplay({
       className="animate-fade-slide-in space-y-4"
     >
       {/* Error header */}
-      <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/15 bg-red-500/5">
+      <div className="flex items-start gap-3 p-4 rounded-modal border border-red-500/15 bg-red-500/5">
         <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
           <Icon className="w-5 h-5 text-red-400" />
         </div>
@@ -50,7 +50,7 @@ export function AutoCredErrorDisplay({
 
       {/* What happened -- expandable context */}
       {ctx && (ctx.tool_call_count > 0 || ctx.last_url || ctx.duration_secs) && (
-        <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
+        <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
           <button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
@@ -102,7 +102,7 @@ export function AutoCredErrorDisplay({
 
       {/* Session log -- expandable with copy */}
       {logs.length > 0 && (
-        <div className="rounded-lg border border-primary/10 bg-secondary/15 overflow-hidden">
+        <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
           <button
             type="button"
             onClick={() => setLogOpen((v) => !v)}
@@ -140,14 +140,14 @@ export function AutoCredErrorDisplay({
       <div className="flex gap-3 justify-center">
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-xl hover:bg-secondary/40 transition-colors"
+          className="px-4 py-2 text-sm text-muted-foreground/70 hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           {error.retryable ? 'Cancel' : 'Set Up Manually'}
         </button>
         {error.retryable && (
           <button
             onClick={onRetry}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal text-sm font-medium transition-colors"
           >
             Retry
           </button>

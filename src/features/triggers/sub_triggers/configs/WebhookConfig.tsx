@@ -44,7 +44,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               value={hmacSecret}
               onChange={(e) => setHmacSecret(e.target.value)}
               placeholder={t.triggers.auto_generated_hint}
-              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
+              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono text-sm' : ''}`}
             />
             <button
               type="button"
@@ -62,7 +62,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
           <button
             type="button"
             onClick={generateSecret}
-            className="flex-shrink-0 p-2 rounded-xl border transition-all bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30"
+            className="flex-shrink-0 p-2 rounded-modal border transition-all bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30"
             title={t.triggers.generate_secret}
           >
             <RefreshCw className="w-4 h-4" />
@@ -71,7 +71,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
             <button
               type="button"
               onClick={copyHmacSecret}
-              className={`flex-shrink-0 p-2 rounded-xl border transition-all ${
+              className={`flex-shrink-0 p-2 rounded-modal border transition-all ${
                 copiedHmac
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
                   : 'bg-background/50 border-primary/15 text-muted-foreground/90 hover:text-foreground/95 hover:border-primary/30'
@@ -87,7 +87,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
           )}
         </div>
       </TriggerFieldGroup>
-      <div className="p-3 bg-background/30 rounded-xl border border-primary/10">
+      <div className="p-3 bg-background/30 rounded-modal border border-primary/10">
         <p className="text-sm text-muted-foreground/90">{t.triggers.webhook_url_note}</p>
       </div>
     </div>

@@ -108,13 +108,13 @@ function SwipeCard({
         <>
           <motion.div
             style={{ opacity: rejectOpacity }}
-            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg uppercase -rotate-12"
+            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 font-bold text-lg uppercase -rotate-12"
           >
             {dt.swipe_reject}
           </motion.div>
           <motion.div
             style={{ opacity: acceptOpacity }}
-            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-xl border-2 border-emerald-500 text-emerald-500 font-bold text-lg uppercase rotate-12"
+            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 font-bold text-lg uppercase rotate-12"
           >
             {dt.swipe_accept}
           </motion.div>
@@ -147,7 +147,7 @@ function SwipeCard({
 
         {/* Reasoning */}
         {idea.reasoning && (
-          <div className="bg-primary/5 rounded-xl p-3">
+          <div className="bg-primary/5 rounded-modal p-3">
             <p className="text-md uppercase tracking-wider text-primary font-medium mb-1">{dt.reasoning_label}</p>
             <p className="text-md text-foreground leading-relaxed">{idea.reasoning}</p>
           </div>
@@ -278,7 +278,7 @@ export default function IdeaTriagePage() {
             </span>
             <button
               onClick={() => setShowShortcuts((p) => !p)}
-              className="ml-1 w-7 h-7 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
+              className="ml-1 w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
               title={dt.shortcuts_open_title}
             >
               <HelpCircle className="w-3.5 h-3.5 text-foreground" />
@@ -303,7 +303,7 @@ export default function IdeaTriagePage() {
             </h3>
             <button
               onClick={() => { setFilterCategory('all'); setFilterScanType(null); }}
-              className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors ${
+              className={`w-full text-left px-3 py-2 rounded-card text-md transition-colors ${
                 filterCategory === 'all' && !filterScanType
                   ? 'bg-primary/10 text-foreground font-medium'
                   : 'text-foreground hover:bg-primary/5'
@@ -318,7 +318,7 @@ export default function IdeaTriagePage() {
                 <button
                   key={cat.key}
                   onClick={() => { setFilterCategory(cat.key as CategoryKey); setFilterScanType(null); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-2 rounded-card text-md transition-colors flex items-center gap-2 ${
                     filterCategory === cat.key && !filterScanType
                       ? 'bg-primary/10 text-foreground font-medium'
                       : 'text-foreground hover:bg-primary/5'
@@ -345,7 +345,7 @@ export default function IdeaTriagePage() {
                   <button
                     key={agent.key}
                     onClick={() => { setFilterScanType(filterScanType === agent.key ? null : agent.key); setFilterCategory('all'); }}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-md transition-colors flex items-center gap-2 ${
+                    className={`w-full text-left px-3 py-1.5 rounded-card text-md transition-colors flex items-center gap-2 ${
                       filterScanType === agent.key
                         ? 'bg-primary/10 text-foreground font-medium'
                         : 'text-foreground hover:bg-primary/5'

@@ -54,7 +54,7 @@ export function SavedViewsDropdown({
       {savedViews.map((view) => (
         <div
           key={view.id}
-          className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
+          className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-input cursor-pointer transition-colors ${
             activeViewId === view.id ? 'bg-primary/10 text-primary' : 'hover:bg-secondary/40 text-foreground/80'
           }`}
           onClick={() => { onApplyView(view); onClose(); }}
@@ -101,7 +101,7 @@ export function SavedViewsDropdown({
         hasActiveFilter && (
           <button
             onClick={() => setSaveDialogOpen(true)}
-            className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 pt-1.5 border-t border-primary/8 text-sm text-primary hover:bg-primary/5 rounded-md transition-colors"
+            className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 pt-1.5 border-t border-primary/8 text-sm text-primary hover:bg-primary/5 rounded-input transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.overview.realtime_page.save_current_filter}

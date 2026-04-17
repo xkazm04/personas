@@ -57,7 +57,7 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.vault.wizard_detect.search_services}
           autoFocus
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
+          className="w-full pl-9 pr-4 py-2.5 rounded-modal border border-primary/15 bg-secondary/25 text-sm text-foreground placeholder-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 transition-all"
         />
       </div>
 
@@ -80,10 +80,10 @@ export function WizardServiceSelect({ onSelect }: WizardServiceSelectProps) {
                   key={connector.id}
                   variants={staggerItem}
                   onClick={() => onSelect(connector)}
-                  className="group flex items-center gap-3 px-3.5 py-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-violet-500/10 hover:border-violet-500/25 transition-all text-left"
+                  className="group flex items-center gap-3 px-3.5 py-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-violet-500/10 hover:border-violet-500/25 transition-all text-left"
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm font-bold"
+                    className="w-8 h-8 rounded-card flex items-center justify-center shrink-0 text-sm font-bold"
                     style={{
                       backgroundColor: `${connector.color}15`,
                       color: connector.color,

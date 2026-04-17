@@ -29,7 +29,7 @@ export function ConnectionTestSection({
           <button
             onClick={onTest}
             disabled={isTesting}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`flex items-center gap-2 px-4 py-2 border rounded-modal text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
               result?.success
                 ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400'
                 : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/25 text-amber-300'
@@ -56,7 +56,7 @@ export function ConnectionTestSection({
                 <Info className="w-3.5 h-3.5" />
               </button>
               {showTestHint && (
-                <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-elevation-3 text-sm text-foreground/85 z-20">
+                <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-modal bg-background border border-primary/20 shadow-elevation-3 text-sm text-foreground/85 z-20">
                   {testHint}
                 </div>
               )}

@@ -12,7 +12,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Info card */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
           <Brain className="w-4 h-4 text-violet-400" />
           {sh.kb_info}
@@ -31,7 +31,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
       </div>
 
       {/* Stats */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 p-5 space-y-4">
+      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground/90">{sh.statistics}</h3>
         <div className="grid grid-cols-2 gap-4">
           <StatCard label={sh.label_documents} value={kb.documentCount} />
@@ -40,7 +40,7 @@ export function SettingsTab({ kb }: SettingsTabProps) {
       </div>
 
       {/* Model info */}
-      <div className="rounded-xl border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
+      <div className="rounded-modal border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
         <h3 className="text-sm font-semibold text-violet-300/90 flex items-center gap-2">
           <Cpu className="w-4 h-4" />
           {sh.local_embedding}
@@ -70,7 +70,7 @@ function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-secondary/30 border border-primary/10 p-3 text-center">
+    <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 text-center">
       <p className="text-2xl font-semibold text-foreground/90">{value.toLocaleString()}</p>
       <p className="text-xs text-muted-foreground/50 mt-1">{label}</p>
     </div>

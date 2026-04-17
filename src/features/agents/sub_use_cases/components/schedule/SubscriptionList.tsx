@@ -132,7 +132,7 @@ export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger
           isActivating={activating.has(suggestedTriggerItem.key)}
         />
       ) : (
-        <div className="flex items-center gap-2.5 p-2 border border-dashed rounded-lg border-amber-500/20 bg-amber-500/5">
+        <div className="flex items-center gap-2.5 p-2 border border-dashed rounded-card border-amber-500/20 bg-amber-500/5">
           <Clock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-medium text-foreground/70 block truncate">
@@ -147,7 +147,7 @@ export function SuggestedTriggerSection({ suggestedTriggerItem, suggestedTrigger
           <button
             onClick={() => void onActivate(suggestedTriggerItem)}
             disabled={activating.has(suggestedTriggerItem.key)}
-            className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 text-sm rounded-modal bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Zap className="w-3 h-3" />
             {t.agents.use_cases.activate}
