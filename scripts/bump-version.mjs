@@ -65,7 +65,15 @@ const current = pkg.version;
 
 // ── 3. Bump version ────────────────────────────────────────────────
 
-const parts = current.split(".").map(Number);
+// Strip any pre-release suffix (e.g. "0.1.0-ff.1" → "0.1.0") before
+// parsing. Without this, `split(".").map(Number)` on "0-ff" yields NaN
+// and the bumped version ships as "0.1.NaN.1".
+const coreOnly = current.split("-")[0];
+const parts = coreOnly.split(".").map(Number);
+if (parts.some(Number.isNaN)) {
+  console.error(`[bump-version] Refusing to bump: current version "${current}" is not parseable.`);
+  process.exit(1);
+}
 
 switch (bumpType) {
   case "major":

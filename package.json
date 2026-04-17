@@ -1,6 +1,6 @@
 {
   "name": "personas-desktop",
-  "version": "0.1.NaN.1",
+  "version": "0.1.0-ff.1",
   "private": true,
   "type": "module",
   "description": "Local-first desktop app for building, orchestrating, and monitoring AI agent personas — encrypted credentials, visual pipelines, real-time observability.",
