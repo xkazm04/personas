@@ -264,6 +264,7 @@ pub const ALLOWED_OCR_EXTENSIONS: &[&str] = &[
 ];
 
 /// Allowed file extensions for sidecar read/write operations.
+#[cfg(feature = "p2p")]
 pub const ALLOWED_SIDECAR_EXTENSIONS: &[&str] = &["json"];
 
 /// Validate a file path for read or write access.
