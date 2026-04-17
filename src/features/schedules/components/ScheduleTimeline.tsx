@@ -187,7 +187,7 @@ export default function ScheduleTimeline() {
 
             {/* Mock seed (dev only) */}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock schedule (dev only)">
+              <button onClick={handleSeedSchedule} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.schedules.seed_mock_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.schedules.mock_schedule}
               </button>
             )}

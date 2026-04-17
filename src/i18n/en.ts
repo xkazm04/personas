@@ -9407,6 +9407,8 @@ export const en = {
     overlaps_with: "Overlaps with",
     // ScheduleTimeline toolbar
     refresh_schedules: "Refresh schedules",
+    // Tooltip on dev-only mock schedule seed button
+    seed_mock_tooltip: "Seed a mock schedule (dev only)",
     // aria-label for the schedule view tab group
     schedule_view_aria: "Schedule view",
 
