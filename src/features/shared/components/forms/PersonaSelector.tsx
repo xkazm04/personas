@@ -91,7 +91,7 @@ export function PersonaSelector({
 
       {/* Dropdown */}
       {open && (
-        <div className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-full min-w-[240px] max-h-[320px] rounded-xl border border-primary/15 bg-background shadow-xl shadow-black/20 overflow-hidden flex flex-col">
+        <div className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-full min-w-[240px] max-h-[320px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 overflow-hidden flex flex-col">
           {/* Search */}
           {sorted.length > 5 && (
             <div className="px-2.5 pt-2.5 pb-1.5">

@@ -168,7 +168,7 @@ export default function KnowledgeGraphDashboard() {
               )}
             </button>
             {showTypeDropdown && (
-              <div className="absolute mt-8 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden">
+              <div className="absolute mt-8 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Types</button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
@@ -191,7 +191,7 @@ export default function KnowledgeGraphDashboard() {
               )}
             </button>
             {showScopeDropdown && (
-              <div className="absolute mt-8 z-50 min-w-[140px] rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden">
+              <div className="absolute mt-8 z-50 min-w-[140px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
                 <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Scopes</button>
                 {Object.entries(SCOPE_TYPES).map(([key, val]) => (
                   <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}

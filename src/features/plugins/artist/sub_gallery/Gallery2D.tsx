@@ -119,7 +119,7 @@ function LightboxImage({ filePath, alt }: { filePath: string; alt: string }) {
     <img
       src={dataUrl}
       alt={alt}
-      className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+      className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-elevation-4"
       onClick={(e) => e.stopPropagation()}
     />
   );

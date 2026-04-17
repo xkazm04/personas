@@ -102,7 +102,7 @@ export default function TourAppearanceContent() {
                   className="w-6 h-6 rounded-full border border-black/10 flex items-center justify-center"
                   style={{ backgroundColor: t.primaryColor }}
                 >
-                  {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-sm" />}
+                  {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-elevation-1" />}
                 </div>
                 <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}
@@ -134,7 +134,7 @@ export default function TourAppearanceContent() {
                   className="w-6 h-6 rounded-full border border-black/10 flex items-center justify-center"
                   style={{ backgroundColor: t.primaryColor }}
                 >
-                  {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-sm" />}
+                  {isActive && <Check className="w-2.5 h-2.5 text-white drop-shadow-elevation-1" />}
                 </div>
                 <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}

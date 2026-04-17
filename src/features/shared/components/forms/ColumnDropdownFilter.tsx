@@ -68,7 +68,7 @@ export function ColumnDropdownFilter({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-xl">
+        <div className="absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-elevation-3">
           {options.map((opt) => (
             <button
               key={opt.value}

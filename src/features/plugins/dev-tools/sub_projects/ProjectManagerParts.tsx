@@ -60,7 +60,7 @@ export function ProjectRowMenu({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setConfirming(false); }} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden py-1">
+          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden py-1">
             <button
               type="button"
               onClick={handleEdit}

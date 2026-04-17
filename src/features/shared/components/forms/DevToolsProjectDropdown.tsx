@@ -123,7 +123,7 @@ export function DevToolsProjectDropdown({
       )}
     >
       {({ close, focusIndex }) => (
-        <div className="w-full bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden">
+        <div className="w-full bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden">
           {loading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -99,7 +99,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <aside className="w-[480px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-2xl">
+      <aside className="w-[480px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-elevation-4">
         {/* Header */}
         <div className="relative px-5 py-4 border-b border-primary/10 overflow-hidden">
           <div

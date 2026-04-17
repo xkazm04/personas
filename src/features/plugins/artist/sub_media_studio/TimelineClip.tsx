@@ -138,7 +138,7 @@ export default function TimelineClip({
       ref={clipRef}
       className={`absolute group transition-shadow ${
         isSelected ? selectedClassName : className
-      } ${isDragging ? 'z-20 shadow-lg' : 'z-10'}`}
+      } ${isDragging ? 'z-20 shadow-elevation-3' : 'z-10'}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       onDoubleClick={onDoubleClick}

@@ -257,7 +257,7 @@ export function QuestionnaireFormGrid({
               disabled={!canSubmit}
               className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-xl transition-all ${
                 canSubmit
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
                   : 'bg-white/[0.06] text-muted-foreground/40 cursor-not-allowed'
               }`}
             >

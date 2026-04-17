@@ -79,7 +79,7 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
         className="w-10 h-10 rounded-full border-2 border-black/10 flex items-center justify-center"
         style={{ backgroundColor: theme.primaryColor }}
       >
-        {active && <Check className="w-4 h-4 text-white drop-shadow-sm" />}
+        {active && <Check className="w-4 h-4 text-white drop-shadow-elevation-1" />}
       </div>
       <span className={`text-sm ${active ? 'text-foreground/90 font-medium' : 'text-muted-foreground/80'}`}>
         {theme.label}

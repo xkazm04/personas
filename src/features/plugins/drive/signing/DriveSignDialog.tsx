@@ -86,7 +86,7 @@ export function DriveSignDialog({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[520px] max-h-[80vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-xl">
+      <div className="w-[520px] max-h-[80vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-elevation-3">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <FileSignature className="w-4 h-4 text-rose-400" />
           <div className="typo-heading-sm typo-section-title flex-1 truncate">

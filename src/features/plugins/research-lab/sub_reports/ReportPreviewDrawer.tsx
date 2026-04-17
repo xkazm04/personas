@@ -84,7 +84,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/60 backdrop-blur-md" onClick={onClose} />
-      <aside className="w-full max-w-3xl bg-background border-l border-border/40 shadow-2xl flex flex-col animate-fade-slide-in">
+      <aside className="w-full max-w-3xl bg-background border-l border-border/40 shadow-elevation-4 flex flex-col animate-fade-slide-in">
         <header className="flex items-center justify-between px-6 py-4 border-b border-border/20">
           <div className="min-w-0">
             <h2 className="typo-section-title truncate">{report.title}</h2>

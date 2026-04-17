@@ -38,7 +38,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
 
   return (
     <div
-      className="group relative rounded-xl border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-lg hover:shadow-rose-500/5 cursor-pointer"
+      className="group relative rounded-xl border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5 cursor-pointer"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onClick={onClick}

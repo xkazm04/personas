@@ -103,7 +103,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
       </span>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-xl border border-primary/10 bg-card p-3 shadow-xl text-left">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-xl border border-primary/10 bg-card p-3 shadow-elevation-3 text-left">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h4 className="typo-heading text-sm text-foreground">{info.label}</h4>
             <button

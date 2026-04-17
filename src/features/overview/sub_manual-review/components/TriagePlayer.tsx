@@ -202,7 +202,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
 
         {/* Card */}
         <div
-          className={`w-full rounded-2xl border ${sev.border} bg-gradient-to-b from-background to-secondary/10 shadow-xl overflow-hidden transition-all duration-280 ${
+          className={`w-full rounded-2xl border ${sev.border} bg-gradient-to-b from-background to-secondary/10 shadow-elevation-3 overflow-hidden transition-all duration-280 ${
             exitDir === 'right' ? 'translate-x-[110%] rotate-6 opacity-0' :
             exitDir === 'left' ? '-translate-x-[110%] -rotate-6 opacity-0' : ''
           }`}

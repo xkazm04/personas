@@ -119,7 +119,7 @@ export function AppearanceStep() {
                   className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center"
                   style={{ backgroundColor: t.primaryColor }}
                 >
-                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
+                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                 </div>
                 <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}
@@ -150,7 +150,7 @@ export function AppearanceStep() {
                   className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center"
                   style={{ backgroundColor: t.primaryColor }}
                 >
-                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
+                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
                 </div>
                 <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}

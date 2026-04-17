@@ -69,7 +69,7 @@ export function DriveSignaturesPanel({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <aside className="w-[420px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-2xl">
+      <aside className="w-[420px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-elevation-4">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <FileSignature className="w-4 h-4 text-rose-400" />
           <div className="typo-heading-sm typo-section-title flex-1">

@@ -76,7 +76,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[560px] max-h-[85vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-xl">
+      <div className="w-[560px] max-h-[85vh] flex flex-col rounded-xl border border-primary/20 bg-background/95 shadow-elevation-3">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10">
           <ShieldCheck className="w-4 h-4 text-sky-400" />
           <div className="typo-heading-sm typo-section-title flex-1 truncate">

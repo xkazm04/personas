@@ -242,7 +242,7 @@ function ViewSegment({
       aria-pressed={active}
       className={`flex items-center gap-1.5 px-2 py-1 rounded-md typo-body font-medium transition-all ${
         active
-          ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-sm border border-cyan-500/40"
+          ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-elevation-1 border border-cyan-500/40"
           : "text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent"
       }`}
     >

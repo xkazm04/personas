@@ -342,7 +342,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
             onClick={() => onChange(opt.value)}
             className={`px-3 py-1.5 text-xs flex items-center gap-1.5 transition-all ${
               selected
-                ? 'bg-primary/15 text-foreground/90 shadow-sm'
+                ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
                 : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-primary/5'
             }`}
           >

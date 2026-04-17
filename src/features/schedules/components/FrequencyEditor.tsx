@@ -122,7 +122,7 @@ export default function FrequencyEditor({
                   onClick={() => handlePresetSelect(preset.cron)}
                   className={`px-2.5 py-2 text-xs rounded-lg border transition-all text-center ${
                     cronInput === preset.cron
-                      ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-sm'
+                      ? 'bg-blue-500/15 border-blue-500/30 text-blue-400 shadow-elevation-1'
                       : 'bg-secondary/40 border-primary/10 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground/80 hover:border-primary/20'
                   }`}
                 >

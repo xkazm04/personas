@@ -91,7 +91,7 @@ function ImageLaneImpl({
             scrollX={scrollX}
             isSelected={item.id === selectedId}
             className="top-0.5 h-11 rounded-lg overflow-hidden bg-emerald-500/15 border border-emerald-500/20 hover:border-emerald-500/40"
-            selectedClassName="top-0.5 h-11 rounded-lg overflow-hidden bg-emerald-500/15 border-2 border-emerald-400 ring-1 ring-emerald-400/40 shadow-sm"
+            selectedClassName="top-0.5 h-11 rounded-lg overflow-hidden bg-emerald-500/15 border-2 border-emerald-400 ring-1 ring-emerald-400/40 shadow-elevation-1"
             onClick={() => onSelect(item.id)}
             onMove={(newStart) => handleMove(item.id, newStart)}
             onTrimLeft={(delta) => handleTrimLeft(item.id, item, delta)}

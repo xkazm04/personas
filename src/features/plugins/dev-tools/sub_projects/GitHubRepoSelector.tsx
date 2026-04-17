@@ -159,7 +159,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
-          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden max-h-64 flex flex-col">
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
             {/* Search input */}
             <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
               <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />

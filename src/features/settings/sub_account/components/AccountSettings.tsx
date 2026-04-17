@@ -69,7 +69,7 @@ export default function AccountSettings() {
               aria-label="Toggle telemetry"
             >
               <span
-                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow-elevation-1 transition-transform ${
                   telemetryOn ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />

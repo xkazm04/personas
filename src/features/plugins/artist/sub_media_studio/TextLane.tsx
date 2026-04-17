@@ -160,7 +160,7 @@ function TextLaneImpl({
               scrollX={scrollX}
               isSelected={item.id === selectedId}
               className="top-0.5 h-9 rounded-lg bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25"
-              selectedClassName="top-0.5 h-9 rounded-lg bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-sm"
+              selectedClassName="top-0.5 h-9 rounded-lg bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-elevation-1"
               onClick={() => onSelect(item.id)}
               onDoubleClick={() => setEditingItem(item)}
               onMove={(newStart) => handleMove(item.id, newStart)}

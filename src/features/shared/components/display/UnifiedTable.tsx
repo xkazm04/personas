@@ -128,7 +128,7 @@ function ColumnHeader<T>({
             <Filter className="w-3.5 h-3.5" />
           </button>
           {showFilter && col.filterOptions && (
-            <div className="absolute top-full left-0 mt-1 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden">
+            <div className="absolute top-full left-0 mt-1 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
               {col.filterOptions.map((opt) => (
                 <button
                   key={opt.value}
