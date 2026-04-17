@@ -1,6 +1,19 @@
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use crate::error::AppError;
+
+/// Module-scoped HTTP client shared across all `ZapierClient` instances.
+///
+/// Zapier's catch-hook validation uses a fixed 15-second timeout and no
+/// per-instance builder config, so a single process-scoped client is safe.
+/// All clones share the same connection pool, TLS sessions, and DNS cache.
+static ZAPIER_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .build()
+        .expect("Failed to build Zapier HTTP client")
+});
 
 /// Minimal Zapier client -- Zapier has no public API for creating Zaps,
 /// so we just validate that a catch hook URL is reachable.
@@ -10,11 +23,7 @@ pub struct ZapierClient {
 
 impl ZapierClient {
     pub fn new() -> Result<Self, AppError> {
-        let http = reqwest::Client::builder()
-            .timeout(Duration::from_secs(15))
-            .build()
-            .map_err(|e| AppError::Internal(format!("Failed to create HTTP client: {e}")))?;
-        Ok(Self { http })
+        Ok(Self { http: ZAPIER_HTTP.clone() })
     }
 
     /// Validate a Zapier catch hook URL by sending a test POST.
