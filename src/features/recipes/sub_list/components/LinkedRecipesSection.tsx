@@ -92,7 +92,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
         <div className="rounded-modal border border-dashed border-border/40 px-4 py-6 flex flex-col items-center text-center gap-1">
           <PuzzlePieceIllustration />
           <p className="typo-body text-foreground">
-            No recipes linked yet. Click &quot;Add&quot; to link recipes from the library.
+            {t.recipes.no_linked}
           </p>
         </div>
       ) : (

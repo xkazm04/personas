@@ -57,8 +57,8 @@ export function RecipeOutputSection({
       {/* Execution metadata */}
       {result && (
         <div className="mx-4 mt-3 flex items-center gap-3 typo-body text-foreground">
-          <span>Recipe: {result.recipe_name}</span>
-          <span>Executed: {new Date(result.executed_at).toLocaleTimeString()}</span>
+          <span>{t.recipes.recipe_label} {result.recipe_name}</span>
+          <span>{t.recipes.executed_label} {new Date(result.executed_at).toLocaleTimeString()}</span>
         </div>
       )}
 
@@ -68,7 +68,7 @@ export function RecipeOutputSection({
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
             <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
-              Rendered Prompt
+              {t.recipes.rendered_prompt}
             </h3>
             {result && (
               <button
@@ -96,7 +96,7 @@ export function RecipeOutputSection({
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
             <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
-              Execution Result
+              {t.recipes.execution_result}
             </h3>
             {llmOutput && (
               <button

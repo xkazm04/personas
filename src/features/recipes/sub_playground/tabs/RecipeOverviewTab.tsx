@@ -50,7 +50,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
       {inputs.length > 0 && (
         <div className="space-y-2">
           <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
-            <FileText className="w-3 h-3" /> Input Fields
+            <FileText className="w-3 h-3" /> {t.recipes.input_fields}
           </h3>
           <div className="rounded-card border border-border/40 overflow-hidden">
             <table className="w-full typo-body">
@@ -78,7 +78,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
       {/* Prompt Template Preview */}
       <div className="space-y-2">
         <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
-          <Cpu className="w-3 h-3" /> Prompt Template
+          <Cpu className="w-3 h-3" /> {t.recipes.prompt_template}
         </h3>
         <PromptTemplateRenderer content={recipe.prompt_template || '(empty)'} maxHeight="max-h-60" />
       </div>

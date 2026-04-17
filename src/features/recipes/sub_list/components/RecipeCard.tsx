@@ -154,7 +154,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
                   onClick={() => { setShowDeleteConfirm(false); onDelete(recipe.id); }}
                   className="rounded-card px-2.5 py-1 typo-body font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
                 >
-                  Confirm Delete
+                  {t.recipes.confirm_delete}
                 </button>
               </div>
             </div>

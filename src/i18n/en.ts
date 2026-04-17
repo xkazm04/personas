@@ -4119,6 +4119,45 @@ export const en = {
       mark_done: "Mark as done",
       mark_step_complete: "Mark step complete",
       copy_to_clipboard: "Copy to clipboard",
+      // DonePhase -- {label} = connector label
+      credential_saved_message: "{label} credential has been securely saved.",
+      // DonePhase refinement count badge -- {count} = revision number
+      revision_count: "(revision {count})",
+      // DonePhase -- shown when a new connector was registered to the catalog
+      connector_added_to_catalog: "connector added to your catalog -- now available for other personas and template adoption.",
+      // DonePhase button to open the new credential detail
+      view_credential: "View Credential",
+      // DonePhase refinement section prompt
+      refine_hint: "Need to adjust scopes, add fields, or tweak the configuration?",
+      // DonePhase refinement input placeholder
+      refine_placeholder: "e.g. add write scopes, add staging environment...",
+      // DonePhase refinement submit button
+      refine: "Refine",
+      // PreviewBanners -- when credential links to an existing connector
+      linked_to_existing: "Your credential will be linked to the existing connector definition.",
+      // PreviewBanners -- {name} = connector.name
+      no_existing_connector: "-- no existing {name} connector was found in your catalog.",
+      // PreviewBanners -- explanation of what happens when saving a new connector
+      new_connector_will_be_registered: "When you save this credential, the AI-generated connector definition will be automatically registered in your connector catalog -- making it reusable for other personas and template adoption.",
+      // PreviewBanners -- refine request link
+      refine_request: "Not quite right? Refine your request",
+      // PreviewPhase -- {label} = connector label
+      auto_provision_hint: "-- let AI guide you through obtaining your {label} credentials step-by-step.",
+      // PreviewPhase credential name label
+      credential_name_label: "Credential Name",
+      // PreviewPhase security notice
+      credentials_secure_notice: "Credentials are stored securely in the app vault and are available for agent tool execution.",
+      // PreviewPhase tested-at badge -- {time} = timestamp string
+      tested_successfully_at: "Tested successfully at {time}",
+      // InteractiveSetupInstructions header
+      setup_instructions: "Setup instructions",
+      // InteractiveSetupInstructions all-done message
+      all_steps_complete: "All steps complete -- fill in the fields below and test your connection.",
+      // IdleSuggestions use-template button
+      use_template: "Use",
+      // RecipeConfidenceBanner usage count -- {count} = usage count
+      recipe_used_one: "-- used {count} time",
+      recipe_used_other: "-- used {count} times",
     },
     // Auto-cred extra strings
     auto_cred_extra: {
@@ -6004,7 +6043,7 @@ export const en = {
     memory_table: { agent: "Agent", title: "Title", category: "Category", priority: "Priority", tags: "Tags", created: "Created" },
     review_results: { title: "AI Memory Review", review_failed: "Review failed" },
     anomaly_drilldown_extra: { title: "Anomaly Drill-Down", value_label: "Value:", baseline_label: "Baseline:", correlating: "Correlating events...", likely_root_causes: "Likely Root Causes", correlated_events: "Correlated Events", no_correlated: "No correlated events found in the \u00b124h window." },
-    healing_issue_modal: { issue_resolved: "Issue Resolved", analysis: "Analysis", suggested_fix: "Suggested Fix", copied: "Copied", copy_fix: "Copy Fix", persona_auto_disabled: "Persona auto-disabled", persona_auto_disabled_desc: "This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.", marking_resolved_note: "Marking resolved means you have addressed this issue outside the healing system.", retry_in_progress: "Retry in progress -- status will update when complete", auto_resolved: "This issue was automatically resolved", close: "Close", resolving: "Resolving\u2026", mark_resolved: "Mark as Resolved" },
+    healing_issue_modal: { issue_resolved: "Issue Resolved", analysis: "Analysis", suggested_fix: "Suggested Fix", copied: "Copied", copy_fix: "Copy Fix", persona_auto_disabled: "Persona auto-disabled", persona_auto_disabled_desc: "This persona was automatically disabled after 5 consecutive failures. Review the error pattern below and re-enable manually once the root cause is resolved.", marking_resolved_note: "Marking resolved means you have addressed this issue outside the healing system.", retry_in_progress: "Retry in progress -- status will update when complete", auto_resolved: "This issue was automatically resolved", close: "Close", resolving: "Resolving\u2026", mark_resolved: "Mark as Resolved", retrying_badge: "retrying", auto_fixed_badge: "auto-fixed", retry_in_progress_badge: "retry in progress", healed_via_retry_badge: "healed via retry", severity_suffix: "severity" },
     healing_issues_panel: { title: "Health Issues", analyzing: "Analyzing...", run_analysis: "Run Analysis", no_open_issues: "No open issues", run_analysis_hint: "Run analysis to check for problems.",
       // AiHealingStreamOverlay panel title
       ai_healing_title: "AI Healing",
@@ -6847,6 +6886,8 @@ export const en = {
       // N8nTransformChat
       customize_persona: "A few questions to customize your persona",
       answer_then_generate: "Answer below, then click Generate",
+      // aria-label for the question view mode tab group
+      question_view_mode_aria: "Question view mode",
       list_view: "List",
       focus_view: "Focus",
       no_config_needed: "No configuration needed",
@@ -6877,6 +6918,8 @@ export const en = {
       streaming_sections: "Streaming Sections",
       awaiting_next_section: "Awaiting next section...",
       // TransformPhaseStepper
+      // aria-label for the transform progress nav
+      transform_progress_aria: "Transform progress",
       analyze_phase: "Analyze",
       questions_phase: "Questions",
       generate_phase: "Generate",
@@ -9365,6 +9408,10 @@ export const en = {
     free_input_placeholder: "Enter input JSON or plain text...",
 
     // RecipeOutputSection
+    // "Recipe:" label prefix in metadata row
+    recipe_label: "Recipe:",
+    // "Executed:" label prefix in metadata row
+    executed_label: "Executed:",
     rendered_prompt: "Rendered Prompt",
     execution_result: "Execution Result",
     rendering_prompt: "Rendering prompt...",

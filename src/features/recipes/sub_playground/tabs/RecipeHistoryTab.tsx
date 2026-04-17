@@ -24,7 +24,7 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
-          Recent Runs ({history.length})
+          {t.recipes.recent_runs} ({history.length})
         </h3>
         <button
           onClick={onClear}
@@ -56,12 +56,12 @@ export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
               </div>
             )}
             <div className="px-3 py-2">
-              <p className="typo-body text-foreground mb-1">Rendered Prompt</p>
+              <p className="typo-body text-foreground mb-1">{t.recipes.rendered_prompt}</p>
               <PromptTemplateRenderer content={run.rendered_prompt} maxHeight="max-h-40" />
             </div>
             {run.llm_output && (
               <div className="px-3 py-2 border-t border-border/20">
-                <p className="typo-body text-foreground mb-1">LLM Output</p>
+                <p className="typo-body text-foreground mb-1">{t.recipes.execution_result}</p>
                 <div className="rounded-card border border-border/40 bg-card/30 p-3 max-h-40 overflow-y-auto">
                   <MarkdownRenderer content={
                     (() => {

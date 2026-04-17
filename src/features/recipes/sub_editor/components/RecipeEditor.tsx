@@ -144,7 +144,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Summarize PR Changes"
+            placeholder={t.recipes.name_placeholder}
             className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           />
         </div>
@@ -179,10 +179,10 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         {/* Prompt Template */}
         <div>
           <label className="block typo-body font-medium text-foreground mb-1.5">
-            Prompt Template *
+            {t.recipes.prompt_template_label}
           </label>
           <p className="typo-body text-foreground mb-1.5">
-            {'Use {{variable}} syntax for placeholders that will be filled from input schema.'}
+            {t.recipes.prompt_template_help}
           </p>
           <textarea
             value={promptTemplate}
@@ -196,7 +196,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         {/* Input Schema — Visual Builder */}
         <div>
           <label className="block typo-body font-medium text-foreground mb-1.5">
-            Input Schema
+            {t.recipes.input_schema_label}
           </label>
           <p className="typo-body text-foreground mb-1.5">
             {t.recipes.input_schema_help}

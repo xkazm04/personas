@@ -100,7 +100,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
       {/* Generate Section */}
       <div className="p-4 border-b border-border/40 space-y-3">
         <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
-          Create New Version
+          {t.recipes.create_new_version}
         </h3>
 
         <div>
@@ -110,7 +110,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
           <textarea
             value={requirements}
             onChange={(e) => setRequirements(e.target.value)}
-            placeholder="e.g., Add error handling for rate limits, include retry logic..."
+            placeholder={t.recipes.changes_placeholder}
             rows={3}
             className="w-full rounded-modal border border-border/50 bg-background/80 px-3 py-2 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 resize-none"
           />
@@ -217,7 +217,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
       {/* {t.recipes.version_history} */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
         <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide mb-3">
-          Version History {!loading && versions.length > 0 && `(${versions.length})`}
+          {t.recipes.version_history} {!loading && versions.length > 0 && `(${versions.length})`}
         </h3>
 
         {loading ? (
