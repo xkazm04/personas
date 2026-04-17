@@ -289,7 +289,7 @@ export function LiveStreamTab() {
         {pausedQueueCount > 0 && (
           <div className="flex items-center gap-1.5 typo-caption text-amber-300 tabular-nums">
             <span className="font-semibold">{pausedQueueCount}</span>
-            <span className="text-amber-300/60">{t.triggers.queued_label}</span>
+            <span className="text-amber-300/60">{t.triggers.queued_bare}</span>
           </div>
         )}
 

@@ -139,7 +139,7 @@ export function ExportSection({
               <span>{s.import_groups.replace('{count}', String(importResult.groups_created))}</span>
             )}
             {importResult.credentials_created > 0 && (
-              <span>{s.import_credentials.replace('{count}', String(importResult.credentials_created))}</span>
+              <span>{s.import_credentials_count.replace('{count}', String(importResult.credentials_created))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

@@ -4366,6 +4366,12 @@ export const en = {
     },
     // Auto-cred extra strings
     auto_cred_extra: {
+      // Shown when the browser-automation panel is actively taking over the user's UI
+      browser_automation_warning: "Browser automation is running. Do not interact with the window — it will resume when complete.",
+      // Setup-guide entry title when the desktop bridge / Tauri shell is required
+      desktop_bridge_title: "{{label}} requires the desktop app",
+      // Hint explaining why the desktop bridge is required
+      desktop_bridge_hint: "This connector drives a native browser session that only runs in the Personas desktop app.",
       preparing_guided: "Preparing guided setup instructions...",
       starting_browser: "Starting browser session...",
       no_log_output: "No log output captured.",
@@ -8212,14 +8218,10 @@ export const en = {
     delete_webhook_title: "Delete webhook trigger",
     // Column header 'Status' in cloud webhooks firing history table
     status_col_label: "Status",
-    // Column header 'Fired At' in cloud webhooks firing history table
-    fired_at_label: "Fired At",
     // Column header 'Duration' in cloud webhooks firing history table
     duration_col_label: "Duration",
     // Column header 'Cost' in cloud webhooks firing history table
     cost_col_label: "Cost",
-    // Label for the Deployed Persona form field
-    deployed_persona_label: "Deployed Persona",
     // Button label for refreshing dead letter events list
     dead_letter_refresh: "Refresh",
     // Loading text while dead letter events are being fetched
@@ -8258,8 +8260,9 @@ export const en = {
     col_status: "Status",
     // Column header label: time column in live stream grid
     col_time: "Time",
-    // Count of events buffered while stream is paused
-    queued_label: "queued",
+    // Bare "queued" word used as a badge/chip label in LiveStreamTab when
+    // no count interpolation is needed. For counted variants use queued_label.
+    queued_bare: "queued",
     // Tooltip for pause/resume button when stream is live
     pause_tooltip: "Pause incoming events",
     // Tooltip for pause/resume button when stream is paused
@@ -8286,16 +8289,6 @@ export const en = {
     setup_guide_step4: "Events appear in Live Stream and route to your agents automatically",
     // Get channel URL prompt with smee.io/new link in relay form
     get_channel_url_prompt: "Get a channel URL from",
-    // Empty state description in trigger studio canvas
-    studio_empty_desc: "Compose reactive event flows across your personas. Use trigger types as building blocks, add conditional branching and parallel fan-out to create intelligent automation chains.",
-    // Studio empty state step 1
-    studio_step1: "1. Add trigger sources from the sidebar (Schedule, Webhook, ...)",
-    // Studio empty state step 2
-    studio_step2: "2. Add persona steps to process events",
-    // Studio empty state step 3
-    studio_step3: "3. Connect them to build reactive chains",
-    // Studio empty state step 4
-    studio_step4: "4. Use condition gates for routing logic",
     // Palette: If/Else gate label
     gate_if_else_label: "If / Else",
     // Palette: If/Else gate description
@@ -8345,6 +8338,20 @@ export const en = {
     cron_expression_placeholder: "* * * * *  (min hour dom mon dow)",
     // Placeholder for app focus config: window title pattern input
     app_focus_window_placeholder: "e.g. .*.rs$ or Project - Visual Studio",
+    // Placeholder for app focus config: process name input
+    app_focus_process_placeholder: "e.g. Code.exe or firefox",
+    // "(optional)" suffix shown next to a field label
+    field_optional: "(optional)",
+    // Placeholder for source-filter input on event-listener trigger config
+    source_filter_input_placeholder: "e.g. watcher-* or exact-source-id",
+    // MetaCell label: event source
+    meta_source: "Source",
+    // Smee relay: "last event: <time>" prefix
+    relay_last_event: "Last:",
+    // Smee relay: tooltip on the relay delete button
+    relay_delete_title: "Delete relay",
+    // Smee relay: first step of the setup guide
+    setup_guide_step1: "Create a channel at smee.io/new",
     // Placeholder for clipboard config: text pattern input
     clipboard_pattern_placeholder: "e.g. https?://.* or error|exception",
     // Placeholder for composite config: event type input
@@ -8359,8 +8366,6 @@ export const en = {
     polling_endpoint_placeholder: "https://api.example.com/poll",
     // Tooltip for 'More tools' button in EventCanvasToolbar
     more_tools_title: "More tools",
-    // 'Last poll:' label in cloud webhooks status banner
-    last_poll_label: "Last poll:",
     // Tooltip on validate-and-fire trigger button in drawer
     validate_and_fire_title: "Validate trigger config, then fire",
     // Tooltip on dry-run trigger button in drawer
@@ -8702,13 +8707,14 @@ export const en = {
       import_teams: "{count} team(s)",
       import_tools: "{count} tool(s)",
       import_groups: "{count} group(s)",
-      import_credentials: "{count} credential(s)",
+      import_credentials_count: "{count} credential(s)",
       // Export selection modal
       export_title: "Export Workspace",
       export_subtitle: "Choose what to include in your export",
       close: "Close",
       loading_data: "Loading workspace data...",
       deselect_all: "Deselect All",
+      select_all: "Select All",
       items_selected: "{selected} of {total} items selected",
       of_selected: "{count} of {total} selected",
       encrypt_passphrase: "Encrypt credentials with passphrase",
@@ -9978,8 +9984,6 @@ export const en = {
       download_aria: "Download",
       // Tooltip on the download button in the details pane
       download_title: "Download",
-      // Loading placeholder in the drive file list
-      loading: "Loading...",
       // Placeholder for the signing reason input
       sign_reason_placeholder: "Reason for signing…",
     },
@@ -10421,9 +10425,7 @@ export const en = {
       idea_evolution_title: "Idea Evolution",
       fitness_ranking_label: "Fitness Ranking",
       similar_to_rejected: "Similar to rejected:",
-      synthesis_suggestions: "Synthesis Suggestions",
       percent_similar: "% similar",
-      potential_duplicates: "Potential Duplicates",
       scanning_with: "Scanning with",
       scanning_subtitle: "Analyzing codebase patterns and generating context groups…",
       no_previous_scans: "No previous scans.",
@@ -12798,6 +12800,12 @@ export const en = {
       search_and_filter: "Search & Filter",
     },
     use_cases_extra: { example_output: "Example output", input_data: "Input Data", rerun_input: "Re-run with this input", input_prefix: "Input: ", error_prefix: "Error: ", output_prefix: "Output: ", toggle_history: "Toggle execution history", configure_model: "Configure model, notifications & subscriptions",
+      // Placeholder for the use-case input box
+      input_placeholder: "Type input to run this use case…",
+      // Placeholder for the optional model-override input
+      model_placeholder: "e.g. claude-3-5-sonnet-latest",
+      // Singular noun used in counts: "<N> use case[s]"
+      use_case_singular: "use case",
       // UseCaseExecutionPanel — time-filter display prefix before "(window: ...)"
       window_prefix: "(window:",
       // UseCaseHistory — loading state text
