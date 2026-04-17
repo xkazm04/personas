@@ -115,8 +115,8 @@ export default function KnowledgeGraphDashboard() {
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title="Seed a mock pattern (dev only)">
-                <Plus className="w-3.5 h-3.5" /> Mock Pattern
+              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
+                <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
               </button>
             )}
             <Button

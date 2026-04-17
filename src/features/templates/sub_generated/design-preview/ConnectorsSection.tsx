@@ -65,7 +65,7 @@ export function ConnectorsSection({
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Plug className="w-4 h-4 text-emerald-400" />
-        Connectors & Tools
+        {t.templates.design.connectors_and_tools}
       </div>
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         {connectorToolMap.map((item, idx) => {

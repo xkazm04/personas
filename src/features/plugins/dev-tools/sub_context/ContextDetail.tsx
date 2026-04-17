@@ -20,7 +20,7 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
 
       <div className="mb-4">
         <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">
-          Files ({ctx.filePaths.length})
+          {t.plugins.dev_tools.files} ({ctx.filePaths.length})
         </h4>
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {ctx.filePaths.map((fp) => (

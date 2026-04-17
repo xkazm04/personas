@@ -188,7 +188,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                             : 'text-foreground hover:text-muted-foreground/70 bg-secondary/20'
                         }`}
                       >
-                        Every day
+                        {t.triggers.active_hours_every_day}
                       </button>
                     </div>
                   </div>

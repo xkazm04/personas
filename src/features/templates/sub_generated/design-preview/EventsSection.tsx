@@ -40,7 +40,7 @@ export function EventsSection({
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
-        Events & Triggers
+        {t.templates.design.events_and_triggers}
         <span className="typo-body font-normal text-foreground ml-1">{t.templates.design.what_activates}</span>
       </div>
 
@@ -106,7 +106,7 @@ export function EventsSection({
           <div className="p-3.5 space-y-2">
             <span className="typo-code font-mono uppercase tracking-wider text-foreground flex items-center gap-1.5">
               <Zap className="w-3 h-3 text-purple-400" />
-              Event Subscriptions
+              {t.templates.design.event_subscriptions}
             </span>
             {suggestedSubscriptions!.map((sub, subIdx) => {
               const isSelected = selectedSubscriptionIndices.has(subIdx);

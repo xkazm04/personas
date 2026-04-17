@@ -176,11 +176,11 @@ export function LiveStreamTab() {
   const columns: DataGridColumn<PersonaEvent>[] = [
     {
       key: 'type',
-      label: 'Type',
+      label: t.triggers.col_type,
       width: '1fr',
       filterComponent: (
         <ColumnDropdownFilter
-          label="Type"
+          label={t.triggers.col_type}
           value={typeFilter}
           options={typeOptions}
           onChange={setTypeFilter}
@@ -190,7 +190,7 @@ export function LiveStreamTab() {
     },
     {
       key: 'source',
-      label: 'Source',
+      label: t.triggers.col_source,
       width: '0.8fr',
       render: (event) => (
         <span className="typo-body text-foreground truncate flex items-center gap-1">
@@ -202,14 +202,14 @@ export function LiveStreamTab() {
     },
     {
       key: 'target',
-      label: 'Target Agent',
+      label: t.triggers.col_target_agent,
       width: '1fr',
       filterComponent: (
         <PersonaColumnFilter
           value={targetPersonaId}
           onChange={setTargetPersonaId}
           personas={personas}
-          label="Target Agent"
+          label={t.triggers.col_target_agent}
         />
       ),
       render: (event) => {
@@ -227,11 +227,11 @@ export function LiveStreamTab() {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t.triggers.col_status,
       width: '0.7fr',
       filterComponent: (
         <ColumnDropdownFilter
-          label="Status"
+          label={t.triggers.col_status}
           value={statusFilter}
           options={STATUS_OPTIONS}
           onChange={setStatusFilter}
@@ -289,7 +289,7 @@ export function LiveStreamTab() {
         {pausedQueueCount > 0 && (
           <div className="flex items-center gap-1.5 typo-caption text-amber-300 tabular-nums">
             <span className="font-semibold">{pausedQueueCount}</span>
-            <span className="text-amber-300/60">queued</span>
+            <span className="text-amber-300/60">{t.triggers.queued_label}</span>
           </div>
         )}
 
@@ -301,7 +301,7 @@ export function LiveStreamTab() {
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
                 : 'bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground'
             }`}
-            title={isPaused ? 'Resume live updates' : 'Pause incoming events'}
+            title={isPaused ? t.triggers.resume_tooltip : t.triggers.pause_tooltip}
           >
             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
             {isPaused ? t.triggers.resume_label : t.triggers.pause_label}
@@ -310,10 +310,10 @@ export function LiveStreamTab() {
             onClick={handleClear}
             disabled={events.length === 0}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            title="Clear stream buffer"
+            title={t.triggers.clear_stream_title}
           >
             <Trash2 className="w-3 h-3" />
-            Clear
+            {t.triggers.clear_stream}
           </button>
         </div>
       </div>

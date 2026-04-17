@@ -115,7 +115,7 @@ export function TemplateCardPreview({
               <div>
                 <SectionLabel as="h5" className="flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  System Prompt
+                  {t.templates.card.system_prompt}
                 </SectionLabel>
                 <p className="typo-code text-foreground leading-relaxed bg-primary/3 rounded-card px-2.5 py-2 font-mono">
                   {systemPromptPreview}

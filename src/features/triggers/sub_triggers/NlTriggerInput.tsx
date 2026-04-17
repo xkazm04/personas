@@ -131,15 +131,15 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
                 </span>
               </div>
               <p className="typo-caption text-foreground mt-0.5">
-                Type: <span className="text-foreground">{result.triggerType.replace(/_/g, ' ')}</span>
+                {t.triggers.nl_type_colon} <span className="text-foreground">{result.triggerType.replace(/_/g, ' ')}</span>
                 {result.formOverrides.cronExpression && (
-                  <> &middot; Cron: <span className="font-mono text-foreground">{result.formOverrides.cronExpression}</span></>
+                  <> {t.triggers.nl_cron_colon} <span className="font-mono text-foreground">{result.formOverrides.cronExpression}</span></>
                 )}
                 {result.formOverrides.interval && result.formOverrides.scheduleMode === 'interval' && (
-                  <> &middot; Interval: <span className="text-foreground">{result.formOverrides.interval}s</span></>
+                  <> {t.triggers.nl_interval_colon} <span className="text-foreground">{result.formOverrides.interval}s</span></>
                 )}
                 {result.formOverrides.globFilter && (
-                  <> &middot; Filter: <span className="font-mono text-foreground">{result.formOverrides.globFilter}</span></>
+                  <> {t.triggers.nl_filter_colon} <span className="font-mono text-foreground">{result.formOverrides.globFilter}</span></>
                 )}
               </p>
             </div>
@@ -160,7 +160,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
             className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-modal border border-border/30 bg-secondary/20 typo-caption text-foreground"
           >
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            <span>Could not parse a trigger from that description. Try something like &ldquo;{PLACEHOLDER_EXAMPLES[placeholderIdx]}&rdquo;</span>
+            <span>{t.triggers.nl_could_not_parse} &ldquo;{PLACEHOLDER_EXAMPLES[placeholderIdx]}&rdquo;</span>
           </div>
         )}
     </div>

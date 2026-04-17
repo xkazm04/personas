@@ -28,7 +28,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
     return (
       <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-foreground">
         <LoadingSpinner size="lg" />
-        <span className="sr-only">Loading cloud status...</span>
+        <span className="sr-only">{dt.status.loading}</span>
       </div>
     );
   }
@@ -36,7 +36,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
   if (!status) {
     return (
       <p className="typo-body text-foreground py-8 text-center">
-        No status data available.
+        {dt.status.no_status}
       </p>
     );
   }

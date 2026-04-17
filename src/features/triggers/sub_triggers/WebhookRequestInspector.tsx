@@ -131,10 +131,10 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
                   className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40"
-                  title="Re-send this payload to trigger a new execution"
+                  title={t.triggers.replay_label}
                 >
                   {isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
-                  {isReplaying ? 'Replaying...' : 'Replay'}
+                  {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
                 </button>
                 <CopyButton
                   copied={copiedCurl}
@@ -260,7 +260,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
               {loading ? (
                 <div className="flex items-center gap-2 py-2 typo-body text-foreground">
                   <LoadingSpinner size="xs" />
-                  Loading...
+                  {t.triggers.loading_history}
                 </div>
               ) : error ? (
                 <div className="flex items-center gap-2 py-2 typo-body text-amber-400/90">
@@ -308,7 +308,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                       className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-red-400/60 hover:text-red-400/90 transition-colors"
                     >
                       {clearing ? <LoadingSpinner size="xs" /> : <Trash2 className="w-3 h-3" />}
-                      Clear all
+                      {t.triggers.clear_all}
                     </button>
                   </div>
                 </>

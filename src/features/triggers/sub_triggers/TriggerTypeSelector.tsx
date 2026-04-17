@@ -33,7 +33,7 @@ export function TriggerTypeSelector({
       <div
         className="grid grid-cols-3 gap-2"
         role="radiogroup"
-        aria-label="Trigger type"
+        aria-label={t.triggers.type_selector.trigger_type}
       >
         {typeOptions.map((option, index) => {
           const meta = TRIGGER_TYPE_META[option.type] || DEFAULT_TRIGGER_META;

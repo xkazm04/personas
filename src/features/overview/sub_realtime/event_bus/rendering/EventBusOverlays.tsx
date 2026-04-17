@@ -11,7 +11,7 @@ interface OverlaysProps {
 }
 
 export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <>
       {/* Legend (only when traffic flowing) */}
@@ -40,7 +40,7 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-card px-3 py-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 flex-shrink-0" />
             <span className="typo-code font-mono text-amber-300/80">
-              {droppedCount.toLocaleString()} earlier event{droppedCount !== 1 ? 's' : ''} not shown
+              {tx(droppedCount !== 1 ? t.overview.event_bus_overlay.earlier_events_not_shown_other : t.overview.event_bus_overlay.earlier_events_not_shown_one, { count: droppedCount.toLocaleString() })}
             </span>
           </div>
         </div>

@@ -1,14 +1,16 @@
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META, TRIGGER_TEMPLATES } from '@/lib/utils/platform/triggerConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface TriggerQuickTemplatesProps {
   onApplyTemplate: (templateId: string) => void;
 }
 
 export function TriggerQuickTemplates({ onApplyTemplate }: TriggerQuickTemplatesProps) {
+  const { t } = useTranslation();
   return (
     <div>
       <label className="block typo-body font-medium text-foreground mb-1.5">
-        Quick Templates
+        {t.triggers.quick_templates_label}
       </label>
       <div className="grid grid-cols-2 gap-1.5">
         {TRIGGER_TEMPLATES.map((tpl) => {

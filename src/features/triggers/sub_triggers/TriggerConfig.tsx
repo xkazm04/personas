@@ -34,7 +34,7 @@ export function TriggerConfig() {
   if (!selectedPersona) {
     return (
       <div className="flex items-center justify-center py-8 text-foreground">
-        No persona selected
+        {t.triggers.no_persona_selected}
       </div>
     );
   }
@@ -66,7 +66,7 @@ export function TriggerConfig() {
           icon={<Plus className="w-4 h-4" />}
           onClick={() => setShowAddForm(!showAddForm)}
         >
-          Add Trigger
+          {t.triggers.config.add_trigger}
         </Button>
       </div>
 

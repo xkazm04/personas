@@ -116,7 +116,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   className="w-24 px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
                   placeholder="0"
                 />
-                <p className="typo-body text-foreground">0 = unlimited</p>
+                <p className="typo-body text-foreground">{t.triggers.zero_unlimited}</p>
               </div>
 
               {/* Runtime stats when active */}

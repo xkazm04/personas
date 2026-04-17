@@ -22,14 +22,14 @@ export function EventListenerConfig({
     <div className="space-y-3">
       <div>
         <label className="block typo-body font-medium text-foreground mb-1.5">
-          Event Type to Listen For
+          {t.triggers.event_type_to_listen}
         </label>
         <input
           type="text"
           list="event-type-suggestions"
           value={listenEventType}
           onChange={(e) => { setListenEventType(e.target.value); if (validationError) setValidationError(null); }}
-          placeholder="e.g. file_changed, execution_completed"
+          placeholder={t.triggers.event_type_input_placeholder}
           aria-invalid={!!validationError}
           aria-describedby={validationError ? 'listen-event-error' : undefined}
           className={`w-full px-3 py-2 bg-background/50 border rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring transition-all ${
@@ -49,23 +49,23 @@ export function EventListenerConfig({
           <p id="listen-event-error" className="typo-body text-red-400/80 mt-1">{validationError}</p>
         )}
         <p className="typo-caption text-foreground mt-1">
-          Type to search registered event types, or enter a custom type.
+          {t.triggers.event_type_helper}
         </p>
       </div>
       <div>
         <label className="block typo-body font-medium text-foreground mb-1.5">
-          Source Filter <span className="text-foreground">(optional)</span>
+          {t.triggers.event_listener.source_filter_label} <span className="text-foreground">{t.triggers.source_filter_optional_label}</span>
         </label>
         <input
           type="text"
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
-          placeholder="e.g. watcher-* or exact-source-id"
+          placeholder={t.triggers.source_filter_input_placeholder}
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
         <details className="mt-1 group">
           <summary className="typo-caption text-foreground cursor-pointer hover:text-muted-foreground/80 transition-colors">
-            {sourceFilterHelp.title} — trailing * prefix wildcard supported
+            {sourceFilterHelp.title} {t.triggers.wildcard_hint}
           </summary>
           <div className="mt-1 p-2 rounded-card bg-background/40 border border-primary/10 typo-caption text-foreground space-y-1">
             {sourceFilterHelp.rules.map((r) => (

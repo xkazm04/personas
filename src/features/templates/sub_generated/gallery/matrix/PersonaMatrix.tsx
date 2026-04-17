@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
@@ -144,6 +145,7 @@ export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
   const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onApproveTestAnyway, onRejectTest, onDeleteDraft, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers, onSaveVersion } = props;
+  const { t } = useTranslation();
   const isEditMode = props.mode === 'edit';
 
   // Track which question modal is currently open (only one at a time)
@@ -303,7 +305,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         return (
           <div className="mt-1.5">
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Protocol Active
+              {t.templates.matrix.protocol_active}
             </span>
           </div>
         );
@@ -430,7 +432,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={effectiveLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onApproveTestAnyway={onApproveTestAnyway} onRejectTest={onRejectTest} onDeleteDraft={onDeleteDraft} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
-  if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 typo-body text-foreground">Matrix data unavailable.</div>);
+  if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 typo-body text-foreground">{t.templates.matrix.matrix_unavailable}</div>);
 
   const firstFour = cells.slice(0, 4);
   const lastFour = cells.slice(4);
@@ -446,7 +448,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-elevation-1 shadow-primary/20">
             <span className="text-[10px] font-bold text-foreground">M</span>
           </div>
-          <h4 className="typo-body-lg font-bold text-foreground uppercase tracking-wider">Persona Matrix</h4>
+          <h4 className="typo-body-lg font-bold text-foreground uppercase tracking-wider">{t.templates.matrix.persona_matrix_title}</h4>
         </div>
       )}
       <div

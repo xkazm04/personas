@@ -4105,6 +4105,8 @@ export const en = {
       fields_discovered_other: "{count} fields discovered",
       extracted_values_label: "Extracted Values",
       no_fields_discovered: "No fields were discovered. Try again with a more specific description.",
+      // {filled} = filled count, {total} = total fields
+      fields_captured_partial: "{filled}/{total} fields captured",
       // {label} = service/connector name
       credential_stored: "{label} credential has been securely stored.",
     },
@@ -4199,12 +4201,16 @@ export const en = {
       sending: "Sending...",
       empty_response: "(empty response)",
       snippets: "Snippets",
+      // Placeholder text shown in the request body textarea
+      request_body_placeholder: '{ "message": "Your prompt here..." }',
     },
 
     // Connection form (dt = t.deployment.connection)
     connection: {
       orchestrator_url_label: "Cloud Server URL",
       orchestrator_prefix: "https://",
+      // Placeholder for the cloud orchestrator URL input
+      orchestrator_url_placeholder: "https://your-orchestrator.example.com",
       enter_api_key: "Enter API key",
       connect: "Connect",
       connected: "Connected",
@@ -4310,6 +4316,10 @@ export const en = {
       open_endpoint: "Open endpoint",
       // Budget gauge label prefix
       budget_label: "Budget:",
+      // Stats row labels in the deployment card
+      label_invocations: "Invocations:",
+      label_last_called: "Last called:",
+      label_created: "Created:",
     },
 
     // Cloud panel tab labels
@@ -4376,6 +4386,14 @@ export const en = {
       empty: "No cloud triggers yet. Create one to schedule automated runs.",
       recent_firings: "Recent firings",
       no_firings: "No recent firings",
+      // Trigger detail row labels in the expanded trigger panel
+      label_type: "Type:",
+      label_status: "Status:",
+      label_last_triggered: "Last triggered:",
+      label_next_trigger: "Next trigger:",
+      label_cron: "Cron:",
+      // Loading indicator text while fetching trigger firings
+      loading_firings: "Loading...",
     },
 
     // -- Unified Deployment Dashboard --
@@ -7573,6 +7591,142 @@ export const en = {
     text_pattern_label: "Text Pattern",
     credential_event_label: "Credential Event",
     field_optional: "(optional)",
+    // Button tooltip for refreshing cloud webhook trigger list
+    refresh_label: "Refresh",
+    // Tooltip for copy webhook URL button in cloud webhooks tab
+    copy_webhook_url_title: "Copy webhook URL",
+    // Tooltip for copy webhook secret button in cloud webhooks tab
+    copy_webhook_secret_title: "Copy webhook secret",
+    // Tooltip for delete webhook trigger button in cloud webhooks tab
+    delete_webhook_title: "Delete webhook trigger",
+    // Column header 'Status' in cloud webhooks firing history table
+    status_col_label: "Status",
+    // Column header 'Fired At' in cloud webhooks firing history table
+    fired_at_label: "Fired At",
+    // Column header 'Duration' in cloud webhooks firing history table
+    duration_col_label: "Duration",
+    // Column header 'Cost' in cloud webhooks firing history table
+    cost_col_label: "Cost",
+    // Label for the Deployed Persona form field
+    deployed_persona_label: "Deployed Persona",
+    // Button label for refreshing dead letter events list
+    dead_letter_refresh: "Refresh",
+    // Loading text while dead letter events are being fetched
+    dead_letter_loading: "Loading...",
+    // Button label to retry a dead letter event
+    dead_letter_retry: "Retry",
+    // Button label to discard a dead letter event permanently
+    dead_letter_discard: "Discard",
+    // Expandable section label for event payload in dead letter view
+    dead_letter_payload: "Payload",
+    // Label for the Event Data section in the event detail modal
+    event_data_section_label: "Event Data",
+    // Tooltip for the copy button in event detail modal
+    copy_event_data_title: "Copy event data",
+    // 'Copied' confirmation text shown briefly after copying payload
+    copied_label: "Copied",
+    // Section label for the error details in event detail modal
+    error_section_label: "Error",
+    // MetaCell label: event unique identifier
+    meta_event_id: "Event ID",
+    // MetaCell label: project identifier
+    meta_project: "Project",
+    // MetaCell label: event source
+    meta_source: "Source",
+    // MetaCell label: when event was processed
+    meta_processed: "Processed",
+    // Button to clear the live stream buffer
+    clear_stream: "Clear",
+    // Tooltip for the clear stream buffer button
+    clear_stream_title: "Clear stream buffer",
+    // Column header label: event type column in live stream grid
+    col_type: "Type",
+    // Column header label: source column in live stream grid
+    col_source: "Source",
+    // Column header label: target agent column in live stream grid
+    col_target_agent: "Target Agent",
+    // Column header label: status column in live stream grid
+    col_status: "Status",
+    // Column header label: time column in live stream grid
+    col_time: "Time",
+    // Count of events buffered while stream is paused
+    queued_label: "queued",
+    // Tooltip for pause/resume button when stream is live
+    pause_tooltip: "Pause incoming events",
+    // Tooltip for pause/resume button when stream is paused
+    resume_tooltip: "Resume live updates",
+    // Form field label for relay label/name
+    relay_label_field: "Label",
+    // Form field label for smee channel URL
+    relay_channel_url_field: "Channel URL",
+    // Form field label for route-to-agent (with optional marker)
+    relay_route_to_agent: "Route to Agent",
+    // Optional marker suffix used in smee relay form labels
+    optional_suffix: "(optional)",
+    // Form field label for event filter (with optional/comma-separated note)
+    relay_event_filter_field: "Event Filter",
+    // Note on event filter field: comma-separated values
+    relay_event_filter_note: "(optional, comma-separated)",
+    // Confirmation button for inline delete in relay list
+    relay_confirm_delete: "Confirm",
+    // Last-event relative time prefix in relay list — e.g. 'Last: 2 min ago'
+    relay_last_event: "Last:",
+    // Tooltip for pause relay button
+    relay_pause_title: "Pause relay",
+    // Tooltip for resume relay button
+    relay_resume_title: "Resume relay",
+    // Tooltip for delete relay button
+    relay_delete_title: "Delete relay",
+    // Setup guide step 1 — visiting smee.io
+    setup_guide_step1: "Visit smee.io/new to create a free relay channel",
+    // Setup guide step 2 — adding relay in the app
+    setup_guide_step2: "Add the relay here with a label and the channel URL",
+    // Setup guide step 3 — pasting the channel URL into an external service
+    setup_guide_step3: "Paste the channel URL as a webhook in GitHub / Stripe / any service",
+    // Setup guide step 4 — events start flowing
+    setup_guide_step4: "Events appear in Live Stream and route to your agents automatically",
+    // Get channel URL prompt with smee.io/new link in relay form
+    get_channel_url_prompt: "Get a channel URL from",
+    // Empty state description in trigger studio canvas
+    studio_empty_desc: "Compose reactive event flows across your personas. Use trigger types as building blocks, add conditional branching and parallel fan-out to create intelligent automation chains.",
+    // Studio empty state step 1
+    studio_step1: "1. Add trigger sources from the sidebar (Schedule, Webhook, ...)",
+    // Studio empty state step 2
+    studio_step2: "2. Add persona steps to process events",
+    // Studio empty state step 3
+    studio_step3: "3. Connect them to build reactive chains",
+    // Studio empty state step 4
+    studio_step4: "4. Use condition gates for routing logic",
+    // Palette: If/Else gate label
+    gate_if_else_label: "If / Else",
+    // Palette: If/Else gate description
+    gate_if_else_description: "Binary conditional branch",
+    // Palette: Classifier gate label
+    gate_classifier_label: "Classifier",
+    // Palette: Classifier gate description
+    gate_classifier_description: "Multi-way routing (support, sales, ...)",
+    // Palette: Fan-Out gate label
+    gate_fan_out_label: "Fan-Out (Parallel)",
+    // Palette: Fan-Out gate description
+    gate_fan_out_description: "Run multiple branches in parallel",
+    // Palette help text at the bottom of the sidebar
+    palette_help_text: "Connect trigger sources to persona steps to build reactive chains. Add condition gates for branching logic and parallel fan-out.",
+    // Placeholder for test event type input in TestTab
+    test_event_type_placeholder: "e.g. build_complete, deploy, file_changed",
+    // Prefix for event ID in test result display
+    result_id_prefix: "ID:",
+    // Prefix for event type in test result display
+    result_type_prefix: "Type:",
+    // Prefix for event status in test result display
+    result_status_prefix: "Status:",
+    // Prefix for target persona in test result display
+    result_target_prefix: "Target:",
+    // Loading text in lazy-loaded tab areas
+    tab_loading: "Loading...",
+    // Tooltip on validate-and-fire trigger button in drawer
+    validate_and_fire_title: "Validate trigger config, then fire",
+    // Tooltip on dry-run trigger button in drawer
+    simulate_trigger_title: "Simulate trigger without executing",
   },
 
   // -------------------------------------------------------------------
@@ -9280,6 +9434,10 @@ export const en = {
       task: "Task",
       pick_winner: "Pick winner",
       winner: "Winner",
+      // Badge label for disqualified slots
+      disqualified_label: "Disqualified",
+      // Suffix after elapsed time, e.g. "12s elapsed"
+      elapsed_label: "elapsed",
       cancel_competition: "Cancel competition",
       no_goals_constellation: "No goals yet. Create goals in the Projects tab to see the constellation.",
       your_turn: "Your Turn",

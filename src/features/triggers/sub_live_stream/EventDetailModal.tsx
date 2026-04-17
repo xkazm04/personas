@@ -80,15 +80,15 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Improvement #7: Metadata grid with better visual hierarchy */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-primary/5 border-b border-primary/10 flex-shrink-0">
-            <MetaCell icon={Hash} label="Event ID">
+            <MetaCell icon={Hash} label={t.triggers.meta_event_id}>
               <UuidLabel value={event.id} />
             </MetaCell>
-            <MetaCell icon={FolderOpen} label="Project">
+            <MetaCell icon={FolderOpen} label={t.triggers.meta_project}>
               <UuidLabel value={event.project_id} />
             </MetaCell>
             {/* Improvement #5: Source type icon + styled chip */}
             {event.source_id && (
-              <MetaCell icon={SourceIcon ?? Hash} iconColor={sourceConfig?.color} label="Source">
+              <MetaCell icon={SourceIcon ?? Hash} iconColor={sourceConfig?.color} label={t.triggers.meta_source}>
                 <div className="flex items-center gap-1.5">
                   {event.source_type && (
                     <span className={`typo-caption font-medium px-1.5 py-0.5 rounded-input bg-secondary/50 border border-primary/10 ${sourceConfig?.color ?? 'text-foreground'}`}>
@@ -100,7 +100,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               </MetaCell>
             )}
             {event.processed_at && (
-              <MetaCell icon={Clock} label="Processed">
+              <MetaCell icon={Clock} label={t.triggers.meta_processed}>
                 <span className="font-mono text-foreground">
                   {new Date(event.processed_at).toLocaleString()}
                 </span>
@@ -114,7 +114,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               {/* Improvement #3: Themed section label */}
               <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/8 flex-shrink-0 bg-secondary/5">
                 <span className="typo-label font-semibold uppercase tracking-wider text-foreground">
-                  Event Data
+                  {t.triggers.event_data_section_label}
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
                 <button
@@ -124,12 +124,12 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : 'text-foreground hover:text-foreground hover:bg-secondary/60 border border-transparent hover:border-primary/10'
                   }`}
-                  title="Copy event data"
+                  title={t.triggers.copy_event_data_title}
                 >
                   {copiedPayload ? (
                     <>
                       <Check className="w-3 h-3" />
-                      Copied
+                      {t.triggers.copied_label}
                     </>
                   ) : (
                     <>
@@ -159,7 +159,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <div className="flex items-center gap-2 px-5 py-2.5 border-b border-red-500/10">
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
                 <span className="typo-label font-semibold uppercase tracking-wider text-red-400/70">
-                  Error
+                  {t.triggers.error_section_label}
                 </span>
               </div>
               <div className="px-5 py-3">

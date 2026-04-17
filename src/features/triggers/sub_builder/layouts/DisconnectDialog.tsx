@@ -2,6 +2,7 @@
  * Confirmation dialog for disconnecting a persona from an event.
  */
 import { AlertTriangle, X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   open: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onCancel }: Props) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -26,10 +28,10 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
             <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="typo-heading font-semibold text-foreground mb-1">Disconnect persona?</h3>
+            <h3 className="typo-heading font-semibold text-foreground mb-1">{t.triggers.disconnect_persona_title}</h3>
             <p className="typo-caption text-foreground leading-relaxed">
-              <span className="font-medium text-foreground">{personaName}</span> will no longer react to{' '}
-              <span className="font-medium text-foreground">{eventLabel}</span> events. You can reconnect later.
+              <span className="font-medium text-foreground">{personaName}</span> {t.triggers.disconnect_will_no_longer}{' '}
+              <span className="font-medium text-foreground">{eventLabel}</span> {t.triggers.disconnect_events_reconnect}
             </p>
           </div>
           <button onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-foreground flex-shrink-0">

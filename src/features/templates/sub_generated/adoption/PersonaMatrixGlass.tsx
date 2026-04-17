@@ -8,6 +8,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, HelpCircle, Play, Eye, Sparkles } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import {
@@ -95,6 +96,7 @@ function GlassCell({ dim, items, status }: {
   items?: string[];
   status?: CellBuildStatus;
 }) {
+  const { t } = useTranslation();
   const DimIcon = dim.icon;
 
   return (
@@ -135,7 +137,7 @@ function GlassCell({ dim, items, status }: {
               ))}
             </ul>
           ) : (
-            <p className="text-md text-foreground italic">No data yet</p>
+            <p className="text-md text-foreground italic">{t.templates.matrix_variants.no_data_yet}</p>
           )}
           </div>
 
@@ -151,6 +153,7 @@ function CenterHub({
   buildPhase, completeness = 0, isRunning, buildActivity,
   onStartTest, onApproveTest, onViewAgent,
 }: Omit<PersonaMatrixGlassProps, 'cellBuildStates'>) {
+  const { t } = useTranslation();
   const pct = Math.round(Math.min(100, Math.max(0, completeness)));
 
   return (
@@ -208,7 +211,7 @@ function CenterHub({
         <div className="flex flex-col gap-2 w-full mt-2">
           {onStartTest && buildPhase === 'draft_ready' && (
             <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
-              <Play className="w-4 h-4" /> Start Test
+              <Play className="w-4 h-4" /> {t.templates.matrix_variants.start_test}
             </button>
           )}
           {buildPhase === 'testing' && (
@@ -218,17 +221,17 @@ function CenterHub({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
               </span>
-              Testing agent...
+              {t.templates.matrix_variants.testing_agent}
             </div>
           )}
           {onApproveTest && buildPhase === 'test_complete' && (
             <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
-              <CheckCircle2 className="w-4 h-4" /> Approve &amp; Promote
+              <CheckCircle2 className="w-4 h-4" /> {t.templates.matrix_variants.approve_and_promote}
             </button>
           )}
           {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
             <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
-              <Eye className="w-4 h-4" /> View Agent
+              <Eye className="w-4 h-4" /> {t.templates.matrix_variants.view_agent_btn}
             </button>
           )}
         </div>

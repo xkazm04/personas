@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Target, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
@@ -121,6 +122,7 @@ function nodeRadius(goal: DevGoal): number {
 // ---------------------------------------------------------------------------
 
 export default function GoalConstellation() {
+  const { t } = useTranslation();
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
@@ -197,7 +199,7 @@ export default function GoalConstellation() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Target className="w-10 h-10 text-foreground mb-3" />
-        <p className="text-md text-foreground">No goals yet. Create goals in the Projects tab to see the constellation.</p>
+        <p className="text-md text-foreground">{t.plugins.dev_tools.no_goals_constellation}</p>
       </div>
     );
   }
@@ -206,16 +208,16 @@ export default function GoalConstellation() {
     <div className="space-y-3">
       {/* Controls */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title="Zoom in">
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} t.plugins.dev_tools.zoom_in>
           <ZoomIn className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title="Zoom out">
+        <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title={t.plugins.dev_tools.zoom_out}>
           <ZoomOut className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon-sm" onClick={handleReset} title="Reset view">
+        <Button variant="ghost" size="icon-sm" onClick={handleReset} title={t.plugins.dev_tools.reset_view}>
           <Maximize2 className="w-4 h-4" />
         </Button>
-        <span className="text-md text-foreground ml-2">{goals.length} goals, {edges.length} connections</span>
+        <span className="text-md text-foreground ml-2">{goals.length} {t.plugins.dev_tools.goals_label} {edges.length} {t.plugins.dev_tools.connections_label}</span>
       </div>
 
       {/* SVG Canvas */}
@@ -342,8 +344,8 @@ export default function GoalConstellation() {
           </div>
         ))}
         <span className="mx-2">|</span>
-        <span>━━ parent</span>
-        <span>┄┄ dependency</span>
+        <span>{t.plugins.dev_tools.legend_parent}</span>
+        <span>{t.plugins.dev_tools.legend_dependency}</span>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import type { McpTool } from '@/api/agents/mcpTools';
 
 // -- Tool input form ----------------------------------------------
@@ -13,10 +14,12 @@ export function ToolInputForm({
   values,
   onChange,
 }: ToolInputFormProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const schema = tool.input_schema as Record<string, unknown> | null;
   if (!schema) {
     return (
-      <p className="typo-body text-foreground">This tool takes no input parameters.</p>
+      <p className="typo-body text-foreground">{sh.no_input_params}</p>
     );
   }
 
@@ -26,7 +29,7 @@ export function ToolInputForm({
 
   if (keys.length === 0) {
     return (
-      <p className="typo-body text-foreground">This tool takes no input parameters.</p>
+      <p className="typo-body text-foreground">{sh.no_input_params}</p>
     );
   }
 
@@ -63,7 +66,7 @@ export function ToolInputForm({
                 onChange={(e) => onChange({ ...values, [key]: e.target.value })}
                 className="px-2 py-1.5 rounded typo-body bg-secondary/20 border border-primary/10 text-foreground focus-visible:outline-none focus-visible:border-primary/25"
               >
-                <option value="">-- select --</option>
+                <option value="">{t.common.select}</option>
                 <option value="true">true</option>
                 <option value="false">false</option>
               </select>

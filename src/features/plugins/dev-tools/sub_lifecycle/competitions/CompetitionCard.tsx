@@ -28,12 +28,12 @@ function BaselineHealth({ json }: { json: string }) {
     };
     return (
       <div className="flex items-center gap-3 flex-wrap typo-caption text-foreground">
-        <span className="uppercase tracking-wider text-primary">Baseline:</span>
+        <span className="uppercase tracking-wider text-primary">{t.plugins.dev_tools.baseline_label}</span>
         {bl.tsc_errors != null && (
-          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>TS errors: {bl.tsc_errors}</span>
+          <span className={bl.tsc_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_tools.ts_errors_label} {bl.tsc_errors}</span>
         )}
         {bl.cargo_errors != null && (
-          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>Cargo errors: {bl.cargo_errors}</span>
+          <span className={bl.cargo_errors === 0 ? 'text-emerald-400' : 'text-amber-400'}>{t.plugins.dev_tools.cargo_errors_label} {bl.cargo_errors}</span>
         )}
         <span className={bl.has_test_runner ? 'text-emerald-400' : 'text-amber-400'}>
           Tests: {bl.has_test_runner ? 'runner found' : 'no runner'}
@@ -141,7 +141,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
-            {competition.slot_count} competitors · {new Date(competition.created_at).toLocaleString()}
+            {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {new Date(competition.created_at).toLocaleString()}
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium border shrink-0 ${badge.color}`}>
@@ -154,10 +154,10 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
           {loading ? (
             <div className="flex items-center justify-center py-6 text-foreground">
               <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              <span className="typo-body">Loading competitors...</span>
+              <span className="typo-body">{t.plugins.dev_tools.loading_competitors}</span>
             </div>
           ) : !detail ? (
-            <p className="typo-body text-foreground">Failed to load detail.</p>
+            <p className="typo-body text-foreground">{t.plugins.dev_tools.failed_to_load_detail}</p>
           ) : (
             <>
               {detail.competition.task_description && (
@@ -203,7 +203,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                 <div className="rounded-interactive border border-emerald-500/20 bg-emerald-500/5 p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Lightbulb className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="typo-caption text-primary uppercase tracking-wider">Winning insight</span>
+                    <span className="typo-caption text-primary uppercase tracking-wider">{t.plugins.dev_tools.winning_insight}</span>
                   </div>
                   <p className="typo-body text-foreground whitespace-pre-wrap">{detail.competition.winner_insight}</p>
                 </div>

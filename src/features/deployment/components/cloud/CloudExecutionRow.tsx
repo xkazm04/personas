@@ -36,12 +36,12 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">Status:</span> <span className="text-foreground">{exec.status}</span></div>
-            <div><span className="text-foreground">Duration:</span> <span className="text-foreground">{formatDuration(exec.duration_ms)}</span></div>
-            <div><span className="text-foreground">Cost:</span> <span className="text-foreground">{formatCost(exec.cost_usd)}</span></div>
-            <div><span className="text-foreground">Tokens:</span> <span className="text-foreground">{(exec.input_tokens ?? 0) + (exec.output_tokens ?? 0)}</span></div>
-            <div><span className="text-foreground">Started:</span> <span className="text-foreground">{exec.started_at ? new Date(exec.started_at).toLocaleString() : '-'}</span></div>
-            <div><span className="text-foreground">Completed:</span> <span className="text-foreground">{exec.completed_at ? new Date(exec.completed_at).toLocaleString() : '-'}</span></div>
+            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{exec.status}</span></div>
+            <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(exec.duration_ms)}</span></div>
+            <div><span className="text-foreground">{dt.label_cost}</span> <span className="text-foreground">{formatCost(exec.cost_usd)}</span></div>
+            <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{(exec.input_tokens ?? 0) + (exec.output_tokens ?? 0)}</span></div>
+            <div><span className="text-foreground">{dt.label_started}</span> <span className="text-foreground">{exec.started_at ? new Date(exec.started_at).toLocaleString() : '-'}</span></div>
+            <div><span className="text-foreground">{dt.label_completed}</span> <span className="text-foreground">{exec.completed_at ? new Date(exec.completed_at).toLocaleString() : '-'}</span></div>
           </div>
           {exec.error_message && (
             <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 typo-caption text-red-400">
@@ -50,7 +50,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
           )}
           {exec.input_data && (
             <div className="space-y-1">
-              <span className="typo-caption text-foreground">Input:</span>
+              <span className="typo-caption text-foreground">{dt.label_input}</span>
               <pre className="typo-caption text-foreground bg-secondary/40 p-2 rounded-card overflow-auto max-h-32 border border-primary/10">
                 {exec.input_data}
               </pre>
@@ -67,7 +67,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                   className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
                 >
                   <Terminal className="w-3 h-3" />
-                  View Output
+                  {dt.view_output}
                 </button>
               );
             }
@@ -94,7 +94,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="typo-caption text-foreground flex items-center gap-1">
-                    <Terminal className="w-3 h-3" /> Output ({output.lines.length} lines)
+                    <Terminal className="w-3 h-3" /> {dt.output_prefix}{output.lines.length} {dt.output_lines_suffix}
                   </span>
                   <button
                     type="button"

@@ -116,7 +116,7 @@ export function DesignPhasePreview({
           <div className="flex items-start gap-2">
             <ArrowRight className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
             <p className="typo-body text-foreground">
-              <span className="font-medium text-foreground/90">Will apply: </span>
+              <span className="font-medium text-foreground/90">{t.agents.design.will_apply}</span>
               {changeSummary.join(', ').toLowerCase()}
             </p>
           </div>
@@ -130,14 +130,14 @@ export function DesignPhasePreview({
           className="flex items-center gap-2 px-4 py-2 rounded-modal font-medium typo-body bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           <Check className="w-3.5 h-3.5" />
-          Apply Changes
+          {t.agents.design.apply_changes}
         </button>
         <button
           onClick={actions.onRefine}
           className="flex items-center gap-2 px-3 py-2 rounded-modal font-medium typo-body bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refine
+          {t.agents.design.refine}
         </button>
         <button
           onClick={() => {
@@ -185,7 +185,7 @@ export function DesignPhasePreview({
           Send
         </button>
       </div>
-      <p className="typo-body text-foreground px-1">Press Enter to submit, Shift+Enter for new line.</p>
+      <p className="typo-body text-foreground px-1">{t.agents.design.enter_submit_hint}</p>
     </div>
   );
 }

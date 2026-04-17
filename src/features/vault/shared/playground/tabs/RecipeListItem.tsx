@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -17,6 +18,8 @@ export function RecipeListItem({
   onOpenPlayground,
   onDelete,
 }: RecipeListItemProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="rounded-modal border border-border/40 bg-card/30 overflow-hidden hover:border-border/60 transition-colors">
       <div className="flex items-center gap-3 px-4 py-3">
@@ -47,7 +50,7 @@ export function RecipeListItem({
         <button
           onClick={onOpenPlayground}
           className="flex items-center justify-center rounded-card p-1.5 text-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
-          title="Open settings"
+          title={sh.open_settings}
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
@@ -65,12 +68,12 @@ export function RecipeListItem({
           >
             <div className="px-4 pb-3 pt-0 border-t border-border/30 space-y-2">
               <div>
-                <p className="typo-body text-foreground mt-2 mb-0.5">Prompt Template</p>
-                <PromptTemplateRenderer content={recipe.prompt_template || '(empty)'} maxHeight="max-h-40" />
+                <p className="typo-body text-foreground mt-2 mb-0.5">{sh.prompt_template}</p>
+                <PromptTemplateRenderer content={recipe.prompt_template || t.vault.playground.mcp_empty} maxHeight="max-h-40" />
               </div>
               <div className="flex gap-4 typo-body text-foreground">
-                <span>Created: {new Date(recipe.created_at).toLocaleDateString()}</span>
-                <span>Updated: {new Date(recipe.updated_at).toLocaleDateString()}</span>
+                <span>{sh.created_label} {new Date(recipe.created_at).toLocaleDateString()}</span>
+                <span>{sh.updated_label} {new Date(recipe.updated_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>

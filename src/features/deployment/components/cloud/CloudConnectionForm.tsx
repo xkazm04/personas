@@ -92,7 +92,7 @@ export function CloudConnectionForm({
               setUrl(e.target.value);
               urlValidation.onChange(e.target.value);
             }}
-            placeholder="https://your-orchestrator.example.com"
+            placeholder={dt.orchestrator_url_placeholder}
             className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
           />
         )}

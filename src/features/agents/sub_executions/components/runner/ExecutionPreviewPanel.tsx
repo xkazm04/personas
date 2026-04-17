@@ -48,7 +48,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
       <button
         onClick={loadPreview}
         className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
-        title="Preview execution cost and prompt"
+        title={e.preview}
       >
         <Eye className="w-3 h-3" />
         {e.preview}

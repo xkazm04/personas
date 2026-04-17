@@ -50,8 +50,11 @@ export function BudgetRecoveryCard({
             <p className="typo-heading text-red-400/90">{e.budget_exceeded}</p>
             {budgetEntry && (
               <p className="typo-body text-red-400/60">
-                This agent has spent ${budgetEntry.spend.toFixed(2)} of its ${budgetEntry.maxBudget?.toFixed(2)} monthly limit ({Math.round(budgetEntry.ratio * 100)}%).
-                Execution is paused to prevent unexpected costs.
+                {tx(e.budget_spend_detail, {
+                  spend: budgetEntry.spend.toFixed(2),
+                  limit: budgetEntry.maxBudget?.toFixed(2) ?? '?',
+                  percent: String(Math.round(budgetEntry.ratio * 100)),
+                })}
               </p>
             )}
           </div>

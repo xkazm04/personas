@@ -7,6 +7,7 @@ import { Search, X, Plus, Users } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   open: boolean;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, eventLabel, onAdd, onClose }: Props) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
@@ -101,7 +103,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search personas..."
+              placeholder={t.triggers.search_personas_placeholder}
               className="w-full pl-8 pr-3 py-1.5 typo-caption bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
               autoFocus
             />
@@ -135,13 +137,13 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             <div className="text-center py-8 typo-caption text-foreground">
               {search ? (
                 <div className="flex flex-col items-center gap-2">
-                  <span>No matching personas found</span>
+                  <span>{t.triggers.no_matching_personas_found}</span>
                   <button
                     type="button"
                     onClick={() => setSearch('')}
                     className="text-primary hover:text-primary/80 transition-colors"
                   >
-                    Clear search
+                    {t.triggers.clear_search_label}
                   </button>
                 </div>
               ) : 'All personas are already connected'}

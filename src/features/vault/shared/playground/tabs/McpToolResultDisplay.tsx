@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, AlertCircle, Clock, Check, Server } from 'lucide-react';
 import type { McpToolResult } from '@/api/agents/mcpTools';
 
@@ -18,6 +19,7 @@ export function formatContent(text: string | null): string {
 // -- Tool result display ------------------------------------------
 
 export function ToolResultDisplay({ result }: { result: McpToolResult }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       {/* Status line */}
@@ -25,12 +27,12 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
         {result.is_error ? (
           <span className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-red-500/15 text-red-400 border border-red-500/25">
             <AlertCircle className="w-3 h-3" />
-            Error
+            {t.vault.playground.mcp_error}
           </span>
         ) : (
           <span className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
             <Check className="w-3 h-3" />
-            Success
+            {t.vault.playground.mcp_success}
           </span>
         )}
         <span className="flex items-center gap-1 typo-body text-foreground">
@@ -59,13 +61,15 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
 // -- Empty state --------------------------------------------------
 
 export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-4">
       <Server className="w-10 h-10 text-foreground" />
       <div className="text-center space-y-1">
-        <p className="typo-body text-foreground">Discover MCP server tools</p>
+        <p className="typo-body text-foreground">{sh.discover_mcp}</p>
         <p className="typo-body text-foreground">
-          Connect to the MCP server to discover available tools and test them.
+          {sh.discover_mcp_hint}
         </p>
       </div>
       <button
@@ -73,7 +77,7 @@ export function EmptyState({ onDiscover }: { onDiscover: () => void }) {
         className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
       >
         <RefreshCw className="w-3.5 h-3.5" />
-        Discover Tools
+        {sh.discover_tools}
       </button>
     </div>
   );

@@ -185,7 +185,7 @@ export function PersonaRunner() {
             )}
             <div className="text-center space-y-1.5">
               <p className="typo-heading text-foreground">{selectedPersona.name}</p>
-              <p className="typo-body text-zinc-500">Ready to execute &mdash; click Run or press{' '}<kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 typo-code">Enter</kbd></p>
+              <p className="typo-body text-zinc-500">{t.agents.executions.ready_to_execute}{' '}<kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 typo-code">Enter</kbd></p>
             </div>
           </div>
         )}
@@ -195,7 +195,7 @@ export function PersonaRunner() {
         <div className="animate-fade-slide-in">
           <ExecutionTerminal lines={state.outputLines} isRunning={isExecuting} onStop={exec.handleStop} label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined} isFullscreen={state.isTerminalFullscreen} onToggleFullscreen={exec.toggleTerminalFullscreen} terminalHeight={state.terminalHeight} onResizeStart={exec.handleTerminalResizeStart} emptyState={state.terminalEmptyState}>
             {queuePosition != null && state.isThisPersonasExecution && (
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5"><Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /><span className="typo-heading text-amber-300/90">Queued -- position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}</span></div>
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5"><Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /><span className="typo-heading text-amber-300/90">{queueDepth != null ? tx(t.agents.executions.queued_position_of, { position: String(queuePosition + 1), depth: String(queueDepth) }) : tx(t.agents.executions.queued_position, { position: String(queuePosition + 1) })}</span></div>
             )}
             <RunnerPhaseTimeline phases={state.phases} showPhases={state.showPhases} setShowPhases={state.setShowPhases} isExecuting={isExecuting} elapsedMs={state.elapsedMs} />
           </ExecutionTerminal>

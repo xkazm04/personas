@@ -33,7 +33,7 @@ export function UniversalAutoCredReview({
   discoveredFields,
   discoveredConnector,
 }: UniversalAutoCredReviewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Derive fields from discovered_fields or from extracted_values keys
   const fields: DiscoveredField[] = (discoveredFields ?? Object.keys(extractedValues)
     .filter((k) => !k.startsWith('__'))
@@ -68,10 +68,12 @@ export function UniversalAutoCredReview({
         </div>
         <div className="flex-1">
           <h4 className="typo-heading font-semibold text-foreground">
-            Discovered: {connectorLabel}
+            {tx(t.vault.auto_cred_extra.discovered_label, { label: connectorLabel })}
           </h4>
           <p className="typo-caption text-foreground">
-            {fields.length} field{fields.length !== 1 ? 's' : ''} discovered
+            {fields.length === 1
+              ? tx(t.vault.auto_cred_extra.fields_discovered_one, { count: fields.length })
+              : tx(t.vault.auto_cred_extra.fields_discovered_other, { count: fields.length })}
             {discoveredConnector?.category ? ` \u00b7 ${discoveredConnector.category}` : ''}
           </p>
         </div>
@@ -86,7 +88,7 @@ export function UniversalAutoCredReview({
       {/* Credential name */}
       <div className="space-y-1.5">
         <label className="typo-label font-medium text-foreground uppercase tracking-wider">
-          Credential Name
+          {t.vault.auto_cred_extra.credential_name}
         </label>
         <input
           type="text"
@@ -99,7 +101,7 @@ export function UniversalAutoCredReview({
       {/* Extracted fields */}
       <div className="space-y-1.5">
         <label className="typo-label font-medium text-foreground uppercase tracking-wider">
-          Extracted Values
+          {t.vault.auto_cred_extra.extracted_values_label}
         </label>
         <div className="space-y-2">
           {fields.map((field) => (
@@ -113,7 +115,7 @@ export function UniversalAutoCredReview({
         </div>
         {fields.length === 0 && (
           <div className="typo-body text-foreground text-center py-4">
-            No fields were discovered. Try again with a more specific description.
+            {t.vault.auto_cred_extra.no_fields_discovered}
           </div>
         )}
       </div>
@@ -123,12 +125,12 @@ export function UniversalAutoCredReview({
         {allFilled ? (
           <>
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="typo-body text-emerald-400">All {fields.length} fields captured</span>
+            <span className="typo-body text-emerald-400">{tx(t.vault.auto_cred_extra.all_fields_captured, { count: fields.length })}</span>
           </>
         ) : (
           <>
             <XCircle className="w-4 h-4 text-amber-400" />
-            <span className="typo-body text-amber-400">{filledCount}/{fields.length} fields captured</span>
+            <span className="typo-body text-amber-400">{tx(t.vault.auto_cred_extra.fields_captured_partial, { filled: filledCount, total: fields.length })}</span>
           </>
         )}
       </div>
@@ -141,13 +143,13 @@ export function UniversalAutoCredReview({
             className="flex items-center gap-1.5 px-3 py-2 typo-body text-foreground hover:text-foreground border border-primary/10 rounded-modal hover:bg-secondary/40 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Retry
+            {t.vault.auto_cred.retry}
           </button>
           <button
             onClick={onCancel}
             className="px-3 py-2 typo-body text-foreground hover:text-muted-foreground rounded-modal hover:bg-secondary/30 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
         <button
@@ -160,7 +162,7 @@ export function UniversalAutoCredReview({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          Save Credential
+          {t.vault.auto_cred.save_credential}
         </button>
       </div>
     </div>

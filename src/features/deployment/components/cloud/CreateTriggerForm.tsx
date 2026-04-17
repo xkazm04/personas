@@ -94,7 +94,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Cron config */}
       {createType === 'schedule' && (
         <div className="space-y-2">
-          <label className="typo-caption text-foreground">Cron Expression <span className="text-amber-400/60 font-medium">(UTC)</span></label>
+          <label className="typo-caption text-foreground">{dt.cron_expression} <span className="text-amber-400/60 font-medium">{dt.utc_suffix}</span></label>
           <input
             type="text"
             value={createCron}
@@ -123,7 +123,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Webhook info */}
       {createType === 'webhook' && (
         <p className="typo-caption text-foreground">
-          A webhook endpoint will be created for this trigger. You can configure payload filtering after creation.
+          {dt.webhook_info}
         </p>
       )}
 

@@ -13,6 +13,7 @@ import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   return (
     <EmptyIllustration
       icon={Globe}
@@ -27,7 +28,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             onClick={onUpload}
             className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
           >
-            Upload Spec File
+            {sh.upload_spec}
           </Button>
           <Button
             variant="secondary"
@@ -35,7 +36,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             icon={<FileText className="w-3.5 h-3.5" />}
             onClick={onPaste}
           >
-            Paste OpenAPI
+            {sh.paste_openapi}
           </Button>
         </div>
       }
@@ -96,13 +97,15 @@ interface RequestResponsePanelProps {
 }
 
 export function RequestResponsePanel({ selectedEndpoint, response, sendError, isSending, onSend, onClose }: RequestResponsePanelProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="border-t border-primary/25 pt-4">
       <div className={`grid gap-0 ${response || sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
         <div className="space-y-4 min-w-0 pr-4">
           <div className="flex items-center gap-2">
             <span className="typo-heading uppercase tracking-wider text-blue-400/70 font-semibold">
-              Request Builder
+              {sh.request_builder}
             </span>
             <div className="flex-1" />
             <Button
@@ -111,7 +114,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
               onClick={onClose}
               className="text-foreground hover:text-muted-foreground/80"
             >
-              Close
+              {t.common.close}
             </Button>
           </div>
           <RequestBuilder
@@ -128,7 +131,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
         {(response || sendError) && (
           <div className="min-w-0 pl-4">
             <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">
-              Response
+              {sh.response}
             </span>
             {sendError && (
               <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
@@ -146,6 +149,7 @@ export function RequestResponsePanel({ selectedEndpoint, response, sendError, is
 export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClose, onSubmit }: PasteSpecModalProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-modal">
       <div className="w-full max-w-2xl mx-4 bg-background border border-primary/15 rounded-modal shadow-elevation-3 p-4 space-y-3">
@@ -173,7 +177,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
             onClick={onClose}
             className="text-foreground"
           >
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button
             variant="accent"
@@ -184,7 +188,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
             loading={isParsing}
             className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
           >
-            {isParsing ? vt.parsing : vt.parse_load}
+            {isParsing ? sh.parsing : sh.parse_and_load}
           </Button>
         </div>
       </div>

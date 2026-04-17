@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Server } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -26,11 +27,13 @@ export function ToolDetail({
   onExecute,
   onClose,
 }: ToolDetailProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className="border-t border-primary/8 pt-4 space-y-3">
       <div className="flex items-center gap-2">
         <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
-          Test Tool
+          {sh.test_tool}
         </span>
         <span className="font-mono typo-code text-foreground">{currentTool.name}</span>
         <div className="flex-1" />
@@ -40,7 +43,7 @@ export function ToolDetail({
           onClick={onClose}
           className="text-foreground hover:text-muted-foreground/60"
         >
-          Close
+          {t.common.close}
         </Button>
       </div>
 
@@ -60,7 +63,7 @@ export function ToolDetail({
         loading={executing}
         className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
       >
-        {executing ? 'Running...' : 'Execute Tool'}
+        {executing ? sh.running_tool : sh.execute_tool}
       </Button>
 
       {/* Error */}
@@ -83,14 +86,16 @@ interface ToolEmptyListProps {
 }
 
 export function ToolEmptyList({ hasLoaded, toolCount, loading }: ToolEmptyListProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   if (!hasLoaded || loading || toolCount > 0) return null;
 
   return (
     <div className="flex flex-col items-center justify-center py-16 space-y-2">
       <Server className="w-8 h-8 text-foreground" />
-      <p className="typo-body text-foreground">No tools found on this MCP server</p>
+      <p className="typo-body text-foreground">{sh.no_tools_found}</p>
       <p className="typo-body text-foreground">
-        The server responded but reported no available tools.
+        {sh.no_tools_hint}
       </p>
     </div>
   );

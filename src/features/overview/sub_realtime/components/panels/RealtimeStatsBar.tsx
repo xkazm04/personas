@@ -35,7 +35,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </div>
           <span className="typo-heading text-foreground uppercase tracking-widest hidden sm:inline">{isPaused ? 'Paused' : isConnected ? 'Live' : 'Offline'}</span>
-          <span className="sr-only">Connection status: {isPaused ? 'Paused' : isConnected ? 'Live' : 'Disconnected'}</span>
+          <span className="sr-only">{isPaused ? t.overview.realtime_page.connection_paused : isConnected ? t.overview.realtime_page.connection_live : t.overview.realtime_page.connection_offline}</span>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3" title={t.overview.realtime_page.events_per_min}>
@@ -44,7 +44,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
-            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">events/min</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.events_per_min}</span>
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
-            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">pending</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.pending}</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={`${stats.successRate}%`} color={stats.successRate >= 90 ? 'text-emerald-400 text-[15px]' : 'text-red-400 text-[15px]'} />
-            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">success</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.success}</span>
           </div>
         </div>
 
@@ -80,7 +80,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
           </div>
           <div className="flex flex-col">
             <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
-            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">in window</span>
+            <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.in_window}</span>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
       <div className="flex items-center gap-2 sm:gap-3">
         <button onClick={onTestFlow} disabled={testFlowLoading} aria-label={testFlowLoading ? 'Testing flow...' : 'Test event flow'} className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 typo-heading rounded-modal bg-gradient-to-r from-purple-500/15 to-primary/15 border border-purple-500/25 text-purple-300 hover:from-purple-500/25 hover:to-primary/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1">
           {testFlowLoading ? <LoadingSpinner /> : <Radio className="w-4 h-4" />}
-          <span className="hidden sm:inline">Test Flow</span>
+          <span className="hidden sm:inline">{t.overview.realtime_stats.test_flow}</span>
         </button>
         <button onClick={onPause} aria-label={isPaused ? 'Resume realtime stream' : 'Pause realtime stream'} className={`p-2 rounded-modal border transition-all shadow-elevation-1 active:scale-[0.95] ${isPaused ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-transparent text-emerald-400 hover:from-emerald-500/30' : 'border-primary/20 bg-background/50 text-foreground hover:text-foreground hover:bg-secondary/60'}`} title={isPaused ? 'Resume' : 'Pause'}>
           {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}

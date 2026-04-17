@@ -71,7 +71,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
           {formatDuration(exec.duration_ms)}
         </span>
         {exec.retry_count > 0 && (
-          <span className="text-amber-400/70 typo-body">retry #{exec.retry_count}</span>
+          <span className="text-amber-400/70 typo-body">{t.triggers.retry_hash}{exec.retry_count}</span>
         )}
         <span className="text-foreground ml-auto typo-body">
           {formatRelativeTime(exec.started_at)}
@@ -87,7 +87,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               {/* Metadata line */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 typo-body text-foreground">
                 <span className="font-mono">{exec.id.slice(0, 12)}</span>
-                {exec.model_used && <span>model: {exec.model_used}</span>}
+                {exec.model_used && <span>{t.triggers.model_colon} {exec.model_used}</span>}
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
                   <span>{exec.input_tokens}{'→'}{exec.output_tokens} tokens</span>
                 )}
@@ -178,7 +178,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
               {history.loading ? (
                 <div className="flex items-center gap-2 py-2 typo-body text-foreground">
                   <LoadingSpinner size="xs" />
-                  Loading...
+                  {t.triggers.loading_history}
                 </div>
               ) : history.error ? (
                 <div className="flex items-center gap-2 py-2 typo-body text-amber-400/90">

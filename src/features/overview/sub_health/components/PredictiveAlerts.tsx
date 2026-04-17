@@ -141,7 +141,7 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
           <AlertTriangle className="w-4 h-4 text-amber-400" />
         </div>
         <div>
-          <h3 className="typo-heading text-foreground/90">Predictive Alerts</h3>
+          <h3 className="typo-heading text-foreground/90">{t.overview.predictive_alerts_extra.title}</h3>
           <p className="typo-caption text-foreground">
             {alerts.length} alert{alerts.length !== 1 ? 's' : ''}{recommendations.length > 0 ? `, ${recommendations.length} recommendation${recommendations.length !== 1 ? 's' : ''}` : ''}
           </p>
@@ -197,8 +197,8 @@ export function PredictiveAlerts({ signals, recommendations }: PredictiveAlertsP
                   <p className="text-[10px] text-foreground mt-1">{rec.reason}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="typo-caption text-emerald-400">-${rec.estimatedSaving.toFixed(2)}/mo</p>
-                  <p className="text-[10px] text-foreground">{(rec.confidence * 100).toFixed(0)}% conf</p>
+                  <p className="typo-caption text-emerald-400">-${rec.estimatedSaving.toFixed(2)}{t.overview.predictive_alerts_extra.per_month}</p>
+                  <p className="text-[10px] text-foreground">{(rec.confidence * 100).toFixed(0)}{t.overview.predictive_alerts_extra.confidence_pct}</p>
                 </div>
               </div>
             ))}

@@ -21,7 +21,7 @@ interface ActivityDiagramModalProps {
 }
 
 export default function ActivityDiagramModal({ isOpen, onClose, templateName, flows, titleOverride, subtitleOverride }: ActivityDiagramModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [activeFlowIndex, setActiveFlowIndex] = useState(0);
   const [inspectedNode, setInspectedNode] = useState<FlowNode | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -51,7 +51,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label="Close dialog">
+        <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
           <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
@@ -126,10 +126,10 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
         <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
           <p className="typo-body text-foreground">{activeFlow.description}</p>
           <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
-            <span>{activeFlow.nodes.length} nodes</span>
-            <span>{activeFlow.edges.length} edges</span>
-            <span>{activeFlow.nodes.filter(n => n.type === 'connector').length} connector(s)</span>
-            <span>{activeFlow.nodes.filter(n => n.type === 'decision').length} decision(s)</span>
+            <span>{tx(t.templates.diagrams.nodes_count, { count: activeFlow.nodes.length })}</span>
+            <span>{tx(t.templates.diagrams.edges_count, { count: activeFlow.edges.length })}</span>
+            <span>{tx(t.templates.diagrams.connectors_count, { count: activeFlow.nodes.filter(n => n.type === 'connector').length })}</span>
+            <span>{tx(t.templates.diagrams.decisions_count, { count: activeFlow.nodes.filter(n => n.type === 'decision').length })}</span>
           </div>
         </div>
       )}

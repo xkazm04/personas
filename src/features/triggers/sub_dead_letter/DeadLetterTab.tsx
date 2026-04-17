@@ -106,7 +106,7 @@ export function DeadLetterTab() {
             className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t.triggers.dead_letter_refresh}
           </button>
         </div>
 
@@ -116,7 +116,7 @@ export function DeadLetterTab() {
 
         {loading && events.length === 0 && (
           <div className="flex items-center justify-center py-12 text-foreground typo-body">
-            Loading...
+            {t.triggers.dead_letter_loading}
           </div>
         )}
 
@@ -156,8 +156,8 @@ export function DeadLetterTab() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 typo-caption text-foreground">
-                      <span>Source: {evt.source_type}</span>
-                      {evt.source_id && <span>ID: {evt.source_id}</span>}
+                      <span>{t.triggers.dead_letter_source} {evt.source_type}</span>
+                      {evt.source_id && <span>{t.triggers.dead_letter_id} {evt.source_id}</span>}
                       <span>{formatDate(evt.created_at)}</span>
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export function DeadLetterTab() {
                         title={`Retry this event (${evt.retry_count}/${MAX_MANUAL_RETRIES} attempts used)`}
                       >
                         <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
-                        Retry
+                        {t.triggers.dead_letter_retry}
                       </button>
                     )}
                     <button
@@ -188,7 +188,7 @@ export function DeadLetterTab() {
                       title="Discard this event permanently"
                     >
                       <Trash2 className="w-3 h-3" />
-                      Discard
+                      {t.triggers.dead_letter_discard}
                     </button>
                   </div>
                 </div>
@@ -202,7 +202,7 @@ export function DeadLetterTab() {
                 {evt.payload && (
                   <details className="typo-caption">
                     <summary className="text-foreground cursor-pointer hover:text-foreground transition-colors">
-                      Payload
+                      {t.triggers.dead_letter_payload}
                     </summary>
                     <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground overflow-x-auto text-[11px] max-h-32">
                       {(() => {

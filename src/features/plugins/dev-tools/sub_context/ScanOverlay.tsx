@@ -38,7 +38,7 @@ export default function ScanOverlay({
               <p className="text-md text-foreground">{t.plugins.dev_tools.analyzing_codebase}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onCancel} title="Cancel scan">
+          <Button variant="ghost" size="icon-sm" onClick={onCancel} title={t.plugins.dev_tools.cancel_scan}>
             <Square className="w-3.5 h-3.5" />
           </Button>
         </div>

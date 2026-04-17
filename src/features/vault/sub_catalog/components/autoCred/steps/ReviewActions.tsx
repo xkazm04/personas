@@ -13,6 +13,7 @@ interface ReviewHealthcheckProps {
 }
 
 export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthcheckProps) {
+  const { t } = useTranslation();
   const [isHealthchecking, setIsHealthchecking] = useState(false);
 
   return (
@@ -30,7 +31,7 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
         className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
       >
         {isHealthchecking ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-3.5 h-3.5" />}
-        {isHealthchecking ? 'Testing...' : 'Test Connection'}
+        {isHealthchecking ? t.vault.auto_cred.testing : t.vault.auto_cred.test_connection}
       </button>
       {healthResult && (
         <div className={`flex items-center gap-1.5 typo-body ${healthResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -94,14 +95,14 @@ export function ReviewActionButtons({
           onClick={onCancel}
           className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
-          Discard
+          {t.vault.auto_cred.discard}
         </button>
         <button
           onClick={onRetry}
           className="flex items-center gap-1.5 px-4 py-2 typo-body text-cyan-400/80 hover:text-cyan-400 rounded-modal border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Re-run Browser
+          {t.vault.auto_cred.re_run_browser}
         </button>
       </div>
       <div className="flex items-center gap-2">
@@ -127,7 +128,7 @@ export function ReviewActionButtons({
             ) : (
               <Database className="w-3.5 h-3.5" />
             )}
-            {procedureSaved ? 'Procedure Saved' : 'Save Procedure'}
+            {procedureSaved ? t.vault.auto_cred.procedure_saved : t.vault.auto_cred.save_procedure}
           </button>
         )}
         <button
@@ -140,7 +141,7 @@ export function ReviewActionButtons({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          Save Credential
+          {t.vault.auto_cred.save_credential}
         </button>
       </div>
     </div>

@@ -181,7 +181,7 @@ export function CloudWebhooksTab() {
             <button
               onClick={() => { setIsLoading(true); fetchWebhookTriggers(); }}
               className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-              title="Refresh"
+              title={t.triggers.refresh_label}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -207,7 +207,7 @@ export function CloudWebhooksTab() {
           <div className="rounded-modal border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
             <div>
               <label className="block text-xs font-medium text-foreground mb-1.5">
-                Deployed Persona
+                {t.triggers.deployed_persona_label}
               </label>
               <select
                 value={createPersonaId}
@@ -291,13 +291,13 @@ export function CloudWebhooksTab() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {row.trigger.last_triggered_at && (
                       <span className="text-xs text-foreground">
-                        Last: {formatRelativeTime(row.trigger.last_triggered_at)}
+                        {t.triggers.last_label} {formatRelativeTime(row.trigger.last_triggered_at)}
                       </span>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCopy(row.webhookUrl, `url-${row.trigger.id}`); }}
                       className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-                      title="Copy webhook URL"
+                      title={t.triggers.copy_webhook_url_title}
                     >
                       {copiedId === `url-${row.trigger.id}` ? (
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -309,7 +309,7 @@ export function CloudWebhooksTab() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleCopy(row.deployment.webhook_secret!, `secret-${row.trigger.id}`); }}
                         className="px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors border border-border/20"
-                        title="Copy webhook secret"
+                        title={t.triggers.copy_webhook_secret_title}
                       >
                         {copiedId === `secret-${row.trigger.id}` ? (
                           <span className="text-emerald-400">Copied</span>
@@ -321,7 +321,7 @@ export function CloudWebhooksTab() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(row.trigger.id); }}
                       className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      title="Delete webhook trigger"
+                      title={t.triggers.delete_webhook_title}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -347,8 +347,8 @@ export function CloudWebhooksTab() {
             ) : (
               <div className="border border-border/30 rounded-modal overflow-hidden">
                 <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">
-                  <span>Status</span>
-                  <span>Fired At</span>
+                  <span>{t.triggers.status_col_label}</span>
+                  <span>{t.triggers.fired_at_label}</span>
                   <span>Duration</span>
                   <span className="text-right">Cost</span>
                 </div>

@@ -23,7 +23,7 @@ export function MessagesSection({
     <div className="space-y-3">
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
-        Messages & Notifications
+        {t.templates.design.messages_and_notifications}
         <span className="typo-body font-normal text-foreground ml-1">{t.templates.design.how_communicates}</span>
       </div>
 

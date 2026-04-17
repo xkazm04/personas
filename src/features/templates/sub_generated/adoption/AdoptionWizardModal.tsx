@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X, Grid3X3 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -26,6 +27,7 @@ export default function AdoptionWizardModal({
   review,
   onPersonaCreated,
 }: AdoptionWizardModalProps) {
+  const { t } = useTranslation();
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
@@ -96,7 +98,7 @@ export default function AdoptionWizardModal({
             </div>
             <div>
               <h2 id="adoption-matrix-title" className="typo-heading font-semibold text-foreground/90">
-                Adopt Template
+                {t.templates.adopt_modal.adopt_template}
               </h2>
               <p className="text-[11px] text-foreground">{review.test_case_name}</p>
             </div>

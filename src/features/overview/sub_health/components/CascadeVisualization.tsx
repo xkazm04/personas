@@ -99,7 +99,7 @@ export function CascadeVisualization({ links, signals }: CascadeVisualizationPro
           <GitBranch className="w-4 h-4 text-violet-400" />
         </div>
         <div>
-          <h3 className="typo-heading text-foreground/90">Chain Cascade Map</h3>
+          <h3 className="typo-heading text-foreground/90">{t.overview.cascade.title}</h3>
           <p className="text-xs text-foreground">{chains.length} chain{chains.length !== 1 ? 's' : ''} detected</p>
         </div>
       </div>

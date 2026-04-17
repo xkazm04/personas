@@ -7,7 +7,7 @@ interface DryRunResultViewProps {
 }
 
 export function DryRunResultView({ detail }: DryRunResultViewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { dryRunResult, clearDryRunResult } = detail;
   if (!dryRunResult) return null;
 
@@ -51,11 +51,11 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
                   <span className="text-amber-400">{dryRunResult.simulated_event.event_type}</span>
                 </div>
                 <div className="text-foreground pl-[18px]">
-                  source: {dryRunResult.simulated_event.source_type} / {dryRunResult.simulated_event.source_id.slice(0, 8)}
+                  {t.triggers.source_colon} {dryRunResult.simulated_event.source_type} / {dryRunResult.simulated_event.source_id.slice(0, 8)}
                 </div>
                 {dryRunResult.simulated_event.target_persona_name && (
                   <div className="text-foreground pl-[18px]">
-                    target: {dryRunResult.simulated_event.target_persona_name}
+                    {t.triggers.dry_run_target_colon} {dryRunResult.simulated_event.target_persona_name}
                   </div>
                 )}
               </div>
@@ -66,7 +66,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
           {dryRunResult.matched_subscriptions.length > 0 && (
             <div className="space-y-1.5">
               <div className="typo-body text-foreground font-medium">
-                Matched Subscriptions ({dryRunResult.matched_subscriptions.length})
+                {tx(t.triggers.matched_subscriptions_count, { count: dryRunResult.matched_subscriptions.length })}
               </div>
               <div className="space-y-1">
                 {dryRunResult.matched_subscriptions.map((sub) => (

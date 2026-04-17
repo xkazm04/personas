@@ -150,11 +150,11 @@ export function CloudDeploymentsPanel({
       {/* Deployment list */}
       {deployments.length === 0 ? (
         <p className="typo-body text-foreground py-8 text-center">
-          No deployments yet. Select a persona above to deploy it as a cloud API endpoint.
+          {t.deployment.deployments_panel.no_deployments_yet}
         </p>
       ) : (
         <div className="space-y-3">
-          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Active Deployments ({deployments.length})</SectionHeading>
+          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{t.deployment.deployments_panel.active_deployments} ({deployments.length})</SectionHeading>
 
           {deployments.map((d) => (
             <DeploymentCard

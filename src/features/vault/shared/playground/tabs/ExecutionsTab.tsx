@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState } from 'react';
 import { History, Calendar } from 'lucide-react';
 import { getCredentialAuditLog } from '@/api/vault/credentials';
@@ -19,6 +20,8 @@ const OP_STYLES: Record<string, string> = {
 };
 
 export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   const [entries, setEntries] = useState<CredentialAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,12 +45,12 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
       <div className="space-y-1.5">
         <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
           <History className="w-3.5 h-3.5" />
-          Recent Activity
+          {sh.recent_activity}
         </h3>
 
         {!loading && entries.length === 0 && (
           <div className="typo-body text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
-            No recorded activity yet
+            {sh.no_recorded_activity}
           </div>
         )}
 

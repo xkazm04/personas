@@ -3,6 +3,7 @@ import {
   GitBranch, Zap, RefreshCw, Settings, Target, Swords,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { listPersonas } from '@/api/agents/personas';
@@ -111,7 +112,7 @@ export default function LifecyclePage() {
       <ContentHeader
         icon={<GitBranch className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
-        title="Dev Lifecycle"
+        title={t.plugins.dev_tools.lifecycle_title}
         actions={
           <div className="flex items-center gap-2">
             <LifecycleProjectPicker />
@@ -121,7 +122,7 @@ export default function LifecyclePage() {
             ) : (
               <Button variant="accent" accentColor="violet" size="sm" icon={<Zap className="w-3.5 h-3.5" />}
                 onClick={handleAutoSetup} loading={configuring} disabled={!devClone}
-                disabledReason={!devClone ? 'Adopt Dev Clone first' : undefined}>Auto-Setup</Button>
+                disabledReason={!devClone ? 'Adopt Dev Clone first' : undefined}>{t.plugins.dev_tools.auto_setup}</Button>
             )}
           </div>
         }

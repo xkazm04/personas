@@ -69,7 +69,7 @@ function TriggerPopup({
             placeholder={t.templates.trigger_edit.schedule_placeholder}
             className={inputClass}
           />
-          <p className="typo-body text-foreground">Natural language or cron (e.g. "0 9 * * 1-5")</p>
+          <p className="typo-body text-foreground">{t.templates.trigger_edit.schedule_hint}</p>
         </div>
       )}
 
@@ -134,8 +134,10 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
       });
   }, [triggers]);
 
+  const { t } = useTranslation();
+
   if (uniqueTriggers.length === 0) {
-    return <span className="typo-body text-foreground">Manual execution only</span>;
+    return <span className="typo-body text-foreground">{t.templates.trigger_edit.manual_only}</span>;
   }
 
   return (

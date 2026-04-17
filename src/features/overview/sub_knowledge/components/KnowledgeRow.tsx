@@ -124,6 +124,7 @@ function PatternValueCard({ label, value }: { label: string; value: unknown }) {
 
 /** 48×16 inline SVG sparkline showing last N execution outcomes (green=success, red=failure). */
 function ExecutionSparkline({ results }: { results: boolean[] }) {
+  const { t } = useTranslation();
   const W = 48;
   const H = 16;
   const pad = 3;
@@ -141,7 +142,7 @@ function ExecutionSparkline({ results }: { results: boolean[] }) {
   const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="inline-block align-middle flex-shrink-0" aria-label="Execution trend">
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="inline-block align-middle flex-shrink-0" aria-label={t.overview.knowledge_row.execution_trend_label}>
       <polyline points={polyline} fill="none" stroke="currentColor" strokeWidth={1} className="text-foreground" />
       {points.map((p, i) => (
         <circle

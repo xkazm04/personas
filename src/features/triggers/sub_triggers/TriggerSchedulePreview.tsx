@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Clock, CalendarClock } from 'lucide-react';
 import { formatInterval } from '@/lib/utils/formatters';
 import { type CronPreview } from '@/api/pipeline/triggers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Compute the next N scheduled run times starting from now */
 export function computeNextRuns(intervalSeconds: number, count: number): Date[] {
@@ -38,6 +39,7 @@ export function formatRunTimeUTC(date: Date): string {
 }
 
 export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeconds: number; triggerType: string }) {
+  const { t } = useTranslation();
   const runs = useMemo(() => computeNextRuns(intervalSeconds, 5), [intervalSeconds]);
   const firstRun = runs[0];
   const lastRun = runs[runs.length - 1];
@@ -57,7 +59,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
         <p className="typo-body text-foreground/90">
           First {triggerType === 'polling' ? 'poll' : 'run'}:{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
-          , then every{' '}
+          {t.triggers.then_every}{' '}
           <span className="font-medium text-foreground/90">{formatInterval(intervalSeconds)}</span>
         </p>
       </div>
@@ -97,6 +99,7 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
 }
 
 export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview }) {
+  const { t } = useTranslation();
   const runs = useMemo(
     () => cronPreview.next_runs.map((r) => new Date(r)),
     [cronPreview.next_runs],
@@ -118,9 +121,9 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         <CalendarClock className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0" />
         <p className="typo-body text-foreground/90">
           <span className="font-medium text-amber-400/90">{cronPreview.description}</span>
-          {' -- '}next run:{' '}
+          {' -- '}{t.triggers.next_run_colon}{' '}
           <span className="font-medium text-foreground/90">{formatRunTime(firstRun)}</span>
-          <span className="text-foreground ml-1 typo-caption">(local)</span>
+          <span className="text-foreground ml-1 typo-caption">{t.triggers.local_label}</span>
         </p>
       </div>
 

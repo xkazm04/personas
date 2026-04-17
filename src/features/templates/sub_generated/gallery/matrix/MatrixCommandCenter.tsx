@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FileText, User, Wrench, BookOpen, Shield, Globe, Search, Sparkles, Upload, Play, Save, Send } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { AgentIR, DesignQuestion } from '@/lib/types/designTypes';
 import type { BuildPhase, ToolTestResult } from '@/lib/types/buildTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -72,6 +73,7 @@ const WRAP = "flex flex-col gap-3 w-full h-full items-center justify-center";
 
 /** Compact refine input for saved/production agents. */
 function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   return (
     <div className="flex gap-1.5">
@@ -79,7 +81,7 @@ function SavedRefineInput({ onRefine }: { onRefine: (feedback: string) => void }
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Adjust anything..."
+        placeholder={t.templates.matrix_cmd.adjust_placeholder}
         className="flex-1 px-2.5 py-1.5 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onRefine(text.trim()); setText(''); } }}
       />
@@ -106,6 +108,7 @@ export function MatrixCommandCenter({
   testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
   buildActivity, onApplyEdits, onDiscardEdits, onSaveVersion, isPreBuild = false,
 }: MatrixCommandCenterProps) {
+  const { t } = useTranslation();
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
@@ -173,8 +176,8 @@ export function MatrixCommandCenter({
             <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/15 via-primary/8 to-accent/10" />
             <LoadingSpinner size="lg" className="text-primary relative z-10" />
           </div>
-          <span className="typo-label font-semibold text-foreground tracking-wide uppercase">Initializing...</span>
-          <span className="text-[10px] text-foreground">Creating draft agent and starting CLI</span>
+          <span className="typo-label font-semibold text-foreground tracking-wide uppercase">{t.templates.matrix_cmd.initializing}</span>
+          <span className="text-[10px] text-foreground">{t.templates.matrix_cmd.initializing_hint}</span>
         </div>
       );
     }
@@ -225,13 +228,13 @@ export function MatrixCommandCenter({
           {onStartTest && (
             <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
               <Play className="w-3.5 h-3.5" />
-              Test Agent
+              {t.templates.matrix_cmd.test_agent}
             </button>
           )}
           {onSaveVersion && (
             <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
               <Save className="w-3.5 h-3.5" />
-              Save Version
+              {t.templates.matrix_cmd.save_version}
             </button>
           )}
         </div>
@@ -273,7 +276,7 @@ export function MatrixCommandCenter({
         {(inputMode === 'describe' || !isCreation) && (
           <textarea value={textValue} onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
-            placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
+            placeholder={isCreation ? t.templates.matrix_cmd.describe_placeholder : t.templates.matrix_cmd.additional_instructions}
             rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
             className={`w-full px-3 py-2 rounded-card border border-primary/15 bg-card-bg typo-body text-foreground placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}

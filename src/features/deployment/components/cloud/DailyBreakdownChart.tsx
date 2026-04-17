@@ -167,13 +167,13 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
         >
           <p className="text-foreground/90 font-medium">{data[hoverIdx]!.date}</p>
           <p className="text-foreground">
-            Runs: <span className="text-foreground">{data[hoverIdx]!.count}</span>
+            {dt.tooltip_runs} <span className="text-foreground">{data[hoverIdx]!.count}</span>
           </p>
           <p className="text-foreground">
-            Cost: <span className="text-foreground">${data[hoverIdx]!.cost.toFixed(2)}</span>
+            {dt.tooltip_cost} <span className="text-foreground">${data[hoverIdx]!.cost.toFixed(2)}</span>
           </p>
           <p className="text-foreground">
-            Success:{' '}
+            {dt.tooltip_success}{' '}
             <span style={{ color: successColor(data[hoverIdx]!.success_rate) }}>
               {data[hoverIdx]!.success_rate != null
                 ? `${(data[hoverIdx]!.success_rate! * 100).toFixed(0)}%`

@@ -1,4 +1,5 @@
 pub mod background_job;
+pub mod bench;
 mod cloud;
 mod commands;
 pub mod daemon;

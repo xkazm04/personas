@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { EVENT_EDGE_TYPES } from '../libs/eventCanvasConstants';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   x: number;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDelete, onClose }: Props) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
   // Close on click outside
@@ -77,7 +79,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
           className="flex items-center gap-2 w-full px-2.5 py-2 rounded-card typo-caption text-red-400 hover:bg-red-500/10 transition-colors border border-red-500/15"
         >
           <Trash2 className="w-3 h-3" />
-          Delete connection
+          {t.triggers.delete_connection_label}
         </button>
       </div>
     </div>

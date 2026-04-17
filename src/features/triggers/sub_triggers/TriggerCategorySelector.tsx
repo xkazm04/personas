@@ -18,7 +18,7 @@ export function TriggerCategorySelector({
   return (
     <div>
       <label className="block typo-body font-medium text-foreground mb-1.5">
-        Trigger Category
+        {t.triggers.category_section_label}
       </label>
       <div className="grid grid-cols-2 gap-2">
         {TRIGGER_CATEGORIES.map((cat) => {

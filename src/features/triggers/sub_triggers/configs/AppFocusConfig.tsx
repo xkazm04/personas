@@ -48,7 +48,7 @@ export function AppFocusConfig({
         </button>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>Window Title Pattern <span className="text-foreground">(optional regex)</span></>}
+        label={<>{t.triggers.window_title_pattern_label} <span className="text-foreground">{t.triggers.optional_regex_label}</span></>}
       >
         <input
           type="text"

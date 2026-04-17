@@ -8,7 +8,7 @@ interface BurnRateProjectionProps {
 }
 
 export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const projections = useMemo(() => {
     const active = signals.filter(s => s.totalExecutions > 0);
     const totalDailyBurn = active.reduce((sum, s) => sum + s.dailyBurnRate, 0);
@@ -28,7 +28,7 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
         <div>
           <h3 className="typo-heading text-foreground/90">{t.overview.burn_rate_extra.title}</h3>
           <p className="typo-caption text-foreground">
-            {projections.activeCount} active personas &middot; local month boundary
+            {tx(t.overview.burn_rate_extra.active_personas_subtitle, { count: projections.activeCount })}
           </p>
         </div>
       </div>

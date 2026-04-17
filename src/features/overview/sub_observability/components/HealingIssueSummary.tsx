@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] }) {
+  const { t } = useTranslation();
   const stats = useMemo(() => {
     const now = Date.now();
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -55,7 +57,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
 
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
-          <span className="text-foreground">auto-fixed this week</span>
+          <span className="text-foreground">{t.overview.healing_summary.auto_fixed_this_week}</span>
         </div>
 
         <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
@@ -70,7 +72,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
             <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
             {stats.recurring.map(([category, count]) => (
               <span key={category} className="text-amber-400/80">
-                {count} {category} issues in 7d
+                {count} {category} {t.overview.healing_summary.issues_in_7d}
               </span>
             ))}
           </>

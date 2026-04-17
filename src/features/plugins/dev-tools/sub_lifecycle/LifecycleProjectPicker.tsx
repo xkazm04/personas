@@ -49,7 +49,7 @@ export function LifecycleProjectPicker() {
         className="flex items-center gap-2 px-3 py-2 rounded-interactive bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/15 transition-colors"
       >
         <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-        <span className="typo-body text-foreground">No project — click to create</span>
+        <span className="typo-body text-foreground">{t.plugins.dev_tools.no_project_click_create}</span>
       </button>
     );
   }
@@ -92,7 +92,7 @@ export function LifecycleProjectPicker() {
           ) : (
             <>
               <FolderKanban className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="typo-caption text-foreground">no repo</span>
+              <span className="typo-caption text-foreground">{t.plugins.dev_tools.no_repo}</span>
             </>
           )}
         </div>

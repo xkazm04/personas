@@ -136,7 +136,7 @@ export default function IpcPerformancePanel() {
           </div>
 
           {tab === 'commands' && (
-            <div role="table" aria-label="IPC command performance">
+            <div role="table" aria-label={t.overview.ipc_panel.commands_table_label}>
               <div role="row" className="grid grid-cols-[1fr_60px_60px_60px_52px] gap-2 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
                 <span role="columnheader">{t.overview.ipc_panel.command}</span>
                 <span role="columnheader" className="text-right">p50</span>
@@ -151,7 +151,7 @@ export default function IpcPerformancePanel() {
           )}
 
           {tab === 'slowest' && (
-            <div role="table" aria-label="Slowest IPC calls">
+            <div role="table" aria-label={t.overview.ipc_panel.slowest_table_label}>
               <div role="row" className="flex items-center gap-3 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
                 <span role="columnheader" className="min-w-[60px] text-right">{t.overview.ipc_panel.duration_header}</span>
                 <span role="columnheader" className="flex-1">Command</span>
@@ -165,8 +165,8 @@ export default function IpcPerformancePanel() {
 
           {(summary.errorRate > 0 || summary.timeoutRate > 0) && (
             <div className="px-4 py-2 border-t border-primary/5 bg-secondary/30 flex items-center gap-4 typo-body">
-              {summary.errorRate > 0 && <span className="text-red-400/80">Error rate: {formatRate(summary.errorRate)}</span>}
-              {summary.timeoutRate > 0 && <span className="text-amber-400/80">Timeout rate: {formatRate(summary.timeoutRate)}</span>}
+              {summary.errorRate > 0 && <span className="text-red-400/80">{t.overview.ipc_panel.error_rate} {formatRate(summary.errorRate)}</span>}
+              {summary.timeoutRate > 0 && <span className="text-amber-400/80">{t.overview.ipc_panel.timeout_rate} {formatRate(summary.timeoutRate)}</span>}
             </div>
           )}
         </div>

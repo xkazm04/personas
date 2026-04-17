@@ -252,7 +252,7 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="flex flex-col items-center gap-2 bg-background/40 backdrop-blur-sm border border-primary/10 rounded-2xl px-6 py-4">
               <span className="typo-code text-foreground font-mono">{t.overview.realtime_idle.idle}</span>
-              <span className="typo-caption text-foreground">Click <span className="text-purple-400/60 font-medium">Test Flow</span> to simulate traffic</span>
+              <span className="typo-caption text-foreground">Click <span className="text-purple-400/60 font-medium">{t.overview.realtime_stats.test_flow}</span> {t.overview.realtime_stats.to_simulate_traffic}</span>
             </div>
           </div>
         )}

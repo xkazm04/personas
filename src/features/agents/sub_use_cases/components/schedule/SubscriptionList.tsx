@@ -89,7 +89,7 @@ export function ActiveSubscriptions({ items, onRetire }: ActiveSubscriptionsProp
               </span>
               {item.sourceFilter && (
                 <span className="typo-body text-foreground block truncate">
-                  filter: {item.sourceFilter}
+                  {t.agents.connectors.sub_filter.replace('{filter}', item.sourceFilter)}
                 </span>
               )}
             </div>

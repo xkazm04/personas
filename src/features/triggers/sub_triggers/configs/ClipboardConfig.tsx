@@ -37,7 +37,7 @@ export function ClipboardConfig({
         </div>
       </TriggerFieldGroup>
       <TriggerFieldGroup
-        label={<>Text Pattern <span className="text-foreground">(optional regex)</span></>}
+        label={<>{t.triggers.text_pattern_label} <span className="text-foreground">{t.triggers.optional_regex_label}</span></>}
         helpText={t.triggers.text_pattern_help}
       >
         <input

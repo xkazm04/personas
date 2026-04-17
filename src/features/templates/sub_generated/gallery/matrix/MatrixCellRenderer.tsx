@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState } from 'react';
 import { CheckCircle2, HelpCircle, AlertCircle, Loader2, Pencil } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
 import { GhostedCellRenderer } from '@/features/agents/components/matrix/GhostedCellRenderer';
@@ -157,6 +158,7 @@ export function MatrixCellRenderer({
     );
   }
 
+  const { t } = useTranslation();
   const Watermark = cell.watermark;
 
   // Determine if we should use state-machine classes (only when cellBuildStatus is provided)
@@ -308,37 +310,37 @@ export function MatrixCellRenderer({
           {cellBuildStatus === 'pending' && (
             <span className="flex items-center gap-1 typo-caption text-cyan-400/70">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              Analyzing
+              {t.templates.matrix.cell_status_analyzing}
             </span>
           )}
           {cellBuildStatus === 'filling' && (
             <span className="flex items-center gap-1 typo-caption text-emerald-400/70">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              Answered
+              {t.templates.matrix.cell_status_answered}
             </span>
           )}
           {cellBuildStatus === 'resolved' && (
             <span className="flex items-center gap-1 typo-caption text-emerald-400/70">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              Resolved
+              {t.templates.matrix.cell_status_resolved}
             </span>
           )}
           {cellBuildStatus === 'highlighted' && (
             <span className="flex items-center gap-1 typo-caption text-amber-400/70">
               <HelpCircle className="w-3 h-3 text-amber-400" />
-              Input needed
+              {t.templates.matrix.cell_status_input_needed}
             </span>
           )}
           {cellBuildStatus === 'updated' && (
             <span className="flex items-center gap-1 typo-caption text-red-400/70">
               <AlertCircle className="w-3 h-3 text-red-400" />
-              Missing credential
+              {t.templates.matrix.cell_status_missing_credential}
             </span>
           )}
           {cellBuildStatus === 'error' && (
             <span className="flex items-center gap-1 typo-caption text-red-400/70">
               <AlertCircle className="w-3 h-3 text-red-400" />
-              Error
+              {t.templates.matrix.cell_status_error}
             </span>
           )}
         </div>

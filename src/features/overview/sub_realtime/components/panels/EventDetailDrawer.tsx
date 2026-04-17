@@ -68,7 +68,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
-            <span className="typo-code font-mono uppercase text-foreground">Event ID</span>
+            <span className="typo-code font-mono uppercase text-foreground">{t.overview.event_detail_drawer.event_id_label}</span>
             <p className="typo-body"><UuidLabel value={event.id} /></p>
           </div>
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
@@ -84,7 +84,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
             <p className="typo-body">
               {event.target_persona_id
                 ? <UuidLabel value={event.target_persona_id} label={getPersonaName(event.target_persona_id)} />
-                : <span className="text-foreground">(broadcast)</span>
+                : <span className="text-foreground">{t.overview.event_detail_drawer.broadcast}</span>
               }
             </p>
           </div>

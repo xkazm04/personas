@@ -111,7 +111,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
             type="text"
             value={logSearch}
             onChange={e => setLogSearch(e.target.value)}
-            placeholder="Filter events\u2026"
+            placeholder={t.overview.event_log_sidebar.filter_placeholder}
             className="w-full pl-6 pr-2 py-1 typo-code font-mono bg-secondary/30 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
         </div>

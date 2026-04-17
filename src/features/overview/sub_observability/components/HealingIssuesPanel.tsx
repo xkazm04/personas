@@ -52,7 +52,7 @@ export function HealingIssuesPanel({
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
   const { t: tOverview } = useOverviewTranslation();
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
@@ -148,9 +148,10 @@ export function HealingIssuesPanel({
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
             <span className="typo-body text-cyan-300">
-              Analysis complete: {analysisResult.issues_created} issue{analysisResult.issues_created !== 1 ? 's' : ''} found
-              {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} auto-fixed)`}
-              , {analysisResult.failures_analyzed} execution{analysisResult.failures_analyzed !== 1 ? 's' : ''} scanned
+              {t.overview.healing_issues_panel.analysis_complete_prefix}{' '}
+              {tx(analysisResult.issues_created !== 1 ? t.overview.analytics_dashboard.issues_found : t.overview.analytics_dashboard.issues_found_one, { count: analysisResult.issues_created })}
+              {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} ${t.overview.analytics_dashboard.auto_fixed})`}
+              {', '}{tx(analysisResult.failures_analyzed !== 1 ? t.overview.analytics_dashboard.executions_scanned : t.overview.analytics_dashboard.executions_scanned_one, { count: analysisResult.failures_analyzed })}
             </span>
           </div>
           <button onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">

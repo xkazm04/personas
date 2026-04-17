@@ -98,11 +98,11 @@ export function IntervalConfig({
         return (
           <>
             <p className="typo-body text-foreground mt-1.5">
-              This persona will {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
+              {t.triggers.this_persona_will} {triggerType === 'polling' ? 'poll' : 'run'} every{' '}
               <span className="text-foreground font-medium">{formatInterval(secs)}</span>
-              , starting from when you enable it.{' '}
+              {t.triggers.starting_from}{' '}
               <span className="text-foreground">
-                Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} per day.
+                Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} {t.triggers.per_day}
               </span>
             </p>
             <SchedulePreview intervalSeconds={secs} triggerType={triggerType} />
@@ -147,7 +147,7 @@ export function CronConfig({
       {/* Presets */}
       <div>
         <label className="block typo-body font-medium text-foreground mb-1.5">
-          Quick Presets
+          {t.triggers.quick_presets_label}
         </label>
         <div className="flex flex-wrap gap-1.5">
           {CRON_PRESETS.map((p) => (
@@ -170,7 +170,7 @@ export function CronConfig({
       {/* Expression input */}
       <div>
         <label className="block typo-body font-medium text-foreground mb-1.5">
-          Cron Expression
+          {t.triggers.cron_expression_label}
         </label>
         <div className="flex items-center gap-2">
           <input

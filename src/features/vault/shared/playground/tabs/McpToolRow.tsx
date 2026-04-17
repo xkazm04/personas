@@ -1,3 +1,4 @@
+import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import type { McpTool } from '@/api/agents/mcpTools';
 
@@ -18,6 +19,8 @@ export function ToolRow({
   onToggle,
   onRun,
 }: ToolRowProps) {
+  const { t } = useTranslation();
+  const sh = t.vault.shared;
   return (
     <div className={`border rounded-card overflow-hidden transition-colors ${
       isSelected ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-primary/8 hover:border-primary/15'
@@ -47,7 +50,7 @@ export function ToolRow({
           className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
-          Run
+          {t.vault.playground.mcp_run}
         </button>
       </button>
 
@@ -59,7 +62,7 @@ export function ToolRow({
           {tool.input_schema && (
             <div className="space-y-1">
               <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
-                Input Schema
+                {sh.input_schema}
               </span>
               <pre className="typo-code text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}

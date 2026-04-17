@@ -8,6 +8,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Loader2, Play, Eye, Sparkles, Terminal } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { CELL_LABELS } from '@/features/agents/components/matrix/cellVocabulary';
 import {
@@ -183,6 +184,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
   buildPhase?: BuildPhase; completeness: number; isRunning: boolean;
   buildActivity?: string | null; onStartTest?: () => void; onApproveTest?: () => void; onViewAgent?: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const phaseLabelText = buildPhase ?? 'initializing';
 
   return (
@@ -193,13 +195,13 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       <div className="flex items-center gap-2 mb-4">
         {phaseIcon(buildPhase)}
         <span className="font-mono typo-code text-foreground">
-          COMMAND CENTER // BUILD v1.0
+          {t.templates.matrix_variants.command_center_header}
         </span>
       </div>
 
       {/* Phase label — full contrast */}
       <div className="font-mono typo-code text-foreground mb-3">
-        [PHASE: {phaseLabelText}]
+        {tx(t.templates.matrix_variants.phase_label, { phase: phaseLabelText })}
       </div>
 
       {/* Completeness */}
@@ -217,7 +219,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
         {isRunning && (
           <div className="flex items-center gap-2 font-mono text-[11px] text-foreground mb-4">
             <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
-            <span>Processing...</span>
+            <span>{t.templates.matrix_variants.processing}</span>
           </div>
         )}
       </div>
@@ -226,7 +228,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       <div className="mt-auto flex flex-col gap-2">
         {(buildPhase === 'draft_ready' || buildPhase === 'completed') && onStartTest && (
           <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono typo-code text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
-            <Play className="w-3.5 h-3.5" /> RUN TEST
+            <Play className="w-3.5 h-3.5" /> {t.templates.matrix_variants.run_test}
           </button>
         )}
         {buildPhase === 'testing' && (
@@ -236,7 +238,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
             </span>
-            TESTING...
+            {t.templates.matrix_variants.testing_dots}
           </div>
         )}
         {buildPhase === 'test_complete' && onApproveTest && (
@@ -246,7 +248,7 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
         )}
         {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
           <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-card-border font-mono typo-code text-foreground cursor-pointer hover:bg-primary/10 transition-colors">
-            <Eye className="w-3.5 h-3.5" /> VIEW AGENT
+            <Eye className="w-3.5 h-3.5" /> {t.templates.matrix_variants.view_agent_label}
           </button>
         )}
       </div>

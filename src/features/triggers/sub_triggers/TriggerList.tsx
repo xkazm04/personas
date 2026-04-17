@@ -172,10 +172,10 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                             </div>
 
                             <div className="mt-1.5 typo-body text-foreground space-y-0.5">
-                              <div>Last: {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
+                              <div>{t.triggers.last_label} {formatTimestamp(trigger.last_triggered_at, 'Never')}</div>
                               {trigger.trigger_type === 'webhook' && (
                                 <div className="font-mono typo-code text-foreground truncate mt-0.5">
-                                  {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/webhook/{trigger.id.slice(0, 8)}...
+                                  {WEBHOOK_BASE_URL.replace(/^https?:\/\//, '')}/{trigger.id.slice(0, 8)}...
                                 </div>
                               )}
                             </div>

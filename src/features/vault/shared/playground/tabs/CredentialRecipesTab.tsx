@@ -20,6 +20,7 @@ interface CredentialRecipesTabProps {
 export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   const fetchRecipes = usePipelineStore((s) => s.fetchRecipes);
 
   const [recipes, setRecipes] = useState<RecipeDefinition[]>([]);
@@ -130,7 +131,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
         <div>
           <h3 className="typo-heading font-semibold text-foreground/90">{vt.recipes_title}</h3>
           <p className="typo-body text-foreground mt-0.5">
-            Reusable automation templates for this credential
+            {sh.recipes_subtitle}
           </p>
         </div>
         {!creating && (
@@ -140,7 +141,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setCreating(true)}
           >
-            New Recipe
+            {sh.new_recipe}
           </Button>
         )}
       </div>
@@ -165,7 +166,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
           <EmptyIllustration
             icon={BookOpen}
             heading={vt.no_recipes}
-            description="Create your first recipe by describing what you want to automate with this credential."
+            description={sh.no_recipes_hint}
             cta={
               <Button
                 variant="primary"
@@ -173,7 +174,7 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
                 icon={<Sparkles className="w-3.5 h-3.5" />}
                 onClick={() => setCreating(true)}
               >
-                Create First Recipe
+                {sh.create_first_recipe}
               </Button>
             }
             className="py-16"

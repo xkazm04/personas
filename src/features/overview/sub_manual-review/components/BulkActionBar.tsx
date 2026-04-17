@@ -61,7 +61,7 @@ export function BulkActionBar({
             <div className="flex items-center justify-between">
               <span className="typo-body text-foreground">
                 <span className="font-semibold text-foreground/90">{activeSelectionCount}</span>{' '}
-                pending review{activeSelectionCount !== 1 ? 's' : ''} selected
+                {activeSelectionCount !== 1 ? t.overview.review.pending_selected : t.overview.review.pending_selected_one}
               </span>
               <div className="flex items-center gap-2">
                 <button

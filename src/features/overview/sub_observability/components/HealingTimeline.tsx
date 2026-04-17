@@ -56,6 +56,7 @@ function formatTimestamp(ts: string) {
 
 function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, tx } = useTranslation();
 
   const outcomeStatus = group.outcome?.status ?? 'open';
   const outcomeStyle = getOutcomeColors(outcomeStatus);
@@ -163,7 +164,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                     )}
                     {event.retryCount != null && event.retryCount > 0 && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-cyan-400/70">
-                        <RefreshCw className="w-2.5 h-2.5" /> retry #{event.retryCount}
+                        <RefreshCw className="w-2.5 h-2.5" /> {tx(t.overview.healing_timeline.retry_badge, { count: event.retryCount })}
                       </span>
                     )}
                   </div>

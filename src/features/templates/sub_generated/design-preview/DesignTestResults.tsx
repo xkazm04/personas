@@ -125,7 +125,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {result.confirmed_capabilities.length > 0 && (
         <div className="space-y-1.5">
           <h4 className="typo-code font-mono text-foreground uppercase tracking-wider">
-            Confirmed Capabilities
+            {t.templates.design.confirmed_capabilities}
           </h4>
           <motion.div
             className="space-y-1"
@@ -170,7 +170,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
         <div className="space-y-1.5">
           <h4 className="typo-code font-mono text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
-            Suggested Next Steps
+            {t.templates.design.suggested_next_steps}
           </h4>
           <motion.div
             className="space-y-1"

@@ -41,7 +41,7 @@ export function CompetitionList() {
   if (!activeProjectId) {
     return (
       <div className="rounded-card border border-primary/15 bg-card/30 p-4">
-        <p className="typo-body text-foreground">Select a project to see competitions.</p>
+        <p className="typo-body text-foreground">{t.plugins.dev_tools.select_project_for_competitions}</p>
       </div>
     );
   }
@@ -77,8 +77,7 @@ export function CompetitionList() {
         <div className="rounded-card border border-primary/10 bg-card/20 p-6 text-center">
           <Swords className="w-8 h-8 text-foreground mx-auto mb-2" />
           <p className="typo-body text-foreground">
-            No competitions yet. Start one to have 2-4 Dev Clone variants race on the same task in parallel worktrees.
-          </p>
+            {t.plugins.dev_tools.no_competitions}</p>
         </div>
       )}
 

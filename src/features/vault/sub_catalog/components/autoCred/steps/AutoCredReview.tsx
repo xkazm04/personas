@@ -37,7 +37,7 @@ export function AutoCredReview({
   isPartial = false,
   completeness,
 }: AutoCredReviewProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ctx = buildConnectorContext(designResult);
 
   return (
@@ -54,10 +54,10 @@ export function AutoCredReview({
         </div>
         <div>
           <h3 className="typo-heading font-semibold text-foreground">
-            Review Extracted Credentials
+            {t.vault.auto_cred_extra.review_extracted}
           </h3>
           <p className="typo-body text-foreground">
-            Values extracted from browser -- verify before saving
+            {t.vault.auto_cred_extra.review_extracted_hint}
           </p>
         </div>
       </div>
@@ -70,8 +70,8 @@ export function AutoCredReview({
             <p className="typo-body font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
             <p className="typo-body text-foreground mt-0.5">
               {completeness
-                ? `${completeness.filledRequired} of ${completeness.totalRequired} required fields filled. Complete the missing fields before saving.`
-                : 'Some fields could not be filled automatically. Please complete the missing fields manually before saving.'}
+                ? tx(t.vault.auto_cred_extra.completeness_partial, { filled: completeness.filledRequired, total: completeness.totalRequired })
+                : t.vault.auto_cred_extra.partial_hint}
             </p>
           </div>
         </div>

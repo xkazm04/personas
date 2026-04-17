@@ -33,7 +33,7 @@ export function UniversalAutoCredRunningPhase({
   onCancel,
   onComplete,
 }: UniversalAutoCredRunningPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="space-y-4">
       <AnimatePresence mode="wait">
@@ -106,14 +106,14 @@ export function UniversalAutoCredRunningPhase({
             <div className="text-center">
               <p className="typo-body-lg font-semibold text-foreground">{t.vault.auto_cred_extra.credential_saved}</p>
               <p className="typo-body text-foreground mt-1">
-                {session.discoveredConnector?.label ?? 'Service'} credential has been securely stored.
+                {tx(t.vault.auto_cred_extra.credential_stored, { label: session.discoveredConnector?.label ?? 'Service' })}
               </p>
             </div>
             <button
               onClick={onComplete}
               className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body font-medium transition-colors"
             >
-              Done
+              {t.common.done}
             </button>
           </motion.div>
         )}

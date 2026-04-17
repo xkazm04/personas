@@ -214,7 +214,7 @@ export function RenameEventDialog({
                 <span className="font-semibold">{affectedCounts.connections}</span>
               </div>
               <div className="text-[10px] text-foreground pt-1">
-                Also updates historical events, persona event handlers, and trigger audit metadata.
+                {t.triggers.rename_also_updates}
               </div>
             </div>
           </div>

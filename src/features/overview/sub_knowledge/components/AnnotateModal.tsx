@@ -78,7 +78,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="e.g. Stripe webhook verification requires the raw request body, not the parsed JSON"
+            placeholder={t.overview.annotate_modal.annotation_placeholder}
             rows={3}
             className="w-full px-3 py-2 rounded-modal bg-secondary/40 border border-primary/10 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
           />

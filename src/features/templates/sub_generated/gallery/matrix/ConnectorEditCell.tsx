@@ -180,7 +180,7 @@ function DatabaseRow({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <span className="typo-body font-medium text-foreground">Existing Table</span>
+                <span className="typo-body font-medium text-foreground">{t.templates.connector_edit.existing_table_label}</span>
                 <Button variant="ghost" size="icon-sm" icon={<X className="w-4 h-4" />} onClick={() => setShowTablePicker(false)} className="text-foreground" />
               </div>
               <div className="space-y-1">
@@ -194,7 +194,7 @@ function DatabaseRow({
                 />
               </div>
               <div className="space-y-1">
-                <label className="typo-body font-medium text-foreground">Table name</label>
+                <label className="typo-body font-medium text-foreground">{t.templates.connector_edit.table_name}</label>
                 <input
                   type="text"
                   value={tableName || ''}
@@ -275,7 +275,7 @@ export function ConnectorEditCell({
           return (
             <div key={rc.name} className="flex items-center gap-2 py-1">
               <MessageSquare className="w-4 h-4 text-primary/60 flex-shrink-0" />
-              <span className="text-sm font-medium text-foreground truncate flex-1">In-App Messages</span>
+              <span className="text-sm font-medium text-foreground truncate flex-1">{t.templates.connector_edit.in_app_messages}</span>
               <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
             </div>
           );
@@ -303,7 +303,7 @@ export function ConnectorEditCell({
                   {roleLabel || meta.label}
                 </span>
                 <AlertCircle className="w-3 h-3 text-orange-500 dark:text-amber-400/60 flex-shrink-0" />
-                <span className="text-[11px] text-orange-600/80 dark:text-amber-400/70 whitespace-nowrap">not connected</span>
+                <span className="text-[11px] text-orange-600/80 dark:text-amber-400/70 whitespace-nowrap">{t.templates.connector_edit.not_connected}</span>
               </Button>
 
               {isOpen && (

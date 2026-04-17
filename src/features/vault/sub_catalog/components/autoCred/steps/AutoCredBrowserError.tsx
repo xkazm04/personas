@@ -73,14 +73,14 @@ export function AutoCredBrowserError({
             onClick={onCancel}
             className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
           >
-            Set Up Manually
+            {t.vault.auto_cred.setup_manually}
           </button>
           {error.retryable && (
             <button
               onClick={onRetry}
               className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
             >
-              Retry
+              {t.vault.auto_cred.retry}
             </button>
           )}
         </div>

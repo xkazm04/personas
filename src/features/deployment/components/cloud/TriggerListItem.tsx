@@ -75,11 +75,11 @@ export function TriggerListItem({
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-3">
           {/* Trigger info */}
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">Type:</span> <span className="text-foreground">{triggerTypeLabel(trigger.trigger_type)}</span></div>
-            <div><span className="text-foreground">Status:</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
-            <div><span className="text-foreground">Last triggered:</span> <span className="text-foreground">{timeAgo(trigger.last_triggered_at)}</span></div>
-            <div><span className="text-foreground">Next trigger:</span> <span className="text-foreground">{trigger.next_trigger_at ? new Date(trigger.next_trigger_at).toLocaleString() : '-'}</span></div>
-            {config.cron && <div className="col-span-2"><span className="text-foreground">Cron:</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
+            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(trigger.trigger_type)}</span></div>
+            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
+            <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.last_triggered_at)}</span></div>
+            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground">{trigger.next_trigger_at ? new Date(trigger.next_trigger_at).toLocaleString() : '-'}</span></div>
+            {config.cron && <div className="col-span-2"><span className="text-foreground">{dt.label_cron}</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
             {trigger.health_message && (
               <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 typo-caption text-amber-400">
                 {trigger.health_message}
@@ -112,7 +112,7 @@ export function TriggerListItem({
             <SectionHeading as="h4" className="typo-caption text-foreground mb-2">{dt.recent_firings}</SectionHeading>
             {isLoadingFirings ? (
               <div className="flex items-center gap-2 typo-caption text-foreground py-2">
-                <LoadingSpinner size="xs" /> Loading...
+                <LoadingSpinner size="xs" /> {dt.loading_firings}
               </div>
             ) : firings.length === 0 ? (
               <p className="typo-caption text-foreground">{dt.no_firings}</p>

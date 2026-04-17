@@ -109,9 +109,9 @@ export default function PersonaHealthDashboard() {
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
                 }`}
-                title="Heartbeats view"
+                title={t.overview.health_dashboard.heartbeats_view}
               >
-                <LayoutGrid className="w-3 h-3" /> Heartbeats
+                <LayoutGrid className="w-3 h-3" /> {t.overview.health_dashboard.heartbeats_btn}
               </button>
               <button
                 onClick={() => setHealthView('status-page')}
@@ -120,9 +120,9 @@ export default function PersonaHealthDashboard() {
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
                 }`}
-                title="Status page view"
+                title={t.overview.health_dashboard.status_page_view}
               >
-                <Rows3 className="w-3 h-3" /> Status Page
+                <Rows3 className="w-3 h-3" /> {t.overview.health.status_page}
               </button>
               <button
                 onClick={() => setHealthView('reliability')}
@@ -131,9 +131,9 @@ export default function PersonaHealthDashboard() {
                     ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground hover:bg-secondary/40'
                 }`}
-                title="SLA reliability view"
+                title={t.overview.health_dashboard.reliability_view}
               >
-                <Shield className="w-3 h-3" /> Reliability
+                <Shield className="w-3 h-3" /> {t.overview.health_dashboard.reliability_btn}
               </button>
             </div>
 
@@ -144,7 +144,7 @@ export default function PersonaHealthDashboard() {
               onClick={handleRefresh}
               disabled={healthLoading}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
-              title="Refresh health data"
+              title={t.overview.health_dashboard.refresh_tooltip}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -154,11 +154,11 @@ export default function PersonaHealthDashboard() {
 
       <ContentBody>
         {healthView === 'status-page' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">Loading status page...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">{t.overview.health_dashboard.loading_status_page}</div>}>
             <StatusPageView />
           </Suspense>
         ) : healthView === 'reliability' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">Loading reliability data...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">{t.overview.health_dashboard.loading_reliability}</div>}>
             <SLADashboard />
           </Suspense>
         ) : (
@@ -184,7 +184,7 @@ export default function PersonaHealthDashboard() {
             <HeartbeatIndicator score={globalScore} grade={globalGrade} size="lg" />
             <div className="flex-1">
               <h2 className="typo-heading-lg text-foreground/90">
-                System Health: <span className={
+                {t.overview.health_dashboard.system_health} <span className={
                   globalGrade === 'healthy' ? 'text-emerald-400' :
                   globalGrade === 'degraded' ? 'text-amber-400' :
                   globalGrade === 'critical' ? 'text-red-400' : 'text-zinc-400'
@@ -210,13 +210,13 @@ export default function PersonaHealthDashboard() {
             <div className="xl:col-span-2 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <Heart className="w-4 h-4 text-rose-400" />
-                <h3 className="typo-heading text-foreground">Persona Heartbeats</h3>
+                <h3 className="typo-heading text-foreground">{t.overview.health_dashboard.persona_heartbeats}</h3>
                 <span className="typo-caption text-foreground">{filteredSignals.length} persona{filteredSignals.length !== 1 ? 's' : ''}</span>
               </div>
 
               {filteredSignals.length === 0 ? (
                 <div className="flex items-center justify-center py-12 text-foreground typo-body">
-                  {healthLoading ? 'Computing health signals...' : 'No personas match the selected filter.'}
+                  {healthLoading ? t.overview.health_dashboard.computing : t.overview.health_dashboard.no_match}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3">

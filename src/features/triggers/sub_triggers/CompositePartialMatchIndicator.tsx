@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function CompositePartialMatchIndicator({ triggerId }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [result, setResult] = useState<PartialMatchResult | null>(null);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
         <span className={`typo-body font-medium ${color}`}>
-          {conditionsMet}/{conditionsTotal} conditions met
+          {tx(t.triggers.conditions_met, { met: conditionsMet, total: conditionsTotal })}
         </span>
         <span className="typo-caption text-foreground ml-auto">
           {operator.toUpperCase()}

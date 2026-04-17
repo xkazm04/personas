@@ -139,8 +139,10 @@ export function AutomationTriggerStep({
               <div>
                 <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
                 <p className="typo-body text-foreground mt-0.5">
-                  Your token needs{!githubPerms.hasRepo ? " 'repo'" : ''}{!githubPerms.hasRepo && !githubPerms.hasWorkflow ? ' and' : ''}{!githubPerms.hasWorkflow ? " 'workflow'" : ''} scope{(!githubPerms.hasRepo && !githubPerms.hasWorkflow) ? 's' : ''}.
-                  Update your token at github.com/settings/tokens.
+                  {t.agents.connectors.auto_github_token_needs.replace('{scopes}', [
+                    !githubPerms.hasRepo ? "'repo'" : '',
+                    !githubPerms.hasWorkflow ? "'workflow'" : '',
+                  ].filter(Boolean).join(' and '))}
                 </p>
               </div>
             </div>

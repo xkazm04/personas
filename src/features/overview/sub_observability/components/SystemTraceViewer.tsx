@@ -101,7 +101,7 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
               <div className="grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 px-2 py-1 bg-secondary/40">
                 <div className="typo-code text-foreground uppercase tracking-wider">{t.overview.system_trace_extra.span}</div>
                 <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-                  <span>0ms</span>
+                  <span>{t.overview.system_trace_extra.zero_ms}</span>
                   <span>{formatDuration(totalMs)}</span>
                 </div>
               </div>

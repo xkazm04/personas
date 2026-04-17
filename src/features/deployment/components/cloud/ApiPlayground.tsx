@@ -159,7 +159,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
                      text-foreground/90 placeholder:text-foreground
                      focus-visible:outline-none focus-visible:border-indigo-500/40
                      resize-y transition-colors"
-          placeholder='{ "message": "Your prompt here..." }'
+          placeholder={dt.request_body_placeholder}
         />
       </div>
 

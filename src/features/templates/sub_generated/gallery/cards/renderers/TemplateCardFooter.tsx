@@ -1,4 +1,5 @@
 import { Download, Play, Workflow } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DimensionRadial } from '../../../shared/DimensionRadial';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -19,6 +20,7 @@ export function TemplateCardFooter({
   onTryIt,
   onViewFlows,
 }: TemplateCardFooterProps) {
+  const { t } = useTranslation();
   return (
     <div className="px-4 py-3.5 border-t border-primary/5 flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -41,7 +43,7 @@ export function TemplateCardFooter({
             className={`px-3.5 py-2 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 ${BUTTON_VARIANTS.tryIt.bg} ${BUTTON_VARIANTS.tryIt.text} ${BUTTON_VARIANTS.tryIt.border} ${BUTTON_VARIANTS.tryIt.hover}`}
           >
             <Play className="w-3.5 h-3.5" />
-            Try It
+            {t.templates.actions.try_it}
           </button>
         )}
       </div>

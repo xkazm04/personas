@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { MoreVertical, Eye, Trash2, CheckCircle2, XCircle, GraduationCap, Clock } from 'lucide-react';
 import { TrustBadge } from '../../../shared/TrustBadge';
 import { useTemplatesTranslation } from '@/features/templates/i18n/useTemplatesTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { readinessTier } from '../../../shared/adoptionReadiness';
@@ -38,6 +39,7 @@ export function TemplateCardHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { t } = useTemplatesTranslation();
+  const { t: tMain } = useTranslation();
 
   return (
     <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
@@ -109,7 +111,7 @@ export function TemplateCardHeader({
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
             >
               <Eye className="w-4 h-4" />
-              View Details
+              {tMain.templates.actions.view_details}
             </button>
             <button
               onClick={(e) => {

@@ -48,7 +48,7 @@ export function CloudOAuthPanel({
               className="mt-3 inline-flex items-center gap-1.5 typo-body font-medium text-indigo-300 hover:text-indigo-200"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Open authorization window
+              {dt.open_auth_window}
             </a>
           )}
         </div>
@@ -71,7 +71,7 @@ export function CloudOAuthPanel({
             disabled={!oauthCode.trim()}
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            Complete Authorization
+            {dt.complete_authorization}
           </button>
           <button
             onClick={onCancelOAuth}
@@ -118,7 +118,7 @@ export function CloudOAuthPanel({
         {isExpired && (
           <div className="p-4 rounded-card bg-amber-500/10 border border-amber-500/25">
             <p className="typo-body text-amber-200/90 leading-relaxed">
-              This OAuth token has expired{oauthStatus.expiresAt ? ` (expired ${new Date(oauthStatus.expiresAt).toLocaleString()})` : ''}. Refresh now to restore cloud execution access.
+              {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` (expired ${new Date(oauthStatus.expiresAt).toLocaleString()})` : ''}`}
             </p>
           </div>
         )}
@@ -126,7 +126,7 @@ export function CloudOAuthPanel({
         {isUnknown && (
           <div className="p-4 rounded-card bg-slate-500/10 border border-slate-500/25">
             <p className="typo-body text-slate-300/90 leading-relaxed">
-              Token validity could not be verified. Refresh the token to confirm it is still active.
+              {dt.token_unknown_msg}
             </p>
           </div>
         )}
@@ -165,7 +165,7 @@ export function CloudOAuthPanel({
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Refresh Token
+            {dt.refresh_token}
           </button>
           <button
             onClick={onDisconnectOAuth}
@@ -185,8 +185,7 @@ export function CloudOAuthPanel({
       <div className="flex flex-col items-center text-center py-8">
         <Shield className="w-10 h-10 text-foreground mb-4" />
         <p className="typo-body text-foreground leading-relaxed">
-          Connect your Anthropic account to enable OAuth-based authentication
-          for cloud executions.
+          {dt.connect_anthropic_msg}
         </p>
       </div>
 
@@ -205,7 +204,7 @@ export function CloudOAuthPanel({
           className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body font-medium rounded-modal bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/15 transition-colors"
         >
           <ExternalLink className="w-4 h-4" />
-          Open Authorization Window
+          {dt.open_authorization_window}
         </a>
       )}
     </div>

@@ -104,14 +104,14 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
                 </div>
               ) : (
                 <p className="typo-body text-foreground text-center py-4">
-                  Go back and answer the questions to configure your agent.
+                  {t.agents.design.go_back_hint}
                 </p>
               )}
 
               {/* Additional context textarea */}
               <div className="space-y-1.5">
                 <label className="typo-body text-foreground">
-                  Additional instructions or context (optional)
+                  {t.agents.design.additional_instructions}
                 </label>
                 <textarea
                   value={additionalContext}
@@ -140,7 +140,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
               onClick={onCancel}
               className="typo-body text-foreground hover:text-muted-foreground transition-colors px-2 py-1"
             >
-              Switch to manual
+              {t.agents.design.switch_to_manual}
             </button>
           ) : (
             <button
@@ -149,7 +149,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
               className="flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body text-foreground hover:text-foreground/95 hover:bg-secondary/50 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              Back
+              {t.common.back}
             </button>
           )}
         </div>
@@ -171,11 +171,11 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
           {isLastStep ? (
             <>
               <Sparkles className="w-4 h-4" />
-              Generate Design
+              {t.agents.design.generate_design}
             </>
           ) : (
             <>
-              Next
+              {t.common.continue}
               <ChevronRight className="w-3.5 h-3.5" />
             </>
           )}

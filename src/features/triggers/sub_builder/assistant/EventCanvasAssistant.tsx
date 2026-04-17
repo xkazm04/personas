@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ const EXAMPLES = [
 ];
 
 export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
         <div className="flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="typo-caption font-semibold text-foreground">Canvas Assistant</span>
+          <span className="typo-caption font-semibold text-foreground">{t.triggers.canvas_assistant_title}</span>
         </div>
         <button onClick={onClose} className="p-0.5 rounded hover:bg-secondary/60">
           <X className="w-3.5 h-3.5 text-foreground" />
@@ -60,7 +62,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
 
       {/* Examples */}
       <div className="px-3 py-2 border-b border-primary/5">
-        <span className="text-[9px] text-foreground uppercase tracking-wider">Try asking</span>
+        <span className="text-[9px] text-foreground uppercase tracking-wider">{t.triggers.try_asking_hint}</span>
         <div className="flex flex-wrap gap-1 mt-1.5">
           {EXAMPLES.map(ex => (
             <button
@@ -88,7 +90,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
-          placeholder="Describe your event topology..."
+          placeholder={t.triggers.assistant_placeholder}
           className="flex-1 px-2.5 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
         <button

@@ -26,7 +26,7 @@ export function ReviewExpandedDetail({
   isAdopting?: boolean;
   onViewDiagram?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showJson, setShowJson] = useState(false);
 
   const designResult = getCachedDesignResult(review);
@@ -100,7 +100,7 @@ export function ReviewExpandedDetail({
                 {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                   <span className="ml-1.5 text-foreground normal-case">
-                    (attempt {review.adjustment_generation}/3)
+                    {tx(t.templates.overview_tab.adjustment_attempt, { attempt: review.adjustment_generation })}
                   </span>
                 )}
               </h4>

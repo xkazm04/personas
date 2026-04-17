@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
 const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
@@ -68,6 +69,7 @@ export function BuildQuestionnaireModal({
   onSubmit,
   onClose,
 }: BuildQuestionnaireModalProps) {
+  const { t, tx } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -139,15 +141,15 @@ export function BuildQuestionnaireModal({
       {/* Minimal header — step name only, no icon/title duplication */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-primary/10">
         <h3 id="build-questionnaire-title" className="typo-body font-medium text-foreground">
-          {dim ? dim.label : 'Setup'} — Question {activeIndex + 1} of {questions.length}
+          {tx(t.templates.questionnaire.header, { label: dim ? dim.label : t.templates.questionnaire.setup, current: activeIndex + 1, total: questions.length })}
           <span className="text-foreground ml-2 typo-caption font-normal">
-            {answeredCount} answered
+            {tx(t.templates.questionnaire.answered, { count: answeredCount })}
           </span>
         </h3>
         <button
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
-          aria-label="Cancel setup"
+          aria-label={t.templates.questionnaire.cancel_setup}
         >
           <X className="w-4 h-4" />
         </button>
@@ -164,7 +166,7 @@ export function BuildQuestionnaireModal({
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
               : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Previous question"
+          aria-label={t.templates.questionnaire.previous_question}
         >
           <ChevronLeft className="w-4.5 h-4.5" />
         </button>
@@ -250,13 +252,13 @@ export function BuildQuestionnaireModal({
                       data-testid="question-text-input"
                       value={currentAnswer}
                       onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                      placeholder={(q as unknown as Record<string, unknown>).placeholder as string ?? q.default ?? 'Type your answer...'}
+                      placeholder={(q as unknown as Record<string, unknown>).placeholder as string ?? q.default ?? t.templates.questionnaire.type_your_answer}
                       autoFocus
                       className={`w-full px-4 py-3 typo-body rounded-modal border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
                     />
                     {currentAnswer && currentAnswer !== q.default && (
                       <p className="typo-caption text-foreground px-1">
-                        Default: {q.default || 'none'}
+                        {tx(t.templates.questionnaire.default_label, { value: q.default || 'none' })}
                       </p>
                     )}
                   </div>
@@ -292,7 +294,7 @@ export function BuildQuestionnaireModal({
                   <DevToolsProjectDropdown
                     value={currentAnswer || null}
                     onSelect={(project) => onAnswerUpdated(q.id, project.id)}
-                    placeholder="Select a codebase project..."
+                    placeholder={t.templates.questionnaire.select_project}
                   />
                 )}
               </div>
@@ -309,7 +311,7 @@ export function BuildQuestionnaireModal({
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground hover:text-foreground'
               : 'border-primary/5 text-foreground cursor-default'
           }`}
-          aria-label="Next question"
+          aria-label={t.templates.questionnaire.next_question}
         >
           <ChevronRight className="w-4.5 h-4.5" />
         </button>
@@ -330,7 +332,7 @@ export function BuildQuestionnaireModal({
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              title={`Question ${i + 1}${isAnswered ? ' (answered)' : ' (unanswered)'}`}
+              title={tx(t.templates.questionnaire.go_to_question, { number: i + 1 }) + (isAnswered ? t.templates.questionnaire.question_answered_suffix : t.templates.questionnaire.question_unanswered_suffix)}
               className={`rounded-full transition-all duration-200 flex items-center justify-center ${
                 isActive
                   ? `w-7 h-2.5 ${dotTone.dot}`
@@ -340,7 +342,7 @@ export function BuildQuestionnaireModal({
                       ? 'w-2.5 h-2.5 bg-rose-400 animate-pulse ring-2 ring-rose-400/30'
                       : 'w-2.5 h-2.5 bg-foreground/12'
               }`}
-              aria-label={`Go to question ${i + 1}${isAnswered ? '' : ' (unanswered)'}`}
+              aria-label={tx(t.templates.questionnaire.go_to_question, { number: i + 1 }) + (isAnswered ? '' : t.templates.questionnaire.question_unanswered_suffix)}
             />
           );
         })}
@@ -351,7 +353,7 @@ export function BuildQuestionnaireModal({
         <div className="flex items-center gap-4">
           <p className="typo-caption text-foreground">
             <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&larr;</kbd>{' '}
-            <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&rarr;</kbd>{' '}navigate
+            <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&rarr;</kbd>{' '}{t.templates.questionnaire.navigate_hint}
           </p>
           <button
             type="button"
@@ -359,7 +361,7 @@ export function BuildQuestionnaireModal({
             className="typo-caption text-foreground hover:text-muted-foreground/60 transition-colors flex items-center gap-1"
           >
             <SkipForward className="w-3 h-3" />
-            Skip all
+            {t.templates.questionnaire.skip_all}
           </button>
         </div>
 
@@ -388,10 +390,10 @@ export function BuildQuestionnaireModal({
         >
           {isLast ? (
             allAnswered
-              ? <>Submit Answers <Send className="w-3.5 h-3.5" /></>
-              : <>Answer remaining ({questions.length - answeredCount})</>
+              ? <>{t.templates.questionnaire.submit_answers} <Send className="w-3.5 h-3.5" /></>
+              : <>{tx(t.templates.questionnaire.answer_remaining, { count: questions.length - answeredCount })}</>
           ) : (
-            <>Next <ChevronRight className="w-3.5 h-3.5" /></>
+            <>{t.templates.questionnaire.next} <ChevronRight className="w-3.5 h-3.5" /></>
           )}
         </button>
       </div>

@@ -4,6 +4,7 @@ import {
   StickyNote, FlaskConical, Sparkles, MoreHorizontal,
 } from 'lucide-react';
 import { SystemEventsToolbar } from './palettes/EventSourcePalette';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -41,6 +42,7 @@ export function EventCanvasToolbar({
   onTogglePalette, onRefresh, onAutoLayout, onAddNote,
   onToggleDryRun, onToggleAssistant, onStartPointerDrag,
 }: ToolbarProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -77,7 +79,7 @@ export function EventCanvasToolbar({
       key="layout"
       onClick={() => { onAutoLayout(); closeMore(); }}
       className={inDropdown ? dropdownItemCls : BTN_DEFAULT}
-      title="Auto Layout"
+      title={t.triggers.toolbar_title_auto_layout}
     >
       <LayoutGrid className="w-3.5 h-3.5" />
       <span className="text-[10px]">Layout</span>
@@ -89,7 +91,7 @@ export function EventCanvasToolbar({
       key="note"
       onClick={() => { onAddNote(); closeMore(); }}
       className={inDropdown ? dropdownItemCls : BTN_DEFAULT}
-      title="Add Sticky Note"
+      title={t.triggers.toolbar_title_add_note}
     >
       <StickyNote className={`w-3.5 h-3.5 ${inDropdown ? 'text-amber-400' : 'text-amber-400'}`} />
       <span className="text-[10px] text-foreground">Note</span>
@@ -103,10 +105,10 @@ export function EventCanvasToolbar({
       className={inDropdown
         ? dropdownItemCls + (dryRunActive ? ' text-amber-400' : '')
         : `${BTN} ${dryRunActive ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-      title={dryRunActive ? 'Stop Dry Run' : 'Start Dry Run'}
+      title={dryRunActive ? t.triggers.toolbar_title_stop_dry_run : t.triggers.toolbar_title_start_dry_run}
     >
       <FlaskConical className="w-3.5 h-3.5" />
-      <span className="text-[10px]">Dry Run</span>
+      <span className="text-[10px]">{t.triggers.toolbar_dry_run}</span>
     </button>
   );
 
@@ -117,7 +119,7 @@ export function EventCanvasToolbar({
       className={inDropdown
         ? dropdownItemCls + (assistantOpen ? ' text-indigo-400' : '')
         : `${BTN} ${assistantOpen ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400' : 'bg-card border-primary/10 hover:bg-secondary/60'}`}
-      title="Canvas Assistant"
+      title={t.triggers.toolbar_title_assistant}
     >
       <Sparkles className="w-3.5 h-3.5" />
       <span className="text-[10px]">Assistant</span>

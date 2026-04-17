@@ -120,7 +120,7 @@ export default function EventBusFilterBar({
         ))}
         {saveDialogOpen ? (
           <div className="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-primary/8">
-            <input type="text" value={saveName} onChange={(e) => setSaveName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSave()} placeholder="View name..." autoFocus className="flex-1 px-2 py-1 typo-body rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring" />
+            <input type="text" value={saveName} onChange={(e) => setSaveName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSave()} placeholder={t.overview.realtime_page.view_name_placeholder} autoFocus className="flex-1 px-2 py-1 typo-body rounded border border-primary/15 bg-background/40 text-foreground placeholder-muted-foreground/30 focus-ring" />
             <button onClick={handleSave} disabled={!saveName.trim()} className="px-2 py-1 typo-caption rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors">Save</button>
             <button onClick={() => { setSaveDialogOpen(false); setSaveName(''); }} className="p-1 rounded hover:bg-secondary/40 text-foreground"><X className="w-3 h-3" /></button>
           </div>

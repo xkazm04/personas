@@ -60,13 +60,13 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
 
   return (
     <div className="border border-primary/20 rounded-modal p-2.5 space-y-2 bg-secondary/30">
-      <FormField label="Event Type" hint="The type of system event that will trigger this persona to run.">
+      <FormField label={t.agents.use_cases.event_type} hint="The type of system event that will trigger this persona to run.">
         <ThemedSelect
           value={newEventType}
           onChange={(e) => setNewEventType(e.target.value)}
           className="py-1.5"
         >
-          <option value="">Select event type...</option>
+          <option value="">{t.agents.use_cases.select_event_type}</option>
           {groupedOptions.map((group) => (
             <optgroup key={group.category} label={group.label}>
               {group.options.map((opt) => (
@@ -76,7 +76,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
           ))}
         </ThemedSelect>
       </FormField>
-      <FormField label="Source Filter" error={validationError ?? undefined} helpText="Narrow events by source_id. Exact match or trailing * prefix wildcard.">
+      <FormField label={t.agents.use_cases.source_filter} error={validationError ?? undefined} helpText="Narrow events by source_id. Exact match or trailing * prefix wildcard.">
         {(inputProps) => (
           <div className="space-y-1.5">
             <input
@@ -87,7 +87,7 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
                 setNewSourceFilter(e.target.value);
                 if (validationError) setValidationError(null);
               }}
-              placeholder="e.g. webhook-1 or watcher-*"
+              placeholder={t.agents.use_cases.source_filter_placeholder}
               className={inputFieldClass(!!validationError)}
             />
             <details className="group">
@@ -123,13 +123,13 @@ export function AddSubscriptionForm({ onAdd, onCancel }: AddSubscriptionFormProp
           }`}
         >
           {saving ? <LoadingSpinner size="sm" /> : <Plus className="w-3.5 h-3.5" />}
-          Add
+          {t.common.add}
         </button>
         <button
           onClick={onCancel}
           className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>

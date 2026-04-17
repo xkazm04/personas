@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, Plus } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
+  const { t } = useTranslation();
+  const ds = t.deployment.schedules;
   const personas = useAgentStore((s) => s.personas);
   const personaName = usePersonaNameMap();
 
@@ -93,7 +96,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <SectionHeading className="typo-caption">Cloud Triggers ({triggers.length})</SectionHeading>
+        <SectionHeading className="typo-caption">{ds.header.replace('{count}', String(triggers.length))}</SectionHeading>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -102,7 +105,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
             onClick={() => setShowCreate(!showCreate)}
             accentColor="indigo"
           >
-            Add Trigger
+            {ds.add_trigger}
           </Button>
           <Button
             variant="secondary"
@@ -128,14 +131,14 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
       {/* No deployments notice */}
       {deployments.filter((d) => d.status === 'active').length === 0 && (
         <p className="typo-body text-foreground py-6 text-center">
-          Deploy a persona first to create cloud triggers.
+          {ds.deploy_first}
         </p>
       )}
 
       {/* Trigger list */}
       {triggers.length === 0 && deployedPersonaIds.size > 0 ? (
         <p className="typo-body text-foreground py-6 text-center">
-          No cloud triggers yet. Create one to schedule automated runs.
+          {ds.empty}
         </p>
       ) : (
         <div className="space-y-1">

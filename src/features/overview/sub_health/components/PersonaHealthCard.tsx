@@ -36,7 +36,7 @@ const GRADE_BG = {
 };
 
 export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const TrendIcon = TREND_ICON[signal.failureTrend];
 
@@ -58,7 +58,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
             <span className={`typo-caption ${TREND_COLOR[signal.failureTrend]}`}>
               {signal.failureTrend === 'improving' ? t.overview.health_extra.improving : signal.failureTrend === 'degrading' ? t.overview.health_extra.degrading : t.overview.health_extra.stable}
             </span>
-            <span className="typo-caption text-foreground ml-1">{signal.successRate.toFixed(0)}% success</span>
+            <span className="typo-caption text-foreground ml-1">{tx(t.overview.health_extra.success_pct, { pct: signal.successRate.toFixed(0) })}</span>
           </div>
         </div>
         {expanded
@@ -108,9 +108,9 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-amber-400" />
                       <span className="typo-caption text-foreground">
-                        Budget exhaustion in{' '}
+                        {t.overview.health_extra.budget_exhaustion}{' '}
                         <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground'}>
-                          {signal.projectedExhaustionDays === 0 ? 'exhausted' : `${signal.projectedExhaustionDays}d`}
+                          {signal.projectedExhaustionDays === 0 ? t.overview.health_extra.exhausted : `${signal.projectedExhaustionDays}d`}
                         </span>
                       </span>
                     </div>
@@ -119,7 +119,7 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="w-3 h-3 text-red-400" />
                       <span className="typo-caption text-foreground">
-                        Predicted failure spike in{' '}
+                        {t.overview.health_extra.predicted_failure}{' '}
                         <span className="text-red-400 font-semibold">{signal.predictedFailureInDays}d</span>
                       </span>
                     </div>

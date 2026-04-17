@@ -23,6 +23,7 @@ interface ResponseViewerProps {
 export function ResponseViewer({ response }: ResponseViewerProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
+  const sh = t.vault.shared;
   const [subTab, setSubTab] = useState<ResponseSubTab>('body');
   const [copied, setCopied] = useState(false);
 
@@ -98,7 +99,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           className="flex items-center gap-1 px-2 py-1 rounded typo-body text-foreground hover:text-muted-foreground/80 hover:bg-secondary/30 transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? sh.copied : t.common.copy}
         </button>
       </div>
 
@@ -109,7 +110,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
             <MarkdownRenderer content={isJson ? '```json\n' + prettyBody + '\n```' : prettyBody} />
           </div>
         ) : (
-          <div className="typo-body text-foreground p-3">(empty response)</div>
+          <div className="typo-body text-foreground p-3">{t.vault.playground.response_empty}</div>
         )
       )}
 
@@ -139,7 +140,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {subTab === 'raw' && (
         <pre className="typo-code font-mono text-foreground bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
-          {response.body || '(empty response)'}
+          {response.body || t.vault.playground.response_empty}
         </pre>
       )}
     </div>

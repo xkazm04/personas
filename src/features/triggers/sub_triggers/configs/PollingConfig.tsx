@@ -20,7 +20,7 @@ export function PollingConfig({
     <>
       {credentialEventsList.length > 0 && (
         <TriggerFieldGroup
-          label={<><Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />Credential Event</>}
+          label={<><Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />{t.triggers.credential_event_label}</>}
           optional
           helpText={t.triggers.credential_event_help}
         >
