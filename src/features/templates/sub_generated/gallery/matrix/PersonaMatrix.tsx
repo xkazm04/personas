@@ -452,7 +452,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
       )}
       <div
-        className="grid grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]"
+        className="grid grid-rows-[1fr_1fr_1fr] gap-2.5 2xl:gap-3 3xl:gap-4 flex-1 min-h-0 w-full min-w-[1100px] 2xl:min-w-[1400px] 3xl:min-w-[1700px] 4xl:min-w-[2000px]"
         style={{
           gridTemplateColumns: isPreBuild ? '1fr 4fr 1fr' : '2fr 2.6fr 2fr',
           transition: 'grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -463,7 +463,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-modal border border-primary/40 p-5 ${isPreBuild ? 'min-h-[240px]' : 'min-h-[160px]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-modal border border-primary/40 p-5 2xl:p-6 3xl:p-8 ${isPreBuild ? 'min-h-[240px] 2xl:min-h-[30vh] 3xl:min-h-[32vh]' : 'min-h-[160px] 2xl:min-h-[22vh] 3xl:min-h-[24vh]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}

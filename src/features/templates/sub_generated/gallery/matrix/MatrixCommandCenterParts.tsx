@@ -484,7 +484,7 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
 
 /** Test results panel -- pass/fail summary with View Report button. */
 export function TestResultsPanel({
-  passed, error, onApprove, onApproveAnyway, onReject, onDeleteDraft, toolResults = [], summary,
+  passed, error, onApprove, onApproveAnyway, onReject, onRefine, onDeleteDraft, toolResults = [], summary,
 }: {
   passed?: boolean | null;
   outputLines?: string[];
@@ -493,6 +493,8 @@ export function TestResultsPanel({
   /** Force-promote bypass when tests didn't pass (skipped / failed / connector gaps). */
   onApproveAnyway?: () => void;
   onReject?: () => void;
+  /** Rebuild with refinement feedback → re-test. */
+  onRefine?: (feedback: string) => void;
   /** Discard the draft and close — shown when tests didn't fully pass. */
   onDeleteDraft?: () => void;
   toolResults?: ToolTestResult[];
@@ -500,6 +502,7 @@ export function TestResultsPanel({
 }) {
   const { t } = useTranslation();
   const [showReport, setShowReport] = useState(false);
+  const [refineText, setRefineText] = useState('');
   const testConnectors = useAgentStore((s) => s.buildTestConnectors);
   const missingConnectors = testConnectors.filter((c) => !c.has_credential);
   const hasConnectorGaps = missingConnectors.length > 0;
@@ -548,6 +551,25 @@ export function TestResultsPanel({
         </p>
       )}
 
+      {/* Refinement input — shown when tests didn't pass so user can describe
+          what changed (e.g. "Added Alpha Vantage key") before retrying. */}
+      {!didPass && onRefine && (
+        <input
+          type="text"
+          value={refineText}
+          onChange={(e) => setRefineText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && refineText.trim()) {
+              e.preventDefault();
+              onRefine(refineText.trim());
+              setRefineText('');
+            }
+          }}
+          placeholder={t.templates.matrix_variants.refine_placeholder}
+          className="w-full px-3 py-1.5 typo-body rounded-lg border border-primary/15 bg-white/[0.03] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
+        />
+      )}
+
       {/* Action buttons — single row */}
       <div className="flex gap-2 w-full">
         {didPass && onApprove && (
@@ -588,12 +610,19 @@ export function TestResultsPanel({
         {onReject && (
           <button
             type="button"
-            onClick={onReject}
+            onClick={() => {
+              if (refineText.trim() && onRefine) {
+                onRefine(refineText.trim());
+                setRefineText('');
+              } else {
+                onReject();
+              }
+            }}
             data-testid="agent-reject-btn"
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-primary/15 text-foreground hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Retry
+            {t.templates.matrix_variants.retry_with_changes}
           </button>
         )}
         {!didPass && onDeleteDraft && (
@@ -611,7 +640,7 @@ export function TestResultsPanel({
       </div>
 
       {showReport && createPortal(
-        <TestReportModal results={toolResults} summary={summary} onClose={() => setShowReport(false)} />,
+        <TestReportModal results={toolResults} summary={summary} onClose={() => setShowReport(false)} onCredentialAdded={onReject} />,
         document.body,
       )}
     </div>

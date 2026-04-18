@@ -2207,6 +2207,10 @@ export type Translations = {
       execution_in_progress: string;
       execute: string;
       execute_failed: string;
+      execution_started: string;
+      cancel_execution: string;
+      execution_cancelled: string;
+      cancel_execution_failed: string;
       no_triggers_or_subs: string;
       missing_credentials: string;
       cannot_enable: string;
@@ -5934,6 +5938,8 @@ export type Translations = {
       delete_draft: string;
       agent_promoted: string;
       view_agent: string;
+      refine_placeholder: string;
+      retry_with_changes: string;
     };
     diagrams: {
       no_flow_data: string;
@@ -6080,6 +6086,9 @@ export type Translations = {
       error_detail: string;
       copy: string;
       copied: string;
+      add_key: string;
+      key_added: string;
+      add_key_for: string;
     };
   };
   triggers: {
@@ -9850,6 +9859,7 @@ export type Translations = {
       no_scheduled_agents: string;
       all_agents_label: string;
       draft_builds: string;
+      progress: string;
       dev_tools_label: string;
       obsidian_brain: string;
       active_twin: string;

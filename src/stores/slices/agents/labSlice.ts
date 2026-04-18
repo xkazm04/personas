@@ -164,12 +164,28 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
       }
     },
     wrapStart: async (fn, ...args) => {
+      // First arg of every lab start API is the personaId. Track it on the
+      // running set so the sidebar orbit dots can show one orange dot per
+      // persona with an active lab run.
+      const personaId = typeof args[0] === 'string' ? (args[0] as string) : null;
       lc.markStarted(set);
+      if (personaId) {
+        set((state) => {
+          const next = Array.from(new Set([...(state as unknown as { labRunningPersonaIds?: string[] }).labRunningPersonaIds ?? [], personaId]));
+          return { labRunningPersonaIds: next } as Partial<AgentStore>;
+        });
+      }
       try {
         const run = await fn(...args);
         return run.id;
       } catch (err) {
         lc.markFailed(set);
+        if (personaId) {
+          set((state) => {
+            const ids = (state as unknown as { labRunningPersonaIds?: string[] }).labRunningPersonaIds ?? [];
+            return { labRunningPersonaIds: ids.filter((id) => id !== personaId) } as Partial<AgentStore>;
+          });
+        }
         reportError(err, `Failed to start ${label} test`, set, { action: `lab.${label}.startRun` });
         return null;
       }
@@ -199,6 +215,8 @@ export interface LabSlice {
   labProgress: LabRunProgress | null;
   setLabProgress: (p: LabRunProgress | null) => void;
   finishLabRun: (mode?: LabMode) => void;
+  /** personaIds with at least one active lab run. Feeds sidebar orbit dots. */
+  labRunningPersonaIds: string[];
 
   // Arena
   arenaRuns: LabArenaRun[];
@@ -290,6 +308,8 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     // Legacy shared
     isLabRunning: false,
     labProgress: null,
+    // Per-persona lab activity (drives sidebar orbit dots)
+    labRunningPersonaIds: [],
     setLabProgress: (p) => set({ labProgress: p }),
     finishLabRun: (mode) => {
       // Finish the mode-specific lifecycle
@@ -297,6 +317,12 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       else if (mode === 'matrix' || mode === 'ab' || mode === 'eval') matrixLifecycle.markFinished(set);
       labLifecycle.markFinished(set);
       const personaId = get().selectedPersona?.id;
+      // Drop this persona from the running set — the lab run ended.
+      if (personaId) {
+        set((state) => ({
+          labRunningPersonaIds: state.labRunningPersonaIds.filter((id) => id !== personaId),
+        }));
+      }
       if (!personaId) return;
       const fetchByMode: Record<string, () => Promise<void>> = {
         arena: () => arena.fetchRuns(personaId),

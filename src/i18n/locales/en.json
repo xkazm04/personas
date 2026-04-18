@@ -2201,6 +2201,10 @@
       "execution_in_progress": "Execution in progress",
       "execute": "Execute",
       "execute_failed": "Failed to start execution. Please try again.",
+      "execution_started": "Execution started",
+      "cancel_execution": "Cancel execution",
+      "execution_cancelled": "Execution cancelled",
+      "cancel_execution_failed": "Failed to cancel execution",
       "no_triggers_or_subs": "No triggers or event subscriptions configured",
       "missing_credentials": "Missing credentials: {credentials}",
       "cannot_enable": "Cannot enable agent",
@@ -5927,7 +5931,9 @@
       "delete_draft_title": "Discard this draft persona and close",
       "delete_draft": "Delete Draft",
       "agent_promoted": "Agent Promoted",
-      "view_agent": "View Agent"
+      "view_agent": "View Agent",
+      "refine_placeholder": "Describe what changed (e.g. 'Added API key')...",
+      "retry_with_changes": "Retry"
     },
     "diagrams": {
       "no_flow_data": "No flow data available",
@@ -6073,7 +6079,10 @@
       "response_preview": "Response Preview",
       "error_detail": "Error Detail",
       "copy": "Copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "add_key": "Add Key",
+      "key_added": "Added",
+      "add_key_for": "Add credential for {connector}"
     }
   },
   "triggers": {
@@ -9844,6 +9853,7 @@
       "no_scheduled_agents": "No agents with schedules",
       "all_agents_label": "All Agents",
       "draft_builds": "Draft builds",
+      "progress": "Progress",
       "dev_tools_label": "Dev Tools",
       "obsidian_brain": "Obsidian Brain",
       "active_twin": "Active Twin",

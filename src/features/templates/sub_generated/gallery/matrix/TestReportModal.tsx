@@ -2,21 +2,26 @@
  * TestReportModal — split-pane test result viewer extracted from MatrixCommandCenterParts.
  * Shows per-tool scope on the left, LLM-generated analysis on the right.
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X, CheckCircle2, XCircle, AlertTriangle, FileText,
-  Zap, Clock, Shield, Key, Copy, Check,
+  Zap, Clock, Shield, Key, Copy, Check, Plus,
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { ToolTestResult } from '@/lib/types/buildTypes';
 import { useAgentStore } from '@/stores/agentStore';
+import { useVaultStore } from '@/stores/vaultStore';
+import { useShallow } from 'zustand/react/shallow';
+import type { ConnectorDefinition } from '@/lib/types/types';
+import { CatalogCredentialModal } from '../../gallery/modals/CatalogCredentialModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // TestReportModal
 // ---------------------------------------------------------------------------
 
-export function TestReportModal({ results, summary, onClose }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void }) {
+export function TestReportModal({ results, summary, onClose, onCredentialAdded }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void; onCredentialAdded?: () => void }) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, true, onClose);
@@ -105,7 +110,7 @@ export function TestReportModal({ results, summary, onClose }: { results: ToolTe
               {selectedTool && selectedResult ? (
                 <ToolDetailView result={selectedResult} sections={sections} />
               ) : (
-                <ReportOverview sections={sections} summary={summary} results={results} connectors={testConnectors} />
+                <ReportOverview sections={sections} summary={summary} results={results} connectors={testConnectors} onCredentialAdded={onCredentialAdded} />
               )}
             </div>
           </div>
@@ -185,37 +190,109 @@ function parseReportSections(md: string): { overview: string; results: string; n
 // ConnectorHandshakeCard
 // ---------------------------------------------------------------------------
 
-function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: string; has_credential: boolean }> }) {
-  const { t } = useTranslation();
+function ConnectorHandshakeCard({
+  connectors,
+  onCredentialAdded,
+}: {
+  connectors: Array<{ name: string; has_credential: boolean }>;
+  onCredentialAdded?: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const { connectorDefinitions, createCredential, fetchCredentials } = useVaultStore(
+    useShallow((s) => ({
+      connectorDefinitions: s.connectorDefinitions,
+      createCredential: s.createCredential,
+      fetchCredentials: s.fetchCredentials,
+    })),
+  );
+  const [addingConnector, setAddingConnector] = useState<ConnectorDefinition | null>(null);
+  const [addedNames, setAddedNames] = useState<Set<string>>(new Set());
+
+  const handleAddKey = useCallback(
+    (connectorName: string) => {
+      const def = connectorDefinitions.find(
+        (c) => c.name === connectorName || c.label.toLowerCase() === connectorName.toLowerCase(),
+      );
+      if (def) setAddingConnector(def);
+    },
+    [connectorDefinitions],
+  );
+
+  const handleSave = useCallback(
+    async (values: Record<string, string>) => {
+      if (!addingConnector) return;
+      try {
+        await createCredential({
+          name: `${addingConnector.label} Credential`,
+          service_type: addingConnector.name,
+          data: values,
+          healthcheck_passed: true,
+        });
+        setAddedNames((prev) => new Set([...prev, addingConnector.name]));
+        setAddingConnector(null);
+        await fetchCredentials().catch(() => {});
+        onCredentialAdded?.();
+      } catch {
+        // CatalogCredentialModal shows its own error state
+      }
+    },
+    [addingConnector, createCredential, fetchCredentials, onCredentialAdded],
+  );
+
   if (connectors.length === 0) return null;
-  const matched = connectors.filter((c) => c.has_credential);
-  const missing = connectors.filter((c) => !c.has_credential);
+  const matched = connectors.filter((c) => c.has_credential || addedNames.has(c.name));
+  const missing = connectors.filter((c) => !c.has_credential && !addedNames.has(c.name));
+
   return (
-    <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Key className="w-4 h-4 text-primary/50" />
-        <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.connector_credentials}</h4>
+    <>
+      <div className="rounded-modal border border-primary/10 bg-primary/[0.02] px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Key className="w-4 h-4 text-primary/50" />
+          <h4 className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.templates.test_report.connector_credentials}</h4>
+        </div>
+        <div className="space-y-1.5">
+          {matched.map((c) => (
+            <div key={c.name} className="flex items-center gap-2 typo-body">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <span className="text-foreground">{c.name}</span>
+              <span className="text-emerald-400/60 typo-caption">
+                {addedNames.has(c.name) ? t.templates.test_report.key_added : t.templates.test_report.matched}
+              </span>
+            </div>
+          ))}
+          {missing.map((c) => (
+            <div key={c.name} className="flex items-center justify-between gap-2 typo-body">
+              <div className="flex items-center gap-2">
+                <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                <span className="text-foreground">{c.name}</span>
+                <span className="text-red-400/60 typo-caption">{t.templates.test_report.not_found}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAddKey(c.name)}
+                title={tx(t.templates.test_report.add_key_for, { connector: c.name })}
+                className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {t.templates.test_report.add_key}
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="space-y-1.5">
-        {matched.map((c) => (
-          <div key={c.name} className="flex items-center gap-2 typo-body">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            <span className="text-foreground">{c.name}</span>
-            <span className="text-emerald-400/60 typo-caption">{t.templates.test_report.matched}</span>
-          </div>
-        ))}
-        {missing.map((c) => (
-          <div key={c.name} className="flex items-center gap-2 typo-body">
-            <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-            <span className="text-foreground">{c.name}</span>
-            <span className="text-red-400/60 typo-caption">{t.templates.test_report.not_found}</span>
-          </div>
-        ))}
-      </div>
-      {missing.length > 0 && (
-        <p className="text-[11px] text-amber-400/60 mt-2">{t.templates.test_report.missing_keys_hint}</p>
-      )}
-    </div>
+
+      {addingConnector &&
+        createPortal(
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <CatalogCredentialModal
+              connectorDefinition={addingConnector}
+              onSave={handleSave}
+              onClose={() => setAddingConnector(null)}
+            />
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -223,7 +300,7 @@ function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: stri
 // ReportOverview
 // ---------------------------------------------------------------------------
 
-function ReportOverview({ sections, summary, results, connectors = [] }: { sections: ReturnType<typeof parseReportSections> | null; summary?: string | null; results: ToolTestResult[]; connectors?: Array<{ name: string; has_credential: boolean }> }) {
+function ReportOverview({ sections, summary, results, connectors = [], onCredentialAdded }: { sections: ReturnType<typeof parseReportSections> | null; summary?: string | null; results: ToolTestResult[]; connectors?: Array<{ name: string; has_credential: boolean }>; onCredentialAdded?: () => void }) {
   if (!sections && !summary) {
     const passed = results.filter((r) => r.status === 'passed');
     const failed = results.filter((r) => r.status === 'failed');
@@ -231,7 +308,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
     const skipped = results.filter((r) => r.status === 'skipped');
     return (
       <div className="space-y-5">
-        <ConnectorHandshakeCard connectors={connectors} />
+        <ConnectorHandshakeCard connectors={connectors} onCredentialAdded={onCredentialAdded} />
         <p className="typo-body text-foreground leading-relaxed">
           {failed.length === 0 && credentialMissing.length === 0 && passed.length > 0
             ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
@@ -247,7 +324,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
   if (!sections) {
     return (
       <div className="space-y-5">
-        <ConnectorHandshakeCard connectors={connectors} />
+        <ConnectorHandshakeCard connectors={connectors} onCredentialAdded={onCredentialAdded} />
         <div className="space-y-1.5">{summary!.split('\n').filter(Boolean).map((line, i) => <MarkdownLine key={i} text={line} />)}</div>
       </div>
     );
@@ -255,7 +332,7 @@ function ReportOverview({ sections, summary, results, connectors = [] }: { secti
 
   return (
     <div className="space-y-5">
-      <ConnectorHandshakeCard connectors={connectors} />
+      <ConnectorHandshakeCard connectors={connectors} onCredentialAdded={onCredentialAdded} />
       {sections.overview && (
         <SectionBlock icon={<Shield className="w-4 h-4 text-primary/50" />} label="Overview">
           {sections.overview.trim().split('\n').filter(Boolean).map((line, i) => <MarkdownLine key={i} text={line} />)}

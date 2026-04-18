@@ -49,7 +49,7 @@ export function DefaultModelSection({ draft, patch, modelDirty, personaId }: Def
 
   return (
     <div className="space-y-1.5">
-      <SectionHeader icon={<Cpu className="w-3.5 h-3.5" />} label={uc.persona_default_model} />
+      <SectionHeader prominent icon={<Cpu className="w-5 h-5" />} label={uc.persona_default_model} />
 
       {/* Collapsed summary bar */}
       <button

@@ -47,8 +47,18 @@ function normalizeTriggerType(raw: string): string {
   return TRIGGER_TYPE_ALIASES[raw] ?? raw;
 }
 
-/** Extract dimension items from an AgentIR design result. Works with loose shapes. */
-function extractDimensionData(ir: unknown): CellDataMap {
+/** Extract dimension items from an AgentIR design result. Works with loose shapes.
+ *
+ * `credentialBindings` (optional) is a map of connector-name / vault-category →
+ * concrete service_type derived from the user's questionnaire picks. When
+ * present, each bound connector in `suggested_connectors` / `required_connectors`
+ * is rewritten to show the user's chosen service so the Apps & Services matrix
+ * cell reflects their selection rather than the template's generic placeholder.
+ */
+function extractDimensionData(
+  ir: unknown,
+  credentialBindings?: Record<string, string>,
+): CellDataMap {
   const d = ir as Record<string, unknown>;
   const data: CellDataMap = {};
 
@@ -68,14 +78,37 @@ function extractDimensionData(ir: unknown): CellDataMap {
     }) };
   }
 
-  // Connectors
+  // Connectors — apply user's credential picks from the questionnaire.
   const connectors = ((d.suggested_connectors ?? d.required_connectors ?? []) as unknown[]);
   if (connectors.length > 0) {
-    const items = connectors.map((c) => { const o = c as Record<string, unknown>; return `${o.name ?? "unknown"} — ${o.purpose ?? o.description ?? ""}`; });
-    const structured = connectors.map((c) => {
+    const rewritten = connectors.map((c) => {
       const o = c as Record<string, unknown>;
-      return { name: String(o.name ?? ""), service_type: String(o.service_type ?? o.n8n_credential_type ?? o.name ?? ""), purpose: String(o.purpose ?? o.description ?? ""), has_credential: Boolean(o.has_credential) };
+      const originalName = String(o.name ?? "");
+      // A binding exists if either the connector name OR the service_type
+      // matches a key in credentialBindings. Templates may use the vault
+      // category (e.g. "ai") or a semantic placeholder (e.g. "image_ai");
+      // both should be rewritten to the concrete service_type.
+      const boundServiceType =
+        credentialBindings?.[originalName] ??
+        credentialBindings?.[String(o.service_type ?? "")] ??
+        undefined;
+      if (boundServiceType) {
+        return {
+          ...o,
+          name: boundServiceType,
+          service_type: boundServiceType,
+          has_credential: true,
+        };
+      }
+      return o;
     });
+    const items = rewritten.map((o) => `${o.name ?? "unknown"} — ${o.purpose ?? o.description ?? ""}`);
+    const structured = rewritten.map((o) => ({
+      name: String(o.name ?? ""),
+      service_type: String(o.service_type ?? o.n8n_credential_type ?? o.name ?? ""),
+      purpose: String(o.purpose ?? o.description ?? ""),
+      has_credential: Boolean(o.has_credential),
+    }));
     data["connectors"] = { items, raw: { connectors: structured, alternatives: {} } };
   }
 
@@ -319,7 +352,21 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     if (hasAdoptionQuestions && !questionsComplete) return;
     seedDone.current = true;
 
-    const dimensionData = extractDimensionData(designResult);
+    // Derive credential bindings from vault-category questions so the Apps &
+    // Services matrix cell reflects the user's concrete picks (e.g. Leonardo
+    // AI) instead of the template's generic placeholder (e.g. "image_ai").
+    const credentialBindings: Record<string, string> = {};
+    for (const q of adoptionQuestions) {
+      if (q.vault_category && q.option_service_types && q.options && adoptionAnswers[q.id]) {
+        const idx = q.options.indexOf(adoptionAnswers[q.id]!);
+        if (idx >= 0 && idx < q.option_service_types.length) {
+          const serviceType = q.option_service_types[idx];
+          if (serviceType) credentialBindings[q.vault_category] = serviceType;
+        }
+      }
+    }
+
+    const dimensionData = extractDimensionData(designResult, credentialBindings);
     const cellStates: Record<string, CellBuildStatus> = {};
     for (const key of Object.keys(dimensionData)) {
       cellStates[key] = "resolved";

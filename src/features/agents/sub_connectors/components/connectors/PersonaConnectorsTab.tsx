@@ -96,7 +96,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       {/* Connector icons row */}
       {connectorNames.length > 0 && (
         <div className="flex items-center gap-3 px-1">
-          <span className="typo-label font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.ct_connectors_label}</span>
+          <span className="typo-submodule-header">{t.agents.connectors.ct_connectors_label}</span>
           <div className="flex items-center gap-1.5">
             {connectorNames.map((name) => {
               const meta = getConnectorMeta(name);

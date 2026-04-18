@@ -193,8 +193,11 @@ export function MatrixCellRenderer({
     ? stateClasses.watermarkOpacity
     : useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]';
 
-  // Build outer class list -- state-machine classes override defaults when present
-  const baseSize = compact ? 'p-2.5 min-h-[80px]' : 'p-4 min-h-[200px]';
+  // Build outer class list -- state-machine classes override defaults when present.
+  // At 2xl+, cells scale with viewport height so the matrix fills large displays.
+  const baseSize = compact
+    ? 'p-2.5 min-h-[80px]'
+    : 'p-4 min-h-[200px] 2xl:p-5 2xl:min-h-[26vh] 3xl:p-6 3xl:min-h-[28vh] 4xl:min-h-[30vh]';
   const outerClasses = stateClasses
     ? [
         `relative rounded-modal border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
@@ -238,7 +241,7 @@ export function MatrixCellRenderer({
           <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
         )}
       </div>
-      <div className={`relative flex-1 flex flex-col justify-center transition-[max-height] duration-300 ${compact ? 'overflow-hidden max-h-[40px]' : 'max-h-[220px] overflow-y-auto scrollbar-thin'}`}>
+      <div className={`relative flex-1 flex flex-col justify-center transition-[max-height] duration-300 ${compact ? 'overflow-hidden max-h-[40px]' : 'max-h-[220px] 2xl:max-h-[22vh] 3xl:max-h-[24vh] 4xl:max-h-[26vh] overflow-y-auto scrollbar-thin'}`}>
         {/* Background status icon — always visible as watermark */}
         {cellBuildStatus && (cellBuildStatus as string) !== 'hidden' && (cellBuildStatus as string) !== 'revealed' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

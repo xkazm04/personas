@@ -497,6 +497,21 @@
         "default": "Standard (7/10 -- balanced quality and speed)",
         "context": "Controls multimodal AI strictness before human review. Higher = better quality, more generation cycles.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_trigger_cadence",
+        "category": "configuration",
+        "question": "How often should this agent run?",
+        "type": "select",
+        "options": [
+          "Hourly",
+          "Daily",
+          "Weekly",
+          "I will set this up later"
+        ],
+        "default": "I will set this up later",
+        "context": "Determines the default schedule trigger. You can always add, edit, or remove triggers from the agent's Triggers tab after adoption.",
+        "dimension": "triggers"
       }
     ]
   }

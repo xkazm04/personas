@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
@@ -7,8 +7,17 @@ import { useAgentStore } from "@/stores/agentStore";
 import type { CloudTab } from '@/lib/types/types';
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
 import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
+import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { cloudItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
+
+// Color classes per activity type — mirror the SidebarLevel1 orbit dots so
+// users see the same signal at both hierarchy levels.
+const PROGRESS_COLORS: Record<AgentActivityType, { dot: string; ping: string; text: string; bg: string; border: string }> = {
+  draft: { dot: 'bg-violet-500',  ping: 'bg-violet-500/40',  text: 'text-violet-300',  bg: 'bg-violet-500/5',  border: 'border-violet-500/20' },
+  exec:  { dot: 'bg-blue-500',    ping: 'bg-blue-500/40',    text: 'text-blue-300',    bg: 'bg-blue-500/5',    border: 'border-blue-500/20' },
+  lab:   { dot: 'bg-orange-500',  ping: 'bg-orange-500/40',  text: 'text-orange-300',  bg: 'bg-orange-500/5',  border: 'border-orange-500/20' },
+};
 
 const HEALTH_DOT: Record<string, string> = {
   healthy: 'bg-emerald-400',
@@ -46,7 +55,40 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
   const [recentsCollapsed, setRecentsCollapsed] = useState(false);
+  const [progressCollapsed, setProgressCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+
+  // Per-persona activity from the same aggregator powering the L1 orbit dots.
+  // Here we group by persona so the list shows each agent with one or more
+  // colored indicators depending on what it's doing (draft / exec / lab).
+  const activities = useSidebarAgentActivity();
+  const progressEntries = useMemo(() => {
+    const byPersona = new Map<string, { personaId: string; personaName: string; types: Set<AgentActivityType>; labels: string[] }>();
+    for (const a of activities) {
+      const existing = byPersona.get(a.personaId);
+      if (existing) {
+        existing.types.add(a.type);
+        existing.labels.push(a.label);
+      } else {
+        byPersona.set(a.personaId, {
+          personaId: a.personaId,
+          personaName: a.personaName,
+          types: new Set([a.type]),
+          labels: [a.label],
+        });
+      }
+    }
+    // Stable order: drafts first, then execs, then labs, within each sorted by name.
+    const typePriority = (types: Set<AgentActivityType>) => (
+      (types.has('draft') ? 0 : types.has('exec') ? 1 : 2)
+    );
+    return Array.from(byPersona.values()).sort((a, b) => {
+      const pa = typePriority(a.types);
+      const pb = typePriority(b.types);
+      if (pa !== pb) return pa - pb;
+      return a.personaName.localeCompare(b.personaName);
+    });
+  }, [activities]);
 
   // Health grades for per-agent dots (lazy-loaded from overviewStore)
   const [healthGrades, setHealthGrades] = useState<Record<string, string>>({});
@@ -278,6 +320,74 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                         aria-label={t.shared.sidebar_extra.add_favorites}
                       >
                         <Star className="w-3 h-3 text-foreground/90" aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Progress section — one entry per persona with active work.
+            Mirrors the colors used by the L1 orbit dots so the same task
+            class is visually consistent across the whole sidebar. */}
+        {progressEntries.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary/10">
+            <button
+              onClick={() => setProgressCollapsed(!progressCollapsed)}
+              aria-expanded={!progressCollapsed}
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-emerald-400/60 hover:text-emerald-400/80 transition-colors"
+            >
+              <Activity className="w-3 h-3" aria-hidden="true" />
+              {t.shared.sidebar_extra.progress}
+              <span className="text-[10px] font-mono text-emerald-400/40 ml-0.5">{progressEntries.length}</span>
+              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${progressCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {!progressCollapsed && (
+              <div className="mt-1 space-y-0.5">
+                {progressEntries.map((entry) => {
+                  const persona = personas.find((p) => p.id === entry.personaId);
+                  const isActive = selectedPersonaId === entry.personaId && !isCreatingPersona;
+                  // Tooltip: show all active task labels for this persona.
+                  const tooltip = `${entry.personaName}\n${entry.labels.join(' · ')}`;
+                  return (
+                    <button
+                      key={entry.personaId}
+                      onClick={() => selectPersona(entry.personaId)}
+                      aria-current={isActive ? 'page' : undefined}
+                      title={tooltip}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors group ${
+                        isActive
+                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
+                          : 'hover:bg-secondary/40'
+                      }`}
+                    >
+                      {persona ? (
+                        <PersonaIcon icon={persona.icon} color={persona.color} />
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-secondary/60 flex-shrink-0" />
+                      )}
+                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
+                        isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
+                      }`}>{entry.personaName}</span>
+                      {/* One pulsing dot per task class this persona has in flight. */}
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        {(['draft', 'exec', 'lab'] as const)
+                          .filter((type) => entry.types.has(type))
+                          .map((type) => {
+                            const meta = PROGRESS_COLORS[type];
+                            return (
+                              <span
+                                key={type}
+                                className="relative flex h-2 w-2"
+                                aria-label={type}
+                              >
+                                <span className={`absolute inset-0 rounded-full animate-ping ${meta.ping}`} />
+                                <span className={`relative w-2 h-2 rounded-full ${meta.dot}`} />
+                              </span>
+                            );
+                          })}
                       </span>
                     </button>
                   );

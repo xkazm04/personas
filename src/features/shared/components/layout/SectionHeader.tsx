@@ -8,14 +8,19 @@ interface SectionHeaderProps {
   className?: string;
   /** When true, hides badge and trailing actions for a cleaner look. */
   simplified?: boolean;
+  /** When true, renders a larger theme-tinted header (text-xl, primary color). */
+  prominent?: boolean;
 }
 
-export function SectionHeader({ icon, label, badge, trailing, className, simplified }: SectionHeaderProps) {
+export function SectionHeader({ icon, label, badge, trailing, className, simplified, prominent }: SectionHeaderProps) {
+  const labelClasses = prominent
+    ? 'typo-submodule-header truncate'
+    : 'typo-label text-foreground/90 truncate';
   return (
     <div className={`flex items-center justify-between gap-3 ${className ?? ''}`}>
       <div className="flex items-center gap-2 px-1 min-w-0">
-        {icon && <span className="text-foreground shrink-0">{icon}</span>}
-        <p className="typo-label text-foreground/90 truncate">
+        {icon && <span className={`${prominent ? 'text-primary' : 'text-foreground'} shrink-0`}>{icon}</span>}
+        <p className={labelClasses}>
           {label}
         </p>
         {!simplified && badge}

@@ -77,7 +77,8 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <SectionHeader
-          icon={<BookOpen className="w-3.5 h-3.5" />}
+          prominent
+          icon={<BookOpen className="w-5 h-5" />}
           label={`${linkedRecipes.length} linked recipe${linkedRecipes.length !== 1 ? 's' : ''}`}
         />
         <button

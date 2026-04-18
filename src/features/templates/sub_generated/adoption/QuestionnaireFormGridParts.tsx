@@ -159,6 +159,7 @@ function DynamicSelectBody({
         onChange={onAnswer}
         multi={src.multi}
         includeAllOption={src.include_all_option}
+        allowCustom
       />
     </div>
   );
@@ -231,16 +232,17 @@ export function QuestionCard({
   onRetryDynamic?: (questionId: string) => void;
 }) {
   const { t } = useTranslation();
-  const [flash, setFlash] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
   const [tipOpen, setTipOpen] = useState(false);
   const prevAnswer = useRef(answer);
 
   useEffect(() => {
     if (answer && answer !== prevAnswer.current) {
-      setFlash(true);
-      const t2 = setTimeout(() => setFlash(false), 500);
+      // Bumping the key remounts the pulse overlay so the radial wave
+      // animation replays from scratch each time the answer changes.
+      setPulseKey((k) => k + 1);
       prevAnswer.current = answer;
-      return () => clearTimeout(t2);
+      return;
     }
     prevAnswer.current = answer;
   }, [answer]);
@@ -250,10 +252,24 @@ export function QuestionCard({
 
   return (
     <div
-      className={`relative rounded-card px-3 py-2.5 transition-colors ${
-        flash ? 'bg-emerald-500/[0.06]' : isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
+      className={`relative overflow-hidden rounded-card px-3 py-2.5 transition-colors ${
+        isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
       }`}
     >
+      {/* Radial green pulse wave — emanates from the center to the edges when
+          a fresh answer commits. The key prop forces a remount so every answer
+          change replays the animation. */}
+      {pulseKey > 0 && !isBlocked && (
+        <span
+          key={pulseKey}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 animate-answer-pulse"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(16,185,129,0.28) 0%, rgba(16,185,129,0.12) 40%, transparent 75%)',
+          }}
+        />
+      )}
       {/* Question label + status indicator + collapsible tip toggle */}
       <div className="flex items-start gap-2 mb-1.5">
         {isBlocked ? (

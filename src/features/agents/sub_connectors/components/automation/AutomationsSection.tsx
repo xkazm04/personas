@@ -100,10 +100,11 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
     <div>
       <div className="cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <SectionHeader
+          prominent
           icon={
             <span className="flex items-center gap-1.5">
-              {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <Zap className="w-3.5 h-3.5 text-accent/60" />
+              {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              <Zap className="w-5 h-5" />
             </span>
           }
           label={sectionLabel}

@@ -196,7 +196,7 @@ export function MatrixCommandCenter({
     if (buildPhase === 'testing')
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);
     if (buildPhase === 'test_complete')
-      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onApproveAnyway={onApproveTestAnyway} onReject={onRejectTest} onDeleteDraft={onDeleteDraft} toolResults={toolTestResults} summary={testSummary} /></div>);
+      return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onApproveAnyway={onApproveTestAnyway} onReject={onRejectTest} onRefine={onRefine} onDeleteDraft={onDeleteDraft} toolResults={toolTestResults} summary={testSummary} /></div>);
     if (buildPhase === 'promoted' && !isSaved)
       return (<div className={WRAP}><PromotionSuccessIndicator onViewAgent={onViewAgent} /></div>);
     // Creation: Design question awaiting answer

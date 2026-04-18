@@ -57,7 +57,7 @@ export function PersonaSettingsTab({
     <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl space-y-4">
       {/* Identity -- relative z-10 so icon/color picker popups render above cards below */}
       <div className="space-y-3 relative z-10">
-        <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.identity}
         </h4>
@@ -106,7 +106,7 @@ export function PersonaSettingsTab({
 
       {/* Execution */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           {t.agents.settings_status.execution}
         </h4>

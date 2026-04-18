@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { AlertCircle, X, Play } from 'lucide-react';
+import { AlertCircle, X, Play, Square } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
@@ -34,8 +34,10 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const executePersonaAction = useAgentStore((s) => s.executePersona);
+  const cancelExecutionAction = useAgentStore((s) => s.cancelExecution);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
@@ -51,12 +53,26 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
   const doExecute = useCallback(async () => {
     if (!selectedPersona?.id || isThisPersonaExecuting) return;
     try {
-      await executePersonaAction(selectedPersona.id);
+      const execId = await executePersonaAction(selectedPersona.id);
+      if (execId) {
+        useToastStore.getState().addToast(t.agents.editor_ui.execution_started, 'success');
+      }
     } catch (err) {
       logger.error('Execute failed', { error: err instanceof Error ? err.message : String(err) });
       useToastStore.getState().addToast(t.agents.editor_ui.execute_failed, 'error');
     }
-  }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction]);
+  }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction, t]);
+
+  const handleCancel = useCallback(async () => {
+    if (!isThisPersonaExecuting || !activeExecutionId) return;
+    try {
+      await cancelExecutionAction(activeExecutionId);
+      useToastStore.getState().addToast(t.agents.editor_ui.execution_cancelled, 'success');
+    } catch (err) {
+      logger.error('Cancel failed', { error: err instanceof Error ? err.message : String(err) });
+      useToastStore.getState().addToast(t.agents.editor_ui.cancel_execution_failed, 'error');
+    }
+  }, [isThisPersonaExecuting, activeExecutionId, cancelExecutionAction, t]);
 
   const handleExecute = useCallback(() => {
     if (isThisPersonaExecuting) return;
@@ -134,19 +150,36 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       }
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
-          {/* Execute button — top row, above the Active toggle */}
-          <Button
-            variant="accent"
-            accentColor={isThisPersonaExecuting ? 'orange' : 'blue'}
-            size="sm"
-            icon={<Play className="w-3.5 h-3.5" />}
-            loading={isThisPersonaExecuting}
-            onClick={handleExecute}
-            data-testid="persona-header-execute-btn"
-            disabledReason={isThisPersonaExecuting ? t.agents.editor_ui.execution_in_progress : undefined}
-          >
-            {isThisPersonaExecuting ? t.agents.editor_ui.running : t.agents.editor_ui.execute}
-          </Button>
+          {/* Execute / Cancel buttons — top row, above the Active toggle */}
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="accent"
+              accentColor={isThisPersonaExecuting ? 'orange' : 'blue'}
+              size="sm"
+              icon={<Play className="w-3.5 h-3.5" />}
+              loading={isThisPersonaExecuting}
+              onClick={handleExecute}
+              data-testid="persona-header-execute-btn"
+              disabled={isThisPersonaExecuting}
+              disabledReason={isThisPersonaExecuting ? t.agents.editor_ui.execution_in_progress : undefined}
+              className={isThisPersonaExecuting ? 'animate-pulse' : ''}
+            >
+              {isThisPersonaExecuting ? t.agents.editor_ui.running : t.agents.editor_ui.execute}
+            </Button>
+            {isThisPersonaExecuting && (
+              <Button
+                variant="accent"
+                accentColor="rose"
+                size="sm"
+                icon={<Square className="w-3.5 h-3.5 fill-current" />}
+                onClick={handleCancel}
+                data-testid="persona-header-cancel-btn"
+                aria-label={t.agents.editor_ui.cancel_execution}
+              >
+                {t.common.cancel}
+              </Button>
+            )}
+          </div>
           {/* Active toggle row */}
           <div className="flex items-center gap-2">
             <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-foreground'}`}>

@@ -251,6 +251,26 @@ body {
   color: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
+/* -- Submodule Header --------------------------------------------------------
+   Prominent section headers used inside agent submodules (Connectors,
+   Use Cases, Settings). Larger than .typo-section-title and tinted more
+   strongly with the theme primary so it reads as a top-level divider.
+   Theme-adaptive: red on red-theme, cyan on default, etc. */
+
+.typo-submodule-header {
+  font-size: 1.25rem;          /* text-xl */
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+}
+
+:root[class*="light"] .typo-submodule-header,
+[data-theme*="light"] .typo-submodule-header {
+  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+}
+
 /* -- Hero Greeting Shine -----------------------------------------------------
    Subtle animated shine effect for the dominant greeting typography. */
 

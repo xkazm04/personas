@@ -170,6 +170,52 @@ pub fn extract_credential_bindings(answers: &AdoptionAnswers) -> HashMap<String,
     answers.credential_bindings.clone()
 }
 
+/// Apply the user's questionnaire credential picks to the AgentIr's
+/// `required_connectors` list.
+///
+/// Templates often ship a generic `required_connectors` entry like
+/// `{"name": "image_ai"}` that's a semantic placeholder — the actual
+/// connector in the vault is named `leonardo_ai` or `openai` or similar.
+/// When the user answers the corresponding vault-category question, the
+/// frontend records the concrete service_type in
+/// `answers.credential_bindings` (e.g. `"ai" -> "leonardo_ai"`).
+///
+/// This function rewrites generic entries to their concrete picks. It does
+/// NOT add new connectors — it only replaces placeholders. The match is
+/// keyed by the connector name matching the vault category (most templates
+/// use the category itself, e.g. `name: "ai"`, as the placeholder name).
+///
+/// Effect:
+/// - The matrix Apps & Services dimension renders the concrete service.
+/// - `prepare_tool_actions` sets `requires_credential_type` to the real
+///   service_type so runtime credential resolution finds the right one.
+pub fn apply_credential_bindings_to_connectors(ir: &mut AgentIr, answers: &AdoptionAnswers) {
+    use crate::db::models::agent_ir::{AgentIrConnector, AgentIrConnectorData};
+
+    if answers.credential_bindings.is_empty() {
+        return;
+    }
+
+    for conn in ir.required_connectors.iter_mut() {
+        let current_name = conn.name().unwrap_or("").to_string();
+        // Look up by exact match on connector name. Templates may use either
+        // the vault category (`ai`) or a semantic placeholder (`image_ai`).
+        let bound = answers
+            .credential_bindings
+            .get(&current_name)
+            .cloned()
+            // Fallback: some templates use aq_id-style names. Future work.
+            .or_else(|| None);
+        if let Some(service_type) = bound {
+            *conn = AgentIrConnector::Structured(AgentIrConnectorData {
+                name: Some(service_type.clone()),
+                service_type: Some(service_type),
+                has_credential: Some(true),
+            });
+        }
+    }
+}
+
 // ============================================================================
 // Tests
 // ============================================================================

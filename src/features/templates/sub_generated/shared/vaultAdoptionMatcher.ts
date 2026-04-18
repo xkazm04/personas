@@ -49,13 +49,28 @@ function hasMatchingCredential(
 /**
  * Match adoption questions against the user's credential vault.
  *
- * For questions with `vault_category` + `option_service_types`, checks
- * how many options have a matching credential in the vault:
- * - 1 match  → auto-select that option, mark as auto-detected
- * - 0 matches → BLOCK the question (user must add a credential via the catalog)
- * - 2+ matches → narrow the displayed options to only the vault-matched ones
- *               (and the "Other/null" fallback if present) so the user sees
- *               only services they actually have credentials for
+ * For questions with `vault_category` + `option_service_types`, the behaviour
+ * depends on matching credentials AND on whether the options include a
+ * `null` fallback (typically an "Other / custom" option):
+ *
+ * WITHOUT a null fallback:
+ * - 0 matches    → BLOCK the question (user must add a credential)
+ * - 1 match      → auto-select the matching option, tag as auto-detected
+ * - 2+ matches   → narrow the displayed options to matched-only
+ *
+ * WITH a null fallback:
+ * - 0 matches    → narrow to ONLY the "Other" option(s) so the user sees a
+ *                   real signal that no credential exists (instead of the
+ *                   full hardcoded list)
+ * - 1 match      → narrow to [match, Other] so the user can confirm the
+ *                   detected credential OR fall through to custom input
+ * - 2+ matches   → narrow to matched + Other
+ *
+ * Rationale: a question with `option_service_types` is declaring "these
+ * are credential-backed choices". If the catalog is hardcoded (no filter),
+ * the `option_service_types` annotation is pure decoration. Filtering is
+ * the whole point. The null fallback only determines whether the user has
+ * a legitimate "custom value" escape hatch — not whether we filter.
  *
  * Matching is alias-aware via SERVICE_TYPE_ALIASES so cloud credentials
  * created via CLI probe or foraging still hit templates that reference the
@@ -111,18 +126,25 @@ export function matchVaultToQuestions(
 
     const hasNullFallback = nullFallbackIndices.length > 0;
 
-    if (matchingIndices.length === 1) {
-      // Exactly 1 match → auto-select
-      autoAnswers[q.id] = q.options[matchingIndices[0]!]!;
-      autoDetectedIds.add(q.id);
-    } else if (matchingIndices.length === 0 && !hasNullFallback) {
-      // No matching credentials and no "Other" fallback → block the question
-      blockedQuestionIds.add(q.id);
-    } else if (matchingIndices.length >= 2) {
-      // 2+ matches → filter displayed options to only the ones the user has,
-      // preserving any null-fallback options (e.g. "Other / custom")
+    if (hasNullFallback) {
+      // With a null fallback the user always has an escape hatch, so we
+      // never block. Always filter to matched + fallback, regardless of
+      // match count. Even 0 matches narrows to just the "Other" pill —
+      // that's a stronger UX signal than hiding filtering behind a full
+      // hardcoded list.
       const keepIndices = [...matchingIndices, ...nullFallbackIndices].sort((a, b) => a - b);
       filteredOptions[q.id] = keepIndices.map((i) => q.options![i]!);
+      // Do NOT auto-answer even on 1 match — the user may want "Other".
+    } else if (matchingIndices.length === 0) {
+      // No matches and no fallback → block the question.
+      blockedQuestionIds.add(q.id);
+    } else if (matchingIndices.length === 1) {
+      // Single match, no fallback → auto-select (only valid option).
+      autoAnswers[q.id] = q.options[matchingIndices[0]!]!;
+      autoDetectedIds.add(q.id);
+    } else {
+      // 2+ matches, no fallback → filter to matched options only.
+      filteredOptions[q.id] = matchingIndices.map((i) => q.options![i]!);
     }
   }
 

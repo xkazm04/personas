@@ -122,10 +122,34 @@ pub fn match_event<T: MatchableSubscription>(
                 }
             }
 
-            // If subscription has a source filter, it must match
-            if let Some(filter) = sub.source_filter() {
-                if !source_filter_matches(filter, event.source_id.as_deref()) {
-                    return false;
+            // Self-scoping: when an event was emitted by a persona (source_type
+            // starts with "persona:"), it only matches subscriptions belonging to
+            // the SAME persona — unless the subscription has an explicit
+            // source_filter that opts into cross-persona events. Without this,
+            // two personas with the same event subscriptions (e.g. both subscribe
+            // to "stock.signal.strong_buy") would trigger each other's runs.
+            if event.source_type.starts_with("persona:") {
+                if let Some(filter) = sub.source_filter() {
+                    // Subscription has an explicit source_filter → honour it
+                    // (allows cross-persona event routing when intentional)
+                    if !source_filter_matches(filter, event.source_id.as_deref()) {
+                        return false;
+                    }
+                } else {
+                    // No source_filter → default to self-scoping: only the
+                    // emitting persona's own subscriptions match.
+                    match event.source_id.as_deref() {
+                        Some(source_pid) if source_pid != sub.persona_id() => return false,
+                        _ => {}
+                    }
+                }
+            } else {
+                // Non-persona events (system, webhook, scheduler, etc.): apply
+                // source_filter if set, otherwise allow all matching subscriptions.
+                if let Some(filter) = sub.source_filter() {
+                    if !source_filter_matches(filter, event.source_id.as_deref()) {
+                        return false;
+                    }
                 }
             }
 
@@ -346,5 +370,79 @@ mod tests {
         let matches = match_event_listeners(&event, &listeners);
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0].persona_id, "p2");
+    }
+
+    // -- Self-scoping tests (persona-emitted events) ---------------------
+
+    fn make_persona_event(event_type: &str, emitting_persona_id: &str) -> PersonaEvent {
+        PersonaEvent {
+            id: "evt-p".into(),
+            project_id: "default".into(),
+            event_type: event_type.into(),
+            source_type: format!("persona:{}", emitting_persona_id),
+            source_id: Some(emitting_persona_id.into()),
+            target_persona_id: None,
+            payload: None,
+            status: PersonaEventStatus::Pending,
+            error_message: None,
+            processed_at: None,
+            created_at: "2026-01-15T10:00:00Z".into(),
+            use_case_id: None,
+            retry_count: 0,
+        }
+    }
+
+    #[test]
+    fn test_self_scoping_same_persona_matches() {
+        let event = make_persona_event("stock.signal.strong_buy", "p1");
+        let subs = vec![make_sub("p1", "stock.signal.strong_buy")];
+        let matches = match_event(&event, &subs);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].persona_id, "p1");
+    }
+
+    #[test]
+    fn test_self_scoping_different_persona_blocked() {
+        let event = make_persona_event("stock.signal.strong_buy", "p1");
+        let subs = vec![
+            make_sub("p1", "stock.signal.strong_buy"),
+            make_sub("p2", "stock.signal.strong_buy"),
+        ];
+        let matches = match_event(&event, &subs);
+        // Only p1 matches — p2 is blocked by self-scoping
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].persona_id, "p1");
+    }
+
+    #[test]
+    fn test_self_scoping_explicit_source_filter_allows_cross_persona() {
+        let event = make_persona_event("task_completed", "p1");
+        let mut sub = make_sub("p2", "task_completed");
+        // Explicit source_filter opts into receiving events from p1
+        sub.source_filter = Some("p1".into());
+        let matches = match_event(&event, &[sub]);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].persona_id, "p2");
+    }
+
+    #[test]
+    fn test_self_scoping_wildcard_source_filter_allows_cross_persona() {
+        let event = make_persona_event("task_completed", "p1");
+        let mut sub = make_sub("p2", "task_completed");
+        sub.source_filter = Some("p*".into());
+        let matches = match_event(&event, &[sub]);
+        assert_eq!(matches.len(), 1);
+    }
+
+    #[test]
+    fn test_non_persona_events_still_broadcast() {
+        // System/webhook events (source_type != "persona:*") broadcast to all subscribers
+        let event = make_event("webhook_received");
+        let subs = vec![
+            make_sub("p1", "webhook_received"),
+            make_sub("p2", "webhook_received"),
+        ];
+        let matches = match_event(&event, &subs);
+        assert_eq!(matches.len(), 2);
     }
 }

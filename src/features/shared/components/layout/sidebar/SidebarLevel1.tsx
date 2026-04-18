@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { BadgeSlot, type BadgeDefinition } from './BadgeSlot';
-import { ActivityDots, type ActivityDot } from './ActivityDots';
+import { OrbitDots } from './OrbitDots';
+import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
@@ -143,13 +144,9 @@ export default function SidebarLevel1({
     setContextScanComplete, creativeSessionRunning,
   ]);
 
-  // Activity dots for Agents: purple per draft, blue per execution
-  const agentActivityDots = useMemo((): ActivityDot[] => {
-    const dots: ActivityDot[] = [];
-    if (isBuildingOrTesting) dots.push({ id: 'build', color: 'bg-violet-500', pingColor: 'bg-violet-500/40', label: buildPhase === 'testing' ? 'Testing agent' : 'Draft in progress' });
-    if (isExecuting) dots.push({ id: 'exec', color: 'bg-blue-500', pingColor: 'bg-blue-500/40', label: 'Execution in progress' });
-    return dots;
-  }, [isExecuting, isBuildingOrTesting, buildPhase]);
+  // Per-persona activity dots for Agents — one per task (draft / exec / lab).
+  // Each dot is clickable to jump to that persona and hoverable for a tooltip.
+  const agentActivities = useSidebarAgentActivity();
 
   return (
     <>
@@ -221,8 +218,8 @@ export default function SidebarLevel1({
               {badgesBySection[section.id] != null && (
                 <BadgeSlot badges={badgesBySection[section.id]!} />
               )}
-              {section.id === 'personas' && agentActivityDots.length > 0 && (
-                <ActivityDots dots={agentActivityDots} />
+              {section.id === 'personas' && agentActivities.length > 0 && (
+                <OrbitDots activities={agentActivities} />
               )}
             </button>
           );

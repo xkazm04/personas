@@ -70,7 +70,8 @@ export function ConnectorsSection({
   return (
     <div className="space-y-3">
       <SectionHeader
-        icon={<Link className="w-3.5 h-3.5" />}
+        prominent
+        icon={<Link className="w-5 h-5" />}
         label={tx(t.agents.connectors.st_required, { count: requiredCredTypes.length })}
         badge={(
           <>

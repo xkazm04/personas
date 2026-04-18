@@ -65,10 +65,11 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
       ) : (
         <div className="space-y-4">
           <SectionHeader
-            icon={<ListChecks className="w-3.5 h-3.5" />}
+            icon={<ListChecks className="w-5 h-5" />}
             label={useCases.length === 1
               ? t.agents.use_cases.use_cases_identified.replace('{count}', String(useCases.length))
               : t.agents.use_cases.use_cases_identified_other.replace('{count}', String(useCases.length))}
+            prominent
           />
 
           <div className="space-y-2">

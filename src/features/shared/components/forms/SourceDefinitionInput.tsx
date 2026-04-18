@@ -28,13 +28,15 @@
  * The `summarizeSourceDefinition` helper is exported for the live-preview
  * card so the summary stays consistent wherever this component is rendered.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderOpen, Database, FolderGit2, AlertCircle } from 'lucide-react';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useShallow } from 'zustand/react/shallow';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ThemedSelect } from './ThemedSelect';
 
 export type SourceKind = 'local' | 'codebase' | 'database';
 
@@ -159,14 +161,40 @@ export function SourceDefinitionInput({
     return 'local';
   });
 
-  // If a stored value loads after mount, switch to its tab. We intentionally
-  // only track the parsed kind — reacting to activeKind here would fight the
-  // user's manual tab selection.
+  // Sync activeKind from the stored value ONLY when the parsed kind changes
+  // externally (e.g. on mount, or when the value prop changes from the parent).
+  // Reacting on every render would fight the user: clicking "Codebase" flips
+  // activeKind, but the stored value still has kind="local" since nothing was
+  // committed yet — the effect would then snap activeKind back to "local".
+  const lastParsedKindRef = useRef<SourceKind | undefined>(parsed?.kind);
   useEffect(() => {
-    if (parsed?.kind && parsed.kind !== activeKind) setActiveKind(parsed.kind);
-  }, [parsed?.kind, activeKind]);
+    if (parsed?.kind && parsed.kind !== lastParsedKindRef.current) {
+      lastParsedKindRef.current = parsed.kind;
+      setActiveKind(parsed.kind);
+    }
+  }, [parsed?.kind]);
 
-  const commit = (next: SourceDefinitionValue) => onChange(JSON.stringify(next));
+  const commit = (next: SourceDefinitionValue) => {
+    lastParsedKindRef.current = next.kind;
+    onChange(JSON.stringify(next));
+  };
+
+  const handleBrowseLocal = async () => {
+    try {
+      // Allow either files or directories — common for design briefs, style
+      // guides, CSVs, folders of assets.
+      const selected = await openDialog({
+        directory: false,
+        multiple: false,
+        title: t.templates.adopt_modal.source_local,
+      });
+      if (typeof selected === 'string') {
+        commit({ kind: 'local', path: selected });
+      }
+    } catch {
+      // User cancelled or dialog unavailable — silent.
+    }
+  };
 
   const tabs: {
     kind: SourceKind;
@@ -232,13 +260,27 @@ export function SourceDefinitionInput({
           <p className="text-xs text-foreground">
             {t.templates.adopt_modal.source_local_hint}
           </p>
-          <input
-            type="text"
-            value={parsed?.kind === 'local' ? parsed.path ?? '' : ''}
-            onChange={(e) => commit({ kind: 'local', path: e.target.value })}
-            placeholder={localPlaceholder ?? t.templates.adopt_modal.source_local_placeholder}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
-          />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/60 pointer-events-none" />
+              <input
+                type="text"
+                value={parsed?.kind === 'local' ? parsed.path ?? '' : ''}
+                onChange={(e) => commit({ kind: 'local', path: e.target.value })}
+                placeholder={localPlaceholder ?? t.templates.adopt_modal.source_local_placeholder}
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleBrowseLocal}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-primary/15 bg-background/80 text-foreground hover:border-primary/25 hover:bg-primary/5 transition-all"
+              title={t.templates.adopt_modal.source_local}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              {t.common.browse}
+            </button>
+          </div>
         </div>
       )}
 
@@ -266,10 +308,11 @@ export function SourceDefinitionInput({
               }
             />
           ) : (
-            <select
+            <ThemedSelect
+              filterable
               value={parsed?.kind === 'codebase' ? parsed.projectId ?? '' : ''}
-              onChange={(e) => {
-                const p = projects.find((x) => x.id === e.target.value);
+              onValueChange={(projectId) => {
+                const p = projects.find((x) => x.id === projectId);
                 if (!p) return;
                 commit({
                   kind: 'codebase',
@@ -278,18 +321,13 @@ export function SourceDefinitionInput({
                   rootPath: p.root_path ?? undefined,
                 });
               }}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
-            >
-              <option value="" disabled>
-                {t.templates.adopt_modal.source_pick_codebase}
-              </option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.root_path ? ` — ${p.root_path}` : ''}
-                </option>
-              ))}
-            </select>
+              placeholder={t.templates.adopt_modal.source_pick_codebase}
+              options={projects.map((p) => ({
+                value: p.id,
+                label: p.name,
+                description: p.root_path ?? undefined,
+              }))}
+            />
           )}
         </div>
       )}
@@ -322,10 +360,11 @@ export function SourceDefinitionInput({
               }
             />
           ) : (
-            <select
+            <ThemedSelect
+              filterable
               value={parsed?.kind === 'database' ? parsed.credentialId ?? '' : ''}
-              onChange={(e) => {
-                const c = databaseCredentials.find((x) => x.id === e.target.value);
+              onValueChange={(credentialId) => {
+                const c = databaseCredentials.find((x) => x.id === credentialId);
                 if (!c) return;
                 commit({
                   kind: 'database',
@@ -334,17 +373,13 @@ export function SourceDefinitionInput({
                   serviceType: c.service_type,
                 });
               }}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
-            >
-              <option value="" disabled>
-                {t.templates.adopt_modal.source_pick_database}
-              </option>
-              {databaseCredentials.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} — {c.service_type}
-                </option>
-              ))}
-            </select>
+              placeholder={t.templates.adopt_modal.source_pick_database}
+              options={databaseCredentials.map((c) => ({
+                value: c.id,
+                label: c.name,
+                description: c.service_type,
+              }))}
+            />
           )}
         </div>
       )}

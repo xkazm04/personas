@@ -1090,6 +1090,28 @@ input[type="number"] {
   animation: shake-error 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* Answer confirmation pulse — a green radial wave that expands from the
+   center of a question card to its edges on answer commit. Used in the
+   adoption questionnaire QuestionCard. */
+@keyframes answer-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+.animate-answer-pulse {
+  animation: answer-pulse 650ms ease-out both;
+  transform-origin: center;
+}
+
 .animate-draw-check {
   animation: draw-check 0.3s ease forwards;
 }

@@ -26,12 +26,12 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"
       >
         {toolsExpanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+          <ChevronDown className="w-4 h-4 text-primary" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+          <ChevronRight className="w-4 h-4 text-primary" />
         )}
-        <Wrench className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-body font-medium text-foreground">
+        <Wrench className="w-5 h-5 text-primary" />
+        <span className="typo-submodule-header">
           {tx(t.agents.connectors.ts_configured, { count: tools.length })}
         </span>
         {!toolsExpanded && tools.length > 0 && (
