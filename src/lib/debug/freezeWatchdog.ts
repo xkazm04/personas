@@ -94,7 +94,7 @@ export function startWatchdog(): void {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
-            level: 'error', message: report
+            level: 'warn', message: report
           });
         } catch { /* intentional: IPC may be blocked during freeze */ }
       }

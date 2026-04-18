@@ -563,7 +563,14 @@ pub fn start_loops(
             };
 
             if let Err(e) = result {
-                tracing::error!("Webhook server failed: {}", e);
+                let msg = e.to_string();
+                // EADDRINUSE (Windows os error 10048 / Unix EADDRINUSE) is a dev-mode
+                // double-start, not an app bug — downgrade so it stays out of Sentry.
+                if msg.contains("10048") || msg.to_lowercase().contains("address already in use") {
+                    tracing::warn!("Webhook server bind skipped (port in use): {}", msg);
+                } else {
+                    tracing::error!("Webhook server failed: {}", msg);
+                }
             }
             scheduler.webhook_alive.store(false, Ordering::Relaxed);
         }

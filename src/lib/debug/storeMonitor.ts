@@ -123,7 +123,7 @@ function tick(): void {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__TAURI_INTERNALS__?.invoke?.('log_frontend_error', {
-          level: 'error', message: alertMsg + '\n' + summary
+          level: 'warn', message: alertMsg + '\n' + summary
         });
       } catch { /* intentional: fire-and-forget IPC */ }
     }
