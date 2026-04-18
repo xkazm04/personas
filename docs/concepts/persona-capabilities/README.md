@@ -1,0 +1,73 @@
+# Persona Capabilities — Implementation Plan
+
+> Architectural reframe: **persona = behavior core + composable capabilities (use cases)**.
+> Each use case becomes a first-class runnable entity with its own triggers, executions,
+> messages, reviews, and memories. Persona keeps identity, style, tools, and shared memory.
+
+**Status:** Design locked. Implementation pending. No production personas exist — greenfield, no backward compatibility required.
+
+## Reading order
+
+1. [00-vision.md](00-vision.md) — Why we're doing this. The mental model.
+2. [01-behavior-core.md](01-behavior-core.md) — What the persona's behavior core is (definition + fields).
+3. [02-use-case-as-capability.md](02-use-case-as-capability.md) — Use case as first-class entity.
+4. [03-runtime.md](03-runtime.md) — Prompt assembly (Option A), session cache, data flow.
+5. [04-data-model.md](04-data-model.md) — Schema, FKs, coupling points.
+6. [05-pillars.md](05-pillars.md) — How triggers/events/executions/messages/memories/reviews rewire.
+7. [06-building-pipeline.md](06-building-pipeline.md) — CLI build + template adoption + template schema v2.
+8. [07-lab-versioning.md](07-lab-versioning.md) — Lab refinement + versioning (RFC, implemented last).
+9. [08-frontend-impact.md](08-frontend-impact.md) — UI surfaces and changes.
+10. [09-implementation-plan.md](09-implementation-plan.md) — Ordered phases with tasks.
+11. [10-deferred-backlog.md](10-deferred-backlog.md) — Items intentionally deferred, with trigger conditions.
+
+## TL;DR architecture
+
+```
+Persona (identity + shared state)
+  ├── Behavior core        → identity, voice, principles, cognitive style
+  ├── Core memories        → facts, constraints, user preferences (cross-capability)
+  ├── Tools                → shared tool pool (available to all capabilities)
+  ├── Governance           → trust_level, budget, turn limits, gateway
+  └── Capabilities (use cases)
+        ├── Purpose                    (what the capability does)
+        ├── Triggers                   (schedule, polling, webhook, manual)
+        ├── Event subscriptions        (which events activate this capability)
+        ├── Input schema / sample      (expected payload shape)
+        ├── Notification channels      (where outputs go for this capability)
+        ├── Model override (optional)  (per-capability compute profile)
+        ├── Learned memories           (scoped to this capability)
+        ├── Test fixtures              (canned simulations)
+        └── enabled: bool              (runtime toggle, no rebuild)
+```
+
+## Key design decisions
+
+| # | Decision | Rationale |
+|---|---|---|
+| 1 | One persona prompt, not per-capability fragments (Option A) | Keeps identity coherent; avoids prompt version fragmentation |
+| 2 | Capabilities injected at runtime into prompt via "## Active Capabilities" section | Dynamic awareness without rebuild |
+| 3 | Session cache hash includes active-capability fingerprint | Toggles invalidate warm sessions correctly |
+| 4 | No Execute button on persona header | Executions are per-capability, surfaced in Use Case tab |
+| 5 | Chat remains persona-scoped | LLM routes internally to the right capability |
+| 6 | Lab can version whole persona or refine capabilities | Matches user's "refine one or many" mental model |
+| 7 | No backward compatibility for templates | Pre-production; rewrite cleanly in one pass |
+| 8 | Use cases do not appear in sidebar | Navigation via Use Case tab |
+
+## Status per phase
+
+| Phase | Subject | State |
+|---|---|---|
+| C1 | Runtime foundation (prompt assembly reads capabilities, session cache, enabled flag, semantic trigger linkage) | not started |
+| C2 | Building pipeline rewrite (AgentIr v2, CLI prompts, template schema v2, 107-template rewrite, adoption v2) | not started |
+| C3 | UI activation (toggle, simulate, remove persona Execute → per-capability in Use Case tab) | not started |
+| C4 | Triggers/automations first-class (trigger builder rewired, automation use-case binding) | not started |
+| C5 | Per-use-case messages/reviews/memories | not started |
+| C6 | Lab per-use-case + versioning RFC-driven | not started |
+
+When a phase completes, update this table and the status header of the individual doc.
+
+## Who reads this
+
+- **Another Claude Code session** picking up where this one left off — read this README + the phase doc they're landing.
+- **Human reviewer** — [00-vision.md](00-vision.md) + [09-implementation-plan.md](09-implementation-plan.md).
+- **Implementer** mid-phase — the phase doc + the pillar docs (03, 04, 05) it touches.
