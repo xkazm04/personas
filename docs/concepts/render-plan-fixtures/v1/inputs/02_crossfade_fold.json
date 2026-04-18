@@ -1,0 +1,38 @@
+{
+  "id": "fx-crossfade-fold",
+  "name": "Crossfade (fold mode)",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "backgroundColor": "#000000",
+  "items": [
+    {
+      "id": "v1",
+      "type": "video",
+      "label": "clip A",
+      "filePath": "/a.mp4",
+      "startTime": 0.0,
+      "duration": 5.0,
+      "trimStart": 0.0,
+      "trimEnd": 0.0,
+      "mediaDuration": 60.0,
+      "transition": "crossfade",
+      "transitionDuration": 1.0,
+      "speed": 1.0
+    },
+    {
+      "id": "v2",
+      "type": "video",
+      "label": "clip B",
+      "filePath": "/b.mp4",
+      "startTime": 5.0,
+      "duration": 4.0,
+      "trimStart": 0.0,
+      "trimEnd": 0.0,
+      "mediaDuration": 60.0,
+      "transition": "cut",
+      "transitionDuration": 0.0,
+      "speed": 1.0
+    }
+  ]
+}

@@ -5,6 +5,7 @@ mod commands;
 pub mod daemon;
 mod db;
 mod engine;
+pub use engine::render_plan;
 mod error;
 pub mod freeze_monitor;
 mod gitlab;
@@ -1675,6 +1676,7 @@ pub fn run() {
             // Artist -- FFmpeg / Media Studio
             commands::artist::ffmpeg::artist_check_ffmpeg,
             commands::artist::ffmpeg::artist_probe_media,
+            commands::artist::ffmpeg::artist_compile_render_plan,
             commands::artist::ffmpeg::artist_export_composition,
             commands::artist::ffmpeg::artist_cancel_export,
             commands::artist::ffmpeg::artist_extract_audio,

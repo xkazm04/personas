@@ -3,7 +3,7 @@
 //! Follows the `BackgroundJobManager` pattern from task_executor.rs:
 //! spawns ffmpeg process, parses stderr for progress, emits Tauri events.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -17,6 +17,12 @@ use ts_rs::TS;
 
 use crate::background_job::BackgroundJobManager;
 use crate::engine::event_registry::event_name;
+use crate::engine::render_plan::compile::{
+    CompileDeps as RpCompileDeps, CompileOptions as RpCompileOptions, Composition as RpComposition,
+};
+use crate::engine::render_plan::{
+    compile as render_plan_compile, AudioStage, OverlayStage, RenderPlan, SourceEntry, VideoStage,
+};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -59,113 +65,6 @@ pub struct MediaProbeResult {
     pub has_audio: bool,
     pub codec: Option<String>,
     pub file_path: String,
-}
-
-/// Serialized composition from the frontend.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CompositionInput {
-    pub width: i32,
-    pub height: i32,
-    pub fps: i32,
-    pub background_color: String,
-    pub items: Vec<CompositionItem>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase", tag = "type")]
-pub enum CompositionItem {
-    #[serde(rename = "video")]
-    Video {
-        file_path: String,
-        start_time: f64,
-        duration: f64,
-        trim_start: f64,
-        trim_end: f64,
-        transition: String,
-        transition_duration: f64,
-        #[serde(default = "default_one")]
-        speed: f64,
-        #[serde(default)]
-        fade_in: f64,
-        #[serde(default)]
-        fade_out: f64,
-        #[serde(default)]
-        strip_audio: bool,
-    },
-    #[serde(rename = "audio")]
-    Audio {
-        file_path: String,
-        start_time: f64,
-        duration: f64,
-        trim_start: f64,
-        trim_end: f64,
-        volume: f64,
-        #[serde(default = "default_one")]
-        speed: f64,
-        #[serde(default)]
-        fade_in: f64,
-        #[serde(default)]
-        fade_out: f64,
-        #[serde(default)]
-        normalize: bool,
-        // Two-pass loudnorm fields: when all four are present, the export
-        // uses loudnorm's linear mode (exact linear gain, matches preview).
-        #[serde(default)]
-        measured_lufs: Option<f64>,
-        #[serde(default)]
-        measured_lra: Option<f64>,
-        #[serde(default)]
-        measured_true_peak: Option<f64>,
-        #[serde(default)]
-        measured_threshold: Option<f64>,
-    },
-    #[serde(rename = "text")]
-    Text {
-        label: String,
-        #[serde(default)]
-        text: String,
-        start_time: f64,
-        duration: f64,
-        font_size: i32,
-        color: String,
-        #[serde(default = "default_half")]
-        position_x: f64,
-        #[serde(default = "default_half")]
-        position_y: f64,
-        #[serde(default)]
-        fade_in: f64,
-        #[serde(default)]
-        fade_out: f64,
-    },
-    #[serde(rename = "image")]
-    Image {
-        file_path: String,
-        start_time: f64,
-        duration: f64,
-        #[serde(default = "default_half")]
-        position_x: f64,
-        #[serde(default = "default_half")]
-        position_y: f64,
-        #[serde(default = "default_scale")]
-        scale: f64,
-        #[serde(default)]
-        fade_in: f64,
-        #[serde(default)]
-        fade_out: f64,
-    },
-}
-
-fn default_one() -> f64 {
-    1.0
-}
-
-fn default_half() -> f64 {
-    0.5
-}
-
-fn default_scale() -> f64 {
-    1.0
 }
 
 /// Resolve a platform-appropriate TTF path for drawtext filters. Returns
@@ -398,6 +297,27 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
     None
 }
 
+/// Compile a Composition JSON blob to a RenderPlan IR.
+///
+/// Exposed so the browser preview can share the Rust compiler instead of
+/// maintaining a parallel TypeScript port. Pure function — no I/O — so it
+/// needs no auth guard. Preview mode uses Fold + frame-snap + !for_export;
+/// export still calls `render_plan::compile` directly in its own command.
+#[tauri::command]
+pub async fn artist_compile_render_plan(
+    composition_json: String,
+) -> Result<RenderPlan, AppError> {
+    let composition: RpComposition = serde_json::from_str(&composition_json)
+        .map_err(|e| AppError::Validation(format!("Invalid composition: {e}")))?;
+
+    render_plan_compile(
+        &composition,
+        &RpCompileOptions::fold_default(),
+        &RpCompileDeps::none(),
+    )
+    .map_err(|e| AppError::Validation(format!("Composition compile failed: {e}")))
+}
+
 /// Export a composition to MP4 via ffmpeg.
 ///
 /// Runs in a background task, streaming progress events to the frontend.
@@ -415,8 +335,17 @@ pub async fn artist_export_composition(
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
 
-    let composition: CompositionInput = serde_json::from_str(&composition_json)
+    let composition: RpComposition = serde_json::from_str(&composition_json)
         .map_err(|e| AppError::Validation(format!("Invalid composition: {e}")))?;
+
+    // Compile to the RenderPlan IR; both the export pipeline and (eventually,
+    // in PR-3) the preview consume the plan instead of the Composition.
+    let plan = render_plan_compile(
+        &composition,
+        &RpCompileOptions::for_export_default(),
+        &RpCompileDeps::none(),
+    )
+    .map_err(|e| AppError::Validation(format!("Composition compile failed: {e}")))?;
 
     let cancel_token = CancellationToken::new();
     MEDIA_EXPORT_JOBS.insert_running(job_id.clone(), cancel_token.clone(), MediaExportExtra)?;
@@ -434,7 +363,7 @@ pub async fn artist_export_composition(
                 &app_handle,
                 &job_id_clone,
                 &ffmpeg,
-                &composition,
+                &plan,
                 &output_path,
             ) => res
         };
@@ -713,10 +642,10 @@ async fn run_ffmpeg_export(
     app: &tauri::AppHandle,
     job_id: &str,
     ffmpeg_path: &Path,
-    composition: &CompositionInput,
+    plan: &RenderPlan,
     output_path: &str,
 ) -> Result<(), AppError> {
-    let args = build_ffmpeg_args(composition, output_path);
+    let args = build_ffmpeg_args(plan, Path::new(output_path));
 
     MEDIA_EXPORT_JOBS.emit_line(app, job_id, format!("Running: ffmpeg {}", args.join(" ")));
 
@@ -739,8 +668,7 @@ async fn run_ffmpeg_export(
 
     let mut reader = BufReader::new(stderr).lines();
 
-    // Compute total duration for progress calculation
-    let total_duration = compute_total_duration(composition);
+    let total_duration = plan.duration_seconds;
 
     while let Ok(Some(line)) = reader.next_line().await {
         // Parse progress from ffmpeg stderr
@@ -771,259 +699,158 @@ async fn run_ffmpeg_export(
     Ok(())
 }
 
-fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<String> {
+// =============================================================================
+// FFmpeg args from RenderPlan (PR-2)
+// =============================================================================
+//
+// This function consumes ONLY the RenderPlan — never the Composition.
+// Every composition-level decision (transition folding, speed clamping,
+// fade combination, source dedup, frame snap) has already been resolved
+// by `render_plan::compile`. The builder below is a flat translation from
+// stages to ffmpeg filter graph notation.
+
+pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     let mut args: Vec<String> = vec!["-y".into()]; // overwrite output
+
+    // ---- Step 1: source → ffmpeg input index map ----
+    //
+    // Sources come in this order:
+    //   slot 0           — reserved Color (never an `-i`)
+    //   slot 1..N        — File/Proxy sources referenced by video/audio stages
+    //                      AND by image overlays. We distinguish them at build
+    //                      time by scanning overlays, so image sources get
+    //                      `-loop 1` and media sources do not.
+    //
+    // When the plan has no video stages, we synthesise a lavfi color background
+    // as an extra input — matches the previous behavior of filling the frame
+    // with the composition's background when it's audio/overlay-only.
+
+    // Which source ids are referenced only as image overlays?
+    let image_source_ids: HashSet<u32> = plan
+        .overlays
+        .iter()
+        .filter_map(|o| match o {
+            OverlayStage::Image(i) => Some(i.source_id),
+            OverlayStage::Text(_) => None,
+        })
+        .collect();
+
+    let mut source_input_idx: HashMap<u32, usize> = HashMap::new();
     let mut input_idx = 0usize;
-    let mut input_map: HashMap<String, usize> = HashMap::new();
 
-    // Collect video and audio inputs
-    let video_clips: Vec<_> = composition.items.iter().filter_map(|item| {
-        if let CompositionItem::Video { file_path, .. } = item { Some(file_path.clone()) } else { None }
-    }).collect();
-
-    let audio_clips: Vec<_> = composition.items.iter().filter_map(|item| {
-        if let CompositionItem::Audio { file_path, .. } = item { Some(file_path.clone()) } else { None }
-    }).collect();
-
-    // Add video + audio input files (dedup by path)
-    for path in video_clips.iter().chain(audio_clips.iter()) {
-        if !input_map.contains_key(path) {
-            args.push("-i".into());
-            args.push(path.clone());
-            input_map.insert(path.clone(), input_idx);
-            input_idx += 1;
+    // Non-image media sources first (slot 1 onward, skipping Color slot 0).
+    for source in plan.sources.iter() {
+        let id = source.id();
+        match source {
+            SourceEntry::Color { .. } => continue,
+            SourceEntry::File { path, .. } | SourceEntry::Proxy { path, .. } => {
+                if image_source_ids.contains(&id) {
+                    // Deferred to the image-input pass below so `-loop 1`
+                    // can be applied per-input (images need it, media don't).
+                    continue;
+                }
+                args.push("-i".into());
+                args.push(path.clone());
+                source_input_idx.insert(id, input_idx);
+                input_idx += 1;
+            }
         }
     }
 
-    // Background lavfi color source. Needed whenever there are no real video
-    // clips — either because the composition is empty OR because the user has
-    // only image/text overlays that still need something to composite onto.
-    let has_video_clips = !video_clips.is_empty();
-    let bg_input_idx: Option<usize> = if !has_video_clips {
-        let idx = input_idx;
+    // Synthetic lavfi background when no video stages exist — reserves its
+    // own input slot and feeds the filter graph as the base video stream.
+    let bg_hex = bg_source_hex(plan);
+    let bg_input_idx: Option<usize> = if plan.video_track.is_empty() {
+        let duration = plan.duration_seconds.max(1.0);
         args.extend_from_slice(&[
             "-f".into(),
             "lavfi".into(),
             "-i".into(),
             format!(
                 "color=c={}:s={}x{}:d={:.3}:r={}",
-                composition.background_color.replace('#', "0x"),
-                composition.width,
-                composition.height,
-                compute_total_duration(composition).max(1.0),
-                composition.fps,
+                bg_hex.replace('#', "0x"),
+                plan.width,
+                plan.height,
+                duration,
+                plan.fps,
             ),
         ]);
+        let idx = input_idx;
         input_idx += 1;
         Some(idx)
     } else {
         None
     };
 
-    // Image inputs — each uses `-loop 1` so it produces an indefinite stream
-    // for the overlay filter to composite. Image clips are NOT deduped because
-    // `-loop 1` must apply per input and two clips could reuse the same file.
-    let mut image_input_map: HashMap<usize, usize> = HashMap::new(); // item_idx → input_idx
-    for (i, item) in composition.items.iter().enumerate() {
-        if let CompositionItem::Image { file_path, .. } = item {
+    // Image overlay sources — each gets a distinct `-loop 1 -i <path>` input.
+    // Image clips are NOT deduped across overlays because `-loop 1` is a
+    // per-input directive, and the old implementation emitted them
+    // sequentially; we preserve that ordering for byte-parity.
+    let mut image_input_idx: HashMap<String, usize> = HashMap::new();
+    for overlay in plan.overlays.iter() {
+        if let OverlayStage::Image(img) = overlay {
+            let Some(source) = plan.sources.iter().find(|s| s.id() == img.source_id) else {
+                continue;
+            };
+            let path = match source {
+                SourceEntry::File { path, .. } | SourceEntry::Proxy { path, .. } => path.clone(),
+                SourceEntry::Color { .. } => continue,
+            };
             args.push("-loop".into());
             args.push("1".into());
             args.push("-i".into());
-            args.push(file_path.clone());
-            image_input_map.insert(i, input_idx);
+            args.push(path);
+            image_input_idx.insert(img.id.clone(), input_idx);
             input_idx += 1;
         }
     }
 
-    // Build filter complex
+    // ---- Step 2: filter_complex ----
     let mut filters: Vec<String> = Vec::new();
     let mut video_labels: Vec<String> = Vec::new();
     let mut audio_labels: Vec<String> = Vec::new();
 
-    // Compute per-index effective fades that include the contribution of
-    // the `transition` field. Both preview and export use the SAME rule:
-    // any non-cut transition on clip[i] adds a fade-out of `transition_duration`
-    // at the end of clip[i] and a fade-in of `transition_duration` at the
-    // start of clip[i+1]. This is how the two sides stay in visual sync.
-    let video_indices: Vec<usize> = composition
-        .items
-        .iter()
-        .enumerate()
-        .filter_map(|(i, it)| matches!(it, CompositionItem::Video { .. }).then_some(i))
-        .collect();
-    let transition_fade_in_from_prev = |current_idx: usize| -> f64 {
-        let pos = video_indices.iter().position(|&x| x == current_idx);
-        let Some(pos) = pos else { return 0.0 };
-        if pos == 0 {
-            return 0.0;
-        }
-        let prev = video_indices[pos - 1];
-        if let Some(CompositionItem::Video { transition, transition_duration, .. }) =
-            composition.items.get(prev)
-        {
-            if transition != "cut" && *transition_duration > 0.0 {
-                return *transition_duration;
-            }
-        }
-        0.0
-    };
-
-    // Speed interpretation (matches the live preview):
-    //   `duration` is the OUTPUT length of the clip on the timeline.
-    //   With speed=k, the clip consumes `duration * k` seconds of source
-    //   material and compresses (or stretches) it to fit `duration` seconds
-    //   of output via `setpts`/`atempo`. This way the timeline never lies
-    //   about how long a clip occupies in the final render.
-    for (i, item) in composition.items.iter().enumerate() {
-        if let CompositionItem::Video {
-            file_path, start_time, trim_start, duration,
-            speed, fade_in, fade_out, strip_audio, transition, transition_duration, ..
-        } = item {
-            let Some(&idx) = input_map.get(file_path) else { continue };
-            let safe_speed = if *speed <= 0.0 { 1.0 } else { *speed };
-            let source_span = duration * safe_speed;
-            let src_end = trim_start + source_span;
-            let out_dur = *duration;
-            let label = format!("v{i}");
-
-            // Effective fades = user-set fade + transition contribution.
-            // Outgoing transition on THIS clip → adds to fade_out.
-            // Incoming transition from PREVIOUS video clip → adds to fade_in.
-            let transition_out = if transition != "cut" && *transition_duration > 0.0 {
-                *transition_duration
-            } else {
-                0.0
-            };
-            let eff_fade_in = (fade_in + transition_fade_in_from_prev(i)).min(out_dur);
-            let eff_fade_out = (fade_out + transition_out).min(out_dur);
-
-            let mut vfilters = vec![
-                format!("trim=start={trim_start:.3}:end={src_end:.3}"),
-                if (safe_speed - 1.0).abs() < 1e-4 {
-                    "setpts=PTS-STARTPTS".to_string()
-                } else {
-                    format!("setpts=(PTS-STARTPTS)/{safe_speed}")
-                },
-            ];
-            if eff_fade_in > 0.01 {
-                vfilters.push(format!("fade=t=in:st=0:d={:.3}", eff_fade_in));
-            }
-            if eff_fade_out > 0.01 {
-                let st = (out_dur - eff_fade_out).max(0.0);
-                vfilters.push(format!("fade=t=out:st={st:.3}:d={:.3}", eff_fade_out));
-            }
-            filters.push(format!("[{idx}:v]{}[{label}]", vfilters.join(",")));
-            video_labels.push(label);
-
-            // Video-embedded audio track. For crossfade (both sides audible),
-            // mirror the video fade at the audio level so the sound blends.
-            // For fade_to_black we only fade the video to black and leave the
-            // audio alone — that's closer to the visual convention.
-            if !*strip_audio {
-                let delay_ms = (start_time * 1000.0) as i64;
-                let audio_fade_out = if transition == "crossfade" {
-                    eff_fade_out
-                } else {
-                    fade_out.min(out_dur)
-                };
-                let audio_fade_in = if transition_fade_in_from_prev(i) > 0.0
-                    && matches!(
-                        composition
-                            .items
-                            .get(video_indices[video_indices.iter().position(|&x| x == i).unwrap_or(0)
-                                .saturating_sub(1)]),
-                        Some(CompositionItem::Video { transition, .. }) if transition == "crossfade"
-                    )
-                {
-                    eff_fade_in
-                } else {
-                    fade_in.min(out_dur)
-                };
-
-                let mut afilters = vec![
-                    format!("atrim=start={trim_start:.3}:end={src_end:.3}"),
-                    "asetpts=PTS-STARTPTS".to_string(),
-                ];
-                if (safe_speed - 1.0).abs() > 1e-4 {
-                    afilters.extend(atempo_chain(safe_speed));
-                }
-                if audio_fade_in > 0.01 {
-                    afilters.push(format!("afade=t=in:st=0:d={:.3}", audio_fade_in));
-                }
-                if audio_fade_out > 0.01 {
-                    let st = (out_dur - audio_fade_out).max(0.0);
-                    afilters.push(format!("afade=t=out:st={st:.3}:d={:.3}", audio_fade_out));
-                }
-                if delay_ms > 0 {
-                    afilters.push(format!("adelay={delay_ms}|{delay_ms}"));
-                }
-                let va_label = format!("va{i}");
-                filters.push(format!(
-                    "[{idx}:a?]{}[{va_label}]",
-                    afilters.join(","),
-                ));
-                audio_labels.push(va_label);
-            }
-        }
+    // Video stages.
+    for (i, stage) in plan.video_track.iter().enumerate() {
+        let Some(&idx) = source_input_idx.get(&stage.source_id) else {
+            continue;
+        };
+        let label = format!("v{i}");
+        filters.push(build_video_stage_filter(idx, &label, stage));
+        video_labels.push(label);
     }
 
-    // Dedicated audio clips
-    for (i, item) in composition.items.iter().enumerate() {
-        if let CompositionItem::Audio {
-            file_path, start_time, trim_start, duration, volume,
-            speed, fade_in, fade_out, normalize,
-            measured_lufs, measured_lra, measured_true_peak, measured_threshold, ..
-        } = item {
-            let Some(&idx) = input_map.get(file_path) else { continue };
-            let safe_speed = if *speed <= 0.0 { 1.0 } else { *speed };
-            let source_span = duration * safe_speed;
-            let src_end = trim_start + source_span;
-            let out_dur = *duration;
-            let delay_ms = (start_time * 1000.0) as i64;
-            let label = format!("a{i}");
-
-            let mut afilters = vec![
-                format!("atrim=start={trim_start:.3}:end={src_end:.3}"),
-                "asetpts=PTS-STARTPTS".to_string(),
-            ];
-            if (safe_speed - 1.0).abs() > 1e-4 {
-                afilters.extend(atempo_chain(safe_speed));
-            }
-            if *normalize {
-                // Use loudnorm's linear (two-pass) mode when we have a
-                // measurement — this is bit-for-bit equivalent to what the
-                // preview's Web Audio GainNode does.
-                match (measured_lufs, measured_lra, measured_true_peak, measured_threshold) {
-                    (Some(mi), Some(mlra), Some(mtp), Some(mthr)) => {
-                        afilters.push(format!(
-                            "loudnorm=I=-16:TP=-1.5:LRA=11:measured_I={mi:.2}:measured_LRA={mlra:.2}:measured_TP={mtp:.2}:measured_thresh={mthr:.2}:offset=0:linear=true"
-                        ));
-                    }
-                    _ => {
-                        afilters.push("loudnorm=I=-16:TP=-1.5:LRA=11".to_string());
-                    }
-                }
-            }
-            if *fade_in > 0.01 {
-                afilters.push(format!("afade=t=in:st=0:d={:.3}", fade_in.min(out_dur)));
-            }
-            if *fade_out > 0.01 {
-                let st = (out_dur - fade_out).max(0.0);
-                afilters.push(format!("afade=t=out:st={st:.3}:d={:.3}", fade_out.min(out_dur)));
-            }
-            if delay_ms > 0 {
-                afilters.push(format!("adelay={delay_ms}|{delay_ms}"));
-            }
-            afilters.push(format!("volume={volume:.2}"));
-
-            filters.push(format!("[{idx}:a]{}[{label}]", afilters.join(",")));
+    // Audio stages (both dedicated tracks and the implicit 'embedded' track).
+    //
+    // Each audio stage becomes a single filter chain. Labels are `a<N>` where
+    // N is the emission ordinal. The old implementation labelled video-
+    // embedded audio as `va<item_idx>` and dedicated audio as `a<item_idx>`;
+    // the labels were never observable since everything is immediately mixed
+    // via `amix`. The IR uses a uniform `a<N>` naming — graph semantics are
+    // identical.
+    let mut audio_ord = 0usize;
+    for track in plan.audio_tracks.iter() {
+        for stage in track.stages.iter() {
+            let Some(&idx) = source_input_idx.get(&stage.source_id) else {
+                continue;
+            };
+            let label = format!("a{audio_ord}");
+            audio_ord += 1;
+            filters.push(build_audio_stage_filter(idx, &label, stage));
             audio_labels.push(label);
         }
     }
 
-    // Concat video labels into a single base (still just concatenation —
-    // true temporal crossfade is future work, see docs/concepts/media-studio-architecture.md).
-    let mut base_video_label: Option<String> = if video_labels.len() > 1 {
+    // ---- Step 3: concat / xfade the video track ----
+    //
+    // Under `TransitionMode::Fold` (what `for_export_default()` uses today)
+    // every video stage has `overlap_next == None` and we emit a simple
+    // `concat=n=N:v=1:a=0` pass. When any stage carries `overlap_next` we
+    // emit a cascading `xfade` chain instead — one xfade filter per pair.
+    let has_overlap = plan.video_track.iter().any(|s| s.overlap_next.is_some());
+    let mut base_video_label: Option<String> = if has_overlap && plan.video_track.len() >= 2 {
+        Some(build_xfade_chain(&plan.video_track, &video_labels, &mut filters))
+    } else if video_labels.len() >= 2 {
         let inputs: String = video_labels.iter().map(|l| format!("[{l}]")).collect();
         filters.push(format!(
             "{inputs}concat=n={}:v=1:a=0[vconcat]",
@@ -1033,136 +860,111 @@ fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<S
     } else if video_labels.len() == 1 {
         Some(video_labels[0].clone())
     } else {
-        // Use the lavfi background directly as the base video stream.
         bg_input_idx.map(|idx| format!("{idx}:v"))
     };
 
-    // --- Image overlays --------------------------------------------------
-    // For each image clip, build `[idx:v]format=rgba,scale,fade[img_N]` and
-    // then chain `[base][img_N]overlay=...[next_base]` against the current
-    // base video label. Position is centered on `(posX, posY)` as a fraction
-    // of the main frame — matches the preview's `translate(-50%, -50%)`.
+    // ---- Step 4: image overlays ----
     let mut overlay_counter = 0usize;
-    for (i, item) in composition.items.iter().enumerate() {
-        let CompositionItem::Image {
-            start_time,
-            duration,
-            position_x,
-            position_y,
-            scale,
-            fade_in,
-            fade_out,
-            ..
-        } = item
-        else {
+    for overlay in plan.overlays.iter() {
+        let OverlayStage::Image(img) = overlay else {
             continue;
         };
-        let Some(img_input_idx) = image_input_map.get(&i).copied() else { continue };
-        let Some(current_base) = base_video_label.clone() else { continue };
+        let Some(&img_idx) = image_input_idx.get(&img.id) else {
+            continue;
+        };
+        let Some(current_base) = base_video_label.clone() else {
+            continue;
+        };
 
-        let out_dur = *duration;
-        let end_time = start_time + duration;
-        // Fit within a 40% × 40% box of the output, multiplied by user scale.
-        let target_w = (composition.width as f64 * 0.4 * scale).round().max(1.0) as i64;
-        let target_h = (composition.height as f64 * 0.4 * scale).round().max(1.0) as i64;
+        let out_dur = img.output_end - img.output_start;
+        // Preserve the old 40%-of-frame box semantics so scale=1.0 still
+        // renders identically. See architecture doc §Image overlay.
+        let target_w = (plan.width as f64 * 0.4 * img.scale).round().max(1.0) as i64;
+        let target_h = (plan.height as f64 * 0.4 * img.scale).round().max(1.0) as i64;
 
         let img_label = format!("img{overlay_counter}");
         let mut img_filters = vec![
             "format=rgba".to_string(),
             format!("scale={target_w}:{target_h}:force_original_aspect_ratio=decrease"),
         ];
-        // Image stream time starts at 0 and is independent of the main stream,
-        // so fade stages must be expressed relative to the IMAGE's own timeline
-        // — i.e. use `0` and `out_dur - fade_out` rather than `start_time`.
-        if *fade_in > 0.01 {
+        if img.fade_in > 0.01 {
             img_filters.push(format!(
                 "fade=t=in:alpha=1:st=0:d={:.3}",
-                fade_in.min(out_dur)
+                img.fade_in.min(out_dur)
             ));
         }
-        if *fade_out > 0.01 {
-            let fo_st = (out_dur - fade_out).max(0.0);
+        if img.fade_out > 0.01 {
+            let fo_st = (out_dur - img.fade_out).max(0.0);
             img_filters.push(format!(
                 "fade=t=out:alpha=1:st={fo_st:.3}:d={:.3}",
-                fade_out.min(out_dur)
+                img.fade_out.min(out_dur)
             ));
         }
         filters.push(format!(
-            "[{img_input_idx}:v]{}[{img_label}]",
+            "[{img_idx}:v]{}[{img_label}]",
             img_filters.join(",")
         ));
 
         let next_label = format!("vo{overlay_counter}");
-        // Overlay position: centered on main frame, enabled for the clip's
-        // time window, and `shortest=0` so we don't truncate the base stream.
         filters.push(format!(
-            "[{current_base}][{img_label}]overlay=x='main_w*{position_x:.4}-overlay_w/2':y='main_h*{position_y:.4}-overlay_h/2':enable='between(t,{start_time:.3},{end_time:.3})'[{next_label}]"
+            "[{current_base}][{img_label}]overlay=x='main_w*{px:.4}-overlay_w/2':y='main_h*{py:.4}-overlay_h/2':enable='between(t,{st:.3},{et:.3})'[{next_label}]",
+            px = img.position_x,
+            py = img.position_y,
+            st = img.output_start,
+            et = img.output_end,
         ));
         base_video_label = Some(next_label);
         overlay_counter += 1;
     }
 
-    // --- Text overlays (drawtext) ----------------------------------------
-    // `drawtext` needs a concrete TTF path. If none is available (rare on
-    // desktops), we log a warning and skip text rendering; the preview DOM
-    // text still shows on screen.
+    // ---- Step 5: text overlays ----
     let font_path = resolve_system_font();
-    for item in composition.items.iter() {
-        let CompositionItem::Text {
-            label,
-            text: _,
-            start_time,
-            duration,
-            font_size,
-            color,
-            position_x,
-            position_y,
-            fade_in,
-            fade_out,
-        } = item
-        else {
+    for overlay in plan.overlays.iter() {
+        let OverlayStage::Text(t) = overlay else {
             continue;
         };
-        let Some(current_base) = base_video_label.clone() else { continue };
-        let Some(font) = font_path.as_ref() else { continue };
-        let end_time = start_time + duration;
-
-        let escaped_label = escape_drawtext(label);
-        let fontcolor = if let Some(hex) = color.strip_prefix('#') {
-            format!("0x{hex}")
-        } else {
-            color.clone()
+        let Some(current_base) = base_video_label.clone() else {
+            continue;
+        };
+        let Some(font) = font_path.as_ref() else {
+            continue;
         };
 
-        // Alpha fade expression — product of fade-in and fade-out ramps.
-        // `enable` gates rendering outside the clip window, so we only need
-        // to ramp inside it. If neither fade is set, we omit the alpha.
-        let alpha_expr = match (*fade_in > 0.01, *fade_out > 0.01) {
+        let escaped = escape_drawtext(&t.text);
+        let fontcolor = if let Some(hex) = t.color_hex.strip_prefix('#') {
+            format!("0x{hex}")
+        } else {
+            t.color_hex.clone()
+        };
+
+        let alpha_expr = match (t.fade_in > 0.01, t.fade_out > 0.01) {
             (true, true) => Some(format!(
                 "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))*min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
-                st = start_time, fi = fade_in, et = end_time, fo = fade_out,
+                st = t.output_start, fi = t.fade_in, et = t.output_end, fo = t.fade_out,
             )),
             (true, false) => Some(format!(
                 "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))",
-                st = start_time, fi = fade_in,
+                st = t.output_start, fi = t.fade_in,
             )),
             (false, true) => Some(format!(
                 "min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
-                et = end_time, fo = fade_out,
+                et = t.output_end, fo = t.fade_out,
             )),
             (false, false) => None,
         };
 
         let mut drawtext_parts = vec![
             format!("fontfile='{font}'"),
-            format!("text='{escaped_label}'"),
-            format!("fontsize={font_size}"),
+            format!("text='{escaped}'"),
+            format!("fontsize={}", t.font_size_px as i64),
             format!("fontcolor={fontcolor}"),
-            format!("x=(w*{position_x:.4})-(text_w/2)"),
-            format!("y=(h*{position_y:.4})-(text_h/2)"),
-            format!("enable='between(t,{start_time:.3},{end_time:.3})'"),
-            // A subtle shadow so text stays legible on any background,
-            // matching the CSS drop-shadow in the preview.
+            format!("x=(w*{px:.4})-(text_w/2)", px = t.position_x),
+            format!("y=(h*{py:.4})-(text_h/2)", py = t.position_y),
+            format!(
+                "enable='between(t,{st:.3},{et:.3})'",
+                st = t.output_start,
+                et = t.output_end
+            ),
             "shadowcolor=black@0.7".to_string(),
             "shadowx=2".to_string(),
             "shadowy=2".to_string(),
@@ -1180,7 +982,7 @@ fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<S
         overlay_counter += 1;
     }
 
-    // Mix audio labels
+    // ---- Step 6: audio mix ----
     if audio_labels.len() > 1 {
         let inputs: String = audio_labels.iter().map(|l| format!("[{l}]")).collect();
         filters.push(format!(
@@ -1190,22 +992,21 @@ fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<S
         audio_labels = vec!["amixed".into()];
     }
 
-    // Apply filter_complex if we have any filters
+    // ---- Step 7: assemble args ----
     if !filters.is_empty() {
         args.push("-filter_complex".into());
         args.push(filters.join(";"));
     }
 
-    // Map video output
     if let Some(vl) = &base_video_label {
         args.push("-map".into());
-        // If it looks like `N:v` use directly; otherwise wrap in [].
+        // lavfi-style `N:v` labels stay bare; filter_complex labels get wrapped.
         if vl.contains(':') {
             args.push(vl.clone());
         } else {
             args.push(format!("[{vl}]"));
         }
-    } else if !input_map.is_empty() {
+    } else if !source_input_idx.is_empty() {
         args.push("-map".into());
         args.push("0:v?".into());
     }
@@ -1215,7 +1016,6 @@ fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<S
         args.push(format!("[{al}]"));
     }
 
-    // Output settings
     args.extend_from_slice(&[
         "-c:v".into(), "libx264".into(),
         "-preset".into(), "medium".into(),
@@ -1223,12 +1023,139 @@ fn build_ffmpeg_args(composition: &CompositionInput, output_path: &str) -> Vec<S
         "-c:a".into(), "aac".into(),
         "-b:a".into(), "192k".into(),
         "-movflags".into(), "+faststart".into(),
-        "-r".into(), composition.fps.to_string(),
-        "-s".into(), format!("{}x{}", composition.width, composition.height),
+        "-r".into(), plan.fps.to_string(),
+        "-s".into(), format!("{}x{}", plan.width, plan.height),
     ]);
 
-    args.push(output_path.into());
+    args.push(output_path.to_string_lossy().into_owned());
     args
+}
+
+fn build_video_stage_filter(input_idx: usize, label: &str, stage: &VideoStage) -> String {
+    let mut vf = vec![
+        format!(
+            "trim=start={si:.3}:end={se:.3}",
+            si = stage.source_in,
+            se = stage.source_end
+        ),
+        if (stage.speed - 1.0).abs() < 1e-4 {
+            "setpts=PTS-STARTPTS".to_string()
+        } else {
+            format!("setpts=(PTS-STARTPTS)/{}", stage.speed)
+        },
+    ];
+    let out_dur = stage.output_end - stage.output_start;
+    if stage.fade_in > 0.01 {
+        vf.push(format!("fade=t=in:st=0:d={:.3}", stage.fade_in.min(out_dur)));
+    }
+    if stage.fade_out > 0.01 {
+        let st = (out_dur - stage.fade_out).max(0.0);
+        vf.push(format!(
+            "fade=t=out:st={st:.3}:d={:.3}",
+            stage.fade_out.min(out_dur)
+        ));
+    }
+    format!("[{input_idx}:v]{}[{label}]", vf.join(","))
+}
+
+fn build_audio_stage_filter(input_idx: usize, label: &str, stage: &AudioStage) -> String {
+    let out_dur = stage.output_end - stage.output_start;
+    let delay_ms = (stage.output_start * 1000.0) as i64;
+    let mut af = vec![
+        format!(
+            "atrim=start={si:.3}:end={se:.3}",
+            si = stage.source_in,
+            se = stage.source_end
+        ),
+        "asetpts=PTS-STARTPTS".to_string(),
+    ];
+    if (stage.speed - 1.0).abs() > 1e-4 {
+        af.extend(atempo_chain(stage.speed));
+    }
+    if let Some(n) = &stage.normalize {
+        // Two-pass loudnorm in linear mode — exact gain match with preview's
+        // GainNode. Uses the same TP/LRA presets as the preview measurement.
+        af.push(format!(
+            "loudnorm=I={target:.0}:TP=-1.5:LRA=11:measured_I={mi:.2}:measured_LRA={mlra:.2}:measured_TP={mtp:.2}:measured_thresh={mthr:.2}:offset=0:linear=true",
+            target = n.target_lufs,
+            mi = n.measurements.integrated_lufs,
+            mlra = n.measurements.lra,
+            mtp = n.measurements.true_peak_dbfs,
+            mthr = n.measurements.threshold,
+        ));
+    }
+    if stage.fade_in > 0.01 {
+        af.push(format!(
+            "afade=t=in:st=0:d={:.3}",
+            stage.fade_in.min(out_dur)
+        ));
+    }
+    if stage.fade_out > 0.01 {
+        let st = (out_dur - stage.fade_out).max(0.0);
+        af.push(format!(
+            "afade=t=out:st={st:.3}:d={:.3}",
+            stage.fade_out.min(out_dur)
+        ));
+    }
+    if delay_ms > 0 {
+        af.push(format!("adelay={delay_ms}|{delay_ms}"));
+    }
+    // volume applied last, matching the old implementation's ordering.
+    if (stage.linear_gain - 1.0).abs() > 1e-4 {
+        af.push(format!("volume={:.2}", stage.linear_gain));
+    }
+    // `[idx:a?]` makes the audio stream optional so video files without an
+    // audio track don't fail the graph (embedded audio case).
+    format!("[{input_idx}:a?]{}[{label}]", af.join(","))
+}
+
+/// Build a cascading `xfade` chain across consecutive video stages whose
+/// predecessors carry `overlap_next`. Emits filters into `filters` and
+/// returns the final label name.
+fn build_xfade_chain(
+    stages: &[VideoStage],
+    labels: &[String],
+    filters: &mut Vec<String>,
+) -> String {
+    debug_assert_eq!(stages.len(), labels.len());
+    let mut current = labels[0].clone();
+    // Cumulative output offset so each xfade's `offset` parameter sits at
+    // the right boundary in the CURRENT running stream.
+    let mut running_end = stages[0].output_end;
+    for i in 1..stages.len() {
+        let prev = &stages[i - 1];
+        let cur_label = labels[i].clone();
+        let merged = format!("vx{i}");
+        let (xtype, duration) = match &prev.overlap_next {
+            Some(o) => (
+                match o.kind {
+                    crate::engine::render_plan::OverlapKind::Crossfade => "fade",
+                    crate::engine::render_plan::OverlapKind::FadeToBlack => "fadeblack",
+                },
+                o.duration_seconds,
+            ),
+            None => ("fade", 0.0),
+        };
+        let offset = (running_end - duration).max(0.0);
+        filters.push(format!(
+            "[{current}][{cur_label}]xfade=transition={xtype}:duration={duration:.3}:offset={offset:.3}[{merged}]"
+        ));
+        current = merged;
+        running_end = running_end - duration + (stages[i].output_end - stages[i].output_start);
+    }
+    current
+}
+
+/// Extract the background color from the reserved Color source at slot 0.
+/// Falls back to black if the invariant has been violated.
+fn bg_source_hex(plan: &RenderPlan) -> String {
+    plan.sources
+        .first()
+        .and_then(|s| match s {
+            SourceEntry::Color { hex, .. } => Some(hex.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| plan.background_color.clone())
 }
 
 /// `atempo` only accepts factors in [0.5, 2.0]. For values outside the range,
@@ -1246,19 +1173,6 @@ fn atempo_chain(speed: f64) -> Vec<String> {
     }
     out.push(format!("atempo={remaining:.4}"));
     out
-}
-
-fn compute_total_duration(composition: &CompositionInput) -> f64 {
-    composition
-        .items
-        .iter()
-        .map(|item| match item {
-            CompositionItem::Video { start_time, duration, .. } => start_time + duration,
-            CompositionItem::Audio { start_time, duration, .. } => start_time + duration,
-            CompositionItem::Text { start_time, duration, .. } => start_time + duration,
-            CompositionItem::Image { start_time, duration, .. } => start_time + duration,
-        })
-        .fold(0.0f64, f64::max)
 }
 
 /// Parse ffmpeg's progress line: `time=HH:MM:SS.ms` → seconds

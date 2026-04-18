@@ -340,12 +340,8 @@ export default function MediaStudioPage() {
               <CompositionPreview
                 engine={engine}
                 playing={playing}
-                videoItems={videoItems}
-                audioItems={audioItems}
-                textItems={textItems}
-                imageItems={imageItems}
+                composition={composition}
                 totalDuration={totalDuration}
-                compositionHeight={composition.height}
               />
             </div>
             <div className="w-[38%] border-l border-primary/10 bg-card/30 min-h-0 overflow-y-auto">

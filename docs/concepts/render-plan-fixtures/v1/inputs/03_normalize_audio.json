@@ -1,0 +1,28 @@
+{
+  "id": "fx-normalize",
+  "name": "Audio with two-pass loudnorm",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "backgroundColor": "#111111",
+  "items": [
+    {
+      "id": "a1",
+      "type": "audio",
+      "label": "narration",
+      "filePath": "/narr.wav",
+      "startTime": 0.0,
+      "duration": 5.0,
+      "trimStart": 0.0,
+      "trimEnd": 0.0,
+      "mediaDuration": 300.0,
+      "volume": 0.9,
+      "speed": 1.0,
+      "normalize": true,
+      "measuredLufs": -20.3,
+      "measuredLra": 7.1,
+      "measuredTruePeak": -2.4,
+      "measuredThreshold": -30.5
+    }
+  ]
+}
