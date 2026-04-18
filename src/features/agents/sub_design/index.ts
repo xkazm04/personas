@@ -1,4 +1,5 @@
 export { DesignTab } from './DesignTab';
+export { DesignHub } from './DesignHub';
 export { DesignWizard } from './wizard/DesignWizard';
 export { DesignPhasePanel } from './phases/DesignPhasePanel';
 export { DesignQuestionPanel } from './DesignQuestionPanel';

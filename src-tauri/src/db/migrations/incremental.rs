@@ -2043,5 +2043,20 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added adoption_answers column to build_sessions");
     }
 
+    // -- traceparent column on persona_executions (CLI 2.1.110 TRACEPARENT) ------
+    // W3C traceparent generated per execution and injected into the spawned CLI's
+    // env so personas' own span tree can be correlated with the CLI's internal
+    // API/tool call spans by downstream observability pipelines.
+    let has_traceparent: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'traceparent'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_traceparent {
+        conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN traceparent TEXT;")?;
+        tracing::info!("Added traceparent column to persona_executions");
+    }
+
     Ok(())
 }

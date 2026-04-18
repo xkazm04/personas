@@ -2192,8 +2192,16 @@
       "tab_connectors": "Connectors",
       "tab_chat": "Chat",
       "tab_design": "Design",
-      "tab_health": "Health",
       "tab_settings": "Settings",
+      "design_sub_design": "Design",
+      "design_sub_prompt": "Prompt",
+      "design_sub_connectors": "Connectors & Tools",
+      "design_health_healthy": "Healthy",
+      "design_health_degraded": "Degraded",
+      "design_health_unhealthy": "Unhealthy",
+      "design_health_run": "Run health check",
+      "design_health_checking": "Checking…",
+      "design_health_never_checked": "Never checked",
       "unsaved_changes": "Unsaved changes",
       "partial_load": "Partial load:",
       "cloud_connect": "Connect a cloud orchestrator to run personas remotely",
@@ -9185,7 +9193,11 @@
   "models": {
     "haiku": "Haiku",
     "sonnet": "Sonnet",
-    "opus": "Opus"
+    "opus": "Opus",
+    "effort_low": "Low",
+    "effort_medium": "Medium",
+    "effort_high": "High",
+    "effort_xhigh": "xhigh"
   },
   "error_explanation": {
     "action_go_to_vault": "Go to Vault",

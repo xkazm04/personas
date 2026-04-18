@@ -853,7 +853,43 @@ fn resolve_effort(model_profile: Option<&ModelProfile>) -> String {
 ///
 /// When called without a persona or model profile (both `None`), produces the
 /// same result as the former `build_default_cli_args()`.
+///
+/// This signature is preserved for the 30+ existing call sites. For new
+/// call sites that want to inject a W3C `TRACEPARENT` header into the child
+/// CLI's env (so personas' trace and the CLI's internal spans can be
+/// correlated), use [`build_cli_args_with_trace`] instead.
 pub fn build_cli_args(
+    persona: Option<&Persona>,
+    model_profile: Option<&ModelProfile>,
+) -> CliArgs {
+    build_cli_args_with_trace(persona, model_profile, None)
+}
+
+/// Like [`build_cli_args`], but also injects the W3C `TRACEPARENT` (and
+/// optional `TRACESTATE`) env var on the resulting `CliArgs` so the spawned
+/// Claude CLI 2.1.110+ participates in the same distributed trace as personas'
+/// own span tree. Returns unchanged args when `trace` is `None`.
+pub fn build_cli_args_with_trace(
+    persona: Option<&Persona>,
+    model_profile: Option<&ModelProfile>,
+    trace: Option<&super::trace::W3cTraceContext>,
+) -> CliArgs {
+    let mut cli_args = build_cli_args_inner(persona, model_profile);
+    if let Some(t) = trace {
+        cli_args
+            .env_overrides
+            .push(("TRACEPARENT".to_string(), t.traceparent_header()));
+        if let Some(state) = t.tracestate_header() {
+            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+        }
+    }
+    cli_args
+}
+
+/// Internal implementation — body of the former `build_cli_args`. Extracted
+/// so [`build_cli_args`] and [`build_cli_args_with_trace`] share the same core
+/// without either recursing through the other.
+fn build_cli_args_inner(
     persona: Option<&Persona>,
     model_profile: Option<&ModelProfile>,
 ) -> CliArgs {
@@ -943,6 +979,21 @@ pub fn build_cli_args(
     cli_args.env_removals.push("DISABLE_PROMPT_CACHING_1H".to_string());
     cli_args.env_removals.push("DISABLE_PROMPT_CACHING_5M".to_string());
 
+    // Suppress the CLI's nonessential traffic — no value in headless mode:
+    // - Auto-title: the CLI otherwise makes an extra Haiku call to name the
+    //   session; personas uses its own session naming.
+    // - Terminal title: the CLI emits terminal escape codes that we do not
+    //   surface; setting the suppression env removes the extra work.
+    // Both are env-gated. Introduced in CLI 2.1.111.
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(),
+        "1".to_string(),
+    ));
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
+        "1".to_string(),
+    ));
+
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
     // to give the CLI time to surface the timeout error cleanly before the
@@ -963,6 +1014,28 @@ pub fn build_cli_args(
 /// Build CLI arguments to resume an existing Claude session.
 /// Uses `--resume <id>` instead of `-p -` to continue a prior conversation.
 pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
+    build_resume_cli_args_with_trace(claude_session_id, None)
+}
+
+/// Like [`build_resume_cli_args`], but also injects a W3C `TRACEPARENT` env
+/// var so the resumed session stays linked to the originating trace.
+pub fn build_resume_cli_args_with_trace(
+    claude_session_id: &str,
+    trace: Option<&super::trace::W3cTraceContext>,
+) -> CliArgs {
+    let mut cli_args = build_resume_cli_args_inner(claude_session_id);
+    if let Some(t) = trace {
+        cli_args
+            .env_overrides
+            .push(("TRACEPARENT".to_string(), t.traceparent_header()));
+        if let Some(state) = t.tracestate_header() {
+            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+        }
+    }
+    cli_args
+}
+
+fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
     let (command, mut args) = base_cli_setup();
 
     args.extend([
@@ -985,7 +1058,19 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
     CliArgs {
         command,
         args,
-        env_overrides: Vec::new(),
+        env_overrides: vec![
+            // Suppress nonessential CLI traffic on resume too — see the matching
+            // block in `build_cli_args`. Keeps resumed sessions on the same
+            // privacy-positive defaults as fresh runs.
+            (
+                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(),
+                "1".to_string(),
+            ),
+            (
+                "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
+                "1".to_string(),
+            ),
+        ],
         env_removals: vec![
             "CLAUDECODE".to_string(),
             "CLAUDE_CODE".to_string(),
@@ -2279,6 +2364,44 @@ mod tests {
             !args.env_overrides.iter().any(|(k, _)| k == "API_TIMEOUT_MS"),
             "API_TIMEOUT_MS should not be set when timeout_ms is 0"
         );
+    }
+
+    #[test]
+    fn test_cli_args_nonessential_traffic_suppression() {
+        let args = build_cli_args(None, None);
+        for key in [
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+        ] {
+            let entry = args
+                .env_overrides
+                .iter()
+                .find(|(k, _)| k == key);
+            assert!(
+                entry.is_some(),
+                "{key} must be set in env_overrides to suppress nonessential CLI traffic"
+            );
+            assert_eq!(entry.unwrap().1, "1");
+        }
+    }
+
+    #[test]
+    fn test_resume_cli_args_nonessential_traffic_suppression() {
+        let args = build_resume_cli_args("sess-non-essential-1");
+        for key in [
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+        ] {
+            let entry = args
+                .env_overrides
+                .iter()
+                .find(|(k, _)| k == key);
+            assert!(
+                entry.is_some(),
+                "{key} must be set on resume too so continued sessions stay privacy-positive"
+            );
+            assert_eq!(entry.unwrap().1, "1");
+        }
     }
 
     #[test]

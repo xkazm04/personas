@@ -48,9 +48,51 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     .get("session_id")
                     .and_then(|s| s.as_str())
                     .map(String::from);
-                let display = format!("Session started ({model})");
+                // CLI ≥ 2.1.111 may emit a `plugin_errors` array listing plugins
+                // in the user's `.claude/plugins/` directory whose dependencies
+                // failed to resolve. Accept both shapes seen in the wild:
+                //  - array of strings (assumed most common)
+                //  - array of objects with `name`/`reason` (fallback, joined)
+                // Missing field -> empty vec (older CLI versions).
+                let plugin_errors: Vec<String> = value
+                    .get("plugin_errors")
+                    .and_then(|pe| pe.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| {
+                                if let Some(s) = v.as_str() {
+                                    Some(s.to_string())
+                                } else if let Some(obj) = v.as_object() {
+                                    let name = obj
+                                        .get("name")
+                                        .and_then(|n| n.as_str())
+                                        .unwrap_or("<unknown>");
+                                    let reason = obj
+                                        .get("reason")
+                                        .and_then(|r| r.as_str())
+                                        .unwrap_or("unknown reason");
+                                    Some(format!("{name}: {reason}"))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let display = if plugin_errors.is_empty() {
+                    format!("Session started ({model})")
+                } else {
+                    format!(
+                        "Session started ({model}) — {} plugin error(s)",
+                        plugin_errors.len()
+                    )
+                };
                 (
-                    StreamLineType::SystemInit { model, session_id },
+                    StreamLineType::SystemInit {
+                        model,
+                        session_id,
+                        plugin_errors,
+                    },
                     Some(display),
                 )
             } else {
@@ -584,13 +626,52 @@ mod tests {
         let (st, display) = parse_stream_line(line);
 
         match st {
-            StreamLineType::SystemInit { model, session_id } => {
+            StreamLineType::SystemInit { model, session_id, plugin_errors } => {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
+                assert!(
+                    plugin_errors.is_empty(),
+                    "older CLI init events without plugin_errors must parse as empty vec"
+                );
             }
             _ => panic!("Expected SystemInit, got {st:?}"),
         }
         assert_eq!(display, Some("Session started (claude-sonnet-4-20250514)".to_string()));
+    }
+
+    #[test]
+    fn test_parse_system_init_with_plugin_errors_string_array() {
+        let line = r#"{"type":"system","subtype":"init","model":"claude-sonnet-4","session_id":"s1","plugin_errors":["foo-plugin: unsatisfied dep","bar-plugin: missing manifest"]}"#;
+        let (st, display) = parse_stream_line(line);
+
+        match st {
+            StreamLineType::SystemInit { plugin_errors, .. } => {
+                assert_eq!(plugin_errors.len(), 2);
+                assert_eq!(plugin_errors[0], "foo-plugin: unsatisfied dep");
+                assert_eq!(plugin_errors[1], "bar-plugin: missing manifest");
+            }
+            _ => panic!("Expected SystemInit, got {st:?}"),
+        }
+        assert_eq!(
+            display,
+            Some("Session started (claude-sonnet-4) — 2 plugin error(s)".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_system_init_with_plugin_errors_object_array() {
+        // Fallback shape: CLI may emit objects with name/reason fields.
+        let line = r#"{"type":"system","subtype":"init","model":"claude-opus-4","session_id":"s2","plugin_errors":[{"name":"foo","reason":"dep missing"},{"name":"bar","reason":"bad manifest"}]}"#;
+        let (st, _) = parse_stream_line(line);
+
+        match st {
+            StreamLineType::SystemInit { plugin_errors, .. } => {
+                assert_eq!(plugin_errors.len(), 2);
+                assert_eq!(plugin_errors[0], "foo: dep missing");
+                assert_eq!(plugin_errors[1], "bar: bad manifest");
+            }
+            _ => panic!("Expected SystemInit, got {st:?}"),
+        }
     }
 
     #[test]

@@ -236,7 +236,19 @@ export function QuestionCard({
   const [tipOpen, setTipOpen] = useState(false);
   const prevAnswer = useRef(answer);
 
+  // Free-text inputs emit a new answer on every keystroke — don't flash
+  // the green pulse for those, it would strobe while the user is typing.
+  // Only pills, booleans, and structured pickers trigger the celebration.
+  const isFreeText =
+    question.type === 'text' ||
+    question.type === 'textarea' ||
+    question.type === 'source_definition';
+
   useEffect(() => {
+    if (isFreeText) {
+      prevAnswer.current = answer;
+      return;
+    }
     if (answer && answer !== prevAnswer.current) {
       // Bumping the key remounts the pulse overlay so the radial wave
       // animation replays from scratch each time the answer changes.
@@ -245,7 +257,7 @@ export function QuestionCard({
       return;
     }
     prevAnswer.current = answer;
-  }, [answer]);
+  }, [answer, isFreeText]);
 
   const isAnswered = !!answer;
   const hasTip = !!question.context && !isBlocked;
@@ -270,16 +282,17 @@ export function QuestionCard({
           }}
         />
       )}
-      {/* Question label + status indicator + collapsible tip toggle */}
-      <div className="flex items-start gap-2 mb-1.5">
+      {/* Question label + status indicator + collapsible tip toggle.
+          `mb-4` gives the question room to breathe before the answer row. */}
+      <div className="flex items-start gap-2 mb-4">
         {isBlocked ? (
-          <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-rose-400 mt-1 flex-shrink-0" />
         ) : isAnswered ? (
-          <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <Check className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
         ) : (
-          <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
+          <CircleDot className="w-5 h-5 text-amber-400/60 mt-1 flex-shrink-0" />
         )}
-        <span className="flex-1 text-base font-medium text-foreground/90 leading-snug">
+        <span className="flex-1 text-xl font-medium text-foreground/90 leading-snug">
           {question.question}
         </span>
         {isAutoDetected && !isBlocked && (

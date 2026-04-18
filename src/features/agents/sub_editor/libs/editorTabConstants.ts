@@ -15,6 +15,8 @@ import type { EditorTab } from '@/lib/types/types';
 export const TAB_DIRTY_DEPENDENCIES: Partial<Record<EditorTab, string[]>> = {
   // Model config changes invalidate use-case test results
   'use-cases': ['model'],
+  // Design hub absorbs Prompt and Connectors save groups (former standalone tabs).
+  design: ['prompt', 'connectors'],
 };
 
 /** Human-readable labels for dirty-state tab identifiers.

@@ -230,7 +230,11 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "roadmap" | "system-check" | "learning";
-export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "chat" | "design" | "health" | "assertions";
+export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
+/** Sub-tab within the Design hub (absorbs former Prompt, Connectors, Health tabs). */
+export type DesignSubTab = "design" | "prompt" | "connectors";
+/** Legacy EditorTab values kept only for migrating persisted state. */
+export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";

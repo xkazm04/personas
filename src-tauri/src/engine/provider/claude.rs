@@ -54,10 +54,25 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.101 fixes: UTF-8 stream corruption, --dangerously-skip-permissions
-        // downgrade, team permission inheritance, hardcoded 5-minute API timeout,
-        // --resume context loss on large sessions, MCP outputSchema validation.
-        Some("2.1.101")
+        // CLI ≥ 2.1.113 adds headless-mode fixes that affect personas directly:
+        // - 2.1.110: stdio MCP stray-line disconnect (regression from 2.1.105),
+        //   PreToolUse hook additionalContext loss on tool failure,
+        //   non-streaming fallback multi-minute hangs, MCP SSE hang on drop,
+        //   Bash tool timeout enforcement, TRACEPARENT/TRACESTATE support.
+        // - 2.1.111: headless stream-json init event now carries plugin_errors.
+        // - 2.1.113: MCP concurrent-call watchdog no longer disarmed by a sibling
+        //   call's message; compacting a resumed long-context session no longer
+        //   fails with "Extra usage is required for long context requests";
+        //   stalled subagents fail with a clear error after 10 minutes instead
+        //   of hanging; Bedrock Opus 4.7 no longer 400s on thinking config;
+        //   Bash `dangerouslyDisableSandbox` no longer bypasses the permission
+        //   prompt. CLI entry point now spawns a native binary via a per-platform
+        //   optional dep (transparent to personas — same binary name).
+        // Earlier 2.1.101 fixes (UTF-8 corruption, --dangerously-skip-permissions
+        // downgrade, team permission inheritance, 5-min API timeout, --resume
+        // context loss on large sessions, MCP outputSchema validation) still
+        // apply.
+        Some("2.1.113")
     }
 }
 
@@ -90,9 +105,10 @@ mod tests {
         let (st, display) = provider.parse_stream_line(line);
 
         match st {
-            StreamLineType::SystemInit { model, session_id } => {
+            StreamLineType::SystemInit { model, session_id, plugin_errors } => {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
+                assert!(plugin_errors.is_empty());
             }
             _ => panic!("Expected SystemInit, got {st:?}"),
         }
@@ -139,6 +155,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.101");
+        assert_eq!(min.unwrap(), "2.1.113");
     }
 }

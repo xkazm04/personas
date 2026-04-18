@@ -1,22 +1,16 @@
 import { useState } from 'react';
-import { Wrench, ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
-import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
 
 interface ToolsSectionProps {
   tools: PersonaToolDefinition[];
   personaId?: string;
 }
 
-export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
+export function ToolsSection({ tools }: ToolsSectionProps) {
   const { t, tx } = useTranslation();
   const [toolsExpanded, setToolsExpanded] = useState(true);
-  const [showRunner, setShowRunner] = useState(false);
-
-  const invocableTools = tools.filter(
-    (t) => t.script_path || t.implementation_guide,
-  );
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
@@ -47,46 +41,23 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
               {tools.length > 0 ? (
-                <>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tools.map((tool) => (
-                      <span
-                        key={tool.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-primary/10 bg-secondary/20 text-foreground"
-                        title={tool.description ?? undefined}
-                      >
-                        <Wrench className="w-3 h-3 text-foreground" />
-                        {tool.name}
-                        {tool.requires_credential_type && (
-                          <span className="typo-body text-foreground">
-                            ({tool.requires_credential_type})
-                          </span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-
-                  {invocableTools.length > 0 && personaId && (
-                    <>
-                      <button
-                        onClick={() => setShowRunner(!showRunner)}
-                        aria-expanded={showRunner}
-                        className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors focus-ring"
-                      >
-                        <Play className="w-3 h-3" />
-                        {showRunner ? t.agents.connectors.ts_hide_runner : tx(t.agents.connectors.ts_try_tools, { count: invocableTools.length })}
-                      </button>
-
-                      {showRunner && (
-                          <div
-                            className="animate-fade-slide-in overflow-hidden"
-                          >
-                            <ToolRunnerPanel tools={invocableTools} personaId={personaId} />
-                          </div>
-                        )}
-                    </>
-                  )}
-                </>
+                <div className="flex flex-wrap gap-1.5">
+                  {tools.map((tool) => (
+                    <span
+                      key={tool.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-primary/10 bg-secondary/20 text-foreground"
+                      title={tool.description ?? undefined}
+                    >
+                      <Wrench className="w-3 h-3 text-foreground" />
+                      {tool.name}
+                      {tool.requires_credential_type && (
+                        <span className="typo-body text-foreground">
+                          ({tool.requires_credential_type})
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
               ) : (
                 <p className="typo-body text-foreground">{t.agents.connectors.ts_no_tools}</p>
               )}

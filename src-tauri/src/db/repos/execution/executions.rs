@@ -532,6 +532,20 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Persist the W3C traceparent header generated for an execution so downstream
+/// observability pipelines can correlate personas' trace with the CLI's spans.
+/// Called near execution start, after `create()`.
+pub fn set_traceparent(pool: &DbPool, execution_id: &str, traceparent: &str) -> Result<(), AppError> {
+    timed_query!("persona_executions", "persona_executions::set_traceparent", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_executions SET traceparent = ?1 WHERE id = ?2",
+            params![traceparent, execution_id],
+        )?;
+        Ok(())
+    })
+}
+
 /// Create an execution record that is a healing retry of `original_exec_id`.
 pub fn create_retry(
     pool: &DbPool,

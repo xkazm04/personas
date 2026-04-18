@@ -51,6 +51,7 @@ export const useSystemStore = create<SystemStore>()(
         sidebarSection: state.sidebarSection,
         homeTab: state.homeTab,
         editorTab: state.editorTab,
+        designSubTab: state.designSubTab,
         cloudTab: state.cloudTab,
         settingsTab: state.settingsTab,
         onboardingCompleted: state.onboardingCompleted,
@@ -76,6 +77,18 @@ export const useSystemStore = create<SystemStore>()(
         if (typeof raw === 'string' && !(raw in TIER_RANK)) {
           // Migrate legacy value
           state.viewMode = (LEGACY_MAP[raw] ?? DEFAULT_TIER) as typeof state.viewMode;
+        }
+        // Migrate legacy editor tabs that were consolidated into the Design hub.
+        const legacyTab = state.editorTab as unknown as string;
+        if (legacyTab === 'prompt') {
+          state.editorTab = 'design';
+          state.designSubTab = 'prompt';
+        } else if (legacyTab === 'connectors') {
+          state.editorTab = 'design';
+          state.designSubTab = 'connectors';
+        } else if (legacyTab === 'health') {
+          state.editorTab = 'design';
+          state.designSubTab = 'design';
         }
       },
     },

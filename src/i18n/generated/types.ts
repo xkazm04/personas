@@ -2198,8 +2198,16 @@ export type Translations = {
       tab_connectors: string;
       tab_chat: string;
       tab_design: string;
-      tab_health: string;
       tab_settings: string;
+      design_sub_design: string;
+      design_sub_prompt: string;
+      design_sub_connectors: string;
+      design_health_healthy: string;
+      design_health_degraded: string;
+      design_health_unhealthy: string;
+      design_health_run: string;
+      design_health_checking: string;
+      design_health_never_checked: string;
       unsaved_changes: string;
       partial_load: string;
       cloud_connect: string;
@@ -9192,6 +9200,10 @@ export type Translations = {
     haiku: string;
     sonnet: string;
     opus: string;
+    effort_low: string;
+    effort_medium: string;
+    effort_high: string;
+    effort_xhigh: string;
   };
   error_explanation: {
     action_go_to_vault: string;

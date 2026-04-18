@@ -364,32 +364,55 @@ For each accepted finding:
 
 ### Code bucket
 
-**Do not auto-edit code** — the user will want to review the change. Pick a routing option based on the shape of what was accepted.
+**IN-SESSION EXECUTION IS THE DEFAULT.** Set on 2026-04-17 after observing the morning-handoff → evening-amendment → next-session-execution fragmentation pattern. Split sessions fragment the work: a handoff written at the end of session N accumulates amendments in session N+1 and finally gets executed in session N+2 — each hand-off is a place where context is lost, scope drifts, and on 2026-04-11 one such hand-off resulted in an entire session's code being wiped during a merge. **Execute in the same session that produced the findings, validate, and commit atomically per task.** This keeps the discovery → decision → implementation arc inside one context window where corrections are cheap.
 
-**The handoff plan is the default for clustered code findings.** Across runs 1-6, the user picked a handoff plan in every run where 2+ findings had concrete file anchors. Do NOT ask "handoff vs todos vs record" as an open question — propose the handoff as the default and only offer alternatives if the findings are clearly single/unrelated (Option A) or the user explicitly asks to defer (Option D).
+**When in-session execution is NOT possible** (pick the fallback shape):
 
-**Option A — Single isolated finding → Obsidian + optional todo**
-For one unrelated code finding with a clear `file_path:line` anchor, write it into the Obsidian Research note (Phase 9) as a checked-but-not-implemented item. Then ask: *"Should I open this as a todo via /gsd:add-todo?"* If yes, invoke that skill. Do NOT use this for 2+ findings — see Option B.
+- **Context is critically tight** and the remaining budget cannot accommodate the edits + validation + commits.
+- **Work is genuinely exploratory or multi-day** — requires specs that don't exist yet, external approvals, research into unknown systems.
+- **Dependency is unavailable** — whitelist-gated API, preview product, credentials the dev team can't obtain (Option C territory).
+- **User explicitly requests planning-only** — "prepare a plan, I'll execute later".
 
-**Option B — Implementation-ready handoff plan (DEFAULT for 2+ clustered code findings)**
-Write a self-contained handoff to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md`. This is the default output for accepted clustered findings — confirmed across 5 of 6 iteration runs. Structure:
+Do NOT fall back to a handoff because the work feels large. "Large" is a signal to break into smaller atomic commits, not to defer. Cross-language work (Rust + TS + i18n + migration in the same run) is still in-session-executable as long as validation passes per-task.
 
-- **Header** — date, source link, original triage decision, target repo path
+**Option A — Single isolated finding → execute + commit + optional todo (NEW DEFAULT)**
+For one code finding with a clear `file_path:line` anchor, apply the edit, run the relevant validation (`cargo check` for Rust, `npx tsc --noEmit` for TypeScript, `npm run lint`), and commit with a `research:` prefix. Offer a follow-up todo via `/gsd-add-todo` only if the finding surfaces adjacent cleanup that is out of scope for this PR. Do NOT write the finding to Obsidian as a "noted but not implemented" item — that is the old default and it fragments the record.
+
+**Option B — Clustered findings → in-session execution with atomic commits (NEW DEFAULT for 2+ findings)**
+For 2+ clustered code findings:
+
+1. **Present the full task plan inline** (same shape as the old handoff structure below) before executing, so the user sees what is about to happen.
+2. **Execute in the recommended ship order** (risk-ascending: trivial constants first, complex cross-file work last).
+3. **After each task, run the relevant validation**:
+   - Rust changes → `cargo check` in `src-tauri/`
+   - TypeScript changes → `npx tsc --noEmit`
+   - i18n changes → `node scripts/check-locale-parity.mjs`
+   - Any frontend task → `npm run lint` (eslint)
+4. **Commit atomically per task** with `research: <short task title>` prefix, Co-Authored-By footer, and a body that explains the why.
+5. **If validation fails for a task**, fix the issue inline before moving to the next task. Do NOT stack failing commits. Do NOT use `--no-verify` or `--amend`.
+6. **If a task genuinely cannot be completed in-session** (e.g., hits a real blocker), commit the completed tasks, then write a handoff for the remainder — do not discard the completed work.
+
+The inline task plan should include:
+
 - **Why this matters** — one-paragraph context (what problem, what infrastructure already exists)
 - **Goal** — numbered list of the bundled findings as deliverables
-- **Non-goals** — explicit "do NOT do these" list (deferred findings, scope creep traps, layers not to touch). This is the most important section — it prevents the implementing CLI from drifting.
+- **Non-goals** — explicit "do NOT do these" list (deferred findings, scope creep traps, layers not to touch). Even in-session execution benefits from explicit non-goals; they keep the execution focused.
 - **Dependency graph & order** — which tasks ship together, which depend on which
-- **Per-task spec** — for each task: file path & line anchor, schema/migration SQL, struct definitions, function signatures, error mapping, acceptance criteria
-- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults (default to denial), backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), explicitly include BOTH of these lines:**
-  - "Honor the typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions."
-  - "All user-facing strings MUST use the i18n system (`useTranslation()` hook, keys in `src/i18n/en.ts`). No hardcoded English in JSX, placeholder, title, or aria-label attributes. For backend status tokens, use `tokenLabel()` from `src/i18n/tokenMaps.ts`. For error messages, use `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`. See CLAUDE.md → Internationalization for the full contract."
-- **Final acceptance checklist** — manual smoke tests + negative paths
-- **What to do if you get stuck** — explicit rule: prefer the more conservative option, leave a `TODO(handoff-{date})` comment, write follow-ups to a sibling file rather than expanding scope silently
-- **Out of band** — the deferred findings, so the implementing CLI knows they're queued and won't accidentally implement them
+- **Per-task spec** — for each task: file path & line anchor, schema/migration SQL, struct definitions, function signatures, acceptance criteria
+- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults, backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), honor BOTH:**
+  - Typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions.
+  - i18n contract: all user-facing strings through `useTranslation()` + keys in `src/i18n/en.ts`. No hardcoded English in JSX, placeholder, title, or aria-label. Backend status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`. Error messages via `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`.
+
+Record the commit SHAs in the Research note frontmatter (`commits: [<sha1>, <sha2>, ...]`) and in the Phase 11 final summary. The Research note replaces the handoff file as the canonical per-run artifact.
+
+**Option B2 — Implementation-ready handoff plan (FALLBACK when in-session execution is impractical)**
+This was the old Option B default. It is now a fallback. Use ONLY when one of the "when in-session execution is NOT possible" conditions above is met. When written, use the structure from Option B above (Why this matters, Goal, Non-goals, Dependency graph, Per-task spec, Cross-cutting concerns, Final acceptance checklist, What to do if you get stuck, Out of band) and save to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md`.
 
 The handoff plan must be **self-contained** — readable without the conversation that produced it. The implementing CLI will not have access to this skill's context.
 
 Record the handoff path in the Research note frontmatter (`handoff: .planning/handoffs/{date}-{slug}.md`) and in the Phase 11 final summary.
+
+**Do NOT default to Option B2.** Every time a handoff is written instead of executed, there is a risk the work never lands or lands fragmented across multiple sessions. The 2026-04-17 same-day morning-handoff → evening-amendment cycle is the canonical cautionary tale — the same findings took two research sessions and a third execution session to fully land when a single session would have sufficed.
 
 **Option C — Theoretical scaffolding handoff (gated/preview/whitelist-dependent features)**
 Same structure as Option B, BUT with a much stricter non-goals section. Use this when the accepted finding depends on an external dependency that isn't available yet: whitelist-gated APIs, preview products, unreleased SDKs, features behind a private beta.
@@ -1180,3 +1203,48 @@ Every research run now ends with an explicit commit step. The design choices:
 - The learning-loop handoff has not been executed yet. Its non-goals section is extensive; the test-run guard is the load-bearing piece. Verify on the next run after execution whether the implementing CLI honored the guard or drifted. If drift happened, the non-goals format itself needs revising.
 - Three runs in a single day happened organically for the first time. How common is this going to be? If >1 run/day becomes routine, the Lessons-file append pattern becomes load-bearing. If it stays rare (days with multiple runs are the exception), the rule is good defensive practice but not a frequent hazard.
 - The `is_test_run` detection in personas' execution context may not exist as a clean signal. Task 0 of the handoff says "grep for existing test-run detection and reuse the same predicate; if ambiguous, default to TRUE (skip hooks)." Whether this predicate exists is unknown as of handoff-write time — the implementing CLI will have to discover it. If they come back saying "no such predicate exists," the handoff has a gap that needs filling with a fresh detection mechanism. Watch for this follow-up.
+
+### 2026-04-17 — In-session execution becomes the Phase 8 default (handoff demoted to fallback)
+
+**Context:** Two back-to-back `/research` runs on 2026-04-17 on overlapping Claude Code CHANGELOG content:
+
+- Morning run (2.1.110–2.1.112) → wrote `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` as Option B default, did NOT execute.
+- Evening run (2.1.112–2.1.114) → surfaced two follow-up findings, amended the morning handoff in place, did NOT execute.
+- User's response at the end of the evening run: *"please execute the handoff in this session, note in the /research procedure not to generate handoffs, and rather execute right away and validate the results to prevent splitting sessions"* → execution finally happened in the same turn.
+
+**Pattern observed:** three sessions of work to deliver what could have been one. Each hand-off created:
+
+1. Context loss — the research session's mental model was lost before execution.
+2. Amendment accumulation — the follow-up run had to edit the morning handoff rather than produce a clean standalone artifact.
+3. A real risk surface — 2026-04-11's merge-loss incident was precisely this shape (research-session code never committed, lost to a merge).
+
+**Rule change (Phase 8 Code bucket):**
+
+- **In-session execution is the new DEFAULT** for all accepted code findings, single or clustered.
+- **Option A** (was: single finding → Obsidian note + optional todo) → now: execute + commit + optional todo. No "note but don't implement" default.
+- **Option B** (was: handoff plan as DEFAULT for 2+ clustered findings) → now: execute the cluster in-session with atomic commits per task. Present the plan inline, then execute it.
+- **Option B2** added as the fallback — same structure as the old Option B. Used only when in-session execution is genuinely impractical (critical context tightness, multi-day exploratory work, unavailable deps, explicit user planning-only request).
+- **Option C** (theoretical scaffolding) unchanged — it already implies scaffolding code, not a pure document.
+- **Option D** (just record, escape hatch) unchanged, still rarely used.
+
+**Validation is now a required step of Option A/B execution**, not an afterthought:
+
+- Rust → `cargo check` in `src-tauri/`
+- TypeScript → `npx tsc --noEmit`
+- i18n → `node scripts/check-locale-parity.mjs`
+- Frontend → `npm run lint`
+
+Failures must be fixed inline before moving to the next task. No stacking failing commits. No `--no-verify`.
+
+**Rules considered but not added:**
+
+- "Forbid Option B2 entirely." Too absolute — there are real cases (multi-day exploration, whitelist-gated APIs with no integration target) where a handoff is the correct artifact. Demotion with clear escape criteria is better than a blanket ban.
+- "Require user confirmation before executing Option B." Re-introduces the split that this rule is designed to prevent. The user's `/research` invocation is the consent — Phase 8's triage answer ("all", "1, 3", etc.) is the decision. If the user wanted planning-only, they would have said so, or the session constraints would have made it obvious.
+- "Auto-invoke validation between every tool call." Too heavy. Per-task validation is enough; per-edit validation floods the harness with redundant checks.
+- "Keep the old Option B default and add a `--execute` flag."  `/research` has no flags; the invocation is free-form. Changing the default is the right lever.
+
+**Open questions for future runs:**
+
+- Does the in-session execution default work for truly large clusters (10+ tasks spanning multiple domains)? The 2026-04-17 evening run had 6 tasks. A larger cluster might need to fall back to Option B2 for context reasons. Watch for the first 10+ task cluster.
+- When execution breaks partway through, is an atomic "commit what worked, handoff what didn't" clean enough? Current phrasing says so, but the shape of the mid-execution fallback hasn't been tested. Watch for the first real mid-execution blocker.
+- Does the new default change what users *ask* for? Users who previously expected handoff output may now ask for it explicitly. If most runs start with "just execute, don't write a plan" the rule is working. If most runs start with "write a plan first", the demotion was wrong.

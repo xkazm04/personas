@@ -88,6 +88,46 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
+## Editor UI — the Design hub
+
+The per-persona editor surfaces are tabbed in `EditorTabBar`:
+`Activity · Matrix · Design · Use Cases · Lab · Chat · Settings`.
+
+**Design is a hub, not a single view.** It absorbs three former tabs
+via horizontal sub-tabs + an inline health badge:
+
+| Sub-tab | Component | Absorbed from |
+|---|---|---|
+| Design | `DesignTab` (wizard / intent / phases / apply) | existing Design tab |
+| Prompt | `PersonaPromptEditor` (structured sections + custom) | former standalone Prompt tab |
+| Connectors & Tools | `PersonaConnectorsTab` (connectors, tools, automations) | former standalone Connectors tab |
+
+The former **Health tab** is collapsed into the badge in the Design
+hub header (`DesignHubHeader`). Clicking the badge re-runs
+`runHealthCheck()` in-place; `HealthCheckPanel` is still available
+and can be reopened if needed.
+
+Wiring:
+
+```
+src/features/agents/sub_design/DesignHub.tsx         (hub shell)
+src/features/agents/sub_design/components/
+  DesignHubHeader.tsx                                (sub-tab nav + health badge)
+src/features/agents/sub_editor/components/
+  EditorLazyTabs.tsx                                 (DesignTab now lazy-loads DesignHub)
+  EditorBody.tsx                                     (routes editorTab === 'design')
+src/stores/slices/system/uiSlice.ts                  (designSubTab state + migration)
+```
+
+Legacy persisted values (`editorTab === 'prompt' | 'connectors' | 'health'`)
+are migrated on rehydrate to `editorTab === 'design'` with the
+appropriate `designSubTab`. The `setEditorTab` action also accepts
+legacy IDs for back-compat with existing call sites.
+
+The **Tool Runner** UI (inline invocation from the Connectors sub-tab)
+has been descoped; the backend `run_tool` command remains for future
+surfaces (Lab, test harnesses).
+
 ## Gotchas that burn time
 
 1. **`design_context` has two formats.** Old personas store a flat
