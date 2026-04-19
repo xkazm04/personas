@@ -1,23 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
-import { Video, Music, ImagePlus, Type, Upload, Film, Save, FolderOpen, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
+import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
+import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
+import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
 import { useMediaStudioPersistence } from './hooks/useMediaStudioPersistence';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
 import { useMediaFilePicker } from './hooks/useMediaFilePicker';
 import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
+import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
 import CompositionPreview from './CompositionPreview';
-import InspectorPanel from './InspectorPanel';
 import TimelinePanel from './TimelinePanel';
 import PlaybackControls from './PlaybackControls';
-import ExportPanel from './ExportPanel';
 
 export default function MediaStudioPage() {
   const { t } = useTranslation();
@@ -50,6 +51,17 @@ export default function MediaStudioPage() {
     replaceComposition,
     enabled: true,
   });
+
+  const { exportState, startExport, cancelExport } = useMediaExport(composition);
+
+  const handleExport = useCallback(async () => {
+    const outputPath = await saveDialog({
+      filters: [{ name: 'MP4 Video', extensions: ['mp4'] }],
+      defaultPath: `${composition.name || 'export'}.mp4`,
+    });
+    if (!outputPath) return;
+    startExport(outputPath);
+  }, [composition.name, startExport]);
 
   const { engine, playing, looping, play, pause, stop, seek, toggleLoop } =
     useTimelinePlayback(totalDuration);
@@ -298,7 +310,20 @@ export default function MediaStudioPage() {
         </div>
       )}
 
-      <PersistenceBar persistence={persistence} compositionName={composition.name} />
+      <MediaStudioToolbar
+        composition={composition}
+        totalDuration={totalDuration}
+        selectedItem={selectedItem}
+        persistence={persistence}
+        engine={engine}
+        onUpdate={updateItem}
+        onUpdateComposition={updateComposition}
+        onSplit={splitItemAt}
+        onAddItem={addItem}
+        onExport={handleExport}
+        exportDisabled={!ffmpegReady || composition.items.length === 0}
+        exporting={exportState.status === 'exporting'}
+      />
 
       {(!ffmpegReady || ffmpegChecking) && (
         <div className="px-4 md:px-6 xl:px-8 pt-4">
@@ -345,27 +370,32 @@ export default function MediaStudioPage() {
 
       {ffmpegReady && composition.items.length > 0 && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex flex-1 min-h-0">
-            <div className="w-[62%] p-4 flex items-start justify-center bg-background/40">
-              <CompositionPreview
-                engine={engine}
-                playing={playing}
-                composition={composition}
-                totalDuration={totalDuration}
-              />
-            </div>
-            <div className="w-[38%] border-l border-primary/10 bg-card/30 min-h-0 overflow-y-auto">
-              <InspectorPanel
-                selectedItem={selectedItem}
-                composition={composition}
-                engine={engine}
-                onUpdate={updateItem}
-                onUpdateComposition={updateComposition}
-                onSplit={splitItemAt}
-                onAddItem={addItem}
-              />
-            </div>
+          <div className="flex-1 min-h-0 p-4 flex items-start justify-center bg-background/40">
+            <CompositionPreview
+              engine={engine}
+              playing={playing}
+              composition={composition}
+              totalDuration={totalDuration}
+            />
           </div>
+
+          {exportState.status === 'exporting' && (
+            <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
+              <span className="text-[11px] text-foreground/60">Exporting…</span>
+              <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden max-w-xs">
+                <div
+                  className="h-full bg-rose-500 transition-all"
+                  style={{ width: `${exportState.progress * 100}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-foreground/60 tabular-nums">
+                {Math.round(exportState.progress * 100)}%
+              </span>
+              <Button variant="ghost" size="sm" onClick={cancelExport}>
+                Cancel
+              </Button>
+            </div>
+          )}
 
           <div className="h-[260px] flex-shrink-0">
             <TimelinePanel
@@ -401,115 +431,9 @@ export default function MediaStudioPage() {
             onSeek={seek}
             onToggleLoop={toggleLoop}
           />
-          <ExportPanel composition={composition} />
         </div>
       )}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// PersistenceBar — compact Save/Open + autosave status indicator.
-//
-// This is the minimal UI surface introduced alongside autosave. In the
-// forthcoming toolbar refactor (#2.2) these controls fold into the top
-// toolbar next to the metadata chips.
-// ---------------------------------------------------------------------------
-
-function PersistenceBar({
-  persistence,
-  compositionName,
-}: {
-  persistence: ReturnType<typeof useMediaStudioPersistence>;
-  compositionName: string;
-}) {
-  const relativeSaved = useRelativeTime(persistence.lastSavedAt);
-
-  return (
-    <div className="flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/5">
-      <div className="flex items-center gap-1.5 mr-auto min-w-0">
-        <span className="typo-caption text-foreground/70 truncate" title={persistence.currentFile ?? compositionName}>
-          {compositionName || 'Untitled'}
-        </span>
-        {persistence.currentFile && (
-          <span className="text-[10px] text-foreground/40 truncate">
-            — {persistence.currentFile.split(/[/\\]/).pop()}
-          </span>
-        )}
-      </div>
-
-      <SaveStatusChip status={persistence.status} relativeSaved={relativeSaved} />
-
-      <Button variant="ghost" size="sm" onClick={persistence.openFile} title="Open composition">
-        <FolderOpen className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Open</span>
-      </Button>
-      <Button variant="ghost" size="sm" onClick={persistence.saveAs} title="Save as…">
-        <Save className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Save as</span>
-      </Button>
-
-      {persistence.restoredFromAutosave && (
-        <button
-          onClick={persistence.dismissRestoreHint}
-          className="text-[10px] px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20"
-          title="Dismiss"
-        >
-          Restored from autosave
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SaveStatusChip({
-  status,
-  relativeSaved,
-}: {
-  status: ReturnType<typeof useMediaStudioPersistence>['status'];
-  relativeSaved: string | null;
-}) {
-  if (status === 'saving') {
-    return (
-      <span className="flex items-center gap-1 text-[11px] text-foreground/60">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        Saving…
-      </span>
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span className="flex items-center gap-1 text-[11px] text-amber-400">
-        <AlertTriangle className="w-3 h-3" />
-        Save failed
-      </span>
-    );
-  }
-  if (relativeSaved) {
-    return (
-      <span className="flex items-center gap-1 text-[11px] text-foreground/50">
-        <Check className="w-3 h-3 text-emerald-400/70" />
-        {relativeSaved}
-      </span>
-    );
-  }
-  return null;
-}
-
-function useRelativeTime(ts: number | null): string | null {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    if (!ts) return;
-    const h = window.setInterval(() => setTick((t) => t + 1), 15_000);
-    return () => window.clearInterval(h);
-  }, [ts]);
-  return useMemo(() => {
-    if (!ts) return null;
-    const diff = Math.max(0, Date.now() - ts);
-    if (diff < 2_000) return 'saved just now';
-    if (diff < 60_000) return `saved ${Math.round(diff / 1_000)}s ago`;
-    if (diff < 3_600_000) return `saved ${Math.round(diff / 60_000)}m ago`;
-    return `saved ${Math.round(diff / 3_600_000)}h ago`;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ts, tick]);
-}
