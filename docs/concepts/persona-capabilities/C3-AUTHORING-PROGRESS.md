@@ -10,19 +10,37 @@ Tracking the hand-authoring migration of 107 templates to v3 shape (per `C3-temp
 
 ## Translation Loader Status
 
-**Not yet built.** Per the 2026-04-19 handoff-followup session, sibling
-language files (`template.<lang>.json`) are now authored and validated in
-parallel with the English canonical, but the runtime deep-merge loader
-has not landed yet. Until it does, sibling files sit on disk but are
-neither loaded nor verified by the catalog.
+**Shipped 2026-04-19.** Per-language sibling overlays
+(`template.<lang>.json`) are now loaded, deep-merged onto the verified
+English canonical, and served to the UI through a language-aware hook.
+Structural integrity stays gated by the English checksum — overlays are
+intentionally not independently checksummed.
 
-- `scripts/generate-template-checksums.mjs` skips `*.xx.json` (13 language
-  codes: ar, bn, cs, de, es, fr, hi, id, ja, ko, ru, vi, zh) so siblings
-  don't get independent checksums.
-- `src/lib/personas/templates/templateCatalog.ts` still globs every
-  `.json`; unchecksummed sibling files are logged and skipped at load
-  time. **Action for next session**: filter sibling files at glob time
-  and implement the deep-merge overlay in the catalog.
+Implementation:
+- `scripts/generate-template-checksums.mjs` skips `*.xx.json` siblings so
+  they don't get independent checksums.
+- `src/lib/personas/templates/templateOverlays.ts` — schema-aware
+  `mergeTemplateOverlay()` (matches array items by `id` / `name` / `key` /
+  `event_type`, falls back to index) plus lazy per-language overlay loader.
+- `src/lib/personas/templates/templateCatalog.ts` — filters overlay
+  filenames from the canonical glob and exposes
+  `getLocalizedTemplateCatalog(lang)` cached per language.
+- `src/lib/personas/templates/useLocalizedTemplateCatalog.ts` — React
+  hook that subscribes to `i18nStore.language` and re-fetches on change.
+- Pilot consumer: `OnboardingTemplateStep.tsx` (template picker gallery).
+- 17 vitest cases cover the merge contract (schema-specific match keys,
+  `{{param.X}}` preservation, structural-field pass-through).
+
+Remaining consumers still read `getTemplateCatalog()` (English only).
+Each should move to `useLocalizedTemplateCatalog()` or
+`getLocalizedTemplateCatalog(lang)` when they need to display translated
+content:
+
+- `src/lib/personas/templates/seedTemplates.ts`
+- `src/hooks/design/template/useDesignReviews.ts`
+- `src/lib/icons/templateIconResolver.ts` (icon-only — probably fine as-is)
+- `src/features/agents/sub_executions/libs/useExecutionList.ts`
+- Any adoption / matrix editor surface that renders template strings.
 
 ## Templates
 

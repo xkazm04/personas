@@ -12,15 +12,24 @@
  *      in the native binary, which is much harder to tamper with (defense layer 2)
  */
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
+import type { LocaleCode } from '@/i18n/locales.manifest';
 import { computeContentHashSync, registerBuiltinTemplates } from '@/lib/templates/templateVerification';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { TEMPLATE_CHECKSUMS } from './templateChecksums';
+import {
+  isOverlayFilename,
+  loadOverlaysForLanguage,
+  mergeTemplateOverlay,
+} from './templateOverlays';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-catalog');
 
 // Lazy glob: each entry is an async loader function, NOT the resolved module.
 // The actual JSON is only fetched + parsed when the loader is called.
+// Per-language sibling overlays (e.g. "name.cs.json") are filtered out here
+// and loaded separately by templateOverlays.ts — they are NOT canonical
+// templates and have no independent checksum.
 const moduleLoaders = import.meta.glob<TemplateCatalogEntry>(
   [
     '../../../../scripts/templates/**/*.json',
@@ -36,6 +45,11 @@ function templatePathFromModulePath(modulePath: string): string {
   return modulePath.slice(idx + marker.length);
 }
 
+function filenameFromPath(path: string): string {
+  const slash = path.lastIndexOf('/');
+  return slash === -1 ? path : path.slice(slash + 1);
+}
+
 // ---------------------------------------------------------------------------
 // Lazy loading + verification
 // ---------------------------------------------------------------------------
@@ -49,8 +63,12 @@ let _cached: VerifiedEntry[] | null = null;
 let _loading: Promise<VerifiedEntry[]> | null = null;
 
 async function loadAndVerify(): Promise<VerifiedEntry[]> {
+  const canonicalEntries = Object.entries(moduleLoaders).filter(
+    ([modulePath]) => !isOverlayFilename(filenameFromPath(modulePath)),
+  );
+
   const modules = await Promise.all(
-    Object.entries(moduleLoaders).map(async ([modulePath, loader]) => {
+    canonicalEntries.map(async ([modulePath, loader]) => {
       const template = await loader();
       return { modulePath, template };
     }),
@@ -104,6 +122,53 @@ export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
 export function invalidateTemplateCatalog(): void {
   _cached = null;
   _loading = null;
+  _localizedCache.clear();
+}
+
+// ---------------------------------------------------------------------------
+// Localized catalog — applies per-language overlays to canonical templates.
+// ---------------------------------------------------------------------------
+
+const _localizedCache = new Map<LocaleCode, Promise<TemplateCatalogEntry[]>>();
+
+/**
+ * Return the template catalog with per-language translations applied.
+ *
+ * For `lang === 'en'` this is identical to `getTemplateCatalog()`. For any
+ * other language it loads the sibling `<name>.<lang>.json` overlay files
+ * and deep-merges their user-facing strings onto the verified canonical
+ * templates. Overlays are not independently checksummed — structural
+ * integrity is gated by the English canonical's checksum, which was
+ * verified at catalog load time.
+ *
+ * Results are cached per language; invalidating the main catalog cache
+ * (via `invalidateTemplateCatalog`) also clears all language caches.
+ */
+export async function getLocalizedTemplateCatalog(
+  lang: LocaleCode,
+): Promise<TemplateCatalogEntry[]> {
+  if (lang === 'en') return getTemplateCatalog();
+
+  const cached = _localizedCache.get(lang);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const [canonical, overlays] = await Promise.all([
+      getTemplateCatalog(),
+      loadOverlaysForLanguage(lang),
+    ]);
+
+    if (overlays.size === 0) return canonical;
+
+    return canonical.map((template) => {
+      const overlay = overlays.get(template.id);
+      if (!overlay) return template;
+      return mergeTemplateOverlay(template, overlay);
+    });
+  })();
+
+  _localizedCache.set(lang, promise);
+  return promise;
 }
 
 // -- Layer 2: Backend verification (async, authoritative) ----------------

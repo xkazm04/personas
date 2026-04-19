@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine } from 'lucide-react';
-import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
+import { useLocalizedTemplateCatalog } from '@/lib/personas/templates/useLocalizedTemplateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
@@ -53,15 +53,12 @@ interface TemplatePickerStepProps {
 export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [catalog, setCatalog] = useState<TemplateCatalogEntry[]>([]);
+  const catalog = useLocalizedTemplateCatalog();
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    getTemplateCatalog().then((entries) => {
-      setCatalog(entries);
-      setFilterCategories(deriveCategories(entries));
-    });
-  }, []);
+    setFilterCategories(deriveCategories(catalog));
+  }, [catalog]);
 
   const filteredTemplates = useMemo(
     () =>
