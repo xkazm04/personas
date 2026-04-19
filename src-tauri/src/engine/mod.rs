@@ -63,6 +63,7 @@ pub mod prompt;
 pub mod provider;
 pub mod queue;
 pub mod rate_limiter;
+pub mod render_plan;
 pub mod tier;
 pub mod rotation;
 pub mod runner;

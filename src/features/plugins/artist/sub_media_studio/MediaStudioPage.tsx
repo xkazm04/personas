@@ -1,22 +1,25 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { Video, Music, ImagePlus, Type, Upload, Film } from 'lucide-react';
+import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useFfmpegDetect } from './hooks/useFfmpegDetect';
+import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
+import { useMediaStudioPersistence } from './hooks/useMediaStudioPersistence';
+import { useRenderPlan } from './hooks/useRenderPlan';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
 import { useMediaFilePicker } from './hooks/useMediaFilePicker';
 import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
+import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
 import CompositionPreview from './CompositionPreview';
-import InspectorPanel from './InspectorPanel';
 import TimelinePanel from './TimelinePanel';
 import PlaybackControls from './PlaybackControls';
-import ExportPanel from './ExportPanel';
 
 export default function MediaStudioPage() {
   const { t } = useTranslation();
@@ -24,6 +27,7 @@ export default function MediaStudioPage() {
   const {
     composition,
     updateComposition,
+    replaceComposition,
     addItem,
     updateItem,
     removeItem,
@@ -42,6 +46,25 @@ export default function MediaStudioPage() {
     canUndo,
     canRedo,
   } = useMediaStudio();
+
+  const persistence = useMediaStudioPersistence({
+    composition,
+    replaceComposition,
+    enabled: true,
+  });
+
+  const { plan } = useRenderPlan(composition);
+
+  const { exportState, startExport, cancelExport } = useMediaExport(composition);
+
+  const handleExport = useCallback(async () => {
+    const outputPath = await saveDialog({
+      filters: [{ name: 'MP4 Video', extensions: ['mp4'] }],
+      defaultPath: `${composition.name || 'export'}.mp4`,
+    });
+    if (!outputPath) return;
+    startExport(outputPath);
+  }, [composition.name, startExport]);
 
   const { engine, playing, looping, play, pause, stop, seek, toggleLoop } =
     useTimelinePlayback(totalDuration);
@@ -240,10 +263,6 @@ export default function MediaStudioPage() {
       startTime: textItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
       duration: 3,
       text: '',
-      fontSize: 48,
-      color: '#ffffff',
-      positionX: 0.5,
-      positionY: 0.5,
     };
     addItem(beat);
   }, [textItems, addItem]);
@@ -290,6 +309,22 @@ export default function MediaStudioPage() {
         </div>
       )}
 
+      <MediaStudioToolbar
+        composition={composition}
+        totalDuration={totalDuration}
+        selectedItem={selectedItem}
+        persistence={persistence}
+        engine={engine}
+        warnings={plan?.warnings ?? []}
+        onUpdate={updateItem}
+        onUpdateComposition={updateComposition}
+        onSplit={splitItemAt}
+        onAddItem={addItem}
+        onExport={handleExport}
+        exportDisabled={!ffmpegReady || composition.items.length === 0}
+        exporting={exportState.status === 'exporting'}
+      />
+
       {(!ffmpegReady || ffmpegChecking) && (
         <div className="px-4 md:px-6 xl:px-8 pt-4">
           <FfmpegStatusBanner
@@ -335,31 +370,32 @@ export default function MediaStudioPage() {
 
       {ffmpegReady && composition.items.length > 0 && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex flex-1 min-h-0">
-            <div className="w-[62%] p-4 flex items-start justify-center bg-background/40">
-              <CompositionPreview
-                engine={engine}
-                playing={playing}
-                videoItems={videoItems}
-                audioItems={audioItems}
-                textItems={textItems}
-                imageItems={imageItems}
-                totalDuration={totalDuration}
-                compositionHeight={composition.height}
-              />
-            </div>
-            <div className="w-[38%] border-l border-primary/10 bg-card/30 min-h-0 overflow-y-auto">
-              <InspectorPanel
-                selectedItem={selectedItem}
-                composition={composition}
-                engine={engine}
-                onUpdate={updateItem}
-                onUpdateComposition={updateComposition}
-                onSplit={splitItemAt}
-                onAddItem={addItem}
-              />
-            </div>
+          <div className="flex-1 min-h-0 p-4 flex items-start justify-center bg-background/40">
+            <CompositionPreview
+              engine={engine}
+              playing={playing}
+              plan={plan}
+              totalDuration={totalDuration}
+            />
           </div>
+
+          {exportState.status === 'exporting' && (
+            <div className="flex items-center gap-2 px-4 py-1.5 border-t border-primary/10 bg-card/40">
+              <span className="text-[11px] text-foreground/60">Exporting…</span>
+              <div className="flex-1 h-1 rounded-full bg-secondary/40 overflow-hidden max-w-xs">
+                <div
+                  className="h-full bg-rose-500 transition-all"
+                  style={{ width: `${exportState.progress * 100}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-foreground/60 tabular-nums">
+                {Math.round(exportState.progress * 100)}%
+              </span>
+              <Button variant="ghost" size="sm" onClick={cancelExport}>
+                Cancel
+              </Button>
+            </div>
+          )}
 
           <div className="h-[260px] flex-shrink-0">
             <TimelinePanel
@@ -395,9 +431,9 @@ export default function MediaStudioPage() {
             onSeek={seek}
             onToggleLoop={toggleLoop}
           />
-          <ExportPanel composition={composition} />
         </div>
       )}
     </div>
   );
 }
+

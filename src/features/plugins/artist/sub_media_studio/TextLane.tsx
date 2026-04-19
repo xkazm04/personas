@@ -1,9 +1,8 @@
-import { memo, useCallback, useState } from 'react';
-import { Type, Plus, X } from 'lucide-react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { MapPin, Plus, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { TextItem } from './types';
-import TimelineClip from './TimelineClip';
 
 interface TextLaneProps {
   items: TextItem[];
@@ -17,14 +16,14 @@ interface TextLaneProps {
   hideAdd?: boolean;
 }
 
-/** Modal for editing a text beat's expanded description. */
+/** Modal for editing a beat's word + longer description. */
 function BeatEditModal({
   item,
   onSave,
   onClose,
 }: {
   item: TextItem;
-  onSave: (word: string, text: string) => void;
+  onSave: (word: string, description: string) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -85,6 +84,92 @@ function BeatEditModal({
   );
 }
 
+/**
+ * Single beat marker — a vertical pin at the beat's start time. No clip
+ * bar, no trim handles: beats are milestones, not rendered ranges. Drag
+ * the pin horizontally to reschedule the beat; double-click to edit the
+ * description.
+ */
+function BeatMarker({
+  item,
+  zoom,
+  scrollX,
+  isSelected,
+  onSelect,
+  onDoubleClick,
+  onMove,
+}: {
+  item: TextItem;
+  zoom: number;
+  scrollX: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDoubleClick: () => void;
+  onMove: (newStartTime: number) => void;
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ startClientX: number; startTime: number } | null>(null);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      onSelect();
+      dragRef.current = { startClientX: e.clientX, startTime: item.startTime };
+      anchorRef.current?.setPointerCapture(e.pointerId);
+    },
+    [item.startTime, onSelect],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragRef.current) return;
+      const dx = e.clientX - dragRef.current.startClientX;
+      const deltaSeconds = dx / zoom;
+      onMove(Math.max(0, dragRef.current.startTime + deltaSeconds));
+    },
+    [onMove, zoom],
+  );
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current = null;
+    anchorRef.current?.releasePointerCapture(e.pointerId);
+  }, []);
+
+  const left = item.startTime * zoom - scrollX;
+
+  return (
+    <div
+      ref={anchorRef}
+      className="absolute top-0 h-full flex flex-col items-center cursor-grab active:cursor-grabbing select-none"
+      style={{ left: `${left}px`, transform: 'translateX(-50%)' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onDoubleClick={onDoubleClick}
+      title={item.label}
+    >
+      <div
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-card border transition-colors ${
+          isSelected
+            ? 'bg-amber-500/30 border-amber-400 ring-1 ring-amber-400/40 shadow-elevation-1'
+            : 'bg-amber-500/15 border-amber-500/20 hover:bg-amber-500/25'
+        }`}
+      >
+        <MapPin className={`w-3 h-3 ${isSelected ? 'text-amber-300' : 'text-amber-400'}`} />
+        <span className="text-[10px] font-semibold text-amber-200 max-w-[96px] truncate">
+          {item.label}
+        </span>
+      </div>
+      <div
+        className={`w-px flex-1 ${
+          isSelected ? 'bg-amber-400/70' : 'bg-amber-500/40'
+        }`}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 function TextLaneImpl({
   items,
   zoom,
@@ -99,42 +184,20 @@ function TextLaneImpl({
   const { t } = useTranslation();
   const [editingItem, setEditingItem] = useState<TextItem | null>(null);
 
-  const handleMove = useCallback(
-    (id: string, newStartTime: number) => {
-      onUpdate(id, { startTime: newStartTime });
-    },
-    [onUpdate],
-  );
-
-  const handleTrimLeft = useCallback(
-    (id: string, item: TextItem, delta: number) => {
-      const newStart = Math.max(0, item.startTime + delta);
-      const actualDelta = newStart - item.startTime;
-      onUpdate(id, {
-        startTime: newStart,
-        duration: Math.max(0.25, item.duration - actualDelta),
-      });
-    },
-    [onUpdate],
-  );
-
-  const handleTrimRight = useCallback(
-    (id: string, item: TextItem, delta: number) => {
-      onUpdate(id, { duration: Math.max(0.25, item.duration + delta) });
-    },
-    [onUpdate],
-  );
+  // Keep editingItem in sync with the latest item state (e.g., after a move).
+  useEffect(() => {
+    if (!editingItem) return;
+    const fresh = items.find((it) => it.id === editingItem.id);
+    if (!fresh) setEditingItem(null);
+  }, [items, editingItem]);
 
   return (
     <>
       <div className="flex flex-col">
-        {/* Lane header */}
         {!hideHeader && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20">
-            <Type className="w-3.5 h-3.5 text-amber-400" />
-            <span className="typo-label text-amber-400">
-              {t.media_studio.layer_text}
-            </span>
+            <MapPin className="w-3.5 h-3.5 text-amber-400" />
+            <span className="typo-label text-amber-400">{t.media_studio.layer_text}</span>
             {items.length > 0 && (
               <span className="ml-auto text-md text-amber-400/60 bg-amber-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
                 {items.length}
@@ -143,50 +206,28 @@ function TextLaneImpl({
           </div>
         )}
 
-        {/* Beats area */}
-        <div className="relative h-10 bg-amber-500/[0.02] border-b border-primary/10">
+        <div className="relative h-10 bg-amber-500/[0.02] border-b border-primary/10 overflow-hidden">
           {items.length === 0 && (
             <div className="absolute inset-0.5 rounded-card border border-dashed border-amber-500/15 flex items-center justify-center">
               <span className="text-md text-amber-400/30">{t.media_studio.empty_lane}</span>
             </div>
           )}
+
           {items.map((item) => (
-            <TimelineClip
+            <BeatMarker
               key={item.id}
-              id={item.id}
-              startTime={item.startTime}
-              duration={item.duration}
+              item={item}
               zoom={zoom}
               scrollX={scrollX}
               isSelected={item.id === selectedId}
-              className="top-0.5 h-9 rounded-card bg-amber-500/15 border border-amber-500/20 hover:bg-amber-500/25"
-              selectedClassName="top-0.5 h-9 rounded-card bg-amber-500/30 border-2 border-amber-400 ring-1 ring-amber-400/40 shadow-elevation-1"
-              onClick={() => onSelect(item.id)}
+              onSelect={() => onSelect(item.id)}
               onDoubleClick={() => setEditingItem(item)}
-              onMove={(newStart) => handleMove(item.id, newStart)}
-              onTrimLeft={(delta) => handleTrimLeft(item.id, item, delta)}
-              onTrimRight={(delta) => handleTrimRight(item.id, item, delta)}
-            >
-              <div className="flex items-center gap-1 h-full px-2 overflow-hidden">
-                <Type className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                <span className="text-md font-bold text-amber-200 truncate">
-                  {item.label}
-                </span>
-              </div>
-            </TimelineClip>
+              onMove={(newStart) => onUpdate(item.id, { startTime: newStart })}
+            />
           ))}
 
-          {/* Add button */}
           {!hideAdd && (
-            <div
-              className="absolute top-0.5 h-9 flex items-center"
-              style={{
-                left: `${items.length > 0
-                  ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
-                  : 8
-                }px`,
-              }}
-            >
+            <div className="absolute top-0.5 right-2 h-9 flex items-center">
               <Button variant="ghost" size="xs" onClick={onAdd}>
                 <Plus className="w-3.5 h-3.5" />
                 {t.media_studio.add_text_beat}
@@ -196,7 +237,6 @@ function TextLaneImpl({
         </div>
       </div>
 
-      {/* Beat edit modal */}
       {editingItem && (
         <BeatEditModal
           item={editingItem}

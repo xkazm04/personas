@@ -104,6 +104,22 @@ export function useMediaStudio() {
     commit('updateComposition', (prev) => ({ ...prev, ...patch }));
   }, [commit]);
 
+  /**
+   * Replace the entire composition — used after Open or autosave restore.
+   * Clears history because the prior past/future no longer applies to the
+   * loaded state.
+   */
+  const replaceComposition = useCallback((next: Composition) => {
+    setHistory({
+      past: [],
+      present: next,
+      future: [],
+      lastTag: null,
+      lastAt: 0,
+    });
+    setSelectedItemId(null);
+  }, []);
+
   const addItem = useCallback((item: TimelineItem) => {
     commit('addItem', (prev) => ({ ...prev, items: [...prev.items, item] }));
     setSelectedItemId(item.id);
@@ -291,6 +307,7 @@ export function useMediaStudio() {
   return {
     composition,
     updateComposition,
+    replaceComposition,
     addItem,
     updateItem,
     removeItem,

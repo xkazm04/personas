@@ -21,15 +21,16 @@ export interface TimelineItemBase {
 
 export interface TextItem extends TimelineItemBase {
   type: 'text';
+  /**
+   * Longer description of the beat — shown in the beat-edit modal and
+   * surfaced on the timeline via the pin tooltip. `label` (from
+   * TimelineItemBase) is the short word; `text` is the elaboration.
+   *
+   * Note: the type is named `TextItem` for save-file backward compatibility.
+   * Semantically these are **beats** — milestones on the timeline, never
+   * rendered into the preview frame or the exported video.
+   */
   text: string;
-  fontSize: number;
-  color: string;
-  positionX: number;
-  positionY: number;
-  /** Seconds of fade-in from transparent → opaque. */
-  fadeIn?: number;
-  /** Seconds of fade-out from opaque → transparent at clip end. */
-  fadeOut?: number;
 }
 
 export interface ImageItem extends TimelineItemBase {

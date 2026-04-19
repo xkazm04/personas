@@ -3,256 +3,92 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { MonitorPlay } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimecode } from '../utils/format';
-import type {
-  VideoClip,
-  AudioClip,
-  TextItem,
-  ImageItem,
-} from './types';
 import type { PlaybackEngine } from './hooks/useTimelinePlayback';
-
-// Target integrated loudness for loudnorm preview — must match the
-// ffmpeg filter `loudnorm=I=-16` used at export time.
-const TARGET_LUFS = -16;
-/** Clamp the preview gain so a very quiet clip can't blow out the user. */
-const MAX_NORMALIZE_GAIN = 6; // +15.5 dB
+import type { AudioStage } from '@/lib/bindings/AudioStage';
+import type { ImageOverlayStage } from '@/lib/bindings/ImageOverlayStage';
+import type { RenderPlan } from '@/lib/bindings/RenderPlan';
+import type { SourceEntry } from '@/lib/bindings/SourceEntry';
+import type { VideoStage } from '@/lib/bindings/VideoStage';
+import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
 
 interface CompositionPreviewProps {
   engine: PlaybackEngine;
   playing: boolean;
-  videoItems: VideoClip[];
-  audioItems: AudioClip[];
-  textItems: TextItem[];
-  imageItems: ImageItem[];
+  /** Compiled plan hoisted from MediaStudioPage so the toolbar + preview
+   *  share a single compile result. Null while the first compile settles. */
+  plan: RenderPlan | null;
   totalDuration: number;
-  /** Composition frame height — drives proportional text sizing. */
-  compositionHeight: number;
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Renderer — consumes a RenderPlan produced by `compile(composition, ...)`.
+// See docs/concepts/media-studio-renderplan.md §"Renderer contract" for the
+// invariants this component relies on (stages are pre-resolved; no Composition
+// walking, no transition folding, no loudnorm math).
 // ---------------------------------------------------------------------------
 
-function safeSpeed(n: number | undefined): number {
-  if (n === undefined || !Number.isFinite(n) || n <= 0) return 1;
-  return Math.max(0.0625, Math.min(16, n));
+function findSource(plan: RenderPlan, sourceId: number): SourceEntry | undefined {
+  return plan.sources.find((s) => s.id === sourceId);
 }
 
-function fadeOpacity(
-  local: number,
-  outputDuration: number,
-  fadeIn: number | undefined,
-  fadeOut: number | undefined,
-): number {
-  let o = 1;
-  if (fadeIn && fadeIn > 0.001 && local < fadeIn) {
-    o = Math.max(0, local / fadeIn);
-  }
-  if (fadeOut && fadeOut > 0.001 && local > outputDuration - fadeOut) {
-    o = Math.min(o, Math.max(0, (outputDuration - local) / fadeOut));
-  }
-  return Math.max(0, Math.min(1, o));
+function sourcePath(source: SourceEntry | undefined): string | null {
+  if (!source) return null;
+  if (source.kind === 'color') return null;
+  return source.path;
 }
 
-/**
- * Derive the effective fade-in/fade-out for a video clip by folding in the
- * contribution of adjacent `transition` fields. This MUST match the rule in
- * `build_ffmpeg_args` (Rust export) so preview and export agree.
- *
- *  - A non-cut transition on clip[i] adds `transitionDuration` to its
- *    effective fade-out.
- *  - A non-cut transition on clip[i-1] adds `transitionDuration` to clip[i]'s
- *    effective fade-in.
- */
-function effectiveVideoFades(
-  clip: VideoClip,
-  index: number,
-  videoItems: VideoClip[],
-): { fadeIn: number; fadeOut: number } {
-  const baseIn = clip.fadeIn ?? 0;
-  const baseOut = clip.fadeOut ?? 0;
-  const prev = index > 0 ? videoItems[index - 1] : null;
-  const transitionFromPrev =
-    prev && prev.transition && prev.transition !== 'cut' && (prev.transitionDuration ?? 0) > 0
-      ? prev.transitionDuration ?? 0
-      : 0;
-  const transitionOut =
-    clip.transition && clip.transition !== 'cut' && (clip.transitionDuration ?? 0) > 0
-      ? clip.transitionDuration ?? 0
-      : 0;
-  return {
-    fadeIn: Math.min(clip.duration, baseIn + transitionFromPrev),
-    fadeOut: Math.min(clip.duration, baseOut + transitionOut),
-  };
-}
-
-/**
- * Compute the dB gain for loudnorm preview. `measured` is the integrated
- * LUFS from ffmpeg's dry run; `target` is the loudnorm I= parameter.
- *
- *   gain_dB = target - measured
- *   gain_linear = 10 ^ (gain_dB / 20)
- */
-function loudnormGain(measured: number | undefined, target: number): number {
-  if (measured === undefined || !Number.isFinite(measured)) return 1;
-  const gainDb = target - measured;
-  const linear = Math.pow(10, gainDb / 20);
-  return Math.max(0.01, Math.min(MAX_NORMALIZE_GAIN, linear));
-}
-
-/**
- * CompositionPreview — rendered preview with live effect application.
- *
- * Preview ↔ Export parity matrix:
- *
- * | Effect                | Preview mechanism                     | Export mechanism         |
- * | --------------------- | ------------------------------------- | ------------------------ |
- * | Speed                 | HTMLMediaElement.playbackRate + seek  | trim + setpts / atempo   |
- * | Fade in / fade out    | opacity (per tick)                    | fade / afade filter      |
- * | Transition (fade/xfd) | effective fade_in/out folded in       | same rule in Rust        |
- * | Strip audio           | video.muted = true                    | filter path skipped      |
- * | Normalize             | measured LUFS → GainNode (true gain)  | loudnorm filter          |
- * | Clip volume           | GainNode                              | volume filter            |
- */
 export default function CompositionPreview({
   engine,
   playing,
-  videoItems,
-  audioItems,
-  textItems,
-  imageItems,
+  plan,
   totalDuration,
-  compositionHeight,
 }: CompositionPreviewProps) {
   const { t } = useTranslation();
 
-  // Local subscription to the playback clock — isolated from the studio tree.
   const [currentTime, setCurrentTime] = useState(0);
   useEffect(() => engine.subscribe(setCurrentTime), [engine]);
 
-  // Preview container ref + observed height so text overlays can be sized
-  // in the same proportion as they will be in the exported frame:
-  //   pxInPreview = (fontSize / compositionHeight) × containerHeight
-  // This means a 48pt font in a 1080p composition renders at the same
-  // relative size in a 400px preview as it will at 1080px in the MP4.
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const [previewHeight, setPreviewHeight] = useState(0);
-  useEffect(() => {
-    const el = previewContainerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height ?? 0;
-      if (h > 0) setPreviewHeight(h);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  const fontScale =
-    previewHeight > 0 && compositionHeight > 0 ? previewHeight / compositionHeight : 0.5;
 
-  // -- Active clip lookup ----------------------------------------------------
+  // -- Active video stage ----------------------------------------------------
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const activeVideo: VideoStage | null = useMemo(() => {
+    if (!plan) return null;
+    return (
+      plan.videoTrack.find((s) => currentTime >= s.outputStart && currentTime < s.outputEnd) ?? null
+    );
+  }, [plan, currentTime]);
 
-  // Web Audio graph: one context, one { source, gain } per audio clip.
-  // Wired lazily on first interaction (browser autoplay policy). When the
-  // normalize flag is off we still route through the GainNode at unity gain
-  // so we don't have to flip audio routing mid-playback.
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const audioNodesRef = useRef<
-    Map<string, { source: MediaElementAudioSourceNode; gain: GainNode }>
-  >(new Map());
+  const videoSrc = useMemo(() => {
+    if (!plan || !activeVideo) return null;
+    const p = sourcePath(findSource(plan, activeVideo.sourceId));
+    return p ? convertFileSrc(p) : null;
+  }, [plan, activeVideo]);
 
-  const ensureAudioGraph = (clipId: string, el: HTMLAudioElement) => {
-    if (audioNodesRef.current.has(clipId)) return audioNodesRef.current.get(clipId)!;
-    if (!audioCtxRef.current) {
-      try {
-        const Ctx = window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        audioCtxRef.current = new Ctx();
-      } catch {
-        return null as unknown as { source: MediaElementAudioSourceNode; gain: GainNode };
-      }
-    }
-    const ctx = audioCtxRef.current;
-    if (!ctx) return null as unknown as { source: MediaElementAudioSourceNode; gain: GainNode };
-    try {
-      const source = ctx.createMediaElementSource(el);
-      const gain = ctx.createGain();
-      gain.gain.value = 1;
-      source.connect(gain);
-      gain.connect(ctx.destination);
-      const nodes = { source, gain };
-      audioNodesRef.current.set(clipId, nodes);
-      return nodes;
-    } catch {
-      // `createMediaElementSource` throws if the element has already been
-      // connected in another context / tab. In that case fall back to
-      // `el.volume` for attenuation.
-      return null as unknown as { source: MediaElementAudioSourceNode; gain: GainNode };
-    }
-  };
-
-  // Drop any nodes whose clip was removed
-  useEffect(() => {
-    const ids = new Set(audioItems.map((a) => a.id));
-    for (const [id, nodes] of audioNodesRef.current.entries()) {
-      if (!ids.has(id)) {
-        try {
-          nodes.source.disconnect();
-          nodes.gain.disconnect();
-        } catch {
-          /* ignore */
-        }
-        audioNodesRef.current.delete(id);
-      }
-    }
-  }, [audioItems]);
-
-  // Resume audio context on user gesture (play click propagates here)
-  useEffect(() => {
-    if (playing && audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume().catch(() => {});
-    }
-  }, [playing]);
-
-  const activeVideoIndex = useMemo(
-    () =>
-      videoItems.findIndex(
-        (v) => currentTime >= v.startTime && currentTime < v.startTime + v.duration,
-      ),
-    [videoItems, currentTime],
-  );
-  const activeVideo = activeVideoIndex >= 0 ? videoItems[activeVideoIndex] : null;
-
-  const videoSrc = useMemo(
-    () => (activeVideo ? convertFileSrc(activeVideo.filePath) : null),
-    [activeVideo],
-  );
-
-  // Source-time target for the active video element (honors speed)
+  // Sync <video>.currentTime into the stage's source window, honoring speed.
   const videoTargetSourceTime = useMemo(() => {
     if (!activeVideo) return 0;
-    const s = safeSpeed(activeVideo.speed);
-    return (currentTime - activeVideo.startTime) * s + activeVideo.trimStart;
+    return activeVideo.sourceIn + (currentTime - activeVideo.outputStart) * activeVideo.speed;
   }, [activeVideo, currentTime]);
 
-  // Opacity for the active video clip — INCLUDES transition contribution
+  // Opacity from the stage's pre-resolved fades (transition contributions
+  // already folded in by the compiler).
   const videoOpacity = useMemo(() => {
-    if (!activeVideo || activeVideoIndex < 0) return 1;
-    const { fadeIn, fadeOut } = effectiveVideoFades(activeVideo, activeVideoIndex, videoItems);
-    const local = currentTime - activeVideo.startTime;
-    return fadeOpacity(local, activeVideo.duration, fadeIn, fadeOut);
-  }, [activeVideo, activeVideoIndex, videoItems, currentTime]);
+    if (!activeVideo) return 1;
+    const local = currentTime - activeVideo.outputStart;
+    const duration = activeVideo.outputEnd - activeVideo.outputStart;
+    return fadeEnvelope(local, duration, activeVideo.fadeIn, activeVideo.fadeOut);
+  }, [activeVideo, currentTime]);
 
-  // -- Live video sync -------------------------------------------------------
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !activeVideo) return;
-    const s = safeSpeed(activeVideo.speed);
+    const s = activeVideo.speed;
 
     if (video.playbackRate !== s) video.playbackRate = s;
-    if (video.muted !== !!activeVideo.stripAudio) video.muted = !!activeVideo.stripAudio;
+    if (video.muted !== activeVideo.stripEmbeddedAudio) {
+      video.muted = activeVideo.stripEmbeddedAudio;
+    }
 
     const applySync = () => {
       const target = videoTargetSourceTime;
@@ -283,58 +119,124 @@ export default function CompositionPreview({
     if (!video || !activeVideo) return;
     if (playing) {
       const attempt = video.play();
-      if (attempt && typeof attempt.then === 'function') {
-        attempt.catch(() => {});
-      }
+      if (attempt && typeof attempt.then === 'function') attempt.catch(() => {});
     } else {
       video.pause();
     }
   }, [playing, activeVideo]);
 
-  // Apply opacity imperatively (no React commit per tick for a style prop)
   useEffect(() => {
     const video = videoRef.current;
     if (video) video.style.opacity = String(videoOpacity);
   }, [videoOpacity]);
 
-  // -- Live audio sync -------------------------------------------------------
+  // -- Audio: dedicated tracks via <audio> elements + Web Audio gain --------
+  //
+  // The IR's "embedded" synthetic track is routed natively through <video>
+  // (muted toggled via stripEmbeddedAudio above); it does not need its own
+  // HTMLAudioElement. Dedicated tracks each get one <audio> element keyed by
+  // track id — the tracks index 1:1 with original AudioClips today.
+  const dedicatedTracks = useMemo(() => {
+    if (!plan) return [];
+    return plan.audioTracks.filter((t) => t.id !== 'embedded');
+  }, [plan]);
+
+  const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioNodesRef = useRef<
+    Map<string, { source: MediaElementAudioSourceNode; gain: GainNode }>
+  >(new Map());
+
+  const ensureAudioGraph = (trackId: string, el: HTMLAudioElement) => {
+    if (audioNodesRef.current.has(trackId)) return audioNodesRef.current.get(trackId)!;
+    if (!audioCtxRef.current) {
+      try {
+        const Ctx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioCtxRef.current = new Ctx();
+      } catch {
+        return null;
+      }
+    }
+    const ctx = audioCtxRef.current;
+    if (!ctx) return null;
+    try {
+      const source = ctx.createMediaElementSource(el);
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      const nodes = { source, gain };
+      audioNodesRef.current.set(trackId, nodes);
+      return nodes;
+    } catch {
+      return null;
+    }
+  };
+
+  // Drop nodes whose track disappeared.
   useEffect(() => {
-    audioItems.forEach((clip) => {
-      const el = audioRefs.current.get(clip.id);
-      if (!el) return;
+    const ids = new Set(dedicatedTracks.map((t) => t.id));
+    for (const [id, nodes] of audioNodesRef.current.entries()) {
+      if (!ids.has(id)) {
+        try {
+          nodes.source.disconnect();
+          nodes.gain.disconnect();
+        } catch {
+          /* ignore */
+        }
+        audioNodesRef.current.delete(id);
+      }
+    }
+  }, [dedicatedTracks]);
 
-      const nodes = ensureAudioGraph(clip.id, el);
-      const s = safeSpeed(clip.speed);
-      const inRange =
-        currentTime >= clip.startTime && currentTime < clip.startTime + clip.duration;
-      const local = currentTime - clip.startTime;
-      const targetLocal = local * s + clip.trimStart;
+  useEffect(() => {
+    if (playing && audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+  }, [playing]);
 
-      if (el.playbackRate !== s) el.playbackRate = s;
+  useEffect(() => {
+    if (!plan) return;
+    for (const track of dedicatedTracks) {
+      const el = audioRefs.current.get(track.id);
+      if (!el) continue;
 
-      // Gain = base_volume × fade × (normalize? loudnormGain : 1)
-      const fade = fadeOpacity(local, clip.duration, clip.fadeIn, clip.fadeOut);
-      const normGain = clip.normalize ? loudnormGain(clip.measuredLufs, TARGET_LUFS) : 1;
-      const totalGain = Math.max(0, (clip.volume ?? 1) * fade * normGain);
+      // A dedicated track has exactly one stage today (1:1 with AudioClip).
+      // Scaling this up to multi-stage tracks is a future IR capability; for
+      // now we consume the first stage.
+      const stage: AudioStage | undefined = track.stages[0];
+      if (!stage) continue;
+
+      const nodes = ensureAudioGraph(track.id, el);
+      const inRange = currentTime >= stage.outputStart && currentTime < stage.outputEnd;
+      const local = currentTime - stage.outputStart;
+      const duration = stage.outputEnd - stage.outputStart;
+      const targetLocal = stage.sourceIn + local * stage.speed;
+
+      if (el.playbackRate !== stage.speed) el.playbackRate = stage.speed;
+
+      const fade = fadeEnvelope(local, duration, stage.fadeIn, stage.fadeOut);
+      const normGain = stage.normalize ? approxLoudnormGain(stage.normalize) : 1;
+      const totalGain = Math.max(0, stage.linearGain * fade * normGain * track.gain);
 
       if (nodes) {
         if (Math.abs(nodes.gain.gain.value - totalGain) > 0.005) {
           nodes.gain.gain.value = totalGain;
         }
-        // Element volume stays at 1 when routed through Web Audio
         if (el.volume !== 1) el.volume = 1;
       } else {
-        // Fallback path: no Web Audio graph — volume is attenuation-only
         const clamped = Math.max(0, Math.min(1, totalGain));
         if (Math.abs(el.volume - clamped) > 0.005) el.volume = clamped;
       }
 
       if (!inRange) {
         if (!el.paused) el.pause();
-        return;
+        continue;
       }
 
-      const threshold = playing ? 0.3 * s : 0.03;
+      const threshold = playing ? 0.3 * stage.speed : 0.03;
       if (Math.abs(el.currentTime - targetLocal) > threshold) {
         try {
           el.currentTime = Math.max(0, targetLocal);
@@ -343,44 +245,58 @@ export default function CompositionPreview({
         }
       }
 
-      if (playing && el.paused) {
-        el.play().catch(() => {});
-      } else if (!playing && !el.paused) {
-        el.pause();
-      }
-    });
-  }, [audioItems, currentTime, playing]);
+      if (playing && el.paused) el.play().catch(() => {});
+      else if (!playing && !el.paused) el.pause();
+    }
+  }, [dedicatedTracks, plan, currentTime, playing]);
 
-  // Clean up audio refs when clips disappear
   useEffect(() => {
-    const ids = new Set(audioItems.map((a) => a.id));
+    const ids = new Set(dedicatedTracks.map((t) => t.id));
     for (const [id, el] of audioRefs.current.entries()) {
       if (!ids.has(id)) {
         el.pause();
         audioRefs.current.delete(id);
       }
     }
-  }, [audioItems]);
+  }, [dedicatedTracks]);
 
-  // -- Active overlays -------------------------------------------------------
-  const activeTexts = useMemo(
-    () =>
-      textItems.filter(
-        (it) => currentTime >= it.startTime && currentTime < it.startTime + it.duration,
-      ),
-    [textItems, currentTime],
-  );
-  const activeImages = useMemo(
-    () =>
-      imageItems.filter(
-        (it) => currentTime >= it.startTime && currentTime < it.startTime + it.duration,
-      ),
-    [imageItems, currentTime],
-  );
+  // -- Active image overlays -------------------------------------------------
+  //
+  // Text items are beats (timeline milestones), not rendered into the video
+  // frame. See docs/concepts/media-studio-architecture.md §Effect model —
+  // they appear only as icons on the timeline.
+  type ActiveImage = { kind: 'image' } & ImageOverlayStage;
+
+  const activeImages: ActiveImage[] = useMemo(() => {
+    if (!plan) return [];
+    return plan.overlays.filter(
+      (o): o is ActiveImage =>
+        o.kind === 'image' && currentTime >= o.outputStart && currentTime < o.outputEnd,
+    );
+  }, [plan, currentTime]);
+
+  // Resolve paths for <audio>/<img> elements from the plan's source catalog.
+  const audioTrackSources = useMemo(() => {
+    if (!plan) return new Map<string, string>();
+    const map = new Map<string, string>();
+    for (const track of dedicatedTracks) {
+      const stage = track.stages[0];
+      if (!stage) continue;
+      const p = sourcePath(findSource(plan, stage.sourceId));
+      if (p) map.set(track.id, p);
+    }
+    return map;
+  }, [plan, dedicatedTracks]);
+
+  const imagePathFor = (overlay: ImageOverlayStage): string | null => {
+    if (!plan) return null;
+    return sourcePath(findSource(plan, overlay.sourceId));
+  };
 
   const progress = totalDuration > 0 ? Math.min(1, currentTime / totalDuration) : 0;
-  const hasAnyMedia =
-    videoItems.length > 0 || imageItems.length > 0 || textItems.length > 0;
+  const hasAnyMedia = plan
+    ? plan.videoTrack.length > 0 || plan.overlays.length > 0 || dedicatedTracks.length > 0
+    : false;
 
   return (
     <div className="flex flex-col rounded-modal bg-card border border-primary/10 overflow-hidden w-full shadow-elevation-2">
@@ -401,9 +317,7 @@ export default function CompositionPreview({
             <div className="flex flex-col items-center gap-2 text-foreground">
               <MonitorPlay className="w-10 h-10" />
               <span className="typo-body">
-                {activeTexts.length + activeImages.length > 0
-                  ? 'Overlay preview'
-                  : 'No video at this time'}
+                {activeImages.length > 0 ? 'Overlay preview' : 'No video at this time'}
               </span>
             </div>
           ) : (
@@ -413,23 +327,26 @@ export default function CompositionPreview({
             </div>
           )}
 
-          {activeImages.map((item) => {
-            const local = currentTime - item.startTime;
-            const opacity = fadeOpacity(local, item.duration, item.fadeIn, item.fadeOut);
+          {activeImages.map((overlay) => {
+            const local = currentTime - overlay.outputStart;
+            const duration = overlay.outputEnd - overlay.outputStart;
+            const opacity = fadeEnvelope(local, duration, overlay.fadeIn, overlay.fadeOut);
+            const path = imagePathFor(overlay);
+            if (!path) return null;
             return (
               <div
-                key={item.id}
+                key={overlay.id}
                 className="absolute pointer-events-none"
                 style={{
-                  left: `${item.positionX * 100}%`,
-                  top: `${item.positionY * 100}%`,
-                  transform: `translate(-50%, -50%) scale(${item.scale})`,
+                  left: `${overlay.positionX * 100}%`,
+                  top: `${overlay.positionY * 100}%`,
+                  transform: `translate(-50%, -50%) scale(${overlay.scale})`,
                   opacity,
                 }}
               >
                 <img
-                  src={convertFileSrc(item.filePath)}
-                  alt={item.label}
+                  src={convertFileSrc(path)}
+                  alt=""
                   className="max-w-[40%] max-h-[40%] object-contain drop-shadow-elevation-3"
                   draggable={false}
                 />
@@ -437,49 +354,10 @@ export default function CompositionPreview({
             );
           })}
 
-          {activeTexts.map((item) => {
-            const local = currentTime - item.startTime;
-            const opacity = fadeOpacity(local, item.duration, item.fadeIn, item.fadeOut);
-            return (
-              <div
-                key={item.id}
-                className="absolute pointer-events-none select-none"
-                style={{
-                  left: `${item.positionX * 100}%`,
-                  top: `${item.positionY * 100}%`,
-                  transform: 'translate(-50%, -50%)',
-                  opacity,
-                }}
-              >
-                <span
-                  className="font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-                  style={{
-                    fontSize: `${Math.max(6, item.fontSize * fontScale)}px`,
-                    color: item.color,
-                  }}
-                >
-                  {item.label}
-                </span>
-                {item.text && (
-                  <p
-                    className="text-center drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] mt-0.5"
-                    style={{
-                      fontSize: `${Math.max(6, item.fontSize * fontScale * 0.5)}px`,
-                      color: item.color,
-                      opacity: 0.85,
-                    }}
-                  >
-                    {item.text}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
-            {activeVideo && safeSpeed(activeVideo.speed) !== 1 && (
+            {activeVideo && activeVideo.speed !== 1 && (
               <span className="px-1.5 py-0.5 rounded bg-rose-500/80 typo-code text-white tabular-nums">
-                {safeSpeed(activeVideo.speed).toFixed(2)}×
+                {activeVideo.speed.toFixed(2)}×
               </span>
             )}
             <div className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">
@@ -499,17 +377,21 @@ export default function CompositionPreview({
       </div>
 
       <div className="sr-only" aria-hidden>
-        {audioItems.map((clip) => (
-          <audio
-            key={clip.id}
-            ref={(el) => {
-              if (el) audioRefs.current.set(clip.id, el);
-              else audioRefs.current.delete(clip.id);
-            }}
-            src={convertFileSrc(clip.filePath)}
-            preload="metadata"
-          />
-        ))}
+        {dedicatedTracks.map((track) => {
+          const path = audioTrackSources.get(track.id);
+          if (!path) return null;
+          return (
+            <audio
+              key={track.id}
+              ref={(el) => {
+                if (el) audioRefs.current.set(track.id, el);
+                else audioRefs.current.delete(track.id);
+              }}
+              src={convertFileSrc(path)}
+              preload="metadata"
+            />
+          );
+        })}
       </div>
     </div>
   );

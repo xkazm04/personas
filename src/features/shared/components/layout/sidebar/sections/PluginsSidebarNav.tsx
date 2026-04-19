@@ -1,13 +1,15 @@
 import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import type { DevToolsTab, TwinTab } from '@/lib/types/types';
-import { devToolsItems, researchLabItems, twinItems } from '../sidebarData';
+import type { ArtistTab, DevToolsTab, TwinTab } from '@/lib/types/types';
+import { artistItems, devToolsItems, researchLabItems, twinItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function PluginsSidebarNav() {
   const { t } = useTranslation();
   const pluginTab = useSystemStore((s) => s.pluginTab);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
+  const artistTab = useSystemStore((s) => s.artistTab);
+  const setArtistTab = useSystemStore((s) => s.setArtistTab);
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const researchLabTab = useSystemStore((s) => s.researchLabTab);
@@ -45,24 +47,45 @@ export function PluginsSidebarNav() {
 
         {/* Artist */}
         {enabledPlugins.has('artist') && (
-          <button
-            onClick={() => setPluginTab('artist')}
-            aria-current={pluginTab === 'artist' ? 'page' : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-              pluginTab === 'artist'
-                ? 'bg-primary/10 text-foreground/90'
-                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
-            }`}
-          >
-            <Palette className="w-4 h-4 flex-shrink-0" />
-            Artist
-            {creativeSessionRunning && (
-              <span className="relative ml-auto flex h-2.5 w-2.5">
-                <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
-                <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-              </span>
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('artist')}
+              aria-current={pluginTab === 'artist' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'artist'
+                  ? 'bg-primary/10 text-foreground/90'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <Palette className="w-4 h-4 flex-shrink-0" />
+              Artist
+              {creativeSessionRunning && (
+                <span className="relative ml-auto flex h-2.5 w-2.5">
+                  <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+                </span>
+              )}
+            </button>
+            {/* Artist sub-tabs */}
+            {pluginTab === 'artist' && (
+              <div className="ml-4 space-y-0.5">
+                {artistItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setArtistTab(item.id as ArtistTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      artistTab === item.id
+                        ? 'bg-primary/10 text-foreground'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             )}
-          </button>
+          </div>
         )}
 
         {/* Dev Tools */}

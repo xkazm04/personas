@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "durationFrames": 150,
+  "durationSeconds": 5.0,
+  "backgroundColor": "#111111",
+  "sources": [
+    {
+      "kind": "color",
+      "id": 0,
+      "hex": "#111111"
+    },
+    {
+      "kind": "file",
+      "id": 1,
+      "path": "/narr.wav",
+      "mediaDurationSeconds": 300.0,
+      "hasAudio": true,
+      "hasVideo": true
+    }
+  ],
+  "videoTrack": [],
+  "audioTracks": [
+    {
+      "id": "a1",
+      "gain": 1.0,
+      "stages": [
+        {
+          "id": "a1",
+          "sourceId": 1,
+          "outputStart": 0.0,
+          "outputEnd": 5.0,
+          "sourceIn": 0.0,
+          "sourceEnd": 5.0,
+          "speed": 1.0,
+          "linearGain": 0.9,
+          "fadeIn": 0.0,
+          "fadeOut": 0.0,
+          "normalize": {
+            "targetLufs": -16.0,
+            "maxLinearGain": 6.0,
+            "measurements": {
+              "integratedLufs": -20.3,
+              "lra": 7.1,
+              "truePeakDbfs": -2.4,
+              "threshold": -30.5
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "overlays": [],
+  "warnings": []
+}
