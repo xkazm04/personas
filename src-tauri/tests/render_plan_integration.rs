@@ -164,19 +164,13 @@ fn text_items_never_produce_overlays() {
         start_time: 0.0,
         duration: 2.0,
         text: String::new(),
-        font_size: 32.0,
-        color: "#fff".into(),
-        position_x: 0.5,
-        position_y: 0.5,
-        fade_in: 0.0,
-        fade_out: 0.0,
+        _legacy: Default::default(),
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
     assert_eq!(plan.overlays.len(), 0);
-    assert!(plan
-        .warnings
-        .iter()
-        .all(|w| !matches!(w, CompileWarning::TextFontMissing { .. })));
+    // Beats do not participate in font probing, so no font-related
+    // warnings ever appear.
+    assert!(plan.warnings.is_empty() || plan.warnings.iter().all(|w| !format!("{w:?}").contains("Font")));
 }
 
 #[test]

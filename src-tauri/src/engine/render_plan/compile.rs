@@ -114,6 +114,12 @@ pub struct AudioClipInput {
     pub measured_threshold: Option<f64>,
 }
 
+/// Beat item (originally "text overlay" — renamed semantically). A timeline
+/// milestone the user annotates; never rendered into the preview frame or
+/// export. Visual fields from the old overlay era (fontSize, color,
+/// positionX, positionY, fadeIn, fadeOut) are accepted on deserialize for
+/// backward compatibility with older saved files — see `beat_legacy_fields`
+/// — but are no longer typed into the struct.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TextItemInput {
@@ -125,18 +131,11 @@ pub struct TextItemInput {
     pub duration: f64,
     #[serde(default)]
     pub text: String,
-    #[serde(default = "default_font_size")]
-    pub font_size: f64,
-    #[serde(default = "default_color")]
-    pub color: String,
-    #[serde(default = "default_half")]
-    pub position_x: f64,
-    #[serde(default = "default_half")]
-    pub position_y: f64,
-    #[serde(default)]
-    pub fade_in: f64,
-    #[serde(default)]
-    pub fade_out: f64,
+    /// Catches the now-removed fontSize/color/positionX/positionY/fadeIn/
+    /// fadeOut fields so older saved files still deserialize. The struct
+    /// ignores their values — beats have no visual properties.
+    #[serde(flatten, default)]
+    pub _legacy: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,8 +162,6 @@ pub struct ImageItemInput {
 
 fn default_one() -> f64 { 1.0 }
 fn default_half() -> f64 { 0.5 }
-fn default_font_size() -> f64 { 32.0 }
-fn default_color() -> String { "#ffffff".to_string() }
 
 // =============================================================================
 // CompileOptions / CompileDeps / CompileError

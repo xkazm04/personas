@@ -342,12 +342,6 @@ impl OverlayStage {
 #[ts(export)]
 #[serde(tag = "kind", rename_all_fields = "camelCase")]
 pub enum CompileWarning {
-    #[serde(rename = "textFontMissing")]
-    TextFontMissing {
-        overlay_id: String,
-        requested: String,
-        fallback: Option<String>,
-    },
     #[serde(rename = "loudnormUnmeasured")]
     LoudnormUnmeasured { audio_stage_id: String },
     #[serde(rename = "speedClamped")]

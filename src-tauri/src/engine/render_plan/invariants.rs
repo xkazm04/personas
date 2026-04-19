@@ -353,18 +353,6 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
     // --- I10: every warning id references an existing stage or source id ---
     for w in &plan.warnings {
         match w {
-            super::CompileWarning::TextFontMissing { overlay_id, .. } => {
-                let known = plan.overlays.iter().any(|o| o.id() == overlay_id);
-                // Missing fonts may refer to an overlay that was omitted, so
-                // tolerate that — otherwise flag.
-                if !known && overlay_id.is_empty() {
-                    return violation(
-                        "I10",
-                        format!("warning references empty overlay id"),
-                        Some(overlay_id),
-                    );
-                }
-            }
             super::CompileWarning::LoudnormUnmeasured { audio_stage_id } => {
                 let known = plan
                     .audio_tracks

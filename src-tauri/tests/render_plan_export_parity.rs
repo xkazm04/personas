@@ -92,12 +92,7 @@ fn text(id: &str, label: &str, start: f64, duration: f64) -> TimelineItem {
         start_time: start,
         duration,
         text: String::new(),
-        font_size: 48.0,
-        color: "#ffffff".into(),
-        position_x: 0.5,
-        position_y: 0.9,
-        fade_in: 0.0,
-        fade_out: 0.0,
+        _legacy: Default::default(),
     })
 }
 

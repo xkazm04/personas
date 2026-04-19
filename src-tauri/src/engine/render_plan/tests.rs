@@ -88,16 +88,11 @@ fn audio_clip(
 fn text_item(id: &str, start: f64, duration: f64) -> TimelineItem {
     TimelineItem::Text(TextItemInput {
         id: Some(id.into()),
-        label: None,
+        label: Some(format!("beat {id}")),
         start_time: start,
         duration,
         text: "hello".into(),
-        font_size: 48.0,
-        color: "#ffffff".into(),
-        position_x: 0.5,
-        position_y: 0.9,
-        fade_in: 0.0,
-        fade_out: 0.0,
+        _legacy: Default::default(),
     })
 }
 

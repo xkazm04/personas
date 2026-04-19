@@ -260,10 +260,6 @@ export default function MediaStudioPage() {
       startTime: textItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
       duration: 3,
       text: '',
-      fontSize: 48,
-      color: '#ffffff',
-      positionX: 0.5,
-      positionY: 0.5,
     };
     addItem(beat);
   }, [textItems, addItem]);

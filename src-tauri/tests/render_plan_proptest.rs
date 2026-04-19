@@ -113,20 +113,15 @@ fn arb_audio_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
 }
 
 fn arb_text_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
-    (0.0f64..40.0, 0.25f64..8.0, 0.0f64..1.0, 0.0f64..1.0).prop_map(
-        move |(start, duration, px, py)| {
+    (0.0f64..40.0, 0.25f64..8.0).prop_map(
+        move |(start, duration)| {
             TimelineItem::Text(TextItemInput {
                 id: Some(format!("t{ordinal}")),
                 label: Some(format!("label{ordinal}")),
                 start_time: start,
                 duration,
                 text: format!("body{ordinal}"),
-                font_size: 48.0,
-                color: "#ffffff".into(),
-                position_x: px,
-                position_y: py,
-                fade_in: 0.0,
-                fade_out: 0.0,
+                _legacy: Default::default(),
             })
         },
     )

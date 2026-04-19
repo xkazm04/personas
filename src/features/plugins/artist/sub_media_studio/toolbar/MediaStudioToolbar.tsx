@@ -298,32 +298,30 @@ export default function MediaStudioToolbar({
           )}
         </IconPopover>
 
-        {/* Style — text / image */}
+        {/* Beat description — text items are beats (timeline milestones) */}
         <IconPopover
           icon={Type}
-          title={isText ? 'Beat style' : 'Image style'}
-          disabled={!isText && !isImage}
+          title="Beat description"
+          disabled={!isText}
+          active={Boolean(isText && selectedItem && (selectedItem as TextItem).text)}
+          widthPx={320}
         >
           {isText && selectedItem && (
-            <div className="flex flex-col gap-3">
-              <NumField
-                label="Font size"
-                value={(selectedItem as TextItem).fontSize}
-                onChange={(v) => update({ fontSize: v } as Partial<TimelineItem>)}
-                step={1}
-                min={8}
+            <label className="flex flex-col gap-1">
+              <span className="typo-label text-foreground">Description</span>
+              <textarea
+                rows={4}
+                value={(selectedItem as TextItem).text}
+                onChange={(e) => update({ text: e.target.value } as Partial<TimelineItem>)}
+                placeholder="What happens at this beat?"
+                className="w-full px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-rose-500/40 resize-none"
               />
-              <label className="flex flex-col gap-1">
-                <span className="typo-label text-foreground">Color</span>
-                <input
-                  type="color"
-                  value={(selectedItem as TextItem).color}
-                  onChange={(e) => update({ color: e.target.value } as Partial<TimelineItem>)}
-                  className="w-full h-8 rounded-card border border-primary/10 cursor-pointer"
-                />
-              </label>
-            </div>
+            </label>
           )}
+        </IconPopover>
+
+        {/* Image scale */}
+        <IconPopover icon={SlidersHorizontal} title="Image scale" disabled={!isImage}>
           {isImage && selectedItem && (
             <RangeField
               label="Scale"
