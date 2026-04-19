@@ -1,10 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Layers } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { useTranslation } from '@/i18n/useTranslation';
+
+/**
+ * Small badge that surfaces a memory's capability (use case) attribution.
+ * Persona-wide memories (use_case_id == null) render nothing — the absence of
+ * a badge already signals "applies everywhere". Phase C5.
+ */
+function CapabilityScopeBadge({ useCaseId }: { useCaseId: string | null | undefined }) {
+  if (!useCaseId) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-500/15 border border-violet-500/30 text-violet-300 typo-body"
+      title={`Capability scope: ${useCaseId}`}
+    >
+      <Layers className="w-3 h-3" />
+      <span className="max-w-[80px] truncate">{useCaseId}</span>
+    </span>
+  );
+}
 
 // -- Importance colors (Tailwind palette values, centralized for theme consistency) --
 const IMPORTANCE_COLORS = {
@@ -72,6 +90,8 @@ export function MemoryRow({
     <CategoryChip category={memory.category} className="flex-shrink-0" />
   );
 
+  const scopeBadge = <CapabilityScopeBadge useCaseId={memory.use_case_id} />;
+
   const deleteButton = (
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
@@ -93,6 +113,7 @@ export function MemoryRow({
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
         <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
         <div className="flex-1 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
+        {scopeBadge}
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
         <span className="typo-body text-foreground w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
@@ -107,6 +128,7 @@ export function MemoryRow({
         </div>
         <span className="typo-body text-foreground line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
+          {scopeBadge}
           {categoryBadge}
           <ImportanceBar value={memory.importance} />
           <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at)}</span>

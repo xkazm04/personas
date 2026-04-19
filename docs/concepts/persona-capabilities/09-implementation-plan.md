@@ -315,6 +315,38 @@ clean.
 
 ## Phase C5 — Messages/reviews/memories per use case
 
+> **Status: SHIPPED (uncommitted) — 2026-04-19.**
+> Schema: `use_case_id` columns + indexes added to `persona_messages`,
+> `persona_manual_reviews`, `persona_memories` (migrations/incremental.rs).
+> Models: optional `use_case_id` on `PersonaMessage`, `PersonaManualReview`,
+> `PersonaMemory`, plus the matching `Create*Input` structs (with
+> `#[serde(default)]`).
+> Repos: row mappers + INSERTs updated; new `get_by_use_case_id` on each.
+> Engine: `DispatchContext.use_case_id` + cached `resolve_notification_channels`
+> (capability `notification_channels` precedence over persona-wide fallback,
+> via `dispatch::testable::pick_capability_channels`). All three
+> `DispatchContext::new` call sites in `runner.rs` thread the execution's
+> `use_case_id` (extracted from `input_data._use_case.id`, populated by C1
+> auto-expand).
+> Memory injection: `mem_repo::get_for_injection_v2(persona_id, use_case_id,
+> core_limit, active_limit)` — core memories always persona-wide; active/working
+> filtered by `use_case_id = ? OR use_case_id IS NULL` when scoped, else
+> `use_case_id IS NULL`. Legacy `get_for_injection` is now a thin wrapper.
+> `runner.rs:492` calls v2 with `execution_use_case_id.as_deref()`.
+> Tests: `engine::dispatch::tests` (7 passing — including 5 new
+> `test_pick_capability_channels_*` cases); `db::repos::core::memories::tests`
+> (4 new C5 tests — `test_get_for_injection_v2_scoped_capability`,
+> `test_get_for_injection_v2_unscoped_persona_wide`,
+> `test_get_for_injection_v1_matches_v2_unscoped`,
+> `test_get_by_use_case_id_filters`, `test_create_persists_use_case_id`).
+> Frontend: activity feed grew a "capability" filter dropdown
+> (`ActivityFilters.tsx` + `ActivityTab.tsx`); memory rows grew a violet
+> "Layers" scope badge for capability-scoped memories
+> (`MemoryCard.tsx`). TS bindings (`PersonaMemory`, `PersonaMessage`,
+> `PersonaManualReview`, `CreatePersonaMemoryInput`) updated to match the
+> Rust model — ts-rs will rewrite identically on next regen.
+> `cargo check --features desktop` clean. `npx tsc --noEmit` clean.
+
 **Goal:** attribute messages, reviews, and memories to capabilities. Enable
 per-capability queues and scoped learned memory.
 

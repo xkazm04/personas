@@ -1,4 +1,4 @@
-import { X, Tag, ExternalLink } from 'lucide-react';
+import { X, Tag, ExternalLink, Layers } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -80,6 +80,18 @@ export default function MemoryDetailModal({
               <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.importance_label}</div>
               <ImportanceBar value={memory.importance} />
             </div>
+            {memory.use_case_id && (
+              <div>
+                <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">Scope</div>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-violet-500/15 border border-violet-500/30 text-violet-300 typo-body"
+                  title={`Capability: ${memory.use_case_id}`}
+                >
+                  <Layers className="w-3 h-3" />
+                  <span className="max-w-[140px] truncate">{memory.use_case_id}</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Tags */}

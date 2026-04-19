@@ -198,6 +198,45 @@ sends. Requires a constructible `AppHandle` mock and an `AppState` builder
 that doesn't pull in the entire desktop runtime. The static dispatch-marker
 test pins the contract until that harness exists.
 
+## §M — C5 follow-up UI polish (deferred during 2026-04-19 ship)
+
+**What.** Three UI surfaces could use deeper integration with capability
+attribution beyond what shipped in C5:
+
+1. **Capability title resolution in MemoryCard scope badge.** The badge in
+   `MemoryCard.tsx` shows the raw `use_case_id` (truncated). The overview
+   memory list aggregates across personas, so the badge cannot trivially
+   reach `useSelectedUseCases()`. Add a join-friendly map (persona_id →
+   {use_case_id → title}) populated alongside the persona list, and feed it
+   into MemoryRow as a prop so the badge can render the human title instead
+   of the slug.
+2. **Dedicated capability filter on the manual reviews queue.** Reviews
+   filter via the shared activity-feed dropdown today, but a top-level
+   reviews UI (e.g. inside the persona's Use Case tab) would be a better
+   home. Surface a "Reviews for this capability" view inside
+   `PersonaUseCasesTab` once the C6 lab refinement work lands and the tab
+   structure stabilizes.
+3. **"Capability scope" picker when creating a memory manually.**
+   `CreatePersonaMemoryInput.use_case_id` is now optional but the
+   `CreateMemoryForm` doesn't expose it. Add a dropdown defaulted to the
+   selected capability when the user opens the form from inside a
+   capability context; default to "persona-wide" otherwise.
+
+**Why deferred.** All three are reachable with the v1 surfaces (activity
+feed already filters by capability; the badge shows the slug; manual
+memories default to persona-wide which is the safe choice). Shipping them
+required either touching unrelated UI scaffolding (#1, #2) or speculating
+on a creation flow that hasn't been requested yet (#3).
+
+**Trigger to revisit.**
+
+- User feedback that "the violet badge is ugly because it shows a UUID"
+  (#1).
+- Manual review queue gets crowded enough that filtering inside the Use
+  Case tab is meaningfully better than the activity feed dropdown (#2).
+- A user requests scoping a learned memory to a specific capability via the
+  UI (#3).
+
 ## §L — C3 execution history UI polish — **shipped 2026-04-19**
 
 **Status.** Promoted out of backlog. Implemented across:
