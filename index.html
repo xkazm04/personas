@@ -28,6 +28,8 @@
       window.addEventListener('unhandledrejection', function(e) {
         var r = e.reason;
         var msg = r instanceof Error ? r.message : (r && typeof r === 'object' ? (r.message || r.error || JSON.stringify(r)) : String(r));
+        // Vite HMR client races its own WebSocket during dev — never a real bug
+        if (typeof msg === 'string' && msg.indexOf('send was called before connect') !== -1) return;
         var text = '[UNHANDLED PROMISE] ' + msg;
         console.error(text);
         __logToRust('error', text);
