@@ -115,14 +115,15 @@ export function QuestionnaireFormFocus({
   }, []);
 
   // Keyboard nav.
-  // - ArrowLeft / ArrowRight navigate (ignored while typing so textareas can
-  //   still use arrow keys for caret motion). Up/Down are reserved for
-  //   in-widget pill navigation (handled inside SelectPills).
-  // - Enter advances on the LAST step: submits the form if all questions are
-  //   answered. Mid-flow Enter is intentionally inert — most steps are pill
-  //   grids where Enter would be ambiguous (toggle pill vs advance), and
-  //   text-input steps are the minority. The "Enter to advance" hint is
-  //   only rendered on the last step for the same reason.
+  // - ArrowLeft / ArrowRight navigate between questions (ignored while typing
+  //   so textareas can still use arrow keys for caret motion). Up/Down are
+  //   reserved for in-widget pill navigation (handled inside SelectPills).
+  // - Enter confirms the current answer and advances:
+  //     * Last step + all answered → submit the whole form
+  //     * Otherwise → advance one step (regardless of input type)
+  //   Shift+Enter in a textarea still inserts a newline. Enter in an input
+  //   of a non-text type (checkbox, radio) is left to the native control.
+  const currentAnswered = !!userAnswers[currentQuestion?.id ?? ''];
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -135,25 +136,24 @@ export function QuestionnaireFormFocus({
       if (e.key === 'Enter') {
         // Shift+Enter in a textarea keeps the native newline insertion.
         if (isTextarea && e.shiftKey) return;
-        // Last step + all answered → Enter submits.
+        // Non-text inputs (checkbox, radio, etc.) keep native Enter behaviour.
+        if (isInput) {
+          const inputType = (target as HTMLInputElement).type;
+          if (inputType && inputType !== 'text' && inputType !== '' && inputType !== 'search') {
+            return;
+          }
+        }
+        // Last step + everything answered → submit.
         if (isAtEnd && canSubmit) {
           e.preventDefault();
           onSubmit();
           return;
         }
-        // Text-input step before the last → advance (quick path for
-        // users who type a free-form answer and want to move on).
-        if ((isInput || isTextarea) && !isAtEnd) {
-          if (isInput && (target as HTMLInputElement).type !== 'text' &&
-              (target as HTMLInputElement).type !== '' &&
-              (target as HTMLInputElement).type !== 'search') {
-            return;
-          }
+        // Otherwise, if the current question is answered, advance.
+        if (currentAnswered) {
           e.preventDefault();
           next();
-          return;
         }
-        // Otherwise Enter is intentionally inert.
         return;
       }
       if (isTyping) return;
@@ -162,7 +162,7 @@ export function QuestionnaireFormFocus({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, isAtEnd, canSubmit, onSubmit]);
+  }, [next, prev, isAtEnd, canSubmit, onSubmit, currentAnswered]);
 
   // Build the preview structure from the template's category grouping.
   const categoryBuckets = useMemo(() => {

@@ -12,6 +12,8 @@ const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
+import { PersonaChronologyJourney } from "./chronology/PersonaChronologyJourney";
+import { PersonaChronologyTimeline } from "./chronology/PersonaChronologyTimeline";
 import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
 import { useThemeStore } from "@/stores/themeStore";
 import type { ThemeId } from "@/stores/themeStore";
@@ -172,8 +174,17 @@ function extractDimensionData(
   return data;
 }
 
-// -- Matrix variant (switcher removed; kept for potential future re-enable) --
-type MatrixVariant = "original" | "glass" | "blueprint";
+// -- Matrix variant --
+// "chrono-journey" and "chrono-timeline" are experimental prototypes that
+// unify Tasks + Apps & Services + Triggers into a single per-use-case
+// chronology component. Exposed via the in-view tab switcher so the user
+// can compare them against the legacy glass/blueprint variants.
+type MatrixVariant =
+  | "original"
+  | "glass"
+  | "blueprint"
+  | "chrono-journey"
+  | "chrono-timeline";
 
 /** Map themes to their preferred matrix visual variant. */
 const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
@@ -188,6 +199,13 @@ const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
 function getThemeVariant(themeId: ThemeId): MatrixVariant {
   return THEME_VARIANT_MAP[themeId] ?? "original";
 }
+
+/** Only the experimental chronology prototypes are exposed through the
+ * in-view tab switcher. The legacy variants remain theme-driven. */
+const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
+  { id: "chrono-journey", label: "Journey", sub: "glass · cards" },
+  { id: "chrono-timeline", label: "Timeline", sub: "blueprint · stepper" },
+];
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
   const { t } = useTranslation();
@@ -645,7 +663,42 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Matrix variant rendering — always the grid variant (switcher hidden) */}
+      {/* Experimental chronology prototype switcher — compare Journey vs.
+          Timeline variants of the unified Tasks/Apps/Triggers component.
+          When neither is selected, the theme-mapped legacy variant renders. */}
+      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/50 mr-1">
+          Prototype:
+        </span>
+        {CHRONO_TABS.map((tab) => {
+          const active = matrixVariant === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setMatrixVariant(tab.id)}
+              className={`flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-modal border cursor-pointer transition-all ${
+                active
+                  ? "bg-primary/15 border-primary/30 text-foreground"
+                  : "bg-card-bg/50 border-card-border text-foreground/70 hover:bg-primary/5 hover:border-primary/20"
+              }`}
+            >
+              <span className="text-[11px] font-semibold leading-none">{tab.label}</span>
+              <span className="text-[9px] uppercase tracking-wider opacity-70 leading-none">
+                {tab.sub}
+              </span>
+            </button>
+          );
+        })}
+        {(matrixVariant === "chrono-journey" || matrixVariant === "chrono-timeline") && (
+          <button
+            onClick={() => setMatrixVariant(getThemeVariant(themeId))}
+            className="text-[10px] uppercase tracking-wider text-foreground/50 hover:text-foreground cursor-pointer ml-1 px-2 py-1"
+          >
+            ← Back to legacy
+          </button>
+        )}
+      </div>
+
       {matrixVariant === "original" && (
         <PersonaMatrix
           designResult={null}
@@ -691,6 +744,30 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       )}
       {matrixVariant === "blueprint" && (
         <PersonaMatrixBlueprint
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          cellBuildStates={build.cellStates}
+          buildActivity={build.buildActivity}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+      {matrixVariant === "chrono-journey" && (
+        <PersonaChronologyJourney
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          cellBuildStates={build.cellStates}
+          buildActivity={build.buildActivity}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+      {matrixVariant === "chrono-timeline" && (
+        <PersonaChronologyTimeline
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}

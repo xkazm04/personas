@@ -47,9 +47,11 @@ export function SelectPills({
   includeAllOption?: boolean;
 }) {
   const { t } = useTranslation();
-  // Default: multi-selects always allow custom entries (feature request —
-  // users routinely need to type values we didn't enumerate).
-  const effectiveAllowCustom = allowCustom ?? !!multi;
+  // Multi-selects always allow custom entries regardless of what the template
+  // declares (feature requirement — users routinely need to type values we
+  // didn't enumerate, and templates can't predict every real-world option).
+  // Single-selects keep the template's declared `allowCustom` (default false).
+  const effectiveAllowCustom = multi ? true : (allowCustom ?? false);
   const optionValueSet = useMemo(() => new Set(options.map((o) => o.value)), [options]);
 
   const selectedValues = useMemo(

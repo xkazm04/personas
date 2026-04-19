@@ -25,8 +25,8 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/newsletter-curator.json", "0010f81605b96895");
     m.insert("content/scientific-writing-editor.json", "00192b22e8f48322");
     m.insert("content/social-media-designer.json", "001f20781e342d8b");
-    m.insert("content/youtube-content-pipeline.json", "001bfc65a8e0e32b");
-    m.insert("development/autonomous-issue-resolver.json", "00009e36ebff9c54");
+    m.insert("content/youtube-content-pipeline.json", "000d6a42e8ad1136");
+    m.insert("development/autonomous-issue-resolver.json", "001121758efee07f");
     m.insert("development/build-intelligence-use-case.json", "001beacb7c020fea");
     m.insert("development/codebase-health-scanner.json", "000459f016ec1e79");
     m.insert("development/design-handoff-coordinator.json", "001da8bdcb45616f");
@@ -49,7 +49,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("finance/budget-spending-monitor.json", "001af626946fcdff");
     m.insert("finance/expense-receipt-processor.json", "0001485171741009");
     m.insert("finance/finance-controller.json", "001ce4af31af91c5");
-    m.insert("finance/financial-stocks-signaller.json", "0013fe11690b5b1f");
+    m.insert("finance/financial-stocks-signaller.json", "0000a6a025b714cb");
     m.insert("finance/freelancer-invoice-autopilot.json", "0015f56f8d8666da");
     m.insert("finance/invoice-tracker.json", "00085ec0fc79c818");
     m.insert("finance/market-intelligence-scout.json", "0001868b7da8f641");
@@ -57,7 +57,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("finance/revenue-intelligence-copilot.json", "001074989607fbac");
     m.insert("finance/revenue-operations-hub.json", "000b916cbf2f6c43");
     m.insert("finance/subscription-billing-use-case.json", "001ab0ef56b39257");
-    m.insert("hr/onboarding-tracker.json", "000ed1faf281cfc7");
+    m.insert("hr/onboarding-tracker.json", "0004bfa7ef7697d5");
     m.insert("hr/recruiting-pipeline-use-case.json", "0005e7191756988c");
     m.insert("legal/ai-contract-reviewer.json", "0014ed611afae8d4");
     m.insert("legal/contract-lifecycle-use-case.json", "0009432559dee858");
@@ -71,7 +71,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/daily-standup-compiler.json", "000036c308050e82");
     m.insert("productivity/digital-clone.json", "001d6700e3406c64");
     m.insert("productivity/email-follow-up-tracker.json", "00058f5fbd924281");
-    m.insert("productivity/email-morning-digest.json", "000e19c9d1608e8e");
+    m.insert("productivity/email-morning-digest.json", "000899d6adef2b97");
     m.insert("productivity/email-task-extractor.json", "000bd0620c3bf8a1");
     m.insert("productivity/idea-harvester.json", "000431770b574305");
     m.insert("productivity/meeting-lifecycle-manager.json", "001c8fc0bba5c746");

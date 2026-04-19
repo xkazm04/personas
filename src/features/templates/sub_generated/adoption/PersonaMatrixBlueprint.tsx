@@ -15,7 +15,18 @@ import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
   MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
 } from '../gallery/matrix/MatrixIcons';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { CellBuildStatus, BuildPhase } from '@/lib/types/buildTypes';
+
+// Strip the technical slug off a connectors-cell item string. Items are
+// authored as "<name> — <purpose>" (em dash) or "<name> - <purpose>" (hyphen).
+function splitConnectorItem(item: string): { name: string; rest: string } {
+  const emIdx = item.indexOf(' \u2014 ');
+  const dashIdx = item.indexOf(' - ');
+  const idx = emIdx >= 0 ? emIdx : dashIdx;
+  if (idx < 0) return { name: item.trim(), rest: '' };
+  return { name: item.slice(0, idx).trim(), rest: item.slice(idx + 3).trim() };
+}
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -154,15 +165,31 @@ function BlueprintCell({ dim, index, items, status }: {
           <DimIcon className={`w-20 h-20 ${dim.colorClass}`} />
         </div>
 
-        {/* Bullet items — full readable contrast, scrollable */}
+        {/* Bullet items — full readable contrast, scrollable.
+            Connectors get icon + friendly label via getConnectorMeta so the
+            raw slug (e.g. "alpha_vantage") never appears to the user. */}
         <div className="max-h-[180px] overflow-y-auto relative z-10 scrollbar-thin">
           <div className="space-y-1">
-            {items.map((item, i) => (
-              <div key={i} className="flex items-start gap-2 font-mono text-md leading-snug">
-                <span className="text-foreground mt-px flex-shrink-0">{'\u203A'}</span>
-                <span className="text-foreground/90">{item}</span>
-              </div>
-            ))}
+            {dim.key === 'connectors'
+              ? items.map((item, i) => {
+                  const { name, rest } = splitConnectorItem(item);
+                  const meta = getConnectorMeta(name);
+                  return (
+                    <div key={i} className="flex items-start gap-2 font-mono text-md leading-snug">
+                      <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                      <span className="text-foreground/90">
+                        <span className="font-bold">{meta.label}</span>
+                        {rest && <span className="text-foreground/70"> — {rest}</span>}
+                      </span>
+                    </div>
+                  );
+                })
+              : items.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 font-mono text-md leading-snug">
+                    <span className="text-foreground mt-px flex-shrink-0">{'\u203A'}</span>
+                    <span className="text-foreground/90">{item}</span>
+                  </div>
+                ))}
           </div>
         </div>
 
