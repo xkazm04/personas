@@ -118,7 +118,7 @@ function tick(): void {
     console.warn(summary);
     if (alerts.length > 0) {
       const alertMsg = `[STORE ALERT]\n${alerts.join('\n---\n')}`;
-      console.error(alertMsg);
+      console.warn(alertMsg);
       // Write to Rust log
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
