@@ -599,7 +599,7 @@ async fn handle_promote_build(
             Ok(serde_json::json!({"success": true, "result": val, "personaId": persona_id}).to_string())
         }
         Err(e) => {
-            tracing::error!(error = %e, "test_automation: promote_build failed");
+            tracing::warn!(error = %e, "test_automation: promote_build failed");
             Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string())
         }
     }
