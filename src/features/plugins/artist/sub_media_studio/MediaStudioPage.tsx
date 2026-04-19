@@ -8,6 +8,7 @@ import { useFfmpegDetect } from './hooks/useFfmpegDetect';
 import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
 import { useMediaStudioPersistence } from './hooks/useMediaStudioPersistence';
+import { useRenderPlan } from './hooks/useRenderPlan';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
 import { useMediaFilePicker } from './hooks/useMediaFilePicker';
 import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
@@ -51,6 +52,8 @@ export default function MediaStudioPage() {
     replaceComposition,
     enabled: true,
   });
+
+  const { plan } = useRenderPlan(composition);
 
   const { exportState, startExport, cancelExport } = useMediaExport(composition);
 
@@ -312,6 +315,7 @@ export default function MediaStudioPage() {
         selectedItem={selectedItem}
         persistence={persistence}
         engine={engine}
+        warnings={plan?.warnings ?? []}
         onUpdate={updateItem}
         onUpdateComposition={updateComposition}
         onSplit={splitItemAt}
@@ -370,7 +374,7 @@ export default function MediaStudioPage() {
             <CompositionPreview
               engine={engine}
               playing={playing}
-              composition={composition}
+              plan={plan}
               totalDuration={totalDuration}
             />
           </div>

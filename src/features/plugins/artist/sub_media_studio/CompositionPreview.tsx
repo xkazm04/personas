@@ -2,10 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { MonitorPlay } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { artistCompileRenderPlan } from '@/api/artist';
-import { silentCatch } from '@/lib/silentCatch';
 import { formatTimecode } from '../utils/format';
-import type { Composition } from './types';
 import type { PlaybackEngine } from './hooks/useTimelinePlayback';
 import type { AudioStage } from '@/lib/bindings/AudioStage';
 import type { ImageOverlayStage } from '@/lib/bindings/ImageOverlayStage';
@@ -14,14 +11,12 @@ import type { SourceEntry } from '@/lib/bindings/SourceEntry';
 import type { VideoStage } from '@/lib/bindings/VideoStage';
 import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
 
-/** Debounce window for the IPC compile. Short enough to feel instant, long
- *  enough that a drag event storm collapses into one round-trip. */
-const COMPILE_DEBOUNCE_MS = 40;
-
 interface CompositionPreviewProps {
   engine: PlaybackEngine;
   playing: boolean;
-  composition: Composition;
+  /** Compiled plan hoisted from MediaStudioPage so the toolbar + preview
+   *  share a single compile result. Null while the first compile settles. */
+  plan: RenderPlan | null;
   totalDuration: number;
 }
 
@@ -45,34 +40,10 @@ function sourcePath(source: SourceEntry | undefined): string | null {
 export default function CompositionPreview({
   engine,
   playing,
-  composition,
+  plan,
   totalDuration,
 }: CompositionPreviewProps) {
   const { t } = useTranslation();
-
-  // Compile the Composition into the IR via the Rust canonical compiler.
-  // One implementation across preview and export — see ADR in
-  // docs/concepts/media-studio-renderplan.md §"Appendix A". The IPC round-
-  // trip is sub-millisecond for typical compositions; we debounce so a
-  // drag-storm collapses into one call, and we guard against out-of-order
-  // responses with a sequence number.
-  const compositionJson = useMemo(() => JSON.stringify(composition), [composition]);
-  const [plan, setPlan] = useState<RenderPlan | null>(null);
-  const compileSeqRef = useRef(0);
-  useEffect(() => {
-    const seq = ++compileSeqRef.current;
-    const handle = window.setTimeout(() => {
-      artistCompileRenderPlan(compositionJson)
-        .then((next) => {
-          if (seq === compileSeqRef.current) setPlan(next);
-        })
-        // An in-progress edit can briefly violate compile invariants
-        // (zero-duration drag, out-of-range trim). Keep the last valid
-        // plan on screen until the edit settles.
-        .catch(silentCatch('render_plan_compile'));
-    }, COMPILE_DEBOUNCE_MS);
-    return () => window.clearTimeout(handle);
-  }, [compositionJson]);
 
   const [currentTime, setCurrentTime] = useState(0);
   useEffect(() => engine.subscribe(setCurrentTime), [engine]);

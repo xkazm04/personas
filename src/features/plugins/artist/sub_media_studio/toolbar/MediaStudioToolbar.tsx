@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import {
   AlertTriangle,
@@ -43,6 +43,7 @@ import type {
 } from '../types';
 import { IconPopover } from './IconPopover';
 import { NumField, RangeField, ToggleRow } from './fields';
+import type { CompileWarning } from '@/lib/bindings/CompileWarning';
 
 // ---------------------------------------------------------------------------
 // MediaStudioToolbar — top-of-workspace controls.
@@ -59,6 +60,8 @@ interface Props {
   selectedItem: TimelineItem | null;
   persistence: MediaStudioPersistence;
   engine: PlaybackEngine;
+  /** Non-fatal issues surfaced by the Rust compiler. Shown inline. */
+  warnings: CompileWarning[];
   onUpdate: (id: string, patch: Partial<TimelineItem>) => void;
   onUpdateComposition: (patch: Partial<Composition>) => void;
   onSplit: (id: string, time: number) => void;
@@ -74,6 +77,7 @@ export default function MediaStudioToolbar({
   selectedItem,
   persistence,
   engine,
+  warnings,
   onUpdate,
   onUpdateComposition,
   onSplit,
@@ -96,9 +100,15 @@ export default function MediaStudioToolbar({
   );
 
   const relativeSaved = useRelativeTime(persistence.lastSavedAt);
+  const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Set<string>>(new Set());
+  const visibleWarnings = useMemo(
+    () => warnings.filter((w) => !dismissedWarningKeys.has(warningKey(w))),
+    [warnings, dismissedWarningKeys],
+  );
 
   return (
-    <div className="flex items-stretch gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40">
+    <div className="flex flex-col border-b border-primary/10 bg-card/40">
+    <div className="flex items-stretch gap-2 px-4 md:px-6 xl:px-8 py-2">
       {/* -- Left: composition identity + metadata -------------------------- */}
       <CompositionIdentity
         composition={composition}
@@ -382,7 +392,81 @@ export default function MediaStudioToolbar({
         </Button>
       </div>
     </div>
+
+    {visibleWarnings.length > 0 && (
+      <WarningsRow
+        warnings={visibleWarnings}
+        onDismiss={(w) =>
+          setDismissedWarningKeys((prev) => {
+            const next = new Set(prev);
+            next.add(warningKey(w));
+            return next;
+          })
+        }
+      />
+    )}
+    </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Compile warnings — non-fatal issues surfaced from the Rust compiler.
+// ---------------------------------------------------------------------------
+
+function WarningsRow({
+  warnings,
+  onDismiss,
+}: {
+  warnings: CompileWarning[];
+  onDismiss: (w: CompileWarning) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-4 md:px-6 xl:px-8 py-1.5 bg-amber-500/5 border-t border-amber-500/15">
+      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+      {warnings.map((w) => (
+        <div
+          key={warningKey(w)}
+          className="flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-card bg-amber-500/10 border border-amber-500/20 text-amber-300"
+        >
+          <span>{warningMessage(w)}</span>
+          <button
+            type="button"
+            onClick={() => onDismiss(w)}
+            className="text-amber-400/70 hover:text-amber-300"
+            aria-label="Dismiss warning"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function warningKey(w: CompileWarning): string {
+  switch (w.kind) {
+    case 'loudnormUnmeasured':
+      return `loudnormUnmeasured:${w.audioStageId}`;
+    case 'speedClamped':
+      return `speedClamped:${w.stageId}:${w.requested}`;
+    case 'proxyMissing':
+      return `proxyMissing:${w.sourceId}`;
+    case 'audioSourceSilent':
+      return `audioSourceSilent:${w.sourceId}`;
+  }
+}
+
+function warningMessage(w: CompileWarning): string {
+  switch (w.kind) {
+    case 'loudnormUnmeasured':
+      return `Audio "${w.audioStageId}" normalize is on but measurement hasn't finished — preview plays without compensation until the dry-run returns.`;
+    case 'speedClamped':
+      return `Clip "${w.stageId}" speed ${w.requested.toFixed(2)}× was clamped to ${w.applied.toFixed(2)}× (valid range 0.0625×–16×).`;
+    case 'proxyMissing':
+      return `Preview proxy not used for source #${w.sourceId} on export (${w.originalPath.split(/[/\\]/).pop()}) — encoding from the original.`;
+    case 'audioSourceSilent':
+      return `Source #${w.sourceId} has no audio stream; the expected audio track will be silent.`;
+  }
 }
 
 // ---------------------------------------------------------------------------
