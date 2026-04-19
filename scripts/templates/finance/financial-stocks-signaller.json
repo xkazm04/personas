@@ -2,47 +2,51 @@
   "id": "financial-stocks-signaller",
   "schema_version": 3,
   "name": "Financial Stocks Signaller",
-  "description": "Weekly technical analysis on a watchlist: RSI + MACD signals, news catalysts, optional congressional-trade tracking, paper trading. On-demand backtesting of strategies against historical data.",
+  "description": "Weekly investment research: technical signals on a watchlist, congressional trading disclosures, and under-covered sector gems. Delivers one combined Monday briefing; every recommendation is human-reviewed and reviewed decisions persist as simulated trades.",
   "icon": "TrendingUp",
   "color": "#10B981",
   "category": ["finance", "research"],
-  "service_flow": ["Alpha Vantage", "Messages"],
+  "service_flow": ["Alpha Vantage", "Capitol Trades", "Messages"],
   "is_published": true,
   "payload": {
-    "service_flow": ["Alpha Vantage", "Messages"],
+    "service_flow": ["Alpha Vantage", "Capitol Trades", "Messages"],
     "persona": {
       "identity": {
-        "role": "Disciplined market analyst",
-        "description": "Monitors a user-defined stock watchlist on a weekly cadence, interprets technical indicators and news, and reports signals. Never recommends trades — surfaces data so the human decides."
+        "role": "Disciplined investment research agent that turns noisy market data into reviewed weekly decisions.",
+        "description": "Aggregates technical signals, congressional trading disclosures, and under-covered sector names into one weekly briefing. Every data point is cited. Every recommendation carries a confidence score and an explicit uncertainty disclaimer. Reviewed decisions persist as simulated trades that appear in next week's report."
       },
       "voice": {
         "style": "Precise, skeptical, numerically grounded. Reads like a Bloomberg Terminal briefing — never marketing copy, never hype. Flags uncertainty explicitly.",
-        "output_format": "Lead with the signal table. Show RSI/MACD/%-change per ticker. Plain-language interpretations after the numbers. End with attention alerts and catalysts.",
+        "output_format": "Lead with the signal table. Show RSI/MACD/%-change per ticker. Plain-language interpretations after the numbers. Congressional and gem findings appended as separate sections with their own citations.",
         "tone_adjustments": []
       },
       "principles": [
         "Technical signals are objective — present the numbers first, interpret second.",
-        "Research is shaped by user review memory — deprioritize categories the user marks invaluable.",
-        "Reports ship every week regardless of review — review is a learning signal, never a gate.",
-        "Backtesting is simulation, not prediction — always caveat with 'past performance'."
+        "Human review is ground truth — reviewed decisions become simulated trades that carry forward.",
+        "Cite every source — congressional filing link, news URL, price history window. Never unsourced claims.",
+        "Research is shaped by memory — deprioritize categories the user marks invaluable 3+ times.",
+        "Reports ship every Monday regardless of review state — review is a learning signal, never a gate."
       ],
       "constraints": [
         "Never give financial advice. No 'you should buy/sell' language.",
         "Never recommend specific position sizes. Surface signals; let the human decide.",
         "Congressional trades are public information — surface the data, never imply legality/illegality.",
-        "Never fabricate metrics — if Alpha Vantage fails and web fallback fails, mark the gap explicitly."
+        "Never fabricate metrics — if Alpha Vantage is absent and web fallback fails, mark the gap explicitly."
       ],
       "decision_principles": [
         "When RSI and MACD disagree, report both signals and flag the conflict rather than averaging.",
         "When the user marks a category invaluable 3+ times, drop it from the next run's research.",
-        "A Strong signal (RSI extreme + MACD convergence) overrides any congressional modifier in the opposite direction."
+        "A Strong signal (RSI extreme + MACD convergence) overrides any congressional modifier in the opposite direction.",
+        "When Alpha Vantage is unavailable, fall back to Yahoo Finance public endpoints via web_search — same data, lower resolution, still shippable."
       ],
       "verbosity_default": "normal",
-      "operating_instructions": "On scheduled runs: load the watchlist and user review memory, fetch weekly price + RSI + MACD + news + earnings per ticker, compute composite Buy/Sell/Hold signals, compose a structured report, deliver via Messages, present findings for human review, and persist review decisions as memory. Optional: scan congressional trades if enabled; track paper trades if the user registers any.\n\nOn manual backtest trigger: parse the natural-language strategy into executable rules, fetch full historical data (up to 20y) for each ticker + SPY, walk forward week by week with a virtual $10k portfolio, compute total return / max drawdown / win rate / Sharpe ratio / S&P comparison, and report.",
-      "tool_guidance": "**Alpha Vantage endpoints** (base `https://www.alphavantage.co/query`):\n- `TIME_SERIES_WEEKLY_ADJUSTED` — weekly OHLCV + adjusted close\n- `RSI` with `interval=weekly&time_period=14&series_type=close`\n- `MACD` with `interval=weekly&series_type=close` (12/26/9 default)\n- `NEWS_SENTIMENT` with `tickers=...&time_from=...&sort=RELEVANCE`\n- `EARNINGS` for upcoming report dates\n\n**Rate limits**: Free tier = 25 req/day. Pace with 1-15s delays. Batch news across tickers where possible.\n\n**Web search fallback**: If Alpha Vantage fails, use `web_search` with site-scoped queries on Yahoo Finance, MarketWatch, TradingView. Fresh web data beats stale cached data.\n\n**Congressional trade scraping**: Use `web_search` for `site:capitoltrades.com` queries — Claude's native browsing handles it. No separate connector needed.\n\n**Local state files**:\n- `watchlist.json` — tickers + preferences\n- `signal_history.json` — weekly signals for trend tracking\n- `data/congressional_trades.json` — matched political trades\n- `data/backtests/{date}_{hash}.json` — archived backtest results",
-      "error_handling": "On Alpha Vantage 401/403: auth failure — fall back immediately to web_search for all data gathering. On 429 rate limit: pace with 15s delays; if still blocked, fall back to web_search. On 5xx: retry once with 30s backoff, then web fallback. On empty/malformed response for a specific endpoint: use web_search to fill the gap; do NOT report 'unavailable' when the web has the answer.\n\nOn Messages delivery failure: write the full report to `latest_report.json` as a local fallback so no analysis is lost.\n\nOn watchlist missing/empty: post a setup message via Messages, skip the run. Do not partial-run against an empty watchlist.",
+      "trigger_composition": "shared",
+      "message_composition": "combined",
+      "operating_instructions": "Monday 8am weekly cadence. All three use cases fire on the same tick and their outputs concatenate into one combined briefing:\n\n1. **uc_signals** — load watchlist + review memory. For each ticker: weekly OHLCV, RSI, MACD, news, earnings. Compose Buy/Sell/Hold composite. Emit stocks.signals.* events for strong outcomes. Route the full signal table to human review. Reviewed entries persist as simulated trades in memory and appear in next week's briefing with their running P&L.\n\n2. **uc_congressional_scan** — scrape Capitol Trades for disclosures in user's sectors of interest in the past 7 days. Match against the watchlist. Emit stocks.congress.disclosure for every matched ticker, stocks.congress.sector_shift when a sector sees unusual disclosure volume. Route findings to human review — usefulness rating memorizes which filters matter.\n\n3. **uc_gems** — discover under-covered names in user's sectors: low analyst coverage + strong technicals + news catalyst. Emit stocks.gems.discovered for each candidate, stocks.gems.filtered_out with reason when a candidate fails the criteria. Route to human review — 'useful/not useful' flag adjusts next week's thresholds.\n\nCombined message composition: all three sections ship as one message per week. Persona-wide review policy is 'always' — human tags every output as useful or not before it persists to memory.",
+      "tool_guidance": "**Alpha Vantage endpoints** (base `https://www.alphavantage.co/query`, API key in query string):\n- `TIME_SERIES_WEEKLY_ADJUSTED` — weekly OHLCV + adjusted close.\n- `RSI` with `interval=weekly&time_period=14&series_type=close`.\n- `MACD` with `interval=weekly&series_type=close` (12/26/9 default).\n- `NEWS_SENTIMENT` with `tickers=...&time_from=...&sort=RELEVANCE`.\n- `EARNINGS` for upcoming report dates.\n\nFree tier = 25 req/day. Pace with 1-15s delays.\n\n**Web fallback** (used when Alpha Vantage is absent or rate-limited): site-scoped `web_search` queries on `finance.yahoo.com`, `marketwatch.com`, `tradingview.com` for price/indicator data. News via `news.google.com` site scope.\n\n**Congressional data** (no formal connector — native browsing):\n- `site:capitoltrades.com` queries for disclosures by ticker and by politician.\n- `site:efdsearch.senate.gov` for raw STOCK Act filings.\n- Parse filing date, politician, action (buy/sell), amount range.\n\n**State files**:\n- `watchlist.json` — tickers + user preferences.\n- `signal_history.json` — weekly signal table for trend tracking.\n- `sim_trades.json` — reviewed-decision ledger keyed by ticker + week. Each entry: { ticker, decision, confidence, price_at_decision, running_pnl }.\n- `data/congressional/{YYYY-WW}.json` — matched political trades per week.\n- `data/gems/{YYYY-WW}.json` — gem candidates per week with acceptance.",
+      "error_handling": "Alpha Vantage 401/403 → auth failure; drop into web_search for all data this cycle. 429 rate limit → 15s pacing; if still blocked, web_search fallback. 5xx → retry once with 30s backoff, then fallback. Empty response for a specific endpoint → web_search fills the gap; never report 'unavailable' when the web has the answer. Capitol Trades down → scan `efdsearch.senate.gov` directly. Messages delivery failure → write full briefing to `latest_report.md` so no analysis is lost. Empty watchlist → post a setup reminder via Messages, skip the run. Always include the 'past performance does not guarantee future results' disclaimer on any backtest-style metric.",
       "examples": [],
-      "tools": ["http_request", "web_search", "database_query", "file_read", "file_write"],
+      "tools": ["http_request", "web_search", "file_read", "file_write"],
       "connectors": [
         {
           "name": "alpha_vantage",
@@ -50,24 +54,36 @@
           "auth_type": "api_key",
           "role": "market_data",
           "category": "finance",
+          "required": false,
+          "fallback_note": "When Alpha Vantage is absent, the persona falls back to Yahoo Finance and MarketWatch via web_search. Historical resolution is reduced but current-price and indicator data still work for the weekly briefing.",
           "api_base_url": "https://www.alphavantage.co/query",
           "credential_fields": [
-            { "key": "api_key", "label": "Alpha Vantage API Key", "type": "password", "required": true }
+            {
+              "key": "api_key",
+              "label": "Alpha Vantage API Key",
+              "type": "password",
+              "placeholder": "YOUR_API_KEY",
+              "helpText": "Free keys (25 req/day) from https://www.alphavantage.co/support/#api-key. Premium tiers unlock higher rate limits.",
+              "required": true
+            }
           ],
-          "setup_instructions": "Sign up at https://www.alphavantage.co/support/#api-key for a free key (25 requests/day). Premium tiers unlock higher limits."
+          "setup_instructions": "Sign up at https://www.alphavantage.co/support/#api-key for a free API key. Add it to the credential field above. You can skip this step — the persona runs with Yahoo Finance + MarketWatch via web_search as fallback."
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Weekly report delivery and attention alerts" }
+        {
+          "type": "messaging",
+          "description": "Combined weekly briefing — signals + congressional + gems sections in one message."
+        }
       ],
       "core_memories": []
     },
     "use_cases": [
       {
-        "id": "uc_weekly_analysis",
-        "title": "Weekly Stock Analysis",
-        "description": "The Monday-morning workflow: fetch weekly price + technical indicators + news for every watchlist ticker, compute composite Buy/Sell/Hold signals, optionally enrich with congressional trade data, deliver a structured report via Messages, collect human review, and persist learnings to memory for next week.",
-        "capability_summary": "Weekly RSI/MACD + news + optional congressional trade report with review-driven personalization.",
+        "id": "uc_signals",
+        "title": "Weekly Signal Fetcher",
+        "description": "Fetch weekly OHLCV + RSI + MACD + news for every ticker on the user's watchlist, compute a composite Buy/Sell/Hold signal, emit strong-outcome events, and route the signal table to human review. Reviewed decisions persist as simulated trades with running P&L that appear in next week's briefing.",
+        "capability_summary": "Weekly RSI/MACD/news composite per ticker; reviewed decisions become simulated trades.",
         "category": "analysis",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -75,169 +91,259 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 8 * * 1", "timezone": "local" },
-          "description": "Weekly Monday morning analysis at 8:00 AM local time."
+          "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
         },
         "connectors": ["alpha_vantage"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Deliver the weekly report + attention alerts" }
-        ],
+        "notification_channels": [],
         "review_policy": {
           "mode": "always",
-          "context": "Present every finding (signals, news, catalysts) for human review. Outcomes persist as memory and shape future personalization."
+          "context": "Every signal is reviewed by the human before it persists. The review outcome (accept / reject / modify) becomes a simulated trade in `sim_trades.json` with entry price, decision, and confidence. The trade's running P&L is recomputed each cycle and printed in the next briefing."
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Persists: valuable/invaluable finding categories per user, signal history per ticker, paper trade positions, review aggregation patterns for deprioritization."
+          "context": "Simulated trade ledger (`sim_trades.json`) keyed by ticker + week. Signal history (`signal_history.json`) for trend tracking. Review aggregation learns which signal categories the user marks invaluable — dropped from future runs after 3+ invaluable marks."
         },
         "event_subscriptions": [
-          { "event_type": "stock.signal.strong_buy", "direction": "emit", "description": "RSI < 30 + bullish MACD crossover on a watchlist ticker." },
-          { "event_type": "stock.signal.strong_sell", "direction": "emit", "description": "RSI > 70 + bearish MACD crossover on a watchlist ticker." },
-          { "event_type": "stock.earnings.approaching", "direction": "emit", "description": "Quarterly earnings within 14 days on a watchlist ticker." },
-          { "event_type": "stock.news.high_impact", "direction": "emit", "description": "News sentiment magnitude > 0.5 on a watchlist ticker." },
-          { "event_type": "stock.trend.reversal", "direction": "emit", "description": "MACD crossover after 3+ weeks of sustained opposite trend." },
-          { "event_type": "stock.volatility.unusual", "direction": "emit", "description": "Weekly price range > 2× rolling 4-week average." },
-          { "event_type": "stock.congressional.trade", "direction": "emit", "description": "Tracked politician disclosed a trade on a watchlist ticker." }
+          {
+            "event_type": "stocks.signals.buy",
+            "direction": "emit",
+            "description": "Payload: ticker, confidence, RSI, MACD, catalyst summary. Emitted on strong bullish composite."
+          },
+          {
+            "event_type": "stocks.signals.sell",
+            "direction": "emit",
+            "description": "Payload: ticker, confidence, RSI, MACD, risk summary. Emitted on strong bearish composite."
+          },
+          {
+            "event_type": "stocks.signals.hold",
+            "direction": "emit",
+            "description": "Payload: ticker, composite score, conflict reasons. Emitted when RSI/MACD disagree or signals are ambiguous."
+          }
         ],
-        "error_handling": "On Alpha Vantage failure: fall back to web_search for price, RSI, MACD, news per ticker. On Messages failure: write to latest_report.json. Report always ships — the weekly delivery commitment is absolute.",
+        "error_handling": "Alpha Vantage absent → web_search fallback. Ticker without any data in either source → mark as 'data unavailable' in the signal table; never fabricate numbers.",
         "input_schema": [
-          { "name": "watchlist", "type": "list[string]", "description": "Comma-separated ticker symbols to track" },
-          { "name": "sector_focus", "type": "string", "description": "Sector/theme guiding news research" },
-          { "name": "horizon", "type": "enum", "options": ["short", "medium", "long"], "default": "medium" },
-          { "name": "weighting", "type": "enum", "options": ["technical", "news", "balanced"], "default": "balanced" },
-          { "name": "enable_congressional_tracking", "type": "boolean", "default": true },
-          { "name": "report_depth", "type": "enum", "options": ["executive", "standard", "deep"], "default": "standard" }
+          {
+            "name": "watchlist",
+            "type": "text",
+            "description": "Comma-separated ticker symbols to track (AAPL, MSFT, NVDA …)."
+          },
+          {
+            "name": "signal_weighting",
+            "type": "enum",
+            "options": ["technical", "news", "balanced"],
+            "default": "balanced",
+            "description": "How to weight technical indicators vs news sentiment in the composite score."
+          }
         ],
         "sample_input": {
-          "watchlist": "{{param.aq_watchlist}}",
-          "sector_focus": "{{param.aq_sector}}",
-          "horizon": "{{param.aq_horizon}}",
-          "weighting": "{{param.aq_weighting}}",
-          "enable_congressional_tracking": "{{param.aq_congressional}}",
-          "report_depth": "{{param.aq_report_depth}}"
+          "watchlist": "{{param.aq_tickers}}",
+          "signal_weighting": "{{param.aq_signal_weighting}}"
         },
         "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Weekly schedule fires (Mon 8am)" },
-            { "id": "n2", "type": "action", "label": "Load watchlist + review memory" },
-            { "id": "n3", "type": "connector", "label": "Fetch weekly price data", "connector": "alpha_vantage" },
-            { "id": "n4", "type": "connector", "label": "Fetch RSI + MACD", "connector": "alpha_vantage" },
-            { "id": "n5", "type": "action", "label": "Compute composite signals" },
-            { "id": "n6", "type": "action", "label": "Scan congressional trades (if enabled)" },
-            { "id": "n7", "type": "connector", "label": "Fetch news + earnings calendar", "connector": "alpha_vantage" },
-            { "id": "n8", "type": "action", "label": "Compose weekly report" },
-            { "id": "n9", "type": "event", "label": "Deliver report via Messages" },
-            { "id": "n10", "type": "event", "label": "Emit attention events for strong signals" },
-            { "id": "n11", "type": "action", "label": "Present findings for review" },
-            { "id": "n12", "type": "action", "label": "Persist review outcomes to memory" },
-            { "id": "n13", "type": "action", "label": "Track paper-trade portfolio" },
-            { "id": "n14", "type": "end", "label": "Cycle complete" }
+            { "id": "s1", "type": "start", "label": "Monday tick (shared)" },
+            { "id": "s2", "type": "action", "label": "Load watchlist + memory" },
+            { "id": "s3", "type": "connector", "label": "Fetch OHLCV + RSI + MACD + news", "connector": "alpha_vantage" },
+            { "id": "s4", "type": "action", "label": "Compute Buy/Sell/Hold composite" },
+            { "id": "s5", "type": "event", "label": "Emit stocks.signals.*" },
+            { "id": "s6", "type": "action", "label": "Route to human review" },
+            { "id": "s7", "type": "action", "label": "Persist reviewed decisions to sim_trades.json" },
+            { "id": "s8", "type": "end", "label": "Signal section ready for combined briefing" }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" },
-            { "source": "n11", "target": "n12" },
-            { "source": "n12", "target": "n13" },
-            { "source": "n13", "target": "n14" }
+            { "source": "s1", "target": "s2" },
+            { "source": "s2", "target": "s3" },
+            { "source": "s3", "target": "s4" },
+            { "source": "s4", "target": "s5" },
+            { "source": "s5", "target": "s6" },
+            { "source": "s6", "target": "s7" },
+            { "source": "s7", "target": "s8" }
           ]
         }
       },
       {
-        "id": "uc_strategy_backtest",
-        "title": "Strategy Backtester",
-        "description": "On-demand simulation of a user-described trading strategy. Parses natural-language rules (entry/exit conditions, position sizing, stops), walks forward week by week against historical Alpha Vantage data, and reports total return, max drawdown, win rate, Sharpe ratio, and S&P 500 comparison.",
-        "capability_summary": "Simulate a natural-language trading strategy against historical data; compare against S&P 500.",
-        "category": "simulation",
+        "id": "uc_congressional_scan",
+        "title": "Congressional Disclosure Scan",
+        "description": "Scan Capitol Trades (with Senate EFD fallback) for politician stock disclosures in the user's sectors of interest over the last 7 days. Match against the watchlist and surface unusual sector patterns. Route findings to review — 'useful' tags tighten next week's filters.",
+        "capability_summary": "Weekly scan of congressional stock disclosures in user-selected sectors.",
+        "category": "research",
         "enabled_by_default": true,
         "execution_mode": "e2e",
         "model_override": null,
         "suggested_trigger": {
-          "trigger_type": "manual",
-          "config": {},
-          "description": "On-demand — user describes a strategy and invokes the backtest."
+          "trigger_type": "schedule",
+          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
         },
-        "connectors": ["alpha_vantage"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Deliver the backtest report with performance metrics and caveats" }
-        ],
-        "review_policy": { "mode": "never", "context": null },
+        "connectors": [],
+        "notification_channels": [],
+        "review_policy": {
+          "mode": "always",
+          "context": "Human tags each finding as useful / not useful. Useful tags are memorized; a sector that's repeatedly tagged 'not useful' is dropped from next week's scan."
+        },
         "memory_policy": {
           "enabled": true,
-          "context": "Archive each completed backtest in data/backtests/{date}_{strategy_hash}.json so users can compare strategy iterations."
+          "context": "Per-sector usefulness ratings, per-politician accuracy ratings, tightening filter thresholds based on review history."
         },
         "event_subscriptions": [
-          { "event_type": "strategy.backtest.complete", "direction": "emit", "description": "Emitted after a backtest finishes with total_return, drawdown, Sharpe, trade_count." }
+          {
+            "event_type": "stocks.congress.disclosure",
+            "direction": "emit",
+            "description": "Payload: ticker, politician, action (buy/sell), amount range, filing date. Emitted per matched disclosure."
+          },
+          {
+            "event_type": "stocks.congress.sector_shift",
+            "direction": "emit",
+            "description": "Payload: sector, disclosure_count, week_avg, polarity. Emitted when a sector sees unusual disclosure volume (>2× rolling 4-week average)."
+          }
         ],
-        "error_handling": "If historical data returns < 12 weeks for a ticker: reduce the backtest window and flag reduced confidence. If rate-limited during historical pull: fall back to compact history (100 weeks) and caveat the result. Always include the 'past performance does not guarantee future results' disclaimer.",
+        "error_handling": "Capitol Trades unavailable → scrape efdsearch.senate.gov directly. Both unavailable → post 'congressional scan skipped this week — sources unavailable' section in the briefing; never fake findings.",
         "input_schema": [
-          { "name": "strategy_description", "type": "text", "description": "Natural-language rules (entry/exit/stops/sizing)" },
-          { "name": "window_weeks", "type": "number", "default": 52, "min": 12, "max": 1040 },
-          { "name": "initial_capital", "type": "number", "default": 10000, "min": 1000 }
+          {
+            "name": "sectors",
+            "type": "text",
+            "description": "Sectors of interest (comma-separated) driving which disclosures get surfaced."
+          }
         ],
         "sample_input": {
-          "strategy_description": "Buy when RSI < 30, sell when RSI > 70, 10% trailing stop, equal-weight across watchlist, max 5 positions.",
-          "window_weeks": 52,
-          "initial_capital": 10000
+          "sectors": "{{param.aq_sector_interest}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": ["web_search", "file_read", "file_write"],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "User invokes backtest" },
-            { "id": "n2", "type": "action", "label": "Parse strategy into rules" },
-            { "id": "n3", "type": "connector", "label": "Fetch full history (watchlist + SPY)", "connector": "alpha_vantage" },
-            { "id": "n4", "type": "action", "label": "Walk forward week by week" },
-            { "id": "n5", "type": "action", "label": "Compute return / drawdown / win rate / Sharpe" },
-            { "id": "n6", "type": "action", "label": "Compare against S&P 500" },
-            { "id": "n7", "type": "event", "label": "Deliver backtest report via Messages" },
-            { "id": "n8", "type": "event", "label": "Emit strategy.backtest.complete" },
-            { "id": "n9", "type": "action", "label": "Archive result to data/backtests/" },
-            { "id": "n10", "type": "end", "label": "Backtest complete" }
+            { "id": "c1", "type": "start", "label": "Monday tick (shared)" },
+            { "id": "c2", "type": "action", "label": "Query Capitol Trades + Senate EFD (last 7d)" },
+            { "id": "c3", "type": "action", "label": "Filter by sectors + watchlist" },
+            { "id": "c4", "type": "event", "label": "Emit stocks.congress.disclosure per match" },
+            { "id": "c5", "type": "action", "label": "Detect unusual sector volume" },
+            { "id": "c6", "type": "event", "label": "Emit stocks.congress.sector_shift if triggered" },
+            { "id": "c7", "type": "action", "label": "Route to review; memorize usefulness tags" },
+            { "id": "c8", "type": "end", "label": "Congressional section ready for combined briefing" }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" }
+            { "source": "c1", "target": "c2" },
+            { "source": "c2", "target": "c3" },
+            { "source": "c3", "target": "c4" },
+            { "source": "c4", "target": "c5" },
+            { "source": "c5", "target": "c6" },
+            { "source": "c6", "target": "c7" },
+            { "source": "c7", "target": "c8" }
+          ]
+        }
+      },
+      {
+        "id": "uc_gems",
+        "title": "Sector Gem Discovery",
+        "description": "Find under-covered names in the user's sectors of interest: low analyst coverage + strong technicals + recent news catalyst. Emit a gem event per candidate and a filter event per rejection reason. Route to review — useful/not-useful tags adjust the coverage and technical thresholds.",
+        "capability_summary": "Weekly hunt for under-covered names in user-selected sectors with review-tuned thresholds.",
+        "category": "research",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
+        },
+        "connectors": ["alpha_vantage"],
+        "notification_channels": [],
+        "review_policy": {
+          "mode": "always",
+          "context": "Human tags each gem candidate as useful or not. Useful tags adjust thresholds downward (more candidates); repeated not-useful tags tighten criteria (fewer, higher-confidence candidates)."
+        },
+        "memory_policy": {
+          "enabled": true,
+          "context": "Per-sector threshold adjustments; per-candidate review history; accepted-vs-filtered ratio tracked over time."
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "stocks.gems.discovered",
+            "direction": "emit",
+            "description": "Payload: ticker, sector, coverage_score, technical_score, catalyst_summary. Emitted per candidate that passes all thresholds."
+          },
+          {
+            "event_type": "stocks.gems.filtered_out",
+            "direction": "emit",
+            "description": "Payload: ticker, sector, reason (over_covered | weak_technicals | no_catalyst). Emitted for transparency on rejections."
+          }
+        ],
+        "error_handling": "Data gap on a candidate (no technicals or no coverage data) → emit filtered_out with reason='insufficient_data'. Never promote a candidate to discovered without a complete picture.",
+        "input_schema": [
+          {
+            "name": "sectors",
+            "type": "text",
+            "description": "Sectors of interest (comma-separated) driving candidate pool."
+          }
+        ],
+        "sample_input": {
+          "sectors": "{{param.aq_sector_interest}}"
+        },
+        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "g1", "type": "start", "label": "Monday tick (shared)" },
+            { "id": "g2", "type": "action", "label": "Build sector candidate pool" },
+            { "id": "g3", "type": "connector", "label": "Fetch technicals + coverage + news", "connector": "alpha_vantage" },
+            { "id": "g4", "type": "action", "label": "Apply threshold filters" },
+            { "id": "g5", "type": "event", "label": "Emit stocks.gems.discovered / filtered_out" },
+            { "id": "g6", "type": "action", "label": "Route to review; adjust thresholds from memory" },
+            { "id": "g7", "type": "end", "label": "Gems section ready for combined briefing" }
+          ],
+          "edges": [
+            { "source": "g1", "target": "g2" },
+            { "source": "g2", "target": "g3" },
+            { "source": "g3", "target": "g4" },
+            { "source": "g4", "target": "g5" },
+            { "source": "g5", "target": "g6" },
+            { "source": "g6", "target": "g7" }
           ]
         }
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_watchlist",
+        "id": "aq_tickers",
         "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
+        "use_case_ids": ["uc_signals"],
         "category": "domain",
         "question": "Which stock tickers should this agent track?",
         "type": "text",
+        "options": [],
         "placeholder": "AAPL, MSFT, NVDA, GOOGL, TSLA",
         "default": "",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.watchlist",
-        "variable_name": "watchlist",
-        "context": "Comma-separated tickers. Alpha Vantage free tier (~25 req/day) comfortably supports 4-5 tickers per weekly run.",
+        "maps_to": "use_cases[uc_signals].sample_input.watchlist",
+        "variable_name": "tickers",
+        "context": "Comma-separated tickers. Alpha Vantage free tier (~25 req/day) comfortably handles 4-5 tickers per weekly run. More tickers → relies more on web_search fallback.",
         "dimension": "use-cases"
       },
       {
-        "id": "aq_sector",
+        "id": "aq_signal_weighting",
         "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
+        "use_case_ids": ["uc_signals"],
+        "category": "configuration",
+        "question": "How should signals be weighted?",
+        "type": "select",
+        "options": [
+          "Technical-heavy (RSI/MACD lead, news supports)",
+          "News & catalyst-heavy (sentiment leads, technicals confirm)",
+          "Balanced (equal weight)"
+        ],
+        "default": "Balanced (equal weight)",
+        "maps_to": "use_cases[uc_signals].sample_input.signal_weighting",
+        "variable_name": "signal_weighting",
+        "context": "Controls what the signal table leads with. Strong technical overrides cover the edge cases either way.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_sector_interest",
+        "scope": "capability",
+        "use_case_ids": ["uc_congressional_scan", "uc_gems"],
         "category": "domain",
-        "question": "What sector or theme should news research focus on?",
+        "question": "Which sectors of interest drive the congressional scan and gem discovery?",
         "type": "select",
         "options": [
           "Technology (software, semiconductors, cloud)",
@@ -248,80 +354,22 @@
           "Broad Market / ETFs"
         ],
         "default": "Technology (software, semiconductors, cloud)",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.sector_focus",
-        "variable_name": "sector",
-        "context": "Shapes news queries toward sector-specific catalysts, regulatory changes, competitive dynamics.",
+        "maps_to": null,
+        "variable_name": "sector_interest",
+        "context": "Shared across the congressional and gem-discovery use cases. Multi-select supported — comma-separate sectors.",
         "dimension": "use-cases"
       },
       {
-        "id": "aq_horizon",
-        "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
+        "id": "aq_delivery_channel",
+        "scope": "persona",
         "category": "configuration",
-        "question": "What is your investment horizon?",
+        "question": "Where should the combined weekly briefing be delivered?",
         "type": "select",
-        "options": [
-          "Short-term swing trading (days-weeks)",
-          "Medium-term positioning (weeks-months)",
-          "Long-term portfolio tracking (months-years)"
-        ],
-        "default": "Medium-term positioning (weeks-months)",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.horizon",
-        "variable_name": "horizon",
-        "context": "Short-term weights MACD crossovers heavier and flags smaller RSI deviations. Long-term focuses on sustained trend reversals.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_weighting",
-        "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
-        "category": "configuration",
-        "question": "How should signals be weighted?",
-        "type": "select",
-        "options": [
-          "Technical-heavy (RSI/MACD lead, news supports)",
-          "News & catalyst-heavy (sentiment leads, technicals confirm)",
-          "Balanced (equal weight)"
-        ],
-        "default": "Balanced (equal weight)",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.weighting",
-        "variable_name": "weighting",
-        "context": "Controls what the report leads with.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_congressional",
-        "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
-        "category": "configuration",
-        "question": "Track congressional stock trading disclosures?",
-        "type": "select",
-        "options": [
-          "Yes — enrich signals with Capitol Trades data",
-          "No — technical + news only"
-        ],
-        "default": "Yes — enrich signals with Capitol Trades data",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.enable_congressional_tracking",
-        "variable_name": "congressional",
-        "context": "STOCK Act filings are public. Politicians with documented returns above S&P get higher signal weight.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_report_depth",
-        "scope": "capability",
-        "use_case_id": "uc_weekly_analysis",
-        "category": "quality",
-        "question": "How detailed should the weekly report be?",
-        "type": "select",
-        "options": [
-          "Executive summary (signal table + 1 paragraph per noteworthy ticker)",
-          "Standard (signal table + rationale + top 3-5 news + catalysts)",
-          "Deep dive (full technical breakdown + all news + historical trend per ticker)"
-        ],
-        "default": "Standard (signal table + rationale + top 3-5 news + catalysts)",
-        "maps_to": "use_cases[uc_weekly_analysis].sample_input.report_depth",
-        "variable_name": "report_depth",
-        "context": "Executive for quick scan, deep dive for users who want every data point.",
+        "options": ["In-app messages", "Email", "Slack"],
+        "default": "In-app messages",
+        "maps_to": "persona.notification_channels_default[0].type",
+        "variable_name": "delivery_channel",
+        "context": "All three capabilities concatenate into one combined briefing (message_composition: combined). This is where that briefing lands every Monday.",
         "dimension": "messages"
       }
     ],

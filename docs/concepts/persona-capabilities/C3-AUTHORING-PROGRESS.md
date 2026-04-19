@@ -42,15 +42,49 @@ content:
 - `src/features/agents/sub_executions/libs/useExecutionList.ts`
 - Any adoption / matrix editor surface that renders template strings.
 
+## Schema v3.1 (2026-04-20)
+
+After the first-pass review, the authoring contract was refined. See
+`C3-schema-v3.1-delta.md` for the 8 normative principles and
+`C3-v3.1-impact-analysis.md` for the file-level impact map.
+
+The first five hand-authored templates predate v3.1. `email-morning-
+digest`, `onboarding-tracker`, `youtube-content-pipeline`, and
+`autonomous-issue-resolver` need light edits (`scope` renames,
+`use_case_id` → `use_case_ids`, flow-density cleanup). The Financial
+Stocks Signaller was **fully rewritten** this pass.
+
+Shipped in this v3.1 pass (backend + templates):
+- `template_v3.rs`: three new normalizer functions with unit tests
+  (singular→plural `use_case_id` migration, `required` default-fill
+  on connectors, `trigger_composition`/`message_composition` hoist).
+- 15/15 `engine::template_v3` tests pass.
+- `finance/financial-stocks-signaller.json` rewritten — 3 UCs
+  (signals / congressional / gems), shared weekly trigger, combined
+  messages, `stocks.*` event namespace, `alpha_vantage` optional.
+- `productivity/idea-harvester.json` rewritten (was v1) — 3 UCs
+  (harvest / triage / codebase-analysis), per-UC triggers with event
+  chaining, `harvester.*` event namespace, `codebase` required
+  connector with `ui_component: CodebaseSelector` hint, `slack` and
+  `notion` optional sources.
+
+Deferred (documented in impact analysis §3):
+- `TriggerCompositionStep.tsx` / `MessageCompositionStep.tsx` UI.
+- `ConnectorGateStep.tsx` empty-state + pick-or-skip UI.
+- `inputSchemaComponents.ts` component registry (hosts
+  `CodebaseSelector`).
+- Retroactive light edits on the three remaining v3 templates.
+
 ## Templates
 
-| Template | Status | Capabilities | Questions | Translations | Notes |
+| Template | Shape | Capabilities | Questions | Translations | Notes |
 |---|---|---|---|---|---|
-| productivity/email-morning-digest | done | 1 | 7 | en only | Reference template — single-capability |
-| finance/financial-stocks-signaller | done | 2 | 6 | en only | Merged 3 internal flows → 2 user-facing capabilities |
-| hr/onboarding-tracker | done | 3 | — | en only | 3-capability multi-schedule |
-| content/youtube-content-pipeline | done | 5 | — | en only | 5-capability pipeline |
-| development/autonomous-issue-resolver | done | 3 | 8 | en + 13 | Tier 1 flagship; merged 3 v1 flows → 3 capabilities (triage/digest/weekly-report); full translation set authored as overlays |
+| productivity/email-morning-digest | v3 (pre-v3.1) | 1 | 7 | en only | Reference; needs light edit for v3.1 |
+| finance/financial-stocks-signaller | **v3.1** | 3 | 4 | en only | Rewritten 2026-04-20; `uc_signals` + `uc_congressional_scan` + `uc_gems`; shared weekly trigger; combined messages; Alpha Vantage optional |
+| hr/onboarding-tracker | v3 (pre-v3.1) | 3 | — | en only | Needs light edit for v3.1 |
+| content/youtube-content-pipeline | v3 (pre-v3.1) | 5 | — | en only | Needs light edit for v3.1 |
+| development/autonomous-issue-resolver | v3 (pre-v3.1) | 3 | 8 | en + 13 | Singular `use_case_id` still — compatible via normalizer; overlays unaffected |
+| productivity/idea-harvester | **v3.1** | 3 | 6 | en only | Rewritten 2026-04-20; `uc_harvest` + `uc_triage` + `uc_codebase_analysis`; per-UC triggers with event chaining; Codebase required, Slack/Notion optional |
 
 ## Tier 1 Flagships (remaining)
 

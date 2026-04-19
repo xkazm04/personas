@@ -49,7 +49,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("finance/budget-spending-monitor.json", "001af626946fcdff");
     m.insert("finance/expense-receipt-processor.json", "0001485171741009");
     m.insert("finance/finance-controller.json", "001ce4af31af91c5");
-    m.insert("finance/financial-stocks-signaller.json", "0000a6a025b714cb");
+    m.insert("finance/financial-stocks-signaller.json", "0002b61c69d39d76");
     m.insert("finance/freelancer-invoice-autopilot.json", "0015f56f8d8666da");
     m.insert("finance/invoice-tracker.json", "00085ec0fc79c818");
     m.insert("finance/market-intelligence-scout.json", "0001868b7da8f641");
@@ -73,7 +73,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/email-follow-up-tracker.json", "00058f5fbd924281");
     m.insert("productivity/email-morning-digest.json", "000899d6adef2b97");
     m.insert("productivity/email-task-extractor.json", "000bd0620c3bf8a1");
-    m.insert("productivity/idea-harvester.json", "000431770b574305");
+    m.insert("productivity/idea-harvester.json", "000df7c497020db5");
     m.insert("productivity/meeting-lifecycle-manager.json", "001c8fc0bba5c746");
     m.insert("productivity/personal-capture-bot.json", "001b834916f17920");
     m.insert("productivity/router.json", "001b1b0d3e7ff89b");

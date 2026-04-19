@@ -62,6 +62,91 @@ pub fn normalize_v3_to_flat(payload: &mut Value) {
     compose_structured_prompt(obj);
     derive_protocol_capabilities(obj);
     ensure_use_case_flows(obj);
+    // v3.1 additions — see docs/concepts/persona-capabilities/C3-schema-v3.1-delta.md
+    migrate_adoption_questions(obj);
+    default_connector_required(obj);
+    hoist_composition_fields(obj);
+}
+
+/// v3.1 — Migrate deprecated singular `use_case_id` on adoption questions
+/// to the plural `use_case_ids: [<id>]` form. Idempotent: questions that
+/// already have `use_case_ids` are left alone. Both fields are preserved
+/// so the downstream UI can read either.
+fn migrate_adoption_questions(obj: &mut Map<String, Value>) {
+    let Some(qs) = obj.get_mut("adoption_questions").and_then(|v| v.as_array_mut()) else {
+        return;
+    };
+    for q in qs.iter_mut() {
+        let Some(q_obj) = q.as_object_mut() else {
+            continue;
+        };
+        if q_obj.get("use_case_ids").and_then(|v| v.as_array()).is_some() {
+            continue;
+        }
+        if let Some(single) = q_obj.get("use_case_id").and_then(|v| v.as_str()) {
+            let migrated = vec![Value::String(single.to_string())];
+            q_obj.insert("use_case_ids".to_string(), Value::Array(migrated));
+        }
+    }
+}
+
+/// v3.1 — Default `persona.connectors[].required` to `true` when missing
+/// so downstream UI can branch on the field unconditionally. Preserves
+/// explicit `false` (optional connectors).
+fn default_connector_required(obj: &mut Map<String, Value>) {
+    let Some(connectors) = obj
+        .get_mut("persona")
+        .and_then(|v| v.get_mut("connectors"))
+        .and_then(|v| v.as_array_mut())
+    else {
+        return;
+    };
+    for c in connectors.iter_mut() {
+        let Some(c_obj) = c.as_object_mut() else {
+            continue;
+        };
+        if !c_obj.contains_key("required") {
+            c_obj.insert("required".to_string(), Value::Bool(true));
+        }
+    }
+    // Also patch the flat copy if hoist_persona_connectors already wrote it.
+    if let Some(flat) = obj
+        .get_mut("suggested_connectors")
+        .and_then(|v| v.as_array_mut())
+    {
+        for c in flat.iter_mut() {
+            if let Some(c_obj) = c.as_object_mut() {
+                if !c_obj.contains_key("required") {
+                    c_obj.insert("required".to_string(), Value::Bool(true));
+                }
+            }
+        }
+    }
+}
+
+/// v3.1 — Surface `persona.trigger_composition` and
+/// `persona.message_composition` at the payload top level so the
+/// adoption UI and promote pipeline can read them without drilling
+/// into `persona`. Defaults when missing: `per_use_case` for both.
+fn hoist_composition_fields(obj: &mut Map<String, Value>) {
+    let (trig, msg) = {
+        let persona = obj.get("persona").and_then(|v| v.as_object());
+        let trig = persona
+            .and_then(|p| p.get("trigger_composition"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("per_use_case")
+            .to_string();
+        let msg = persona
+            .and_then(|p| p.get("message_composition"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("per_use_case")
+            .to_string();
+        (trig, msg)
+    };
+    obj.entry("trigger_composition")
+        .or_insert(Value::String(trig));
+    obj.entry("message_composition")
+        .or_insert(Value::String(msg));
 }
 
 /// For each capability, if it has a `suggested_trigger`, append a copy to
@@ -731,5 +816,114 @@ mod tests {
         let once = payload.clone();
         normalize_v3_to_flat(&mut payload);
         assert_eq!(payload, once, "double-normalize must be idempotent");
+    }
+
+    // ------------------------------------------------------------------
+    // v3.1 — adoption question migration, required connectors, composition
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn migrates_singular_use_case_id_on_questions() {
+        let mut payload = json!({
+            "persona": { "identity": { "role": "X" } },
+            "use_cases": [{ "id": "uc_a", "title": "A" }],
+            "adoption_questions": [
+                { "id": "aq1", "scope": "capability", "use_case_id": "uc_a", "question": "Q1" },
+                { "id": "aq2", "scope": "persona", "question": "Q2" },
+                { "id": "aq3", "scope": "capability", "use_case_ids": ["uc_a", "uc_b"], "question": "Q3" }
+            ]
+        });
+        normalize_v3_to_flat(&mut payload);
+        let qs = payload.get("adoption_questions").and_then(|v| v.as_array()).unwrap();
+
+        // aq1: singular → plural of length 1
+        let aq1_ids = qs[0].get("use_case_ids").and_then(|v| v.as_array()).unwrap();
+        assert_eq!(aq1_ids.len(), 1);
+        assert_eq!(aq1_ids[0].as_str(), Some("uc_a"));
+
+        // aq2: persona scope, no migration
+        assert!(qs[1].get("use_case_ids").is_none());
+
+        // aq3: already plural, untouched
+        let aq3_ids = qs[2].get("use_case_ids").and_then(|v| v.as_array()).unwrap();
+        assert_eq!(aq3_ids.len(), 2);
+    }
+
+    #[test]
+    fn defaults_connector_required_to_true() {
+        let mut payload = json!({
+            "persona": {
+                "identity": { "role": "X" },
+                "connectors": [
+                    { "name": "jira", "label": "Jira" },                          // missing → default true
+                    { "name": "notion", "label": "Notion", "required": true },    // explicit true stays
+                    { "name": "alpha_vantage", "label": "AV", "required": false } // explicit false stays
+                ]
+            },
+            "use_cases": [{ "id": "uc_a", "title": "A", "connectors": ["jira", "notion"] }]
+        });
+        normalize_v3_to_flat(&mut payload);
+
+        let conns = payload
+            .get("persona")
+            .and_then(|v| v.get("connectors"))
+            .and_then(|v| v.as_array())
+            .unwrap();
+        assert_eq!(conns[0].get("required").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(conns[1].get("required").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(conns[2].get("required").and_then(|v| v.as_bool()), Some(false));
+
+        // Flat copy carries the same values.
+        let flat = payload
+            .get("suggested_connectors")
+            .and_then(|v| v.as_array())
+            .unwrap();
+        let by_name: std::collections::HashMap<&str, bool> = flat
+            .iter()
+            .map(|c| {
+                (
+                    c.get("name").and_then(|v| v.as_str()).unwrap(),
+                    c.get("required").and_then(|v| v.as_bool()).unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(by_name.get("jira"), Some(&true));
+        assert_eq!(by_name.get("notion"), Some(&true));
+        assert_eq!(by_name.get("alpha_vantage"), Some(&false));
+    }
+
+    #[test]
+    fn hoists_composition_defaults() {
+        let mut payload = v3_fixture();
+        normalize_v3_to_flat(&mut payload);
+        assert_eq!(
+            payload.get("trigger_composition").and_then(|v| v.as_str()),
+            Some("per_use_case")
+        );
+        assert_eq!(
+            payload.get("message_composition").and_then(|v| v.as_str()),
+            Some("per_use_case")
+        );
+    }
+
+    #[test]
+    fn hoists_composition_explicit_shared() {
+        let mut payload = json!({
+            "persona": {
+                "identity": { "role": "X" },
+                "trigger_composition": "shared",
+                "message_composition": "combined"
+            },
+            "use_cases": [{ "id": "uc_a", "title": "A" }]
+        });
+        normalize_v3_to_flat(&mut payload);
+        assert_eq!(
+            payload.get("trigger_composition").and_then(|v| v.as_str()),
+            Some("shared")
+        );
+        assert_eq!(
+            payload.get("message_composition").and_then(|v| v.as_str()),
+            Some("combined")
+        );
     }
 }
