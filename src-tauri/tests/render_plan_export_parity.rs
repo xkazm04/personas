@@ -303,18 +303,19 @@ fn image_overlay_emits_overlay_filter_chain() {
 }
 
 #[test]
-fn text_overlay_is_omitted_when_font_missing() {
-    // On CI/servers with no system font, drawtext is skipped. That matches
-    // the pre-PR behavior and the spec's TextFontMissing path.
+fn text_items_never_reach_export_as_drawtext() {
+    // Text items are beats in the UX, not rendered video. The export
+    // never emits `drawtext` regardless of how many text items the
+    // composition carries.
     let mut comp = empty_comp(30);
     comp.items = vec![
         video_clip("v1", "/a.mp4", 0.0, 2.0, "cut", 0.0),
-        text("t1", "Hello", 0.5, 1.0),
+        text("t1", "Scene 1", 0.5, 1.0),
+        text("t2", "Cut to B", 1.3, 0.2),
     ];
     let args = args_for(&comp);
-    // Note: on developer machines with system fonts, drawtext WILL appear.
-    // This assertion only guarantees no panic — the behavior is env-dependent.
-    let _fc = joined_filters(&args);
+    let joined = args.join(" ");
+    assert!(!joined.contains("drawtext"), "export emitted drawtext: {joined}");
 }
 
 #[test]

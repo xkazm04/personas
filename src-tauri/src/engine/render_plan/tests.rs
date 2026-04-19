@@ -309,32 +309,13 @@ fn speed_clamp_emits_warning() {
 }
 
 #[test]
-fn text_overlay_renders_when_bundled_font_assumed() {
+fn text_items_are_beats_and_produce_no_overlays() {
+    // Text items are beats (timeline milestones). The compiler validates
+    // their duration but never emits an overlay stage for them.
     let mut comp = empty_comp();
     comp.items = vec![text_item("t1", 1.0, 2.0)];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
-    assert_eq!(plan.overlays.len(), 1);
-    if let OverlayStage::Text(t) = &plan.overlays[0] {
-        assert_eq!(t.id, "t1");
-        assert_eq!(t.font_family, "Inter");
-    } else {
-        panic!("expected text overlay");
-    }
-}
-
-#[test]
-fn text_overlay_omitted_when_no_font_found() {
-    let mut comp = empty_comp();
-    comp.items = vec![text_item("t1", 1.0, 2.0)];
-    let never_probe: &dyn Fn(&str) -> bool = &|_| false;
-    let deps = CompileDeps {
-        proxy_lookup: None,
-        font_probe: Some(never_probe),
-        media_probe: None,
-    };
-    let plan = compile(&comp, &CompileOptions::fold_default(), &deps).unwrap();
     assert_eq!(plan.overlays.len(), 0);
-    assert!(plan.warnings.iter().any(|w| matches!(w, CompileWarning::TextFontMissing { overlay_id, .. } if overlay_id == "t1")));
 }
 
 #[test]
@@ -422,7 +403,18 @@ fn baseline_plan() -> RenderPlan {
         video_clip("v1", "/a.mp4", 0.0, 2.0, "cut", 0.0),
         video_clip("v2", "/b.mp4", 2.0, 2.0, "cut", 0.0),
         audio_clip("a1", "/m.wav", 0.0, 4.0, 1.0, false, None),
-        text_item("t1", 0.5, 1.0),
+        TimelineItem::Image(ImageItemInput {
+            id: Some("i1".into()),
+            label: None,
+            file_path: "/logo.png".into(),
+            start_time: 0.5,
+            duration: 1.0,
+            position_x: 0.5,
+            position_y: 0.5,
+            scale: 1.0,
+            fade_in: 0.0,
+            fade_out: 0.0,
+        }),
     ];
     compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap()
 }
@@ -492,8 +484,8 @@ fn i6_negative_gain_detected() {
 #[test]
 fn i7_overlay_position_out_of_range_detected() {
     let mut plan = baseline_plan();
-    if let OverlayStage::Text(t) = &mut plan.overlays[0] {
-        t.position_x = 1.5;
+    if let OverlayStage::Image(i) = &mut plan.overlays[0] {
+        i.position_x = 1.5;
     }
     let err = assert_invariants(&plan).unwrap_err();
     assert_eq!(err.code, "I7");

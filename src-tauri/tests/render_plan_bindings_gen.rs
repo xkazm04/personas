@@ -12,7 +12,7 @@
 use app_lib::render_plan::{
     AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
     NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
-    TextOverlayStage, VideoStage,
+    VideoStage,
 };
 use app_lib::artist_persistence::{AutosaveInfo, CompositionLoad};
 use ts_rs::TS;
@@ -32,7 +32,6 @@ fn export_render_plan_bindings() {
     NormalizeDirective::export_all().expect("export NormalizeDirective");
     LoudnormMeasurements::export_all().expect("export LoudnormMeasurements");
     OverlayStage::export_all().expect("export OverlayStage");
-    TextOverlayStage::export_all().expect("export TextOverlayStage");
     ImageOverlayStage::export_all().expect("export ImageOverlayStage");
     CompileWarning::export_all().expect("export CompileWarning");
     CompositionLoad::export_all().expect("export CompositionLoad");

@@ -267,43 +267,8 @@ pub struct LoudnormMeasurements {
 #[ts(export)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum OverlayStage {
-    #[serde(rename = "text")]
-    Text(TextOverlayStage),
     #[serde(rename = "image")]
     Image(ImageOverlayStage),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct TextOverlayStage {
-    pub id: String,
-    pub output_start: f64,
-    pub output_end: f64,
-    pub fade_in: f64,
-    pub fade_out: f64,
-
-    /// Frame-relative position, both in [0, 1]. Renderers scale to container.
-    pub position_x: f64,
-    pub position_y: f64,
-
-    pub text: String,
-
-    /// Optional secondary line. Preview renders this below the primary text
-    /// at half size. Export ignores it today — the preview-only capability is
-    /// flagged here so the divergence is explicit rather than hidden in the
-    /// renderer.
-    pub subtitle: Option<String>,
-
-    /// The font the compiler decided to use for THIS overlay. Compiler picks
-    /// from a known-bundled set first, then optional system probe, and records
-    /// the final choice so preview and export render identical glyphs.
-    pub font_family: String,
-    pub font_weight: u32,
-
-    /// Pixels at the composition's native height.
-    pub font_size_px: f64,
-    pub color_hex: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -328,49 +293,42 @@ pub struct ImageOverlayStage {
 impl OverlayStage {
     pub fn id(&self) -> &str {
         match self {
-            OverlayStage::Text(t) => &t.id,
             OverlayStage::Image(i) => &i.id,
         }
     }
 
     pub fn output_start(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.output_start,
             OverlayStage::Image(i) => i.output_start,
         }
     }
 
     pub fn output_end(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.output_end,
             OverlayStage::Image(i) => i.output_end,
         }
     }
 
     pub fn fade_in(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.fade_in,
             OverlayStage::Image(i) => i.fade_in,
         }
     }
 
     pub fn fade_out(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.fade_out,
             OverlayStage::Image(i) => i.fade_out,
         }
     }
 
     pub fn position_x(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.position_x,
             OverlayStage::Image(i) => i.position_x,
         }
     }
 
     pub fn position_y(&self) -> f64 {
         match self {
-            OverlayStage::Text(t) => t.position_y,
             OverlayStage::Image(i) => i.position_y,
         }
     }

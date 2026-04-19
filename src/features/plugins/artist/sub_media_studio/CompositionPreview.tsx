@@ -11,7 +11,6 @@ import type { AudioStage } from '@/lib/bindings/AudioStage';
 import type { ImageOverlayStage } from '@/lib/bindings/ImageOverlayStage';
 import type { RenderPlan } from '@/lib/bindings/RenderPlan';
 import type { SourceEntry } from '@/lib/bindings/SourceEntry';
-import type { TextOverlayStage } from '@/lib/bindings/TextOverlayStage';
 import type { VideoStage } from '@/lib/bindings/VideoStage';
 import { approxLoudnormGain, fadeEnvelope } from './renderPlanHelpers';
 
@@ -78,23 +77,7 @@ export default function CompositionPreview({
   const [currentTime, setCurrentTime] = useState(0);
   useEffect(() => engine.subscribe(setCurrentTime), [engine]);
 
-  // Proportional font sizing: a 48px font in a 1080p composition renders at
-  // `48 × (previewHeight / 1080)` pixels in the preview container, matching
-  // what the exported frame will show.
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const [previewHeight, setPreviewHeight] = useState(0);
-  useEffect(() => {
-    const el = previewContainerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height ?? 0;
-      if (h > 0) setPreviewHeight(h);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  const fontScale =
-    previewHeight > 0 && composition.height > 0 ? previewHeight / composition.height : 0.5;
 
   // -- Active video stage ----------------------------------------------------
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -306,22 +289,12 @@ export default function CompositionPreview({
     }
   }, [dedicatedTracks]);
 
-  // -- Active overlays -------------------------------------------------------
+  // -- Active image overlays -------------------------------------------------
   //
-  // The generated OverlayStage binding is a discriminated union shaped as
-  // `{kind:'text'} & TextOverlayStage | {kind:'image'} & ImageOverlayStage`,
-  // so the narrowed variant types include the `kind` field alongside the
-  // inner stage shape.
-  type ActiveText = { kind: 'text' } & TextOverlayStage;
+  // Text items are beats (timeline milestones), not rendered into the video
+  // frame. See docs/concepts/media-studio-architecture.md §Effect model —
+  // they appear only as icons on the timeline.
   type ActiveImage = { kind: 'image' } & ImageOverlayStage;
-
-  const activeTexts: ActiveText[] = useMemo(() => {
-    if (!plan) return [];
-    return plan.overlays.filter(
-      (o): o is ActiveText =>
-        o.kind === 'text' && currentTime >= o.outputStart && currentTime < o.outputEnd,
-    );
-  }, [plan, currentTime]);
 
   const activeImages: ActiveImage[] = useMemo(() => {
     if (!plan) return [];
@@ -373,9 +346,7 @@ export default function CompositionPreview({
             <div className="flex flex-col items-center gap-2 text-foreground">
               <MonitorPlay className="w-10 h-10" />
               <span className="typo-body">
-                {activeTexts.length + activeImages.length > 0
-                  ? 'Overlay preview'
-                  : 'No video at this time'}
+                {activeImages.length > 0 ? 'Overlay preview' : 'No video at this time'}
               </span>
             </div>
           ) : (
@@ -408,46 +379,6 @@ export default function CompositionPreview({
                   className="max-w-[40%] max-h-[40%] object-contain drop-shadow-elevation-3"
                   draggable={false}
                 />
-              </div>
-            );
-          })}
-
-          {activeTexts.map((overlay) => {
-            const local = currentTime - overlay.outputStart;
-            const duration = overlay.outputEnd - overlay.outputStart;
-            const opacity = fadeEnvelope(local, duration, overlay.fadeIn, overlay.fadeOut);
-            return (
-              <div
-                key={overlay.id}
-                className="absolute pointer-events-none select-none"
-                style={{
-                  left: `${overlay.positionX * 100}%`,
-                  top: `${overlay.positionY * 100}%`,
-                  transform: 'translate(-50%, -50%)',
-                  opacity,
-                }}
-              >
-                <span
-                  className="font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-                  style={{
-                    fontSize: `${Math.max(6, overlay.fontSizePx * fontScale)}px`,
-                    color: overlay.colorHex,
-                  }}
-                >
-                  {overlay.text}
-                </span>
-                {overlay.subtitle && (
-                  <p
-                    className="text-center drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] mt-0.5"
-                    style={{
-                      fontSize: `${Math.max(6, overlay.fontSizePx * fontScale * 0.5)}px`,
-                      color: overlay.colorHex,
-                      opacity: 0.85,
-                    }}
-                  >
-                    {overlay.subtitle}
-                  </p>
-                )}
               </div>
             );
           })}

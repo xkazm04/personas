@@ -11,7 +11,7 @@ use app_lib::render_plan::compile::{
     TimelineItem, TransitionMode, VideoClipInput,
 };
 use app_lib::render_plan::{
-    assert_invariants, compile, CompileWarning, OverlapKind, OverlayStage, SourceEntry,
+    assert_invariants, compile, CompileWarning, OverlapKind, SourceEntry,
     RENDER_PLAN_SCHEMA_VERSION,
 };
 
@@ -154,14 +154,16 @@ fn normalize_unmeasured_emits_warning() {
 }
 
 #[test]
-fn text_font_missing_omits_overlay() {
+fn text_items_never_produce_overlays() {
+    // Text items are beats (timeline markers) — the compiler accepts them
+    // for history/save compatibility but never emits an overlay stage.
     let mut comp = empty_comp();
     comp.items = vec![TimelineItem::Text(TextItemInput {
         id: Some("t1".into()),
-        label: None,
+        label: Some("Scene 1".into()),
         start_time: 0.0,
         duration: 2.0,
-        text: "hello".into(),
+        text: String::new(),
         font_size: 32.0,
         color: "#fff".into(),
         position_x: 0.5,
@@ -169,15 +171,12 @@ fn text_font_missing_omits_overlay() {
         fade_in: 0.0,
         fade_out: 0.0,
     })];
-    let never_font: &dyn Fn(&str) -> bool = &|_| false;
-    let deps = CompileDeps {
-        proxy_lookup: None,
-        font_probe: Some(never_font),
-        media_probe: None,
-    };
-    let plan = compile(&comp, &CompileOptions::fold_default(), &deps).unwrap();
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
     assert_eq!(plan.overlays.len(), 0);
-    assert!(plan.warnings.iter().any(|w| matches!(w, CompileWarning::TextFontMissing { .. })));
+    assert!(plan
+        .warnings
+        .iter()
+        .all(|w| !matches!(w, CompileWarning::TextFontMissing { .. })));
 }
 
 #[test]
@@ -201,26 +200,3 @@ fn proxy_lookup_preferred_in_preview_mode() {
     assert!(plan.sources.iter().any(|s| matches!(s, SourceEntry::Proxy { .. })));
 }
 
-#[test]
-fn text_overlay_renders_with_inter_by_default() {
-    let mut comp = empty_comp();
-    comp.items = vec![TimelineItem::Text(TextItemInput {
-        id: Some("t1".into()),
-        label: None,
-        start_time: 0.0,
-        duration: 2.0,
-        text: "hi".into(),
-        font_size: 32.0,
-        color: "#fff".into(),
-        position_x: 0.5,
-        position_y: 0.5,
-        fade_in: 0.0,
-        fade_out: 0.0,
-    })];
-    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
-    assert_eq!(plan.overlays.len(), 1);
-    match &plan.overlays[0] {
-        OverlayStage::Text(t) => assert_eq!(t.font_family, "Inter"),
-        _ => panic!("expected text overlay"),
-    }
-}

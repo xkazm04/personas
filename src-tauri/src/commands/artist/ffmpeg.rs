@@ -67,60 +67,6 @@ pub struct MediaProbeResult {
     pub file_path: String,
 }
 
-/// Resolve a platform-appropriate TTF path for drawtext filters. Returns
-/// None if no known font is installed — caller should log and skip text
-/// rendering rather than error.
-fn resolve_system_font() -> Option<String> {
-    #[cfg(target_os = "windows")]
-    {
-        for candidate in [
-            r"C:\Windows\Fonts\arial.ttf",
-            r"C:\Windows\Fonts\segoeui.ttf",
-        ] {
-            let p = std::path::Path::new(candidate);
-            if p.exists() {
-                // ffmpeg filter syntax prefers forward slashes on Windows
-                return Some(candidate.replace('\\', "/"));
-            }
-        }
-    }
-    #[cfg(target_os = "macos")]
-    {
-        for candidate in [
-            "/System/Library/Fonts/Helvetica.ttc",
-            "/Library/Fonts/Arial.ttf",
-        ] {
-            if std::path::Path::new(candidate).exists() {
-                return Some(candidate.to_string());
-            }
-        }
-    }
-    #[cfg(target_os = "linux")]
-    {
-        for candidate in [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-        ] {
-            if std::path::Path::new(candidate).exists() {
-                return Some(candidate.to_string());
-            }
-        }
-    }
-    None
-}
-
-/// Escape a user string for use inside an ffmpeg `drawtext=text='...'` clause.
-/// The filter graph uses `:` and `,` as separators and `\` as an escape, and
-/// we single-quote the text itself so `'` needs doubling.
-fn escape_drawtext(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace(':', "\\:")
-        .replace(',', "\\,")
-        .replace('\'', "\\\\\\'")
-        .replace('%', "\\%")
-}
-
 // =============================================================================
 // Background job for export
 // =============================================================================
@@ -725,13 +671,12 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     // as an extra input — matches the previous behavior of filling the frame
     // with the composition's background when it's audio/overlay-only.
 
-    // Which source ids are referenced only as image overlays?
+    // Which source ids are referenced as image overlays?
     let image_source_ids: HashSet<u32> = plan
         .overlays
         .iter()
         .filter_map(|o| match o {
             OverlayStage::Image(i) => Some(i.source_id),
-            OverlayStage::Text(_) => None,
         })
         .collect();
 
@@ -917,72 +862,12 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
         overlay_counter += 1;
     }
 
-    // ---- Step 5: text overlays ----
-    let font_path = resolve_system_font();
-    for overlay in plan.overlays.iter() {
-        let OverlayStage::Text(t) = overlay else {
-            continue;
-        };
-        let Some(current_base) = base_video_label.clone() else {
-            continue;
-        };
-        let Some(font) = font_path.as_ref() else {
-            continue;
-        };
-
-        let escaped = escape_drawtext(&t.text);
-        let fontcolor = if let Some(hex) = t.color_hex.strip_prefix('#') {
-            format!("0x{hex}")
-        } else {
-            t.color_hex.clone()
-        };
-
-        let alpha_expr = match (t.fade_in > 0.01, t.fade_out > 0.01) {
-            (true, true) => Some(format!(
-                "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))*min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
-                st = t.output_start, fi = t.fade_in, et = t.output_end, fo = t.fade_out,
-            )),
-            (true, false) => Some(format!(
-                "min(1\\,max(0\\,(t-{st:.3})/{fi:.3}))",
-                st = t.output_start, fi = t.fade_in,
-            )),
-            (false, true) => Some(format!(
-                "min(1\\,max(0\\,({et:.3}-t)/{fo:.3}))",
-                et = t.output_end, fo = t.fade_out,
-            )),
-            (false, false) => None,
-        };
-
-        let mut drawtext_parts = vec![
-            format!("fontfile='{font}'"),
-            format!("text='{escaped}'"),
-            format!("fontsize={}", t.font_size_px as i64),
-            format!("fontcolor={fontcolor}"),
-            format!("x=(w*{px:.4})-(text_w/2)", px = t.position_x),
-            format!("y=(h*{py:.4})-(text_h/2)", py = t.position_y),
-            format!(
-                "enable='between(t,{st:.3},{et:.3})'",
-                st = t.output_start,
-                et = t.output_end
-            ),
-            "shadowcolor=black@0.7".to_string(),
-            "shadowx=2".to_string(),
-            "shadowy=2".to_string(),
-        ];
-        if let Some(expr) = alpha_expr {
-            drawtext_parts.push(format!("alpha='{expr}'"));
-        }
-
-        let next_label = format!("vt{overlay_counter}");
-        filters.push(format!(
-            "[{current_base}]drawtext={}[{next_label}]",
-            drawtext_parts.join(":")
-        ));
-        base_video_label = Some(next_label);
-        overlay_counter += 1;
-    }
-
-    // ---- Step 6: audio mix ----
+    // ---- Step 5: audio mix ----
+    //
+    // Text overlays no longer render — Text items in the Composition are
+    // beats (timeline milestones) and never become OverlayStage::Text.
+    // `drawtext` emission was removed alongside the IR's Text overlay
+    // variant.
     if audio_labels.len() > 1 {
         let inputs: String = audio_labels.iter().map(|l| format!("[{l}]")).collect();
         filters.push(format!(

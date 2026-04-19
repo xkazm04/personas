@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use super::{
     AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
     NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
-    TextOverlayStage, VideoStage, RENDER_PLAN_SCHEMA_VERSION,
+    VideoStage, RENDER_PLAN_SCHEMA_VERSION,
 };
 use super::invariants::assert_invariants;
 
@@ -664,63 +664,21 @@ pub fn compile(
     // ---- Step 6: compile overlays. ----
     let mut overlays: Vec<OverlayStage> = Vec::new();
 
-    for (ordinal, t) in sorted_text.iter().enumerate() {
-        let id = t.id.clone().unwrap_or_else(|| format!("t{ordinal}"));
+    // Text items are now "beats" — timeline milestones authored by the user
+    // and surfaced only as icons on the timeline UI. They do not produce any
+    // overlay stages, are never drawn into the preview frame, and are not
+    // rendered into the exported video. The item type is still accepted on
+    // deserialize (saved files pre-dating this change still load) and the
+    // compiler walks the list to validate durations.
+    for t in sorted_text.iter() {
+        let id = t.id.clone().unwrap_or_else(|| "beat".to_string());
         if t.duration <= 0.0 {
             return Err(CompileError::NegativeOrZeroDuration { stage_id: id });
         }
-
-        let preferred = ["Inter", "Segoe UI", "Arial", "Helvetica", "DejaVu Sans"];
-        let chosen = match deps.font_probe {
-            Some(probe) => preferred.iter().copied().find(|&f| probe(f)),
-            // Without a probe we assume Inter is bundled (project default).
-            None => Some("Inter"),
-        };
-
-        match chosen {
-            Some(family) => {
-                let fade_in = t.fade_in.max(0.0).min(t.duration);
-                let fade_out = t.fade_out.max(0.0).min(t.duration - fade_in).max(0.0);
-                // The existing export renders `label` as the primary line,
-                // and the preview additionally renders `text` as an optional
-                // half-size subtitle. We split them explicitly in the IR so
-                // the divergence is visible rather than buried in the
-                // renderers.
-                let primary = t
-                    .label
-                    .clone()
-                    .filter(|s| !s.is_empty())
-                    .unwrap_or_else(|| t.text.clone());
-                let subtitle = if Some(&primary) == t.label.as_ref() && !t.text.is_empty() {
-                    Some(t.text.clone())
-                } else {
-                    None
-                };
-                overlays.push(OverlayStage::Text(TextOverlayStage {
-                    id,
-                    output_start: t.start_time,
-                    output_end: t.start_time + t.duration,
-                    fade_in,
-                    fade_out,
-                    position_x: t.position_x.clamp(0.0, 1.0),
-                    position_y: t.position_y.clamp(0.0, 1.0),
-                    text: primary,
-                    subtitle,
-                    font_family: family.to_string(),
-                    font_weight: 400,
-                    font_size_px: t.font_size.max(1.0),
-                    color_hex: t.color.clone(),
-                }));
-            }
-            None => {
-                warnings.push(CompileWarning::TextFontMissing {
-                    overlay_id: id,
-                    requested: "Inter".into(),
-                    fallback: None,
-                });
-            }
-        }
     }
+    // sorted_text kept in scope so the loop above is exercised; the font
+    // probe is no longer consulted for beats.
+    let _ = (&sorted_text, &deps.font_probe);
 
     for (ordinal, img) in sorted_image.iter().enumerate() {
         let id = img.id.clone().unwrap_or_else(|| format!("i{ordinal}"));
@@ -802,16 +760,6 @@ pub fn compile(
         }
         for o in overlays.iter_mut() {
             match o {
-                OverlayStage::Text(t) => {
-                    t.output_start = snap(t.output_start);
-                    t.output_end = snap(t.output_end);
-                    t.fade_in = snap(t.fade_in);
-                    t.fade_out = snap(t.fade_out);
-                    let dur = (t.output_end - t.output_start).max(0.0);
-                    if t.fade_in + t.fade_out > dur {
-                        t.fade_out = (dur - t.fade_in).max(0.0);
-                    }
-                }
                 OverlayStage::Image(i) => {
                     i.output_start = snap(i.output_start);
                     i.output_end = snap(i.output_end);
