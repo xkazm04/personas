@@ -83,22 +83,34 @@ export function OrbitDots({ activities }: OrbitDotsProps) {
       {visible.map((a, i) => {
         const { x, y } = positionFor(i, slotCount);
         const meta = COLOR[a.type];
+        // Rendered as span+role="button" rather than <button>. SidebarLevel1
+        // wraps each section in a <button>, and nesting a real button inside
+        // is an HTML hydration error. Keyboard & a11y are preserved via
+        // role, tabIndex, and the onKeyDown handler below.
         return (
-          <button
+          <span
             key={a.id}
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               e.stopPropagation();
               handleClick(a);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClick(a);
+              }
+            }}
             title={`${a.personaName} — ${a.label}`}
             aria-label={`${a.personaName}: ${a.label}`}
-            className="pointer-events-auto absolute top-1/2 left-1/2 w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full hover:scale-125 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            className="pointer-events-auto absolute top-1/2 left-1/2 w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full hover:scale-125 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
             style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }}
           >
             <span className={`absolute inset-0 rounded-full animate-ping ${meta.ping}`} />
             <span className={`relative block w-2.5 h-2.5 rounded-full border border-black/20 shadow-[0_0_4px_rgba(0,0,0,0.4)] ${meta.dot}`} />
-          </button>
+          </span>
         );
       })}
       {overflow > 0 && (() => {

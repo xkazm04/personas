@@ -93,6 +93,20 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
   const [subscriptions, setSubscriptions] = useState<PersonaEventSubscription[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('all'); // 'all' | 'common' | personaId
   const [eventSearch, setEventSearch] = useState('');
+  // Default feed: only events with at least one connected persona (Phase C4 feedback —
+  // keeps the firehose of SYS/EXT noise out of the default view).
+  const [showUnconnected, setShowUnconnected] = useState(false);
+  // Default visible classes: user-emitted ("USR") only. SYS/EXT revealed via pills.
+  const [visibleClasses, setVisibleClasses] = useState<Set<'persona' | 'common' | 'external'>>(
+    () => new Set(['persona']),
+  );
+  const toggleClass = (c: 'persona' | 'common' | 'external') => {
+    setVisibleClasses(prev => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c); else next.add(c);
+      return next;
+    });
+  };
   const [actionMenuRow, setActionMenuRow] = useState<string | null>(null);
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<{ eventType: string } | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<{ connection: Connection; personaName: string; eventLabel: string } | null>(null);
@@ -167,6 +181,8 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
   const filteredRows = useMemo(() => {
     const q = eventSearch.toLowerCase().trim();
     return rows.filter(row => {
+      if (!visibleClasses.has(row.sourceClass)) return false;
+      if (!showUnconnected && row.connections.length === 0) return false;
       if (sourceFilter === 'common' && row.sourceClass !== 'common') return false;
       if (sourceFilter !== 'all' && sourceFilter !== 'common') {
         if (!row.sourcePersonas.some(s => s.personaId === sourceFilter)) return false;
@@ -178,7 +194,19 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
       }
       return true;
     });
-  }, [rows, sourceFilter, eventSearch]);
+  }, [rows, sourceFilter, eventSearch, visibleClasses, showUnconnected]);
+
+  // Counts per class for the toggle pill badges (computed on the full row set
+  // so toggling a class shows accurate "would reveal N rows" guidance).
+  const classCounts = useMemo(() => {
+    const c = { persona: 0, common: 0, external: 0 };
+    for (const r of rows) c[r.sourceClass] += 1;
+    return c;
+  }, [rows]);
+  const unconnectedCount = useMemo(
+    () => rows.filter(r => visibleClasses.has(r.sourceClass) && r.connections.length === 0).length,
+    [rows, visibleClasses],
+  );
 
   // ── Actions ──
 
@@ -295,6 +323,40 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
             className="w-full pl-8 pr-3 py-1.5 text-sm bg-secondary/30 border border-primary/10 rounded-card text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-400/40"
           />
         </div>
+
+        {/* Source-class pills: USR visible by default, SYS/EXT revealed on click (Phase C4 feedback). */}
+        <div className="flex items-center gap-1">
+          {([
+            { key: 'persona', label: 'USR', className: 'text-violet-400 bg-violet-500/10 border-violet-500/30' },
+            { key: 'common', label: 'SYS', className: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' },
+            { key: 'external', label: 'EXT', className: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+          ] as const).map(({ key, label, className }) => {
+            const active = visibleClasses.has(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleClass(key)}
+                title={`${active ? 'Hide' : 'Show'} ${label} events (${classCounts[key]})`}
+                className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider border transition-colors ${
+                  active ? className : 'text-foreground border-border/40 hover:border-border opacity-50 hover:opacity-80'
+                }`}
+              >
+                {label}
+                <span className="ml-1 opacity-60 tabular-nums">{classCounts[key]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="flex items-center gap-1.5 text-xs text-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showUnconnected}
+            onChange={e => setShowUnconnected(e.target.checked)}
+            className="accent-primary"
+          />
+          Show unconnected ({unconnectedCount})
+        </label>
 
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-foreground tabular-nums">

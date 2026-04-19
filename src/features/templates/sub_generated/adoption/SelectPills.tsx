@@ -30,28 +30,27 @@ export function SelectPills({
   options,
   value,
   onChange,
-  allowCustom,
+  allowCustom: _allowCustom,
   multi,
   includeAllOption,
 }: {
   options: PillOption[];
   value: string;
   onChange: (v: string) => void;
-  /** When omitted, multi-selects default to `true` (users can always add a
-   *  custom entry) and single-selects default to `false` (the preset options
-   *  are the full valid set). Templates can still pass `allowCustom={false}`
-   *  on a multi-select to lock it to presets, or `allowCustom={true}` on a
-   *  single-select to enable the "Custom…" pill. */
+  /** Accepted for backwards-compat with callers that pass the template's
+   *  declared value, but ignored — every select (single or multi) always
+   *  surfaces a "Custom…"/"Other" pill so users can enter an off-list value
+   *  the template didn't enumerate. */
   allowCustom?: boolean;
   multi?: boolean;
   includeAllOption?: boolean;
 }) {
   const { t } = useTranslation();
-  // Multi-selects always allow custom entries regardless of what the template
-  // declares (feature requirement — users routinely need to type values we
-  // didn't enumerate, and templates can't predict every real-world option).
-  // Single-selects keep the template's declared `allowCustom` (default false).
-  const effectiveAllowCustom = multi ? true : (allowCustom ?? false);
+  // Always allow custom entries. Real-world adoption routinely needs values
+  // templates can't predict (uncommon providers, unique timings, bespoke
+  // categories), and a locked preset list forces users to pick the least-wrong
+  // option and move on. Applied uniformly here so no template can override it.
+  const effectiveAllowCustom = true;
   const optionValueSet = useMemo(() => new Set(options.map((o) => o.value)), [options]);
 
   const selectedValues = useMemo(
@@ -225,7 +224,7 @@ export function SelectPills({
           </button>
         )}
       </div>
-      {allowCustom && showCustomInput && (
+      {effectiveAllowCustom && showCustomInput && (
         <div className="flex items-center gap-2">
           <input
             ref={customInputRef}

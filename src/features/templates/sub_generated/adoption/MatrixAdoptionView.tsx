@@ -4,7 +4,7 @@
  *
  * This replaces the 5-step wizard with a single-screen matrix experience.
  */
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import { createLogger } from "@/lib/log";
 
@@ -12,9 +12,10 @@ const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
-import { PersonaChronologyJourney } from "./chronology/PersonaChronologyJourney";
-import { PersonaChronologyTimeline } from "./chronology/PersonaChronologyTimeline";
+import { PersonaChronologyChain } from "./chronology/PersonaChronologyChain";
+import { PersonaChronologyWildcard } from "./chronology/PersonaChronologyWildcard";
 import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
+import { UseCasePickerStep, type UseCaseOption } from "./UseCasePickerStep";
 import { useThemeStore } from "@/stores/themeStore";
 import type { ThemeId } from "@/stores/themeStore";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
@@ -56,20 +57,39 @@ function normalizeTriggerType(raw: string): string {
  * present, each bound connector in `suggested_connectors` / `required_connectors`
  * is rewritten to show the user's chosen service so the Apps & Services matrix
  * cell reflects their selection rather than the template's generic placeholder.
+ *
+ * `selectedUseCaseIds` (optional) narrows use-case-scoped items (use_cases
+ * entries, triggers tied to a specific `use_case_id`) so the matrix reflects
+ * the user's capability picks from the first adoption step. When omitted,
+ * everything in the template is included.
  */
 function extractDimensionData(
   ir: unknown,
   credentialBindings?: Record<string, string>,
+  selectedUseCaseIds?: Set<string>,
 ): CellDataMap {
   const d = ir as Record<string, unknown>;
   const data: CellDataMap = {};
+  const ucFilterActive = !!selectedUseCaseIds && selectedUseCaseIds.size > 0;
+  const matchesUseCaseFilter = (id: unknown): boolean => {
+    if (!ucFilterActive) return true;
+    if (id == null || id === "") return true; // untagged items pass through
+    return selectedUseCaseIds!.has(String(id));
+  };
 
   // Use cases — check use_cases first, fall back to use_case_flows
-  let useCases = (d.use_cases ?? (d.design_context as Record<string, unknown> | undefined)?.use_cases ?? []) as unknown[];
-  if (useCases.length === 0) {
+  let useCasesRaw = (d.use_cases ?? (d.design_context as Record<string, unknown> | undefined)?.use_cases ?? []) as unknown[];
+  if (useCasesRaw.length === 0) {
     const flows = ((d.use_case_flows ?? []) as Record<string, unknown>[]);
-    useCases = flows.map((f) => ({ name: f.name, description: f.description }));
+    useCasesRaw = flows.map((f) => ({ id: f.id, name: f.name, description: f.description, capability_summary: f.capability_summary }));
   }
+  const useCases = ucFilterActive
+    ? useCasesRaw.filter((uc) => {
+        if (typeof uc === "string") return true;
+        const o = uc as Record<string, unknown>;
+        return matchesUseCaseFilter(o.id ?? o.use_case_id);
+      })
+    : useCasesRaw;
   if (useCases.length > 0) {
     data["use-cases"] = { items: useCases.map((uc) => {
       if (typeof uc === "string") return uc;
@@ -114,8 +134,11 @@ function extractDimensionData(
     data["connectors"] = { items, raw: { connectors: structured, alternatives: {} } };
   }
 
-  // Triggers
-  const triggers = ((d.suggested_triggers ?? d.triggers ?? []) as unknown[]);
+  // Triggers — drop any tied to a disabled use case
+  const triggersRaw = ((d.suggested_triggers ?? d.triggers ?? []) as unknown[]);
+  const triggers = ucFilterActive
+    ? triggersRaw.filter((tr) => matchesUseCaseFilter((tr as Record<string, unknown>).use_case_id))
+    : triggersRaw;
   if (triggers.length > 0) {
     const items = triggers.map((t) => { const o = t as Record<string, unknown>; const type = normalizeTriggerType(String(o.trigger_type ?? "manual")); const desc = String(o.description ?? ""); return desc ? `${type}: ${desc}` : type; });
     const structured = triggers.map((t) => { const o = t as Record<string, unknown>; return { trigger_type: normalizeTriggerType(String(o.trigger_type ?? "manual")), config: (o.config ?? {}) as Record<string, string>, description: String(o.description ?? "") }; });
@@ -167,24 +190,26 @@ function extractDimensionData(
     data["error-handling"] = { items: ["Default error handling"] };
   }
 
-  // Events
-  const events = ((d.suggested_event_subscriptions ?? []) as unknown[]);
+  // Events — drop subscriptions tied to a disabled use case
+  const eventsRaw = ((d.suggested_event_subscriptions ?? []) as unknown[]);
+  const events = ucFilterActive
+    ? eventsRaw.filter((e) => matchesUseCaseFilter((e as Record<string, unknown>).use_case_id))
+    : eventsRaw;
   data["events"] = { items: events.length > 0 ? events.map((e) => { const o = e as Record<string, unknown>; return `${o.event_type ?? "event"}: ${o.description ?? ""}`; }) : ["No event subscriptions"] };
 
   return data;
 }
 
 // -- Matrix variant --
-// "chrono-journey" and "chrono-timeline" are experimental prototypes that
-// unify Tasks + Apps & Services + Triggers into a single per-use-case
-// chronology component. Exposed via the in-view tab switcher so the user
-// can compare them against the legacy glass/blueprint variants.
+// The "chrono-*" variants are experimental prototypes that unify ALL 8
+// dimensions into a per-use-case view. Exposed via the in-view tab
+// switcher so we can A/B them against each other and the legacy layouts.
 type MatrixVariant =
   | "original"
   | "glass"
   | "blueprint"
-  | "chrono-journey"
-  | "chrono-timeline";
+  | "chrono-chain"
+  | "chrono-wildcard";
 
 /** Map themes to their preferred matrix visual variant. */
 const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
@@ -203,8 +228,8 @@ function getThemeVariant(themeId: ThemeId): MatrixVariant {
 /** Only the experimental chronology prototypes are exposed through the
  * in-view tab switcher. The legacy variants remain theme-driven. */
 const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
-  { id: "chrono-journey", label: "Journey", sub: "glass · cards" },
-  { id: "chrono-timeline", label: "Timeline", sub: "blueprint · stepper" },
+  { id: "chrono-chain", label: "Chain", sub: "8-col table · thin rows" },
+  { id: "chrono-wildcard", label: "Wildcard", sub: "constellation · cards" },
 ];
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
@@ -234,8 +259,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   const templateName = review.test_case_name ?? "Template";
 
-  // Adoption questions from template
-  const adoptionQuestions = (designResult?.adoption_questions ?? []) as TransformQuestionResponse[];
+  // Adoption questions from template — memoized so dependent hooks (filter,
+  // dynamic-options, seed) don't see a new array identity on every render.
+  const adoptionQuestions = useMemo<TransformQuestionResponse[]>(
+    () => (designResult?.adoption_questions ?? []) as TransformQuestionResponse[],
+    [designResult],
+  );
   const hasAdoptionQuestions = adoptionQuestions.length > 0;
   const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
   const [questionsComplete, setQuestionsComplete] = useState(false);
@@ -243,6 +272,73 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [blockedQuestionIds, setBlockedQuestionIds] = useState<Set<string>>(new Set());
   const [filteredOptions, setFilteredOptions] = useState<Record<string, string[]>>({});
   const defaultsLoaded = useRef(false);
+
+  // Use-case picker — runs before the questionnaire when the template declares
+  // ≥2 use cases (or use_case_flows). User can disable capabilities they don't
+  // need; disabled ones are stripped from the downstream questionnaire, the
+  // matrix use-cases cell, and any per-use-case triggers / subscriptions.
+  const availableUseCases = useMemo<UseCaseOption[]>(() => {
+    if (!designResult) return [];
+    const fromUseCases = (designResult.use_cases ?? []) as unknown[];
+    const primary = Array.isArray(fromUseCases) && fromUseCases.length > 0
+      ? fromUseCases
+      : (designResult.use_case_flows ?? []) as unknown[];
+    const out: UseCaseOption[] = [];
+    for (const item of primary) {
+      if (typeof item === "string") {
+        out.push({ id: item, name: item });
+        continue;
+      }
+      const o = item as Record<string, unknown>;
+      const id = String(o.id ?? o.name ?? "").trim();
+      if (!id) continue;
+      out.push({
+        id,
+        name: String(o.name ?? o.title ?? id),
+        description: typeof o.description === "string" ? o.description : undefined,
+        capability_summary: typeof o.capability_summary === "string" ? o.capability_summary : undefined,
+      });
+    }
+    return out;
+  }, [designResult]);
+
+  const showUseCasePicker = availableUseCases.length >= 2;
+  const [selectedUseCaseIds, setSelectedUseCaseIds] = useState<Set<string>>(
+    () => new Set(availableUseCases.map((u) => u.id)),
+  );
+  // Seed the selection set once the designResult parses (availableUseCases is
+  // empty on the first render pass because designResult parse happens inline).
+  const useCasesInitialized = useRef(false);
+  useEffect(() => {
+    if (useCasesInitialized.current) return;
+    if (availableUseCases.length === 0) return;
+    useCasesInitialized.current = true;
+    setSelectedUseCaseIds(new Set(availableUseCases.map((u) => u.id)));
+  }, [availableUseCases]);
+
+  const [useCasesPicked, setUseCasesPicked] = useState(false);
+  const useCaseStepDone = !showUseCasePicker || useCasesPicked;
+
+  const toggleUseCase = useCallback((id: string) => {
+    setSelectedUseCaseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Filter adoption questions by selected use cases. Questions with no
+  // use_case_id / use_case_ids (persona or connector scope) always show.
+  const filteredAdoptionQuestions = useMemo(() => {
+    if (!showUseCasePicker) return adoptionQuestions;
+    return adoptionQuestions.filter((q) => {
+      const tied = [q.use_case_id, ...(q.use_case_ids ?? [])].filter(Boolean) as string[];
+      if (tied.length === 0) return true;
+      return tied.some((id) => selectedUseCaseIds.has(id));
+    });
+  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
+  const hasFilteredQuestions = filteredAdoptionQuestions.length > 0;
 
   // Resolve dynamic option lists (Sentry projects, codebases, ...) from the
   // user's connected credentials. Questions without a `dynamic_source` simply
@@ -306,10 +402,11 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // Don't regress phase if a test or promotion is already in progress
     if (currentPhase === "testing" || currentPhase === "test_complete" || currentPhase === "promoted") return;
 
-    // Merge adoption answers into the build draft as parameter overrides
+    // Merge adoption answers into the build draft as parameter overrides.
+    // Only answers for questions that survived use-case filtering are saved.
     const currentDraft = useAgentStore.getState().buildDraft as Record<string, unknown> | null;
     const answerMap: Record<string, string> = {};
-    for (const q of adoptionQuestions) {
+    for (const q of filteredAdoptionQuestions) {
       if (adoptionAnswers[q.id]) answerMap[q.id] = adoptionAnswers[q.id]!;
     }
 
@@ -330,7 +427,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       // option_service_types[0] = "gcp_cloud"), record that binding so the
       // backend can prefer the right credential during test and runtime.
       const credentialBindings: Record<string, string> = {};
-      for (const q of adoptionQuestions) {
+      for (const q of filteredAdoptionQuestions) {
         if (q.vault_category && q.option_service_types && q.options && answerMap[q.id]) {
           const selectedIdx = q.options.indexOf(answerMap[q.id]!);
           if (selectedIdx >= 0 && selectedIdx < q.option_service_types.length) {
@@ -344,7 +441,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
       const payload = {
         answers: answerMap,
-        questions: adoptionQuestions.map((q) => ({
+        questions: filteredAdoptionQuestions.map((q) => ({
           id: q.id,
           question: q.question,
           category: q.category,
@@ -352,6 +449,10 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           vault_category: q.vault_category,
         })),
         credential_bindings: credentialBindings,
+        // Record the user's capability selection so promote / test can prune
+        // disabled use cases from the final persona (backend may ignore this
+        // field today; the matrix preview already reflects the filter).
+        selected_use_case_ids: showUseCasePicker ? [...selectedUseCaseIds] : null,
       };
       void invokeWithTimeout("save_adoption_answers", {
         sessionId,
@@ -360,21 +461,22 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         logger.warn("Failed to persist adoption answers", { err });
       });
     }
-  }, [questionsComplete, seeded, adoptionAnswers, adoptionQuestions]);
+  }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
 
   // Seed the matrix cells from the template — deferred until questionnaire is completed
   // (if one exists). This prevents creating a draft persona when the user might
   // close the questionnaire without finishing it.
   useEffect(() => {
     if (seedDone.current || !designResult) return;
-    if (hasAdoptionQuestions && !questionsComplete) return;
+    if (!useCaseStepDone) return;
+    if (hasFilteredQuestions && !questionsComplete) return;
     seedDone.current = true;
 
     // Derive credential bindings from vault-category questions so the Apps &
     // Services matrix cell reflects the user's concrete picks (e.g. Leonardo
     // AI) instead of the template's generic placeholder (e.g. "image_ai").
     const credentialBindings: Record<string, string> = {};
-    for (const q of adoptionQuestions) {
+    for (const q of filteredAdoptionQuestions) {
       if (q.vault_category && q.option_service_types && q.options && adoptionAnswers[q.id]) {
         const idx = q.options.indexOf(adoptionAnswers[q.id]!);
         if (idx >= 0 && idx < q.option_service_types.length) {
@@ -384,7 +486,11 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       }
     }
 
-    const dimensionData = extractDimensionData(designResult, credentialBindings);
+    const dimensionData = extractDimensionData(
+      designResult,
+      credentialBindings,
+      showUseCasePicker ? selectedUseCaseIds : undefined,
+    );
     const cellStates: Record<string, CellBuildStatus> = {};
     for (const key of Object.keys(dimensionData)) {
       cellStates[key] = "resolved";
@@ -416,7 +522,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         // This creates the session slot in the map (required by multi-draft slice)
         // AND mirrors the scalars automatically. Building a PersistedBuildSession
         // shaped object lets us reuse the existing hydration path.
-        const initialPhase = hasAdoptionQuestions && !questionsComplete ? "awaiting_input" : "draft_ready";
+        const initialPhase = hasFilteredQuestions && !questionsComplete ? "awaiting_input" : "draft_ready";
         const resolvedCellsForHydration: Record<string, unknown> = {};
         for (const [key, cellValue] of Object.entries(dimensionData)) {
           resolvedCellsForHydration[key] = cellValue;
@@ -436,8 +542,8 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         // Register process activity for the adoption flow
         try {
           const { useOverviewStore } = await import("@/stores/overviewStore");
-          const initialStatus = hasAdoptionQuestions && !questionsComplete ? 'input_required' as const : 'running' as const;
-          const initialEvent = hasAdoptionQuestions && !questionsComplete ? 'Adoption questions need answers' : 'Draft ready';
+          const initialStatus = hasFilteredQuestions && !questionsComplete ? 'input_required' as const : 'running' as const;
+          const initialEvent = hasFilteredQuestions && !questionsComplete ? 'Adoption questions need answers' : 'Draft ready';
           useOverviewStore.getState().processStarted(
             'template_adopt',
             persona.id,
@@ -460,7 +566,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         logger.error("Failed to create draft persona for adoption", { err });
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasAdoptionQuestions, questionsComplete]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers]);
 
   const build = useMatrixBuild({ personaId });
   const lifecycle = useMatrixLifecycle({ personaId });
@@ -488,12 +594,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     if (!seeded || !personaId) return;
     if (currentBuildPhase !== 'draft_ready') return;
     if (autoTestedRef.current === personaId) return;
-    if (hasAdoptionQuestions && !questionsComplete) return;
+    if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
     autoTestedRef.current = personaId;
     void lifecycle.handleStartTest();
-  }, [seeded, personaId, currentBuildPhase, hasAdoptionQuestions, questionsComplete, build.pendingQuestions, build.buildError, lifecycle]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, lifecycle]);
   useEffect(() => {
     if (!seeded || !personaId) return;
     // Terminal phases: end the process activity
@@ -619,25 +725,40 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const handleDiscardEdits = useCallback(() => {
     const store = useAgentStore.getState();
     store.clearEditDirty();
-    // Re-seed from template
+    // Re-seed from template — preserves the user's capability picks so the
+    // discard reverts manual edits without reintroducing disabled use cases.
     if (designResult) {
-      const dimensionData = extractDimensionData(designResult);
+      const dimensionData = extractDimensionData(
+        designResult,
+        undefined,
+        showUseCasePicker ? selectedUseCaseIds : undefined,
+      );
       store.patchActiveSession({ cellData: dimensionData, draft: designResult });
     }
-  }, [designResult]);
+  }, [designResult, showUseCasePicker, selectedUseCaseIds]);
 
   if (!seeded) {
-    // Render the questionnaire inline as the wizard's primary content while
-    // the user fills it in. Static questions are interactive immediately;
-    // dynamic-source questions show a per-card loading spinner that flips to
-    // the real options as the API call resolves. We only fall back to the
-    // "Loading template…" placeholder AFTER the user submits, while seed
-    // creates the draft persona — so the user is never blocked behind a
-    // generic loading screen with the questionnaire trapped underneath it.
-    if (hasAdoptionQuestions && !questionsComplete) {
+    // Step 1 — capability picker (templates with ≥2 use cases only).
+    if (showUseCasePicker && !useCasesPicked) {
+      return (
+        <UseCasePickerStep
+          templateName={templateName}
+          useCases={availableUseCases}
+          selectedIds={selectedUseCaseIds}
+          onToggle={toggleUseCase}
+          onContinue={() => setUseCasesPicked(true)}
+        />
+      );
+    }
+    // Step 2 — questionnaire. Rendered inline while the user fills it in so
+    // static/dynamic questions are interactive immediately. We only fall back
+    // to the "Loading template…" placeholder AFTER the user submits, while
+    // seed creates the draft persona — so the user is never blocked behind
+    // a generic loading screen with the questionnaire trapped underneath it.
+    if (hasFilteredQuestions && !questionsComplete) {
       return (
         <QuestionnaireFormFocus
-          questions={adoptionQuestions}
+          questions={filteredAdoptionQuestions}
           userAnswers={adoptionAnswers}
           autoDetectedIds={autoDetectedIds}
           blockedQuestionIds={blockedQuestionIds}
@@ -689,7 +810,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
             </button>
           );
         })}
-        {(matrixVariant === "chrono-journey" || matrixVariant === "chrono-timeline") && (
+        {(matrixVariant === "chrono-chain" || matrixVariant === "chrono-wildcard") && (
           <button
             onClick={() => setMatrixVariant(getThemeVariant(themeId))}
             className="text-[10px] uppercase tracking-wider text-foreground/50 hover:text-foreground cursor-pointer ml-1 px-2 py-1"
@@ -714,7 +835,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           buildPhase={build.buildPhase}
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
           onRejectTest={lifecycle.handleRejectTest}
           onDeleteDraft={handleDeleteDraft}
           onRefine={lifecycle.handleRefine}
@@ -754,24 +875,22 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           onViewAgent={handleViewAgent}
         />
       )}
-      {matrixVariant === "chrono-journey" && (
-        <PersonaChronologyJourney
+      {matrixVariant === "chrono-chain" && (
+        <PersonaChronologyChain
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
           buildActivity={build.buildActivity}
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}
           onViewAgent={handleViewAgent}
         />
       )}
-      {matrixVariant === "chrono-timeline" && (
-        <PersonaChronologyTimeline
+      {matrixVariant === "chrono-wildcard" && (
+        <PersonaChronologyWildcard
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
           buildActivity={build.buildActivity}
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}

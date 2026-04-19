@@ -6114,7 +6114,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "重命名中...",
       "show_sidebar": "显示侧边栏",
-      "source": "来源",
+      "source": "类型",
       "source_personas": "来源代理",
       "use_template": "使用模板"
     },

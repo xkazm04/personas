@@ -5903,6 +5903,13 @@ export type Translations = {
       source_no_databases: string;
       source_pick_codebase: string;
       source_pick_database: string;
+      use_cases_title: string;
+      use_cases_subtitle: string;
+      use_cases_continue: string;
+      use_cases_enabled_count: string;
+      use_cases_none_selected: string;
+      use_case_enabled_badge: string;
+      use_case_disabled_badge: string;
     };
     scan: {
       scanning_draft: string;

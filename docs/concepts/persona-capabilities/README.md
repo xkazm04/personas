@@ -64,6 +64,7 @@ Persona (identity + shared state)
 | C3 | UI activation (toggle, simulate, remove persona Execute → per-capability in Use Case tab) | **shipped** (uncommitted — 2026-04-19); §L + §K polish/tests shipped 2026-04-19 |
 | C4 | Triggers/automations first-class (trigger builder rewired, automation use-case binding) | **shipped** (uncommitted — 2026-04-19) |
 | C5 | Per-use-case messages/reviews/memories | **shipped** (uncommitted — 2026-04-19) |
+| C5b | Per-capability generation policy (memories/reviews/events) + event aliasing + technical-failure review cleanup | **shipped** (uncommitted — 2026-04-19) |
 | C6 | Lab per-use-case + versioning RFC-driven | not started |
 
 ### Quick resume for a new session

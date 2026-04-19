@@ -92,11 +92,31 @@ pub async fn create_adoption_session(
     let now = chrono::Utc::now().to_rfc3339();
     let cells = resolved_cells_json.unwrap_or_else(|| "{}".to_string());
 
+    // Schema v3 templates nest triggers / connectors / events inside
+    // `use_cases[i]` and hoist persona-wide concerns into `persona`. The
+    // downstream pipeline expects the flat v2 shape — flatten in place.
+    // No-op for v1/v2 payloads.
+    let normalized_agent_ir_json = match serde_json::from_str::<serde_json::Value>(&agent_ir_json) {
+        Ok(mut payload) => {
+            if crate::engine::template_v3::is_v3_shape(&payload) {
+                crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
+                tracing::info!(
+                    session_id = %session_id,
+                    "create_adoption_session: normalized v3 template shape to flat AgentIr"
+                );
+                serde_json::to_string(&payload).unwrap_or(agent_ir_json)
+            } else {
+                agent_ir_json
+            }
+        }
+        Err(_) => agent_ir_json,
+    };
+
     let conn = state.db.get()?;
     conn.execute(
         "INSERT INTO build_sessions (id, persona_id, phase, resolved_cells, intent, agent_ir, created_at, updated_at)
          VALUES (?1, ?2, 'draft_ready', ?3, ?4, ?5, ?6, ?6)",
-        rusqlite::params![session_id, persona_id, cells, intent, agent_ir_json, now],
+        rusqlite::params![session_id, persona_id, cells, intent, normalized_agent_ir_json, now],
     )?;
 
     tracing::info!(
@@ -1183,12 +1203,31 @@ pub async fn promote_build_draft_inner(
         .validate_transition(BuildPhase::Promoted)
         .map_err(AppError::Validation)?;
 
+    // Belt-and-braces normalization (§5.3 item 5 of C4-build-from-scratch-v3-handoff.md):
+    // CLI build-from-scratch sessions bypass create_adoption_session, so their
+    // agent_ir may still be v3-shaped when we hit this promote path. Run the
+    // same normalizer here — no-op if already flat.
     let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
-        None => return Err(AppError::Validation("Build session has no agent_ir (field is null)".to_string())),
+        None => {
+            return Err(AppError::Validation(
+                "Build session has no agent_ir (field is null)".to_string(),
+            ))
+        }
         Some(raw) => {
-            serde_json::from_str(raw).map_err(|e| {
-                tracing::error!(session_id = %session_id, error = %e, "Failed to parse agent_ir for promotion");
+            let mut payload: serde_json::Value = serde_json::from_str(raw).map_err(|e| {
+                tracing::error!(session_id = %session_id, error = %e, "Failed to parse agent_ir as JSON for promotion");
                 AppError::Validation(format!("Build session agent_ir parse error: {e}"))
+            })?;
+            if crate::engine::template_v3::is_v3_shape(&payload) {
+                crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
+                tracing::info!(
+                    session_id = %session_id,
+                    "promote_build_draft: normalized v3 agent_ir to flat AgentIr"
+                );
+            }
+            serde_json::from_value(payload).map_err(|e| {
+                tracing::error!(session_id = %session_id, error = %e, "Failed to deserialize agent_ir into AgentIr struct after normalization");
+                AppError::Validation(format!("Build session agent_ir shape error: {e}"))
             })?
         }
     };

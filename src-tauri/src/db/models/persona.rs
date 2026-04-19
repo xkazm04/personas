@@ -271,6 +271,14 @@ pub struct DesignUseCase {
     /// Advisory only — all persona tools remain available at runtime.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_hints: Option<Vec<String>>,
+    /// Phase C5b — per-capability generation policy. Controls whether the
+    /// dispatcher persists memories/reviews/events emitted by the LLM under
+    /// this capability, and lets the user rename emitted events. Absent or
+    /// individual fields absent ⇒ defaults inherited from the persona's
+    /// existing artefacts (see `engine::dispatch::testable::resolve_generation_policy`).
+    /// Stored as raw JSON so the field can grow without a migration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generation_settings: Option<serde_json::Value>,
 }
 
 /// A step in the connector pipeline showing chronological service interactions.

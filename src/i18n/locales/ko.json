@@ -6114,7 +6114,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "이름 변경 중...",
       "show_sidebar": "사이드바 표시",
-      "source": "소스",
+      "source": "유형",
       "source_personas": "소스 페르소나",
       "use_template": "템플릿 사용"
     },

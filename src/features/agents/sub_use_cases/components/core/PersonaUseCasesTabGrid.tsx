@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Power, PowerOff, Play, FlaskConical, Clock, Cpu, Bell, Calendar, Webhook, Zap, MousePointer,
@@ -12,8 +12,11 @@ import { UseCaseDetailPanel } from '../detail/UseCaseDetailPanel';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { DefaultModelSection } from './DefaultModelSection';
 import { CapabilityDisableDialog } from './CapabilityDisableDialog';
+import { CapabilityPolicyControls } from './CapabilityPolicyControls';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
+import { getMemoryCount } from '@/api/overview/memories';
+import { listManualReviews } from '@/api/overview/reviews';
 
 const TRIGGER_ICON: Record<string, typeof Calendar> = {
   schedule: Calendar,
@@ -65,6 +68,26 @@ export function PersonaUseCasesTabGrid({
   } = useCapabilityToggle();
 
   const [detailTab, setDetailTab] = useState<'history' | 'config'>('history');
+
+  // Phase C5b — persona-level defaults for the policy chips. We treat
+  // "persona has any memory rows" / "persona has any review rows" as the
+  // signal that the persona was *designed* to produce that artefact. New
+  // capabilities default to ON when the persona uses the artefact.
+  const [memoriesDefault, setMemoriesDefault] = useState(true);
+  const [reviewsDefault, setReviewsDefault] = useState(true);
+  useEffect(() => {
+    if (!personaId) return;
+    let cancelled = false;
+    Promise.all([
+      getMemoryCount(personaId).catch(() => 0),
+      listManualReviews(personaId).then((rs) => rs.length).catch(() => 0),
+    ]).then(([memCount, revCount]) => {
+      if (cancelled) return;
+      setMemoriesDefault(memCount > 0);
+      setReviewsDefault(revCount > 0);
+    });
+    return () => { cancelled = true; };
+  }, [personaId]);
 
   const handleToggle = useCallback(
     (uc: UseCaseItem) => {
@@ -163,6 +186,19 @@ export function PersonaUseCasesTabGrid({
                     <span title="Notifications"><Bell className="w-3 h-3 text-amber-400/70" /></span>
                   )}
                 </div>
+
+                {/* Phase C5b — generation policy chips. Each chip persists on
+                    click and the backend invalidates the session pool. */}
+                {personaId && (
+                  <div className="pt-2 mt-1 border-t border-primary/10">
+                    <CapabilityPolicyControls
+                      personaId={personaId}
+                      useCase={uc}
+                      memoriesDefault={memoriesDefault}
+                      reviewsDefault={reviewsDefault}
+                    />
+                  </div>
+                )}
 
                 {/* Action row */}
                 <div

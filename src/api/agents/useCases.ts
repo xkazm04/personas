@@ -64,3 +64,87 @@ export const simulateUseCase = (
     useCaseId,
     inputOverride,
   });
+
+// ===========================================================================
+// Phase C5b — per-capability generation policy + event-rename consumer warning
+// ===========================================================================
+
+/**
+ * Per-capability generation policy. Mirrors `UseCaseGenerationSettings` in
+ * `src-tauri/src/commands/core/use_cases.rs`.
+ *
+ * - `memories`: 'on' stores agent-emitted memories under this capability;
+ *   'off' silently drops them at dispatch.
+ * - `reviews`: 'on' queues manual reviews; 'off' drops them; 'trust_llm'
+ *   stores them but auto-resolves so they never block a human queue.
+ * - `events`: 'on' publishes events; 'off' drops them.
+ * - `event_aliases`: rename map applied at emit time. Key = name LLM emits;
+ *   value = name actually published.
+ */
+export interface UseCaseGenerationSettings {
+  memories?: 'on' | 'off';
+  reviews?: 'on' | 'off' | 'trust_llm';
+  events?: 'on' | 'off';
+  event_aliases?: Record<string, string>;
+}
+
+/**
+ * Persist the generation policy onto a single capability. Replaces any prior
+ * value. Server invalidates the session pool so the next run reassembles the
+ * prompt with the new "Generation policy" section.
+ */
+export const setUseCaseGenerationSettings = (
+  personaId: string,
+  useCaseId: string,
+  settings: UseCaseGenerationSettings,
+) =>
+  invoke<UseCaseGenerationSettings>("set_use_case_generation_settings", {
+    personaId,
+    useCaseId,
+    settings,
+  });
+
+export interface EventListenerCounts {
+  subscriptions: number;
+  triggers: number;
+}
+
+/**
+ * Count how many subscribers/triggers currently listen for `eventType`. Used
+ * to warn the user before they rename an event and break consumer wiring.
+ * Pass `excludePersonaId` to skip the persona doing the rename.
+ */
+export const countEventListeners = (
+  eventType: string,
+  excludePersonaId?: string,
+) =>
+  invoke<EventListenerCounts>("count_event_listeners", {
+    eventType,
+    excludePersonaId,
+  });
+
+export type RenameConsumerAction = 'update' | 'delete' | 'leave';
+
+export interface RenameEventListenersResult {
+  subscriptions_touched: number;
+  triggers_touched: number;
+  action: RenameConsumerAction;
+}
+
+/**
+ * Apply the user's chosen action when renaming an event. `update` rewrites
+ * consumers to the new name; `delete` drops them; `leave` does nothing
+ * (consumers stop receiving the event silently).
+ */
+export const renameEventListeners = (
+  fromEvent: string,
+  toEvent: string,
+  action: RenameConsumerAction,
+  excludePersonaId?: string,
+) =>
+  invoke<RenameEventListenersResult>("rename_event_listeners", {
+    fromEvent,
+    toEvent,
+    action,
+    excludePersonaId,
+  });

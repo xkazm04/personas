@@ -176,6 +176,21 @@ pub fn get_by_use_case_id(
     })
 }
 
+/// Delete every review attached to an execution. Phase C5b — used by the
+/// engine to cleanse reviews that were emitted by the LLM before a technical
+/// failure (auth/network/provider/timeout) cut the run short. Returns the
+/// number of rows deleted.
+pub fn delete_for_execution(pool: &DbPool, execution_id: &str) -> Result<usize, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::delete_for_execution", {
+        let conn = pool.get()?;
+        let count = conn.execute(
+            "DELETE FROM persona_manual_reviews WHERE execution_id = ?1",
+            params![execution_id],
+        )? as usize;
+        Ok(count)
+    })
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,

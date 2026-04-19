@@ -6114,7 +6114,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "Переименование...",
       "show_sidebar": "Показать панель",
-      "source": "Источник",
+      "source": "Тип",
       "source_personas": "Агенты-источники",
       "use_template": "Использовать шаблон"
     },

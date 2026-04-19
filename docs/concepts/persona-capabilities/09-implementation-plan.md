@@ -383,6 +383,78 @@ per-capability queues and scoped learned memory.
 - Messages, reviews, memories carry capability attribution
 - Learned memory tier is correctly scoped (verified via runtime tests)
 
+## Phase C5b — Per-capability generation policy + event aliasing
+
+> **Status: SHIPPED (uncommitted) — 2026-04-19.**
+>
+> **Goal.** Make memory/review/event generation a per-capability switch so a
+> persona can run multiple capabilities without polluting each other's
+> artefacts. Two-layer enforcement: prompt instructs the LLM (soft), dispatch
+> drops violations silently (hard).
+>
+> **Data model.** New optional `generation_settings: serde_json::Value` field
+> on `DesignUseCase` (Rust `db/models/persona.rs`) and `UseCaseGenerationSettings`
+> on `frontendTypes.ts`. JSON-only, no migration. Schema:
+> `{ memories?: 'on'|'off', reviews?: 'on'|'off'|'trust_llm', events?: 'on'|'off',
+> event_aliases?: Record<string,string> }`.
+>
+> **Dispatch enforcement** (`engine/dispatch.rs`):
+> - `DispatchContext.policy_cache` lazily resolves on first artefact via
+>   `testable::resolve_generation_policy`.
+> - `AgentMemory` → silently dropped when `memories='off'`.
+> - `ManualReview` → dropped when `'off'`; auto-resolved
+>   (status=`'resolved'`, notes=`"auto-approved by trust_llm policy"`) when
+>   `'trust_llm'`; notification skipped for trust_llm rows.
+> - `EmitEvent` and `PersonaAction` → dropped when `events='off'`.
+> - `EmitEvent` → renamed via `event_aliases` map at publish time;
+>   subscribers see the renamed name.
+>
+> **Prompt rendering** (`engine/prompt.rs::render_generation_policy_lines`):
+> the `## Current Focus` block grows a "Generation policy for this capability"
+> bullet list reflecting the policy. SOFT layer — LLM follows instructions
+> ~95% of the time; HARD layer above catches the rest.
+>
+> **Failure-mode review cleanup** (`engine/mod.rs` execution finalization):
+> when a run fails AND `error_taxonomy::is_technical_failure(category)` returns
+> true (auth/network/rate-limit/timeout/provider/api), call
+> `manual_reviews::delete_for_execution(exec_id)` to wipe LLM-emitted reviews
+> that describe a run which never produced real output.
+>
+> **IPC** (`commands/core/use_cases.rs`):
+> - `set_use_case_generation_settings(persona_id, use_case_id, settings)` —
+>   patches `design_context` and invalidates the session pool.
+> - `count_event_listeners(event_type, exclude_persona_id?)` — counts
+>   subscribers + event-listener triggers across the project (used by the
+>   rename modal to warn about consumer breakage).
+> - `rename_event_listeners(from, to, action: 'update'|'delete'|'leave',
+>   exclude_persona_id?)` — reconciles consumers on the user's choice.
+>
+> **UI** (`features/agents/sub_use_cases/components/core/`):
+> - `CapabilityPolicyControls.tsx` — three pill chips (Mem on/off, Rev queue/trust/off,
+>   Evt on/off) plus a Rename launcher; embedded in each Grid card. Defaults
+>   for memories/reviews are inherited from "does the persona have any
+>   memory/review rows" (counts queried once per persona by the Grid).
+> - `EventRenameModal.tsx` — alias-row editor + consumer-warning panel + 3-way
+>   action picker (Update / Delete / Leave). Excludes the renaming persona
+>   from the warning by default.
+>
+> **Tests.** `engine::dispatch::tests` adds 6 tests for policy parsing
+> (`parse_generation_settings_*`, `pick_generation_policy_*`, `published_event_name_uses_alias_*`).
+> `engine::error_taxonomy::tests` adds 2 tests pinning the `is_technical_failure`
+> set. `commands::core::use_cases::tests` adds 2 tests
+> (`patch_generation_settings_persists_to_design_context`, `..._rejects_unknown_use_case`).
+>
+> Verification: `cargo check --features desktop`, `npx tsc --noEmit`,
+> `npx vite build` — all clean.
+>
+> **Defaults.** When `generation_settings` is absent the policy is permissive
+> (everything on, no aliases) — preserves pre-C5b behavior. The UI's chip
+> defaults differ: when a persona has zero memories/reviews ever, the chip
+> defaults to `off` (matches the user's intent: "if not part of the building
+> process, default off"). The dispatch layer remains permissive in that case
+> so legacy personas keep behaving exactly as before until the user
+> explicitly sets a policy.
+
 ## Phase C6 — Lab per-use-case (RFC-gated)
 
 **Goal:** Lab can refine whole persona or specific capabilities; versioning

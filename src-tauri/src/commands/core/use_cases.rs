@@ -22,7 +22,7 @@ use self::testable::{build_simulation_input, cascade_use_case_toggle};
 /// Pure helpers extracted from the IPC commands so the inline tests can
 /// exercise cascade + simulation logic without constructing an `AppState`.
 mod testable {
-    use super::{AppError, UseCaseToggleResult};
+    use super::{AppError, UseCaseGenerationSettings, UseCaseToggleResult};
 
     /// Apply a capability toggle: patch `personas.design_context.useCases[i].enabled`
     /// and cascade into `persona_triggers`, `persona_event_subscriptions`, and
@@ -130,6 +130,72 @@ mod testable {
             subscriptions_updated,
             automations_updated,
         })
+    }
+
+    /// Phase C5b — patch `design_context.use_cases[uc].generation_settings`
+    /// with the supplied policy. Replaces any prior value for that capability.
+    /// Returns the merged settings as stored. Pure DB write — no
+    /// session-pool / cascade side-effects (caller does those).
+    pub fn patch_generation_settings(
+        conn: &rusqlite::Connection,
+        persona_id: &str,
+        use_case_id: &str,
+        settings: &UseCaseGenerationSettings,
+    ) -> Result<UseCaseGenerationSettings, AppError> {
+        let dc_str: Option<String> = conn
+            .prepare("SELECT design_context FROM personas WHERE id = ?1")?
+            .query_row(rusqlite::params![persona_id], |row| row.get(0))
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::Validation(format!("Persona '{}' not found", persona_id))
+                }
+                other => AppError::Database(other),
+            })?;
+        let dc_str = dc_str.ok_or_else(|| {
+            AppError::Validation(format!("Persona '{}' has no design_context", persona_id))
+        })?;
+
+        let mut dc: serde_json::Value = serde_json::from_str(&dc_str)
+            .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
+        let use_cases = dc
+            .get_mut("use_cases")
+            .and_then(|v| v.as_array_mut())
+            .ok_or_else(|| {
+                AppError::Validation(format!(
+                    "Persona '{}' design_context has no use_cases array",
+                    persona_id
+                ))
+            })?;
+
+        let mut found = false;
+        let merged_value = serde_json::to_value(settings).map_err(|e| {
+            AppError::Validation(format!("failed to serialize generation_settings: {}", e))
+        })?;
+        for uc in use_cases.iter_mut() {
+            if uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id) {
+                if let Some(obj) = uc.as_object_mut() {
+                    obj.insert("generation_settings".to_string(), merged_value.clone());
+                }
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return Err(AppError::Validation(format!(
+                "use_case_id '{}' not found on persona '{}'",
+                use_case_id, persona_id
+            )));
+        }
+
+        let new_dc_str = serde_json::to_string(&dc)
+            .map_err(|e| AppError::Validation(format!("failed to re-serialize design_context: {}", e)))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
+            rusqlite::params![new_dc_str, now, persona_id],
+        )?;
+
+        Ok(settings.clone())
     }
 
     /// Build the simulation input payload. Precedence:
@@ -258,6 +324,217 @@ pub async fn set_use_case_enabled(
     );
 
     Ok(result)
+}
+
+// =========================================================================
+// Phase C5b — per-capability generation policy
+// =========================================================================
+
+/// Frontend-facing generation policy. Mirrors the TS `UseCaseGenerationSettings`
+/// shape. All fields optional so callers can patch one knob without rewriting
+/// the whole struct.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct UseCaseGenerationSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memories: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviews: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub events: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_aliases: Option<std::collections::HashMap<String, String>>,
+}
+
+/// Persist the generation policy onto a single capability inside the persona's
+/// `design_context.use_cases[id].generation_settings`. Replaces any prior value
+/// for that capability. Returns the patched settings as the LLM/dispatch layer
+/// will see them on the next run.
+///
+/// Phase C5b.
+#[tauri::command]
+pub async fn set_use_case_generation_settings(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    use_case_id: String,
+    settings: UseCaseGenerationSettings,
+) -> Result<UseCaseGenerationSettings, AppError> {
+    require_privileged(&state, "set_use_case_generation_settings").await?;
+
+    let result = {
+        let conn = state.db.get()?;
+        testable::patch_generation_settings(&conn, &persona_id, &use_case_id, &settings)?
+    };
+
+    // Invalidate session pool so the next run reassembles the prompt with the
+    // new "Generation policy" lines (see prompt::render_generation_policy_lines).
+    state.session_pool.invalidate(&persona_id).await;
+
+    tracing::info!(
+        persona_id = %persona_id,
+        use_case_id = %use_case_id,
+        "Generation policy patched",
+    );
+
+    Ok(result)
+}
+
+/// Counts of subscribers / triggers that will be impacted by an event rename.
+/// `excluding_persona_id` is the persona doing the renaming — usually
+/// excluded so the user only sees *external* consumers they might break.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct EventListenerCounts {
+    #[ts(type = "number")]
+    pub subscriptions: usize,
+    #[ts(type = "number")]
+    pub triggers: usize,
+}
+
+/// Count how many event subscribers and event-listener triggers currently
+/// listen for `event_type`. Used by the rename modal to warn the user before
+/// they break consumer wiring. Phase C5b.
+#[tauri::command]
+pub async fn count_event_listeners(
+    state: State<'_, Arc<AppState>>,
+    event_type: String,
+    exclude_persona_id: Option<String>,
+) -> Result<EventListenerCounts, AppError> {
+    require_privileged(&state, "count_event_listeners").await?;
+
+    let conn = state.db.get()?;
+    let exclude = exclude_persona_id.as_deref().unwrap_or("");
+
+    let subscriptions: i64 = conn
+        .prepare(
+            "SELECT COUNT(*) FROM persona_event_subscriptions
+             WHERE event_type = ?1 AND (?2 = '' OR persona_id <> ?2)",
+        )?
+        .query_row(rusqlite::params![event_type, exclude], |r| r.get(0))?;
+
+    // persona_triggers store config as JSON; event_listener triggers carry the
+    // event name in the `event_type` column on the trigger row when present,
+    // and we additionally match LIKE on the config JSON for older rows where
+    // the column may be empty. The LIKE bound is anchored to '"event_type":"..."'
+    // to avoid substring false-positives.
+    let needle = format!("%\"event_type\":\"{}\"%", event_type.replace('"', "\\\""));
+    let triggers: i64 = conn
+        .prepare(
+            "SELECT COUNT(*) FROM persona_triggers
+             WHERE trigger_type = 'event_listener'
+               AND (?1 = '' OR persona_id <> ?1)
+               AND config LIKE ?2",
+        )?
+        .query_row(rusqlite::params![exclude, needle], |r| r.get(0))?;
+
+    Ok(EventListenerCounts {
+        subscriptions: subscriptions as usize,
+        triggers: triggers as usize,
+    })
+}
+
+/// How to handle existing consumers when an event is renamed.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum RenameConsumerAction {
+    /// Rewrite each subscription/trigger to listen for `to`.
+    Update,
+    /// Drop each subscription/trigger so the producer can fully decouple.
+    Delete,
+    /// Leave consumers unchanged — they'll silently stop receiving the event.
+    Leave,
+}
+
+/// Result of `rename_event_listeners` — counts of rows touched.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct RenameEventListenersResult {
+    #[ts(type = "number")]
+    pub subscriptions_touched: usize,
+    #[ts(type = "number")]
+    pub triggers_touched: usize,
+    pub action: RenameConsumerAction,
+}
+
+/// Apply the chosen consumer action when renaming an event. Excludes the
+/// renaming persona by default. Phase C5b.
+#[tauri::command]
+pub async fn rename_event_listeners(
+    state: State<'_, Arc<AppState>>,
+    from_event: String,
+    to_event: String,
+    action: RenameConsumerAction,
+    exclude_persona_id: Option<String>,
+) -> Result<RenameEventListenersResult, AppError> {
+    require_privileged(&state, "rename_event_listeners").await?;
+
+    if from_event.trim().is_empty() || to_event.trim().is_empty() {
+        return Err(AppError::Validation(
+            "from_event and to_event must be non-empty".into(),
+        ));
+    }
+
+    let conn = state.db.get()?;
+    let exclude = exclude_persona_id.as_deref().unwrap_or("");
+    let now = chrono::Utc::now().to_rfc3339();
+    let needle = format!("%\"event_type\":\"{}\"%", from_event.replace('"', "\\\""));
+
+    let (subscriptions_touched, triggers_touched) = match action {
+        RenameConsumerAction::Update => {
+            let subs = conn.execute(
+                "UPDATE persona_event_subscriptions
+                 SET event_type = ?1, updated_at = ?2
+                 WHERE event_type = ?3 AND (?4 = '' OR persona_id <> ?4)",
+                rusqlite::params![to_event, now, from_event, exclude],
+            )? as usize;
+            // For triggers we rewrite the config JSON's event_type field. Use a
+            // simple string substitution scoped to '"event_type":"..."' to keep
+            // the operation transparent without parsing each row.
+            let from_token = format!("\"event_type\":\"{}\"", from_event.replace('"', "\\\""));
+            let to_token = format!("\"event_type\":\"{}\"", to_event.replace('"', "\\\""));
+            let trigs = conn.execute(
+                "UPDATE persona_triggers
+                 SET config = REPLACE(config, ?1, ?2), updated_at = ?3
+                 WHERE trigger_type = 'event_listener'
+                   AND (?4 = '' OR persona_id <> ?4)
+                   AND config LIKE ?5",
+                rusqlite::params![from_token, to_token, now, exclude, needle],
+            )? as usize;
+            (subs, trigs)
+        }
+        RenameConsumerAction::Delete => {
+            let subs = conn.execute(
+                "DELETE FROM persona_event_subscriptions
+                 WHERE event_type = ?1 AND (?2 = '' OR persona_id <> ?2)",
+                rusqlite::params![from_event, exclude],
+            )? as usize;
+            let trigs = conn.execute(
+                "DELETE FROM persona_triggers
+                 WHERE trigger_type = 'event_listener'
+                   AND (?1 = '' OR persona_id <> ?1)
+                   AND config LIKE ?2",
+                rusqlite::params![exclude, needle],
+            )? as usize;
+            (subs, trigs)
+        }
+        RenameConsumerAction::Leave => (0, 0),
+    };
+
+    tracing::info!(
+        from = %from_event,
+        to = %to_event,
+        action = ?action,
+        subscriptions_touched,
+        triggers_touched,
+        "Event listeners reconciled after rename",
+    );
+
+    Ok(RenameEventListenersResult {
+        subscriptions_touched,
+        triggers_touched,
+        action,
+    })
 }
 
 /// Simulate a capability: run the persona end-to-end with the capability's
@@ -531,6 +808,54 @@ mod tests {
             dispatch_src.contains("[SIM]"),
             "dispatch.rs must log a [SIM] marker so simulation rows are auditable"
         );
+    }
+
+    /// Phase C5b — `patch_generation_settings` writes settings into the
+    /// capability and returns the merged value. Subsequent reads via
+    /// `dispatch::testable::pick_generation_policy` must reflect them.
+    #[test]
+    fn patch_generation_settings_persists_to_design_context() {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let conn = pool.get().expect("get conn");
+        seed_persona_with_capability(&conn, "p_gs", "uc_gs");
+
+        let settings = UseCaseGenerationSettings {
+            memories: Some("off".to_string()),
+            reviews: Some("trust_llm".to_string()),
+            events: Some("on".to_string()),
+            event_aliases: Some({
+                let mut m = std::collections::HashMap::new();
+                m.insert("alert".to_string(), "escalation".to_string());
+                m
+            }),
+        };
+        let returned = testable::patch_generation_settings(&conn, "p_gs", "uc_gs", &settings)
+            .expect("patch ok");
+        assert_eq!(returned.memories.as_deref(), Some("off"));
+        assert_eq!(returned.reviews.as_deref(), Some("trust_llm"));
+
+        let dc: String = conn.query_row(
+            "SELECT design_context FROM personas WHERE id = 'p_gs'",
+            [], |r| r.get(0),
+        ).unwrap();
+        let policy = crate::engine::dispatch::testable::pick_generation_policy(&dc, "uc_gs");
+        assert!(matches!(policy.memories, crate::engine::dispatch::testable::BoolPolicy::Off));
+        assert!(matches!(policy.reviews, crate::engine::dispatch::testable::ReviewPolicy::TrustLlm));
+        assert_eq!(policy.event_aliases.get("alert").map(|s| s.as_str()), Some("escalation"));
+    }
+
+    #[test]
+    fn patch_generation_settings_rejects_unknown_use_case() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        seed_persona_with_capability(&conn, "p_gs2", "uc_gs2");
+        let settings = UseCaseGenerationSettings::default();
+        let err = testable::patch_generation_settings(&conn, "p_gs2", "missing", &settings)
+            .unwrap_err();
+        match err {
+            AppError::Validation(m) => assert!(m.contains("missing")),
+            other => panic!("expected Validation, got {other:?}"),
+        }
     }
 
     fn seed_persona_with_capability(conn: &rusqlite::Connection, persona_id: &str, use_case_id: &str) {

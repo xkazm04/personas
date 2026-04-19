@@ -5874,8 +5874,8 @@
       "show_explanation": "Show explanation",
       "all_option": "All",
       "add_custom": "Add",
-      "custom_prefix": "+ Custom…",
-      "custom_plain": "Custom…",
+      "custom_prefix": "+ Other…",
+      "custom_plain": "Other…",
       "type_your_answer": "Type your answer...",
       "describe_in_detail": "Describe in detail...",
       "select_directory": "Select a directory...",
@@ -5896,7 +5896,14 @@
       "source_no_codebases": "No Dev Tools projects found. Register one in Dev Tools first.",
       "source_no_databases": "No database credentials found. Add one in the Vault first.",
       "source_pick_codebase": "Select a codebase…",
-      "source_pick_database": "Select a database…"
+      "source_pick_database": "Select a database…",
+      "use_cases_title": "Which capabilities should this persona handle?",
+      "use_cases_subtitle": "Turn off anything you don't need. Disabled capabilities won't appear in the matrix and their setup questions are skipped.",
+      "use_cases_continue": "Continue",
+      "use_cases_enabled_count": "{count} of {total} enabled",
+      "use_cases_none_selected": "Enable at least one capability to continue",
+      "use_case_enabled_badge": "On",
+      "use_case_disabled_badge": "Off"
     },
     "scan": {
       "scanning_draft": "Scanning persona draft...",
@@ -6138,7 +6145,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "Renaming...",
       "show_sidebar": "Show sidebar",
-      "source": "Source",
+      "source": "Type",
       "source_personas": "Source personas",
       "use_template": "Use template"
     },

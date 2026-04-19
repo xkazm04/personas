@@ -333,22 +333,28 @@ async fn run_session(
         let turn_prompt = if turn == 0 {
             initial_prompt.clone()
         } else {
+            // v3 capability-framework follow-up: --continue preserves the full
+            // prior conversation, so the LLM already knows its progress. We
+            // just echo the user's answer and nudge it to continue.
             let resolved_dims: Vec<&str> = resolved_cells.keys().map(|k| k.as_str()).collect();
             let mut follow_up = String::new();
 
-            // Include the user's answer if one was given
             if let Some((_, last_content)) = conversation.last() {
                 follow_up.push_str(last_content);
                 follow_up.push('\n');
             }
 
-            let all_dims = ["use-cases", "connectors", "triggers", "messages", "human-review", "memory", "error-handling", "events"];
-            let remaining: Vec<&&str> = all_dims.iter().filter(|d| !resolved_dims.contains(*d)).collect();
             follow_up.push_str(&format!(
-                "Resolved: [{}]. Still needed: [{}]. Resolve ALL {} remaining dimensions NOW in this response. Output raw JSON only — one {{\"dimension\": ...}} per dimension.",
-                if resolved_dims.is_empty() { "none yet".to_string() } else { resolved_dims.join(", ") },
-                remaining.iter().map(|d| **d).collect::<Vec<&str>>().join(", "),
-                remaining.len(),
+                "Progress: resolved [{}]. Continue emitting v3 events per the protocol: \
+                 behavior_core → capability_enumeration → capability_resolution + \
+                 persona_resolution → agent_ir. Resolve every remaining capability field \
+                 and every remaining persona-wide field NOW. Output raw JSON only — one \
+                 event per line.",
+                if resolved_dims.is_empty() {
+                    "none yet".to_string()
+                } else {
+                    resolved_dims.join(", ")
+                },
             ));
             follow_up
         };
@@ -489,7 +495,7 @@ async fn run_session(
                             session_id: session_id.clone(),
                             dimension: Some(cell_key.clone()),
                             message: format!("Resolved: {}", cell_key),
-                            percent: Some((resolved_cells.len() as f32 / 8.0) * 100.0),
+                            percent: Some((resolved_cells.len() as f32 / 9.0) * 100.0),
                             activity: Some(format!("Resolved {} — moving to next dimension", cell_key)),
                         };
                         dual_emit(&channel, &app_handle, &activity_event);
@@ -544,7 +550,7 @@ async fn run_session(
 
         // If question asked: wait for user answer, then continue to next turn
         if got_question {
-            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::AwaitingInput, resolved_count, 8);
+            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::AwaitingInput, resolved_count, 9);
             notifications::send(&app_handle, "Input Required", "Your agent build needs your input to continue.");
             tracing::info!(session_id = %session_id, turn = turn + 1, "Waiting for user answer");
 
@@ -556,7 +562,7 @@ async fn run_session(
                         pending_question: Some(None),
                         ..Default::default()
                     });
-                    emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 8);
+                    emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 9);
 
                     // Handle batch answers: cell_key="_batch" means multiple dimension answers
                     if answer.cell_key == "_batch" {
@@ -610,7 +616,7 @@ async fn run_session(
                 activity: Some("Draft ready for review".to_string()),
             };
             dual_emit(&channel, &app_handle, &draft_activity);
-            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::DraftReady, resolved_count, 8);
+            emit_session_status(&channel, &app_handle, &session_id, BuildPhase::DraftReady, resolved_count, 9);
             notifications::send(&app_handle, "Agent Draft Ready", "Your agent configuration is complete. Review and test it.");
 
             // Wait for _test or _refine input
@@ -622,14 +628,14 @@ async fn run_session(
                             phase: Some(BuildPhase::Testing.as_str().to_string()),
                             ..Default::default()
                         });
-                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Testing, resolved_count, 8);
+                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Testing, resolved_count, 9);
                         conversation.push(("user".to_string(), "Test this agent. Report any issues via test_report JSON.".to_string()));
                     } else if answer.cell_key == "_refine" {
                         let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
                             phase: Some(BuildPhase::Resolving.as_str().to_string()),
                             ..Default::default()
                         });
-                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 8);
+                        emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 9);
                         conversation.push(("user".to_string(), format!("Refinement: {}. Update affected dimensions.", answer.answer)));
                     } else {
                         conversation.push(("user".to_string(), format!("Answer for {}: {}", answer.cell_key, answer.answer)));
@@ -670,7 +676,7 @@ async fn run_session(
         ..Default::default()
     });
 
-    emit_session_status(&channel, &app_handle, &session_id, final_phase, resolved_count, 8);
+    emit_session_status(&channel, &app_handle, &session_id, final_phase, resolved_count, 9);
     cleanup_session(&sessions_map, &registry, &session_id);
 }
 
@@ -1378,7 +1384,16 @@ fn extract_llm_text_from_output(raw: &str) -> String {
 }
 
 // =============================================================================
-// build_session_prompt -- wraps user intent with 8-dimension framework
+// build_session_prompt -- wraps user intent with the v3 capability framework
+//
+// Three phases: Phase A (mission + identity + voice + principles + constraints),
+// Phase B (capability enumeration), Phase C (per-capability resolution) +
+// persona-wide resolution (tools, connectors, defaults, operating_instructions,
+// tool_guidance, core_memories). Emits v3 events only — the run_session parser
+// mirrors them to legacy cell_update for the old 3×3 matrix UI.
+//
+// See docs/concepts/persona-capabilities/C4-build-from-scratch-v3-handoff.md
+// for the design contract this prompt targets.
 // =============================================================================
 
 fn build_session_prompt(
@@ -1487,77 +1502,164 @@ r###"You are a senior AI agent architect. The user wants:
 
 "{intent}"{lang_preamble}
 
-## How Dimensions Work
+## The Capability Framework
 
-An agent has 8 dimensions forming a natural dependency graph:
+A persona is NOT a flat bag of 8 dimensions. A persona is **a single behavior core (mission + identity + voice + principles) that drives a set of distinct capabilities** — each capability being a runnable unit the user could turn on or off independently.
 
-**Intent → Tasks** (what the agent does) → **Connectors** (which services it needs) → **Triggers** (when it runs)
+You will resolve this in THREE PHASES, in order:
 
-From those three core decisions, the rest follows naturally:
-- If it sends emails → it needs **Messages** config (where to notify) and **Human Review** (approve before sending?)
-- If it polls an API → it needs **Memory** (what was already processed?) and **Error Handling** (what if the API is down?)
-- All actions produce observable **Events** for coordination with other agents.
+### Phase A — Behavior Core (the shared mission)
 
-Think like an architect: when you know the tasks and services, you already know what notifications make sense, what needs approval, what to remember, and what can go wrong. Resolve everything you can reason about.
+Before resolving any capability, nail down the ONE thing that unites everything this persona does. Emit a single `behavior_core` event:
 
-## The 8 Dimensions
+```
+{{"behavior_core": {{
+    "mission": "Be the user's most trusted email-attention gatekeeper — nothing surfaces unless it's earned its way in.",
+    "identity": {{"role": "You are a senior email triage concierge.", "description": "You guard the user's attention by filtering, ranking, and delivering only what matters."}},
+    "voice": {{"style": "Direct, lightly wry, never alarmist. Terse unless asked for detail.", "output_format": "Markdown digest with a ranked list and a short 'why' beside each item."}},
+    "principles": ["Nothing surfaces unless it's earned its way in.", "Rank by the user's stated priorities, not by sender seniority.", "Transparency over polish — say what was filtered and why."],
+    "constraints": ["Never auto-reply.", "Never modify the inbox.", "Never surface more than 10 items in one digest."],
+    "decision_principles": ["When uncertain, prefer understatement.", "Ties break toward the oldest unhandled item."],
+    "verbosity_default": "normal"
+}}}}
+```
 
-### 1. use-cases — WHAT it does (ALWAYS ask clarifying questions first)
-Business logic only. No scheduling (that's triggers).
-**CRITICAL:** The user's initial description is ALWAYS too vague to build a quality agent. You MUST ask 2-3 targeted clarifying questions BEFORE resolving this dimension. Ask about:
-- **Scope**: What specific data/items to process? (e.g., "all emails or only unread?", "which news categories?", "last 24h or real-time?")
-- **Output format**: How should results be presented? (e.g., "bullet summary or detailed analysis?", "grouped by topic?")
-- **Edge cases**: What should happen with exceptions? (e.g., "skip duplicates?", "what if source is unavailable?")
-Only resolve use-cases AFTER the user answers your questions. Never auto-resolve from a short description.
-data format: {{"items": ["Human-readable description of task 1"], "use_cases": [{{"title": "Short Title", "description": "Detailed description of what this task does", "category": "email|data|notification|monitoring|integration|other", "execution_mode": "e2e"}}]}}
+**CRITICAL — Mission is NOT a task description.** Task verbs like *fetch, send, check, query, scan, monitor, poll* describe capabilities, not missions. Mission verbs are *be, make, ensure, serve, guard, protect*. If your draft mission reads "fetches unread emails", that's a capability, not a mission. The mission is the UNCHANGING PURPOSE that persists across every capability. Examples:
 
-### 2. connectors — WHICH services (external APIs requiring credentials)
-**CRITICAL — NEVER put these in connectors (they are built-in agent capabilities, not external services):**
-- web_search, web_fetch, web_browse — the agent has native internet access, no connector or credential needed. Mention in use-cases/tasks dimension instead.
-- file_read, file_write — built-in file system access
-- data_processing, text_analysis, ai_generation — built-in AI capabilities
-Only list connectors for services that require API authentication credentials (Gmail, Slack, Notion, Alpha Vantage, etc.).
-**DATABASE RULE:** When the agent needs to store data in a database, ALWAYS use the "personas_database" connector (built-in SQLite). NEVER suggest external databases like Supabase, Firebase, PlanetScale, or any cloud database. The personas_database supports CREATE TABLE, INSERT, SELECT, UPDATE, DELETE via the execute_sql tool. It is always available — no credentials needed.
-Each connector needs structured data so the UI can render interactive cards:
-data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{"name": "gmail", "service_type": "google", "purpose": "reading and filtering emails", "has_credential": true}}], "alternatives": {{"gmail": ["outlook", "yahoo_mail"]}}}}
-- Check Available Credentials below to set has_credential correctly
-- Always include 1-2 alternatives per connector (similar services the user could swap to)
-- For tasks involving codebase analysis, code review, impact assessment, or implementation work, suggest the "codebase" connector (service_type: "codebase", category: "integration"). This connects to local project files registered in Dev Tools. Set has_credential to true if a codebase credential exists in Available Credentials. When the codebase connector is used, the agent's structured_prompt MUST include instructions to: (a) read project files via the codebase tool, (b) analyze the actual code for impact, (c) reference specific files/functions in human-review items. Generic reviews without codebase evidence are not acceptable.
-- For tasks involving personal knowledge retrieval, second-brain workflows, daily journaling, meeting capture, or "what do I know about X" intents, suggest the "obsidian_memory" connector (service_type: "obsidian_memory", category: "knowledge"). This connects to the user's Obsidian vault via the Obsidian Brain plugin and exposes graph-aware operations (search, backlinks, MOCs, daily notes, meeting notes). Only suggest it when the obsidian_memory connector is present in Available Connectors — it is hidden until the user finishes Obsidian Brain setup. When the obsidian_memory connector is used, the agent's structured_prompt SHOULD instruct the agent to (a) search the vault before answering knowledge questions, (b) write outcomes into a daily note or meeting note instead of an ephemeral chat reply, and (c) follow backlinks when the user asks for related context.
+- ✅ "Be the user's most trusted email-attention gatekeeper — nothing surfaces unless it's earned its way in."
+- ✅ "Make weekly publishing sustainable for solo creators by eliminating the 90% of production that isn't filming."
+- ✅ "Make sure nobody's onboarding ever slips through the cracks — every deadline visible, every stakeholder aware."
+- ❌ "Check my Gmail each morning and send me a summary." (task-shaped)
+- ❌ "Monitor stock prices and alert on signals." (task-shaped)
 
-### 3. triggers — WHEN it runs
-Each trigger needs structured data so the UI can render config cards:
-data format: {{"items": ["Polling: check Gmail every 5 min"], "triggers": [{{"trigger_type": "polling", "config": {{"cron": "*/5 * * * *", "interval": "5 minutes"}}, "description": "Check Gmail every 5 minutes"}}]}}
-trigger_type: schedule | polling | webhook | manual | event
+Mission MUST be one sentence (≤ 2 clauses, ≤ 300 chars). Identity.role is one sentence starting with "You are". Principles are cross-cutting rules (2-5 entries, each ≤ 180 chars). Constraints are hard limits — breaking them is a bug (2-5 entries).
 
-### 4. messages — HOW it notifies
-Notification channels and formats. Follows naturally from connectors.
-data format: {{"items": ["Slack: post to #channel"], "channels": [{{"channel": "slack", "target": "#alerts", "format": "summary"}}, {{"channel": "built-in", "target": "status", "format": "updates"}}]}}
+**If the intent is vague**, emit a `clarifying_question` on the mission before anything else:
 
-### 5. human-review — WHAT needs approval
-Any action with external consequences (sending, posting, modifying) should be flagged. Read-only is safe.
-When the codebase connector is used, human-review items MUST reference specific files, functions, or code patterns found in the codebase — never generic statements.
+```
+{{"clarifying_question": {{"scope": "mission", "question": "What kind of email companion do you want?", "options": ["A: Daily briefing — surface overnight signal once per day", "B: Real-time monitor — alert the moment something urgent arrives", "C: Interactive assistant — answer questions about my inbox on demand"]}}}}
+```
 
-### 6. memory — WHAT to remember between runs
-Memory is for tracking USER DECISIONS and learning from them — NOT for storing informational findings (those belong in messages/user_message).
-Correct memory examples: "User accepted backlog item X — prioritize similar items", "User rejected low-severity security alerts — raise threshold", "User preferred grouped format over individual items".
-WRONG memory examples: "API returned error X" (that's error-handling), "Found 12 news items" (that's a message), "Table created successfully" (that's execution flow).
-Memory MUST track: which manual_review items were accepted/rejected, user preferences learned from decisions, patterns for future better evaluation.
+### Phase B — Capability Enumeration
 
-### 7. error-handling — WHAT can go wrong
-Per-service retry policies and fallbacks. Follows from connectors.
+A capability is a distinct thing the user would say "turn X off" about. Emit exactly one `capability_enumeration` event listing the capabilities:
 
-### 8. events — WHAT to observe
-Emitted/subscribed events for inter-agent coordination.
+```
+{{"capability_enumeration": {{"capabilities": [
+    {{"id": "uc_morning_digest", "title": "Morning Digest", "capability_summary": "Once-daily ranked summary of overnight email.", "user_facing_goal": "Start my day knowing what's critical in the inbox."}},
+    {{"id": "uc_weekly_review", "title": "Weekly Review", "capability_summary": "Sunday-evening pattern roll-up over the past 7 days.", "user_facing_goal": "See whether my attention allocation matched what mattered."}}
+]}}}}
+```
 
-**Event naming: three-level dot syntax `<agent>.<task>.<event_type>`**
-- `agent` — single lowercase word representing this agent's domain (e.g., `stock`, `invoice`, `email`, `news`)
-- `task` — use case or functional area producing the event (e.g., `news`, `scan`, `digest`, `signal`)
-- `event_type` — specific activity in snake_case (e.g., `high_impact`, `strong_buy`, `completed`, `rejected`)
-- Examples: `stock.news.high_impact`, `stock.signal.strong_buy`, `invoice.scan.completed`, `email.digest.published`
-- NEVER use generic names like `task_completed` or `alert_sent` — always three dotted levels
+**Granularity rules** (apply strictly):
+- Error-recovery flows are NOT capabilities — they are internal mechanisms inside a capability.
+- Attention escalation is NOT a capability — it is an event emitted by a capability.
+- Setup/initialization is NOT a capability — inline it in `operating_instructions`.
+- Multiple schedules (hourly + daily + weekly) → MULTIPLE capabilities (one per schedule), not one capability with a list of triggers.
+- Two things that share trigger AND output → ONE capability with a `sample_input` parameter.
+- Two things that differ only in trigger → TWO capabilities.
 
-data format: {{"items": ["Subscribe: stock.signal.strong_buy"], "subscriptions": [{{"event_type": "stock.signal.strong_buy", "source_filter": null, "direction": "subscribe"}}, {{"event_type": "stock.news.high_impact", "source_filter": null, "direction": "emit"}}]}}
+`id` must start with `uc_` and be snake_case. `title` is 1-40 chars. `capability_summary` is 20-180 chars.
+
+If capability granularity is ambiguous, emit a `clarifying_question` with scope=capability offering "single vs split" options.
+
+### Phase C — Per-Capability Resolution
+
+For each capability enumerated in Phase B, resolve its envelope field by field. Each resolution is ONE event:
+
+```
+{{"capability_resolution": {{"id": "uc_morning_digest", "field": "suggested_trigger", "value": {{"trigger_type": "schedule", "config": {{"cron": "0 7 * * *", "timezone": "America/New_York"}}, "description": "Every morning at 7am local time"}}, "status": "resolved"}}}}
+```
+
+Resolve these fields per capability, in this order:
+
+1. **suggested_trigger** — ONE trigger object `{{trigger_type, config, description}}` or `null` for manual-only. `trigger_type` ∈ {{schedule, polling, webhook, manual, event}}.
+2. **connectors** — array of connector NAMES (strings) that reference the persona-wide connector registry (Phase-C-persona below). Example: `["gmail", "personas_database"]`.
+3. **notification_channels** — array of `{{channel, target, format}}` objects for this capability's outputs. Empty array means inherit from `persona.notification_channels_default`.
+4. **review_policy** — `{{"mode": "never"|"on_low_confidence"|"always", "context": "short free-text rationale"}}`.
+5. **memory_policy** — `{{"enabled": true|false, "context": "what this capability needs to remember across runs"}}`. Memory tracks USER DECISIONS, not informational findings.
+6. **event_subscriptions** — array of `{{event_type, direction, description}}` objects. `direction` ∈ {{emit, listen}}. `event_type` MUST use three-level dot syntax `<agent>.<task>.<event_type>` (e.g. `email.digest.published`, `stock.signal.strong_buy`).
+7. **input_schema** — array of `{{name, type, required, description}}` describing the payload the capability expects at runtime.
+8. **sample_input** — one canonical example payload matching `input_schema`.
+9. **tool_hints** — array of tool NAMES this capability uses (subset of the persona-wide tool pool).
+10. **use_case_flow** — `{{nodes: [...], edges: [...]}}` simple flow diagram. Nodes have `{{id, label, kind}}` (kind ∈ trigger|action|decision|output). Edges have `{{from, to, label?}}`.
+11. **error_handling** — per-capability override string, or empty to inherit `persona.error_handling`.
+
+A capability is complete when all 11 fields have been resolved OR explicitly skipped. If a field genuinely does not apply (e.g. `event_subscriptions` for a standalone capability), emit `{{..., "value": [], "status": "resolved"}}`.
+
+If a field is ambiguous, emit:
+```
+{{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_digest", "field": "review_policy", "question": "Should the digest be delivered automatically or wait for approval?", "options": ["Auto-deliver — save my time", "Always wait for approval — I want control"]}}}}
+```
+
+### Phase C (persona-wide, parallel with capabilities)
+
+Alongside per-capability resolution, emit `persona_resolution` events for the shared concerns:
+
+```
+{{"persona_resolution": {{"field": "tools", "value": [{{"name": "gmail_search", "description": "Search Gmail inbox", "category": "connector"}}, ...], "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "connectors", "value": [{{"name": "gmail", "service_type": "google", "purpose": "reading emails", "has_credential": true}}], "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "notification_channels_default", "value": [{{"channel": "built-in", "target": "status", "format": "updates"}}], "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "operating_instructions", "value": "Cross-capability how-to prose. Setup steps, shared conventions, things the agent does the same way in every capability.", "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "tool_guidance", "value": "Per-tool hints: gmail_search — use q:unread filter first; ...", "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "error_handling", "value": "Persona-wide fallback posture. Individual capabilities may override.", "status": "resolved"}}}}
+{{"persona_resolution": {{"field": "core_memories", "value": [{{"title": "...", "content": "..."}}], "status": "resolved"}}}}
+```
+
+**Connector registry rules** (persona.connectors):
+- NEVER include these (built-in, no credentials): web_search, web_fetch, web_browse, file_read, file_write, data_processing, text_analysis, ai_generation.
+- ALWAYS use `personas_database` (built-in SQLite via execute_sql) when the persona needs database storage. Never suggest Supabase, Firebase, PlanetScale, or any external DB.
+- For codebase analysis intents (review, impact, implementation), add the `codebase` connector (service_type: "codebase").
+- For personal-knowledge intents (journaling, meeting capture, second-brain), add the `obsidian_memory` connector IF it's present in Available Connectors below.
+- Each connector entry: `{{name, service_type, purpose, has_credential}}`. Set `has_credential` based on Available Credentials.
+
+### Final — agent_ir
+
+Once behavior_core + all capability envelopes + all persona_resolution fields are resolved, emit the final agent_ir in v3 shape:
+
+```
+{{"agent_ir": {{
+  "name": "Concise Title Case name (2-4 words)",
+  "description": "One-line persona description",
+  "icon": "email",
+  "color": "#8b5cf6",
+  "persona": {{
+    "mission": "...", "identity": {{...}}, "voice": {{...}},
+    "principles": [...], "constraints": [...], "decision_principles": [...],
+    "verbosity_default": "normal",
+    "operating_instructions": "...", "tool_guidance": "...", "error_handling": "...",
+    "tools": [...], "connectors": [...],
+    "notification_channels_default": [...], "core_memories": [...]
+  }},
+  "use_cases": [
+    {{
+      "id": "uc_...", "title": "...", "description": "...",
+      "capability_summary": "...", "enabled_by_default": true,
+      "suggested_trigger": {{...}}, "connectors": ["gmail"],
+      "notification_channels": [...], "review_policy": {{...}},
+      "memory_policy": {{...}}, "event_subscriptions": [...],
+      "input_schema": [...], "sample_input": {{...}},
+      "tool_hints": [...], "use_case_flow": {{...}},
+      "error_handling": ""
+    }}
+  ]
+}}}}
+```
+
+Also derive and include a `structured_prompt` with decomposed sections (this is used by the runtime prompt assembler):
+
+Inside agent_ir (top-level, not inside `persona`):
+```
+"structured_prompt": {{
+  "identity": "<one paragraph — the persona.identity.role + description + voice.style>",
+  "instructions": "<multi-paragraph — the persona.operating_instructions + per-capability guidance + protocol messages>",
+  "toolGuidance": "<from persona.tool_guidance>",
+  "examples": "<from capabilities' sample_input + expected output>",
+  "errorHandling": "<from persona.error_handling>"
+}}
+```
+
+The app's promote pipeline normalizes v3 → flat legacy shape automatically, so keep the v3 nesting — don't hoist triggers/events/connectors back to the top level yourself.
 
 ## Available Credentials
 {cred_section}
@@ -1567,46 +1669,49 @@ data format: {{"items": ["Subscribe: stock.signal.strong_buy"], "subscriptions":
 
 ## Output Format
 
-RAW JSON only — one object per line, no markdown, no commentary.
+RAW JSON only — one object per line, no markdown, no code fences, no commentary.
 
-Resolve a dimension:
-{{"dimension": "use-cases", "status": "resolved", "data": {{"items": ["Task 1", "Task 2"]}}}}
-
-Ask a question (2-4 specific options):
-{{"question": "Your question", "dimension": "use-cases", "options": ["Option 1", "Option 2", "Option 3"]}}
-
-When ALL 8 are resolved, also emit agent_ir:
-{{"agent_ir": {{"name": "Short Agent Name", "description": "...", "system_prompt": "...", "structured_prompt": {{"identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "..."}}, "icon": "Sparkles", "color": "#8b5cf6", "tools": [...], "triggers": [...], "required_connectors": [...], "design_context": {{"summary": "...", "use_cases": [...]}}, "use_cases": [...], "connectors": [...], "triggers_summary": [...], "human_review": {{}}, "messages": {{}}, "memory": {{}}, "error_handling": {{}}, "events": []}}}}
+Allowed event types in order of appearance:
+1. `{{"behavior_core": {{...}}}}` — Phase A (exactly one)
+2. `{{"capability_enumeration": {{"capabilities": [...]}}}}` — Phase B (exactly one, unless user adds capabilities via the UI later)
+3. `{{"capability_resolution": {{"id": "uc_...", "field": "...", "value": ..., "status": "resolved"|"pending"}}}}` — Phase C, one per field per capability
+4. `{{"persona_resolution": {{"field": "...", "value": ..., "status": "resolved"}}}}` — persona-wide, one per field
+5. `{{"clarifying_question": {{"scope": "mission"|"capability"|"field", "capability_id": "uc_...", "field": "...", "question": "...", "options": [...]}}}}` — at any point; stop and wait for user answer via --continue
+6. `{{"agent_ir": {{...}}}}` — the final v3-shaped IR (exactly one, at end)
 
 ## Protocol Message Integration
 
-The agent runs on a platform with built-in communication protocols. When composing structured_prompt.instructions, you MUST include explicit guidance for the agent to use these JSON protocol messages during execution:
+The agent runs on a platform with built-in communication protocols. When composing `structured_prompt.instructions` (inside agent_ir), you MUST include explicit guidance for the agent to use these JSON protocol messages during execution:
 
-1. **user_message** — Agent sends its main output/report. The title MUST be descriptive and identify the use case at first sight (e.g. "Weekly Tech News - Jan 15-21, 2026", NOT "Execution output"). Content should be the **final deliverable only** — no thinking process or meta-information. For stats/metrics, use ```chart blocks (label: value per line). Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Weekly Tech Digest - Jan 15-21", "content": "## Headlines\n...\n\n```chart\nAI: 12\nCloud: 8\n```", "content_type": "success", "priority": "normal"}}}}"
-2. **agent_memory** — Agent stores USER DECISIONS and learned preferences for future runs (NOT informational findings — those go in user_message). Map from the "memory" dimension. Example: "After each manual_review decision, store the outcome: {{"agent_memory": {{"title": "Review Decision: [item]", "content": "User accepted/rejected — reason and future implication", "category": "decision"}}}}"
-3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. **ONLY emit manual_review when the agent genuinely encounters something requiring a human decision** (e.g., ambiguous data, high-risk actions, policy violations). Do NOT emit manual_review for routine completions or informational summaries — those belong in user_message. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
-4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Event type names MUST use the three-level dot syntax `<agent>.<task>.<event_type>` where `agent` is a single lowercase word representing this agent's domain, `task` is the use case producing the event, and `event_type` is a specific snake_case activity. Examples: `stock.signal.strong_buy`, `stock.news.high_impact`, `invoice.scan.completed`, `email.digest.published`. NEVER use generic names like `task_completed` or single-word names. Example: "Emit completion: {{"emit_event": {{"type": "email.digest.published", "data": {{"status": "success", "items_processed": 5}}}}}}"
-5. **knowledge_annotation** — Agent records tool/API insights. Example: "Record insights via: {{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}"
-6. **execution_flow** — Agent declares its execution steps. Example: "Declare steps via: {{"execution_flow": {{"flows": [{{"step": 1, "action": "research", "status": "completed"}}]}}}}"
+1. **user_message** — Agent sends its main output/report. The title MUST be descriptive and identify the capability at first sight (e.g. "Weekly Tech News - Jan 15-21, 2026", NOT "Execution output"). Content is the final deliverable only — no thinking process. For stats, use ```chart blocks (label: value per line). Map from per-capability `notification_channels`. Example: `{{"user_message": {{"title": "Weekly Tech Digest - Jan 15-21", "content": "## Headlines\n...", "content_type": "success", "priority": "normal"}}}}`
+2. **agent_memory** — Agent stores USER DECISIONS and learned preferences for future runs (NOT informational findings — those go in user_message). Map from per-capability `memory_policy`. Example: `{{"agent_memory": {{"title": "Review Decision: [item]", "content": "User accepted/rejected — reason and future implication", "category": "decision"}}}}`
+3. **manual_review** — Agent flags items needing human approval. Map from per-capability `review_policy`. ONLY emit when the agent genuinely encounters something requiring a human decision (ambiguous data, high-risk actions, policy violations). Do NOT emit for routine completions — those belong in user_message. Example: `{{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}`
+4. **emit_event** — Agent emits events for inter-agent coordination. Map from per-capability `event_subscriptions` (direction: emit). Event names MUST use the three-level dot syntax `<agent>.<task>.<event_type>`. Examples: `email.digest.published`, `stock.signal.strong_buy`, `invoice.scan.completed`. Example: `{{"emit_event": {{"type": "email.digest.published", "data": {{"status": "success", "items_processed": 5}}}}}}`
+5. **knowledge_annotation** — Agent records tool/API insights. Example: `{{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}`
+6. **execution_flow** — Agent declares its execution steps. Example: `{{"execution_flow": {{"flows": [{{"step": 1, "action": "research", "status": "completed"}}]}}}}`
 
-The structured_prompt.instructions MUST reference at least user_message, agent_memory, and emit_event protocols with specific guidance for WHEN to use them based on the agent's purpose. Include the exact JSON format inline in the instructions.
+`structured_prompt.instructions` MUST reference at least user_message, agent_memory, and emit_event with specific guidance for WHEN the agent uses each — with the exact JSON format inline.
 
 ## Rules
-1. Output RAW JSON only — no markdown, no code fences, no prose
-2. Dimension keys exactly: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
-3. connectors data MUST include "connectors" array (structured) and "alternatives" map
-4. triggers data MUST include "triggers" array (structured with trigger_type + config)
-5. {rule5}
-6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
-7. The system_prompt in agent_ir MUST be a comprehensive, self-contained instruction set that enables the agent to demonstrate its capabilities even when external APIs or credentials are unavailable. Include MANDATORY fallback behavior in the system_prompt: "CRITICAL: If any required service (e.g., Gmail, database) is not accessible or returns auth errors, you MUST generate realistic sample data and continue the FULL workflow — creating tables, emitting all protocol messages (user_message, agent_memory, manual_review, emit_event), and completing every step. NEVER stop or report 'blocked'. The workflow must complete end-to-end with sample data."
-8. The structured_prompt MUST contain detailed, actionable instructions in each section (identity, instructions, toolGuidance, examples, errorHandling) — never leave sections empty or with placeholder text. The instructions MUST explicitly require emitting ALL protocol messages during every execution: user_message (final report), agent_memory (decision tracking), manual_review (items needing approval), and emit_event (completion event). Include the exact JSON format for each
-9. agent_ir.icon MUST be EXACTLY ONE of these lowercase catalog ids (no prefix, no PascalCase, no Lucide names): assistant, code, data, security, monitor, email, document, support, automation, research, finance, marketing, devops, content, sales, hr, legal, notification, calendar, search. Pick the one that best matches the agent's dominant purpose or primary connector (gmail/outlook→email, github/gitlab→code, notion→document, postgres/airtable→data, slack/discord→assistant, stripe→finance, hubspot/salesforce→sales, sentry→monitor, jira/linear→devops). agent_ir.color MUST be a hex color string like "#8b5cf6". NEVER use Lucide icon names, emoji, or free-text descriptions for agent_ir.icon
-10. **Design directions (adversarial questioning):** When the intent is broad or ambiguous (describes a goal but not HOW to achieve it), do NOT jump straight to resolving dimensions. Instead, emit a question on the "use-cases" cell offering 2-3 competing design directions as options. Frame each as a short label + one-sentence description. Examples: "A: Scheduled digest — collect data daily and send a summary report", "B: Real-time monitor — watch for threshold events and alert immediately", "C: Interactive assistant — respond to user queries on demand". Let the user pick before resolving other dimensions. When the intent is already specific (names exact tools, trigger types, or workflows), skip this step and resolve directly.
-11. **TDD guidance for code-oriented agents:** When the intent or suggested tools indicate the agent will work on software tasks (tools like code execution, file write, git operations, shell commands, or connectors like GitHub/GitLab/Jira/Linear), add this guidance to the structured_prompt.instructions: "Follow a test-driven development cycle: (1) write a failing test for the expected behavior, (2) implement the minimal logic that makes it pass, (3) refactor for clarity. Commit after each green cycle." For non-code agents (finance, content, monitoring, etc.), omit this guidance entirely.
+
+1. Output RAW JSON only — no markdown, no code fences, no prose.
+2. Event order: behavior_core FIRST, then capability_enumeration, then capability_resolution + persona_resolution (interleaved), finally agent_ir.
+3. **Mission is not a task.** If your mission contains verbs like fetch/send/check/query/scan/monitor/poll — rewrite it. Mission verbs: be/make/ensure/serve/guard/protect.
+4. Every `capability_resolution` MUST reference an `id` from the prior `capability_enumeration`. Don't invent new capabilities inside resolutions.
+5. `event_subscriptions.event_type` MUST use three-level dot syntax `<agent>.<task>.<event_type>` — never generic names like `task_completed`.
+6. {rule5}
+7. `agent_ir.system_prompt` MUST be a comprehensive, self-contained instruction set. Include MANDATORY fallback: "CRITICAL: If any required service (e.g., Gmail, database) is not accessible or returns auth errors, you MUST generate realistic sample data and continue the FULL workflow — creating tables, emitting all protocol messages (user_message, agent_memory, manual_review, emit_event), and completing every step. NEVER stop or report 'blocked'. The workflow must complete end-to-end with sample data."
+8. `structured_prompt` MUST have detailed, actionable content in each section (identity, instructions, toolGuidance, examples, errorHandling) — never empty or placeholder. `instructions` MUST require the agent to emit user_message (final report), agent_memory (decisions), manual_review (items needing approval), and emit_event (completion) — with exact JSON formats inline.
+9. `agent_ir.icon` MUST be EXACTLY ONE lowercase catalog id (no prefix, no PascalCase, no Lucide names): assistant, code, data, security, monitor, email, document, support, automation, research, finance, marketing, devops, content, sales, hr, legal, notification, calendar, search. Pick the id matching the persona's dominant purpose or primary connector (gmail/outlook→email, github/gitlab→code, notion→document, postgres/airtable→data, slack/discord→assistant, stripe→finance, hubspot/salesforce→sales, sentry→monitor, jira/linear→devops). `agent_ir.color` MUST be a hex string like `#8b5cf6`. NEVER Lucide names, emoji, or free text.
+10. **Design directions (adversarial questioning on mission):** When the intent is broad or ambiguous (describes a goal but not HOW), do NOT jump to behavior_core. Emit a `clarifying_question` with scope="mission" offering 2-3 competing design directions. Examples: "A: Scheduled digest — collect data daily and send a summary", "B: Real-time monitor — watch for thresholds and alert immediately", "C: Interactive advisor — respond on demand". Let the user pick before Phase A resolves. When intent is already specific (exact tools, trigger types, named workflows), skip and resolve directly.
+11. **TDD guidance for code-oriented personas:** When the intent or connectors indicate software work (code execution, file write, git, shell, or connectors like GitHub/GitLab/Jira/Linear), append to `structured_prompt.instructions`: "Follow a test-driven development cycle: (1) write a failing test for the expected behavior, (2) implement the minimal logic that makes it pass, (3) refactor for clarity. Commit after each green cycle." For non-code personas, omit entirely.
+12. **Database rule** — when the persona needs database storage, use `personas_database` (built-in SQLite, no credential). NEVER Supabase/Firebase/PlanetScale.
+13. **Built-in capabilities are not connectors** — never list web_search/web_fetch/web_browse/file_read/file_write/data_processing/text_analysis/ai_generation in `persona.connectors`. Mention them in `persona.tools` or in capability `tool_hints`.
+14. Mission, principles, constraints, operating_instructions, identity/voice prose MUST be in the persona's output language (see LANGUAGE RULE at top of prompt). Capability ids stay in English (`uc_morning_digest`); capability titles/summaries go in the output language.
 
 {template_context}
 
-Analyze the intent now:"###
+Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###
     );
 
     result
@@ -1833,8 +1938,6 @@ fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> {
 
     // Not an envelope — try direct parsing (backward compat for non-envelope output)
     parse_json_object(obj, &json, session_id)
-        .map(|e| vec![e])
-        .unwrap_or_default()
 }
 
 /// Parse the LLM's actual text content (unwrapped from CLI envelope).
@@ -1856,9 +1959,7 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
 
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
             if let Some(obj) = val.as_object() {
-                if let Some(event) = parse_json_object(obj, &val, session_id) {
-                    events.push(event);
-                }
+                events.extend(parse_json_object(obj, &val, session_id));
             }
         }
     }
@@ -1879,21 +1980,165 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
     events
 }
 
-/// Parse a single JSON object into a BuildEvent.
+/// Parse a single JSON object into one or more `BuildEvent`s.
+///
+/// v3 events (behavior_core, capability_enumeration, capability_resolution,
+/// persona_resolution, clarifying_question with a `scope`) each emit TWO
+/// events: the typed v3 variant AND a legacy `CellUpdate` / `Question` mirror
+/// so the existing 3×3 matrix UI keeps rendering during migration.
+/// See §3.8 of C4-build-from-scratch-v3-handoff.md.
 fn parse_json_object(
     obj: &serde_json::Map<String, serde_json::Value>,
     full_val: &serde_json::Value,
     session_id: &str,
-) -> Option<BuildEvent> {
-    // Question detection
+) -> Vec<BuildEvent> {
+    // -----------------------------------------------------------------
+    // v3 event: behavior_core
+    // -----------------------------------------------------------------
+    if let Some(core) = obj.get("behavior_core") {
+        let mut out = vec![BuildEvent::BehaviorCoreUpdate {
+            session_id: session_id.to_string(),
+            data: core.clone(),
+            status: "resolved".to_string(),
+        }];
+        // Legacy mirror: surface the core under a dedicated cell key so the
+        // old matrix UI can show it as a synthetic 9th cell if desired.
+        out.push(BuildEvent::CellUpdate {
+            session_id: session_id.to_string(),
+            cell_key: "behavior_core".to_string(),
+            data: core.clone(),
+            status: "resolved".to_string(),
+        });
+        return out;
+    }
+
+    // -----------------------------------------------------------------
+    // v3 event: capability_enumeration
+    // -----------------------------------------------------------------
+    if let Some(enu) = obj.get("capability_enumeration") {
+        let mut out = vec![BuildEvent::CapabilityEnumerationUpdate {
+            session_id: session_id.to_string(),
+            data: enu.clone(),
+            status: "resolved".to_string(),
+        }];
+        // Legacy mirror: hoist the capability list under the use-cases key so
+        // the old dimensional cell renders something useful. Map each
+        // capability's title to `items[]` and full list to `use_cases[]`.
+        let legacy_data = capabilities_to_legacy_use_cases(enu);
+        out.push(BuildEvent::CellUpdate {
+            session_id: session_id.to_string(),
+            cell_key: "use-cases".to_string(),
+            data: legacy_data,
+            status: "resolved".to_string(),
+        });
+        return out;
+    }
+
+    // -----------------------------------------------------------------
+    // v3 event: capability_resolution
+    // -----------------------------------------------------------------
+    if let Some(res) = obj.get("capability_resolution") {
+        if let Some(res_obj) = res.as_object() {
+            let capability_id = res_obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let field = res_obj
+                .get("field")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let value = res_obj.get("value").cloned().unwrap_or_default();
+            let status = res_obj
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("resolved")
+                .to_string();
+
+            let mut out = vec![BuildEvent::CapabilityResolutionUpdate {
+                session_id: session_id.to_string(),
+                capability_id: capability_id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                status: status.clone(),
+            }];
+            // Legacy mirror: map field → legacy dimension key and surface as CellUpdate.
+            if let Some(legacy_key) = map_capability_field_to_legacy_dimension(&field) {
+                let legacy_data = wrap_value_in_legacy_dimension_shape(&field, &value, &capability_id);
+                out.push(BuildEvent::CellUpdate {
+                    session_id: session_id.to_string(),
+                    cell_key: legacy_key.to_string(),
+                    data: legacy_data,
+                    status,
+                });
+            }
+            return out;
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // v3 event: persona_resolution
+    // -----------------------------------------------------------------
+    if let Some(res) = obj.get("persona_resolution") {
+        if let Some(res_obj) = res.as_object() {
+            let field = res_obj
+                .get("field")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let value = res_obj.get("value").cloned().unwrap_or_default();
+            let status = res_obj
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("resolved")
+                .to_string();
+
+            let mut out = vec![BuildEvent::PersonaResolutionUpdate {
+                session_id: session_id.to_string(),
+                field: field.clone(),
+                value: value.clone(),
+                status: status.clone(),
+            }];
+            if let Some(legacy_key) = map_persona_field_to_legacy_dimension(&field) {
+                let legacy_data = wrap_value_in_legacy_dimension_shape(&field, &value, "");
+                out.push(BuildEvent::CellUpdate {
+                    session_id: session_id.to_string(),
+                    cell_key: legacy_key.to_string(),
+                    data: legacy_data,
+                    status,
+                });
+            }
+            return out;
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Question detection — handles BOTH legacy `{question, dimension}` and
+    // v3 `{clarifying_question: {scope, ...}}` / bare `{question, scope, ...}`.
+    // -----------------------------------------------------------------
+    if let Some(cq) = obj.get("clarifying_question") {
+        if let Some(cq_obj) = cq.as_object() {
+            return build_clarifying_question_events(cq_obj, session_id);
+        }
+    }
     if obj.contains_key("question") {
+        // A v3-style question is `{question, scope, ...}`; a legacy question is
+        // `{question, dimension, options}`. Detect scope to route correctly.
+        if obj.contains_key("scope") {
+            return build_clarifying_question_events(obj, session_id);
+        }
+
         let cell_key = obj
             .get("dimension")
             .or_else(|| obj.get("cell_key"))
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
-        let question = obj.get("question")?.as_str()?.to_string();
+        let question = match obj.get("question").and_then(|v| v.as_str()) {
+            Some(q) => q.to_string(),
+            None => return vec![],
+        };
         let options = obj.get("options").and_then(|v| {
             v.as_array().map(|arr| {
                 arr.iter()
@@ -1901,37 +2146,37 @@ fn parse_json_object(
                     .collect()
             })
         });
-        return Some(BuildEvent::Question {
+        return vec![BuildEvent::Question {
             session_id: session_id.to_string(),
             cell_key,
             question,
             options,
-        });
+        }];
     }
 
     // Agent IR detection
     if obj.contains_key("agent_ir") {
         let ir_data = obj.get("agent_ir").cloned().unwrap_or_default();
-        return Some(BuildEvent::CellUpdate {
+        return vec![BuildEvent::CellUpdate {
             session_id: session_id.to_string(),
             cell_key: "agent_ir".to_string(),
             data: ir_data,
             status: "resolved".to_string(),
-        });
+        }];
     }
 
     // Test report detection
     if obj.contains_key("test_report") {
         let report = obj.get("test_report").cloned().unwrap_or_default();
-        return Some(BuildEvent::CellUpdate {
+        return vec![BuildEvent::CellUpdate {
             session_id: session_id.to_string(),
             cell_key: "_test_report".to_string(),
             data: report,
             status: "resolved".to_string(),
-        });
+        }];
     }
 
-    // Dimension/cell update detection
+    // Dimension/cell update detection (legacy v2 dimensional output)
     if obj.contains_key("dimension") || obj.contains_key("cell_key") {
         let cell_key = obj
             .get("dimension")
@@ -1949,12 +2194,12 @@ fn parse_json_object(
             .and_then(|v| v.as_str())
             .unwrap_or("resolved")
             .to_string();
-        return Some(BuildEvent::CellUpdate {
+        return vec![BuildEvent::CellUpdate {
             session_id: session_id.to_string(),
             cell_key,
             data,
             status,
-        });
+        }];
     }
 
     // Error detection
@@ -1968,15 +2213,289 @@ fn parse_json_object(
             .get("retryable")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-        return Some(BuildEvent::Error {
+        return vec![BuildEvent::Error {
             session_id: session_id.to_string(),
             cell_key: obj.get("cell_key").and_then(|v| v.as_str()).map(|s| s.to_string()),
             message,
             retryable,
-        });
+        }];
     }
 
-    None // Not a recognized event type
+    vec![]
+}
+
+/// Emit the typed v3 `ClarifyingQuestionV3` plus a legacy `Question` mirror
+/// so the old dimension-scoped question panel keeps rendering.
+fn build_clarifying_question_events(
+    obj: &serde_json::Map<String, serde_json::Value>,
+    session_id: &str,
+) -> Vec<BuildEvent> {
+    let scope = obj
+        .get("scope")
+        .and_then(|v| v.as_str())
+        .unwrap_or("mission")
+        .to_string();
+    let capability_id = obj
+        .get("capability_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let field = obj
+        .get("field")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let question = match obj.get("question").and_then(|v| v.as_str()) {
+        Some(q) => q.to_string(),
+        None => return vec![],
+    };
+    let options = obj.get("options").and_then(|v| {
+        v.as_array().map(|arr| {
+            arr.iter()
+                .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+    });
+
+    let mut events = vec![BuildEvent::ClarifyingQuestionV3 {
+        session_id: session_id.to_string(),
+        scope: scope.clone(),
+        capability_id: capability_id.clone(),
+        field: field.clone(),
+        question: question.clone(),
+        options: options.clone(),
+    }];
+
+    // Legacy Question mirror — the old UI keys by `cell_key`. Pick the most
+    // sensible legacy dimension for each scope so the old question panel
+    // can surface it somewhere instead of dropping it.
+    let cell_key = match scope.as_str() {
+        "mission" => "behavior_core".to_string(),
+        "capability" => "use-cases".to_string(),
+        "field" => field
+            .as_deref()
+            .and_then(map_capability_field_to_legacy_dimension)
+            .unwrap_or("use-cases")
+            .to_string(),
+        _ => "use-cases".to_string(),
+    };
+    events.push(BuildEvent::Question {
+        session_id: session_id.to_string(),
+        cell_key,
+        question,
+        options,
+    });
+
+    events
+}
+
+/// Map a v3 capability field name to the legacy v2 dimension key the 3×3
+/// matrix UI understands, for the legacy CellUpdate mirror. Returns `None`
+/// for fields that have no legacy equivalent (e.g. `input_schema`,
+/// `use_case_flow`) — those events surface only via v3 typed state.
+fn map_capability_field_to_legacy_dimension(field: &str) -> Option<&'static str> {
+    match field {
+        "suggested_trigger" => Some("triggers"),
+        "connectors" => Some("connectors"),
+        "notification_channels" => Some("messages"),
+        "review_policy" => Some("human-review"),
+        "memory_policy" => Some("memory"),
+        "event_subscriptions" => Some("events"),
+        "error_handling" => Some("error-handling"),
+        _ => None,
+    }
+}
+
+/// Map a v3 persona-wide field name to the legacy dimension key. Persona-wide
+/// overlaps (connectors, error_handling, etc.) share the legacy key with
+/// capability-scoped fields — the 3×3 UI rendered them as a single cell anyway.
+fn map_persona_field_to_legacy_dimension(field: &str) -> Option<&'static str> {
+    match field {
+        "connectors" => Some("connectors"),
+        "notification_channels_default" => Some("messages"),
+        "error_handling" => Some("error-handling"),
+        "core_memories" => Some("memory"),
+        _ => None,
+    }
+}
+
+/// Wrap a v3 field value in the shape the legacy dimension cell expects.
+/// The old UI consumes `{items, <dimension-key>[]}` shapes so each dimension
+/// can render a summary + structured list. We reconstruct that on the fly
+/// from v3 values.
+fn wrap_value_in_legacy_dimension_shape(
+    field: &str,
+    value: &serde_json::Value,
+    capability_id: &str,
+) -> serde_json::Value {
+    use serde_json::json;
+    let suffix = if capability_id.is_empty() {
+        String::new()
+    } else {
+        format!(" [{}]", capability_id)
+    };
+
+    match field {
+        // Per-capability suggested_trigger — value is a single trigger object
+        "suggested_trigger" => {
+            let mut trig = value.clone();
+            if let Some(obj) = trig.as_object_mut() {
+                if !capability_id.is_empty() {
+                    obj.insert(
+                        "use_case_id".to_string(),
+                        json!(capability_id),
+                    );
+                }
+            }
+            let desc = trig
+                .get("description")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            json!({
+                "items": [format!("{}{}", desc, suffix)],
+                "triggers": [trig]
+            })
+        }
+
+        // Persona-wide or per-capability connector list
+        "connectors" => {
+            let arr = value.as_array().cloned().unwrap_or_default();
+            // If entries are strings (capability references), skip legacy mirror;
+            // otherwise assume they are full connector objects (persona registry).
+            if arr.iter().all(|v| v.is_string()) {
+                json!({
+                    "items": arr.iter().filter_map(|v| v.as_str().map(|s| format!("{}{}", s, suffix))).collect::<Vec<_>>(),
+                })
+            } else {
+                let items: Vec<String> = arr
+                    .iter()
+                    .map(|c| {
+                        let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                        let svc = c.get("service_type").and_then(|v| v.as_str()).unwrap_or("");
+                        let purp = c.get("purpose").and_then(|v| v.as_str()).unwrap_or("");
+                        format!("{} ({}) — {}", name, svc, purp)
+                    })
+                    .collect();
+                json!({
+                    "items": items,
+                    "connectors": arr,
+                    "alternatives": {}
+                })
+            }
+        }
+
+        "notification_channels" | "notification_channels_default" => {
+            let arr = value.as_array().cloned().unwrap_or_default();
+            let items: Vec<String> = arr
+                .iter()
+                .map(|c| {
+                    let ch = c.get("channel").and_then(|v| v.as_str()).unwrap_or("");
+                    let tgt = c.get("target").and_then(|v| v.as_str()).unwrap_or("");
+                    format!("{}: {}{}", ch, tgt, suffix)
+                })
+                .collect();
+            json!({ "items": items, "channels": arr })
+        }
+
+        "review_policy" => {
+            let mode = value.get("mode").and_then(|v| v.as_str()).unwrap_or("never");
+            let ctx = value.get("context").and_then(|v| v.as_str()).unwrap_or("");
+            json!({
+                "items": [format!("{}: {}{}", mode, ctx, suffix)],
+                "policy": value.clone()
+            })
+        }
+
+        "memory_policy" => {
+            let enabled = value.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+            let ctx = value.get("context").and_then(|v| v.as_str()).unwrap_or("");
+            json!({
+                "items": [format!("enabled={}: {}{}", enabled, ctx, suffix)],
+                "policy": value.clone()
+            })
+        }
+
+        "event_subscriptions" => {
+            let arr = value.as_array().cloned().unwrap_or_default();
+            let mut subs_with_ucid = arr.clone();
+            // Tag each subscription with its originating capability for
+            // downstream tooling (persona_event_subscriptions.use_case_id).
+            if !capability_id.is_empty() {
+                for s in subs_with_ucid.iter_mut() {
+                    if let Some(o) = s.as_object_mut() {
+                        o.insert("use_case_id".to_string(), json!(capability_id));
+                    }
+                }
+            }
+            let items: Vec<String> = arr
+                .iter()
+                .map(|e| {
+                    let typ = e.get("event_type").and_then(|v| v.as_str()).unwrap_or("");
+                    let dir = e.get("direction").and_then(|v| v.as_str()).unwrap_or("subscribe");
+                    format!("{}: {}{}", dir, typ, suffix)
+                })
+                .collect();
+            json!({ "items": items, "subscriptions": subs_with_ucid })
+        }
+
+        "error_handling" => {
+            let text = value.as_str().unwrap_or("").to_string();
+            json!({ "items": [format!("{}{}", text, suffix)] })
+        }
+
+        "core_memories" => {
+            let arr = value.as_array().cloned().unwrap_or_default();
+            let items: Vec<String> = arr
+                .iter()
+                .map(|m| {
+                    let t = m.get("title").and_then(|v| v.as_str()).unwrap_or("");
+                    format!("{}{}", t, suffix)
+                })
+                .collect();
+            json!({ "items": items, "memories": arr })
+        }
+
+        _ => json!({ "items": [], "value": value.clone() }),
+    }
+}
+
+/// Convert a v3 capability_enumeration value into the legacy use-cases cell shape.
+fn capabilities_to_legacy_use_cases(enu: &serde_json::Value) -> serde_json::Value {
+    use serde_json::json;
+    let caps = enu
+        .get("capabilities")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let items: Vec<String> = caps
+        .iter()
+        .map(|c| {
+            let title = c.get("title").and_then(|v| v.as_str()).unwrap_or("");
+            let sum = c.get("capability_summary").and_then(|v| v.as_str()).unwrap_or("");
+            if sum.is_empty() {
+                title.to_string()
+            } else {
+                format!("{title}: {sum}")
+            }
+        })
+        .collect();
+    let legacy_use_cases: Vec<serde_json::Value> = caps
+        .iter()
+        .map(|c| {
+            let title = c.get("title").and_then(|v| v.as_str()).unwrap_or("");
+            let sum = c.get("capability_summary").and_then(|v| v.as_str()).unwrap_or("");
+            let id = c.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            json!({
+                "id": id,
+                "title": title,
+                "description": sum,
+                "category": "other",
+                "execution_mode": "e2e"
+            })
+        })
+        .collect();
+    json!({
+        "items": items,
+        "use_cases": legacy_use_cases
+    })
 }
 
 /// Try to extract agent IR (the final JSON result) from accumulated output.

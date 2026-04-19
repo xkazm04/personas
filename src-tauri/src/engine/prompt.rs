@@ -119,6 +119,64 @@ pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
     entries.join("|")
 }
 
+/// Phase C5b — render the per-capability generation policy as natural-language
+/// bullet points the LLM can act on. Returns an empty Vec when the JSON object
+/// has no recognised fields, so the caller can skip the surrounding header.
+///
+/// This is the SOFT layer of the two-layer enforcement model. The HARD layer
+/// is `engine::dispatch::testable::resolve_generation_policy` which silently
+/// drops protocol messages that violate the policy — required because LLMs
+/// occasionally ignore even explicit instructions.
+pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> Vec<String> {
+    let Some(s) = settings.filter(|v| !v.is_null()) else { return Vec::new(); };
+    let mut lines = Vec::new();
+
+    if let Some(v) = s.get("memories").and_then(|v| v.as_str()) {
+        if v.eq_ignore_ascii_case("off") {
+            lines.push(
+                "Do not write to agent memory for this capability. The persona has memories \
+                 from other capabilities; do not extend them from this run.".to_string(),
+            );
+        }
+    }
+    if let Some(v) = s.get("reviews").and_then(|v| v.as_str()) {
+        match v.to_ascii_lowercase().as_str() {
+            "off" => lines.push(
+                "Do not request manual review for this capability. Resolve uncertainty \
+                 with your own best judgment and proceed.".to_string(),
+            ),
+            "trust_llm" | "trustllm" | "trust-llm" => lines.push(
+                "Trust your own judgment for this capability. If you would normally \
+                 request manual review, proceed instead — your decisions will not be queued \
+                 for human approval.".to_string(),
+            ),
+            _ => {}
+        }
+    }
+    if let Some(v) = s.get("events").and_then(|v| v.as_str()) {
+        if v.eq_ignore_ascii_case("off") {
+            lines.push(
+                "Do not emit events for this capability. Other personas will not be \
+                 notified of your actions on this run.".to_string(),
+            );
+        }
+    }
+    if let Some(map) = s.get("event_aliases").and_then(|v| v.as_object()) {
+        let pairs: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| v.as_str().map(|tgt| format!("{} → {}", k, tgt)))
+            .collect();
+        if !pairs.is_empty() {
+            lines.push(format!(
+                "When emitting events, use these renamed names: {}",
+                pairs.join(", ")
+            ));
+        }
+    }
+
+    lines
+}
+
 /// Build documentation string for a single tool definition.
 pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     let mut doc = format!("### {}\n{}\n", tool.name, tool.description);
@@ -632,6 +690,17 @@ pub fn assemble_prompt(
                         "Deliver outputs via: {}\n",
                         types.join(", ")
                     ));
+                }
+            }
+            // Phase C5b — render the capability's generation policy so the LLM
+            // knows what artefact protocol messages to suppress for this run.
+            // This is the SOFT layer; `engine::dispatch` enforces the same
+            // rules silently as a HARD safety net for ignored instructions.
+            let policy_lines = render_generation_policy_lines(use_case.get("generation_settings"));
+            if !policy_lines.is_empty() {
+                prompt.push_str("Generation policy for this capability:\n");
+                for line in policy_lines {
+                    prompt.push_str(&format!("- {}\n", line));
                 }
             }
             prompt.push_str("Focus on this capability. Ignore other capabilities unless the input explicitly requires coordination with them.\n\n");
