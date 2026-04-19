@@ -4,7 +4,7 @@
 //! Pure — no I/O except through `CompileDeps` callbacks (proxy lookup, font
 //! probe). Given identical inputs the output is bit-identical.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::{
     AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
@@ -21,7 +21,7 @@ use super::invariants::assert_invariants;
 // remains the single source of truth for the authoring format. They mirror
 // `src/features/plugins/artist/sub_media_studio/types.ts`.
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Composition {
     #[serde(default)]
@@ -35,7 +35,7 @@ pub struct Composition {
     pub items: Vec<TimelineItem>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "type")]
 pub enum TimelineItem {
     #[serde(rename = "video")]
@@ -48,7 +48,7 @@ pub enum TimelineItem {
     Image(ImageItemInput),
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoClipInput {
     #[serde(default)]
@@ -78,7 +78,7 @@ pub struct VideoClipInput {
     pub strip_audio: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioClipInput {
     #[serde(default)]
@@ -114,7 +114,7 @@ pub struct AudioClipInput {
     pub measured_threshold: Option<f64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TextItemInput {
     #[serde(default)]
@@ -139,7 +139,7 @@ pub struct TextItemInput {
     pub fade_out: f64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImageItemInput {
     #[serde(default)]

@@ -1,4 +1,4 @@
-//! Regenerate the RenderPlan TypeScript bindings.
+//! Regenerate the RenderPlan + persistence TypeScript bindings.
 //!
 //! Run with:
 //!   cargo test --features desktop --test render_plan_bindings_gen
@@ -14,6 +14,7 @@ use app_lib::render_plan::{
     NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
     TextOverlayStage, VideoStage,
 };
+use app_lib::artist_persistence::{AutosaveInfo, CompositionLoad};
 use ts_rs::TS;
 
 #[test]
@@ -34,4 +35,6 @@ fn export_render_plan_bindings() {
     TextOverlayStage::export_all().expect("export TextOverlayStage");
     ImageOverlayStage::export_all().expect("export ImageOverlayStage");
     CompileWarning::export_all().expect("export CompileWarning");
+    CompositionLoad::export_all().expect("export CompositionLoad");
+    AutosaveInfo::export_all().expect("export AutosaveInfo");
 }
