@@ -7,6 +7,7 @@ import {
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy,
   User, Mic, Volume2, Sparkles,
+  Wand2, Image as ImageIcon, Film,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -93,6 +94,12 @@ export const eventBusItems: SubNavItem[] = [
 export const templateItems: SubNavItem[] = [
   { id: 'n8n', label: 'n8n Import', icon: Upload, minTier: TIERS.TEAM },
   { id: 'generated', label: 'Generated', icon: List },
+];
+
+export const artistItems: SubNavItem[] = [
+  { id: 'blender', label: 'Creative Studio', icon: Wand2 },
+  { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+  { id: 'media-studio', label: 'Media Studio', icon: Film },
 ];
 
 export const devToolsItems: SubNavItem[] = [
