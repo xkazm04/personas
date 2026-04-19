@@ -1,6 +1,6 @@
 import {
   Zap, CheckCircle2, XCircle,
-  ExternalLink, Activity, ShieldCheck,
+  ExternalLink, Activity, ShieldCheck, Layers,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -13,6 +13,7 @@ import { AutomationStatusBadge } from './AutomationStatusBadge';
 import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 
 interface AutomationCardProps {
   automation: PersonaAutomation;
@@ -30,6 +31,10 @@ export function AutomationCard({
 }: AutomationCardProps) {
   const { t } = useTranslation();
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
+  const useCases = useSelectedUseCases();
+  const capabilityTitle = automation.useCaseId
+    ? useCases.find(u => u.id === automation.useCaseId)?.title ?? automation.useCaseId
+    : null;
 
   return (
     <SectionCard size="md">
@@ -58,6 +63,15 @@ export function AutomationCard({
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>
+            {capabilityTitle && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0 typo-body font-medium rounded border border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
+                title={`Scoped to capability: ${capabilityTitle}`}
+              >
+                <Layers className="w-2.5 h-2.5" />
+                {capabilityTitle}
+              </span>
+            )}
             {automation.lastTriggeredAt && <span className="typo-body text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}
             {automation.deploymentStatus === 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_not_deployed}</span>}

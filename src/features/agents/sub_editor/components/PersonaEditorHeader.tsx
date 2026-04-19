@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { AlertCircle, X, Play, Square } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
@@ -11,16 +11,10 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
 import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import { useTier } from '@/hooks/utility/interaction/useTier';
-import { usePreRunCheck } from '@/hooks/execution/usePreRunCheck';
-import { PreRunPreview } from '@/features/execution/components/PreRunPreview';
-import { createLogger } from '@/lib/log';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 import { QuickStatsBar } from './QuickStatsBar';
 import { useTranslation } from '@/i18n/useTranslation';
-
-const logger = createLogger('persona-editor-header');
 
 interface PersonaEditorHeaderProps {
   draft: PersonaDraft;
@@ -29,64 +23,26 @@ interface PersonaEditorHeaderProps {
   setBaseline: React.Dispatch<React.SetStateAction<PersonaDraft>>;
 }
 
+/**
+ * Persona editor header — persona identity + governance controls.
+ *
+ * Phase C3 — the persona-wide **Execute** button has been removed; running
+ * is now a per-capability action surfaced inside the Use Case tab. Only
+ * governance remains here: the Active toggle (which flips persona-level
+ * runnability) and the readiness popover that explains why a persona can't
+ * be enabled.
+ *
+ * See `docs/concepts/persona-capabilities/08-frontend-impact.md`.
+ */
 export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: PersonaEditorHeaderProps) {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
-  const executePersonaAction = useAgentStore((s) => s.executePersona);
-  const cancelExecutionAction = useAgentStore((s) => s.cancelExecution);
-  const isExecuting = useAgentStore((s) => s.isExecuting);
-  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
-  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const credentials = useVaultStore((s) => s.credentials);
   const effective = useEffectivePersona(draft, baseline);
   const designContext = useParsedDesignContext();
-  const { isStarter } = useTier();
   const [showReadinessPopover, setShowReadinessPopover] = useState(false);
-  const [showPreRunPreview, setShowPreRunPreview] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const preRunCheck = usePreRunCheck(selectedPersona, credentials);
-
-  // Execute button state: running if this persona is the active execution
-  const isThisPersonaExecuting = isExecuting && executionPersonaId === selectedPersona?.id;
-
-  const doExecute = useCallback(async () => {
-    if (!selectedPersona?.id || isThisPersonaExecuting) return;
-    try {
-      const execId = await executePersonaAction(selectedPersona.id);
-      if (execId) {
-        useToastStore.getState().addToast(t.agents.editor_ui.execution_started, 'success');
-      }
-    } catch (err) {
-      logger.error('Execute failed', { error: err instanceof Error ? err.message : String(err) });
-      useToastStore.getState().addToast(t.agents.editor_ui.execute_failed, 'error');
-    }
-  }, [selectedPersona?.id, isThisPersonaExecuting, executePersonaAction, t]);
-
-  const handleCancel = useCallback(async () => {
-    if (!isThisPersonaExecuting || !activeExecutionId) return;
-    try {
-      await cancelExecutionAction(activeExecutionId);
-      useToastStore.getState().addToast(t.agents.editor_ui.execution_cancelled, 'success');
-    } catch (err) {
-      logger.error('Cancel failed', { error: err instanceof Error ? err.message : String(err) });
-      useToastStore.getState().addToast(t.agents.editor_ui.cancel_execution_failed, 'error');
-    }
-  }, [isThisPersonaExecuting, activeExecutionId, cancelExecutionAction, t]);
-
-  const handleExecute = useCallback(() => {
-    if (isThisPersonaExecuting) return;
-    if (isStarter) {
-      setShowPreRunPreview(true);
-    } else {
-      doExecute();
-    }
-  }, [isThisPersonaExecuting, isStarter, doExecute]);
-
-  const handlePreRunConfirm = useCallback(() => {
-    setShowPreRunPreview(false);
-    doExecute();
-  }, [doExecute]);
 
   useClickOutside(popoverRef, showReadinessPopover, () => setShowReadinessPopover(false));
 
@@ -116,7 +72,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     const unique = [...new Set(missingCreds)];
     if (unique.length > 0) reasons.push(tx(t.agents.editor_ui.missing_credentials, { credentials: unique.join(', ') }));
     return { canEnable: reasons.length === 0, reasons };
-  }, [selectedPersona, triggers, subscriptions, tools, credentials]);
+  }, [selectedPersona, triggers, subscriptions, tools, credentials, t, tx]);
 
   const handleHeaderToggle = useCallback(async () => {
     if (!selectedPersona) return;
@@ -130,7 +86,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
     } catch { useToastStore.getState().addToast(t.agents.header.toggle_failed, 'error'); }
-  }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
+  }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline, t]);
 
   if (!effective) return null;
 
@@ -150,37 +106,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       }
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
-          {/* Execute / Cancel buttons — top row, above the Active toggle */}
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="accent"
-              accentColor={isThisPersonaExecuting ? 'orange' : 'blue'}
-              size="sm"
-              icon={<Play className="w-3.5 h-3.5" />}
-              loading={isThisPersonaExecuting}
-              onClick={handleExecute}
-              data-testid="persona-header-execute-btn"
-              disabled={isThisPersonaExecuting}
-              disabledReason={isThisPersonaExecuting ? t.agents.editor_ui.execution_in_progress : undefined}
-              className={isThisPersonaExecuting ? 'animate-pulse' : ''}
-            >
-              {isThisPersonaExecuting ? t.agents.editor_ui.running : t.agents.editor_ui.execute}
-            </Button>
-            {isThisPersonaExecuting && (
-              <Button
-                variant="accent"
-                accentColor="rose"
-                size="sm"
-                icon={<Square className="w-3.5 h-3.5 fill-current" />}
-                onClick={handleCancel}
-                data-testid="persona-header-cancel-btn"
-                aria-label={t.agents.editor_ui.cancel_execution}
-              >
-                {t.common.cancel}
-              </Button>
-            )}
-          </div>
-          {/* Active toggle row */}
+          {/* Active toggle — governance only. Per-capability Run/Simulate lives in the Use Case tab. */}
           <div className="flex items-center gap-2">
             <span className={`typo-heading transition-colors ${effective.enabled ? 'text-emerald-400' : 'text-foreground'}`}>
               {effective.enabled ? t.common.active : t.common.off}
@@ -195,14 +121,6 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             />
           </div>
           <AnimatePresence>
-            {showPreRunPreview && !isThisPersonaExecuting && (
-              <PreRunPreview
-                check={preRunCheck}
-                personaName={effective.name}
-                onConfirm={handlePreRunConfirm}
-                onCancel={() => setShowPreRunPreview(false)}
-              />
-            )}
             {showReadinessPopover && readiness.reasons.length > 0 && (
               <motion.div
                 ref={popoverRef}

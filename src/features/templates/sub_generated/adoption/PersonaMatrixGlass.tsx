@@ -15,7 +15,19 @@ import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
   MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
 } from '../gallery/matrix/MatrixIcons';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { CellBuildStatus, BuildPhase } from '@/lib/types/buildTypes';
+
+// Strip the technical slug off a connectors-cell item string. Items are
+// authored as "<name> — <purpose>" (em dash) or "<name> - <purpose>" (hyphen)
+// so the user never sees the raw slug like "alpha_vantage" in the matrix.
+function splitConnectorItem(item: string): { name: string; rest: string } {
+  const emIdx = item.indexOf(' \u2014 ');
+  const dashIdx = item.indexOf(' - ');
+  const idx = emIdx >= 0 ? emIdx : dashIdx;
+  if (idx < 0) return { name: item.trim(), rest: '' };
+  return { name: item.slice(0, idx).trim(), rest: item.slice(idx + 3).trim() };
+}
 
 /* ─── Props ─────────────────────────────────────────────────────────── */
 
@@ -125,17 +137,37 @@ function GlassCell({ dim, items, status }: {
             <DimIcon className={`w-24 h-24 ${dim.iconCls}`} />
           </div>
 
-          {/* Bullet items — readable contrast, scrollable when content overflows */}
+          {/* Bullet items — readable contrast, scrollable when content overflows.
+              Connectors get icon + friendly label via getConnectorMeta so the
+              raw slug (e.g. "alpha_vantage") never appears to the user. */}
           <div className="max-h-[180px] overflow-y-auto mt-2 scrollbar-thin">
           {items && items.length > 0 ? (
-            <ul className="space-y-1.5">
-              {items.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-md text-foreground leading-relaxed">
-                  <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground/25 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            dim.key === 'connectors' ? (
+              <ul className="space-y-1.5">
+                {items.map((item, i) => {
+                  const { name, rest } = splitConnectorItem(item);
+                  const meta = getConnectorMeta(name);
+                  return (
+                    <li key={i} className="flex items-start gap-2 text-md text-foreground leading-relaxed">
+                      <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                      <span className="flex-1">
+                        <span className="font-medium">{meta.label}</span>
+                        {rest && <span className="text-foreground/70"> — {rest}</span>}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <ul className="space-y-1.5">
+                {items.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-md text-foreground leading-relaxed">
+                    <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground/25 flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            )
           ) : (
             <p className="text-md text-foreground italic">{t.templates.matrix_variants.no_data_yet}</p>
           )}

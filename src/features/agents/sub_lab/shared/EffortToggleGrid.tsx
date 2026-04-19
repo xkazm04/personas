@@ -1,4 +1,5 @@
 import { EFFORT_OPTIONS, type EffortLevel } from '@/lib/models/modelCatalog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface EffortToggleGridProps {
   selectedEfforts: Set<EffortLevel>;
@@ -14,6 +15,7 @@ interface EffortToggleGridProps {
  * default `medium`), the grid behaves identically to a model-only run.
  */
 export function EffortToggleGrid({ selectedEfforts, toggleEffort, testIdPrefix }: EffortToggleGridProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
       <label className="typo-body font-medium text-foreground">Effort</label>
@@ -28,7 +30,7 @@ export function EffortToggleGrid({ selectedEfforts, toggleEffort, testIdPrefix }
             data-testid={testIdPrefix ? `${testIdPrefix}-effort-${e.id}` : undefined}
             className={`px-2.5 py-1 rounded-modal typo-body font-medium border transition-all cursor-pointer ${selectedEfforts.has(e.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-foreground border-primary/10 hover:border-primary/20 hover:text-foreground/95'}`}
           >
-            {e.label}
+            {t.models[`effort_${e.id}`]}
           </button>
         ))}
       </div>

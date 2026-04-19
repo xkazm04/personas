@@ -68,6 +68,11 @@ pub enum StreamLineType {
     SystemInit {
         model: String,
         session_id: Option<String>,
+        /// CLI ≥ 2.1.111: plugins in the user's `.claude/plugins/` directory
+        /// that failed dependency resolution. Empty on older CLI versions and
+        /// on sessions with no plugin errors. Personas log-warns on non-empty
+        /// so plugin breakage is visible in headless mode.
+        plugin_errors: Vec<String>,
     },
     AssistantText {
         text: String,

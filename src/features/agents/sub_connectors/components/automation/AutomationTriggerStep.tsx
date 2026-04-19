@@ -9,6 +9,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
+import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
 interface AutomationTriggerStepProps {
   description: string;
@@ -29,6 +30,9 @@ interface AutomationTriggerStepProps {
   loadingRepos: boolean;
   zapierZaps: ZapierZap[];
   loadingZaps: boolean;
+  availableUseCases: DesignUseCase[];
+  useCaseId: string | null;
+  setUseCaseId: (v: string | null) => void;
   canDesign: boolean;
   onDesign: () => void;
 }
@@ -38,7 +42,9 @@ export function AutomationTriggerStep({
   needsCredential, hasPlatformCredential, platformCredentials,
   platformCredentialId, setPlatformCredentialId, platformConnector,
   githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
-  zapierZaps, loadingZaps, canDesign, onDesign,
+  zapierZaps, loadingZaps,
+  availableUseCases, useCaseId, setUseCaseId,
+  canDesign, onDesign,
 }: AutomationTriggerStepProps) {
   const { t, tx } = useTranslation();
   return (
@@ -87,6 +93,23 @@ export function AutomationTriggerStep({
           </div>
         )}
       </div>
+
+      {/* Capability scope (Phase C4) — optional; persona-wide by default */}
+      {availableUseCases.length > 0 && (
+        <div className="flex items-center gap-3">
+          <label className="typo-body text-foreground">Capability scope</label>
+          <ThemedSelect
+            wrapperClassName="flex-1"
+            value={useCaseId ?? ''}
+            onValueChange={(v) => setUseCaseId(v || null)}
+          >
+            <option value="">Persona-wide (all capabilities)</option>
+            {availableUseCases.map((uc) => (
+              <option key={uc.id} value={uc.id}>{uc.title}</option>
+            ))}
+          </ThemedSelect>
+        </div>
+      )}
 
       {/* Credential gate */}
       {needsCredential && !hasPlatformCredential && (

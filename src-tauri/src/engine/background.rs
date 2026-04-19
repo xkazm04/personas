@@ -662,17 +662,14 @@ pub(crate) async fn event_bus_tick(
     for (idx, event) in events.iter().enumerate() {
         // Status already set to 'processing' by claim_pending — no separate update needed.
 
-        // Match against legacy subscriptions
-        let mut matches = bus::match_event(event, &all_subs);
-
-        // Also match event_listener triggers (unified model).
-        // Deduplicate by persona_id to avoid double-fire.
-        let listener_matches = bus::match_event(event, &parsed_listeners);
-        for lm in listener_matches {
-            if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
-                matches.push(lm);
-            }
-        }
+        // Match against legacy subscriptions + event_listener triggers, then
+        // prefer capability-scoped over persona-wide for the same persona
+        // (Phase C4 §event-routing). The helper also dedupes on
+        // `(persona_id, use_case_id)` so the legacy-subs + trigger-rows merge
+        // doesn't double-fire a capability-scoped handler.
+        let mut combined = bus::match_event(event, &all_subs);
+        combined.extend(bus::match_event(event, &parsed_listeners));
+        let matches = bus::prefer_capability_scoped(combined);
 
         tracing::debug!(
             event_id = %event.id,

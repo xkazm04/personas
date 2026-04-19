@@ -1,5 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, FlaskConical } from 'lucide-react';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
@@ -19,6 +19,7 @@ interface ExecutionListRowProps {
   showRaw: boolean;
   hasCopied: boolean;
   copiedId: string | null;
+  capabilityTitle: string | null;
   onRowClick: (id: string) => void;
   onCopyId: (id: string) => void;
   onRerun: (inputData: string | null) => void;
@@ -27,7 +28,7 @@ interface ExecutionListRowProps {
 
 export function ExecutionListRow({
   execution, execIdx, executions, compareMode, compareLeft, compareRight,
-  isExpanded, showRaw, hasCopied, copiedId,
+  isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
   onRowClick, onCopyId, onRerun, onAutoCompareRetry,
 }: ExecutionListRowProps) {
   const { t, tx } = useTranslation();
@@ -46,6 +47,18 @@ export function ExecutionListRow({
       </span>
     </Tooltip>
   ) : null;
+  const simulatedBadge = execution.is_simulation ? (
+    <Tooltip content={e.simulated_badge_tooltip}>
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
+        <FlaskConical className="w-2.5 h-2.5" />{e.simulated_badge}
+      </span>
+    </Tooltip>
+  ) : null;
+  const capabilityCell = (
+    <span className="typo-body text-foreground/90 truncate" title={capabilityTitle ?? undefined}>
+      {capabilityTitle ?? e.capability_unattributed}
+    </span>
+  );
   const duration = <span className="typo-code text-foreground/90">{formatDuration(execution.duration_ms)}</span>;
 
   return (
@@ -66,14 +79,15 @@ export function ExecutionListRow({
             ) : <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />}
           </div>
         )}
-        <div className={`${compareMode ? 'col-span-2' : 'col-span-2'} flex items-center gap-2`}>{chevron}{statusBadge}{retryBadge}</div>
-        <div className="col-span-2 flex items-center">{duration}</div>
-        <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} typo-body text-foreground/90 flex items-center`}>{formatTimestamp(execution.started_at)}</div>
+        <div className="col-span-2 flex items-center gap-2 flex-wrap">{chevron}{statusBadge}{retryBadge}{simulatedBadge}</div>
+        <div className="col-span-2 flex items-center min-w-0">{capabilityCell}</div>
+        <div className={`${compareMode ? 'col-span-1' : 'col-span-2'} flex items-center`}>{duration}</div>
+        <div className="col-span-2 typo-body text-foreground/90 flex items-center">{formatTimestamp(execution.started_at)}</div>
         <div className="col-span-2 typo-code text-foreground/90 flex items-center">
           <Tooltip content={e.input_tokens}><span>{formatTokens(execution.input_tokens)}</span></Tooltip>{' / '}
           <Tooltip content={e.output_tokens}><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
         </div>
-        <div className={`${compareMode ? 'col-span-2' : 'col-span-3'} flex items-center gap-2`}>
+        <div className={`${compareMode ? 'col-span-1' : 'col-span-2'} flex items-center gap-2`}>
           <span className="typo-code text-foreground/90">${execution.cost_usd.toFixed(4)}</span>
           {!compareMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).reverse()} />}
         </div>
@@ -86,15 +100,18 @@ export function ExecutionListRow({
           isCompareSelected ? 'bg-primary/10' : 'bg-background/30 hover:bg-secondary/20'
         }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {compareMode && compareLabel && (
             <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
               compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
             }`}>{compareLabel}</span>
           )}
-          {chevron}{statusBadge}{retryBadge}{duration}
+          {chevron}{statusBadge}{retryBadge}{simulatedBadge}{duration}
           <span className="typo-body text-foreground ml-auto">{formatRelativeTime(execution.started_at)}</span>
         </div>
+        {capabilityTitle && (
+          <p className="typo-body text-foreground pl-5.5 truncate">{capabilityTitle}</p>
+        )}
         {execution.error_message && (
           <p className="typo-body text-red-400/70 truncate pl-5.5">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-list')}</p>
         )}

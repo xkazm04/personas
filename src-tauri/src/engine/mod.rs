@@ -1,4 +1,5 @@
 pub mod adoption_answers;
+pub mod template_v3;
 pub mod auto_rollback;
 pub mod backend;
 pub mod build_session;
@@ -1779,8 +1780,15 @@ async fn handle_execution_result(
         }
     }
 
-    // OS + external channel notification
-    notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    // OS + external channel notification.
+    // Phase C3 — simulation runs skip the completed-notification push so
+    // the user can preview behavior without pinging real notification channels.
+    let is_simulation = exec_repo::get_by_id(pool, exec_id)
+        .map(|e| e.is_simulation)
+        .unwrap_or(false);
+    if !is_simulation {
+        notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    }
 
     // Budget enforcement (only on success)
     if result.success {
@@ -1925,6 +1933,7 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                         priority: Some("critical".into()),
                         metadata: None,
                         thread_id: None,
+                        use_case_id: None,
                     },
                 );
                 tracing::warn!(
@@ -1973,6 +1982,30 @@ fn evaluate_healing_and_retry(
     let exec_state_str = if result.success { "incomplete" } else { "failed" };
 
     let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
+
+    // Phase C5b — when the run fails for a technical reason (auth, network,
+    // rate-limit, timeout, provider-not-found, API error), wipe any manual
+    // reviews the LLM emitted *before* the technical error propagated. Those
+    // reviews describe a run that never produced real output, so queueing
+    // them for a human to resolve is noise. See
+    // `engine::error_taxonomy::is_technical_failure` for the category set.
+    if !result.success && error_taxonomy::is_technical_failure(&category) {
+        match crate::db::repos::communication::manual_reviews::delete_for_execution(pool, exec_id) {
+            Ok(0) => { /* nothing to clean up */ }
+            Ok(n) => tracing::info!(
+                execution_id = %exec_id,
+                category = ?category,
+                deleted = n,
+                "Suppressed {n} manual review(s) — execution failed for a technical reason"
+            ),
+            Err(e) => tracing::warn!(
+                execution_id = %exec_id,
+                error = %e,
+                "Failed to clean up manual reviews after technical failure"
+            ),
+        }
+    }
+
     let kb_hint = resolve_service_knowledge_hint(pool, persona_id, &category);
 
     let current_retry_count = exec_repo::get_by_id(pool, exec_id)

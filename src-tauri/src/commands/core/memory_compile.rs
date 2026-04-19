@@ -289,6 +289,7 @@ Raw memories:
                 "compiled".to_string(),
                 "wiki".to_string(),
             ])),
+            use_case_id: None,
         };
 
         match repo::create(&db, input) {

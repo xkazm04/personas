@@ -1,6 +1,16 @@
 # Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe)
 [target.aarch64-pc-windows-msvc]
 linker = "lld-link"
+# Windows main-thread stack size bump. The default 1 MB main-thread stack
+# can be exhausted by sync `pub fn` Tauri commands (which run on the
+# webview/main thread) when they serialize deeply-nested payloads —
+# observed as STATUS_STACK_OVERFLOW in debug builds after creating many
+# personas with rich design_context + triggers + subscriptions. 8 MB
+# matches Linux/macOS defaults and leaves plenty of headroom.
+rustflags = ["-C", "link-arg=/STACK:8388608"]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=/STACK:8388608"]
 
 [target.aarch64-linux-android]
 linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android24-clang.cmd"

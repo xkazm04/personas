@@ -76,6 +76,10 @@ pub struct PersonaManualReview {
     pub resolved_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    /// Capability (use case) attribution. Inherited from the originating
+    /// execution's `use_case_id` at dispatch time. Phase C5.
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -88,6 +92,8 @@ pub struct CreateManualReviewInput {
     pub severity: Option<String>,
     pub context_data: Option<String>,
     pub suggested_actions: Option<String>,
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

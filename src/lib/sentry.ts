@@ -125,6 +125,11 @@ export function initSentry(appVersion: string): void {
     sendDefaultPii: false,
 
     beforeSend(event) {
+      // Drop Vite HMR client's own send-before-connect race — dev-only noise, never our bug
+      const excValue = event.exception?.values?.[0]?.value ?? event.message ?? '';
+      if (typeof excValue === 'string' && excValue.includes('send was called before connect')) {
+        return null;
+      }
       // Strip user fields
       if (event.user) {
         delete event.user.email;

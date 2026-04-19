@@ -36,6 +36,12 @@ function computeContentHashSync(content) {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(16, '0');
 }
 
+// Per-language sibling overlays (e.g. "name.cs.json") are NOT canonical
+// templates — they are translation overlays that the loader merges at
+// runtime. Skip them here so they don't get independent checksums and
+// don't surface as duplicate entries in the catalog.
+const LANGUAGE_SIBLING_RE = /\.(ar|bn|cs|de|es|fr|hi|id|ja|ko|ru|vi|zh)\.json$/;
+
 function findJsonFiles(dir) {
   const results = [];
   for (const entry of readdirSync(dir)) {
@@ -46,7 +52,7 @@ function findJsonFiles(dir) {
       results.push(...findJsonFiles(fullPath));
       continue;
     }
-    if (entry.endsWith('.json')) {
+    if (entry.endsWith('.json') && !LANGUAGE_SIBLING_RE.test(entry)) {
       results.push(fullPath);
     }
   }

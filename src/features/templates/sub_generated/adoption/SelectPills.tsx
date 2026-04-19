@@ -30,18 +30,27 @@ export function SelectPills({
   options,
   value,
   onChange,
-  allowCustom,
+  allowCustom: _allowCustom,
   multi,
   includeAllOption,
 }: {
   options: PillOption[];
   value: string;
   onChange: (v: string) => void;
+  /** Accepted for backwards-compat with callers that pass the template's
+   *  declared value, but ignored — every select (single or multi) always
+   *  surfaces a "Custom…"/"Other" pill so users can enter an off-list value
+   *  the template didn't enumerate. */
   allowCustom?: boolean;
   multi?: boolean;
   includeAllOption?: boolean;
 }) {
   const { t } = useTranslation();
+  // Always allow custom entries. Real-world adoption routinely needs values
+  // templates can't predict (uncommon providers, unique timings, bespoke
+  // categories), and a locked preset list forces users to pick the least-wrong
+  // option and move on. Applied uniformly here so no template can override it.
+  const effectiveAllowCustom = true;
   const optionValueSet = useMemo(() => new Set(options.map((o) => o.value)), [options]);
 
   const selectedValues = useMemo(
@@ -53,12 +62,12 @@ export function SelectPills({
   // In multi-select mode, any selected value that isn't in the options set
   // counts as a user-typed custom entry (and persists across re-renders).
   const customValuesFromAnswer = useMemo(() => {
-    if (!allowCustom) return [] as string[];
+    if (!effectiveAllowCustom) return [] as string[];
     if (!multi) {
       return value && !optionValueSet.has(value) && value !== ALL_SENTINEL ? [value] : [];
     }
     return [...selectedValues].filter((v) => v && v !== ALL_SENTINEL && !optionValueSet.has(v));
-  }, [allowCustom, multi, value, selectedValues, optionValueSet]);
+  }, [effectiveAllowCustom, multi, value, selectedValues, optionValueSet]);
 
   const hasCustomValue = customValuesFromAnswer.length > 0;
   const [showCustomInput, setShowCustomInput] = useState(hasCustomValue);
@@ -117,13 +126,39 @@ export function SelectPills({
     onChange(toCsv([...next]));
   };
 
+  // Arrow key navigation for multi-select pills — users can walk through
+  // options with ↑/↓ and toggle with Space/Enter. Single-selects keep the
+  // plain click model (Enter there is reserved for advancing the questionnaire).
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onPillKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
+    if (!multi) return;
+    const root = containerRef.current;
+    if (!root) return;
+    const pills = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-pill="1"]'));
+    if (pills.length === 0) return;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      pills[(idx + 1) % pills.length]?.focus();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      pills[(idx - 1 + pills.length) % pills.length]?.focus();
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      // Space always toggles; Enter toggles only if the user explicitly
+      // targeted a pill (the outer questionnaire owns Enter for "advance").
+      if (e.key === ' ') e.preventDefault();
+    }
+  };
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5" ref={containerRef}>
       <div className="flex flex-wrap gap-1.5">
         {multi && includeAllOption && (
           <button
             type="button"
+            data-pill="1"
             onClick={pickAll}
+            onKeyDown={(e) => onPillKeyDown(e, 0)}
             className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
               isAllSelected
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
@@ -133,16 +168,19 @@ export function SelectPills({
             {t.templates.adopt_modal.all_option}
           </button>
         )}
-        {options.map((opt) => {
+        {options.map((opt, i) => {
           const selected =
             !showCustomInput &&
             !isAllSelected &&
             (multi ? selectedValues.has(opt.value) : value === opt.value);
+          const pillIdx = (multi && includeAllOption ? 1 : 0) + i;
           return (
             <button
               key={opt.value}
               type="button"
+              data-pill="1"
               onClick={() => togglePill(opt.value)}
+              onKeyDown={(e) => onPillKeyDown(e, pillIdx)}
               className={`px-3.5 py-1.5 text-base rounded-card border transition-all ${
                 selected
                   ? 'bg-primary/20 border-primary/30 text-primary font-medium'
@@ -172,7 +210,7 @@ export function SelectPills({
             </button>
           </span>
         ))}
-        {allowCustom && (
+        {effectiveAllowCustom && (
           <button
             type="button"
             onClick={() => setShowCustomInput((v) => !v)}
@@ -186,7 +224,7 @@ export function SelectPills({
           </button>
         )}
       </div>
-      {allowCustom && showCustomInput && (
+      {effectiveAllowCustom && showCustomInput && (
         <div className="flex items-center gap-2">
           <input
             ref={customInputRef}

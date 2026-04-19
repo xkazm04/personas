@@ -38,6 +38,14 @@ use super::logger::ExecutionLogger;
 use super::parser;
 use super::prompt;
 use super::provider::{self, PromptDelivery};
+
+/// Default per-execution stream timeout when `persona.timeout_ms <= 0`.
+///
+/// 11 minutes — deliberately above the Claude Code CLI 2.1.113 subagent-stall
+/// cutoff (10 minutes) so the CLI's clearer mid-stream error surfaces before
+/// personas' generic "timed out after 600s" fires. See
+/// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md` T6.
+pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
@@ -230,6 +238,26 @@ pub async fn run_execution(
         .and_then(|d| d.get("_ops"))
         .and_then(|f| f.as_bool())
         .unwrap_or(false);
+
+    // Phase C3 — simulation runs preserve protocol storage but skip outbound
+    // notification delivery (real Slack/email pushes). Set by `simulate_use_case`.
+    let is_simulation_mode = input_data
+        .as_ref()
+        .and_then(|d| d.get("_simulation"))
+        .and_then(|f| f.as_bool())
+        .unwrap_or(false);
+
+    // Phase C5 — capability attribution. The execution's use_case_id is
+    // expanded into `input_data._use_case` by `execute_persona` (see
+    // commands/execution/executions.rs §1b). Recover the bare id here so
+    // every dispatch context (and the memory injection below) can scope
+    // by capability.
+    let execution_use_case_id: Option<String> = input_data
+        .as_ref()
+        .and_then(|d| d.get("_use_case"))
+        .and_then(|uc| uc.get("id"))
+        .and_then(|id| id.as_str())
+        .map(|s| s.to_string());
 
     if let Some(Continuation::PromptHint(ref hint)) = continuation {
         let mut obj = input_data
@@ -471,9 +499,18 @@ pub async fn run_execution(
     // Inject tiered agent memories from prior runs so the agent can recall
     // what the user found valuable, recurring patterns, and learned context.
     // Core memories (stable beliefs/preferences) are always injected.
-    // Active memories are scored by importance + recency + access frequency.
+    // Active/working memories are scored by importance + recency + access
+    // frequency, and (Phase C5) scoped to the execution's capability when one
+    // is set — so capability-attributed learnings only surface under their
+    // own capability, while persona-wide memories surface everywhere.
     let prompt_text = if !is_session_resume {
-        match mem_repo::get_for_injection(&pool, &persona.id, 10, 40) {
+        match mem_repo::get_for_injection_v2(
+            &pool,
+            &persona.id,
+            execution_use_case_id.as_deref(),
+            10,
+            40,
+        ) {
             Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
                 let mut mem_section = String::new();
 
@@ -651,6 +688,20 @@ pub async fn run_execution(
         &policy_decision,
     );
 
+    // Generate a W3C traceparent for this execution. Injected into each
+    // failover candidate's env so the spawned Claude CLI ≥ 2.1.110 participates
+    // in the same distributed trace as personas' own span tree. Persisted once
+    // up-front; failover re-attempts within the same execution share the ID.
+    let w3c_trace = super::trace::W3cTraceContext::new_root();
+    let traceparent_header = w3c_trace.traceparent_header();
+    if let Err(e) = exec_repo::set_traceparent(&pool, &execution_id, &traceparent_header) {
+        tracing::warn!(
+            execution_id = %execution_id,
+            error = ?e,
+            "Failed to persist traceparent — continuing without DB-side correlation"
+        );
+    }
+
     // Resolve provider + build CLI args + spawn, trying each failover candidate
     let mut last_spawn_error: Option<String> = None;
     #[allow(unused_assignments)]
@@ -731,6 +782,19 @@ pub async fn run_execution(
                     };
                 }
                 PromptDelivery::Stdin => {}
+            }
+
+            // Inject the W3C traceparent generated above into the child CLI's
+            // env. Claude CLI ≥ 2.1.110 picks this up and includes it on the
+            // spans it emits for its internal API / tool calls. Harmless no-op
+            // for providers that don't read it (e.g. Codex) — OTEL collectors
+            // simply ignore unrelated env vars.
+            cli_args.env_overrides.push((
+                "TRACEPARENT".to_string(),
+                traceparent_header.clone(),
+            ));
+            if let Some(state) = w3c_trace.tracestate_header() {
+                cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
             }
 
             if candidate_idx > 0 {
@@ -1060,22 +1124,25 @@ pub async fn run_execution(
         tokio::spawn(async { String::new() })
     };
 
-    // Set up timeout
+    // Set up timeout. Buffer above the CLI's 10-min subagent-stall cutoff so the
+    // upstream error can surface before personas' generic timeout fires.
     let timeout_ms = if persona.timeout_ms > 0 {
         persona.timeout_ms as u64
     } else {
-        600_000
-    }; // default 10 min
+        DEFAULT_EXECUTION_TIMEOUT_MS
+    };
     let timeout_duration = std::time::Duration::from_millis(timeout_ms);
 
     // Clone values needed in the closure
     let exec_id_for_stream = execution_id.clone();
     let persona_id_for_stream = persona.id.clone();
+    let use_case_id_for_stream: Option<String> = execution_use_case_id.clone();
     let project_id_for_stream = persona.project_id.clone();
     let pool_for_stream = pool.clone();
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
     let is_ops_for_stream = is_ops_mode;
+    let is_simulation_for_stream = is_simulation_mode;
 
     // Track mid-stream protocol dispatches for execution-scoped dedup in post-mortem
     let stream_events_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
@@ -1207,11 +1274,26 @@ pub async fn run_execution(
                                     execution_id: exec_id_for_stream.clone(),
                                     content_preview: content_preview.clone(),
                                 }),
-                                StreamLineType::SystemInit { model, session_id } => Some(StructuredExecutionEvent::SystemInit {
-                                    execution_id: exec_id_for_stream.clone(),
-                                    model: model.clone(),
-                                    session_id: session_id.clone(),
-                                }),
+                                StreamLineType::SystemInit { model, session_id, plugin_errors } => {
+                                    // CLI ≥ 2.1.111 reports demoted plugins in .claude/plugins/.
+                                    // Surface them to tracing so headless runs get observability;
+                                    // StructuredExecutionEvent::SystemInit does not currently carry
+                                    // the vec (frontend has no surface for it), so the log is the
+                                    // canonical signal.
+                                    if !plugin_errors.is_empty() {
+                                        tracing::warn!(
+                                            execution_id = %exec_id_for_stream,
+                                            count = plugin_errors.len(),
+                                            errors = ?plugin_errors,
+                                            "Claude CLI reported demoted plugins on session init"
+                                        );
+                                    }
+                                    Some(StructuredExecutionEvent::SystemInit {
+                                        execution_id: exec_id_for_stream.clone(),
+                                        model: model.clone(),
+                                        session_id: session_id.clone(),
+                                    })
+                                }
                                 StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, model, session_id } => Some(StructuredExecutionEvent::ExecutionResult {
                                     execution_id: exec_id_for_stream.clone(),
                                     duration_ms: *duration_ms,
@@ -1284,6 +1366,8 @@ pub async fn run_execution(
                                                 Some(gate_config.clone()),
                                             );
                                             dispatch_ctx.ops_mode = is_ops_for_stream;
+                                            dispatch_ctx.is_simulation = is_simulation_for_stream;
+                                            dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
                                             super::dispatch::dispatch(&mut dispatch_ctx, msg);
                                         }
                                     }
@@ -1422,6 +1506,8 @@ pub async fn run_execution(
                                             Some(gate_config.clone()),
                                         );
                                         dispatch_ctx.ops_mode = is_ops_for_stream;
+                                        dispatch_ctx.is_simulation = is_simulation_for_stream;
+                                        dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
                                         use super::protocol::ExecutionProtocol;
                                         match &protocol_msg {
                                             ProtocolMessage::EmitEvent { .. } => {
@@ -1572,6 +1658,8 @@ pub async fn run_execution(
                 None, // lazy-loaded on first use (context persists across loop)
             );
             dispatch_ctx.ops_mode = is_ops_mode;
+            dispatch_ctx.is_simulation = is_simulation_mode;
+            dispatch_ctx.use_case_id = execution_use_case_id.as_deref();
             use super::protocol::ExecutionProtocol;
             for line in assistant_text.split('\n') {
                 let trimmed = line.trim();
@@ -2312,4 +2400,28 @@ pub(crate) async fn inject_credential(
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DEFAULT_EXECUTION_TIMEOUT_MS;
+
+    /// Defensive guard: the fallback must stay above the Claude Code CLI
+    /// 2.1.113 subagent-stall cutoff (10 minutes). See handoff T6 in
+    /// `.planning/handoffs/2026-04-17-claude-cli-2-1-111-adapter-drift.md`.
+    #[test]
+    fn default_execution_timeout_exceeds_cli_subagent_stall_cutoff() {
+        const CLI_SUBAGENT_STALL_CUTOFF_MS: u64 = 600_000;
+        assert!(
+            DEFAULT_EXECUTION_TIMEOUT_MS > CLI_SUBAGENT_STALL_CUTOFF_MS,
+            "DEFAULT_EXECUTION_TIMEOUT_MS ({DEFAULT_EXECUTION_TIMEOUT_MS} ms) must be > \
+             CLI_SUBAGENT_STALL_CUTOFF_MS ({CLI_SUBAGENT_STALL_CUTOFF_MS} ms) so the CLI's \
+             clearer error can surface before personas' generic timeout fires"
+        );
+    }
+
+    #[test]
+    fn default_execution_timeout_is_660_000_ms() {
+        assert_eq!(DEFAULT_EXECUTION_TIMEOUT_MS, 660_000);
+    }
 }

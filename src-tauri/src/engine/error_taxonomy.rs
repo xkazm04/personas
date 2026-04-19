@@ -181,6 +181,28 @@ pub fn is_auto_fixable(category: &ErrorCategory) -> bool {
     matches!(category, ErrorCategory::RateLimit | ErrorCategory::Timeout)
 }
 
+/// Phase C5b — returns `true` for categories that represent **technical**
+/// failures of the run itself (auth/network/provider/timeout). These are NOT
+/// the LLM's signals — the LLM may have emitted a `ManualReview` protocol
+/// message before the technical error propagated, but those reviews shouldn't
+/// queue for human resolution because they describe a run that never produced
+/// real output.
+///
+/// Excludes `ToolError`, `Validation`, and `Unknown` — those can legitimately
+/// surface review-worthy state from the LLM's perspective.
+pub fn is_technical_failure(category: &ErrorCategory) -> bool {
+    matches!(
+        category,
+        ErrorCategory::RateLimit
+            | ErrorCategory::SessionLimit
+            | ErrorCategory::Timeout
+            | ErrorCategory::ProviderNotFound
+            | ErrorCategory::CredentialError
+            | ErrorCategory::Network
+            | ErrorCategory::ApiError
+    )
+}
+
 /// Returns `true` for categories that should trigger provider failover.
 pub fn is_failover_eligible(category: &ErrorCategory) -> bool {
     matches!(
@@ -234,6 +256,36 @@ pub fn db_category(category: &ErrorCategory) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // --- is_technical_failure (Phase C5b) ---
+
+    #[test]
+    fn test_is_technical_failure_classifies_infra_categories_as_technical() {
+        for cat in [
+            ErrorCategory::RateLimit,
+            ErrorCategory::SessionLimit,
+            ErrorCategory::Timeout,
+            ErrorCategory::ProviderNotFound,
+            ErrorCategory::CredentialError,
+            ErrorCategory::Network,
+            ErrorCategory::ApiError,
+        ] {
+            assert!(is_technical_failure(&cat), "{cat:?} should be technical");
+        }
+    }
+
+    #[test]
+    fn test_is_technical_failure_excludes_llm_signals() {
+        // ToolError / Validation / Unknown can legitimately surface review-worthy
+        // state — we don't suppress reviews for them.
+        for cat in [
+            ErrorCategory::ToolError,
+            ErrorCategory::Validation,
+            ErrorCategory::Unknown,
+        ] {
+            assert!(!is_technical_failure(&cat), "{cat:?} should NOT be technical");
+        }
+    }
 
     // --- classify_error ---
 

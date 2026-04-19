@@ -36,16 +36,20 @@ export const deleteTrigger = (id: string, personaId: string) =>
  * Atomically create an event_listener trigger AND patch the persona's
  * structured_prompt.eventHandlers with matching handler text. The persona
  * will actually react to the wired event at runtime.
+ *
+ * Pass `useCaseId` to scope the trigger to a specific capability (Phase C4);
+ * omit / `null` → persona-wide.
  */
 export const linkPersonaToEvent = (
   personaId: string,
   eventType: string,
-  handlerText?: string,
+  options?: { handlerText?: string; useCaseId?: string | null },
 ) =>
   invoke<PersonaTrigger>("link_persona_to_event", {
     personaId,
     eventType,
-    handlerText: handlerText ?? null,
+    handlerText: options?.handlerText ?? null,
+    useCaseId: options?.useCaseId ?? null,
   });
 
 /** Inverse: delete the event_listener trigger AND remove its handler entry. */

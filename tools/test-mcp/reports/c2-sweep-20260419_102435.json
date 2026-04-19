@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-04-19T10:24:35",
+  "total_templates": 3,
+  "grade_distribution": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "F": 1,
+    "skip": 2
+  },
+  "failure_patterns": {
+    "modal_opens": 1,
+    "persona_created": 1,
+    "questionnaire_renders": 1,
+    "submit_all": 1
+  },
+  "results": [
+    {
+      "template_id": "ai-document-intelligence-hub",
+      "display_name": "AI Document Intelligence Hub",
+      "category": "content",
+      "path": "scripts/templates/content/ai-document-intelligence-hub.json",
+      "schema_version": 1,
+      "status": "skipped",
+      "duration_ms": 0,
+      "connectors": {
+        "available": [
+          "notion",
+          "telegram",
+          "slack"
+        ],
+        "missing": [
+          "google_drive"
+        ]
+      },
+      "checks": [],
+      "issues": [
+        "missing connectors: google_drive"
+      ],
+      "persona_id": null,
+      "build_phase": null,
+      "grade": "skip"
+    },
+    {
+      "template_id": "analytics-content-distribution-use-case",
+      "display_name": "Analytics Content Distribution Use Case",
+      "category": "content",
+      "path": "scripts/templates/content/analytics-content-distribution-use-case.json",
+      "schema_version": 1,
+      "status": "skipped",
+      "duration_ms": 0,
+      "connectors": {
+        "available": [
+          "buffer"
+        ],
+        "missing": [
+          "wordpress",
+          "google_analytics"
+        ]
+      },
+      "checks": [],
+      "issues": [
+        "missing connectors: wordpress, google_analytics"
+      ],
+      "persona_id": null,
+      "build_phase": null,
+      "grade": "skip"
+    },
+    {
+      "template_id": "audio-briefing-host",
+      "display_name": "Audio Briefing Host",
+      "category": "content",
+      "path": "scripts/templates/content/audio-briefing-host.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 10664,
+      "connectors": {
+        "available": [
+          "elevenlabs"
+        ],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=533f68e8-6b5e-4be5-9c5a-6ee02f11a241"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": false,
+          "detail": "no modal"
+        },
+        {
+          "id": "persona_created",
+          "passed": false,
+          "detail": "no buildPersonaId"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": false,
+          "detail": "0 questions"
+        },
+        {
+          "id": "submit_all",
+          "passed": false,
+          "detail": "buildPhase=initializing"
+        }
+      ],
+      "issues": [
+        "modal_opens: no modal",
+        "persona_created: no buildPersonaId",
+        "questionnaire_renders: 0 questions",
+        "submit_all: buildPhase=initializing"
+      ],
+      "persona_id": null,
+      "build_phase": "initializing",
+      "grade": "F"
+    }
+  ]
+}

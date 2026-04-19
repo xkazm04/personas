@@ -26,6 +26,10 @@ export interface GlobalExecutionRow {
   created_at: string;
   execution_config: string | null;
   log_truncated: boolean;
+  /**
+   * Phase C3 — simulation runs are excluded from the default activity feed.
+   */
+  is_simulation: boolean;
   persona_name: string | null;
   persona_icon: string | null;
   persona_color: string | null;

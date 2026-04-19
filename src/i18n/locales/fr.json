@@ -6114,7 +6114,7 @@
       "rename_placeholder": "nouveau.type.evenement",
       "renaming": "Renommage...",
       "show_sidebar": "Afficher la barre latérale",
-      "source": "Source",
+      "source": "Type",
       "source_personas": "Personas sources",
       "use_template": "Utiliser le modèle"
     },
@@ -9176,7 +9176,11 @@
   "models": {
     "haiku": "Haiku",
     "sonnet": "Sonnet",
-    "opus": "Opus"
+    "opus": "Opus",
+    "effort_low": "Low",
+    "effort_medium": "Medium",
+    "effort_high": "High",
+    "effort_xhigh": "xhigh"
   },
   "error_explanation": {
     "action_go_to_vault": "Accéder au Coffre-fort",

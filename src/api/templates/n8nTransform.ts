@@ -63,6 +63,19 @@ export interface TransformQuestionResponse {
   default?: string;
   context?: string;
   allow_custom?: boolean;
+  /** Phase C2 — scope for grouped questionnaire UI.
+   *  Populated by the backend when the template declares it; otherwise
+   *  inferred at render time from `use_case_ids` / connector hints. */
+  scope?: 'persona' | 'capability' | 'connector';
+  /** Phase C2 — capability id when `scope === 'capability'`. Must match a
+   *  `use_cases[].id` in the template's design_context. */
+  use_case_id?: string;
+  /** Phase C2 — use case ids the question applies to. Single-entry arrays
+   *  also count as a capability scope hint when `scope` is absent. */
+  use_case_ids?: string[];
+  /** Phase C2 — connector names the question configures. Triggers connector
+   *  scope when present and no explicit scope is set. */
+  connector_names?: string[];
   /** Credential category to match against the vault (e.g. "cloud", "ai"). */
   vault_category?: string;
   /** Parallel array mapping each `options` entry to a credential service_type. null = no mapping. */

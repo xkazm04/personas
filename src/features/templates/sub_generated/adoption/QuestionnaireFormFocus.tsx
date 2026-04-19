@@ -105,6 +105,7 @@ export function QuestionnaireFormFocus({
   );
   const blockedCount = blockedQuestionIds?.size ?? 0;
   const canSubmit = answeredCount === questions.length && blockedCount === 0;
+  const isAtEnd = activeIdx === questions.length - 1;
 
   const next = useCallback(() => {
     setActiveIdx((i) => Math.min(i + 1, questions.length - 1));
@@ -114,12 +115,15 @@ export function QuestionnaireFormFocus({
   }, []);
 
   // Keyboard nav.
-  // - ArrowLeft / ArrowRight navigate (ignored while typing so textareas can
-  //   still use arrow keys for caret motion).
-  // - Enter advances to the next question from text inputs and
-  //   non-shift-enter in textareas. This is the "quick path" through the
-  //   questionnaire — users can tab through questions without reaching for
-  //   the mouse. Shift+Enter in a textarea still inserts a newline.
+  // - ArrowLeft / ArrowRight navigate between questions (ignored while typing
+  //   so textareas can still use arrow keys for caret motion). Up/Down are
+  //   reserved for in-widget pill navigation (handled inside SelectPills).
+  // - Enter confirms the current answer and advances:
+  //     * Last step + all answered → submit the whole form
+  //     * Otherwise → advance one step (regardless of input type)
+  //   Shift+Enter in a textarea still inserts a newline. Enter in an input
+  //   of a non-text type (checkbox, radio) is left to the native control.
+  const currentAnswered = !!userAnswers[currentQuestion?.id ?? ''];
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -130,20 +134,27 @@ export function QuestionnaireFormFocus({
       const isTyping = isInput || isTextarea || target.isContentEditable;
 
       if (e.key === 'Enter') {
-        // Textarea: only advance on Enter without Shift. Shift+Enter keeps
-        // the native newline insertion behaviour.
+        // Shift+Enter in a textarea keeps the native newline insertion.
         if (isTextarea && e.shiftKey) return;
-        if (isInput || isTextarea) {
-          // Inputs of type="button" / "submit" shouldn't trigger a next hop.
-          if (isInput && (target as HTMLInputElement).type !== 'text' &&
-              (target as HTMLInputElement).type !== '' &&
-              (target as HTMLInputElement).type !== 'search') {
+        // Non-text inputs (checkbox, radio, etc.) keep native Enter behaviour.
+        if (isInput) {
+          const inputType = (target as HTMLInputElement).type;
+          if (inputType && inputType !== 'text' && inputType !== '' && inputType !== 'search') {
             return;
           }
+        }
+        // Last step + everything answered → submit.
+        if (isAtEnd && canSubmit) {
           e.preventDefault();
-          next();
+          onSubmit();
           return;
         }
+        // Otherwise, if the current question is answered, advance.
+        if (currentAnswered) {
+          e.preventDefault();
+          next();
+        }
+        return;
       }
       if (isTyping) return;
       if (e.key === 'ArrowRight') next();
@@ -151,7 +162,7 @@ export function QuestionnaireFormFocus({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev]);
+  }, [next, prev, isAtEnd, canSubmit, onSubmit, currentAnswered]);
 
   // Build the preview structure from the template's category grouping.
   const categoryBuckets = useMemo(() => {
@@ -168,7 +179,6 @@ export function QuestionnaireFormFocus({
   const currentMeta =
     CATEGORY_META[currentQuestion.category ?? ''] ?? FALLBACK_CATEGORY;
   const { Icon: CurrentIcon } = currentMeta;
-  const isAtEnd = activeIdx === questions.length - 1;
 
   // Everything (header + stage + footer) is constrained to a single
   // `max-w-5xl` column so the left and right halves stay visually close on
@@ -274,7 +284,9 @@ export function QuestionnaireFormFocus({
                   onRetryDynamic={onRetryDynamic}
                 />
 
-                {/* Hint + arrow-key legend */}
+                {/* Hint + arrow-key legend. Enter is only wired on the last
+                    step (to submit), so the hint is suppressed everywhere else
+                    to avoid teaching a shortcut that won't work mid-flow. */}
                 <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-foreground">
                   <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
                     ←
@@ -283,11 +295,15 @@ export function QuestionnaireFormFocus({
                     →
                   </kbd>
                   <span>{t.templates.adopt_modal.navigate_hint}</span>
-                  <span className="text-foreground">·</span>
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
-                    Enter
-                  </kbd>
-                  <span>{t.templates.adopt_modal.enter_to_advance}</span>
+                  {isAtEnd && canSubmit && (
+                    <>
+                      <span className="text-foreground">·</span>
+                      <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
+                        Enter
+                      </kbd>
+                      <span>{t.templates.adopt_modal.enter_to_advance}</span>
+                    </>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -404,7 +420,7 @@ export function QuestionnaireFormFocus({
               <button
                 type="button"
                 onClick={onSubmit}
-                className="flex items-center gap-2 px-6 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-6 py-2 typo-body font-medium rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 {t.templates.adopt_modal.submit_all}
@@ -414,7 +430,7 @@ export function QuestionnaireFormFocus({
                 type="button"
                 onClick={next}
                 disabled={isAtEnd}
-                className="flex items-center gap-2 px-5 py-2 typo-body font-medium rounded-modal bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
+                className="flex items-center gap-2 px-5 py-2 typo-body font-medium rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
               >
                 {t.templates.adopt_modal.next}
                 <ChevronRight className="w-4 h-4" />

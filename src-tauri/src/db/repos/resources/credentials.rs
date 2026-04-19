@@ -1085,7 +1085,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         // Create
-        let cred = create(
+        let cred = create_with_fields(
             &pool,
             CreateCredentialInput {
                 name: "My Gmail".into(),
@@ -1096,6 +1096,7 @@ mod tests {
                 session_encrypted_data: None,
                 healthcheck_passed: None,
             },
+            &HashMap::new(),
         )
         .unwrap();
         assert_eq!(cred.name, "My Gmail");
@@ -1156,7 +1157,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         // Create a credential first (required by FK)
-        let cred = create(
+        let cred = create_with_fields(
             &pool,
             CreateCredentialInput {
                 name: "Event Test Cred".into(),
@@ -1167,6 +1168,7 @@ mod tests {
                 session_encrypted_data: None,
                 healthcheck_passed: None,
             },
+            &HashMap::new(),
         )
         .unwrap();
 

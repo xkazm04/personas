@@ -20,6 +20,11 @@ pub struct PersonaMessage {
     pub created_at: String,
     pub read_at: Option<String>,
     pub thread_id: Option<String>,
+    /// Capability (use case) attribution. Inherited from the originating
+    /// execution's `use_case_id` at dispatch time. `None` for persona-wide
+    /// messages (e.g. ad-hoc chat). Phase C5.
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -33,6 +38,8 @@ pub struct CreateMessageInput {
     pub priority: Option<String>,
     pub metadata: Option<String>,
     pub thread_id: Option<String>,
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 /// Summary of a message thread: the parent message plus reply count and latest reply timestamp.

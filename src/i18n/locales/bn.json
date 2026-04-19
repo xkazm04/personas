@@ -6114,7 +6114,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "নাম পরিবর্তন হচ্ছে...",
       "show_sidebar": "সাইডবার দেখান",
-      "source": "উৎস",
+      "source": "ধরন",
       "source_personas": "উৎস পার্সোনা",
       "use_template": "টেমপ্লেট ব্যবহার করুন"
     },
@@ -9176,7 +9176,11 @@
   "models": {
     "haiku": "Haiku",
     "sonnet": "Sonnet",
-    "opus": "Opus"
+    "opus": "Opus",
+    "effort_low": "Low",
+    "effort_medium": "Medium",
+    "effort_high": "High",
+    "effort_xhigh": "xhigh"
   },
   "error_explanation": {
     "action_go_to_vault": "Go to Vault",

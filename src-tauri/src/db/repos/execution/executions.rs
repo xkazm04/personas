@@ -31,6 +31,7 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         created_at: row.get("created_at")?,
         execution_config: row.get("execution_config").unwrap_or(None),
         log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
+        is_simulation: row.get::<_, Option<bool>>("is_simulation")?.unwrap_or(false),
     })
 }
 
@@ -116,6 +117,7 @@ pub fn get_all_global(
             created_at: row.get("created_at")?,
             execution_config: row.get("execution_config").unwrap_or(None),
             log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
+            is_simulation: row.get::<_, Option<bool>>("is_simulation")?.unwrap_or(false),
             persona_name: row.get("persona_name")?,
             persona_icon: row.get("persona_icon")?,
             persona_color: row.get("persona_color")?,
@@ -154,13 +156,17 @@ pub fn create(
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::create", {
-        create_with_idempotency(pool, persona_id, trigger_id, input_data, model_used, use_case_id, None)
+        create_with_idempotency(pool, persona_id, trigger_id, input_data, model_used, use_case_id, None, false)
     })
 }
 
 /// Create an execution record with an optional idempotency key.
 /// If `idempotency_key` is `Some` and an execution with that key already exists,
 /// the existing record is returned instead of creating a duplicate.
+///
+/// `is_simulation` — Phase C3: when `true` the execution is flagged as a
+/// simulation. Dispatch skips real notification delivery; activity feeds
+/// filter these rows out by default.
 pub fn create_with_idempotency(
     pool: &DbPool,
     persona_id: &str,
@@ -169,6 +175,7 @@ pub fn create_with_idempotency(
     model_used: Option<String>,
     use_case_id: Option<String>,
     idempotency_key: Option<String>,
+    is_simulation: bool,
 ) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::create_with_idempotency", {
         // Check for existing execution with this idempotency key
@@ -189,9 +196,9 @@ pub fn create_with_idempotency(
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_executions
-             (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, created_at)
-             VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8)",
-            params![id, persona_id, trigger_id, input_data, model_used, use_case_id, idempotency_key, now],
+             (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
+             VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)",
+            params![id, persona_id, trigger_id, input_data, model_used, use_case_id, idempotency_key, is_simulation as i64, now],
         )?;
 
         get_by_id(pool, &id)
@@ -529,6 +536,20 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM persona_executions WHERE id = ?1", params![id])?;
         Ok(rows > 0)
+    })
+}
+
+/// Persist the W3C traceparent header generated for an execution so downstream
+/// observability pipelines can correlate personas' trace with the CLI's spans.
+/// Called near execution start, after `create()`.
+pub fn set_traceparent(pool: &DbPool, execution_id: &str, traceparent: &str) -> Result<(), AppError> {
+    timed_query!("persona_executions", "persona_executions::set_traceparent", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_executions SET traceparent = ?1 WHERE id = ?2",
+            params![traceparent, execution_id],
+        )?;
+        Ok(())
     })
 }
 

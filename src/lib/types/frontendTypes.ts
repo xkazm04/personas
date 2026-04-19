@@ -194,6 +194,35 @@ export interface DesignUseCase {
   notification_channels?: NotificationChannel[];
   event_subscriptions?: UseCaseEventSubscription[];
   test_fixtures?: TestFixture[];
+  /** Phase C1 — runtime toggle. `undefined`/`true` = active. */
+  enabled?: boolean;
+  /** One-line summary injected into the runtime "Active Capabilities" prompt section. */
+  capability_summary?: string;
+  /** Tool names to prefer when this capability is in focus. Advisory only. */
+  tool_hints?: string[];
+  /** Phase C5b — per-capability generation policy. */
+  generation_settings?: UseCaseGenerationSettings;
+}
+
+/**
+ * Phase C5b — controls per-capability generation of artefacts. Absent fields
+ * inherit from persona-level defaults (computed by the backend from existing
+ * memory/review counts at policy-resolve time).
+ *
+ * - `memories`: 'on' stores agent-emitted memories under this capability;
+ *   'off' silently drops them at the dispatch layer.
+ * - `reviews`: 'on' queues manual reviews as today; 'off' drops them;
+ *   'trust_llm' stores them but auto-resolves with status='resolved' so they
+ *   never block a human queue.
+ * - `events`: 'on' publishes events as the LLM emits them; 'off' drops them.
+ * - `event_aliases`: rename map applied at emit time. Key = name the LLM
+ *   emits; value = name actually published. Subscribers listen to the value.
+ */
+export interface UseCaseGenerationSettings {
+  memories?: 'on' | 'off';
+  reviews?: 'on' | 'off' | 'trust_llm';
+  events?: 'on' | 'off';
+  event_aliases?: Record<string, string>;
 }
 
 export interface UseCaseTimeFilter {

@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-04-19T10:25:45",
+  "total_templates": 1,
+  "grade_distribution": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "F": 1,
+    "skip": 0
+  },
+  "failure_patterns": {
+    "persona_created": 1,
+    "questionnaire_renders": 1,
+    "scope_grouping_v2": 1,
+    "submit_all": 1
+  },
+  "results": [
+    {
+      "template_id": "email-morning-digest",
+      "display_name": "Email Morning Digest",
+      "category": "productivity",
+      "path": "scripts/templates/productivity/email-morning-digest.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 10720,
+      "connectors": {
+        "available": [
+          "gmail"
+        ],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=f48dfe4f-436e-49d2-975a-6102507a2006"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "persona_created",
+          "passed": false,
+          "detail": "no buildPersonaId"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": false,
+          "detail": "0 questions"
+        },
+        {
+          "id": "scope_grouping_v2",
+          "passed": false,
+          "detail": "no scope-grouped sections (legacy layout)"
+        },
+        {
+          "id": "submit_all",
+          "passed": false,
+          "detail": "buildPhase=initializing"
+        }
+      ],
+      "issues": [
+        "persona_created: no buildPersonaId",
+        "questionnaire_renders: 0 questions",
+        "scope_grouping_v2: no scope-grouped sections (legacy layout)",
+        "submit_all: buildPhase=initializing"
+      ],
+      "persona_id": null,
+      "build_phase": "initializing",
+      "grade": "F"
+    }
+  ]
+}

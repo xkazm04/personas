@@ -14,6 +14,12 @@ export interface ActivityItem {
   subtitle: string;
   status: string;
   timestamp: string;
+  /**
+   * Capability (use case) attribution. Inherited from the originating
+   * execution at dispatch time. Phase C5. `null` for persona-wide rows
+   * (ad-hoc chat, budget alerts, reviews from non-capability runs).
+   */
+  useCaseId: string | null;
   raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview | PersonaMessage;
 }
 

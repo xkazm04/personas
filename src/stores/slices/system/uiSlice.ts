@@ -1,7 +1,7 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
 export interface AdoptionDraft {
   reviewId: string;
@@ -32,6 +32,8 @@ export interface UiSlice {
   templateTab: TemplateTab;
   agentTab: AgentTab;
   editorTab: EditorTab;
+  /** Sub-tab inside the Design hub (absorbs former Prompt / Connectors / Health tabs). */
+  designSubTab: DesignSubTab;
   cloudTab: CloudTab;
   settingsTab: SettingsTab;
   rerunInputData: string | null;
@@ -68,7 +70,9 @@ export interface UiSlice {
   setHomeTab: (tab: HomeTab) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
-  setEditorTab: (tab: EditorTab) => void;
+  /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
+  setEditorTab: (tab: EditorTab | "prompt" | "connectors" | "health") => void;
+  setDesignSubTab: (tab: DesignSubTab) => void;
   setCloudTab: (tab: CloudTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setRerunInputData: (data: string | null) => void;
@@ -111,6 +115,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
+  designSubTab: "design" as DesignSubTab,
   cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,
@@ -142,7 +147,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
-  setEditorTab: (tab) => startTransition(() => set({ editorTab: tab })),
+  setEditorTab: (tab) => startTransition(() => {
+    // Migrate legacy tab IDs → design hub with the matching sub-tab.
+    if (tab === "prompt") return set({ editorTab: "design", designSubTab: "prompt" });
+    if (tab === "connectors") return set({ editorTab: "design", designSubTab: "connectors" });
+    if (tab === "health") return set({ editorTab: "design", designSubTab: "design" });
+    set({ editorTab: tab });
+  }),
+  setDesignSubTab: (tab) => startTransition(() => set({ designSubTab: tab })),
   setCloudTab: (tab) => startTransition(() => set({ cloudTab: tab })),
   setSettingsTab: (tab) => startTransition(() => set({ settingsTab: tab })),
   setRerunInputData: (data) => set({ rerunInputData: data }),

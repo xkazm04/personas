@@ -44,6 +44,11 @@ pub struct PersonaExecution {
     /// `true` when the execution log file may be incomplete due to I/O errors.
     #[serde(default)]
     pub log_truncated: bool,
+    /// Phase C3 — `true` when this execution was started via
+    /// `simulate_use_case`. Simulations skip real notification dispatch and
+    /// are filtered out of the default activity feed.
+    #[serde(default)]
+    pub is_simulation: bool,
 }
 
 /// Execution row with persona metadata included via SQL JOIN.
@@ -81,6 +86,9 @@ pub struct GlobalExecutionRow {
     /// `true` when the execution log file may be incomplete due to I/O errors.
     #[serde(default)]
     pub log_truncated: bool,
+    /// Phase C3 — simulation runs are excluded from the default activity feed.
+    #[serde(default)]
+    pub is_simulation: bool,
     // Persona metadata from JOIN
     pub persona_name: Option<String>,
     pub persona_icon: Option<String>,

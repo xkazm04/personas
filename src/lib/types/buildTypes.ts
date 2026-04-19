@@ -70,6 +70,47 @@ export type BuildEvent =
       phase: string;
       resolved_count: number;
       total_count: number;
+    }
+  // v3 capability-framework events (additive; coexist with legacy events).
+  // The CLI emits these directly; the backend parser ALSO mirrors each to a
+  // legacy cell_update/question for the old 3×3 matrix UI. See
+  // docs/concepts/persona-capabilities/C4-build-from-scratch-v3-handoff.md §3.8.
+  | {
+      type: "behavior_core_update";
+      session_id: string;
+      data: unknown;
+      status: string;
+    }
+  | {
+      type: "capability_enumeration_update";
+      session_id: string;
+      data: unknown;
+      status: string;
+    }
+  | {
+      type: "capability_resolution_update";
+      session_id: string;
+      capability_id: string;
+      field: string;
+      value: unknown;
+      status: string;
+    }
+  | {
+      type: "persona_resolution_update";
+      session_id: string;
+      field: string;
+      value: unknown;
+      status: string;
+    }
+  | {
+      type: "clarifying_question_v3";
+      session_id: string;
+      /** "mission" | "capability" | "field" */
+      scope: string;
+      capability_id: string | null;
+      field: string | null;
+      question: string;
+      options: string[] | null;
     };
 
 /** A pending question the user needs to answer for a specific cell. */

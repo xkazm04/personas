@@ -323,6 +323,7 @@ pub async fn import_persona(
                 source_execution_id: None,
                 importance: Some(m.importance),
                 tags: m.tags.clone(),
+                use_case_id: None,
             })
             .collect();
         let expected = memory_inputs.len();

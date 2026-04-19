@@ -167,6 +167,50 @@ pub fn match_event<T: MatchableSubscription>(
         .collect()
 }
 
+/// Phase C4 — collapse `(persona_id, use_case_id)` duplicates within a match
+/// set, preferring capability-scoped matches over persona-wide ones for the
+/// same persona.
+///
+/// Rules:
+/// 1. Matches with distinct `(persona_id, use_case_id)` pairs are all kept —
+///    one persona can still run multiple capability-scoped handlers for the
+///    same event (different capabilities handle different aspects).
+/// 2. If a persona has **both** a capability-scoped match (`use_case_id = Some`)
+///    and a persona-wide match (`use_case_id = None`), the persona-wide match
+///    is dropped. Rationale: the author scoped a capability to this event on
+///    purpose; firing the persona-wide handler on top would double-dispatch.
+/// 3. If the only match for a persona is persona-wide, it is kept.
+///
+/// Preserves insertion order of survivors so callers still see a stable
+/// dispatch sequence.
+pub fn prefer_capability_scoped(matches: Vec<EventMatch>) -> Vec<EventMatch> {
+    use std::collections::HashSet;
+
+    // First pass: remember which personas have at least one capability-scoped match.
+    let mut personas_with_scoped: HashSet<String> = HashSet::new();
+    for m in &matches {
+        if m.use_case_id.is_some() {
+            personas_with_scoped.insert(m.persona_id.clone());
+        }
+    }
+
+    // Second pass: drop persona-wide matches for personas that have a scoped one,
+    // and dedupe on `(persona_id, use_case_id)` so the same capability-scoped
+    // subscription doesn't fire twice through the legacy+trigger merge path.
+    let mut seen: HashSet<(String, Option<String>)> = HashSet::new();
+    let mut out = Vec::with_capacity(matches.len());
+    for m in matches {
+        if m.use_case_id.is_none() && personas_with_scoped.contains(&m.persona_id) {
+            continue;
+        }
+        let key = (m.persona_id.clone(), m.use_case_id.clone());
+        if seen.insert(key) {
+            out.push(m);
+        }
+    }
+    out
+}
+
 /// Convenience wrapper: match event against `PersonaTrigger` slices directly.
 ///
 /// Parses each trigger's config once, wraps in `ParsedTrigger`, then delegates
@@ -444,5 +488,85 @@ mod tests {
         ];
         let matches = match_event(&event, &subs);
         assert_eq!(matches.len(), 2);
+    }
+
+    // -- Phase C4: capability-scoped preference --------------------------
+
+    fn make_match(persona_id: &str, use_case_id: Option<&str>, sub_id: &str) -> EventMatch {
+        EventMatch {
+            event_id: "evt-1".into(),
+            event_type: "file_changed".into(),
+            subscription_id: sub_id.into(),
+            persona_id: persona_id.into(),
+            payload: None,
+            source_id: None,
+            use_case_id: use_case_id.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn prefer_scoped_keeps_capability_match_over_persona_wide_for_same_persona() {
+        let scoped = make_match("p1", Some("uc_a"), "sub-scoped");
+        let wide = make_match("p1", None, "sub-wide");
+        let out = prefer_capability_scoped(vec![wide.clone(), scoped.clone()]);
+        assert_eq!(out.len(), 1, "persona-wide dropped when a scoped match exists");
+        assert_eq!(out[0].subscription_id, "sub-scoped");
+        assert_eq!(out[0].use_case_id.as_deref(), Some("uc_a"));
+    }
+
+    #[test]
+    fn prefer_scoped_keeps_multiple_capabilities_for_same_persona() {
+        let a = make_match("p1", Some("uc_a"), "sub-a");
+        let b = make_match("p1", Some("uc_b"), "sub-b");
+        let out = prefer_capability_scoped(vec![a, b]);
+        assert_eq!(out.len(), 2, "different capabilities dispatch independently");
+    }
+
+    #[test]
+    fn prefer_scoped_keeps_persona_wide_when_no_scoped_exists() {
+        let wide = make_match("p1", None, "sub-wide");
+        let out = prefer_capability_scoped(vec![wide]);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].use_case_id, None);
+    }
+
+    #[test]
+    fn prefer_scoped_preference_is_per_persona() {
+        // p1 has both scoped + wide → wide dropped.
+        // p2 has only wide → wide kept.
+        let matches = vec![
+            make_match("p1", None, "p1-wide"),
+            make_match("p1", Some("uc_x"), "p1-scoped"),
+            make_match("p2", None, "p2-wide"),
+        ];
+        let out = prefer_capability_scoped(matches);
+        let subs: Vec<&str> = out.iter().map(|m| m.subscription_id.as_str()).collect();
+        assert!(subs.contains(&"p1-scoped"));
+        assert!(subs.contains(&"p2-wide"));
+        assert!(!subs.contains(&"p1-wide"));
+        assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn prefer_scoped_dedupes_same_capability_merged_from_legacy_and_trigger_sources() {
+        // Simulates the case where the same capability has both a legacy
+        // persona_event_subscription row and a new event_listener trigger;
+        // both match the event → merge would double-fire without dedup.
+        let m1 = make_match("p1", Some("uc_a"), "legacy-sub");
+        let m2 = make_match("p1", Some("uc_a"), "trigger-row");
+        let out = prefer_capability_scoped(vec![m1, m2]);
+        assert_eq!(out.len(), 1, "same (persona, use_case) dedupes");
+        assert_eq!(out[0].subscription_id, "legacy-sub", "first wins (stable order)");
+    }
+
+    #[test]
+    fn prefer_scoped_preserves_insertion_order() {
+        let matches = vec![
+            make_match("pZ", Some("uc_1"), "first"),
+            make_match("pA", Some("uc_1"), "second"),
+        ];
+        let out = prefer_capability_scoped(matches);
+        assert_eq!(out[0].subscription_id, "first");
+        assert_eq!(out[1].subscription_id, "second");
     }
 }

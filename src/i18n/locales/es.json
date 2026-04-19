@@ -6114,7 +6114,7 @@
       "rename_placeholder": "nuevo.tipo.evento",
       "renaming": "Renombrando...",
       "show_sidebar": "Mostrar barra lateral",
-      "source": "Origen",
+      "source": "Tipo",
       "source_personas": "Personas de origen",
       "use_template": "Usar plantilla"
     },
@@ -9176,7 +9176,11 @@
   "models": {
     "haiku": "Haiku",
     "sonnet": "Sonnet",
-    "opus": "Opus"
+    "opus": "Opus",
+    "effort_low": "Low",
+    "effort_medium": "Medium",
+    "effort_high": "High",
+    "effort_xhigh": "xhigh"
   },
   "error_explanation": {
     "action_go_to_vault": "Ir a la Bóveda",

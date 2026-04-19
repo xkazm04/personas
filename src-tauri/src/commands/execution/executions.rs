@@ -90,6 +90,41 @@ pub async fn execute_persona(
     idempotency_key: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     require_privileged(&state, "execute_persona").await?;
+    execute_persona_inner(
+        &state,
+        app,
+        persona_id,
+        trigger_id,
+        input_data,
+        use_case_id,
+        continuation,
+        idempotency_key,
+        /* is_simulation */ false,
+    )
+    .await
+}
+
+/// Shared implementation for `execute_persona` and `simulate_use_case`.
+///
+/// Phase C3 — `is_simulation=true` flags the execution row so the dispatcher
+/// skips real notification delivery and the activity feed can filter it out.
+/// Simulations also **bypass** the `enabled` gate on the target capability so
+/// users can test a disabled capability before activating it.
+///
+/// All other runtime behavior is identical: prompt assembly, tool exposure,
+/// memory injection, and engine spawn happen the same way.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn execute_persona_inner(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    persona_id: String,
+    trigger_id: Option<String>,
+    input_data: Option<String>,
+    use_case_id: Option<String>,
+    continuation: Option<crate::engine::types::Continuation>,
+    idempotency_key: Option<String>,
+    is_simulation: bool,
+) -> Result<PersonaExecution, AppError> {
     use crate::engine::pipeline::{PipelineContext, PipelineStage};
 
     // -- Stage: Initiate ----------------------------------------------
@@ -100,7 +135,74 @@ pub async fn execute_persona(
     pipeline.enter_stage(PipelineStage::Validate);
 
     // 1. Get persona
-    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+
+    // 1b. Auto-expand use_case_id into input_data._use_case (Phase C1).
+    //
+    // When a trigger fires with a use_case_id (or a manual per-capability run
+    // provides one), expand the capability JSON from design_context and merge
+    // it into input_data so the prompt assembler renders "Current Focus"
+    // correctly. Enforces `enabled != Some(false)` — disabled capabilities
+    // cannot be executed even if a stale trigger fires.
+    //
+    // See docs/concepts/persona-capabilities/03-runtime.md §2.
+    let mut input_data = input_data;
+    if let Some(uc_id) = use_case_id.as_ref() {
+        let Some(dc_str) = persona.design_context.as_deref() else {
+            return Err(AppError::Validation(format!(
+                "Persona '{}' has no design_context but use_case_id='{}' was requested",
+                persona.name, uc_id
+            )));
+        };
+        let dc: serde_json::Value = serde_json::from_str(dc_str).map_err(|e| {
+            AppError::Validation(format!("design_context is not valid JSON: {}", e))
+        })?;
+        let use_case = dc
+            .get("use_cases")
+            .and_then(|v| v.as_array())
+            .and_then(|arr| arr.iter().find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id)))
+            .cloned()
+            .ok_or_else(|| {
+                AppError::Validation(format!(
+                    "use_case_id '{}' not found on persona '{}'",
+                    uc_id, persona.name
+                ))
+            })?;
+
+        // Simulations deliberately bypass the enable gate so users can test
+        // a disabled capability before activating it. Real executions reject.
+        if !is_simulation
+            && use_case.get("enabled").and_then(|v| v.as_bool()) == Some(false)
+        {
+            return Err(AppError::Validation(format!(
+                "Capability '{}' is disabled on persona '{}'",
+                uc_id, persona.name
+            )));
+        }
+
+        // Merge capability metadata into input_data._use_case and _time_filter.
+        // Caller-provided _use_case takes precedence — this is only a default.
+        let mut merged: serde_json::Map<String, serde_json::Value> = input_data
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+
+        merged.entry("_use_case".to_string()).or_insert_with(|| use_case.clone());
+        if let Some(tf) = use_case.get("time_filter").cloned() {
+            merged.entry("_time_filter".to_string()).or_insert(tf);
+        }
+        input_data = Some(serde_json::to_string(&merged).unwrap_or_default());
+
+        // Apply model_override (if any) by mutating the persona's model_profile
+        // for this execution. Engine reads persona.model_profile at spawn time.
+        if let Some(mo) = use_case.get("model_override") {
+            if !mo.is_null() {
+                persona.model_profile = Some(mo.to_string());
+            }
+        }
+    }
 
     // 2. Check budget limit (concurrency is handled by the engine's queue)
     if let Some(budget) = persona.max_budget_usd {
@@ -136,8 +238,9 @@ pub async fn execute_persona(
         trigger_id,
         input_data.clone(),
         model_used,
-        use_case_id,
+        use_case_id.clone(),
         idempotency_key,
+        is_simulation,
     )?;
 
     // Update pipeline context with real execution ID
@@ -199,13 +302,29 @@ pub async fn execute_persona(
     let continuation = if continuation.is_some() {
         continuation
     } else {
-        // Compute config hash from current persona state
+        // Compute config hash from current persona state.
+        //
+        // Phase C1 — includes `structured_prompt` and a fingerprint of the
+        // currently-enabled capabilities so toggling `enabled` on any use case
+        // invalidates warm sessions that would otherwise serve a prompt with
+        // stale capability awareness.
+        //
+        // See docs/concepts/persona-capabilities/03-runtime.md §3.
         let config_hash = {
             use std::hash::{Hash, Hasher};
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             persona.system_prompt.as_str().hash(&mut hasher);
+            persona
+                .structured_prompt
+                .as_deref()
+                .unwrap_or("")
+                .hash(&mut hasher);
             persona.model_profile.as_deref().unwrap_or("").hash(&mut hasher);
             tools.len().hash(&mut hasher);
+            crate::engine::prompt::active_capabilities_fingerprint(
+                persona.design_context.as_deref(),
+            )
+            .hash(&mut hasher);
             hasher.finish()
         };
         match state.session_pool.take(&persona_id, config_hash).await {

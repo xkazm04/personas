@@ -11,6 +11,7 @@ import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 
 export function ExecutionList() {
   const { t } = useTranslation();
@@ -19,16 +20,32 @@ export function ExecutionList() {
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
 
   const personaId = selectedPersona?.id || '';
-  const { executions, loading } = useExecutionList(personaId);
+  const { executions: rawExecutions, loading } = useExecutionList(personaId);
+  const useCases = useSelectedUseCases();
+  const useCaseTitleById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const uc of useCases) m.set(uc.id, uc.title);
+    return m;
+  }, [useCases]);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { copied: hasCopied, copy: copyToClipboard } = useCopyToClipboard();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
+  const [showSimulations, setShowSimulations] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+
+  const hasSimulations = useMemo(
+    () => rawExecutions.some((e) => e.is_simulation),
+    [rawExecutions],
+  );
+  const executions = useMemo(
+    () => (showSimulations ? rawExecutions : rawExecutions.filter((e) => !e.is_simulation)),
+    [rawExecutions, showSimulations],
+  );
 
   const [sampleInput, setSampleInput] = useState('{}');
   useEffect(() => {
@@ -95,6 +112,8 @@ export function ExecutionList() {
         </h4>
         <ExecutionListFilters
           showRaw={showRaw} setShowRaw={setShowRaw}
+          showSimulations={showSimulations} setShowSimulations={setShowSimulations}
+          hasSimulations={hasSimulations}
           compareMode={compareMode} exitCompareMode={exitCompareMode} setCompareMode={setCompareMode}
           hasExecutions={executions.length > 0} hasEnoughToCompare={executions.length >= 2}
           compareLeft={compareLeft} compareRight={compareRight}
@@ -118,11 +137,12 @@ export function ExecutionList() {
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-foreground uppercase tracking-wider">
             {compareMode && <div className="col-span-1" />}
-            <div className={compareMode ? 'col-span-2' : 'col-span-2'}>{e.col_status}</div>
-            <div className="col-span-2">{e.col_duration}</div>
-            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>{e.col_started}</div>
+            <div className="col-span-2">{e.col_status}</div>
+            <div className="col-span-2">{e.col_capability}</div>
+            <div className={compareMode ? 'col-span-1' : 'col-span-2'}>{e.col_duration}</div>
+            <div className="col-span-2">{e.col_started}</div>
             <div className="col-span-2">{e.col_tokens}</div>
-            <div className={compareMode ? 'col-span-2' : 'col-span-3'}>{e.col_cost}</div>
+            <div className={compareMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
           </div>
 
           {executions.map((execution, execIdx) => (
@@ -138,6 +158,7 @@ export function ExecutionList() {
               showRaw={showRaw}
               hasCopied={hasCopied}
               copiedId={copiedId}
+              capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
               onRowClick={handleRowClick}
               onCopyId={(id) => { copyToClipboard(id); setCopiedId(id); }}
               onRerun={(inputData) => setRerunInputData(inputData || '{}')}

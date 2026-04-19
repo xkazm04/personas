@@ -437,3 +437,103 @@ impl TraceCollector {
             .cloned()
     }
 }
+
+// =============================================================================
+// W3C trace context propagation
+// =============================================================================
+
+/// W3C `traceparent` header generator, used to correlate personas' own
+/// execution trace (the `ExecutionTrace` span tree above) with the spans the
+/// Claude CLI emits for its internal API / tool calls (via
+/// `TRACEPARENT`/`TRACESTATE` env vars supported from CLI 2.1.110).
+///
+/// This is a minimum viable implementation: personas generates a fresh root
+/// context per execution and injects it into the child CLI's env. Upstream
+/// OTEL collectors / observability pipelines stitch the two halves together.
+/// We do NOT emit OTLP spans here — there is no collector wired up yet and
+/// the execution's span tree is our primary observability surface.
+///
+/// Format: `00-<32-hex-trace-id>-<16-hex-span-id>-<2-hex-flags>`
+/// See <https://www.w3.org/TR/trace-context/>.
+#[derive(Debug, Clone)]
+pub struct W3cTraceContext {
+    pub trace_id: [u8; 16],
+    pub span_id: [u8; 8],
+    /// Trace flags. Bit 0 = sampled. Personas sets this to `0x01` so
+    /// downstream collectors record the spans.
+    pub flags: u8,
+    /// Optional vendor-specific `tracestate` value. None in the root case.
+    pub tracestate: Option<String>,
+}
+
+impl W3cTraceContext {
+    /// Generate a fresh root trace context for a new execution.
+    ///
+    /// 128-bit trace_id + 64-bit span_id drawn from `rand::thread_rng`
+    /// (already a personas dep; no new crates added).
+    pub fn new_root() -> Self {
+        use rand::RngCore;
+        let mut rng = rand::thread_rng();
+        let mut trace_id = [0u8; 16];
+        let mut span_id = [0u8; 8];
+        rng.fill_bytes(&mut trace_id);
+        rng.fill_bytes(&mut span_id);
+        Self {
+            trace_id,
+            span_id,
+            flags: 0x01, // sampled
+            tracestate: None,
+        }
+    }
+
+    /// W3C traceparent header form: `00-<trace_id_hex>-<span_id_hex>-<flags_hex>`.
+    pub fn traceparent_header(&self) -> String {
+        format!(
+            "00-{}-{}-{:02x}",
+            hex::encode(self.trace_id),
+            hex::encode(self.span_id),
+            self.flags
+        )
+    }
+
+    /// Optional tracestate header value.
+    pub fn tracestate_header(&self) -> Option<String> {
+        self.tracestate.clone()
+    }
+}
+
+#[cfg(test)]
+mod w3c_tests {
+    use super::W3cTraceContext;
+
+    #[test]
+    fn traceparent_header_has_w3c_shape() {
+        let ctx = W3cTraceContext::new_root();
+        let header = ctx.traceparent_header();
+        let parts: Vec<&str> = header.split('-').collect();
+        assert_eq!(parts.len(), 4, "expected 4 dash-separated segments, got: {header}");
+        assert_eq!(parts[0], "00", "version must be 00");
+        assert_eq!(parts[1].len(), 32, "trace_id hex length must be 32");
+        assert_eq!(parts[2].len(), 16, "span_id hex length must be 16");
+        assert_eq!(parts[3].len(), 2, "flags hex length must be 2");
+        // All lowercase hex.
+        for seg in &parts[1..] {
+            assert!(seg.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
+                "segment {seg} must be lowercase hex");
+        }
+    }
+
+    #[test]
+    fn traceparent_is_unique_per_context() {
+        let a = W3cTraceContext::new_root();
+        let b = W3cTraceContext::new_root();
+        assert_ne!(a.trace_id, b.trace_id, "trace_ids should differ across contexts");
+        assert_ne!(a.span_id, b.span_id, "span_ids should differ across contexts");
+    }
+
+    #[test]
+    fn sampled_flag_is_set() {
+        let ctx = W3cTraceContext::new_root();
+        assert_eq!(ctx.flags & 0x01, 0x01, "sampled bit must be set");
+    }
+}

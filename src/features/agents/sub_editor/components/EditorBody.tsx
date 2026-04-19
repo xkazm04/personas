@@ -12,8 +12,8 @@ import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab, MatrixTab,
-  PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, LabTab, ChatTab, DesignTab, HealthTab,
+  PersonaSettingsTab, PersonaUseCasesTab,
+  LabTab, ChatTab, DesignTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
@@ -161,16 +161,9 @@ export function EditorBody() {
                   <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />
                 </EditorTabContent>
               )}
-              {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}
-              {editorTab === 'connectors' && (
-                <EditorTabContent>
-                  <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />
-                </EditorTabContent>
-              )}
               {editorTab === 'chat' && <ChatTab />}
-              {editorTab === 'design' && <DesignTab />}
-              {editorTab === 'health' && <HealthTab />}
+              {editorTab === 'design' && <DesignTab onConnectorsMissingChange={setConnectorsMissing} />}
               {editorTab === 'settings' && (
                 <EditorTabContent>
                   <PersonaSettingsTab

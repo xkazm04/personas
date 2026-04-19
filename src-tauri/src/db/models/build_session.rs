@@ -131,6 +131,68 @@ pub enum BuildEvent {
         resolved_count: usize,
         total_count: usize,
     },
+
+    // ------------------------------------------------------------------
+    // v3 capability-framework events (additive; coexist with legacy events)
+    //
+    // The CLI's three-phase protocol (behavior_core → capability_enumeration →
+    // per-capability resolution) streams these event types. The run_session
+    // parser ALSO mirrors each v3 event into a legacy CellUpdate so the
+    // existing 3×3 matrix UI keeps rendering during the migration window
+    // (§3.8 + §4.5 of C4-build-from-scratch-v3-handoff.md).
+    // ------------------------------------------------------------------
+
+    /// Phase A output: persona behavior core (mission + identity + voice +
+    /// principles + constraints + decision_principles + verbosity_default).
+    BehaviorCoreUpdate {
+        session_id: String,
+        data: serde_json::Value,
+        status: String,
+    },
+
+    /// Phase B output: list of capability drafts (id + title + summary + goal).
+    /// Emitted ONCE before per-capability resolution begins. Further drafts
+    /// from "+ Add" flows are delivered as additional events with the same
+    /// type; the frontend appends/dedupes by capability id.
+    CapabilityEnumerationUpdate {
+        session_id: String,
+        data: serde_json::Value,
+        status: String,
+    },
+
+    /// Phase C output: one field resolution on one capability.
+    /// `field` is one of: suggested_trigger, connectors, notification_channels,
+    /// review_policy, memory_policy, event_subscriptions, input_schema,
+    /// sample_input, tool_hints, use_case_flow, error_handling.
+    CapabilityResolutionUpdate {
+        session_id: String,
+        capability_id: String,
+        field: String,
+        value: serde_json::Value,
+        status: String,
+    },
+
+    /// Persona-wide resolution: tools / connectors / notification_channels_default /
+    /// operating_instructions / tool_guidance / error_handling / core_memories.
+    PersonaResolutionUpdate {
+        session_id: String,
+        field: String,
+        value: serde_json::Value,
+        status: String,
+    },
+
+    /// v3 clarifying question — scoped to mission, a capability, or a specific
+    /// field within a capability. Replaces legacy per-dimension `Question`
+    /// when the CLI is emitting v3 events.
+    ClarifyingQuestionV3 {
+        session_id: String,
+        /// One of: "mission" | "capability" | "field"
+        scope: String,
+        capability_id: Option<String>,
+        field: Option<String>,
+        question: String,
+        options: Option<Vec<String>>,
+    },
 }
 
 // ============================================================================

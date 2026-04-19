@@ -502,10 +502,17 @@ export type Translations = {
       ready_to_compare: string;
       vs: string;
       col_status: string;
+      col_capability: string;
       col_duration: string;
       col_started: string;
       col_tokens: string;
       col_cost: string;
+      show_simulations: string;
+      hide_simulations: string;
+      simulations_filter_tooltip: string;
+      simulated_badge: string;
+      simulated_badge_tooltip: string;
+      capability_unattributed: string;
       input_tokens: string;
       output_tokens: string;
       healing_retry: string;
@@ -2198,8 +2205,16 @@ export type Translations = {
       tab_connectors: string;
       tab_chat: string;
       tab_design: string;
-      tab_health: string;
       tab_settings: string;
+      design_sub_design: string;
+      design_sub_prompt: string;
+      design_sub_connectors: string;
+      design_health_healthy: string;
+      design_health_degraded: string;
+      design_health_unhealthy: string;
+      design_health_run: string;
+      design_health_checking: string;
+      design_health_never_checked: string;
       unsaved_changes: string;
       partial_load: string;
       cloud_connect: string;
@@ -5888,6 +5903,13 @@ export type Translations = {
       source_no_databases: string;
       source_pick_codebase: string;
       source_pick_database: string;
+      use_cases_title: string;
+      use_cases_subtitle: string;
+      use_cases_continue: string;
+      use_cases_enabled_count: string;
+      use_cases_none_selected: string;
+      use_case_enabled_badge: string;
+      use_case_disabled_badge: string;
     };
     scan: {
       scanning_draft: string;
@@ -9192,6 +9214,10 @@ export type Translations = {
     haiku: string;
     sonnet: string;
     opus: string;
+    effort_low: string;
+    effort_medium: string;
+    effort_high: string;
+    effort_xhigh: string;
   };
   error_explanation: {
     action_go_to_vault: string;

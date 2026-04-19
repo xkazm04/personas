@@ -6114,7 +6114,7 @@
       "rename_placeholder": "new.event.type",
       "renaming": "Đang đổi tên...",
       "show_sidebar": "Hiện thanh bên",
-      "source": "Nguồn",
+      "source": "Loại",
       "source_personas": "Personas nguồn",
       "use_template": "Dùng mẫu"
     },
@@ -9176,7 +9176,11 @@
   "models": {
     "haiku": "Haiku",
     "sonnet": "Sonnet",
-    "opus": "Opus"
+    "opus": "Opus",
+    "effort_low": "Low",
+    "effort_medium": "Medium",
+    "effort_high": "High",
+    "effort_xhigh": "xhigh"
   },
   "error_explanation": {
     "action_go_to_vault": "Đi đến Kho",

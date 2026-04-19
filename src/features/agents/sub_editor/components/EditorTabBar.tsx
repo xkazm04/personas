@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Check, Activity, MessageCircle, Grid3X3, Wand2, HeartPulse } from 'lucide-react';
+import { ListChecks, FileText, Settings, FlaskConical, Check, Activity, MessageCircle, Grid3X3, Wand2 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
@@ -13,13 +13,10 @@ type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; devO
 const tabDefs: TabDefBase[] = [
   { id: 'activity', labelKey: 'tab_activity', icon: Activity, minTier: TIERS.TEAM },
   { id: 'matrix', labelKey: 'tab_matrix', icon: Grid3X3, minTier: TIERS.TEAM },
-  { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
-  { id: 'prompt', labelKey: 'tab_prompt', icon: FileText },
-  { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
-  { id: 'connectors', labelKey: 'tab_connectors', icon: Link },
-  { id: 'chat', labelKey: 'tab_chat', icon: MessageCircle },
   { id: 'design', labelKey: 'tab_design', icon: Wand2 },
-  { id: 'health', labelKey: 'tab_health', icon: HeartPulse },
+  { id: 'use-cases', labelKey: 'tab_use_cases', icon: ListChecks },
+  { id: 'lab', labelKey: 'tab_lab', icon: FlaskConical, minTier: TIERS.TEAM },
+  { id: 'chat', labelKey: 'tab_chat', icon: MessageCircle },
   { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
@@ -82,7 +79,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               {!IS_MOBILE && label}
-              {tab.id === 'connectors' && connectorsMissing > 0
+              {tab.id === 'design' && connectorsMissing > 0
                 ? <TabBadge variant="error" count={connectorsMissing} />
                 : tabDirty
                   ? <TabBadge variant="dirty" />

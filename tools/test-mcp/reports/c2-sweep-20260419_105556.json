@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-04-19T10:55:56",
+  "total_templates": 1,
+  "grade_distribution": {
+    "A": 0,
+    "B": 1,
+    "C": 0,
+    "D": 0,
+    "F": 0,
+    "skip": 0
+  },
+  "failure_patterns": {
+    "scope_grouping_v2": 1
+  },
+  "results": [
+    {
+      "template_id": "email-morning-digest",
+      "display_name": "Email Morning Digest",
+      "category": "productivity",
+      "path": "scripts/templates/productivity/email-morning-digest.json",
+      "schema_version": 1,
+      "status": "error",
+      "duration_ms": 14443,
+      "connectors": {
+        "available": [
+          "gmail"
+        ],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=f48dfe4f-436e-49d2-975a-6102507a2006"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "6/6 questions rendered (template declares 6)"
+        },
+        {
+          "id": "scope_grouping_v2",
+          "passed": false,
+          "detail": "no scope-grouped sections (legacy layout)"
+        },
+        {
+          "id": "persona_created",
+          "passed": true,
+          "detail": "id=c50da022-9bad-4209-adde-0a8b2072470e phase=testing"
+        },
+        {
+          "id": "submit_all",
+          "passed": true,
+          "detail": "buildPhase=testing"
+        }
+      ],
+      "issues": [
+        "scope_grouping_v2: no scope-grouped sections (legacy layout)",
+        "exception: [WinError 10061] No connection could be made because the target machine actively refused it"
+      ],
+      "persona_id": "c50da022-9bad-4209-adde-0a8b2072470e",
+      "build_phase": "testing",
+      "grade": "B"
+    }
+  ]
+}

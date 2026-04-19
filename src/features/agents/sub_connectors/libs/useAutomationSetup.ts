@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useAgentStore } from '@/stores/agentStore';
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
 import { silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
 
@@ -55,6 +58,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const [timeoutSecs, setTimeoutSecs] = useState(30);
   const [fallbackMode, setFallbackMode] = useState<AutomationFallbackMode>('connector');
   const [platformCredentialId, setPlatformCredentialId] = useState<string | null>(null);
+  const [useCaseId, setUseCaseId] = useState<string | null>(null);
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([]);
   const [githubPerms, setGithubPerms] = useState<GitHubPermissions | null>(null);
   const [githubRepo, setGithubRepo] = useState<string | null>(null);
@@ -65,6 +69,14 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const [deployResult, setDeployResult] = useState<DeployAutomationResult | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
+
+  const personas = useAgentStore((s) => s.personas);
+  const availableUseCases = useMemo<DesignUseCase[]>(() => {
+    const persona = personas.find((p) => p.id === personaId);
+    if (!persona) return [];
+    const ucs = parseDesignContext(persona.design_context).useCases ?? [];
+    return ucs.filter((uc) => uc.enabled !== false);
+  }, [personas, personaId]);
 
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
@@ -93,6 +105,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       setTimeoutSecs(Math.round(editAutomation.timeoutMs / 1000));
       if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
       if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
+      setUseCaseId(editAutomation.useCaseId ?? null);
     }
   }, [editAutomation]);
 
@@ -159,6 +172,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
         personaId, credentialId: platformCredentialId,
         designResult: mergedDesign as Record<string, unknown>,
         githubRepo: platform === 'github_actions' ? githubRepo : null,
+        useCaseId,
       });
       if (result) { setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId); }
       else { setLocalPhase(null); setDeployError('Deployment failed. Check your platform credentials and try again.'); }
@@ -170,7 +184,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     setInputSchema(''); setTimeoutSecs(30); setFallbackMode('connector');
     setPlatformCredentialId(null); setGithubRepo(null); setGithubRepos([]);
     setGithubPerms(null); setZapierZaps([]); setLocalPhase(null);
-    setDeployResult(null); setDeployError(null);
+    setDeployResult(null); setDeployError(null); setUseCaseId(null);
   }, [design]);
 
   const stageIndex = useMemo(() => deriveStageIndex(design.outputLines), [design.outputLines]);
@@ -218,6 +232,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     name, setName, platform, setPlatform, inputSchema, setInputSchema,
     timeoutSecs, setTimeoutSecs, fallbackMode, setFallbackMode,
     platformCredentialId, setPlatformCredentialId,
+    useCaseId, setUseCaseId, availableUseCases,
     githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
     zapierZaps, loadingZaps,
     localPhase, setLocalPhase, deployResult, deployError, setDeployError,

@@ -154,6 +154,13 @@ export interface AdoptionRequirement {
   source: "connector" | "trigger" | "channel";
 }
 
+/** Scope under which an adoption question should be rendered (Phase C2).
+ *  - `persona` — tunes identity/voice/shared-memory/persona-wide config (default when omitted)
+ *  - `capability` — configures one specific capability; pair with `use_case_id`
+ *  - `connector` — collects connector-specific config; pair with `connector_names`
+ *  See `docs/concepts/persona-capabilities/C2-execution-plan.md` §Part 1. */
+export type AdoptionQuestionScope = 'persona' | 'capability' | 'connector';
+
 /** A pre-defined question for template adoption, tied to specific use cases or connectors */
 export interface AdoptionQuestion {
   id: string;
@@ -170,6 +177,40 @@ export interface AdoptionQuestion {
   category?: string;
   /** Which matrix dimension this question configures (e.g., 'connectors', 'use-cases', 'triggers') */
   dimension?: string;
+
+  // -- Phase C2 additions (capability-aware questionnaire) -----------------
+
+  /** Phase C2 — scope under which this question is grouped in the UI.
+   *  When absent, `inferQuestionScope()` derives it from legacy hints. */
+  scope?: AdoptionQuestionScope;
+  /** Required when `scope === 'capability'` — the specific capability id
+   *  (matches `use_cases[].id` in design_context). Used by the grid to
+   *  nest the question under the correct capability section. */
+  use_case_id?: string;
+}
+
+/** Phase C2 — infer a question's scope when the `scope` field is absent.
+ *  Lets v1 templates render in the v2 grouped UI without modification.
+ *
+ *  Precedence: explicit `scope` → connector_names → single use_case_ids → persona. */
+export function inferQuestionScope(q: AdoptionQuestion): AdoptionQuestionScope {
+  if (q.scope) return q.scope;
+  if (q.connector_names && q.connector_names.length > 0) return 'connector';
+  if (q.use_case_ids && q.use_case_ids.length === 1) return 'capability';
+  return 'persona';
+}
+
+/** Phase C2 — the capability id a question belongs to, for grouping in the UI.
+ *  Returns undefined for persona/connector scopes or when ambiguous. */
+export function questionCapabilityId(q: AdoptionQuestion): string | undefined {
+  if (q.use_case_id) return q.use_case_id;
+  if (q.scope === 'capability' && q.use_case_ids?.length === 1) {
+    return q.use_case_ids[0];
+  }
+  if (!q.scope && q.use_case_ids?.length === 1 && !q.connector_names?.length) {
+    return q.use_case_ids[0];
+  }
+  return undefined;
 }
 
 /** Readiness status for a connector in a template */

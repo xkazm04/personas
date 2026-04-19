@@ -68,20 +68,22 @@ export const ALL_MODELS: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_MODELS]
  * Foundry/Team/Enterprise users. Lab panels expose effort as a second
  * experimentation dimension alongside model selection.
  */
-export const EFFORT_LEVELS = ['low', 'medium', 'high'] as const;
+export const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
 export type EffortLevel = (typeof EFFORT_LEVELS)[number];
 
 export const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 export interface EffortOption {
   id: EffortLevel;
-  label: string;
+  /** i18n key, resolved via useTranslation(); component renders t.models.effort_<id>. */
+  labelKey: `models.effort_${EffortLevel}`;
 }
 
 export const EFFORT_OPTIONS: EffortOption[] = [
-  { id: 'low', label: 'Low' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'high', label: 'High' },
+  { id: 'low', labelKey: 'models.effort_low' },
+  { id: 'medium', labelKey: 'models.effort_medium' },
+  { id: 'high', labelKey: 'models.effort_high' },
+  { id: 'xhigh', labelKey: 'models.effort_xhigh' },
 ];
 
 /**

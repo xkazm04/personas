@@ -24,6 +24,159 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
     serde_json::from_str::<ModelProfile>(json_str).ok()
 }
 
+/// Render the "## Active Capabilities" section for the runtime prompt.
+///
+/// Reads the persona's `design_context` JSON, filters use cases by
+/// `enabled != Some(false)` (missing or `true` both count as active), and
+/// renders each with `capability_summary` (falling back to `description`).
+/// Trigger hint and `tool_hints` are appended when present.
+///
+/// Returns empty when `design_context` is missing, unparseable, or contains
+/// no enabled use cases — callers push the result unconditionally.
+///
+/// Phase C1 runtime foundation. See `docs/concepts/persona-capabilities/03-runtime.md`.
+pub fn render_active_capabilities(design_context: Option<&str>) -> String {
+    let Some(dc_json) = design_context else { return String::new(); };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
+    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+    if use_cases.is_empty() { return String::new(); }
+
+    let mut out = String::new();
+    let mut rendered = 0usize;
+
+    for uc in use_cases {
+        // Disabled only when explicitly `enabled == false`. Missing or true → active.
+        if uc.get("enabled").and_then(|v| v.as_bool()) == Some(false) { continue; }
+
+        let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled");
+        let summary = uc
+            .get("capability_summary")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .or_else(|| uc.get("description").and_then(|v| v.as_str()))
+            .unwrap_or("");
+
+        if rendered == 0 {
+            out.push_str("## Active Capabilities\n");
+            out.push_str(
+                "You have these active capabilities. Choose the right one for each request; each capability has its own trigger, inputs, and delivery channels.\n\n",
+            );
+        }
+
+        out.push_str(&format!("- **{}**: {}", title, summary));
+
+        if let Some(st) = uc.get("suggested_trigger") {
+            if let Some(desc) = st.get("description").and_then(|v| v.as_str()) {
+                if !desc.is_empty() {
+                    out.push_str(&format!(" _(trigger: {})_", desc));
+                }
+            } else if let Some(t) = st.get("type").and_then(|v| v.as_str()) {
+                out.push_str(&format!(" _(trigger: {})_", t));
+            }
+        }
+
+        if let Some(hints) = uc.get("tool_hints").and_then(|v| v.as_array()) {
+            let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
+            if !names.is_empty() {
+                out.push_str(&format!(" _(tools: {})_", names.join(", ")));
+            }
+        }
+
+        out.push('\n');
+        rendered += 1;
+    }
+
+    if rendered > 0 {
+        out.push('\n');
+    }
+
+    out
+}
+
+/// Fingerprint of the persona's currently-enabled capabilities.
+///
+/// Used by the session pool cache key so toggling a capability invalidates
+/// warm sessions. Stable under reordering: use case ids are sorted before
+/// being joined. Returns empty string when design_context is absent / empty
+/// so personas without capabilities don't carry bogus hash input.
+///
+/// Phase C1. See `docs/concepts/persona-capabilities/03-runtime.md` §3.
+pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
+    let Some(dc_json) = design_context else { return String::new(); };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
+    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+
+    let mut entries: Vec<String> = use_cases
+        .iter()
+        .filter(|uc| uc.get("enabled").and_then(|v| v.as_bool()) != Some(false))
+        .filter_map(|uc| {
+            let id = uc.get("id").and_then(|v| v.as_str())?;
+            let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("");
+            Some(format!("{}@{}", id, title))
+        })
+        .collect();
+    entries.sort();
+    entries.join("|")
+}
+
+/// Phase C5b — render the per-capability generation policy as natural-language
+/// bullet points the LLM can act on. Returns an empty Vec when the JSON object
+/// has no recognised fields, so the caller can skip the surrounding header.
+///
+/// This is the SOFT layer of the two-layer enforcement model. The HARD layer
+/// is `engine::dispatch::testable::resolve_generation_policy` which silently
+/// drops protocol messages that violate the policy — required because LLMs
+/// occasionally ignore even explicit instructions.
+pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> Vec<String> {
+    let Some(s) = settings.filter(|v| !v.is_null()) else { return Vec::new(); };
+    let mut lines = Vec::new();
+
+    if let Some(v) = s.get("memories").and_then(|v| v.as_str()) {
+        if v.eq_ignore_ascii_case("off") {
+            lines.push(
+                "Do not write to agent memory for this capability. The persona has memories \
+                 from other capabilities; do not extend them from this run.".to_string(),
+            );
+        }
+    }
+    if let Some(v) = s.get("reviews").and_then(|v| v.as_str()) {
+        match v.to_ascii_lowercase().as_str() {
+            "off" => lines.push(
+                "Do not request manual review for this capability. Resolve uncertainty \
+                 with your own best judgment and proceed.".to_string(),
+            ),
+            "trust_llm" | "trustllm" | "trust-llm" => lines.push(
+                "Trust your own judgment for this capability. If you would normally \
+                 request manual review, proceed instead — your decisions will not be queued \
+                 for human approval.".to_string(),
+            ),
+            _ => {}
+        }
+    }
+    if let Some(v) = s.get("events").and_then(|v| v.as_str()) {
+        if v.eq_ignore_ascii_case("off") {
+            lines.push(
+                "Do not emit events for this capability. Other personas will not be \
+                 notified of your actions on this run.".to_string(),
+            );
+        }
+    }
+    if let Some(map) = s.get("event_aliases").and_then(|v| v.as_object()) {
+        let pairs: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| v.as_str().map(|tgt| format!("{} → {}", k, tgt)))
+            .collect();
+        if !pairs.is_empty() {
+            lines.push(format!(
+                "When emitting events, use these renamed names: {}",
+                pairs.join(", ")
+            ));
+        }
+    }
+
+    lines
+}
+
 /// Build documentation string for a single tool definition.
 pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     let mut doc = format!("### {}\n{}\n", tool.name, tool.description);
@@ -347,6 +500,12 @@ pub fn assemble_prompt(
         prompt.push_str("\n\n");
     }
 
+    // Active Capabilities (Phase C1) — persona's runtime-enabled use cases.
+    // Filters design_context.useCases by `enabled != false` so toggling a
+    // capability immediately removes it from the LLM's awareness. Always
+    // rendered in normal execution; advisory mode has its own rendering.
+    prompt.push_str(&render_active_capabilities(persona.design_context.as_deref()));
+
     // Workspace Shared Instructions (from group/workspace defaults)
     if let Some(ws_instructions) = workspace_instructions {
         prompt.push_str("## Workspace Instructions\n");
@@ -492,20 +651,59 @@ pub fn assemble_prompt(
         // Inject use case context if present -- wrap user-controlled values in
         // XML boundary tags so the model treats them as data, not instructions.
         if let Some(use_case) = data.get("_use_case") {
-            prompt.push_str("## Use Case Context\n");
+            // Phase C1 — scoped execution focus. Surfaced as "Current Focus"
+            // to complement the "## Active Capabilities" menu rendered above.
+            prompt.push_str("## Current Focus\n");
             if let Some(title) = use_case.get("title").and_then(|v| v.as_str()) {
                 prompt.push_str(&format!(
-                    "You are executing the use case: {}\n",
+                    "This execution is scoped to the capability: {}\n",
                     wrap_runtime_xml_boundary("use_case_title", title)
                 ));
             }
-            if let Some(desc) = use_case.get("description").and_then(|v| v.as_str()) {
+            if let Some(desc) = use_case
+                .get("capability_summary")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .or_else(|| use_case.get("description").and_then(|v| v.as_str()))
+            {
                 prompt.push_str(&format!(
-                    "Description:\n{}\n",
+                    "Summary:\n{}\n",
                     wrap_runtime_xml_boundary("use_case_description", desc)
                 ));
             }
-            prompt.push_str("Focus on this specific use case.\n\n");
+            if let Some(hints) = use_case.get("tool_hints").and_then(|v| v.as_array()) {
+                let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
+                if !names.is_empty() {
+                    prompt.push_str(&format!(
+                        "Preferred tools for this capability: {}\n",
+                        names.join(", ")
+                    ));
+                }
+            }
+            if let Some(channels) = use_case.get("notification_channels").and_then(|v| v.as_array()) {
+                let types: Vec<String> = channels
+                    .iter()
+                    .filter_map(|c| c.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                    .collect();
+                if !types.is_empty() {
+                    prompt.push_str(&format!(
+                        "Deliver outputs via: {}\n",
+                        types.join(", ")
+                    ));
+                }
+            }
+            // Phase C5b — render the capability's generation policy so the LLM
+            // knows what artefact protocol messages to suppress for this run.
+            // This is the SOFT layer; `engine::dispatch` enforces the same
+            // rules silently as a HARD safety net for ignored instructions.
+            let policy_lines = render_generation_policy_lines(use_case.get("generation_settings"));
+            if !policy_lines.is_empty() {
+                prompt.push_str("Generation policy for this capability:\n");
+                for line in policy_lines {
+                    prompt.push_str(&format!("- {}\n", line));
+                }
+            }
+            prompt.push_str("Focus on this capability. Ignore other capabilities unless the input explicitly requires coordination with them.\n\n");
         }
 
         // Inject time filter constraints if present -- field/window values are user-controlled
@@ -853,7 +1051,43 @@ fn resolve_effort(model_profile: Option<&ModelProfile>) -> String {
 ///
 /// When called without a persona or model profile (both `None`), produces the
 /// same result as the former `build_default_cli_args()`.
+///
+/// This signature is preserved for the 30+ existing call sites. For new
+/// call sites that want to inject a W3C `TRACEPARENT` header into the child
+/// CLI's env (so personas' trace and the CLI's internal spans can be
+/// correlated), use [`build_cli_args_with_trace`] instead.
 pub fn build_cli_args(
+    persona: Option<&Persona>,
+    model_profile: Option<&ModelProfile>,
+) -> CliArgs {
+    build_cli_args_with_trace(persona, model_profile, None)
+}
+
+/// Like [`build_cli_args`], but also injects the W3C `TRACEPARENT` (and
+/// optional `TRACESTATE`) env var on the resulting `CliArgs` so the spawned
+/// Claude CLI 2.1.110+ participates in the same distributed trace as personas'
+/// own span tree. Returns unchanged args when `trace` is `None`.
+pub fn build_cli_args_with_trace(
+    persona: Option<&Persona>,
+    model_profile: Option<&ModelProfile>,
+    trace: Option<&super::trace::W3cTraceContext>,
+) -> CliArgs {
+    let mut cli_args = build_cli_args_inner(persona, model_profile);
+    if let Some(t) = trace {
+        cli_args
+            .env_overrides
+            .push(("TRACEPARENT".to_string(), t.traceparent_header()));
+        if let Some(state) = t.tracestate_header() {
+            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+        }
+    }
+    cli_args
+}
+
+/// Internal implementation — body of the former `build_cli_args`. Extracted
+/// so [`build_cli_args`] and [`build_cli_args_with_trace`] share the same core
+/// without either recursing through the other.
+fn build_cli_args_inner(
     persona: Option<&Persona>,
     model_profile: Option<&ModelProfile>,
 ) -> CliArgs {
@@ -943,6 +1177,21 @@ pub fn build_cli_args(
     cli_args.env_removals.push("DISABLE_PROMPT_CACHING_1H".to_string());
     cli_args.env_removals.push("DISABLE_PROMPT_CACHING_5M".to_string());
 
+    // Suppress the CLI's nonessential traffic — no value in headless mode:
+    // - Auto-title: the CLI otherwise makes an extra Haiku call to name the
+    //   session; personas uses its own session naming.
+    // - Terminal title: the CLI emits terminal escape codes that we do not
+    //   surface; setting the suppression env removes the extra work.
+    // Both are env-gated. Introduced in CLI 2.1.111.
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(),
+        "1".to_string(),
+    ));
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
+        "1".to_string(),
+    ));
+
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
     // to give the CLI time to surface the timeout error cleanly before the
@@ -963,6 +1212,28 @@ pub fn build_cli_args(
 /// Build CLI arguments to resume an existing Claude session.
 /// Uses `--resume <id>` instead of `-p -` to continue a prior conversation.
 pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
+    build_resume_cli_args_with_trace(claude_session_id, None)
+}
+
+/// Like [`build_resume_cli_args`], but also injects a W3C `TRACEPARENT` env
+/// var so the resumed session stays linked to the originating trace.
+pub fn build_resume_cli_args_with_trace(
+    claude_session_id: &str,
+    trace: Option<&super::trace::W3cTraceContext>,
+) -> CliArgs {
+    let mut cli_args = build_resume_cli_args_inner(claude_session_id);
+    if let Some(t) = trace {
+        cli_args
+            .env_overrides
+            .push(("TRACEPARENT".to_string(), t.traceparent_header()));
+        if let Some(state) = t.tracestate_header() {
+            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+        }
+    }
+    cli_args
+}
+
+fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
     let (command, mut args) = base_cli_setup();
 
     args.extend([
@@ -985,7 +1256,19 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
     CliArgs {
         command,
         args,
-        env_overrides: Vec::new(),
+        env_overrides: vec![
+            // Suppress nonessential CLI traffic on resume too — see the matching
+            // block in `build_cli_args`. Keeps resumed sessions on the same
+            // privacy-positive defaults as fresh runs.
+            (
+                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".to_string(),
+                "1".to_string(),
+            ),
+            (
+                "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
+                "1".to_string(),
+            ),
+        ],
         env_removals: vec![
             "CLAUDECODE".to_string(),
             "CLAUDE_CODE".to_string(),
@@ -2282,6 +2565,44 @@ mod tests {
     }
 
     #[test]
+    fn test_cli_args_nonessential_traffic_suppression() {
+        let args = build_cli_args(None, None);
+        for key in [
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+        ] {
+            let entry = args
+                .env_overrides
+                .iter()
+                .find(|(k, _)| k == key);
+            assert!(
+                entry.is_some(),
+                "{key} must be set in env_overrides to suppress nonessential CLI traffic"
+            );
+            assert_eq!(entry.unwrap().1, "1");
+        }
+    }
+
+    #[test]
+    fn test_resume_cli_args_nonessential_traffic_suppression() {
+        let args = build_resume_cli_args("sess-non-essential-1");
+        for key in [
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+            "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+        ] {
+            let entry = args
+                .env_overrides
+                .iter()
+                .find(|(k, _)| k == key);
+            assert!(
+                entry.is_some(),
+                "{key} must be set on resume too so continued sessions stay privacy-positive"
+            );
+            assert_eq!(entry.unwrap().1, "1");
+        }
+    }
+
+    #[test]
     fn test_resume_cli_args_has_exclude_dynamic() {
         let args = build_resume_cli_args("sess-1");
         assert!(args
@@ -2744,5 +3065,197 @@ mod tests {
         assert!(prompt.contains("Handle one."));
         assert!(prompt.contains("event.two"));
         assert!(prompt.contains("Handle two."));
+    }
+
+    // ─── Phase C1 — capability-aware runtime tests ───────────────────────
+    //
+    // See docs/concepts/persona-capabilities/09-implementation-plan.md §C1.
+    // Ensures the runtime reads design_context.useCases, filters by
+    // `enabled != Some(false)`, and the session hash fingerprint reacts to
+    // toggles so warm-session reuse stays correct.
+
+    fn design_context_with_three_capabilities() -> String {
+        serde_json::json!({
+            "use_cases": [
+                {
+                    "id": "uc_perf",
+                    "title": "Performance Analysis",
+                    "description": "Deep-dive on a single ticker.",
+                    "capability_summary": "Ticker performance with price + news + technicals.",
+                    "enabled": true,
+                    "suggested_trigger": { "type": "manual", "description": "User provides a symbol" },
+                    "tool_hints": ["market_data_api", "news_api"]
+                },
+                {
+                    "id": "uc_gem",
+                    "title": "Weekly Gem Finder",
+                    "description": "Scan news for underappreciated stocks.",
+                    "capability_summary": "Weekly sector-filtered screen.",
+                    "enabled": true,
+                    "suggested_trigger": { "type": "schedule", "description": "Mondays 8am" }
+                },
+                {
+                    "id": "uc_gov",
+                    "title": "Gov Investment Tracker",
+                    "description": "Alerts on government filings.",
+                    "enabled": false,
+                    "suggested_trigger": { "type": "polling", "description": "Hourly" }
+                }
+            ]
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_filters_disabled() {
+        let dc = design_context_with_three_capabilities();
+        let out = render_active_capabilities(Some(&dc));
+        assert!(out.contains("## Active Capabilities"));
+        assert!(out.contains("Performance Analysis"));
+        assert!(out.contains("Weekly Gem Finder"));
+        assert!(
+            !out.contains("Gov Investment Tracker"),
+            "disabled capability must not appear in the Active Capabilities section"
+        );
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_uses_summary_then_description() {
+        let dc = design_context_with_three_capabilities();
+        let out = render_active_capabilities(Some(&dc));
+        // Performance Analysis has both; capability_summary wins.
+        assert!(out.contains("Ticker performance with price + news + technicals."));
+        assert!(!out.contains("Deep-dive on a single ticker."));
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_empty_when_all_disabled() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "A", "description": "x", "enabled": false }
+            ]
+        })
+        .to_string();
+        assert_eq!(render_active_capabilities(Some(&dc)), "");
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_empty_on_missing_context() {
+        assert_eq!(render_active_capabilities(None), "");
+        assert_eq!(render_active_capabilities(Some("")), "");
+        assert_eq!(render_active_capabilities(Some("not json")), "");
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_treats_missing_enabled_as_active() {
+        // Greenfield personas may have no `enabled` key — they count as active.
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "Alpha", "description": "d" }
+            ]
+        })
+        .to_string();
+        let out = render_active_capabilities(Some(&dc));
+        assert!(out.contains("Alpha"));
+    }
+
+    #[test]
+    fn c1_fingerprint_changes_when_capability_disabled() {
+        let dc_all = design_context_with_three_capabilities();
+        let fp_all = active_capabilities_fingerprint(Some(&dc_all));
+
+        let dc_one_disabled = serde_json::json!({
+            "use_cases": [
+                { "id": "uc_perf", "title": "Performance Analysis", "description": "", "enabled": true },
+                { "id": "uc_gem", "title": "Weekly Gem Finder", "description": "", "enabled": false }
+            ]
+        })
+        .to_string();
+        let fp_disabled = active_capabilities_fingerprint(Some(&dc_one_disabled));
+
+        assert_ne!(fp_all, fp_disabled, "session hash must invalidate on toggle");
+        assert!(fp_disabled.contains("uc_perf"));
+        assert!(!fp_disabled.contains("uc_gem"));
+    }
+
+    #[test]
+    fn c1_fingerprint_is_stable_under_reordering() {
+        let a = serde_json::json!({
+            "use_cases": [
+                { "id": "b", "title": "B" },
+                { "id": "a", "title": "A" }
+            ]
+        })
+        .to_string();
+        let b = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "A" },
+                { "id": "b", "title": "B" }
+            ]
+        })
+        .to_string();
+        assert_eq!(
+            active_capabilities_fingerprint(Some(&a)),
+            active_capabilities_fingerprint(Some(&b))
+        );
+    }
+
+    #[test]
+    fn c1_assemble_prompt_injects_capabilities_section() {
+        let mut persona = test_persona();
+        persona.design_context = Some(design_context_with_three_capabilities());
+
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        assert!(prompt.contains("## Active Capabilities"));
+        assert!(prompt.contains("Performance Analysis"));
+        assert!(prompt.contains("Weekly Gem Finder"));
+        assert!(!prompt.contains("Gov Investment Tracker"),
+            "disabled capability must not leak into the runtime prompt");
+        // Trigger hints render too.
+        assert!(prompt.contains("Mondays 8am"));
+    }
+
+    #[test]
+    fn c1_current_focus_section_rendered_when_use_case_in_input() {
+        let mut persona = test_persona();
+        persona.design_context = Some(design_context_with_three_capabilities());
+
+        let input = serde_json::json!({
+            "_use_case": {
+                "title": "Weekly Gem Finder",
+                "capability_summary": "Weekly sector-filtered screen.",
+                "tool_hints": ["news_api", "screener"],
+                "notification_channels": [{ "type": "email" }]
+            },
+            "sector": "semiconductors"
+        });
+
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            Some(&input),
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        assert!(prompt.contains("## Current Focus"));
+        assert!(prompt.contains("Weekly Gem Finder"));
+        assert!(prompt.contains("Preferred tools for this capability:"));
+        assert!(prompt.contains("news_api"));
+        assert!(prompt.contains("Deliver outputs via:"));
+        assert!(prompt.contains("email"));
     }
 }

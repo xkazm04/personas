@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-04-19T10:37:53",
+  "total_templates": 1,
+  "grade_distribution": {
+    "A": 1,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "F": 0,
+    "skip": 0
+  },
+  "failure_patterns": {},
+  "results": [
+    {
+      "template_id": "incident-logger",
+      "display_name": "Incident Logger",
+      "category": "devops",
+      "path": "scripts/templates/devops/incident-logger.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 10808,
+      "connectors": {
+        "available": [],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=f2c3e3c1-6d34-4e3f-8c15-e74a2c30c8bf"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "6/6 questions rendered (template declares 6)"
+        },
+        {
+          "id": "persona_created",
+          "passed": true,
+          "detail": "id=c326f9f2-8cd5-43b4-854e-a195b80f0149 phase=testing"
+        },
+        {
+          "id": "submit_all",
+          "passed": true,
+          "detail": "buildPhase=testing"
+        }
+      ],
+      "issues": [],
+      "persona_id": "c326f9f2-8cd5-43b4-854e-a195b80f0149",
+      "build_phase": "testing",
+      "grade": "A"
+    }
+  ]
+}
