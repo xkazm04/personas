@@ -984,6 +984,10 @@ pub fn run() {
             commands::core::personas::get_persona_summaries,
             commands::core::personas::get_persona_detail,
             commands::core::personas::resolve_effective_config,
+            // Core -- Use Cases (Phase C3: capability toggle + simulate)
+            commands::core::use_cases::get_use_case_cascade,
+            commands::core::use_cases::set_use_case_enabled,
+            commands::core::use_cases::simulate_use_case,
             // Core -- Groups
             commands::core::groups::list_groups,
             commands::core::groups::create_group,

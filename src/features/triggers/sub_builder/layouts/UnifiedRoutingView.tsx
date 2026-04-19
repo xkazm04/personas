@@ -66,6 +66,7 @@ import {
   deleteSubscription,
 } from '@/api/overview/events';
 import { findTemplateByEventType } from '../libs/eventCanvasConstants';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { AddPersonaModal } from './AddPersonaModal';
 import { DisconnectDialog } from './DisconnectDialog';
 import { RenameEventDialog } from './RenameEventDialog';
@@ -211,16 +212,16 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
     }
   }, [allTriggers, subscriptions, reload]);
 
-  const handleAddPersona = useCallback(async (personaId: string) => {
+  const handleAddPersona = useCallback(async (personaId: string, useCaseId: string | null) => {
     if (!addPersonaForEvent) return;
     const { eventType } = addPersonaForEvent;
     setAddPersonaForEvent(null);
     try {
-      // Use the atomic link command: one transaction creates the
-      // event_listener trigger AND patches persona.structured_prompt.eventHandlers
-      // with a handler instruction. This guarantees the persona actually
-      // reacts to the event at runtime — see docs/design/event-routing-proposal.md.
-      await linkPersonaToEvent(personaId, eventType);
+      // Atomic link: creates the event_listener trigger AND patches
+      // persona.structured_prompt.eventHandlers. Phase C4: when useCaseId is
+      // non-null, the trigger is scoped to that capability — the event bus's
+      // prefer_capability_scoped() rule routes to it over any persona-wide match.
+      await linkPersonaToEvent(personaId, eventType, { useCaseId });
       await reload();
     } catch { /* best-effort */ }
   }, [addPersonaForEvent, reload]);
@@ -413,22 +414,35 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                 {row.connections.length === 0 && (
                   <span className="text-sm text-foreground italic">{t.triggers.builder.no_personas_connected}</span>
                 )}
-                {row.connections.map(conn => (
-                  <PersonaChip
-                    key={conn.subscriptionId ?? conn.triggerId ?? conn.personaId}
-                    persona={conn.persona}
-                    personaIdFallback={conn.personaId}
-                    badge={conn.kind === 'chain' ? {
-                      text: conn.chainCondition ?? 'chain',
-                      title: `Chained after ${conn.chainCondition ?? 'any'} condition`,
-                    } : undefined}
-                    onRemove={() => setDisconnectTarget({
-                      connection: conn,
-                      personaName: conn.persona?.name ?? conn.personaId.slice(0, 8),
-                      eventLabel: row.template?.label ?? row.eventType,
-                    })}
-                  />
-                ))}
+                {row.connections.map(conn => {
+                  let capBadge: { text: string; title?: string } | undefined;
+                  if (conn.useCaseId && conn.persona) {
+                    const ucs = parseDesignContext(conn.persona.design_context).useCases ?? [];
+                    const uc = ucs.find(u => u.id === conn.useCaseId);
+                    const title = uc?.title ?? conn.useCaseId;
+                    capBadge = {
+                      text: title,
+                      title: `Scoped to capability: ${title}`,
+                    };
+                  }
+                  const badge = conn.kind === 'chain' ? {
+                    text: conn.chainCondition ?? 'chain',
+                    title: `Chained after ${conn.chainCondition ?? 'any'} condition`,
+                  } : capBadge;
+                  return (
+                    <PersonaChip
+                      key={conn.subscriptionId ?? conn.triggerId ?? `${conn.personaId}:${conn.useCaseId ?? 'all'}`}
+                      persona={conn.persona}
+                      personaIdFallback={conn.personaId}
+                      badge={badge}
+                      onRemove={() => setDisconnectTarget({
+                        connection: conn,
+                        personaName: conn.persona?.name ?? conn.personaId.slice(0, 8),
+                        eventLabel: row.template?.label ?? row.eventType,
+                      })}
+                    />
+                  );
+                })}
               </div>
 
               {/* Three-dot action menu */}

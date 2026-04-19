@@ -47,10 +47,26 @@ pub struct DispatchContext<'a> {
     /// reviews). Used for ops chat executions which are conversational queries,
     /// not real agent executions.
     pub ops_mode: bool,
+    /// When true, this is a simulation run from `simulate_use_case`. Messages,
+    /// memories, events, and reviews are still persisted (with their rows
+    /// tagged), but **outbound notification channels and OS notifications are
+    /// suppressed** so the user can preview behavior without spamming real
+    /// Slack channels, email lists, etc. Phase C3.
+    pub is_simulation: bool,
+    /// Capability (use case) attribution for this execution. Inherited by every
+    /// message, manual review, memory, and event published during dispatch so
+    /// downstream consumers (activity feed, review queue, memory injector,
+    /// event bus) can scope by capability. `None` for persona-wide runs.
+    /// Phase C5.
+    pub use_case_id: Option<&'a str>,
     /// Cached quality-gate config — loaded lazily on first use, then reused for
     /// all subsequent protocol messages in this execution. Avoids O(messages)
     /// DB reads for config that rarely changes.
     quality_gate_cache: Option<QualityGateConfig>,
+    /// Cached resolved notification channels. Lazily computed on first use to
+    /// avoid the design_context DB roundtrip when no message/review fires.
+    /// `Some(Some(json))` once computed; `None` until first call. Phase C5.
+    resolved_channels_cache: Option<Option<String>>,
 }
 
 impl<'a> DispatchContext<'a> {
@@ -82,7 +98,10 @@ impl<'a> DispatchContext<'a> {
             notification_channels,
             logger,
             ops_mode: false,
+            is_simulation: false,
+            use_case_id: None,
             quality_gate_cache: gate_config,
+            resolved_channels_cache: None,
         }
     }
 
@@ -92,6 +111,29 @@ impl<'a> DispatchContext<'a> {
             self.quality_gate_cache = Some(quality_gate::load(self.pool));
         }
         self.quality_gate_cache.as_ref().unwrap()
+    }
+
+    /// Resolve the effective notification channels for this dispatch.
+    ///
+    /// Phase C5 precedence: when the execution has a `use_case_id`, look up the
+    /// capability's `notification_channels` from `design_context.use_cases[]`
+    /// and use them if non-empty. Otherwise fall back to the persona-wide
+    /// `notification_channels` set on the execution context.
+    ///
+    /// Cached after first call so subsequent dispatches in the same execution
+    /// don't re-query the persona row.
+    fn resolve_notification_channels(&mut self) -> Option<String> {
+        if let Some(cached) = self.resolved_channels_cache.as_ref() {
+            return cached.clone();
+        }
+        let resolved = testable::resolve_notification_channels(
+            self.pool,
+            self.persona_id,
+            self.use_case_id,
+            self.notification_channels,
+        );
+        self.resolved_channels_cache = Some(resolved.clone());
+        resolved
     }
 }
 
@@ -124,6 +166,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 return;
             }
 
+            let use_case_id_owned = ctx.use_case_id.map(|s| s.to_string());
             match msg_repo::create(
                 ctx.pool,
                 CreateMessageInput {
@@ -135,6 +178,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     priority: priority.clone(),
                     metadata: None,
                     thread_id: None,
+                    use_case_id: use_case_id_owned,
                 },
             ) {
                 Ok(m) => {
@@ -144,13 +188,19 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         m.id
                     ));
                     emit_to(ctx.emitter, event_name::MESSAGE_CREATED, &m);
-                    if let Some(app) = ctx.app_handle {
-                        crate::notifications::notify_new_message(
-                            app,
-                            ctx.persona_name,
-                            m.title.as_deref().unwrap_or("New message"),
-                            ctx.notification_channels,
-                        );
+                    if ctx.is_simulation {
+                        ctx.logger.log("[SIM] Notification delivery skipped (simulation)");
+                    } else {
+                        let channels = ctx.resolve_notification_channels();
+                        let title_str = m.title.clone().unwrap_or_else(|| "New message".to_string());
+                        if let Some(app) = ctx.app_handle {
+                            crate::notifications::notify_new_message(
+                                app,
+                                ctx.persona_name,
+                                &title_str,
+                                channels.as_deref(),
+                            );
+                        }
                     }
                 }
                 Err(e) => ctx.logger.log(&format!("[MESSAGE] Failed to create: {e}")),
@@ -177,7 +227,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         })
                         .to_string(),
                     ),
-                    use_case_id: None,
+                    use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
                 Ok(_) => ctx.logger.log(&format!(
@@ -203,7 +253,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     target_persona_id: None,
                     project_id: Some(ctx.project_id.to_string()),
                     payload: data.as_ref().map(|d| d.to_string()),
-                    use_case_id: None,
+                    use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
                 Ok(_) => ctx.logger.log(&format!("[EVENT] Published custom event: {event_type}")),
@@ -294,6 +344,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     category: normalized_category,
                     importance: clamped_importance,
                     tags: tags.as_ref().map(|t| crate::db::models::Json(t.clone())),
+                    use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
                 Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
@@ -375,6 +426,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     suggested_actions: suggested_actions
                         .as_ref()
                         .map(|a| serde_json::json!(a).to_string()),
+                    use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
                 Ok(r) => {
@@ -382,13 +434,18 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         "[REVIEW] Created manual review: {} ({})",
                         title, r.id
                     ));
-                    if let Some(app) = ctx.app_handle {
-                        crate::notifications::notify_manual_review(
-                            app,
-                            ctx.persona_name,
-                            title,
-                            ctx.notification_channels,
-                        );
+                    if ctx.is_simulation {
+                        ctx.logger.log("[SIM] Manual-review notification skipped (simulation)");
+                    } else {
+                        let channels = ctx.resolve_notification_channels();
+                        if let Some(app) = ctx.app_handle {
+                            crate::notifications::notify_manual_review(
+                                app,
+                                ctx.persona_name,
+                                title,
+                                channels.as_deref(),
+                            );
+                        }
                     }
                 }
                 Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {e}")),
@@ -449,6 +506,65 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
 }
 
 // =============================================================================
+// Pure helpers — extracted for unit testing (Phase C5)
+// =============================================================================
+
+pub(crate) mod testable {
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::db::DbPool;
+
+    /// Pick a capability's notification_channels from a persona design_context
+    /// JSON blob. Returns the JSON-encoded array as a string when present and
+    /// non-empty, otherwise `None`.
+    ///
+    /// Pure: takes JSON in, returns Option<String>. Suitable for unit testing
+    /// without a database.
+    pub fn pick_capability_channels(
+        design_context_json: &str,
+        use_case_id: &str,
+    ) -> Option<String> {
+        let dc: serde_json::Value = serde_json::from_str(design_context_json).ok()?;
+        let uc = dc
+            .get("use_cases")
+            .and_then(|v| v.as_array())?
+            .iter()
+            .find(|u| {
+                u.get("id").and_then(|v| v.as_str()) == Some(use_case_id)
+            })?;
+        let channels = uc.get("notification_channels")?;
+        let arr = channels.as_array()?;
+        if arr.is_empty() {
+            return None;
+        }
+        Some(channels.to_string())
+    }
+
+    /// Resolve effective notification channels for a dispatch, preferring the
+    /// capability's `notification_channels` over the persona-wide fallback.
+    ///
+    /// DB-touching variant of [`pick_capability_channels`]. The fallback
+    /// (`fallback_channels`) is the persona-wide value already loaded into the
+    /// dispatch context and is used when no capability override is available.
+    pub fn resolve_notification_channels(
+        pool: &DbPool,
+        persona_id: &str,
+        use_case_id: Option<&str>,
+        fallback_channels: Option<&str>,
+    ) -> Option<String> {
+        if let Some(uc_id) = use_case_id {
+            if let Ok(persona) = persona_repo::get_by_id(pool, persona_id) {
+                if let Some(dc_str) = persona.design_context.as_deref() {
+                    if let Some(channels) = pick_capability_channels(dc_str, uc_id) {
+                        return Some(channels);
+                    }
+                }
+            }
+        }
+        fallback_channels.map(|s| s.to_string())
+    }
+}
+
+// =============================================================================
 // ExecutionProtocol implementation for DispatchContext (Tauri/Desktop mode)
 // =============================================================================
 
@@ -491,5 +607,72 @@ mod tests {
         // DispatchContext is not Send (contains &mut logger), which is correct
         // since it's used within a single async task.
         let _ = std::mem::size_of::<DispatchContext>();
+    }
+
+    // ------------------------------------------------------------------------
+    // Phase C5 — pure helpers
+    // ------------------------------------------------------------------------
+
+    #[test]
+    fn test_pick_capability_channels_returns_array_when_set() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                {
+                    "id": "uc-1",
+                    "title": "Sales digest",
+                    "notification_channels": ["slack:#sales", "email:team@x.io"],
+                },
+                {
+                    "id": "uc-2",
+                    "title": "Other",
+                },
+            ]
+        })
+        .to_string();
+        let resolved = testable::pick_capability_channels(&dc, "uc-1").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&resolved).unwrap();
+        assert_eq!(parsed.as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_pick_capability_channels_none_when_unknown_uc() {
+        let dc = serde_json::json!({
+            "use_cases": [{"id": "uc-1", "notification_channels": ["x"]}]
+        })
+        .to_string();
+        assert!(testable::pick_capability_channels(&dc, "missing").is_none());
+    }
+
+    #[test]
+    fn test_pick_capability_channels_none_when_no_channels_field() {
+        let dc = serde_json::json!({
+            "use_cases": [{"id": "uc-1", "title": "Bare"}]
+        })
+        .to_string();
+        assert!(testable::pick_capability_channels(&dc, "uc-1").is_none());
+    }
+
+    #[test]
+    fn test_pick_capability_channels_none_when_empty_array() {
+        let dc = serde_json::json!({
+            "use_cases": [{"id": "uc-1", "notification_channels": []}]
+        })
+        .to_string();
+        assert!(testable::pick_capability_channels(&dc, "uc-1").is_none());
+    }
+
+    #[test]
+    fn test_pick_capability_channels_none_when_invalid_json() {
+        assert!(testable::pick_capability_channels("not-json{", "uc-1").is_none());
+    }
+
+    #[test]
+    fn test_resolve_falls_back_to_persona_wide() {
+        // Pure-helper-only path: no DB lookup, so we exercise the contract by
+        // verifying that pick_capability_channels returning None means callers
+        // fall through to the fallback. The fallback branch in
+        // resolve_notification_channels is a one-liner copy of fallback_channels.
+        let dc = serde_json::json!({"use_cases": []}).to_string();
+        assert!(testable::pick_capability_channels(&dc, "any").is_none());
     }
 }

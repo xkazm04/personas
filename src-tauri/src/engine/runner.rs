@@ -239,6 +239,26 @@ pub async fn run_execution(
         .and_then(|f| f.as_bool())
         .unwrap_or(false);
 
+    // Phase C3 — simulation runs preserve protocol storage but skip outbound
+    // notification delivery (real Slack/email pushes). Set by `simulate_use_case`.
+    let is_simulation_mode = input_data
+        .as_ref()
+        .and_then(|d| d.get("_simulation"))
+        .and_then(|f| f.as_bool())
+        .unwrap_or(false);
+
+    // Phase C5 — capability attribution. The execution's use_case_id is
+    // expanded into `input_data._use_case` by `execute_persona` (see
+    // commands/execution/executions.rs §1b). Recover the bare id here so
+    // every dispatch context (and the memory injection below) can scope
+    // by capability.
+    let execution_use_case_id: Option<String> = input_data
+        .as_ref()
+        .and_then(|d| d.get("_use_case"))
+        .and_then(|uc| uc.get("id"))
+        .and_then(|id| id.as_str())
+        .map(|s| s.to_string());
+
     if let Some(Continuation::PromptHint(ref hint)) = continuation {
         let mut obj = input_data
             .as_ref()
@@ -479,9 +499,18 @@ pub async fn run_execution(
     // Inject tiered agent memories from prior runs so the agent can recall
     // what the user found valuable, recurring patterns, and learned context.
     // Core memories (stable beliefs/preferences) are always injected.
-    // Active memories are scored by importance + recency + access frequency.
+    // Active/working memories are scored by importance + recency + access
+    // frequency, and (Phase C5) scoped to the execution's capability when one
+    // is set — so capability-attributed learnings only surface under their
+    // own capability, while persona-wide memories surface everywhere.
     let prompt_text = if !is_session_resume {
-        match mem_repo::get_for_injection(&pool, &persona.id, 10, 40) {
+        match mem_repo::get_for_injection_v2(
+            &pool,
+            &persona.id,
+            execution_use_case_id.as_deref(),
+            10,
+            40,
+        ) {
             Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
                 let mut mem_section = String::new();
 
@@ -1107,11 +1136,13 @@ pub async fn run_execution(
     // Clone values needed in the closure
     let exec_id_for_stream = execution_id.clone();
     let persona_id_for_stream = persona.id.clone();
+    let use_case_id_for_stream: Option<String> = execution_use_case_id.clone();
     let project_id_for_stream = persona.project_id.clone();
     let pool_for_stream = pool.clone();
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
     let is_ops_for_stream = is_ops_mode;
+    let is_simulation_for_stream = is_simulation_mode;
 
     // Track mid-stream protocol dispatches for execution-scoped dedup in post-mortem
     let stream_events_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
@@ -1335,6 +1366,8 @@ pub async fn run_execution(
                                                 Some(gate_config.clone()),
                                             );
                                             dispatch_ctx.ops_mode = is_ops_for_stream;
+                                            dispatch_ctx.is_simulation = is_simulation_for_stream;
+                                            dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
                                             super::dispatch::dispatch(&mut dispatch_ctx, msg);
                                         }
                                     }
@@ -1473,6 +1506,8 @@ pub async fn run_execution(
                                             Some(gate_config.clone()),
                                         );
                                         dispatch_ctx.ops_mode = is_ops_for_stream;
+                                        dispatch_ctx.is_simulation = is_simulation_for_stream;
+                                        dispatch_ctx.use_case_id = use_case_id_for_stream.as_deref();
                                         use super::protocol::ExecutionProtocol;
                                         match &protocol_msg {
                                             ProtocolMessage::EmitEvent { .. } => {
@@ -1623,6 +1658,8 @@ pub async fn run_execution(
                 None, // lazy-loaded on first use (context persists across loop)
             );
             dispatch_ctx.ops_mode = is_ops_mode;
+            dispatch_ctx.is_simulation = is_simulation_mode;
+            dispatch_ctx.use_case_id = execution_use_case_id.as_deref();
             use super::protocol::ExecutionProtocol;
             for line in assistant_text.split('\n') {
                 let trimmed = line.trim();

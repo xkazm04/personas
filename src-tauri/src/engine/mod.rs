@@ -1778,8 +1778,15 @@ async fn handle_execution_result(
         }
     }
 
-    // OS + external channel notification
-    notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    // OS + external channel notification.
+    // Phase C3 — simulation runs skip the completed-notification push so
+    // the user can preview behavior without pinging real notification channels.
+    let is_simulation = exec_repo::get_by_id(pool, exec_id)
+        .map(|e| e.is_simulation)
+        .unwrap_or(false);
+    if !is_simulation {
+        notify_execution_rich(app, pool, persona_id, status.as_str(), result);
+    }
 
     // Budget enforcement (only on success)
     if result.success {
@@ -1924,6 +1931,7 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                         priority: Some("critical".into()),
                         metadata: None,
                         thread_id: None,
+                        use_case_id: None,
                     },
                 );
                 tracing::warn!(

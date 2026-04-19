@@ -871,6 +871,7 @@ pub fn update_manual_review_status(
                 category: Some("learned".to_string()),
                 importance: Some(5),
                 tags: Some(crate::db::models::Json(vec!["review".to_string(), decision.to_string()])),
+                use_case_id: None,
             },
         );
 

@@ -97,6 +97,12 @@ pub struct AgentIrTrigger {
     pub config: Option<serde_json::Value>,
     #[serde(default)]
     pub description: Option<String>,
+    /// Phase C2 — semantic linkage to the capability this trigger fires.
+    /// v2 templates and v2 CLI output populate this. Promote path prefers it
+    /// over positional `triggers[i]` ↔ `use_cases[i]` matching.
+    /// See `docs/concepts/persona-capabilities/06-building-pipeline.md`.
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -257,6 +263,11 @@ impl AgentIrUseCase {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AgentIrUseCaseData {
+    /// Stable capability id (v2 convention: `uc_<slug>`). When absent, the
+    /// promote path generates a UUID-suffixed id. Carries through to
+    /// `design_context.useCases[].id` and to every linked trigger/subscription.
+    #[serde(default)]
+    pub id: Option<String>,
     #[serde(default)]
     pub title: Option<String>,
     #[serde(default)]
@@ -268,6 +279,56 @@ pub struct AgentIrUseCaseData {
     /// Per-use-case event subscriptions. Legacy key: `events`.
     #[serde(default, alias = "events")]
     pub event_subscriptions: Vec<AgentIrUseCaseEvent>,
+
+    // ---- Phase C2 additions (v2 capability envelope). All additive. ----
+
+    /// One-line summary rendered in the Active Capabilities prompt section.
+    /// Falls back to `description` when absent. Mirrors `DesignUseCase`.
+    #[serde(default)]
+    pub capability_summary: Option<String>,
+
+    /// Runtime toggle. Absent = enabled. Set to Some(false) to disable
+    /// without rebuilding the persona.
+    #[serde(default)]
+    pub enabled: Option<bool>,
+
+    /// Per-capability notification channels. Shape matches the top-level
+    /// `notification_channels` — kept as Value for forward compatibility.
+    #[serde(default)]
+    pub notification_channels: Option<serde_json::Value>,
+
+    /// Per-capability model profile override. When set, the runtime uses
+    /// this profile instead of the persona default for this capability.
+    #[serde(default)]
+    pub model_override: Option<serde_json::Value>,
+
+    /// Named test fixtures for simulation (canned inputs).
+    #[serde(default)]
+    pub test_fixtures: Option<serde_json::Value>,
+
+    /// Tool names the LLM should prefer when this capability is in focus.
+    /// Advisory — all persona tools remain available at runtime.
+    #[serde(default)]
+    pub tool_hints: Option<Vec<String>>,
+
+    /// Structured input schema (typed fields the trigger delivers).
+    #[serde(default)]
+    pub input_schema: Option<serde_json::Value>,
+
+    /// Canonical example payload for simulation and documentation.
+    #[serde(default)]
+    pub sample_input: Option<serde_json::Value>,
+
+    /// Authoring-time trigger hint — mirrors what the corresponding entry in
+    /// `AgentIr.triggers[]` will contain once promoted. Lets template authors
+    /// keep trigger intent next to the capability that owns it.
+    #[serde(default)]
+    pub suggested_trigger: Option<serde_json::Value>,
+
+    /// Workflow diagram carried over from v1 `use_case_flows[i]` (nodes +
+    /// edges). Documentation-only; runtime does not read it.
+    #[serde(default)]
+    pub use_case_flow: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -330,5 +391,129 @@ impl AgentIr {
     /// Serialize back to `serde_json::Value` (for places that still need dynamic JSON).
     pub fn to_value(&self) -> serde_json::Value {
         serde_json::to_value(self).unwrap_or_default()
+    }
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// C2 — a v1-shaped IR (no v2 fields present) still parses and the new
+    /// fields come back as `None` / empty. This is the backward-compat guarantee
+    /// for pre-migration templates that haven't been rewritten yet.
+    #[test]
+    fn v1_shape_parses_into_v2_struct_with_none_extras() {
+        let v1 = serde_json::json!({
+            "name": "Legacy",
+            "triggers": [
+                { "trigger_type": "schedule", "config": { "cron": "0 * * * *" } }
+            ],
+            "use_cases": [
+                { "title": "Old Use Case", "description": "legacy" }
+            ]
+        });
+        let ir: AgentIr = serde_json::from_value(v1).expect("v1 still parses");
+        assert_eq!(ir.name.as_deref(), Some("Legacy"));
+        assert_eq!(ir.triggers.len(), 1);
+        assert!(ir.triggers[0].use_case_id.is_none(), "v1 trigger has no use_case_id");
+
+        match &ir.use_cases[0] {
+            AgentIrUseCase::Structured(d) => {
+                assert!(d.id.is_none());
+                assert!(d.capability_summary.is_none());
+                assert!(d.enabled.is_none());
+                assert!(d.tool_hints.is_none());
+            }
+            AgentIrUseCase::Simple(_) => panic!("expected structured variant"),
+        }
+    }
+
+    /// C2 — v2 fields round-trip through serde with stable shape. Lock the
+    /// contract that the promote path depends on (semantic use_case_id
+    /// linkage, per-capability metadata).
+    #[test]
+    fn v2_fields_round_trip() {
+        let v2 = serde_json::json!({
+            "name": "Stock Analyst",
+            "triggers": [
+                {
+                    "trigger_type": "schedule",
+                    "config": { "cron": "0 8 * * 1" },
+                    "description": "Mondays 08:00",
+                    "use_case_id": "uc_gem"
+                }
+            ],
+            "use_cases": [
+                {
+                    "id": "uc_gem",
+                    "title": "Weekly Gem Finder",
+                    "description": "scans for gems",
+                    "capability_summary": "weekly sector screen",
+                    "enabled": true,
+                    "tool_hints": ["http_request", "slack_post"],
+                    "notification_channels": [{ "type": "slack" }],
+                    "model_override": { "model": "claude-haiku-4-5" },
+                    "sample_input": { "sector": "semiconductors" },
+                    "input_schema": [{ "name": "sector", "type": "string" }],
+                    "suggested_trigger": { "type": "schedule", "description": "Mondays 08:00" },
+                    "use_case_flow": { "nodes": [], "edges": [] }
+                }
+            ]
+        });
+        let ir: AgentIr = serde_json::from_value(v2.clone()).expect("v2 parses");
+
+        assert_eq!(
+            ir.triggers[0].use_case_id.as_deref(),
+            Some("uc_gem"),
+            "semantic linkage preserved"
+        );
+
+        let data = match &ir.use_cases[0] {
+            AgentIrUseCase::Structured(d) => d,
+            AgentIrUseCase::Simple(_) => panic!("expected structured"),
+        };
+        assert_eq!(data.id.as_deref(), Some("uc_gem"));
+        assert_eq!(data.capability_summary.as_deref(), Some("weekly sector screen"));
+        assert_eq!(data.enabled, Some(true));
+        assert_eq!(
+            data.tool_hints.as_deref(),
+            Some(&["http_request".to_string(), "slack_post".to_string()][..])
+        );
+        assert!(data.notification_channels.is_some());
+        assert!(data.model_override.is_some());
+        assert!(data.sample_input.is_some());
+        assert!(data.input_schema.is_some());
+        assert!(data.suggested_trigger.is_some());
+        assert!(data.use_case_flow.is_some());
+
+        // Serialize back and reparse — the structure must survive a round trip.
+        let reparsed: AgentIr = serde_json::from_value(ir.to_value()).expect("round trip");
+        assert_eq!(
+            reparsed.triggers[0].use_case_id.as_deref(),
+            Some("uc_gem"),
+            "use_case_id survives round-trip"
+        );
+    }
+
+    /// C2 — `enabled: false` is the explicit disable marker; `None` (missing)
+    /// and `Some(true)` both count as active. Mirrors the runtime filter in
+    /// `engine::prompt::render_active_capabilities`.
+    #[test]
+    fn enabled_tri_state_round_trips() {
+        let cases = [
+            serde_json::json!({ "id": "a", "title": "A" }),
+            serde_json::json!({ "id": "b", "title": "B", "enabled": true }),
+            serde_json::json!({ "id": "c", "title": "C", "enabled": false }),
+        ];
+        let expected = [None, Some(true), Some(false)];
+        for (uc, want) in cases.into_iter().zip(expected) {
+            let data: AgentIrUseCaseData =
+                serde_json::from_value(uc).expect("case parses");
+            assert_eq!(data.enabled, want);
+        }
     }
 }

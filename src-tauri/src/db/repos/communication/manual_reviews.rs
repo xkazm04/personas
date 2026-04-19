@@ -20,6 +20,7 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
         resolved_at: row.get("resolved_at")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
+        use_case_id: row.get::<_, Option<String>>("use_case_id").unwrap_or(None),
     })
 }
 
@@ -42,8 +43,8 @@ pub fn create(
         conn.execute(
             "INSERT INTO persona_manual_reviews
              (id, execution_id, persona_id, title, description, severity, status,
-              context_data, suggested_actions, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
+              context_data, suggested_actions, created_at, updated_at, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9, ?10)",
             params![
                 id,
                 input.execution_id,
@@ -54,6 +55,7 @@ pub fn create(
                 input.context_data,
                 input.suggested_actions,
                 now,
+                input.use_case_id,
             ],
         )?;
 
@@ -140,6 +142,37 @@ pub fn get_recent_resolved(
         )?;
         let rows = stmt.query_map(params![persona_id, days, limit], row_to_review)?;
         Ok(collect_rows(rows, "manual_reviews::get_recent_resolved"))
+    })
+}
+
+/// Fetch reviews attributed to a specific capability (use case) on a persona.
+/// Phase C5 — capability-scoped review queue.
+pub fn get_by_use_case_id(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: &str,
+    status: Option<&str>,
+) -> Result<Vec<PersonaManualReview>, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::get_by_use_case_id", {
+        let conn = pool.get()?;
+
+        if let Some(status_filter) = status {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 WHERE persona_id = ?1 AND use_case_id = ?2 AND status = ?3
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map(params![persona_id, use_case_id, status_filter], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_by_use_case_id(filtered)"))
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 WHERE persona_id = ?1 AND use_case_id = ?2
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map(params![persona_id, use_case_id], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_by_use_case_id"))
+        }
     })
 }
 
@@ -312,6 +345,7 @@ mod tests {
                 severity: Some("warning".into()),
                 context_data: Some(r#"{"key":"value"}"#.into()),
                 suggested_actions: Some("Verify manually".into()),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -372,6 +406,7 @@ mod tests {
                 severity: None,
                 context_data: None,
                 suggested_actions: None,
+                use_case_id: None,
             },
         )
         .unwrap();

@@ -88,6 +88,12 @@ pub struct PersonaMemory {
     pub last_accessed_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    /// Capability (use case) attribution. Memories with `use_case_id = Some(_)`
+    /// are scoped to that capability for injection (active/working tier).
+    /// `None` means persona-wide; injected for any execution. Core-tier memories
+    /// are always persona-wide regardless of this column. Phase C5.
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -100,4 +106,6 @@ pub struct CreatePersonaMemoryInput {
     pub source_execution_id: Option<String>,
     pub importance: Option<i32>,
     pub tags: Option<Json<Vec<String>>>,
+    #[serde(default)]
+    pub use_case_id: Option<String>,
 }

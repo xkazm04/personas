@@ -118,6 +118,8 @@ export interface Connection {
   triggerId: string | null;
   personaId: string;
   persona: Persona | undefined;
+  /** Phase C4 — capability scope when the trigger is scoped to one use case. */
+  useCaseId?: string | null;
   chainCondition?: string;
 }
 
@@ -256,13 +258,17 @@ export function buildEventRows(
       if (!et) continue;
       const row = ensureRow(et);
       if (row.sourcePersonas.some(s => s.personaId === t.persona_id)) continue;
-      if (row.connections.some(c => c.personaId === t.persona_id)) continue;
+      // Phase C4: capability-scoped triggers are distinct connections even for
+      // the same persona, so a persona can listen to the same event with two
+      // different capabilities without the UI collapsing them.
+      if (row.connections.some(c => c.personaId === t.persona_id && (c.useCaseId ?? null) === (t.use_case_id ?? null))) continue;
       row.connections.push({
         kind: 'trigger-listener',
         subscriptionId: null,
         triggerId: t.id,
         personaId: t.persona_id,
         persona: personaMap.get(t.persona_id),
+        useCaseId: t.use_case_id,
       });
     } catch { /* skip */ }
   }

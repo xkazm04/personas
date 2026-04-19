@@ -15,6 +15,13 @@ import { ActivityHeader } from './ActivityHeader';
 import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+
+// Tolerate bindings that haven't been regenerated yet — use_case_id is
+// optional on every row that carries it after Phase C5.
+type WithUseCase = { use_case_id?: string | null };
+const useCaseIdOf = (raw: unknown): string | null =>
+  ((raw as WithUseCase | null | undefined)?.use_case_id) ?? null;
 
 export function ActivityTab() {
   const { t, tx } = useTranslation();
@@ -22,9 +29,11 @@ export function ActivityTab() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [filter, setFilter] = useState<ActivityType>('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [useCaseFilter, setUseCaseFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
   const personaId = selectedPersona?.id;
+  const useCases = useSelectedUseCases();
 
   const loadData = useCallback(async () => {
     if (!personaId) return;
@@ -50,6 +59,7 @@ export function ActivityTab() {
           subtitle: e.output_data?.slice(0, 80) || t.agents.activity.no_output,
           status: e.status,
           timestamp: e.started_at || e.created_at,
+          useCaseId: useCaseIdOf(e),
           raw: e,
         })),
         ...personaEvents.map((e): ActivityItem => ({
@@ -58,6 +68,7 @@ export function ActivityTab() {
           subtitle: e.source_type || 'System',
           status: e.status === 'pending' ? 'delivered' : e.status,
           timestamp: e.created_at,
+          useCaseId: useCaseIdOf(e),
           raw: e,
         })),
         ...memories.map((m): ActivityItem => ({
@@ -66,6 +77,7 @@ export function ActivityTab() {
           subtitle: m.category,
           status: `importance: ${m.importance}`,
           timestamp: m.created_at,
+          useCaseId: useCaseIdOf(m),
           raw: m,
         })),
         ...reviews.map((r): ActivityItem => ({
@@ -74,6 +86,7 @@ export function ActivityTab() {
           subtitle: r.description?.slice(0, 80) || '',
           status: r.status,
           timestamp: r.created_at,
+          useCaseId: useCaseIdOf(r),
           raw: r,
         })),
         ...personaMessages.map((m): ActivityItem => ({
@@ -82,6 +95,7 @@ export function ActivityTab() {
           subtitle: m.content?.slice(0, 80) || '',
           status: m.priority || 'normal',
           timestamp: m.created_at,
+          useCaseId: useCaseIdOf(m),
           raw: m,
         })),
       ];
@@ -98,8 +112,22 @@ export function ActivityTab() {
   const filtered = useMemo(() => {
     let result = filter === 'all' ? items : items.filter((i) => i.type === filter);
     if (statusFilter !== 'all') result = result.filter((i) => i.status.toLowerCase() === statusFilter);
+    if (useCaseFilter !== 'all') {
+      result = useCaseFilter === '__none__'
+        ? result.filter((i) => !i.useCaseId)
+        : result.filter((i) => i.useCaseId === useCaseFilter);
+    }
     return result;
-  }, [items, filter, statusFilter]);
+  }, [items, filter, statusFilter, useCaseFilter]);
+
+  const useCaseOptions = useMemo(
+    () =>
+      useCases.map((uc) => ({
+        id: uc.id,
+        title: uc.title || uc.id,
+      })),
+    [useCases],
+  );
 
   const availableStatuses = useMemo(() => {
     const base = filter === 'all' ? items : items.filter((i) => i.type === filter);
@@ -137,10 +165,13 @@ export function ActivityTab() {
       <ActivityFilters
         filter={filter}
         statusFilter={statusFilter}
+        useCaseFilter={useCaseFilter}
         counts={counts}
         availableStatuses={availableStatuses}
+        useCaseOptions={useCaseOptions}
         onFilterChange={setFilter}
         onStatusFilterChange={setStatusFilter}
+        onUseCaseFilterChange={setUseCaseFilter}
       />
       <ActivityList
         items={filtered}

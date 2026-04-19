@@ -859,6 +859,7 @@ pub fn link_persona_to_event(
     persona_id: String,
     event_type: String,
     handler_text: Option<String>,
+    use_case_id: Option<String>,
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
     repo::link_persona_to_event(
@@ -866,6 +867,7 @@ pub fn link_persona_to_event(
         &persona_id,
         &event_type,
         handler_text.as_deref(),
+        use_case_id.as_deref(),
     )
 }
 

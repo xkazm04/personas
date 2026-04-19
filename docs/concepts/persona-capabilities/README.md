@@ -4,7 +4,9 @@
 > Each use case becomes a first-class runnable entity with its own triggers, executions,
 > messages, reviews, and memories. Persona keeps identity, style, tools, and shared memory.
 
-**Status:** Design locked. Implementation pending. No production personas exist — greenfield, no backward compatibility required.
+**Status:** Design locked. Implementation in progress across multiple sessions. No production personas exist — greenfield, no backward compatibility required.
+
+**👉 New coordinator picking this up? Start at [HANDOFF-2026-04-19.md](HANDOFF-2026-04-19.md) — it has the current state snapshot, the locked decisions, C2 coordination rules, and the full C5 task breakdown.**
 
 ## Reading order
 
@@ -57,12 +59,20 @@ Persona (identity + shared state)
 
 | Phase | Subject | State |
 |---|---|---|
-| C1 | Runtime foundation (prompt assembly reads capabilities, session cache, enabled flag, semantic trigger linkage) | not started |
-| C2 | Building pipeline rewrite (AgentIr v2, CLI prompts, template schema v2, 107-template rewrite, adoption v2) | not started |
-| C3 | UI activation (toggle, simulate, remove persona Execute → per-capability in Use Case tab) | not started |
-| C4 | Triggers/automations first-class (trigger builder rewired, automation use-case binding) | not started |
+| C1 | Runtime foundation (prompt assembly reads capabilities, session cache, enabled flag, semantic trigger linkage via positional fallback) | **shipped** (uncommitted — 2026-04-19) |
+| C2 | Building pipeline rewrite (AgentIr v2, CLI prompts, template schema v2, 107-template rewrite, adoption v2) | **in progress** (separate CLI session) |
+| C3 | UI activation (toggle, simulate, remove persona Execute → per-capability in Use Case tab) | **shipped** (uncommitted — 2026-04-19); §L + §K polish/tests shipped 2026-04-19 |
+| C4 | Triggers/automations first-class (trigger builder rewired, automation use-case binding) | **shipped** (uncommitted — 2026-04-19) |
 | C5 | Per-use-case messages/reviews/memories | not started |
 | C6 | Lab per-use-case + versioning RFC-driven | not started |
+
+### Quick resume for a new session
+
+1. `git status` — C1 + C3 changes are on `master` working tree, uncommitted. C2 work (agent_ir.rs + C2-template-audit.md) is also uncommitted, from a separate CLI session.
+2. `cargo check --features desktop` — clean.
+3. `npx tsc --noEmit && npx vite build` — clean.
+4. The only green tests I can confirm running are `engine::prompt::tests::c1_*` (9 passing). Other Rust test-scope compilation is broken on master (unrelated); partial hygiene fix applied in `credentials.rs` to unblock `c1_*`.
+5. **C4 is the next phase** — unless C2 blocks on a schema decision, start C4 from a cold read of [09-implementation-plan.md](09-implementation-plan.md) §C4.
 
 When a phase completes, update this table and the status header of the individual doc.
 

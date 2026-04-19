@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Play, Clock, Info, Settings2, Cpu, Bell } from 'lucide-react';
+import { Play, Clock, Info, Settings2, Cpu, Bell, FlaskConical, Power, PowerOff } from 'lucide-react';
 import type { UseCaseItem } from './UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -30,6 +30,12 @@ interface UseCaseRowProps {
   onToggleConfig?: (useCaseId: string) => void;
   configExpanded?: boolean;
   configContent?: ReactNode;
+  /** Phase C3 — flip the capability's `enabled` flag (cascades to triggers/subs). */
+  onToggleEnabled?: (useCaseId: string, enabled: boolean) => void;
+  /** Phase C3 — run the capability as a simulation (no real notifications). */
+  onSimulate?: (useCaseId: string) => void;
+  /** Set true while a toggle IPC is in flight to prevent double-clicks. */
+  toggling?: boolean;
 }
 
 export function UseCaseRow({
@@ -44,19 +50,38 @@ export function UseCaseRow({
   onToggleConfig,
   configExpanded,
   configContent,
+  onToggleEnabled,
+  onSimulate,
+  toggling,
 }: UseCaseRowProps) {
   const { t } = useTranslation();
   const mode = useCase.execution_mode ?? 'e2e';
   const modeBadge = (MODE_BADGE[mode] ?? MODE_BADGE.e2e)!;
   const catStyle = useCase.category ? CATEGORY_STYLES[useCase.category] : null;
-  const isRunnable = mode !== 'non_executable';
+
+  // Phase C3: a capability is active unless `enabled === false`. Disabled
+  // capabilities grey out and block Run (but not Simulate).
+  const isEnabled = useCase.enabled !== false;
+  const isRunnable = mode !== 'non_executable' && isEnabled;
   const playDisabled = !isRunnable || (isExecuting && !isActive);
+  const simulateDisabled = mode === 'non_executable' || (isExecuting && !isActive);
+
   const hasModelOverride = !!useCase.model_override;
   const hasNotifications = (useCase.notification_channels?.length ?? 0) > 0;
   const hasAnyConfig = hasModelOverride || hasNotifications;
 
+  const summary = useCase.capability_summary ?? useCase.description;
+
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div
+      className={`rounded-xl border overflow-hidden transition-opacity ${
+        isEnabled
+          ? 'border-primary/10 bg-secondary/20'
+          : 'border-primary/5 bg-secondary/10 opacity-60'
+      }`}
+      data-use-case-id={useCase.id}
+      data-enabled={isEnabled}
+    >
       <div className="p-3.5">
         <div className="flex items-start gap-3">
           {/* Index number */}
@@ -76,10 +101,13 @@ export function UseCaseRow({
               <span className={`px-1.5 py-0.5 typo-label rounded border ${modeBadge.bg} ${modeBadge.text}`}>
                 {modeBadge.label}
               </span>
+              {!isEnabled && (
+                <span className="px-1.5 py-0.5 typo-label rounded border bg-secondary/50 border-primary/20 text-foreground">
+                  PAUSED
+                </span>
+              )}
             </div>
-            <p className="typo-body text-foreground mt-1 leading-relaxed">
-              {useCase.description}
-            </p>
+            <p className="typo-body text-foreground mt-1 leading-relaxed">{summary}</p>
             {/* Override indicators */}
             {hasAnyConfig && (
               <div className="flex items-center gap-2 mt-1.5">
@@ -99,10 +127,33 @@ export function UseCaseRow({
 
           {/* Actions */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Enable/disable toggle (Phase C3) */}
+            {onToggleEnabled && (
+              <button
+                onClick={() => onToggleEnabled(useCase.id, !isEnabled)}
+                disabled={toggling}
+                data-testid={`use-case-toggle-${useCase.id}`}
+                className={`p-1.5 rounded-lg border transition-colors ${
+                  isEnabled
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/80 hover:bg-emerald-500/20'
+                    : 'bg-secondary/40 border-primary/15 text-foreground hover:text-foreground/80 hover:border-primary/25'
+                } ${toggling ? 'opacity-50 cursor-wait' : ''}`}
+                title={
+                  isEnabled
+                    ? 'Pause this capability (stops triggers + subscriptions)'
+                    : 'Activate this capability'
+                }
+                aria-label={isEnabled ? 'Pause capability' : 'Activate capability'}
+              >
+                {isEnabled ? <Power className="w-3.5 h-3.5" /> : <PowerOff className="w-3.5 h-3.5" />}
+              </button>
+            )}
+
             {/* Play button */}
             <button
               onClick={() => onExecute(useCase.id, useCase.sample_input ?? undefined)}
               disabled={playDisabled}
+              data-testid={`use-case-run-${useCase.id}`}
               className={`p-1.5 rounded-lg border transition-colors ${
                 isActive
                   ? 'bg-primary/20 border-primary/30 text-primary'
@@ -113,9 +164,11 @@ export function UseCaseRow({
               title={
                 mode === 'non_executable'
                   ? 'This use case is informational only'
-                  : isExecuting && !isActive
-                    ? 'Another use case is executing'
-                    : `Run ${useCase.title}`
+                  : !isEnabled
+                    ? 'Capability is paused — activate it to run'
+                    : isExecuting && !isActive
+                      ? 'Another use case is executing'
+                      : `Run ${useCase.title}`
               }
             >
               {isActive ? (
@@ -129,6 +182,28 @@ export function UseCaseRow({
                 <Play className="w-3.5 h-3.5" />
               )}
             </button>
+
+            {/* Simulate button (Phase C3) — bypasses enable gate, suppresses notifications */}
+            {onSimulate && (
+              <button
+                onClick={() => onSimulate(useCase.id)}
+                disabled={simulateDisabled}
+                data-testid={`use-case-simulate-${useCase.id}`}
+                className={`p-1.5 rounded-lg border transition-colors ${
+                  simulateDisabled
+                    ? 'bg-secondary/30 border-primary/10 text-foreground cursor-not-allowed'
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400/80 hover:bg-amber-500/20 hover:text-amber-400'
+                }`}
+                title={
+                  simulateDisabled
+                    ? 'Simulation unavailable while another execution is running'
+                    : 'Simulate — real API calls, no notifications delivered'
+                }
+                aria-label="Simulate capability"
+              >
+                <FlaskConical className="w-3.5 h-3.5" />
+              </button>
+            )}
 
             {/* History toggle */}
             <button

@@ -12,6 +12,9 @@ import {
   CATEGORY_META, FALLBACK_CATEGORY,
   containerVariants, sectionVariants,
   groupByCategory,
+  groupByScope,
+  hasMultiScope,
+  type ScopeSection,
 } from './QuestionnaireFormGridConfig';
 import { ProgressBar, QuestionCard } from './QuestionnaireFormGridParts';
 
@@ -79,6 +82,11 @@ export function QuestionnaireFormGrid({
   const { t } = useTranslation();
   const grouped = useMemo(() => groupByCategory(questions), [questions]);
   const categoryKeys = useMemo(() => Object.keys(grouped), [grouped]);
+  // Phase C2 — scope sections (persona / capability:uc_x / connector:name).
+  // Multi-scope activates grouped rendering; single-scope falls back to the
+  // legacy category-only grid so pre-v2 templates look identical to today.
+  const scopeSections = useMemo<ScopeSection[]>(() => groupByScope(questions), [questions]);
+  const multiScope = useMemo(() => hasMultiScope(scopeSections), [scopeSections]);
 
   const answeredCount = useMemo(
     () => questions.filter((q) => !!userAnswers[q.id]).length,
@@ -181,57 +189,156 @@ export function QuestionnaireFormGrid({
               </div>
             </div>
           )}
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-          >
-            {categoryKeys.map((catKey) => {
-              const meta = CATEGORY_META[catKey] ?? FALLBACK_CATEGORY;
-              const qs = grouped[catKey]!;
-              const { Icon } = meta;
+          {multiScope ? (
+            /* Phase C2 — scope-grouped layout. Each scope section wraps the
+               existing category grid so the template's category metadata is
+               preserved inside every scope-level band. */
+            <motion.div
+              className="flex flex-col gap-5"
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+            >
+              {scopeSections.map((section) => {
+                const sectionGrouped = groupByCategory(section.questions);
+                const sectionKeys = Object.keys(sectionGrouped);
+                const answered = section.questions.filter((q) => !!userAnswers[q.id]).length;
+                const heading =
+                  section.scope === 'persona'
+                    ? 'Persona setup'
+                    : section.scope === 'capability'
+                      ? `Capability: ${section.subjectId ?? 'unknown'}`
+                      : `Connector: ${section.subjectId ?? 'unknown'}`;
+                const accent =
+                  section.scope === 'persona'
+                    ? 'text-primary/90'
+                    : section.scope === 'capability'
+                      ? 'text-emerald-300'
+                      : 'text-amber-300';
 
-              return (
-                <motion.div
-                  key={catKey}
-                  variants={sectionVariants}
-                  className={`rounded-modal border ${meta.border} ${meta.bg} overflow-hidden`}
-                  style={{ borderLeftWidth: 3 }}
-                >
-                  {/* Category header */}
-                  <div className="flex items-center gap-2 px-4 pt-3 pb-2">
-                    <Icon className={`w-4 h-4 ${meta.color}`} />
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
-                      {meta.label}
-                    </span>
-                    <span className="text-[10px] text-foreground ml-auto">
-                      {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
-                    </span>
-                  </div>
+                return (
+                  <section
+                    key={section.key}
+                    data-testid={`questionnaire-scope-${section.key}`}
+                    data-scope={section.scope}
+                    data-subject-id={section.subjectId ?? ''}
+                    className="rounded-modal border border-white/[0.06] bg-white/[0.02] px-4 pt-3 pb-4"
+                  >
+                    <header className="flex items-center justify-between mb-3">
+                      <h3 className={`text-sm font-semibold tracking-wide ${accent}`}>
+                        {heading}
+                      </h3>
+                      <span className="text-[10px] text-foreground">
+                        {answered}/{section.questions.length}
+                      </span>
+                    </header>
 
-                  {/* Questions */}
-                  <div className="px-2 pb-3 space-y-1">
-                    {qs.map((q) => (
-                      <QuestionCard
-                        key={q.id}
-                        question={q}
-                        answer={userAnswers[q.id] ?? ''}
-                        onAnswer={(v) => onAnswerUpdated(q.id, v)}
-                        inputRef={q.id === firstUnansweredId ? firstInputRef : undefined}
-                        isAutoDetected={autoDetectedIds?.has(q.id)}
-                        isBlocked={blockedQuestionIds?.has(q.id)}
-                        onAddCredential={onAddCredential}
-                        filteredOptions={filteredOptions?.[q.id]}
-                        dynamicState={dynamicOptions?.[q.id]}
-                        onRetryDynamic={onRetryDynamic}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                    <motion.div
+                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                      variants={containerVariants}
+                    >
+                      {sectionKeys.map((catKey) => {
+                        const meta = CATEGORY_META[catKey] ?? FALLBACK_CATEGORY;
+                        const qs = sectionGrouped[catKey]!;
+                        const { Icon } = meta;
+
+                        return (
+                          <motion.div
+                            key={`${section.key}-${catKey}`}
+                            variants={sectionVariants}
+                            className={`rounded-modal border ${meta.border} ${meta.bg} overflow-hidden`}
+                            style={{ borderLeftWidth: 3 }}
+                          >
+                            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+                              <Icon className={`w-4 h-4 ${meta.color}`} />
+                              <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
+                                {meta.label}
+                              </span>
+                              <span className="text-[10px] text-foreground ml-auto">
+                                {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
+                              </span>
+                            </div>
+
+                            <div className="px-2 pb-3 space-y-1">
+                              {qs.map((q) => (
+                                <QuestionCard
+                                  key={q.id}
+                                  question={q}
+                                  answer={userAnswers[q.id] ?? ''}
+                                  onAnswer={(v) => onAnswerUpdated(q.id, v)}
+                                  inputRef={q.id === firstUnansweredId ? firstInputRef : undefined}
+                                  isAutoDetected={autoDetectedIds?.has(q.id)}
+                                  isBlocked={blockedQuestionIds?.has(q.id)}
+                                  onAddCredential={onAddCredential}
+                                  filteredOptions={filteredOptions?.[q.id]}
+                                  dynamicState={dynamicOptions?.[q.id]}
+                                  onRetryDynamic={onRetryDynamic}
+                                />
+                              ))}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  </section>
+                );
+              })}
+            </motion.div>
+          ) : (
+            /* Legacy layout — used when all questions fall under `persona`
+               scope (i.e. pre-v2 templates). Identical to pre-C2 rendering. */
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+            >
+              {categoryKeys.map((catKey) => {
+                const meta = CATEGORY_META[catKey] ?? FALLBACK_CATEGORY;
+                const qs = grouped[catKey]!;
+                const { Icon } = meta;
+
+                return (
+                  <motion.div
+                    key={catKey}
+                    variants={sectionVariants}
+                    className={`rounded-modal border ${meta.border} ${meta.bg} overflow-hidden`}
+                    style={{ borderLeftWidth: 3 }}
+                  >
+                    {/* Category header */}
+                    <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+                      <Icon className={`w-4 h-4 ${meta.color}`} />
+                      <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
+                        {meta.label}
+                      </span>
+                      <span className="text-[10px] text-foreground ml-auto">
+                        {qs.filter((q) => !!userAnswers[q.id]).length}/{qs.length}
+                      </span>
+                    </div>
+
+                    {/* Questions */}
+                    <div className="px-2 pb-3 space-y-1">
+                      {qs.map((q) => (
+                        <QuestionCard
+                          key={q.id}
+                          question={q}
+                          answer={userAnswers[q.id] ?? ''}
+                          onAnswer={(v) => onAnswerUpdated(q.id, v)}
+                          inputRef={q.id === firstUnansweredId ? firstInputRef : undefined}
+                          isAutoDetected={autoDetectedIds?.has(q.id)}
+                          isBlocked={blockedQuestionIds?.has(q.id)}
+                          onAddCredential={onAddCredential}
+                          filteredOptions={filteredOptions?.[q.id]}
+                          dynamicState={dynamicOptions?.[q.id]}
+                          onRetryDynamic={onRetryDynamic}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
         </div>
 
         {/* ── Footer ─────────────────────────────────────────── */}

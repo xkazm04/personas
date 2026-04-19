@@ -161,6 +161,69 @@ isn't worth solving until we hear from users.
 - A persona has a mix of cheap + expensive capabilities and the user is
   worried about a runaway on the expensive one.
 
+## §K — C3 Rust integration tests (cascade + simulation) — **shipped 2026-04-19**
+
+**Status.** Promoted out of backlog. Tests live in
+`src-tauri/src/commands/core/use_cases.rs` `mod tests` and pass under
+`cargo test --features desktop --lib commands::core::use_cases` (10/10).
+
+**What landed.**
+
+- Cascade core extracted into pure helper `cascade_use_case_toggle(&mut Conn, ...)`;
+  IPC `set_use_case_enabled` now delegates to it (behavior identical, just
+  testable). Session-pool invalidation stays in the IPC wrapper.
+- Simulation input-build extracted into `build_simulation_input(use_case, override)`
+  so the `_simulation: true` flag injection can be asserted in isolation.
+- Tests:
+  1. `cascade_disables_triggers_subscriptions_and_running_automations` —
+     full SQL-state verification for 2 triggers + 3 subscriptions + 1
+     running automation, plus `design_context.use_cases[i].enabled` patch.
+  2. `cascade_reenable_resumes_triggers_and_subs_but_leaves_automations_paused`
+     — pins the deliberate "operator must explicitly reactivate automations"
+     contract.
+  3. `cascade_rejects_unknown_use_case` — error path.
+  4. `build_simulation_input_*` (×4) — override, sample fallback, missing
+     sample, plain-text override.
+  5. `dispatch_module_contains_simulation_short_circuit` — static guard
+     that pins the `if ctx.is_simulation` + `[SIM]` markers in
+     `engine/dispatch.rs`. Cheap proxy for the full mock-notifier
+     integration test described below under "Still deferred".
+- Hygiene fix: `engine/management_api.rs` test fixture missing
+  `is_simulation` field on `PersonaExecution` literal — added so the test
+  binary actually compiles.
+
+**Still deferred (smaller scope).** A full mock-notifier integration test
+that runs `simulate_use_case` end-to-end and asserts zero real notification
+sends. Requires a constructible `AppHandle` mock and an `AppState` builder
+that doesn't pull in the entire desktop runtime. The static dispatch-marker
+test pins the contract until that harness exists.
+
+## §L — C3 execution history UI polish — **shipped 2026-04-19**
+
+**Status.** Promoted out of backlog. Implemented across:
+
+- `src/lib/bindings/PersonaExecution.ts` + `GlobalExecutionRow.ts` — added
+  `is_simulation: boolean` field (mirrors Rust model; ts-rs will rewrite
+  identically on next regen).
+- `src/i18n/locales/en.json` — added `col_capability`, `show_simulations`,
+  `hide_simulations`, `simulations_filter_tooltip`, `simulated_badge`,
+  `simulated_badge_tooltip`, `capability_unattributed`. Types regenerated
+  via `node scripts/i18n/gen-types.mjs`.
+- `ExecutionListFilters.tsx` — new "Show/Hide simulations" toggle (only
+  shown when at least one simulation row exists; FlaskConical icon, violet
+  treatment).
+- `ExecutionList.tsx` — wires `useSelectedUseCases()` to build a
+  `use_case_id → title` map; filters `executions` by `showSimulations`;
+  added `Capability` column to the desktop header (12-col grid: status 2,
+  capability 2, duration 2, started 2, tokens 2, cost 2).
+- `ExecutionListRow.tsx` — desktop row renders capability cell + violet
+  "SIMULATED" badge (FlaskConical) next to the status badge; mobile card
+  shows capability title on a second line and the same badge inline.
+
+**Acceptance met.** Toggle filters the list; capability column resolves
+`use_case_id` to title (em-dash when unattributed); simulation rows carry
+the badge. `npx tsc --noEmit` clean; lint adds 0 new errors.
+
 ## How to promote an item out of this backlog
 
 1. Confirm the trigger condition has fired.

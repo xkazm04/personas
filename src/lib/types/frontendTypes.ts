@@ -194,6 +194,12 @@ export interface DesignUseCase {
   notification_channels?: NotificationChannel[];
   event_subscriptions?: UseCaseEventSubscription[];
   test_fixtures?: TestFixture[];
+  /** Phase C1 — runtime toggle. `undefined`/`true` = active. */
+  enabled?: boolean;
+  /** One-line summary injected into the runtime "Active Capabilities" prompt section. */
+  capability_summary?: string;
+  /** Tool names to prefer when this capability is in focus. Advisory only. */
+  tool_hints?: string[];
 }
 
 export interface UseCaseTimeFilter {

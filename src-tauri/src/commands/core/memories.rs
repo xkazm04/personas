@@ -499,6 +499,7 @@ pub fn seed_mock_memory(
             source_execution_id: None,
             importance: Some(((t % 5) + 1) as i32),
             tags: Some(crate::db::models::Json(vec![MOCK_TAGS[t % MOCK_TAGS.len()].to_string()])),
+            use_case_id: None,
         };
 
         return repo::create(&_state.db, input);

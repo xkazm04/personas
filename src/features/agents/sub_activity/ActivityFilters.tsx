@@ -4,15 +4,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface ActivityFiltersProps {
   filter: ActivityType;
   statusFilter: string;
+  useCaseFilter: string;
   counts: Record<ActivityType, number>;
   availableStatuses: string[];
+  useCaseOptions: { id: string; title: string }[];
   onFilterChange: (f: ActivityType) => void;
   onStatusFilterChange: (s: string) => void;
+  onUseCaseFilterChange: (s: string) => void;
 }
 
 export function ActivityFilters({
-  filter, statusFilter, counts, availableStatuses,
-  onFilterChange, onStatusFilterChange,
+  filter, statusFilter, useCaseFilter, counts, availableStatuses, useCaseOptions,
+  onFilterChange, onStatusFilterChange, onUseCaseFilterChange,
 }: ActivityFiltersProps) {
   const { t } = useTranslation();
   return (
@@ -35,18 +38,34 @@ export function ActivityFilters({
           </button>
         ))}
       </div>
-      {availableStatuses.length > 1 && (
-        <select
-          value={statusFilter}
-          onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="ml-auto px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
-        >
-          <option value="all">{t.agents.activity.all_statuses}</option>
-          {availableStatuses.map((s) => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-          ))}
-        </select>
-      )}
+      <div className="ml-auto flex items-center gap-2">
+        {useCaseOptions.length > 0 && (
+          <select
+            value={useCaseFilter}
+            onChange={(e) => onUseCaseFilterChange(e.target.value)}
+            className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
+            title="Filter by capability"
+          >
+            <option value="all">All capabilities</option>
+            <option value="__none__">Persona-wide</option>
+            {useCaseOptions.map((uc) => (
+              <option key={uc.id} value={uc.id}>{uc.title}</option>
+            ))}
+          </select>
+        )}
+        {availableStatuses.length > 1 && (
+          <select
+            value={statusFilter}
+            onChange={(e) => onStatusFilterChange(e.target.value)}
+            className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
+          >
+            <option value="all">{t.agents.activity.all_statuses}</option>
+            {availableStatuses.map((s) => (
+              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            ))}
+          </select>
+        )}
+      </div>
     </div>
   );
 }

@@ -17,4 +17,10 @@ execution_config: string | null,
 /**
  * `true` when the execution log file may be incomplete due to I/O errors.
  */
-log_truncated: boolean, };
+log_truncated: boolean,
+/**
+ * Phase C3 — `true` when this execution was started via
+ * `simulate_use_case`. Simulations skip real notification dispatch and
+ * are filtered out of the default activity feed.
+ */
+is_simulation: boolean, };

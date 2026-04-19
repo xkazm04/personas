@@ -24,6 +24,101 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
     serde_json::from_str::<ModelProfile>(json_str).ok()
 }
 
+/// Render the "## Active Capabilities" section for the runtime prompt.
+///
+/// Reads the persona's `design_context` JSON, filters use cases by
+/// `enabled != Some(false)` (missing or `true` both count as active), and
+/// renders each with `capability_summary` (falling back to `description`).
+/// Trigger hint and `tool_hints` are appended when present.
+///
+/// Returns empty when `design_context` is missing, unparseable, or contains
+/// no enabled use cases — callers push the result unconditionally.
+///
+/// Phase C1 runtime foundation. See `docs/concepts/persona-capabilities/03-runtime.md`.
+pub fn render_active_capabilities(design_context: Option<&str>) -> String {
+    let Some(dc_json) = design_context else { return String::new(); };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
+    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+    if use_cases.is_empty() { return String::new(); }
+
+    let mut out = String::new();
+    let mut rendered = 0usize;
+
+    for uc in use_cases {
+        // Disabled only when explicitly `enabled == false`. Missing or true → active.
+        if uc.get("enabled").and_then(|v| v.as_bool()) == Some(false) { continue; }
+
+        let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled");
+        let summary = uc
+            .get("capability_summary")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .or_else(|| uc.get("description").and_then(|v| v.as_str()))
+            .unwrap_or("");
+
+        if rendered == 0 {
+            out.push_str("## Active Capabilities\n");
+            out.push_str(
+                "You have these active capabilities. Choose the right one for each request; each capability has its own trigger, inputs, and delivery channels.\n\n",
+            );
+        }
+
+        out.push_str(&format!("- **{}**: {}", title, summary));
+
+        if let Some(st) = uc.get("suggested_trigger") {
+            if let Some(desc) = st.get("description").and_then(|v| v.as_str()) {
+                if !desc.is_empty() {
+                    out.push_str(&format!(" _(trigger: {})_", desc));
+                }
+            } else if let Some(t) = st.get("type").and_then(|v| v.as_str()) {
+                out.push_str(&format!(" _(trigger: {})_", t));
+            }
+        }
+
+        if let Some(hints) = uc.get("tool_hints").and_then(|v| v.as_array()) {
+            let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
+            if !names.is_empty() {
+                out.push_str(&format!(" _(tools: {})_", names.join(", ")));
+            }
+        }
+
+        out.push('\n');
+        rendered += 1;
+    }
+
+    if rendered > 0 {
+        out.push('\n');
+    }
+
+    out
+}
+
+/// Fingerprint of the persona's currently-enabled capabilities.
+///
+/// Used by the session pool cache key so toggling a capability invalidates
+/// warm sessions. Stable under reordering: use case ids are sorted before
+/// being joined. Returns empty string when design_context is absent / empty
+/// so personas without capabilities don't carry bogus hash input.
+///
+/// Phase C1. See `docs/concepts/persona-capabilities/03-runtime.md` §3.
+pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
+    let Some(dc_json) = design_context else { return String::new(); };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
+    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+
+    let mut entries: Vec<String> = use_cases
+        .iter()
+        .filter(|uc| uc.get("enabled").and_then(|v| v.as_bool()) != Some(false))
+        .filter_map(|uc| {
+            let id = uc.get("id").and_then(|v| v.as_str())?;
+            let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("");
+            Some(format!("{}@{}", id, title))
+        })
+        .collect();
+    entries.sort();
+    entries.join("|")
+}
+
 /// Build documentation string for a single tool definition.
 pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     let mut doc = format!("### {}\n{}\n", tool.name, tool.description);
@@ -347,6 +442,12 @@ pub fn assemble_prompt(
         prompt.push_str("\n\n");
     }
 
+    // Active Capabilities (Phase C1) — persona's runtime-enabled use cases.
+    // Filters design_context.useCases by `enabled != false` so toggling a
+    // capability immediately removes it from the LLM's awareness. Always
+    // rendered in normal execution; advisory mode has its own rendering.
+    prompt.push_str(&render_active_capabilities(persona.design_context.as_deref()));
+
     // Workspace Shared Instructions (from group/workspace defaults)
     if let Some(ws_instructions) = workspace_instructions {
         prompt.push_str("## Workspace Instructions\n");
@@ -492,20 +593,48 @@ pub fn assemble_prompt(
         // Inject use case context if present -- wrap user-controlled values in
         // XML boundary tags so the model treats them as data, not instructions.
         if let Some(use_case) = data.get("_use_case") {
-            prompt.push_str("## Use Case Context\n");
+            // Phase C1 — scoped execution focus. Surfaced as "Current Focus"
+            // to complement the "## Active Capabilities" menu rendered above.
+            prompt.push_str("## Current Focus\n");
             if let Some(title) = use_case.get("title").and_then(|v| v.as_str()) {
                 prompt.push_str(&format!(
-                    "You are executing the use case: {}\n",
+                    "This execution is scoped to the capability: {}\n",
                     wrap_runtime_xml_boundary("use_case_title", title)
                 ));
             }
-            if let Some(desc) = use_case.get("description").and_then(|v| v.as_str()) {
+            if let Some(desc) = use_case
+                .get("capability_summary")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .or_else(|| use_case.get("description").and_then(|v| v.as_str()))
+            {
                 prompt.push_str(&format!(
-                    "Description:\n{}\n",
+                    "Summary:\n{}\n",
                     wrap_runtime_xml_boundary("use_case_description", desc)
                 ));
             }
-            prompt.push_str("Focus on this specific use case.\n\n");
+            if let Some(hints) = use_case.get("tool_hints").and_then(|v| v.as_array()) {
+                let names: Vec<&str> = hints.iter().filter_map(|h| h.as_str()).collect();
+                if !names.is_empty() {
+                    prompt.push_str(&format!(
+                        "Preferred tools for this capability: {}\n",
+                        names.join(", ")
+                    ));
+                }
+            }
+            if let Some(channels) = use_case.get("notification_channels").and_then(|v| v.as_array()) {
+                let types: Vec<String> = channels
+                    .iter()
+                    .filter_map(|c| c.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                    .collect();
+                if !types.is_empty() {
+                    prompt.push_str(&format!(
+                        "Deliver outputs via: {}\n",
+                        types.join(", ")
+                    ));
+                }
+            }
+            prompt.push_str("Focus on this capability. Ignore other capabilities unless the input explicitly requires coordination with them.\n\n");
         }
 
         // Inject time filter constraints if present -- field/window values are user-controlled
@@ -2867,5 +2996,197 @@ mod tests {
         assert!(prompt.contains("Handle one."));
         assert!(prompt.contains("event.two"));
         assert!(prompt.contains("Handle two."));
+    }
+
+    // ─── Phase C1 — capability-aware runtime tests ───────────────────────
+    //
+    // See docs/concepts/persona-capabilities/09-implementation-plan.md §C1.
+    // Ensures the runtime reads design_context.useCases, filters by
+    // `enabled != Some(false)`, and the session hash fingerprint reacts to
+    // toggles so warm-session reuse stays correct.
+
+    fn design_context_with_three_capabilities() -> String {
+        serde_json::json!({
+            "use_cases": [
+                {
+                    "id": "uc_perf",
+                    "title": "Performance Analysis",
+                    "description": "Deep-dive on a single ticker.",
+                    "capability_summary": "Ticker performance with price + news + technicals.",
+                    "enabled": true,
+                    "suggested_trigger": { "type": "manual", "description": "User provides a symbol" },
+                    "tool_hints": ["market_data_api", "news_api"]
+                },
+                {
+                    "id": "uc_gem",
+                    "title": "Weekly Gem Finder",
+                    "description": "Scan news for underappreciated stocks.",
+                    "capability_summary": "Weekly sector-filtered screen.",
+                    "enabled": true,
+                    "suggested_trigger": { "type": "schedule", "description": "Mondays 8am" }
+                },
+                {
+                    "id": "uc_gov",
+                    "title": "Gov Investment Tracker",
+                    "description": "Alerts on government filings.",
+                    "enabled": false,
+                    "suggested_trigger": { "type": "polling", "description": "Hourly" }
+                }
+            ]
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_filters_disabled() {
+        let dc = design_context_with_three_capabilities();
+        let out = render_active_capabilities(Some(&dc));
+        assert!(out.contains("## Active Capabilities"));
+        assert!(out.contains("Performance Analysis"));
+        assert!(out.contains("Weekly Gem Finder"));
+        assert!(
+            !out.contains("Gov Investment Tracker"),
+            "disabled capability must not appear in the Active Capabilities section"
+        );
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_uses_summary_then_description() {
+        let dc = design_context_with_three_capabilities();
+        let out = render_active_capabilities(Some(&dc));
+        // Performance Analysis has both; capability_summary wins.
+        assert!(out.contains("Ticker performance with price + news + technicals."));
+        assert!(!out.contains("Deep-dive on a single ticker."));
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_empty_when_all_disabled() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "A", "description": "x", "enabled": false }
+            ]
+        })
+        .to_string();
+        assert_eq!(render_active_capabilities(Some(&dc)), "");
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_empty_on_missing_context() {
+        assert_eq!(render_active_capabilities(None), "");
+        assert_eq!(render_active_capabilities(Some("")), "");
+        assert_eq!(render_active_capabilities(Some("not json")), "");
+    }
+
+    #[test]
+    fn c1_render_active_capabilities_treats_missing_enabled_as_active() {
+        // Greenfield personas may have no `enabled` key — they count as active.
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "Alpha", "description": "d" }
+            ]
+        })
+        .to_string();
+        let out = render_active_capabilities(Some(&dc));
+        assert!(out.contains("Alpha"));
+    }
+
+    #[test]
+    fn c1_fingerprint_changes_when_capability_disabled() {
+        let dc_all = design_context_with_three_capabilities();
+        let fp_all = active_capabilities_fingerprint(Some(&dc_all));
+
+        let dc_one_disabled = serde_json::json!({
+            "use_cases": [
+                { "id": "uc_perf", "title": "Performance Analysis", "description": "", "enabled": true },
+                { "id": "uc_gem", "title": "Weekly Gem Finder", "description": "", "enabled": false }
+            ]
+        })
+        .to_string();
+        let fp_disabled = active_capabilities_fingerprint(Some(&dc_one_disabled));
+
+        assert_ne!(fp_all, fp_disabled, "session hash must invalidate on toggle");
+        assert!(fp_disabled.contains("uc_perf"));
+        assert!(!fp_disabled.contains("uc_gem"));
+    }
+
+    #[test]
+    fn c1_fingerprint_is_stable_under_reordering() {
+        let a = serde_json::json!({
+            "use_cases": [
+                { "id": "b", "title": "B" },
+                { "id": "a", "title": "A" }
+            ]
+        })
+        .to_string();
+        let b = serde_json::json!({
+            "use_cases": [
+                { "id": "a", "title": "A" },
+                { "id": "b", "title": "B" }
+            ]
+        })
+        .to_string();
+        assert_eq!(
+            active_capabilities_fingerprint(Some(&a)),
+            active_capabilities_fingerprint(Some(&b))
+        );
+    }
+
+    #[test]
+    fn c1_assemble_prompt_injects_capabilities_section() {
+        let mut persona = test_persona();
+        persona.design_context = Some(design_context_with_three_capabilities());
+
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        assert!(prompt.contains("## Active Capabilities"));
+        assert!(prompt.contains("Performance Analysis"));
+        assert!(prompt.contains("Weekly Gem Finder"));
+        assert!(!prompt.contains("Gov Investment Tracker"),
+            "disabled capability must not leak into the runtime prompt");
+        // Trigger hints render too.
+        assert!(prompt.contains("Mondays 8am"));
+    }
+
+    #[test]
+    fn c1_current_focus_section_rendered_when_use_case_in_input() {
+        let mut persona = test_persona();
+        persona.design_context = Some(design_context_with_three_capabilities());
+
+        let input = serde_json::json!({
+            "_use_case": {
+                "title": "Weekly Gem Finder",
+                "capability_summary": "Weekly sector-filtered screen.",
+                "tool_hints": ["news_api", "screener"],
+                "notification_channels": [{ "type": "email" }]
+            },
+            "sector": "semiconductors"
+        });
+
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            Some(&input),
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+
+        assert!(prompt.contains("## Current Focus"));
+        assert!(prompt.contains("Weekly Gem Finder"));
+        assert!(prompt.contains("Preferred tools for this capability:"));
+        assert!(prompt.contains("news_api"));
+        assert!(prompt.contains("Deliver outputs via:"));
+        assert!(prompt.contains("email"));
     }
 }

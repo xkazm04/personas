@@ -663,6 +663,19 @@ const bridge: TestBridge = {
     }
   },
 
+  /** Phase C2 — fetch a persona's detail including design_context, triggers,
+   *  subscriptions. Used by the sweep harness to validate the post-adoption
+   *  shape (useCases populated, triggers carry use_case_id, etc.).
+   *  See `docs/guide-adoption-test-framework.md` §D. */
+  async getPersonaDetail(personaId: string) {
+    try {
+      const detail = await invoke('get_persona_detail', { id: personaId });
+      return { success: true, detail };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
   /** Get artifact counts for a persona across all overview modules. */
   async getOverviewCounts(personaId: string) {
     try {

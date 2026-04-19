@@ -419,6 +419,7 @@ pub fn link_persona_to_event(
     persona_id: &str,
     event_type: &str,
     handler_text: Option<&str>,
+    use_case_id: Option<&str>,
 ) -> Result<PersonaTrigger, AppError> {
     timed_query!("persona_triggers", "persona_triggers::link_persona_to_event", {
         if event_type.trim().is_empty() {
@@ -446,12 +447,13 @@ pub fn link_persona_to_event(
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1. INSERT trigger
+        // 1. INSERT trigger (capability scope threaded through from builder UI;
+        //    NULL = persona-wide — Phase C4).
         tx.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
-             VALUES (?1, ?2, 'event_listener', ?3, 1, 'active', NULL, ?4, ?4)",
-            params![trigger_id, persona_id, encrypted_config, now],
+             VALUES (?1, ?2, 'event_listener', ?3, 1, 'active', ?4, ?5, ?5)",
+            params![trigger_id, persona_id, encrypted_config, use_case_id, now],
         )
         .map_err(AppError::Database)?;
 
@@ -1859,6 +1861,7 @@ mod tests {
             &persona.id,
             "stock.signal.strong_buy",
             None, // use default handler
+            None, // persona-wide
         )
         .unwrap();
 
@@ -1900,6 +1903,7 @@ mod tests {
             &persona.id,
             "stock.signal.strong_buy",
             Some(custom),
+            None,
         )
         .unwrap();
 
@@ -1918,7 +1922,7 @@ mod tests {
         let persona = create_test_persona(&pool);
 
         let trigger =
-            link_persona_to_event(&pool, &persona.id, "stock.signal.strong_buy", None).unwrap();
+            link_persona_to_event(&pool, &persona.id, "stock.signal.strong_buy", None, None).unwrap();
 
         // Verify both exist
         assert!(get_by_id(&pool, &trigger.id).is_ok());
@@ -1948,8 +1952,8 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona = create_test_persona(&pool);
 
-        let t1 = link_persona_to_event(&pool, &persona.id, "event.one", None).unwrap();
-        let _t2 = link_persona_to_event(&pool, &persona.id, "event.two", None).unwrap();
+        let t1 = link_persona_to_event(&pool, &persona.id, "event.one", None, None).unwrap();
+        let _t2 = link_persona_to_event(&pool, &persona.id, "event.two", None, None).unwrap();
 
         unlink_persona_from_event(&pool, &t1.id).unwrap();
 
@@ -1964,10 +1968,10 @@ mod tests {
         let pool = init_test_db().unwrap();
         let persona = create_test_persona(&pool);
 
-        let result = link_persona_to_event(&pool, &persona.id, "", None);
+        let result = link_persona_to_event(&pool, &persona.id, "", None, None);
         assert!(result.is_err());
 
-        let result2 = link_persona_to_event(&pool, &persona.id, "   ", None);
+        let result2 = link_persona_to_event(&pool, &persona.id, "   ", None, None);
         assert!(result2.is_err());
     }
 
@@ -2011,7 +2015,7 @@ mod tests {
         let persona = create_test_persona(&pool);
 
         // Create with default handler
-        link_persona_to_event(&pool, &persona.id, "my.event", None).unwrap();
+        link_persona_to_event(&pool, &persona.id, "my.event", None, None).unwrap();
 
         // Refine it
         let refined = "Refined handler: pull ticker from payload and alert.";
@@ -2046,7 +2050,7 @@ mod tests {
             .unwrap();
         }
 
-        link_persona_to_event(&pool, &persona.id, "test.event", None).unwrap();
+        link_persona_to_event(&pool, &persona.id, "test.event", None, None).unwrap();
 
         let sp = read_structured_prompt(&pool, &persona.id);
         // Original fields preserved
@@ -2437,7 +2441,7 @@ mod tests {
 
         // 4. S3 link_persona_to_event creates another event_listener with the
         //    _handler_key advisory set to the event_type.
-        link_persona_to_event(&pool, &persona.id, "stock.alert.old_name", Some("Handle old name.")).unwrap();
+        link_persona_to_event(&pool, &persona.id, "stock.alert.old_name", Some("Handle old name."), None).unwrap();
 
         // 5. Persona handler entry — already seeded by the S3 link above.
         //    Confirm it's there before rename.

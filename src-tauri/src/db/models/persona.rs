@@ -260,6 +260,17 @@ pub struct DesignUseCase {
     pub notification_channels: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_subscriptions: Option<serde_json::Value>,
+    /// Runtime toggle — `None` or `Some(true)` means active. Phase C1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    /// One-line "what this capability does" used in the Active Capabilities
+    /// section of the runtime prompt. Falls back to `description` when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capability_summary: Option<String>,
+    /// Tool names the LLM should prefer when this capability is in focus.
+    /// Advisory only — all persona tools remain available at runtime.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_hints: Option<Vec<String>>,
 }
 
 /// A step in the connector pipeline showing chronological service interactions.

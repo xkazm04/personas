@@ -1,0 +1,240 @@
+{
+  "timestamp": "2026-04-19T11:33:55",
+  "total_templates": 3,
+  "grade_distribution": {
+    "A": 0,
+    "B": 0,
+    "C": 1,
+    "D": 0,
+    "F": 2,
+    "skip": 0
+  },
+  "failure_patterns": {
+    "persona_created": 2,
+    "submit_all": 2,
+    "test_agent_runs": 2,
+    "capability_summary_populated": 1,
+    "subscriptions_attributed": 1
+  },
+  "results": [
+    {
+      "template_id": "ai-document-intelligence-hub",
+      "display_name": "AI Document Intelligence Hub",
+      "category": "content",
+      "path": "scripts/templates/content/ai-document-intelligence-hub.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 182075,
+      "connectors": {
+        "available": [
+          "notion",
+          "telegram",
+          "slack"
+        ],
+        "missing": [
+          "google_drive"
+        ]
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=97d0bf51-830e-4d71-b554-6d1dcea34255"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "8/8 questions rendered (template declares 8)"
+        },
+        {
+          "id": "persona_created",
+          "passed": false,
+          "detail": "no buildPersonaId (phase=initializing)"
+        },
+        {
+          "id": "submit_all",
+          "passed": false,
+          "detail": "buildPhase=initializing"
+        },
+        {
+          "id": "test_agent_runs",
+          "passed": false,
+          "detail": "no terminal state (phase=initializing)"
+        }
+      ],
+      "issues": [
+        "connector_not_builtin: google_drive",
+        "persona_created: no buildPersonaId (phase=initializing)",
+        "submit_all: buildPhase=initializing",
+        "test_agent_runs: no terminal state (phase=initializing)"
+      ],
+      "persona_id": null,
+      "build_phase": "initializing",
+      "grade": "F"
+    },
+    {
+      "template_id": "analytics-content-distribution-use-case",
+      "display_name": "Analytics Content Distribution Use Case",
+      "category": "content",
+      "path": "scripts/templates/content/analytics-content-distribution-use-case.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 182057,
+      "connectors": {
+        "available": [
+          "buffer"
+        ],
+        "missing": [
+          "wordpress",
+          "google_analytics"
+        ]
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=38dc1309-e120-4cea-9cde-f9c126aaebbb"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "7/8 questions rendered (template declares 8)"
+        },
+        {
+          "id": "persona_created",
+          "passed": false,
+          "detail": "no buildPersonaId (phase=initializing)"
+        },
+        {
+          "id": "submit_all",
+          "passed": false,
+          "detail": "buildPhase=initializing"
+        },
+        {
+          "id": "test_agent_runs",
+          "passed": false,
+          "detail": "no terminal state (phase=initializing)"
+        }
+      ],
+      "issues": [
+        "connector_not_builtin: wordpress, google_analytics",
+        "persona_created: no buildPersonaId (phase=initializing)",
+        "submit_all: buildPhase=initializing",
+        "test_agent_runs: no terminal state (phase=initializing)"
+      ],
+      "persona_id": null,
+      "build_phase": "initializing",
+      "grade": "F"
+    },
+    {
+      "template_id": "audio-briefing-host",
+      "display_name": "Audio Briefing Host",
+      "category": "content",
+      "path": "scripts/templates/content/audio-briefing-host.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 50617,
+      "connectors": {
+        "available": [
+          "elevenlabs"
+        ],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=533f68e8-6b5e-4be5-9c5a-6ee02f11a241"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "4/4 questions rendered (template declares 4)"
+        },
+        {
+          "id": "persona_created",
+          "passed": true,
+          "detail": "id=048c45f5-11ff-416b-a382-d344ba927c5a phase=draft_ready"
+        },
+        {
+          "id": "submit_all",
+          "passed": true,
+          "detail": "buildPhase=draft_ready"
+        },
+        {
+          "id": "test_agent_runs",
+          "passed": true,
+          "detail": "1 output lines, phase=test_complete"
+        },
+        {
+          "id": "persona_promoted",
+          "passed": true,
+          "detail": "phase=test_complete"
+        },
+        {
+          "id": "design_context_has_use_cases",
+          "passed": true,
+          "detail": "1 useCases in design_context"
+        },
+        {
+          "id": "use_case_ids_present",
+          "passed": true,
+          "detail": "ids populated on all 1 useCases"
+        },
+        {
+          "id": "capability_summary_populated",
+          "passed": false,
+          "detail": "summaries present on 0/1"
+        },
+        {
+          "id": "triggers_attributed",
+          "passed": true,
+          "detail": "2/2 triggers carry use_case_id"
+        },
+        {
+          "id": "subscriptions_attributed",
+          "passed": false,
+          "detail": "0/3 subscriptions carry use_case_id"
+        }
+      ],
+      "issues": [
+        "capability_summary_populated: summaries present on 0/1",
+        "subscriptions_attributed: 0/3 subscriptions carry use_case_id",
+        "summary: useCases=1 triggers=2(2uc) subscriptions=3"
+      ],
+      "persona_id": "048c45f5-11ff-416b-a382-d344ba927c5a",
+      "build_phase": "test_complete",
+      "grade": "C"
+    }
+  ]
+}

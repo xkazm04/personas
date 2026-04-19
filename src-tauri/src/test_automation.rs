@@ -686,6 +686,26 @@ async fn handle_overview_counts(
     .await
 }
 
+#[derive(Deserialize)]
+struct PersonaDetailRequest {
+    persona_id: String,
+}
+
+/// Phase C2 — fetch a persona's detail (incl. design_context, triggers,
+/// subscriptions) so the sweep harness can validate the post-adoption shape.
+async fn handle_persona_detail(
+    AxumState(state): AxumState<ServerState>,
+    Json(body): Json<PersonaDetailRequest>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(
+        &state,
+        "getPersonaDetail",
+        &serde_json::json!({ "personaId": body.persona_id }),
+        BRIDGE_TIMEOUT_DEFAULT,
+    )
+    .await
+}
+
 async fn handle_list_credentials(
     AxumState(state): AxumState<ServerState>,
 ) -> Result<String, (StatusCode, String)> {
@@ -781,6 +801,7 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
         .route("/refresh-personas", post(handle_refresh_personas))
         // Overview & credential helpers
         .route("/overview-counts", post(handle_overview_counts))
+        .route("/persona-detail", post(handle_persona_detail))
         .route("/list-credentials", get(handle_list_credentials))
         .route("/list-cli-capturable", get(handle_list_cli_capturable))
         .route("/cli-capture-run", post(handle_cli_capture_run))

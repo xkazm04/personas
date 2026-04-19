@@ -23,6 +23,7 @@ fn row_to_message(row: &Row) -> rusqlite::Result<PersonaMessage> {
         created_at: row.get("created_at")?,
         read_at: row.get("read_at")?,
         thread_id: row.get("thread_id")?,
+        use_case_id: row.get::<_, Option<String>>("use_case_id").unwrap_or(None),
     })
 }
 
@@ -78,6 +79,29 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessage, AppError> {
             }
             other => AppError::Database(other),
         })
+    })
+}
+
+/// Fetch messages attributed to a specific capability (use case) on a persona.
+/// Phase C5 — capability-scoped activity feed.
+pub fn get_by_use_case_id(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaMessage>, AppError> {
+    timed_query!("persona_messages", "persona_messages::get_by_use_case_id", {
+        let limit = limit.unwrap_or(50);
+        let conn = pool.get()?;
+
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_messages
+             WHERE persona_id = ?1 AND use_case_id = ?2
+             ORDER BY created_at DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_message)?;
+        Ok(collect_rows(rows, "messages::get_by_use_case_id"))
     })
 }
 
@@ -142,8 +166,8 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_messages
-             (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9, ?10)",
+             (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9, ?10, ?11)",
             params![
                 id,
                 input.persona_id,
@@ -155,6 +179,7 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
                 input.metadata,
                 now,
                 thread_id,
+                input.use_case_id,
             ],
         )?;
 
@@ -435,6 +460,7 @@ mod tests {
                 priority: Some("high".into()),
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -476,6 +502,7 @@ mod tests {
                     priority: None,
                     metadata: None,
                     thread_id: None,
+                    use_case_id: None,
                 },
             )
             .unwrap();
@@ -510,6 +537,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -540,6 +568,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -555,6 +584,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -596,6 +626,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -611,6 +642,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -642,6 +674,7 @@ mod tests {
                 priority: None,
                 metadata: None,
                 thread_id: None,
+                use_case_id: None,
             },
         )
         .unwrap();

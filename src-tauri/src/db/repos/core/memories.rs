@@ -93,6 +93,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     access_count [opt_i32],
     last_accessed_at [opt],
     created_at, updated_at,
+    use_case_id [opt],
 });
 
 /// Map user-provided sort column to a safe SQL column name.
@@ -240,8 +241,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
             params![
                 id,
                 input.persona_id,
@@ -252,6 +253,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
                 importance,
                 normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
                 now,
+                input.use_case_id,
             ],
         )?;
 
@@ -274,8 +276,8 @@ pub fn batch_create(pool: &DbPool, inputs: Vec<CreatePersonaMemoryInput>) -> Res
         {
             let mut stmt = tx.prepare(
                 "INSERT INTO persona_memories
-                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
             )?;
 
             for input in inputs {
@@ -308,6 +310,7 @@ pub fn batch_create(pool: &DbPool, inputs: Vec<CreatePersonaMemoryInput>) -> Res
                     importance,
                     normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
                     now,
+                    input.use_case_id,
                 ])?;
                 count += 1;
             }
@@ -562,17 +565,52 @@ pub struct TieredMemories {
 /// * `core_limit` — max number of core-tier memories to return.
 /// * `active_limit` — max number of active-tier memories to return (scored by
 ///   importance DESC, access_count DESC, created_at DESC).
+///
+/// **Note:** `get_for_injection` is the persona-wide entry point used by
+/// non-capability runs. Capability-aware execution should call
+/// [`get_for_injection_v2`] which scopes active/working memories by use_case.
 pub fn get_for_injection(
     pool: &DbPool,
     persona_id: &str,
     core_limit: i64,
     active_limit: i64,
 ) -> Result<TieredMemories, AppError> {
-    timed_query!("persona_memories", "persona_memories::get_for_injection", {
+    get_for_injection_v2(pool, persona_id, None, core_limit, active_limit)
+}
+
+/// Phase C5 — capability-aware memory fetch for prompt injection.
+///
+/// Tier rules:
+/// - **Core** memories are always persona-wide regardless of `use_case_id`.
+///   They define stable identity/principles and should be injected on every
+///   execution.
+/// - **Active / working** memories are scoped:
+///   - When `use_case_id = Some(uc)`, fetch rows where
+///     `use_case_id = uc OR use_case_id IS NULL` (capability-scoped + global).
+///   - When `use_case_id = None`, fetch only persona-wide rows
+///     (`use_case_id IS NULL`).
+///
+/// Ordering: importance DESC, access_count DESC, created_at DESC for active;
+/// importance DESC, created_at DESC for core.
+pub fn get_for_injection_v2(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: Option<&str>,
+    core_limit: i64,
+    active_limit: i64,
+) -> Result<TieredMemories, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_for_injection_v2", {
         let conn = pool.get()?;
 
-        // Single round-trip: fetch both tiers via UNION ALL with per-tier limits.
-        let mut stmt = conn.prepare(
+        // Active-tier scope predicate depends on whether a capability is set.
+        // Inlining the column comparison (rather than using a parameter) keeps
+        // the prepared-statement signature stable across the two branches.
+        let (active_scope_sql, active_uc_param): (&str, Option<&str>) = match use_case_id {
+            Some(uc) => ("AND (use_case_id = ?4 OR use_case_id IS NULL)", Some(uc)),
+            None => ("AND use_case_id IS NULL", None),
+        };
+
+        let sql = format!(
             "SELECT * FROM (
                  SELECT * FROM persona_memories
                  WHERE persona_id = ?1 AND tier = 'core'
@@ -583,18 +621,52 @@ pub fn get_for_injection(
              SELECT * FROM (
                  SELECT * FROM persona_memories
                  WHERE persona_id = ?1 AND tier IN ('active', 'working')
+                 {active_scope_sql}
                  ORDER BY importance DESC, access_count DESC, created_at DESC
                  LIMIT ?3
-             )",
-        )?;
-        let rows = stmt.query_map(params![persona_id, core_limit, active_limit], row_to_memory)?;
-        let all: Vec<PersonaMemory> = collect_rows(rows, "memories::get_for_injection");
+             )"
+        );
 
-        let (core, active) = all.into_iter().partition(|m| {
-            m.tier == "core"
-        });
+        let mut stmt = conn.prepare(&sql)?;
+        let all: Vec<PersonaMemory> = if let Some(uc) = active_uc_param {
+            let rows = stmt.query_map(
+                params![persona_id, core_limit, active_limit, uc],
+                row_to_memory,
+            )?;
+            collect_rows(rows, "memories::get_for_injection_v2(scoped)")
+        } else {
+            let rows = stmt.query_map(
+                params![persona_id, core_limit, active_limit],
+                row_to_memory,
+            )?;
+            collect_rows(rows, "memories::get_for_injection_v2(unscoped)")
+        };
+
+        let (core, active) = all.into_iter().partition(|m| m.tier == "core");
 
         Ok(TieredMemories { core, active })
+    })
+}
+
+/// Fetch memories attributed to a specific capability (use case) on a persona.
+/// Phase C5 — capability-scoped memory editor view.
+pub fn get_by_use_case_id(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_by_use_case_id", {
+        let limit = limit.unwrap_or(100);
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND use_case_id = ?2
+             ORDER BY importance DESC, created_at DESC
+             LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_memory)?;
+        Ok(collect_rows(rows, "memories::get_by_use_case_id"))
     })
 }
 
@@ -728,6 +800,7 @@ mod tests {
                 source_execution_id: None,
                 importance: Some(5),
                 tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -745,6 +818,7 @@ mod tests {
                 source_execution_id: None,
                 importance: None, // defaults to 3
                 tags: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -822,6 +896,7 @@ mod tests {
             source_execution_id: None,
             importance,
             tags: None,
+            use_case_id: None,
         };
 
         // Valid boundaries
@@ -880,6 +955,7 @@ mod tests {
                 source_execution_id: None,
                 importance: Some(3),
                 tags: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -894,6 +970,7 @@ mod tests {
                 source_execution_id: None,
                 importance: Some(3),
                 tags: None,
+                use_case_id: None,
             },
         )
         .unwrap();
@@ -921,5 +998,175 @@ mod tests {
         // Verify no partial write happened — m1 should still be 5 from the valid batch
         let m1_after = get_by_id(&pool, &m1.id).unwrap();
         assert_eq!(m1_after.importance, 5);
+    }
+
+    // ========================================================================
+    // Phase C5 — capability-scoped memory injection
+    // ========================================================================
+
+    fn make_persona(pool: &DbPool, name: &str) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "scope test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    fn insert_scoped_memory(
+        pool: &DbPool,
+        persona_id: &str,
+        title: &str,
+        tier: &str,
+        use_case_id: Option<&str>,
+    ) -> String {
+        let mem = create(
+            pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona_id.to_string(),
+                title: title.to_string(),
+                content: format!("content for {title}"),
+                category: Some("fact".to_string()),
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: use_case_id.map(|s| s.to_string()),
+            },
+        )
+        .unwrap();
+        // Tier defaults to "active" — promote/demote as needed.
+        if tier != "active" {
+            update_tier(pool, &mem.id, tier).unwrap();
+        }
+        mem.id
+    }
+
+    /// v2 scoping (use_case_id = Some): core ALWAYS injected, active filtered
+    /// to capability-scoped + persona-wide.
+    #[test]
+    fn test_get_for_injection_v2_scoped_capability() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "C5 Scoped");
+        let core_global = insert_scoped_memory(&pool, &persona_id, "core global", "core", None);
+        let core_scoped =
+            insert_scoped_memory(&pool, &persona_id, "core other-uc", "core", Some("other-uc"));
+        let active_match =
+            insert_scoped_memory(&pool, &persona_id, "active match", "active", Some("uc-a"));
+        let active_global =
+            insert_scoped_memory(&pool, &persona_id, "active global", "active", None);
+        let active_other =
+            insert_scoped_memory(&pool, &persona_id, "active other", "active", Some("uc-b"));
+
+        let tiered = get_for_injection_v2(&pool, &persona_id, Some("uc-a"), 10, 40).unwrap();
+
+        let core_ids: Vec<&str> = tiered.core.iter().map(|m| m.id.as_str()).collect();
+        // Both core memories surface regardless of use_case_id (rule: core is
+        // always persona-wide).
+        assert!(core_ids.contains(&core_global.as_str()));
+        assert!(core_ids.contains(&core_scoped.as_str()));
+
+        let active_ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
+        assert!(active_ids.contains(&active_match.as_str()), "scoped match missing");
+        assert!(active_ids.contains(&active_global.as_str()), "global active missing");
+        assert!(
+            !active_ids.contains(&active_other.as_str()),
+            "other capability's active memory leaked"
+        );
+    }
+
+    /// v2 scoping (use_case_id = None): persona-wide active memories only.
+    #[test]
+    fn test_get_for_injection_v2_unscoped_persona_wide() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "C5 Unscoped");
+        let core_global = insert_scoped_memory(&pool, &persona_id, "core global", "core", None);
+        let active_global =
+            insert_scoped_memory(&pool, &persona_id, "active global", "active", None);
+        let active_scoped =
+            insert_scoped_memory(&pool, &persona_id, "active scoped", "active", Some("uc-a"));
+
+        let tiered = get_for_injection_v2(&pool, &persona_id, None, 10, 40).unwrap();
+
+        assert_eq!(tiered.core.len(), 1);
+        assert_eq!(tiered.core[0].id, core_global);
+
+        let active_ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
+        assert!(active_ids.contains(&active_global.as_str()));
+        assert!(
+            !active_ids.contains(&active_scoped.as_str()),
+            "scoped active memory leaked into persona-wide injection"
+        );
+    }
+
+    /// Legacy `get_for_injection` is a thin wrapper that delegates to v2 with
+    /// use_case_id=None — verify behaviour matches.
+    #[test]
+    fn test_get_for_injection_v1_matches_v2_unscoped() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "C5 V1Compat");
+        insert_scoped_memory(&pool, &persona_id, "global", "active", None);
+        insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
+
+        let v1 = get_for_injection(&pool, &persona_id, 10, 40).unwrap();
+        let v2 = get_for_injection_v2(&pool, &persona_id, None, 10, 40).unwrap();
+        assert_eq!(v1.core.len(), v2.core.len());
+        assert_eq!(v1.active.len(), v2.active.len());
+    }
+
+    /// `get_by_use_case_id` returns only memories attributed to the capability.
+    #[test]
+    fn test_get_by_use_case_id_filters() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "C5 ByUC");
+        insert_scoped_memory(&pool, &persona_id, "global", "active", None);
+        let scoped =
+            insert_scoped_memory(&pool, &persona_id, "scoped", "active", Some("uc-a"));
+        insert_scoped_memory(&pool, &persona_id, "other", "active", Some("uc-b"));
+
+        let rows = get_by_use_case_id(&pool, &persona_id, "uc-a", None).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].id, scoped);
+        assert_eq!(rows[0].use_case_id.as_deref(), Some("uc-a"));
+    }
+
+    /// Verify `create()` round-trips `use_case_id` through the new column.
+    #[test]
+    fn test_create_persists_use_case_id() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "C5 Persist");
+        let mem = create(
+            &pool,
+            CreatePersonaMemoryInput {
+                persona_id: persona_id.clone(),
+                title: "scoped".into(),
+                content: "scoped content".into(),
+                category: None,
+                source_execution_id: None,
+                importance: Some(3),
+                tags: None,
+                use_case_id: Some("uc-x".into()),
+            },
+        )
+        .unwrap();
+        assert_eq!(mem.use_case_id.as_deref(), Some("uc-x"));
+        let fetched = get_by_id(&pool, &mem.id).unwrap();
+        assert_eq!(fetched.use_case_id.as_deref(), Some("uc-x"));
     }
 }

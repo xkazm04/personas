@@ -356,7 +356,22 @@ export function QuestionCard({
           />
         ) : question.type === 'select' && question.options ? (
           <SelectPills
-            options={(filteredOptions ?? question.options).map((o) => ({ value: o, label: o }))}
+            options={(filteredOptions ?? question.options).map((o) => {
+              // Templates authored both shapes over time:
+              //  - plain strings (e.g. ["Low", "Medium", "High"])
+              //  - {value, label, description?} objects (9 templates in the catalog)
+              // Accept either so the adoption UI never crashes on object options.
+              if (o && typeof o === 'object') {
+                const obj = o as { value?: unknown; label?: unknown; description?: unknown };
+                const value = typeof obj.value === 'string' ? obj.value : String(obj.value ?? '');
+                const label = typeof obj.label === 'string' ? obj.label : value;
+                const sublabel =
+                  typeof obj.description === 'string' ? obj.description : null;
+                return { value, label, sublabel };
+              }
+              const s = String(o);
+              return { value: s, label: s };
+            })}
             value={answer}
             onChange={onAnswer}
             allowCustom={question.allow_custom}

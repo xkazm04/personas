@@ -502,10 +502,17 @@ export type Translations = {
       ready_to_compare: string;
       vs: string;
       col_status: string;
+      col_capability: string;
       col_duration: string;
       col_started: string;
       col_tokens: string;
       col_cost: string;
+      show_simulations: string;
+      hide_simulations: string;
+      simulations_filter_tooltip: string;
+      simulated_badge: string;
+      simulated_badge_tooltip: string;
+      capability_unattributed: string;
       input_tokens: string;
       output_tokens: string;
       healing_retry: string;

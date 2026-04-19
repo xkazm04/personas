@@ -1,10 +1,13 @@
-import { ArrowLeftRight, X, Shield } from 'lucide-react';
+import { ArrowLeftRight, X, Shield, FlaskConical } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionListFiltersProps {
   showRaw: boolean;
   setShowRaw: (v: boolean) => void;
+  showSimulations: boolean;
+  setShowSimulations: (v: boolean) => void;
+  hasSimulations: boolean;
   compareMode: boolean;
   exitCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
@@ -19,6 +22,9 @@ interface ExecutionListFiltersProps {
 export function ExecutionListFilters({
   showRaw,
   setShowRaw,
+  showSimulations,
+  setShowSimulations,
+  hasSimulations,
   compareMode,
   exitCompareMode,
   setCompareMode,
@@ -33,11 +39,26 @@ export function ExecutionListFilters({
   const e = t.agents.executions;
   return (
     <>
+      {hasSimulations && (
+        <Tooltip content={e.simulations_filter_tooltip}>
+          <button
+            onClick={() => setShowSimulations(!showSimulations)}
+            className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
+              showSimulations
+                ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                : 'text-foreground hover:text-muted-foreground/70 border border-transparent'
+            }`}
+          >
+            <FlaskConical className="w-3 h-3" />
+            {showSimulations ? e.hide_simulations : e.show_simulations}
+          </button>
+        </Tooltip>
+      )}
       {hasExecutions && (
         <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
           <button
             onClick={() => setShowRaw(!showRaw)}
-            className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
+            className={`${hasSimulations ? '' : 'ml-auto '}flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showRaw
                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'text-foreground hover:text-muted-foreground/70 border border-transparent'

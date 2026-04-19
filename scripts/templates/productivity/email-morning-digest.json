@@ -227,9 +227,12 @@
     ],
     "use_case_flows": [
       {
-        "id": "flow_morning_digest",
+        "id": "uc_morning_digest",
         "name": "Morning Digest Generation",
         "description": "The primary daily workflow: fetch unread emails from Gmail, score by adaptive sender importance, rank and select top N, summarize into priority tiers, compose and deliver the digest, update sender models, and emit completion events.",
+        "capability_summary": "Scans Gmail on a daily schedule and emits a ranked, summarized digest of the most important unread messages.",
+        "tool_hints": ["gmail.list_messages", "gmail.get_message", "personas_messages.send"],
+        "enabled_by_default": true,
         "nodes": [
           {
             "id": "n1",
@@ -415,6 +418,8 @@
     "adoption_questions": [
       {
         "id": "aq_config_1",
+        "scope": "capability",
+        "use_case_id": "uc_morning_digest",
         "category": "configuration",
         "question": "What time should the morning digest be generated?",
         "type": "select",
@@ -430,6 +435,8 @@
       },
       {
         "id": "aq_config_2",
+        "scope": "connector",
+        "connector_names": ["gmail"],
         "category": "configuration",
         "question": "Which email categories should be included in the scan?",
         "type": "select",
@@ -445,6 +452,8 @@
       },
       {
         "id": "aq_domain_1",
+        "scope": "capability",
+        "use_case_id": "uc_morning_digest",
         "category": "domain",
         "question": "How detailed should email summaries be in the digest?",
         "type": "select",
@@ -460,6 +469,8 @@
       },
       {
         "id": "aq_domain_2",
+        "scope": "capability",
+        "use_case_id": "uc_morning_digest",
         "category": "domain",
         "question": "How many emails should the digest include at most?",
         "type": "select",
@@ -475,6 +486,7 @@
       },
       {
         "id": "aq_quality_1",
+        "scope": "persona",
         "category": "quality",
         "question": "Should the agent learn and improve sender importance rankings over time?",
         "type": "boolean",
@@ -485,6 +497,8 @@
       },
       {
         "id": "aq_boundaries_1",
+        "scope": "capability",
+        "use_case_id": "uc_morning_digest",
         "category": "boundaries",
         "question": "Should the digest include emails from automated senders (GitHub, Jira, CI/CD bots)?",
         "type": "select",

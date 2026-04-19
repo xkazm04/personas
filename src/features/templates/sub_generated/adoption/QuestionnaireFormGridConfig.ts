@@ -59,3 +59,104 @@ export function groupByCategory(questions: TransformQuestionResponse[]) {
   }
   return groups;
 }
+
+// ---------------------------------------------------------------------------
+// Phase C2 — scope-based grouping (capability-aware questionnaire)
+// See `docs/concepts/persona-capabilities/C2-execution-plan.md` §Part 1.
+// ---------------------------------------------------------------------------
+
+export type QuestionScope = 'persona' | 'capability' | 'connector';
+
+/** Derive a question's scope when the `scope` field is absent.
+ *  Precedence: explicit scope → connector_names → single use_case_ids → persona. */
+export function inferScope(q: TransformQuestionResponse): QuestionScope {
+  if (q.scope) return q.scope;
+  if (q.connector_names && q.connector_names.length > 0) return 'connector';
+  if (q.use_case_ids && q.use_case_ids.length === 1) return 'capability';
+  return 'persona';
+}
+
+/** Derive the capability id a question belongs to. */
+export function scopeKey(q: TransformQuestionResponse): string {
+  const scope = inferScope(q);
+  if (scope === 'capability') {
+    return q.use_case_id ?? (q.use_case_ids && q.use_case_ids[0]) ?? '__unknown_capability__';
+  }
+  if (scope === 'connector') {
+    return (q.connector_names && q.connector_names[0]) ?? '__unknown_connector__';
+  }
+  return 'persona';
+}
+
+export interface ScopeSection {
+  /** `persona` | `capability:uc_xxx` | `connector:name` */
+  key: string;
+  scope: QuestionScope;
+  /** capability id or connector name; undefined for persona */
+  subjectId?: string;
+  questions: TransformQuestionResponse[];
+}
+
+/** Group questions by scope → capability/connector subject. Stable ordering:
+ *  persona first, then capabilities (sorted by first occurrence), then connectors. */
+export function groupByScope(questions: TransformQuestionResponse[]): ScopeSection[] {
+  const personaQs: TransformQuestionResponse[] = [];
+  const capabilityOrder: string[] = [];
+  const capabilityQs = new Map<string, TransformQuestionResponse[]>();
+  const connectorOrder: string[] = [];
+  const connectorQs = new Map<string, TransformQuestionResponse[]>();
+
+  for (const q of questions) {
+    const scope = inferScope(q);
+    if (scope === 'persona') {
+      personaQs.push(q);
+      continue;
+    }
+    if (scope === 'capability') {
+      const id = scopeKey(q);
+      if (!capabilityQs.has(id)) {
+        capabilityQs.set(id, []);
+        capabilityOrder.push(id);
+      }
+      capabilityQs.get(id)!.push(q);
+      continue;
+    }
+    if (scope === 'connector') {
+      const id = scopeKey(q);
+      if (!connectorQs.has(id)) {
+        connectorQs.set(id, []);
+        connectorOrder.push(id);
+      }
+      connectorQs.get(id)!.push(q);
+    }
+  }
+
+  const out: ScopeSection[] = [];
+  if (personaQs.length) {
+    out.push({ key: 'persona', scope: 'persona', questions: personaQs });
+  }
+  for (const id of capabilityOrder) {
+    out.push({
+      key: `capability:${id}`,
+      scope: 'capability',
+      subjectId: id,
+      questions: capabilityQs.get(id)!,
+    });
+  }
+  for (const id of connectorOrder) {
+    out.push({
+      key: `connector:${id}`,
+      scope: 'connector',
+      subjectId: id,
+      questions: connectorQs.get(id)!,
+    });
+  }
+  return out;
+}
+
+/** Whether the grouping produces more than one scope section — i.e. the
+ *  v2 grouped layout should render. When every question falls under
+ *  `persona`, render the legacy layout (no scope headings). */
+export function hasMultiScope(sections: ScopeSection[]): boolean {
+  return sections.length > 1;
+}

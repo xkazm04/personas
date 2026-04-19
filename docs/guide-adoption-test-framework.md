@@ -1,8 +1,308 @@
 # Adoption Process Test Framework
 
-## Operator Model
+> Live-harness end-to-end tests for the template adoption pipeline. Runs
+> against a real desktop app instance with the `test-automation` feature
+> enabled (see [guide-test-automation.md](guide-test-automation.md) for the
+> harness primitives). Drives the real adoption UI through HTTP, asserts on
+> persona metadata and runtime state, and produces a catalog-wide report.
+>
+> **Historical note (pre-2026-04-19):** an earlier version of this doc
+> described a *static* evaluation (read JSON + app code, score). That
+> approach is archived inline under [Appendix — Static-eval legacy
+> (archived)](#appendix--static-eval-legacy-archived). The static-only
+> approach never caught runtime state bugs, adoption-flow crashes, or
+> questionnaire-to-design_context propagation gaps — the issues that matter
+> most for the C2 capability migration.
 
-Claude Code CLI is the test operator. It processes templates **one at a time**, evaluating both the template data and the adoption app code. When it finds issues, it fixes them immediately — patching the template JSON, the wizard UI code, or shared infrastructure — before moving to the next template.
+## Architecture
+
+```
+ Catalog sweep runner         Test harness             Desktop app
+ ─────────────────────        ─────────────           ───────────
+ tools/test-mcp/              src/test/automation/     Tauri dev server
+ e2e_c2_sweep.py    ──HTTP──▶ bridge.ts        ──▶   React + Rust
+                    17320      window.__TEST__         with `test-automation`
+                                                        feature flag
+```
+
+- Sweep runner: Python script iterating templates, posting to the HTTP
+  bridge, collecting per-template pass/fail + timing.
+- Harness: the `window.__TEST__` bridge exposed by the React app (DOM + Zustand
+  + Tauri IPC access).
+- App: must be started with `--features test-automation` (see below).
+
+## Running the sweep
+
+### 1. Start the app with the automation feature
+
+```bash
+npx tauri dev --features test-automation
+```
+
+The app launches as usual. It additionally binds `http://127.0.0.1:17320`
+to an axum server defined in `src-tauri/src/test_automation.rs`. The
+frontend bridge mounts on `window.__TEST__` when `import.meta.env.DEV` is
+true.
+
+Confirm it's up:
+
+```bash
+curl http://127.0.0.1:17320/health
+# → {"status":"ok","server":"personas-test-automation","version":"0.2.0"}
+```
+
+### 2. Run the sweep
+
+```bash
+uvx --with httpx python tools/test-mcp/e2e_c2_sweep.py
+```
+
+Flags:
+
+- `--port 17320` — test-automation server port (default 17320)
+- `--template "<name>"` — test one template by display name
+- `--category <slug>` — test one category only (e.g. `--category finance`)
+- `--skip-test-agent` — don't click the Test Agent button (faster)
+- `--report <path>` — output path for JSON report
+  (default `tools/test-mcp/reports/c2-sweep-<ts>.json`)
+
+The sweep:
+1. Loads every template from `scripts/templates/**/*.json`
+2. Classifies connectors (available / swappable / missing)
+3. Skips templates with missing connectors (logged with reason)
+4. For each runnable template, executes the per-template checklist below
+5. Writes a per-template result + an aggregate summary JSON
+
+## Per-template checklist
+
+For each template the sweep runs, it verifies:
+
+### A. Gallery surface
+
+| Check | Passes when | Fails when |
+|---|---|---|
+| `gallery_visible` | `template-row-<review_id>` present in DOM | Row missing → template not seeded |
+| `gallery_clickable` | Row is interactable | Disabled or covered by overlay |
+
+### B. Adoption modal
+
+| Check | Passes when | Fails when |
+|---|---|---|
+| `adoption_opens` | `/open-matrix-adoption` returns `success: true` | Backend error or timeout |
+| `modal_correct_template` | First modal text contains the template display name | Wrong template opened |
+| `cells_populated` | Matrix adoption view shows populated dimension cells | Empty cells → seeding failed |
+
+### C. Questionnaire
+
+| Check | Passes when | Fails when |
+|---|---|---|
+| `questionnaire_renders` | At least one question visible OR template has zero questions (logged) | UI shows no form at all |
+| `scope_grouping_v2` | For v2 templates with `scope` field: questions grouped under persona/capability/connector headings | Flat list in v2 |
+| `answers_accepted` | Empty text inputs fillable; selects selectable | Inputs rejected or read-only |
+| `submit_all` | Clicking "Submit All" transitions `buildPhase` to `draft_ready` | Phase stays at `questioning` / errors |
+
+### D. Persona metadata (post-adoption)
+
+The sweep reads the created persona from the app state and verifies:
+
+| Check | Passes when | Fails when |
+|---|---|---|
+| `persona_created` | `persona.id` present in `window.__TEST__.getSnapshot().personas` | Persona missing from list |
+| `design_context_has_use_cases` | `persona.design_context.useCases[]` populated with ≥1 entry | Empty or null |
+| `use_case_ids_present` | Every use case has an `id` field | Missing → C1 disabled-check won't work |
+| `capability_summary_populated` | Every use case has `capability_summary` (v2) | Empty → prompt injection degraded |
+| `triggers_attributed` | Every trigger in `persona_triggers` has `use_case_id` matching a capability | Null or mismatched → positional fallback |
+| `event_subs_attributed` | Every subscription has `use_case_id` OR is intentionally persona-wide | Ambiguous dispatch |
+| `questionnaire_propagated` | Each scope=`capability` answer appears in `useCases[i].sample_input[key]` (or equivalent) | Answer dropped during transform |
+
+### E. Runtime
+
+| Check | Passes when | Fails when |
+|---|---|---|
+| `test_agent_runs` | "Test Agent" button click → `buildTestOutputLines > 0` | Button missing or no output |
+| `prompt_assembly` | Manual invocation of `assemble_prompt` contains `## Active Capabilities` section (uses bridge `/eval`) | Missing — C1 rendering broken |
+| `no_console_errors` | No uncaught errors logged during the flow | Any exception → regression |
+
+## Scoring
+
+Each template gets a grade based on check pass-rate:
+
+| Grade | Criterion |
+|---|---|
+| **A** | All checks pass |
+| **B** | All passes except `capability_summary_populated` (content gap, not code bug) |
+| **C** | 1-2 failures, all in section D (metadata), all fixable per-template |
+| **D** | Failures in sections A/B/C (adoption flow broken) |
+| **F** | `adoption_opens` fails or `persona_created` fails |
+
+The aggregate report counts grades per category and surfaces common
+failure modes.
+
+## Connector eligibility
+
+Before running the adoption flow, classify every `suggested_connectors`
+entry:
+
+| Classification | Logic | Action |
+|---|---|---|
+| **Virtual** | Name in `{personas_messages, personas_database, personas_memory}` | Available |
+| **Builtin** | `scripts/connectors/builtin/<name>.json` exists | Available |
+| **Swappable** | Has a role in `connectorRoles.ts` with an available member | Available (swapped) |
+| **Missing** | None of the above | Skip with reason |
+
+The classifier is implemented in `tools/test-mcp/e2e_c2_sweep.py::classify_connectors`.
+
+## Output format
+
+### Per-template entry
+
+```json
+{
+  "template_id": "financial-stocks-signaller",
+  "category": "finance",
+  "display_name": "Financial Stocks Signaller",
+  "status": "evaluated",
+  "duration_ms": 8421,
+
+  "connectors": {
+    "available": ["slack", "personas_database"],
+    "swapped": {},
+    "missing": []
+  },
+
+  "checks": [
+    { "id": "gallery_visible", "passed": true },
+    { "id": "adoption_opens", "passed": true },
+    { "id": "questionnaire_renders", "passed": true, "detail": "6 questions" },
+    { "id": "scope_grouping_v2", "passed": false, "detail": "v2 fields absent — template not migrated" },
+    { "id": "submit_all", "passed": true, "detail": "buildPhase=draft_ready after 2.1s" },
+    { "id": "persona_created", "passed": true },
+    { "id": "design_context_has_use_cases", "passed": true, "detail": "3 use cases" },
+    { "id": "use_case_ids_present", "passed": true },
+    { "id": "capability_summary_populated", "passed": false, "detail": "0 of 3 have summary" },
+    { "id": "triggers_attributed", "passed": true, "detail": "2 of 2 attributed" },
+    { "id": "test_agent_runs", "passed": true, "detail": "12 output lines" }
+  ],
+
+  "grade": "B",
+
+  "issues": [
+    "Template not yet migrated to v2 (no scope fields on questions)",
+    "capability_summary empty on all use cases (prompt renders with description fallback)"
+  ],
+
+  "fixes_applied": []
+}
+```
+
+### Aggregate summary
+
+```json
+{
+  "timestamp": "2026-04-19T...",
+  "total_templates": 107,
+  "evaluated": 72,
+  "skipped": [
+    { "id": "salesforce-pipeline", "reason": "missing_connector: salesforce" }
+  ],
+
+  "grade_distribution": { "A": 8, "B": 42, "C": 15, "D": 5, "F": 2 },
+
+  "failure_patterns": [
+    { "check": "capability_summary_populated", "fail_count": 51, "note": "Expected: templates not hand-migrated yet" },
+    { "check": "scope_grouping_v2", "fail_count": 61, "note": "Expected: questionnaire mechanism not rolled out to templates" },
+    { "check": "triggers_attributed", "fail_count": 9, "note": "Actual bug: positional fallback triggered, investigate" }
+  ],
+
+  "app_fixes_applied": [
+    { "file": "src/features/templates/.../QuestionnaireFormGrid.tsx", "description": "Added scope grouping with fallback inference" }
+  ],
+
+  "follow_ups": [
+    "Hand-redesign 51 templates missing capability_summary (per C2-content-review.md Tier 1-3)",
+    "Investigate 9 trigger attribution failures (log which templates)"
+  ]
+}
+```
+
+## Troubleshooting
+
+### Server not starting
+
+```
+curl: (7) Failed to connect to 127.0.0.1 port 17320
+```
+
+- Confirm app started with `--features test-automation` (not plain
+  `npx tauri dev`)
+- Check `PERSONAS_TEST_PORT` env var — if set to a different port, use
+  `--port` flag on the runner
+
+### Template row not found
+
+```
+FAIL 'Financial Stocks Signaller' in gallery
+```
+
+- Template gallery seeds asynchronously. The runner retries for 10s; if
+  still missing, the template may be unpublished or filed under a different
+  display name.
+- Search with `--template` by partial name to disambiguate.
+
+### buildPhase stuck at `questioning`
+
+- Check browser console in the dev app for React errors during submit.
+- Check that all required questions have defaults; some templates have
+  required-without-default questions that the runner's `fill_empty_text_inputs`
+  may miss if the type isn't text/textarea.
+- `fill_field` explicitly by `data-testid` for typed inputs.
+
+### Test Agent produces no output
+
+- Verify the LLM backend is configured. The runner assumes default model
+  profile works.
+- Try `--skip-test-agent` to isolate adoption-flow failures from build/test
+  failures.
+
+## Extending
+
+### Add a new check
+
+1. Append to the `CHECKS` list in `e2e_c2_sweep.py`
+2. Implement `check_<name>(template, state) -> (passed, detail)` in the
+   same file
+3. Update the scoring rubric above if the check should affect grades
+
+### Add a new data-testid the runner relies on
+
+1. Add `data-testid="..."` to the React component
+2. Reference it in the runner via `click_testid` / `fill_field`
+3. Document it in [guide-test-automation.md](guide-test-automation.md) §
+   data-testid Reference
+
+### Mock a missing connector
+
+Missing connectors are skipped, not mocked. If you need to test a template
+whose connector doesn't exist:
+1. Create a builtin definition at `scripts/connectors/builtin/<name>.json`
+2. The classifier will then mark it available without any other changes
+3. Note this is for harness-testing only; real usage still needs a real
+   credential
+
+---
+
+## Appendix — Static-eval legacy (archived)
+
+Pre-2026-04-19 this framework was a static-eval playbook: read template
+JSON + app code, score without running anything. That approach is retained
+here for reference but is **superseded by the live harness** above.
+
+The static rubric still informs the per-template metadata checks (section
+D): we score `capability_summary` substance, `structured_prompt` section
+length, etc. statically *as part of* the live sweep. But standalone static
+eval is no longer maintained.
+
+### Static-only usage (legacy)
 
 ```
 For each template in scripts/templates/:
@@ -10,419 +310,35 @@ For each template in scripts/templates/:
   2. Classify connector requirements → run or skip
   3. Simulate adoption flow (static, no backend)
   4. Score across dimensions
-  5. If issues found:
-     a. Fix template JSON (adoption_questions, defaults, prompts)
-     b. Fix app code (wizard steps, reducer, context, types)
-     c. Log what was changed and why
+  5. If issues found, fix template JSON or app code
   6. Write per-template report
-  7. Next template
 ```
 
-This is NOT a test suite that runs in CI. It is a **design document for Claude Code CLI sessions** where the operator evaluates and improves the adoption pipeline.
-
-## Connector Eligibility
-
-Templates are classified before evaluation based on connector requirements:
-
-### Runnable
-
-A template is **runnable** if every `suggested_connector` satisfies one of:
-- Is a virtual/built-in connector (`personas_messages`, `personas_database`)
-- Has a matching builtin definition in `scripts/connectors/builtin/`
-- Is swappable to a connector that satisfies the above (via `connectorRoles.ts`)
-
-For the adoption simulation, built-in connectors are assumed always available. No real credentials are needed — the evaluator assesses whether the wizard flow, questions, and generated prompt are correct, not whether API calls succeed.
-
-### Skipped
-
-Templates requiring connectors with **no builtin definition and no role-swap alternative** are skipped. The final report lists:
-- Total templates: 74
-- Evaluated: N
-- Skipped (missing connectors): M
-- Skipped template IDs + which connectors are missing
-
-The evaluator does NOT attempt to create connector definitions or mock external services.
-
-## Evaluation Scope
-
-### What the evaluator checks per template
-
-#### A. Template Data Quality
-
-| Check | What | Fix target |
-|-------|------|------------|
-| Schema completeness | All required payload fields present and non-empty | Template JSON |
-| Use case flow graph integrity | Connected nodes, valid edges, start/end nodes present | Template JSON |
-| Trigger validity | Schedule has cron or description, webhook has path, polling has interval | Template JSON |
-| Connector-role alignment | Every connector references a valid role from `connectorRoles.ts` | Template JSON or `connectorRoles.ts` |
-| Adoption question fitness | Questions are precise, tied to use cases, typed correctly | Template JSON `adoption_questions` field |
-| Default value coverage | Required variables have defaults or are select-type | Template JSON |
-| Prompt quality | Identity, instructions, tool guidance, examples, error handling are substantive | Template JSON `structured_prompt` / `full_prompt_markdown` |
-| Safety scan | No critical findings in prompt text | Template JSON |
-
-#### B. Adoption App Code Quality
-
-| Check | What | Fix target |
-|-------|------|------------|
-| Wizard step rendering | Each step handles the template's data shape without errors (null connectors, empty flows, missing fields) | Step components (`ChooseStep`, `ConnectStep`, `TuneStep`, `BuildStep`, `CreateStep`) |
-| Connector resolution | Virtual connectors render correctly, role-swap works for this template's roles | `ConnectStep.tsx`, `connectorRoles.ts` |
-| Variable rendering | All variable types (`text`, `select`, `cron`, `url`, `email`, `number`, `json`) render with correct inputs | `TuneStep.tsx` |
-| Trigger config rendering | All trigger types in this template have matching UI inputs | `TuneStep.tsx` trigger column |
-| State completeness | AdoptState carries all fields needed for this template's adoption flow | `useAdoptReducer.ts` |
-| Draft-to-persona mapping | Generated draft fields map correctly to persona creation API | `useAsyncTransform.ts`, `templateAdopt.ts` |
-| Adoption question rendering | Questions from template render and answers flow into transform | `TuneStep.tsx`, `AdoptionWizardContext.tsx` |
-| Edge case handling | Empty use cases, zero connectors, no triggers, no variables — does the UI degrade gracefully? | Step components |
-
-#### C. Generated Persona Quality (LLM judgment)
-
-The evaluator reads the template's `full_prompt_markdown`, `structured_prompt`, tools, triggers, and connectors as if it were the generated draft (since without a running backend, this is the closest proxy). It scores:
+### Static dimensions (still useful as tie-break inside live checks)
 
 | Dimension | Weight | What to assess |
 |-----------|--------|----------------|
-| Prompt Completeness | 3 | Identity (>50 words), instructions (>200 words, numbered steps), tool guidance (API endpoints), examples (2+ scenarios), error handling |
-| Tool-Prompt Alignment | 2 | Every tool referenced in prompt has a definition; no phantom tools |
-| Trigger Coherence | 2 | Trigger configs match prompt workflow; schedules are sensible |
-| Connector Coverage | 2 | Every service in `service_flow` backed by a connector definition |
-| Memory Design | 1 | Prompt describes what to learn/retain; memory scope fits the use case |
-| Error Handling | 2 | Per-service failure strategy, rate limits, data validation |
-| Use Case Fidelity | 2 | Prompt covers all workflows described by `use_case_flows` |
+| Prompt Completeness | 3 | Identity (>50 words), instructions (>200 words, numbered), tool guidance, examples (2+), error handling |
+| Tool-Prompt Alignment | 2 | Every tool referenced in prompt has a definition |
+| Trigger Coherence | 2 | Trigger configs match prompt workflow |
+| Connector Coverage | 2 | Every service in `service_flow` backed by a connector |
+| Memory Design | 1 | Prompt describes what to learn/retain |
+| Error Handling | 2 | Per-service failure strategy |
+| Use Case Fidelity | 2 | Prompt covers all workflows |
 | Value Clarity | 2 | Clear business outcome per execution |
-| Execution Feasibility | 3 | Tools are standard, connectors have real APIs, trigger configs actionable |
-| Differentiation | 1 | Persona adds reasoning beyond what a simple cron/webhook could do |
-| Variable Necessity | 1 | Required variables genuinely needed, not filler |
-| Default Quality | 2 | Could a user adopt with zero changes and get a working persona? |
-
-### Grading
-
-| Grade | Score | Meaning |
-|-------|-------|---------|
-| A | >= 8.5 | Production-ready |
-| B | >= 7.0 | Good, minor gaps |
-| C | >= 5.5 | Functional, needs work |
-| D | >= 4.0 | Significant issues |
-| F | < 4.0 | Broken or dangerous |
-
-## Evaluation Procedure (Claude Code CLI Playbook)
-
-### Session Setup
-
-```
-1. Read this document
-2. Read the adoption wizard code:
-   - src/features/templates/sub_generated/adoption/useAdoptReducer.ts
-   - src/features/templates/sub_generated/adoption/AdoptionWizardContext.tsx
-   - src/features/templates/sub_generated/adoption/steps/*.tsx
-   - src/lib/types/designTypes.ts
-   - scripts/connectors/builtin/ (list available connectors)
-   - src/lib/credentials/connectorRoles.ts
-3. Build a mental model of:
-   - Which connector roles exist and their members
-   - What virtual connectors are always available
-   - What the AdoptState shape is
-   - What each wizard step expects from the template
-```
-
-### Per-Template Evaluation
-
-```
-For template T:
-
-1. READ template JSON from scripts/templates/{category}/{id}.json
-
-2. CLASSIFY connectors:
-   - For each suggested_connector:
-     - Is it virtual (personas_messages, personas_database)? → available
-     - Does scripts/connectors/builtin/{name}.json exist? → available
-     - Does it have a role with available members? → swappable
-     - None of the above? → missing
-   - If any connector is missing and not swappable → SKIP template, log reason
-
-3. EVALUATE template data (checks A above):
-   - Parse structured_prompt sections, check length and substance
-   - Validate use_case_flows graph connectivity
-   - Check triggers have valid configs
-   - Verify connector roles
-   - Run safety patterns against prompt text
-   - Check adoption_questions (if present) reference valid IDs
-   - Check variable defaults
-
-4. EVALUATE app code fit (checks B above):
-   - Would ChooseStep render this template's use_case_flows correctly?
-   - Would ConnectStep handle the connector set (virtual, regular, role-swap)?
-   - Would TuneStep render all variable types and trigger types?
-   - Does the state carry what this template needs?
-
-5. SCORE dimensions (section C above):
-   - Read full_prompt_markdown as the "generated persona"
-   - Score each of the 12 dimensions 0-10
-   - Compute weighted average → overall score → grade
-
-6. FIX issues found:
-   Template fixes:
-   - Add/improve adoption_questions if connectors need user-specific config
-   - Fix missing default_values on required variables
-   - Improve structured_prompt sections that are too thin
-   - Add missing error handling in prompt
-   - Fix use_case_flow graph errors (disconnected nodes, missing edges)
-
-   App code fixes:
-   - If a variable type isn't handled in TuneStep, add the input
-   - If a connector role isn't in connectorRoles.ts, add it
-   - If a state field is missing for this template's needs, add it
-   - If a step component would crash on this template's data shape, add guards
-
-7. WRITE per-template report to adoption-reports/{id}.json
-
-8. NEXT template
-```
-
-### Adoption Question Generation
-
-When evaluating a template that has connectors requiring user-specific configuration (e.g., Slack channel, email address, repository URL), the evaluator generates `adoption_questions` and writes them into the template JSON.
-
-Question generation rules:
-- One question per user-specific config value that the persona needs at runtime
-- Tied to `use_case_ids` when the question only applies to specific flows
-- Typed: `text` for free-form, `select` for constrained choices, `boolean` for toggles
-- Include `context` field explaining why this is needed
-- Include sensible `default` where possible
-- Category: `configuration`, `credentials`, `human_in_the_loop`, `memory`
-
-Example for an email template with Gmail + Slack connectors:
-```json
-{
-  "adoption_questions": [
-    {
-      "id": "watch_email",
-      "question": "Which email address should this persona monitor?",
-      "type": "text",
-      "default": "inbox@yourcompany.com",
-      "context": "The persona watches this inbox for incoming messages to process",
-      "connector_names": ["google_workspace"],
-      "category": "configuration"
-    },
-    {
-      "id": "slack_channel",
-      "question": "Which Slack channel should receive notifications?",
-      "type": "text",
-      "default": "#notifications",
-      "context": "Processed emails are forwarded to this channel",
-      "connector_names": ["slack"],
-      "category": "configuration"
-    },
-    {
-      "id": "auto_label",
-      "question": "Should processed emails be automatically labeled?",
-      "type": "boolean",
-      "default": "Yes",
-      "context": "Adds a 'Processed' label to emails after the persona handles them",
-      "use_case_ids": ["flow_1"],
-      "category": "configuration"
-    }
-  ]
-}
-```
-
-## Report Format
-
-### Per-Template Report
-
-```json
-{
-  "templateId": "incident-commander",
-  "templateName": "Incident Commander",
-  "category": ["devops"],
-  "status": "evaluated",
-  "timestamp": "2026-03-08T...",
-
-  "connectorClassification": {
-    "available": ["slack", "personas_database"],
-    "swapped": { "pagerduty": "opsgenie" },
-    "missing": []
-  },
-
-  "staticChecks": {
-    "passed": true,
-    "checks": [
-      { "name": "schema_completeness", "passed": true },
-      { "name": "flow_integrity", "passed": true },
-      { "name": "trigger_validity", "passed": true },
-      { "name": "safety_scan", "passed": true, "detail": "0 critical, 1 info" }
-    ]
-  },
-
-  "dimensions": [
-    { "name": "Prompt Completeness", "category": "technical", "score": 9, "weight": 3, "rationale": "..." },
-    { "name": "Tool-Prompt Alignment", "category": "technical", "score": 8, "weight": 2, "rationale": "..." }
-  ],
-
-  "overall": 8.2,
-  "grade": "B",
-
-  "issues": [
-    "No adoption_questions — Slack channel and PagerDuty service ID should be asked",
-    "Error handling section doesn't cover Datadog API rate limits"
-  ],
-
-  "fixes_applied": {
-    "template": [
-      "Added 3 adoption_questions for slack_channel, pagerduty_service_id, datadog_priority_threshold",
-      "Added rate limit handling paragraph to structured_prompt.errorHandling"
-    ],
-    "app_code": []
-  }
-}
-```
-
-### Catalog Summary Report
-
-Written at the end of a full evaluation session.
-
-```json
-{
-  "timestamp": "2026-03-08T...",
-  "total_templates": 74,
-  "evaluated": 68,
-  "skipped": {
-    "count": 6,
-    "templates": [
-      { "id": "salesforce-pipeline", "missing_connectors": ["salesforce"] },
-      { "id": "hubspot-crm-sync", "missing_connectors": ["hubspot"] }
-    ]
-  },
-
-  "grade_distribution": { "A": 12, "B": 34, "C": 18, "D": 4, "F": 0 },
-  "average_score": 7.4,
-
-  "category_scores": {
-    "devops": { "avg": 8.1, "count": 8, "worst": "log-aggregator" },
-    "email": { "avg": 6.8, "count": 2, "worst": "intake-processor" }
-  },
-
-  "common_issues": [
-    { "issue": "No adoption_questions despite needing user-specific config", "count": 45 },
-    { "issue": "Error handling section under 50 words", "count": 12 },
-    { "issue": "Missing default_value on required variables", "count": 8 }
-  ],
-
-  "weakest_dimensions": [
-    { "dimension": "Memory Design", "avg_score": 5.2 },
-    { "dimension": "Default Quality", "avg_score": 6.1 }
-  ],
-
-  "app_code_fixes": [
-    { "file": "src/lib/credentials/connectorRoles.ts", "description": "Added 3 new roles: log_aggregation, crm_system, ci_cd" },
-    { "file": "src/features/templates/sub_generated/adoption/steps/TuneStep.tsx", "description": "Added json variable type input" }
-  ],
-
-  "templates_with_questions_added": 45,
-  "total_questions_generated": 127
-}
-```
-
-## App Code Patterns to Watch
-
-These are recurring code issues the evaluator should look for across templates, fixing them once in shared code rather than per-template:
-
-### State shape gaps
-
-If a template needs a state field not in `AdoptState` (e.g., a new preference type), add it to:
-1. `useAdoptReducer.ts` — `AdoptState` interface + `INITIAL_STATE`
-2. `AdoptionWizardContext.tsx` — expose via context if needed by steps
-3. `uiSlice.ts` `AdoptionDraft` — if it should persist across modal close
-
-### Missing variable types
-
-If a template has a variable type not handled in `TuneStep.tsx` (e.g., `json`, `number`), add the input rendering case.
-
-### Connector role gaps
-
-If a template's connector has a `role` not in `connectorRoles.ts`, add the role definition with its member list. This enables connector swapping during adoption.
-
-### Edge cases in step components
-
-Templates may have:
-- Zero use case flows → `ChooseStep` should show entity checklists fallback
-- Zero triggers → Trigger column in `TuneStep` should show "No triggers"
-- Zero connectors → `ConnectStep` shows empty state
-- All connectors virtual → `ConnectStep` shows all as "Built-in"
-- No structured_prompt (only full_prompt_markdown) → `CreateStep` should still work
-
-The evaluator verifies each template against these edge cases and adds guards where missing.
-
-## Implementation Plan
-
-### Phase 1: Evaluation Skill
-
-Create a Claude Code skill at `.claude/skills/evaluate-adoption/skill.md` that encodes the playbook above. The skill:
-- Accepts `--template={id}` for single template or `--category={name}` or `--all`
-- Reads templates and app code
-- Performs the evaluation procedure
-- Writes reports to `adoption-reports/`
-- Applies fixes with commits per template
-
-### Phase 2: Static Utilities
-
-Create lightweight helpers the skill invokes (not a full test framework, just shared logic):
-
-```
-src/test/adoption/
-  templateLoader.ts       - Read and parse all template JSONs
-  connectorClassifier.ts  - Classify connectors as available/swappable/missing
-  flowValidator.ts        - Validate use_case_flow graph structure
-  promptAnalyzer.ts       - Check structured_prompt section lengths and content
-  reportWriter.ts         - Write per-template and summary reports
-```
-
-These are utility functions, not test runners. The evaluator (Claude Code CLI) calls them mentally or literally during evaluation.
-
-### Phase 3: Category Sweeps
-
-Run the skill category by category:
-1. `devops` (8 templates) — calibrate scoring, fix shared code issues
-2. `development` (14 templates) — largest category, will surface most edge cases
-3. `productivity` (10 templates)
-4. Remaining categories in order of size
-
-Each sweep produces a category report and potentially app code fixes that benefit subsequent categories.
-
-### Phase 4: Cross-Template Analysis
-
-After all templates evaluated, analyze the summary report for:
-- Dimensions that are consistently weak → systemic template generation issue
-- App code fixes that were needed multiple times → missing abstractions
-- Templates that scored F → investigate whether the template concept is viable
-- Adoption question patterns → extract reusable question templates per connector type
-
-### Phase 5: Adoption Question Library
-
-Extract common questions into a reusable library keyed by connector name:
-
-```typescript
-// src/lib/templates/adoptionQuestionLibrary.ts
-export const CONNECTOR_QUESTIONS: Record<string, AdoptionQuestion[]> = {
-  slack: [
-    { id: 'slack_channel', question: 'Which Slack channel?', type: 'text', default: '#general', ... },
-    { id: 'slack_mention', question: 'Should the bot @mention users?', type: 'boolean', default: 'No', ... },
-  ],
-  google_workspace: [
-    { id: 'gmail_watch_address', question: 'Email address to monitor?', type: 'text', ... },
-    { id: 'gmail_label', question: 'Label for processed emails?', type: 'text', default: 'Processed', ... },
-  ],
-  // ...per connector
-};
-```
-
-Templates can reference this library instead of duplicating questions. The adoption wizard merges library questions with template-specific ones based on which connectors are selected.
-
-## Cost & Time Estimates
-
-| Phase | Sessions | LLM cost | Output |
-|-------|----------|----------|--------|
-| Phase 1: Skill creation | 1 | $0 | `.claude/skills/evaluate-adoption/skill.md` |
-| Phase 2: Static utilities | 1 | $0 | 5 utility files |
-| Phase 3: Category sweeps (74 templates) | 5-8 | ~$5-10 (context for reading/fixing) | 74 template reports, template fixes, app code fixes |
-| Phase 4: Cross-template analysis | 1 | $0 | Summary report |
-| Phase 5: Question library | 1-2 | $0 | Library file + template updates |
-
-Total: ~10-13 sessions, ~$5-10 in LLM context costs. No backend/transform costs since evaluation is static.
+| Execution Feasibility | 3 | Tools standard, connectors real |
+| Differentiation | 1 | Beyond simple cron/webhook |
+| Variable Necessity | 1 | Required variables genuinely needed |
+| Default Quality | 2 | Adoption with zero changes produces working persona |
+
+These are now computed by the sweep's `static_prompt_score` check, which
+contributes to the overall grade via `B` tier (content gap, not bug).
+
+### Historical question-library concept (deferred)
+
+The earlier doc proposed `src/lib/templates/adoptionQuestionLibrary.ts` — a
+per-connector reusable question library. Deferred indefinitely; the v2
+scope mechanism (Part 1 of [C2-execution-plan.md](concepts/persona-capabilities/C2-execution-plan.md))
+subsumes most of what a library would have provided by making
+`scope: "connector"` a first-class notion. Revisit if we still see question
+duplication across templates after the v2 rollout.

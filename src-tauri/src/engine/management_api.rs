@@ -1410,6 +1410,7 @@ mod tests {
             created_at: now,
             execution_config: Some("{}".into()),
             log_truncated: false,
+            is_simulation: false,
         }
     }
 

@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-04-19T10:51:35",
+  "total_templates": 1,
+  "grade_distribution": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 1,
+    "F": 0,
+    "skip": 0
+  },
+  "failure_patterns": {
+    "design_context_has_use_cases": 1,
+    "use_case_ids_present": 1,
+    "capability_summary_populated": 1
+  },
+  "results": [
+    {
+      "template_id": "incident-logger",
+      "display_name": "Incident Logger",
+      "category": "devops",
+      "path": "scripts/templates/devops/incident-logger.json",
+      "schema_version": 1,
+      "status": "evaluated",
+      "duration_ms": 26400,
+      "connectors": {
+        "available": [],
+        "missing": []
+      },
+      "checks": [
+        {
+          "id": "gallery_visible",
+          "passed": true,
+          "detail": "review_id=f2c3e3c1-6d34-4e3f-8c15-e74a2c30c8bf"
+        },
+        {
+          "id": "adoption_opens",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "id": "modal_opens",
+          "passed": true,
+          "detail": "2 modals"
+        },
+        {
+          "id": "questionnaire_renders",
+          "passed": true,
+          "detail": "6/6 questions rendered (template declares 6)"
+        },
+        {
+          "id": "persona_created",
+          "passed": true,
+          "detail": "id=fbb71900-125f-42fd-8cee-15ebcfc3382b phase=testing"
+        },
+        {
+          "id": "submit_all",
+          "passed": true,
+          "detail": "buildPhase=testing"
+        },
+        {
+          "id": "test_agent_runs",
+          "passed": true,
+          "detail": "1 output lines, phase=test_complete"
+        },
+        {
+          "id": "persona_promoted",
+          "passed": true,
+          "detail": "phase=test_complete"
+        },
+        {
+          "id": "design_context_has_use_cases",
+          "passed": false,
+          "detail": "0 useCases in design_context"
+        },
+        {
+          "id": "use_case_ids_present",
+          "passed": false,
+          "detail": "no useCases"
+        },
+        {
+          "id": "capability_summary_populated",
+          "passed": false,
+          "detail": "summaries present on 0/0"
+        },
+        {
+          "id": "triggers_attributed",
+          "passed": true,
+          "detail": "3/3 triggers carry use_case_id"
+        }
+      ],
+      "issues": [
+        "design_context_has_use_cases: 0 useCases in design_context",
+        "use_case_ids_present: no useCases",
+        "capability_summary_populated: summaries present on 0/0"
+      ],
+      "persona_id": "fbb71900-125f-42fd-8cee-15ebcfc3382b",
+      "build_phase": "test_complete",
+      "grade": "D"
+    }
+  ]
+}

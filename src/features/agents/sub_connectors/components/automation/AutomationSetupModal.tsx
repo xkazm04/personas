@@ -64,6 +64,8 @@ export function AutomationSetupModal({
               githubRepo={s.githubRepo} setGithubRepo={s.setGithubRepo}
               loadingRepos={s.loadingRepos}
               zapierZaps={s.zapierZaps} loadingZaps={s.loadingZaps}
+              availableUseCases={s.availableUseCases}
+              useCaseId={s.useCaseId} setUseCaseId={s.setUseCaseId}
               canDesign={s.canDesign} onDesign={s.handleDesign}
             />
           )}

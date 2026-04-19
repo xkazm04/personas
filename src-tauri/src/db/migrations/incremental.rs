@@ -177,6 +177,66 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added use_case_id column to persona_executions");
     }
 
+    // Phase C3 — Add is_simulation column to persona_executions so runs made
+    // via `simulate_use_case` can be filtered out of real activity feeds and
+    // skip outbound notification dispatch.
+    // See docs/concepts/persona-capabilities/04-data-model.md.
+    let has_is_simulation: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'is_simulation'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_is_simulation {
+        conn.execute_batch(
+            "ALTER TABLE persona_executions ADD COLUMN is_simulation INTEGER NOT NULL DEFAULT 0;
+             CREATE INDEX IF NOT EXISTS idx_pe_simulation ON persona_executions(persona_id, is_simulation);"
+        )?;
+        tracing::info!("Added is_simulation column to persona_executions");
+    }
+
+    // Phase C5 — use_case_id attribution for messages, manual reviews, and memories.
+    // Lets the activity feed, review queues, and learned-memory injection scope
+    // by capability. Inherited from the originating execution at dispatch time.
+    // See docs/concepts/persona-capabilities/04-data-model.md and 09-implementation-plan.md §C5.
+    let has_msg_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_messages') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_msg_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_messages ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pmsg_use_case ON persona_messages(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_messages");
+    }
+
+    let has_review_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_manual_reviews') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_review_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_manual_reviews ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pmr_use_case ON persona_manual_reviews(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_manual_reviews");
+    }
+
+    let has_memory_use_case_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_memories') WHERE name = 'use_case_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_memory_use_case_id {
+        conn.execute_batch(
+            "ALTER TABLE persona_memories ADD COLUMN use_case_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pm_use_case ON persona_memories(use_case_id);"
+        )?;
+        tracing::info!("Added use_case_id column to persona_memories");
+    }
+
     // Add use_case_id to persona_triggers
     let has_trigger_use_case_id: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_triggers') WHERE name = 'use_case_id'")?

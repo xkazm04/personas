@@ -1,13 +1,18 @@
 /**
  * Modal for adding personas to the event routing matrix.
  * Features: search, group filtering, categorization.
+ *
+ * Phase C4: when the selected persona has capabilities, a second step lets
+ * the user scope the event wiring to a specific capability (or keep it
+ * persona-wide).
  */
 import { useMemo, useState } from 'react';
-import { Search, X, Plus, Users } from 'lucide-react';
+import { Search, X, Plus, Users, ChevronLeft, Layers } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 import { useTranslation } from '@/i18n/useTranslation';
+import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 
 interface Props {
   open: boolean;
@@ -15,7 +20,7 @@ interface Props {
   groups: PersonaGroup[];
   alreadyActiveIds: Set<string>;
   eventLabel?: string;
-  onAdd: (personaId: string) => void;
+  onAdd: (personaId: string, useCaseId: string | null) => void;
   onClose: () => void;
 }
 
@@ -23,6 +28,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [capabilityStep, setCapabilityStep] = useState<Persona | null>(null);
 
   const groupMap = useMemo(() => {
     const m = new Map<string, PersonaGroup>();
@@ -74,6 +80,27 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
 
   const availableCount = personas.filter(p => !alreadyActiveIds.has(p.id)).length;
 
+  const handlePersonaPick = (persona: Persona) => {
+    const useCases = parseDesignContext(persona.design_context).useCases ?? [];
+    const enabledUseCases = useCases.filter(uc => uc.enabled !== false);
+    if (enabledUseCases.length > 0) {
+      setCapabilityStep(persona);
+    } else {
+      onAdd(persona.id, null);
+    }
+  };
+
+  const handleCapabilityPick = (useCaseId: string | null) => {
+    if (!capabilityStep) return;
+    const personaId = capabilityStep.id;
+    setCapabilityStep(null);
+    onAdd(personaId, useCaseId);
+  };
+
+  const capabilityOptions = capabilityStep
+    ? (parseDesignContext(capabilityStep.design_context).useCases ?? []).filter(uc => uc.enabled !== false)
+    : [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -83,18 +110,80 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
-          <Users className="w-4 h-4 text-emerald-400" />
+          {capabilityStep ? (
+            <button
+              onClick={() => setCapabilityStep(null)}
+              className="p-1 rounded-card hover:bg-secondary/60 text-foreground"
+              aria-label="Back to personas"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <Users className="w-4 h-4 text-emerald-400" />
+          )}
           <div className="flex-1">
             <h3 className="typo-heading font-semibold text-foreground">
-              {eventLabel ? `Connect persona to "${eventLabel}"` : 'Add Persona'}
+              {capabilityStep
+                ? `Scope "${capabilityStep.name}" to…`
+                : eventLabel
+                  ? `Connect persona to "${eventLabel}"`
+                  : 'Add Persona'}
             </h3>
-            <p className="text-[10px] text-foreground">{availableCount} available</p>
+            <p className="text-[10px] text-foreground">
+              {capabilityStep
+                ? 'Pick a capability or keep this trigger persona-wide'
+                : `${availableCount} available`}
+            </p>
           </div>
           <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/60 text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {capabilityStep && (
+          <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+            <button
+              onClick={() => handleCapabilityPick(null)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card/50 border border-primary/10 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left"
+            >
+              <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
+                <Users className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-medium text-foreground">Persona-wide</div>
+                <div className="text-[9px] text-foreground">All capabilities run for this event</div>
+              </div>
+            </button>
+            {capabilityOptions.length > 0 && (
+              <div className="pt-1">
+                <div className="px-2 py-1 text-[10px] font-semibold text-foreground uppercase tracking-wider">
+                  Scope to a capability
+                </div>
+                <div className="space-y-1">
+                  {capabilityOptions.map(uc => (
+                    <button
+                      key={uc.id}
+                      onClick={() => handleCapabilityPick(uc.id)}
+                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
+                    >
+                      <div className="icon-frame bg-cyan-500/10 flex-shrink-0 mt-0.5">
+                        <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-medium text-foreground truncate">{uc.title}</div>
+                        {uc.description && (
+                          <div className="text-[9px] text-foreground line-clamp-2">{uc.description}</div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!capabilityStep && <>
         {/* Search + filters */}
         <div className="px-4 py-2.5 border-b border-primary/5 space-y-2">
           <div className="relative">
@@ -171,7 +260,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                 {ps.map(p => (
                   <button
                     key={p.id}
-                    onClick={() => onAdd(p.id)}
+                    onClick={() => handlePersonaPick(p)}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
                     <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
@@ -190,6 +279,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
             </div>
           ))}
         </div>
+        </>}
       </div>
     </div>
   );
