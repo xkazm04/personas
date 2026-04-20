@@ -1,8 +1,3 @@
-// @ts-nocheck
-// WIP — UI variant prototype per ui-variant-prototype skill. Not yet wired
-// into production adoption flow. Type cleanup lands when one variant wins.
-"use client";
-
 /**
  * Variant B — "Master + Override Drawer"
  *
@@ -13,7 +8,7 @@
  * is explicit.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ElementType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Calendar, Zap, Activity, Settings2, ChevronDown } from "lucide-react";
 import type { UseCase, TriggerSelection } from "./TriggerCompositionStepChips";
@@ -28,7 +23,7 @@ export interface TriggerCompositionStepMasterProps {
 
 type PresetKey = TriggerSelection["preset"];
 
-const PRESETS: { key: PresetKey; label: string; icon: React.ElementType }[] = [
+const PRESETS: { key: PresetKey; label: string; icon: ElementType }[] = [
   { key: "daily", label: "Daily", icon: Calendar },
   { key: "weekly", label: "Weekly", icon: Calendar },
   { key: "hourly", label: "Hourly", icon: Clock },

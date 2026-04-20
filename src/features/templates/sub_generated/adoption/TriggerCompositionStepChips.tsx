@@ -1,8 +1,3 @@
-// @ts-nocheck
-// WIP — UI variant prototype per ui-variant-prototype skill. Not yet wired
-// into production adoption flow. Type cleanup lands when one variant wins.
-"use client";
-
 /**
  * Variant A — "Chip Grid"
  *
@@ -15,7 +10,7 @@
  * card is self-contained — no mode switching.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ElementType } from "react";
 import { motion } from "framer-motion";
 import { Clock, Calendar, Zap, Activity, Settings2 } from "lucide-react";
 
@@ -50,7 +45,7 @@ export interface TriggerSelection {
 
 type PresetKey = TriggerSelection["preset"];
 
-const PRESETS: { key: PresetKey; label: string; icon: React.ElementType }[] = [
+const PRESETS: { key: PresetKey; label: string; icon: ElementType }[] = [
   { key: "daily", label: "Daily", icon: Calendar },
   { key: "weekly", label: "Weekly", icon: Calendar },
   { key: "hourly", label: "Hourly", icon: Clock },

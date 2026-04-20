@@ -30,6 +30,8 @@ import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
+import TriggerCompositionDemo from "./TriggerCompositionDemo";
+import type { UseCase as TriggerUseCase, TriggerSelection } from "./TriggerCompositionStepChips";
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -325,6 +327,76 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   const [useCasesPicked, setUseCasesPicked] = useState(false);
   const useCaseStepDone = !showUseCasePicker || useCasesPicked;
+
+  // Trigger composition step — renders between UC picker and questionnaire
+  // when the persona has at least one scheduled/polling/event UC in the
+  // enabled set. Manual-only personas skip it (nothing to compose).
+  const [triggersPicked, setTriggersPicked] = useState(false);
+  const [triggerSelections, setTriggerSelections] = useState<{
+    perUseCase: Record<string, TriggerSelection>;
+    master?: TriggerSelection;
+    overrides?: Record<string, TriggerSelection>;
+    variant: "chips" | "master";
+  } | null>(null);
+
+  // Shape the enabled UCs for the TriggerComposition component. Pulls
+  // suggested_trigger + emits from the raw designResult so the step
+  // renders real cadence defaults and real cross-UC event options.
+  const triggerStepUseCases = useMemo<TriggerUseCase[]>(() => {
+    if (!designResult) return [];
+    const raw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+    const enabled = showUseCasePicker
+      ? raw.filter((uc) => {
+          const id = String(uc.id ?? "");
+          return selectedUseCaseIds.has(id);
+        })
+      : raw;
+    return enabled.map((uc) => {
+      const id = String(uc.id ?? "");
+      const title = String(uc.title ?? uc.name ?? id);
+      const cap = typeof uc.capability_summary === "string" ? uc.capability_summary : "";
+      const suggested = (uc.suggested_trigger ?? {}) as Record<string, unknown>;
+      const cfg = (suggested.config ?? {}) as Record<string, unknown>;
+      const emits = Array.isArray(uc.event_subscriptions)
+        ? (uc.event_subscriptions as Array<Record<string, unknown>>)
+            .filter((e) => e.direction === "emit")
+            .map((e) => ({
+              event_type: String(e.event_type ?? ""),
+              description: String(e.description ?? ""),
+            }))
+        : [];
+      const triggerType = (suggested.trigger_type as string) ?? "manual";
+      return {
+        id,
+        title,
+        capability_summary: cap,
+        suggested_trigger: {
+          trigger_type: (
+            ["schedule", "polling", "manual", "event_listener", "webhook"].includes(triggerType)
+              ? triggerType
+              : "manual"
+          ) as TriggerUseCase["suggested_trigger"]["trigger_type"],
+          config: {
+            cron: typeof cfg.cron === "string" ? cfg.cron : undefined,
+            event_type: typeof cfg.event_type === "string" ? cfg.event_type : undefined,
+            timezone: typeof cfg.timezone === "string" ? cfg.timezone : undefined,
+          },
+          description: typeof suggested.description === "string" ? suggested.description : "",
+        },
+        emits,
+      };
+    });
+  }, [designResult, selectedUseCaseIds, showUseCasePicker]);
+
+  const showTriggerStep = triggerStepUseCases.some(
+    (uc) => uc.suggested_trigger.trigger_type !== "manual",
+  );
+  const triggerStepDone = !showTriggerStep || triggersPicked;
+
+  const triggerComposition = useMemo<"shared" | "per_use_case">(() => {
+    const persona = (designResult?.persona ?? {}) as Record<string, unknown>;
+    return persona.trigger_composition === "shared" ? "shared" : "per_use_case";
+  }, [designResult]);
 
   const toggleUseCase = useCallback((id: string) => {
     setSelectedUseCaseIds((prev) => {
@@ -766,12 +838,31 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         />
       );
     }
-    // Step 2 — questionnaire. Rendered inline while the user fills it in so
+    // Step 2 — trigger composition. Renders when the enabled UCs include at
+    // least one non-manual trigger, so the user can set/override cadence and
+    // event chaining before the questionnaire. Skipped for manual-only
+    // personas.
+    if (useCaseStepDone && showTriggerStep && !triggersPicked) {
+      return (
+        <TriggerCompositionDemo
+          personaName={templateName}
+          personaGoal={templateGoal}
+          triggerComposition={triggerComposition}
+          useCases={triggerStepUseCases}
+          onContinue={(selections) => {
+            setTriggerSelections(selections);
+            setTriggersPicked(true);
+          }}
+          onBack={showUseCasePicker ? () => setUseCasesPicked(false) : undefined}
+        />
+      );
+    }
+    // Step 3 — questionnaire. Rendered inline while the user fills it in so
     // static/dynamic questions are interactive immediately. We only fall back
     // to the "Loading template…" placeholder AFTER the user submits, while
     // seed creates the draft persona — so the user is never blocked behind
     // a generic loading screen with the questionnaire trapped underneath it.
-    if (hasFilteredQuestions && !questionsComplete) {
+    if (triggerStepDone && hasFilteredQuestions && !questionsComplete) {
       return (
         <QuestionnaireFormFocus
           questions={filteredAdoptionQuestions}
