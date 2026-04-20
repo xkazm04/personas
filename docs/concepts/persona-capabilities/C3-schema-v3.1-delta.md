@@ -297,7 +297,28 @@ engine currently ignores this field — all enabled assertions run against
 every execution. Per-UC targeting is a follow-up (tracked in EXEC-VERIF-PLAN
 Phase 10).
 
-### 2.7 Removals
+### 2.7 Deprecated fields (2026-04-21, Phase 10 of EXEC-VERIF-PLAN)
+
+The v3.1 wire-audit (see `EXEC-VERIF-PLAN.md` problem statement) identified
+five fields that templates populate but no runtime consumer reads. Rather
+than ship features that lie about what the persona does, these fields are
+formally deprecated and the checksum linter warns on new usage.
+
+| Field | Status | Reason |
+|---|---|---|
+| `persona.core_memories[]` | **Deprecated** — do not author | Every template has `[]`; no code reads it. Memory is sourced from the runtime `agent_memories` table (written by `emit_memory`). If seeding behavior is ever needed, a dedicated `persona_seed_memories` phase will be added. |
+| `persona.examples[]` | **Deprecated** — do not author | Hard-coded to empty string in `template_v3.rs::compose_structured_prompt`. Wiring it would risk PII leakage from template-bundled sample data. Use the adoption flow's dynamic substitution instead. |
+| `persona.verbosity_default` | **Deprecated** — do not author | No runtime consumer. Verbosity is governed by the model's `effort` setting in `ModelProfile`. |
+| `use_cases[i].execution_mode` | **Deprecated** — reserved | Every template sets `"e2e"`; no other value branches. Keep as an undocumented schema slot for a future "step" / "dry_run" mode; don't author in new templates. |
+| `persona.connectors[i].fallback_note` | **Required when `required:false`** | Authoring contract from v3.1 §1 P8: every optional connector MUST document what the persona does without it. `scripts/generate-template-checksums.mjs` now **errors** on missing `fallback_note` when `required:false`. |
+
+**No mass template migration.** Serde's `#[serde(default)]` silently ignores
+extra fields, so the 107 templates that still carry empty `core_memories: []`
+or `execution_mode: "e2e"` keep parsing without changes. The linter prints
+warnings on deprecated fields (non-blocking) and errors on missing fallback
+notes (blocks CI).
+
+### 2.8 Removals
 
 - **`payload.adoption_questions[i]` — remove any question whose
   intent is "toggle this use case on/off"**. The picker owns that.

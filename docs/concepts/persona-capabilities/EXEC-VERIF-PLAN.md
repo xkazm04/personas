@@ -80,7 +80,7 @@ detail page.
 
 ## Phase 6 — Pre-execution connector healthcheck + semantic output assertions
 
-**Status:** partially complete (2026-04-21) — assertions shipped; healthcheck gate deferred to Phase 6b.
+**Status:** Phase 6a complete (2026-04-21). Phase 6b (healthcheck gate) deferred.
 
 **Commit provenance note:** Phase 6a code was bundled into commit `553718e8`
 ("feat(simple-mode): wire InboxVariant master-detail with keyboard nav")
@@ -157,7 +157,15 @@ templates.
 
 ## Phase 7 — Per-use-case `error_handling` in prompt
 
-**Status:** pending
+**Status:** complete (2026-04-21, commit `0b1a47b2`)
+
+**What shipped:**
+- `AgentIrUseCaseData.error_handling: Option<String>` + accessor matching the
+  `category()` / `execution_mode()` pattern (empty string for Simple variants).
+- `build_structured_use_cases()` carries the field into `design_context.useCases[i]`.
+- `prompt.rs::render_active_capabilities()` emits an indented
+  `_Error handling:_ …` line under each UC bullet when the field is
+  non-empty. Persona-wide `error_handling` remains the baseline.
 
 **Goal:** Template author's per-UC error recipes (e.g. "GitHub 422 branch-exists
 → suffix counter and retry") reach the LLM for that capability.
@@ -183,7 +191,19 @@ templates.
 
 ## Phase 8 — Policy enforcement audit log
 
-**Status:** pending
+**Status:** backend complete (2026-04-21, commit `52548178`). Frontend tab deferred.
+
+**What shipped:**
+- New `policy_events` table + migration + `PolicyEvent` model + repo
+  (`insert`, `list_by_execution`).
+- `engine/dispatch.rs::audit_policy_event()` helper wired into 5 silent
+  enforcement sites: `event.off` × 2 (persona_action + custom EmitEvent),
+  `event.aliased`, `memory.off`, `review.off`, `review.trust_llm`.
+- `get_policy_events_for_execution` IPC command exposed via `lib.rs`.
+- Audit persist is best-effort: a failed write warns but never aborts
+  dispatch since the enforcement itself already succeeded.
+- Frontend "Policy Events" tab is a follow-up; the stable read path is
+  already in place to plug a reader into.
 
 **Goal:** Every `[POLICY] ... dropped` action persists to a queryable table
 and surfaces in a per-execution "Policy Events" tab.
@@ -210,7 +230,17 @@ and surfaces in a per-execution "Policy Events" tab.
 
 ## Phase 9 — Per-UC `model_override`
 
-**Status:** pending
+**Status:** complete (2026-04-21, commit `b1e3cfd1`)
+
+**What shipped:**
+- `runner.rs` looks up `design_context.useCases[uc_id].model_override`
+  before the failover chain builds and merges it into `model_profile`.
+- Accepted shapes on `model_override`: bare string (`"haiku"`), partial
+  `ModelProfile` object, or `null`/absent. For strings, only `model` is
+  overridden. For objects, set fields win and missing fields fall back
+  to the persona default.
+- `build_structured_use_cases()` carries the field into `design_context`
+  so the runner can read it without re-deserializing the full IR.
 
 **Goal:** `uc_backlog_scan` → Haiku, `uc_implementation` → Opus is respected
 at runtime.
@@ -232,7 +262,23 @@ at runtime.
 
 ## Phase 10 — Schema cleanup (dead fields)
 
-**Status:** pending
+**Status:** complete (2026-04-21)
+
+**What shipped:**
+- `C3-schema-v3.1-delta.md` §2.7 documents per-field decisions:
+  `core_memories`, `examples`, `verbosity_default`, `execution_mode`
+  formally deprecated (do not author); `fallback_note` required when
+  `connectors[i].required: false`.
+- No mass template migration — serde's `#[serde(default)]` silently
+  ignores extras, so the 107 templates with legacy `core_memories: []`
+  or `execution_mode: "e2e"` continue to parse clean. Linter surfaces
+  non-blocking warnings where content is actually present.
+- `scripts/generate-template-checksums.mjs` gains a per-template
+  linter pass that runs alongside checksum generation:
+  - **Warns** on presence of each deprecated field with content.
+  - **Errors** on missing `fallback_note` when `required: false`.
+  - Baseline: 107 templates produce N warnings (mostly
+    `verbosity_default`), 0 errors.
 
 **Goal:** Stop lying about features. Each dead field is either wired or removed.
 

@@ -59,8 +59,67 @@ function findJsonFiles(dir) {
   return results;
 }
 
+// Fields the v3.1 authoring audit (EXEC-VERIF-PLAN Phase 10) found to have
+// zero runtime consumer. Authors should stop populating them; existing empty
+// arrays in 107 templates are harmless because serde ignores extras. Warnings
+// only — non-blocking, the checksum output is unaffected.
+const DEAD_PERSONA_FIELDS = ["core_memories", "examples", "verbosity_default"];
+const DEAD_USE_CASE_FIELDS = ["execution_mode"];
+
+function lintTemplate(rel, parsed) {
+  const warnings = [];
+  const errors = [];
+  const payload = parsed?.payload ?? parsed;
+  const persona = payload?.persona ?? {};
+
+  for (const field of DEAD_PERSONA_FIELDS) {
+    if (persona[field] !== undefined) {
+      const value = persona[field];
+      const isEmpty = Array.isArray(value) ? value.length === 0 : !value;
+      if (!isEmpty) {
+        warnings.push(
+          `${rel}: persona.${field} has content but no runtime consumer exists (deprecated per C3-schema-v3.1-delta §2.7). Remove or leave empty.`,
+        );
+      }
+    }
+  }
+
+  const useCases = Array.isArray(payload?.use_cases) ? payload.use_cases : [];
+  for (const uc of useCases) {
+    if (!uc || typeof uc !== "object") continue;
+    for (const field of DEAD_USE_CASE_FIELDS) {
+      if (uc[field] !== undefined && uc[field] !== "e2e") {
+        warnings.push(
+          `${rel}: use_cases[${uc.id ?? "?"}].${field}="${uc[field]}" has no runtime branch (deprecated per C3-schema-v3.1-delta §2.7). All values collapse to "e2e".`,
+        );
+      }
+    }
+  }
+
+  // P8 / Phase 6b — connectors declared as optional MUST carry a fallback_note
+  // so adopters know what the persona does without that connector. Error-level
+  // because it affects adopter UX and was introduced in v3.1 §1 P8.
+  const connectors = Array.isArray(persona?.connectors) ? persona.connectors : [];
+  for (const c of connectors) {
+    if (!c || typeof c !== "object") continue;
+    if (c.required === false) {
+      const note = (c.fallback_note ?? "").toString().trim();
+      if (!note) {
+        errors.push(
+          `${rel}: persona.connectors[${c.name ?? "?"}] is required:false but has no fallback_note. v3.1 §1 P8 requires documenting the fallback path for optional connectors.`,
+        );
+      }
+    }
+  }
+
+  return { warnings, errors };
+}
+
 const files = findJsonFiles(TEMPLATES_DIR).sort();
 const checksums = {};
+
+const allWarnings = [];
+const allErrors = [];
 
 let skippedUnpublished = 0;
 for (const filePath of files) {
@@ -73,9 +132,22 @@ for (const filePath of files) {
     continue;
   }
 
-  const canonical = JSON.stringify(parsed);
   const rel = relative(TEMPLATES_DIR, filePath).replace(/\\/g, '/');
+  const { warnings, errors } = lintTemplate(rel, parsed);
+  allWarnings.push(...warnings);
+  allErrors.push(...errors);
+
+  const canonical = JSON.stringify(parsed);
   checksums[rel] = computeContentHashSync(canonical);
+}
+
+if (allWarnings.length > 0) {
+  console.warn(`\n${allWarnings.length} template lint warning(s):`);
+  for (const w of allWarnings) console.warn(`  [warn] ${w}`);
+}
+if (allErrors.length > 0) {
+  console.error(`\n${allErrors.length} template lint error(s):`);
+  for (const e of allErrors) console.error(`  [error] ${e}`);
 }
 
 const outputLines = [
