@@ -4,6 +4,13 @@
  *
  * Variant shells (Mosaic / Console / Inbox) are lazy-loaded from inside
  * SimpleHomePage; consumers should only import the default export here.
+ *
+ * Also re-exports the unified inbox selector + types so Phases 07-09 and
+ * any future consumer can import from `@/features/simple-mode` directly.
  */
 export { default } from './SimpleHomePage';
 export { default as SimpleHomePage } from './SimpleHomePage';
+
+export { useUnifiedInbox } from './hooks/useUnifiedInbox';
+export { normalizeSeverity } from './types';
+export type { InboxKind, Severity, UnifiedInboxItem } from './types';

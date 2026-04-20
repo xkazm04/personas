@@ -273,7 +273,7 @@ describe('useUnifiedInbox', () => {
     });
     const { result } = renderHook(() => useUnifiedInbox());
     expect(result.current).toHaveLength(1);
-    expect(result.current[0].source).toBe('rev-pending');
+    expect(result.current[0]?.source).toBe('rev-pending');
   });
 
   it('filters out read messages', () => {
@@ -285,7 +285,7 @@ describe('useUnifiedInbox', () => {
     });
     const { result } = renderHook(() => useUnifiedInbox());
     expect(result.current).toHaveLength(1);
-    expect(result.current[0].source).toBe('msg-unread');
+    expect(result.current[0]?.source).toBe('msg-unread');
   });
 
   it('filters out resolved and auto-fixed healing issues', () => {
@@ -298,7 +298,7 @@ describe('useUnifiedInbox', () => {
     });
     const { result } = renderHook(() => useUnifiedInbox());
     expect(result.current).toHaveLength(1);
-    expect(result.current[0].source).toBe('heal-open');
+    expect(result.current[0]?.source).toBe('heal-open');
   });
 
   it('sorts items newest-first by createdAt', () => {
@@ -352,9 +352,9 @@ describe('useUnifiedInbox', () => {
       manualReviews: [approvalRecord({ persona_id: 'p-1' })],
     });
     const { result } = renderHook(() => useUnifiedInbox());
-    expect(result.current[0].personaName).toBe('Storm Caller');
-    expect(result.current[0].personaIcon).toBe('⚡');
-    expect(result.current[0].personaColor).toBe('#ff0000');
+    expect(result.current[0]?.personaName).toBe('Storm Caller');
+    expect(result.current[0]?.personaIcon).toBe('⚡');
+    expect(result.current[0]?.personaColor).toBe('#ff0000');
   });
 
   it('falls back to "Unknown assistant" when persona is missing', () => {
@@ -363,8 +363,8 @@ describe('useUnifiedInbox', () => {
       manualReviews: [approvalRecord({ persona_id: 'p-missing' })],
     });
     const { result } = renderHook(() => useUnifiedInbox());
-    expect(result.current[0].personaName).toBe('Unknown assistant');
-    expect(result.current[0].personaIcon).toBeNull();
-    expect(result.current[0].personaColor).toBeNull();
+    expect(result.current[0]?.personaName).toBe('Unknown assistant');
+    expect(result.current[0]?.personaIcon).toBeNull();
+    expect(result.current[0]?.personaColor).toBeNull();
   });
 });
