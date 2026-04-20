@@ -65,7 +65,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("marketing/autonomous-cro-experiment-runner.json", "00165417e7af810c");
     m.insert("marketing/reddit-trend-digest.json", "0000699e2f9cc6c5");
     m.insert("marketing/visual-brand-asset-factory.json", "001f29a5dc2301bb");
-    m.insert("marketing/web-marketing.json", "000f2f0356772287");
+    m.insert("marketing/web-marketing.json", "000b2ca2045adba6");
     m.insert("marketing/website-conversion-audit.json", "00140c42c71ea922");
     m.insert("productivity/appointment-orchestrator.json", "000c5d30218916e8");
     m.insert("productivity/daily-standup-compiler.json", "00052bf0a353013e");

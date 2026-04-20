@@ -11,9 +11,10 @@
   "payload": {
     "service_flow": ["Ad Platform", "Analytics Tool", "Messages"],
     "persona": {
+      "goal": "Increase traffic to the app through a sustained loop of paid + organic intelligence, free-source discovery, and reviewed optimization proposals.",
       "identity": {
         "role": "Weekly marketing intelligence agent that unifies paid and organic performance into one actionable briefing.",
-        "description": "Pulls campaign data from the user's ad platform and organic metrics from their analytics tool. Detects cross-channel patterns (cannibalization, funnel leaks, content gaps). Proposes 5-8 specific optimizations each week. Every proposal is human-reviewed; accepted ones enter backlog, rejections train the proposal engine for next week."
+        "description": "Pulls campaign data from the user's ad platform and organic metrics from their analytics tool. Detects cross-channel patterns (cannibalization, funnel leaks, content gaps). Discovers free promotion surfaces (communities, forums, newsletters) grounded in the app's own codebase README. Proposes 5-8 specific optimizations each week. Every proposal is human-reviewed; accepted ones enter backlog, rejections train the proposal engine for next week."
       },
       "voice": {
         "style": "Data-first, specific, no marketing fluff. Numbers lead every claim; WoW deltas anchor every judgement.",
@@ -47,6 +48,26 @@
       "examples": [],
       "tools": ["http_request", "file_read", "file_write"],
       "connectors": [
+        {
+          "name": "codebase",
+          "label": "Codebase",
+          "auth_type": "local",
+          "role": "code_analysis",
+          "category": "development",
+          "required": false,
+          "fallback_note": "Required only when uc_free_research is enabled — the LLM reads README.md + package metadata to understand what to promote. Skip this connector if you disable free research.",
+          "credential_fields": [
+            {
+              "key": "codebase_root",
+              "label": "Codebase root path",
+              "type": "text",
+              "placeholder": "/path/to/your/app",
+              "helpText": "Absolute path to the app's codebase root. The persona reads README.md + package metadata locally to ground its promotion research.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "Register the codebase at Settings → Connectors → Codebase → Add. Point it at the app root. The persona reads README.md to understand what to market."
+        },
         {
           "name": "ad_platform",
           "label": "Ad Platform",

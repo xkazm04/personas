@@ -56,7 +56,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'marketing/autonomous-cro-experiment-runner.json': '00165417e7af810c',
   'marketing/reddit-trend-digest.json': '0000699e2f9cc6c5',
   'marketing/visual-brand-asset-factory.json': '001f29a5dc2301bb',
-  'marketing/web-marketing.json': '000f2f0356772287',
+  'marketing/web-marketing.json': '000b2ca2045adba6',
   'marketing/website-conversion-audit.json': '00140c42c71ea922',
   'productivity/appointment-orchestrator.json': '000c5d30218916e8',
   'productivity/daily-standup-compiler.json': '00052bf0a353013e',
