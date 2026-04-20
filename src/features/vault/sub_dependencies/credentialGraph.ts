@@ -4,6 +4,84 @@ import type { Workflow } from '@/lib/types/compositionTypes';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 
 // ---------------------------------------------------------------------------
+// Agent-node ID contract
+// ---------------------------------------------------------------------------
+//
+// Agent nodes are stored in the graph under `agent:<persona_id>` rather than
+// the raw persona id so the same id space doesn't collide with credential ids
+// (which are also UUIDs) and event ids (prefixed `evt:`). The prefix is an
+// implementation detail of the graph — every caller that needs to read or
+// write an agent node id MUST go through {@link toAgentNodeId} /
+// {@link fromAgentNodeId} so the contract stays a single-file change.
+
+/** Required prefix on every agent node id. */
+const AGENT_NODE_PREFIX = 'agent:';
+
+/** Branded string narrowing down the `agent:<persona_id>` shape. */
+export type AgentNodeId = string & { readonly __agentNodeBrand?: never };
+
+/** Wrap a raw persona id into its graph node id. */
+export function toAgentNodeId(personaId: string): AgentNodeId {
+  return `${AGENT_NODE_PREFIX}${personaId}` as AgentNodeId;
+}
+
+/** True iff the given string obeys the agent-node id contract. */
+export function isAgentNodeId(value: string): value is AgentNodeId {
+  return value.startsWith(AGENT_NODE_PREFIX) && value.length > AGENT_NODE_PREFIX.length;
+}
+
+/**
+ * Strip the `agent:` prefix to recover the persona id. Throws when the input
+ * does not match the contract — previous code silently passed the raw node id
+ * through, producing "unknown" health grades and zero burn-rate, under-
+ * reporting blast radius. An invariant-violation is preferable to a
+ * plausibly-wrong result.
+ */
+export function fromAgentNodeId(nodeId: string): string {
+  if (!isAgentNodeId(nodeId)) {
+    throw new Error(
+      `fromAgentNodeId: expected "${AGENT_NODE_PREFIX}<persona_id>", got ${JSON.stringify(nodeId)}`,
+    );
+  }
+  return nodeId.slice(AGENT_NODE_PREFIX.length);
+}
+
+// ---------------------------------------------------------------------------
+// Blast-radius severity thresholds
+// ---------------------------------------------------------------------------
+
+/**
+ * Severity thresholds driving the colour / urgency of the vault UI's
+ * blast-radius indicator AND the revocation simulator. Shared source of
+ * truth so the two surfaces cannot drift.
+ *
+ * - `HIGH_SEVERITY_AGENT_COUNT = 3` — pragmatic: a credential feeding 3+
+ *   agents is treated as "rotate now" because the blast-radius page stops
+ *   being browsable past that count (heuristics grid condenses), and ops
+ *   feedback has historically flagged 3-agent breakages as "outage" whereas
+ *   1–2 are "degraded".
+ * - `MEDIUM_SEVERITY_AGENT_COUNT = 1` — any agent depending on a credential
+ *   is at least a "degraded" rotation risk; zero dependents is the only
+ *   "low" state.
+ *
+ * Tune here, not at the call site. Both `analyzeBlastRadius` and
+ * `simulateRevocation` read from this object.
+ */
+export const BLAST_RADIUS_THRESHOLDS = {
+  HIGH_SEVERITY_AGENT_COUNT: 3,
+  MEDIUM_SEVERITY_AGENT_COUNT: 1,
+} as const;
+
+/** Map an affected-agent count to a blast-radius severity bucket. */
+export function severityForAgentCount(
+  affectedAgents: number,
+): 'low' | 'medium' | 'high' {
+  if (affectedAgents >= BLAST_RADIUS_THRESHOLDS.HIGH_SEVERITY_AGENT_COUNT) return 'high';
+  if (affectedAgents >= BLAST_RADIUS_THRESHOLDS.MEDIUM_SEVERITY_AGENT_COUNT) return 'medium';
+  return 'low';
+}
+
+// ---------------------------------------------------------------------------
 // Graph node / edge types
 // ---------------------------------------------------------------------------
 
@@ -72,18 +150,22 @@ export function analyzeBlastRadius(
     }
   }
 
-  // Find connected events
+  // Find connected events. Mirror the agent-dedupe via eventIds Set so a
+  // credential with both an outgoing `triggers` edge and a future inbound
+  // edge to the same event can't double-count toward blast radius.
+  const eventIds = new Set<string>();
   const affectedEvents: BlastRadius['affectedEvents'] = [];
   for (const edge of allEdges) {
     const otherId = edge.source === credentialId ? edge.target : edge.source;
     const otherNode = graph.nodes.find((n) => n.id === otherId);
-    if (otherNode?.kind === 'event') {
+    if (otherNode?.kind === 'event' && !eventIds.has(otherId)) {
+      eventIds.add(otherId);
       affectedEvents.push({ id: otherId, name: otherNode.label });
     }
   }
 
-  // Severity: high if 3+ agents, medium if 1-2, low if none
-  const severity = affectedAgents.length >= 3 ? 'high' : affectedAgents.length >= 1 ? 'medium' : 'low';
+  // Severity derived from shared threshold table (see BLAST_RADIUS_THRESHOLDS).
+  const severity = severityForAgentCount(affectedAgents.length);
 
   return {
     credentialId,
@@ -170,8 +252,10 @@ export function simulateRevocation(
     const otherNode = graph.nodes.find((n) => n.id === otherId);
     if (otherNode?.kind === 'agent' && !agentIds.has(otherId)) {
       agentIds.add(otherId);
-      // Strip "agent:" prefix to look up health
-      const personaId = otherId.startsWith('agent:') ? otherId.slice(6) : otherId;
+      // Invariant is enforced at graph-build time in buildCredentialGraph —
+      // fromAgentNodeId throws on malformed ids so a bogus node can't silently
+      // degrade the simulation to `grade='unknown'`, `$0 burn rate`, etc.
+      const personaId = fromAgentNodeId(otherId);
       const health = healthMap.get(personaId);
       affectedPersonas.push({
         id: personaId,
@@ -223,15 +307,12 @@ export function simulateRevocation(
       healthOk: c.healthcheck_last_success,
     }));
 
-  // 5. Severity: critical if workflows break, high if 3+ personas, medium if 1-2, low if none
+  // 5. Severity: `critical` if any workflow breaks, otherwise fall back to the
+  //    shared blast-radius bucket (see BLAST_RADIUS_THRESHOLDS).
   const severity: SimulationResult['severity'] =
     affectedWorkflows.length > 0
       ? 'critical'
-      : affectedPersonas.length >= 3
-        ? 'high'
-        : affectedPersonas.length >= 1
-          ? 'medium'
-          : 'low';
+      : severityForAgentCount(affectedPersonas.length);
 
   return {
     credentialId,
@@ -287,11 +368,15 @@ export function buildCredentialGraph(
     nodeIds.add(cred.id);
   }
 
-  // 2. Add agent nodes and credential->agent edges via dependentsMap
+  // 2. Add agent nodes and credential->agent edges via dependentsMap.
+  //    Agent node ids go through `toAgentNodeId` exclusively so
+  //    `fromAgentNodeId` at read time can enforce the invariant and never
+  //    silently fall back to the raw id.
   const agentNodes = new Map<string, GraphNode>();
   for (const [credId, deps] of dependentsMap) {
     for (const dep of deps) {
-      const agentNodeId = `agent:${dep.persona_id}`;
+      if (!dep.persona_id) continue; // skip: orphaned dependents shouldn't poison the graph
+      const agentNodeId = toAgentNodeId(dep.persona_id);
       if (!agentNodes.has(agentNodeId)) {
         const persona = personas.find((p) => p.id === dep.persona_id);
         agentNodes.set(agentNodeId, {
@@ -313,6 +398,14 @@ export function buildCredentialGraph(
     }
   }
   for (const node of agentNodes.values()) {
+    // Invariant guard. Every agent node id in the graph MUST obey the
+    // agent-node contract — if a future code path adds one without the
+    // prefix, fail loudly here instead of mis-reporting blast radius later.
+    if (!isAgentNodeId(node.id)) {
+      throw new Error(
+        `buildCredentialGraph: agent node id ${JSON.stringify(node.id)} does not match the "agent:<persona_id>" contract`,
+      );
+    }
     nodes.push(node);
     nodeIds.add(node.id);
   }

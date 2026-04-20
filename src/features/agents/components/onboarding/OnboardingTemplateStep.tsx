@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine } from 'lucide-react';
-import { useLocalizedTemplateCatalog } from '@/lib/personas/templates/useLocalizedTemplateCatalog';
+import { PenLine, AlertTriangle, RefreshCw, FlaskConical } from 'lucide-react';
+import { useLocalizedTemplateCatalogStatus } from '@/lib/personas/templates/useLocalizedTemplateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
@@ -53,8 +53,9 @@ interface TemplatePickerStepProps {
 export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: TemplatePickerStepProps) {
   const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useState<string>('all');
-  const catalog = useLocalizedTemplateCatalog();
+  const { templates: catalog, phase, skipped, retry } = useLocalizedTemplateCatalogStatus();
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const errorSkips = useMemo(() => skipped.filter((s) => s.reason !== 'unpublished'), [skipped]);
 
   useEffect(() => {
     setFilterCategories(deriveCategories(catalog));
@@ -122,6 +123,58 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             </button>
           ))}
         </div>
+
+        {/* Partial-load warning: some templates were dropped during verification.
+            Shown above the grid when catalog has some templates but others failed. */}
+        {phase === 'partial' && errorSkips.length > 0 && (
+          <div className="mb-3 flex items-start gap-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-amber-300/90">
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div className="min-w-0 typo-body">
+              <p>Some templates could not be verified and were hidden.</p>
+              <p className="text-amber-300/70 mt-0.5 truncate">
+                Skipped: {errorSkips.map((s) => s.id ?? s.relPath).join(', ')}
+              </p>
+            </div>
+            <button
+              onClick={retry}
+              className="ml-auto flex-shrink-0 inline-flex items-center gap-1 rounded-card border border-amber-500/25 px-2 py-1 text-amber-300 hover:bg-amber-500/10"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Discriminated blank states — distinguishes empty catalog from
+            loading from every-template-failed so support can triage. */}
+        {phase === 'loading' && catalog.length === 0 && (
+          <div className="py-16 text-center text-foreground typo-body">Loading templates…</div>
+        )}
+        {phase === 'empty' && (
+          <div className="py-16 text-center">
+            <FlaskConical className="w-10 h-10 mx-auto text-foreground mb-3" />
+            <p className="typo-body text-foreground">No published templates available.</p>
+            <p className="typo-body text-foreground mt-1">Start from scratch below to create your own.</p>
+          </div>
+        )}
+        {phase === 'failed' && (
+          <div className="py-16 text-center">
+            <AlertTriangle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
+            <p className="typo-body text-foreground">Could not load the template catalog.</p>
+            {errorSkips.length > 0 && (
+              <p className="typo-body text-foreground/70 mt-1">
+                {errorSkips.length} template{errorSkips.length === 1 ? '' : 's'} failed integrity checks.
+              </p>
+            )}
+            <button
+              onClick={retry}
+              className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-primary/15 text-foreground border border-primary/25 hover:bg-primary/25"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Template grid with layout animation */}
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>

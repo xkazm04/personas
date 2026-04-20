@@ -18,9 +18,9 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
     availableConnectors, availableCategories, total, loadedCount,
     onCleanupDuplicates, isCleaningUp, onBackfillPipeline, isBackfillingPipeline,
     onBackfillTools, isBackfillingTools, coverageFilter, onCoverageFilterChange, coverageCounts,
-    density, onDensityChange, viewMode, onViewModeChange,
+    density, onDensityChange,
     aiSearchMode, onAiSearchToggle, aiSearchLoading, aiSearchRationale, aiSearchActive,
-    onAiSearchSubmit, aiCliLog, hasRecommendations, onOpenRecommended,
+    onAiSearchSubmit, aiCliLog,
   } = props;
 
   const { onDifficultyFilterChange, onSetupFilterChange } = props;
@@ -61,11 +61,9 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
         />
 
         <TemplateSearchControls
-          viewMode={viewMode} onViewModeChange={onViewModeChange}
           density={density} onDensityChange={onDensityChange}
           sortBy={sortBy} onSortByChange={onSortByChange} sortDir={sortDir} onSortDirChange={onSortDirChange}
           total={total} loadedCount={loadedCount}
-          hasRecommendations={hasRecommendations} onOpenRecommended={onOpenRecommended}
         />
       </div>
 
@@ -88,7 +86,7 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
       )}
 
       <TemplateSearchFilterRow
-        viewMode={viewMode} selectedCategory={selectedCategory}
+        density={density} selectedCategory={selectedCategory}
         connectorFilter={connectorFilter} onCategoryFilterChange={onCategoryFilterChange}
         onConnectorFilterChange={onConnectorFilterChange} availableConnectors={availableConnectors}
         coverageFilter={coverageFilter} onCoverageFilterChange={onCoverageFilterChange} coverageCounts={coverageCounts}

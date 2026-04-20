@@ -65,17 +65,6 @@ struct AppDetector {
 
 const KNOWN_APPS: &[AppDetector] = &[
     AppDetector {
-        connector_name: "desktop_vscode",
-        label: "VS Code",
-        category: "desktop",
-        binaries: &["code", "code.cmd", "code-insiders", "code-insiders.cmd"],
-        #[cfg(target_os = "windows")]
-        install_paths: &[
-            r"C:\Program Files\Microsoft VS Code\bin\code.cmd",
-            r"C:\Users\*\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd",
-        ],
-    },
-    AppDetector {
         connector_name: "desktop_docker",
         label: "Docker",
         category: "desktop",
@@ -86,23 +75,19 @@ const KNOWN_APPS: &[AppDetector] = &[
         ],
     },
     AppDetector {
-        connector_name: "desktop_terminal",
-        label: "Terminal",
-        category: "desktop",
-        binaries: &["bash", "powershell.exe", "pwsh.exe", "pwsh", "zsh"],
-        #[cfg(target_os = "windows")]
-        install_paths: &[
-            r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
-        ],
-    },
-    AppDetector {
         connector_name: "desktop_obsidian",
         label: "Obsidian",
         category: "desktop",
         binaries: &["obsidian", "obsidian.exe"],
+        // Obsidian is typically NOT on PATH on Windows; it installs per-user under
+        // %LOCALAPPDATA%. Both the legacy `...\Obsidian\Obsidian.exe` layout and
+        // the newer `...\Programs\Obsidian\Obsidian.exe` layout are supported.
         #[cfg(target_os = "windows")]
         install_paths: &[
+            r"C:\Users\*\AppData\Local\Programs\Obsidian\Obsidian.exe",
             r"C:\Users\*\AppData\Local\Obsidian\Obsidian.exe",
+            r"C:\Program Files\Obsidian\Obsidian.exe",
+            r"C:\Program Files (x86)\Obsidian\Obsidian.exe",
         ],
     },
     AppDetector {
@@ -308,7 +293,6 @@ async fn get_all_running_processes() -> std::collections::HashSet<String> {
 /// Check if any of a connector's known process names are in the cached process list.
 fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSet<String>) -> bool {
     let process_names: &[&str] = match connector_name {
-        "desktop_vscode" => &["code", "code.exe"],
         "desktop_docker" => &["docker", "docker desktop.exe", "dockerd"],
         "desktop_obsidian" => &["obsidian", "obsidian.exe"],
         "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe"],

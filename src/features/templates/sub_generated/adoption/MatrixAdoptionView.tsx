@@ -12,7 +12,6 @@ const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
-import { PersonaChronologyChain } from "./chronology/PersonaChronologyChain";
 import { PersonaChronologyWildcard } from "./chronology/PersonaChronologyWildcard";
 import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
 import { UseCasePickerStep, type UseCaseOption } from "./UseCasePickerStep";
@@ -337,7 +336,6 @@ type MatrixVariant =
   | "original"
   | "glass"
   | "blueprint"
-  | "chrono-chain"
   | "chrono-wildcard";
 
 /** Map themes to their preferred matrix visual variant. */
@@ -354,10 +352,9 @@ function getThemeVariant(themeId: ThemeId): MatrixVariant {
   return THEME_VARIANT_MAP[themeId] ?? "original";
 }
 
-/** Only the experimental chronology prototypes are exposed through the
- * in-view tab switcher. The legacy variants remain theme-driven. */
+/** The Wildcard prototype is the go-to multi-use-case view, exposed through
+ * the in-view tab switcher alongside the legacy theme-driven variants. */
 const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
-  { id: "chrono-chain", label: "Chain", sub: "8-col table · thin rows" },
   { id: "chrono-wildcard", label: "Wildcard", sub: "constellation · cards" },
 ];
 
@@ -1010,7 +1007,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           When neither is selected, the theme-mapped legacy variant renders. */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/50 mr-1">
-          Prototype:
+          {t.templates.chronology.prototype_label}
         </span>
         {CHRONO_TABS.map((tab) => {
           const active = matrixVariant === tab.id;
@@ -1031,12 +1028,12 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
             </button>
           );
         })}
-        {(matrixVariant === "chrono-chain" || matrixVariant === "chrono-wildcard") && (
+        {matrixVariant === "chrono-wildcard" && (
           <button
             onClick={() => setMatrixVariant(getThemeVariant(themeId))}
             className="text-[10px] uppercase tracking-wider text-foreground/50 hover:text-foreground cursor-pointer ml-1 px-2 py-1"
           >
-            ← Back to legacy
+            {t.templates.chronology.back_to_legacy}
           </button>
         )}
       </div>
@@ -1096,25 +1093,26 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           onViewAgent={handleViewAgent}
         />
       )}
-      {matrixVariant === "chrono-chain" && (
-        <PersonaChronologyChain
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildActivity={build.buildActivity}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onViewAgent={handleViewAgent}
-        />
-      )}
       {matrixVariant === "chrono-wildcard" && (
         <PersonaChronologyWildcard
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}
           buildActivity={build.buildActivity}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
           onStartTest={lifecycle.handleStartTest}
           onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
           onViewAgent={handleViewAgent}
         />
       )}

@@ -6,7 +6,7 @@
  * Run with:
  *   node scripts/generate-connector-seed.mjs
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,5 +83,12 @@ ${entries.join(',\n')}
 ];
 `;
 
-writeFileSync(OUTPUT_FILE, output, 'utf-8');
-console.log(`Generated ${OUTPUT_FILE} with ${entries.length} connectors`);
+// Skip write if content is identical to avoid unnecessary Rust rebuilds when
+// this script runs on every `predev` / `prebuild`.
+const existing = existsSync(OUTPUT_FILE) ? readFileSync(OUTPUT_FILE, 'utf-8') : null;
+if (existing === output) {
+  console.log(`Connector seed up to date (${entries.length} connectors, no change)`);
+} else {
+  writeFileSync(OUTPUT_FILE, output, 'utf-8');
+  console.log(`Generated ${OUTPUT_FILE} with ${entries.length} connectors`);
+}

@@ -4,6 +4,56 @@
 //!
 //! Error classification is delegated to the unified [`super::error_taxonomy`]
 //! module. This module re-exports the shared types for backwards compatibility.
+//!
+//! # Three counters, three scopes
+//!
+//! [`diagnose`] consumes three independent failure counters. Each is scoped
+//! differently and interacts with a distinct escalation lever. Reviewing this
+//! module in isolation obscures how they combine — this table is the canonical
+//! overview. When touching healing policy, update the table too.
+//!
+//! | Counter               | Scope                  | Threshold constant        | Effect when threshold reached                       |
+//! | --------------------- | ---------------------- | ------------------------- | --------------------------------------------------- |
+//! | `retry_count`         | Per execution chain    | [`MAX_RETRY_COUNT`] = 3   | Retryable actions escalate to `CreateIssue`         |
+//! | `consecutive_failures`| Per persona (recent)   | _no hard cap_             | Feeds the exponential backoff: `30s << consecutive` |
+//! | `occurrence_count`    | Fleet-wide (KB hint)   | `KB_ESCALATION_THRESHOLD` = 5 | Skip retries entirely, jump straight to `CreateIssue` |
+//!
+//! ## Decision table
+//!
+//! Rows: failure category. Columns: which counter/state wins. "→" marks the
+//! resulting [`HealingAction`].
+//!
+//! | Category        | `retry_count < MAX` & no KB hint      | `retry_count >= MAX` OR KB `occurrence >= 5` | Notes                                       |
+//! | --------------- | ------------------------------------- | -------------------------------------------- | ------------------------------------------- |
+//! | `RateLimit`     | → `RetryWithBackoff` (KB delay wins)  | → `CreateIssue`                              | `consecutive_failures` drives exponent      |
+//! | `Timeout`       | → `RetryWithTimeout` (×2, capped)     | → `CreateIssue`                              | New timeout capped at [`MAX_TIMEOUT_MS`]    |
+//! | `External`      | → `RetryWithBackoff`                  | → `CreateIssue`                              | Treated like `RateLimit` w/r/t retries      |
+//! | `Transient`     | → `RetryWithBackoff`                  | → `CreateIssue`                              | Short fixed backoff, ignores `consecutive`  |
+//! | `Config`        | → `AiHealing` (unconditional)         | → `AiHealing`                                | Retries don't help a bad config             |
+//! | `Credential`    | → `CreateIssue` (unconditional)       | → `CreateIssue`                              | Human must rotate creds                     |
+//! | `Unknown`       | → `CreateIssue` (unconditional)       | → `CreateIssue`                              | Safe default                                |
+//!
+//! ## Priority when multiple counters apply
+//!
+//! 1. **KB preemptive escalation first**: if `occurrence_count >= KB_ESCALATION_THRESHOLD`,
+//!    retryable categories jump straight to `CreateIssue` regardless of
+//!    `retry_count`. The fleet-wide signal overrides the per-chain budget.
+//! 2. **Chain retry budget second**: if `retry_count >= MAX_RETRY_COUNT`,
+//!    retryable categories escalate to `CreateIssue`.
+//! 3. **Backoff last**: only when neither escalation fires do we compute a
+//!    delay. KB `recommended_delay_secs` overrides exponential backoff when
+//!    present (so fleet wisdom can downshift a pathological backoff).
+//!
+//! ## Worked examples
+//!
+//! - `RateLimit`, `consecutive_failures=2`, `retry_count=3`, no KB hint
+//!   → `retry_count >= MAX_RETRY_COUNT` wins → `CreateIssue`.
+//! - `RateLimit`, `consecutive_failures=2`, `retry_count=1`, no KB hint
+//!   → `RetryWithBackoff { delay_secs: min(30 << 2, MAX_BACKOFF_SECS) }` = 120s.
+//! - `RateLimit`, `consecutive_failures=0`, `retry_count=0`, KB `occurrence_count=6`
+//!   → `occurrence_count >= KB_ESCALATION_THRESHOLD` wins → `CreateIssue`.
+//! - `Timeout`, `retry_count=2`, current 60s, no KB hint
+//!   → `RetryWithTimeout { new_timeout_ms: min(60_000*2, MAX_TIMEOUT_MS) }`.
 
 pub use super::error_taxonomy::ErrorCategory as FailureCategory;
 pub use super::error_taxonomy::{classify_error, is_auto_fixable};
@@ -57,6 +107,10 @@ pub struct KnowledgeHint {
 }
 
 /// Produce a full [`HealingDiagnosis`] with a recommended action.
+///
+/// See the module-level doc comment for the full decision table covering how
+/// [`MAX_RETRY_COUNT`] (per-chain), `consecutive_failures` (per-persona), and
+/// [`KnowledgeHint::occurrence_count`] (fleet-wide) interact.
 ///
 /// `consecutive_failures` is the number of recent consecutive failures for the
 /// same persona -- used to escalate backoff or switch from retry to manual issue.

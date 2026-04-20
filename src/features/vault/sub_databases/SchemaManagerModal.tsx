@@ -6,6 +6,7 @@ import { ThemedConnectorIcon } from '@/features/shared/components/display/Connec
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';
@@ -63,8 +64,18 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
       useVaultStore.setState((s) => ({
         credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
       }));
-    } catch { /* intentional: non-critical -- rename is best-effort */ }
-    setIsEditingName(false);
+      // Success: close the editor and sync the draft field to the new name.
+      setIsEditingName(false);
+      setEditName(updated.name);
+    } catch (err) {
+      // Failure: surface the error and KEEP the editor open so the user can
+      // retry or fix the name. Previously this was a silent best-effort catch
+      // that closed the editor and left the user staring at the old name.
+      toastCatch(
+        'SchemaManagerModal:saveName',
+        `Could not rename credential. ${trimmed !== credential.name ? 'The old name is still saved.' : ''}`.trim(),
+      )(err);
+    }
   }, [credential.id, credential.name, editName]);
 
   const fetchDbSchemaTables = useVaultStore((s) => s.fetchDbSchemaTables);

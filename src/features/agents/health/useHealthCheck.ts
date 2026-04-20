@@ -1,3 +1,26 @@
+/**
+ * Health-check module.
+ *
+ * ## Error policy for best-effort sub-checks
+ *
+ * A health check aggregates several independent sub-checks (design feasibility,
+ * config-warnings, etc.). Any sub-check that is *enrichment* — i.e. its failure
+ * does not invalidate the rest of the health score — follows this contract:
+ *
+ *   1. Route the error through [`silentCatch`] so Sentry gets a breadcrumb.
+ *      An empty `catch {}` is never acceptable — "healthy" must never mean
+ *      "the backend command threw and we pretended it was fine".
+ *   2. Append a single **info-severity** issue to the result noting that the
+ *      sub-check could not run, with enough context for the user to see that
+ *      the score is incomplete.
+ *   3. Never throw out of the main check. Other sub-checks still produce
+ *      useful signal; a transient IPC failure in one must not blank the tab.
+ *
+ * This policy is documented in one place (here) and applied consistently to
+ * the `get_persona_config_warnings` fetch below. New best-effort sub-checks
+ * MUST follow the same three-step shape or justify a deviation inline.
+ */
+
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
 import { useVaultStore } from "@/stores/vaultStore";

@@ -1,5 +1,4 @@
 export { default as GeneratedReviewsTab } from './cards/GeneratedReviewsTab';
-export type { ViewMode } from './cards/GeneratedReviewsTab';
 export { TemplateSearchBar } from './search/TemplateSearchBar';
 export { TemplateCard } from './cards/renderers/TemplateCard';
 export { TemplateDetailModal } from './modals/TemplateDetailModal';
@@ -25,7 +24,6 @@ export { AiSearchStatusBar } from './search/suggestions/AiSearchStatusBar';
 export { FilterChips } from './search/filters/FilterChips';
 export { SearchAutocomplete } from './search/suggestions/SearchAutocomplete';
 export { DensityToggle, type Density } from './search/filters/DensityToggle';
-export { ExploreView } from './explore/ExploreView';
 export { RoleGroupCard } from './explore/RoleGroupCard';
 export { AutomationOpportunitiesRail } from './explore/AutomationOpportunitiesRail';
 export { useAutomationDiscovery, type AutomationOpportunity } from './explore/useAutomationDiscovery';

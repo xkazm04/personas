@@ -99,26 +99,16 @@ export interface PlanExecutionResult {
 
 // -- Bridge metadata --------------------------------------------------
 
-export type BridgeName = "vscode" | "docker" | "terminal" | "obsidian";
+export type BridgeName = "docker" | "obsidian";
 
 export const BRIDGE_INFO: Record<
   BridgeName,
   { label: string; description: string; connector: string }
 > = {
-  vscode: {
-    label: "VS Code",
-    description: "Open files, manage extensions, run tasks",
-    connector: "desktop_vscode",
-  },
   docker: {
     label: "Docker",
     description: "Manage containers, images, and compose stacks",
     connector: "desktop_docker",
-  },
-  terminal: {
-    label: "Terminal",
-    description: "Execute commands, read/write files",
-    connector: "desktop_terminal",
   },
   obsidian: {
     label: "Obsidian",

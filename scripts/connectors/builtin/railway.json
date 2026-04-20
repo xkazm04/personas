@@ -1,0 +1,43 @@
+{
+  "id": "builtin-railway",
+  "name": "railway",
+  "label": "Railway",
+  "color": "#0B0D0E",
+  "icon_url": "/icons/connectors/railway.svg",
+  "category": "cloud",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Create an account-level token at railway.app/account/tokens",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://backboard.railway.com/graphql/v2",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"query\":\"query { me { email } }\"}",
+    "description": "Validates token via GraphQL me query"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Railway deployment platform for running services, databases, and cron jobs.",
+    "auth_type": "pat",
+    "auth_type_label": "API Token",
+    "docs_url": "https://docs.railway.com/reference/public-api",
+    "setup_guide": "1. Go to railway.app/account/tokens\n2. Click 'Create Token' and give it a name\n3. Copy the token and paste here",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}
+    ]
+  }
+}

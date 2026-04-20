@@ -356,13 +356,31 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   },
 
   updateTeamMemory: async (id, title, content, category, importance) => {
+    // Mirror deleteTeamMemory / updateTeamConnection: optimistic set first,
+    // then rollback in catch. Prevents the UI from showing stale data on a
+    // partial-success write (save appears to succeed, reload reveals the
+    // change is gone — classic trust-eroding divergence).
     const prev = get().teamMemories;
+    const optimistic = prev.map((m) =>
+      m.id === id
+        ? {
+            ...m,
+            ...(title !== undefined && { title }),
+            ...(content !== undefined && { content }),
+            ...(category !== undefined && { category }),
+            ...(importance !== undefined && { importance }),
+          }
+        : m,
+    );
+    set({ teamMemories: optimistic });
     try {
       const updated = await updateTeamMemory(id, title, content, category, importance);
+      // Reconcile with the authoritative backend record.
       set({
-        teamMemories: prev.map((m) => (m.id === id ? updated : m)),
+        teamMemories: get().teamMemories.map((m) => (m.id === id ? updated : m)),
       });
     } catch (err) {
+      set({ teamMemories: prev });
       reportError(err, "Failed to update memory", set);
     }
   },

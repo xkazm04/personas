@@ -66,8 +66,6 @@
     "zapier": "devops",
     "auth0": "devops",
     "okta": "devops",
-    "desktop_vscode": "devops",
-    "desktop_terminal": "devops",
     "desktop_docker": "devops",
 
     "jira": "project-mgmt",

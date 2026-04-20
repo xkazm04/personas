@@ -3,7 +3,7 @@
   "name": "local_drive",
   "label": "Local Drive",
   "color": "#0EA5E9",
-  "icon_url": "/icons/connectors/local-drive.svg",
+  "icon_url": "/illustrations/logo-v1-geometric-nobg.png",
   "category": "storage",
   "fields": [],
   "healthcheck_config": null,

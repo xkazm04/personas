@@ -188,10 +188,8 @@ async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
 
 /// Desktop connector names that map to `desktop_discovery` app entries.
 const DESKTOP_CONNECTOR_MAP: &[(&str, &str)] = &[
-    ("desktop_vscode", "VS Code"),
     ("desktop_docker", "Docker"),
     ("desktop_obsidian", "Obsidian"),
-    ("desktop_terminal", "Terminal"),
     ("desktop_browser", "Browser (Chrome/Edge)"),
 ];
 

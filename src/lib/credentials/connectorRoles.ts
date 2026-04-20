@@ -133,9 +133,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   role('tool_gateway',        ['mcp_gateway', 'arcade']),
 
   // -- Desktop Apps --------------------------------------------
-  role('code_editor',         ['desktop_vscode']),
   role('container_runtime',   ['desktop_docker']),
-  role('shell',               ['desktop_terminal']),
   role('note_taking',         ['desktop_obsidian', 'obsidian']),
   role('browser_automation',  ['desktop_browser', 'apify']),
 ];
@@ -204,7 +202,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   purposeGroup('messaging',      ['chat_messaging']),
   purposeGroup('email',          ['email_delivery', 'sms']),
   purposeGroup('notifications',  ['notifications']),
-  purposeGroup('devops',         ['source_control', 'ci_cd', 'feature_flags', 'auth_identity', 'code_editor', 'container_runtime', 'shell', 'browser_automation']),
+  purposeGroup('devops',         ['source_control', 'ci_cd', 'feature_flags', 'auth_identity', 'container_runtime', 'browser_automation']),
   purposeGroup('project-mgmt',   ['project_tracking']),
   purposeGroup('productivity',   ['knowledge_base', 'search_engine', 'video_comms', 'note_taking', 'e_signature']),
   purposeGroup('design',         ['design']),

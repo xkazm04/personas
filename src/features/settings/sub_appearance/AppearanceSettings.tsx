@@ -7,6 +7,7 @@ import type { ThemeId, ThemeDefinition, TextScale } from '@/stores/themeStore';
 import { VIEW_MODES } from '@/lib/constants/uiModes';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { ModePreviewsPanel } from './components/previews/ModePreviewsPanel';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -110,6 +111,9 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
+          {/* Simple-mode redesign previews (temporary prototype surface) */}
+          <ModePreviewsPanel />
+
           {/* View mode toggle */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <div className="flex items-center gap-2.5">

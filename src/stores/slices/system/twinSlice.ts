@@ -9,6 +9,11 @@ import type { TwinCommunication } from "@/lib/bindings/TwinCommunication";
 import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
 import * as twinApi from "@/api/twin/twin";
+import type {
+  TwinChannelKind,
+  TwinInteractionDirection,
+  TwinPendingMemoryStatus,
+} from "@/api/enums";
 
 // ============================================================================
 // Twin slice (P0 + P1 + P2)
@@ -71,7 +76,7 @@ export interface TwinSlice {
   fetchTwinTones: (twinId: string) => Promise<void>;
   upsertTwinTone: (
     twinId: string,
-    channel: string,
+    channel: TwinChannelKind,
     voiceDirectives: string,
     examplesJson?: string | null,
     constraintsJson?: string | null,
@@ -84,15 +89,15 @@ export interface TwinSlice {
   unbindTwinKnowledgeBase: (twinId: string) => Promise<void>;
 
   // -- Pending memory actions (P2) -------------------------------------
-  fetchTwinPendingMemories: (twinId: string, status?: string) => Promise<void>;
+  fetchTwinPendingMemories: (twinId: string, status?: TwinPendingMemoryStatus) => Promise<void>;
   reviewTwinMemory: (id: string, approved: boolean, reviewerNotes?: string) => Promise<void>;
 
   // -- Communication actions (P2) --------------------------------------
-  fetchTwinCommunications: (twinId: string, channel?: string, limit?: number) => Promise<void>;
+  fetchTwinCommunications: (twinId: string, channel?: TwinChannelKind, limit?: number) => Promise<void>;
   recordTwinInteraction: (
     twinId: string,
-    channel: string,
-    direction: string,
+    channel: TwinChannelKind,
+    direction: TwinInteractionDirection,
     content: string,
     contactHandle?: string,
     summary?: string,
@@ -117,7 +122,7 @@ export interface TwinSlice {
   fetchTwinChannels: (twinId: string) => Promise<void>;
   createTwinChannel: (
     twinId: string,
-    channelType: string,
+    channelType: TwinChannelKind,
     credentialId: string,
     personaId?: string,
     label?: string,

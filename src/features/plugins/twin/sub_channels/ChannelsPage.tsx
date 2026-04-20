@@ -7,6 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
+import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { CoachMark } from '../CoachMark';
@@ -112,7 +113,7 @@ export default function ChannelsPage() {
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   const [adding, setAdding] = useState(false);
-  const [newType, setNewType] = useState('discord');
+  const [newType, setNewType] = useState<TwinChannelKind>('discord');
   const [newCredId, setNewCredId] = useState('');
   const [newPersonaId, setNewPersonaId] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -252,7 +253,7 @@ export default function ChannelsPage() {
                     filterable
                     options={channelOptions}
                     value={newType}
-                    onValueChange={setNewType}
+                    onValueChange={(v) => setNewType(v as TwinChannelKind)}
                     placeholder={t.channels.selectChannel}
                   />
                 </div>

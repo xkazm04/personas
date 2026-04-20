@@ -57,7 +57,8 @@ export function useGalleryActions(
       if (score === 100) ready++;
       else if (score > 0) partial++;
     }
-    return { all: unfilteredTotal ?? total, ready, partial };
+    void unfilteredTotal;
+    return { all: total, ready, partial };
   }, [readinessScores, total, unfilteredTotal]);
 
   // -- Available architectural components ----------------------------

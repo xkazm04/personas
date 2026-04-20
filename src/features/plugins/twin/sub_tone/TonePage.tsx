@@ -8,6 +8,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { CoachMark } from '../CoachMark';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
+import type { TwinChannelKind } from '@/api/enums';
 
 /**
  * Tone tab — per-channel voice directive editor.
@@ -90,7 +91,11 @@ export default function TonePage() {
     try {
       await upsertTwinTone(
         activeTwinId,
-        channel,
+        // Channel strings here originate from the tone-page's fixed channel
+        // list (see `t.tone.channels`), which the Rust handler keeps in sync
+        // with TwinChannelKind. Cast is safe as long as that registry stays
+        // aligned — the runtime also validates it.
+        channel as TwinChannelKind,
         f.voiceDirectives,
         f.examplesJson.trim() || null,
         f.constraintsJson.trim() || null,

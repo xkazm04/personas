@@ -32,8 +32,6 @@ export interface TemplateSearchBarProps {
   // Density & view mode
   density?: Density;
   onDensityChange?: (d: Density) => void;
-  viewMode?: 'list' | 'explore';
-  onViewModeChange?: (v: 'list' | 'explore') => void;
   // AI search
   aiSearchMode?: boolean;
   onAiSearchToggle?: () => void;
@@ -42,9 +40,6 @@ export interface TemplateSearchBarProps {
   aiSearchActive?: boolean;
   onAiSearchSubmit?: (query: string) => void;
   aiCliLog?: string[];
-  // Recommended
-  hasRecommendations?: boolean;
-  onOpenRecommended?: () => void;
   // Difficulty & setup filters
   onDifficultyFilterChange?: (values: string[]) => void;
   onSetupFilterChange?: (values: string[]) => void;

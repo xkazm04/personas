@@ -22,6 +22,62 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("event-bridge");
 
 // ---------------------------------------------------------------------------
+// Timing constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Named timing knobs for every subscription in this file. Every value here
+ * was chosen deliberately — edit only with a matching update to the
+ * "What breaks if" note so future readers don't treat these as arbitrary.
+ */
+const EVENT_BRIDGE_TIMING = {
+  /**
+   * Debounce for `AUTH_STATE_CHANGED`. A successful OAuth fires several
+   * consecutive state events in <50ms; coalescing into one update avoids a
+   * brief "unauthenticated → authenticated → unauthenticated" flicker in
+   * the UI. Halving to 50ms stops coalescing; doubling to 200ms makes
+   * post-login chrome visibly lag.
+   */
+  AUTH_STATE_DEBOUNCE_MS: 100,
+  /**
+   * Debounce for `PERSONA_HEALTH_CHANGED`. Chain triggers routinely fire
+   * several health events in ~200ms; one `fetchPersonaSummaries` is enough.
+   * Halving causes duplicate fetches; doubling delays the dashboard update
+   * past the point the user expects to see it.
+   */
+  PERSONA_HEALTH_DEBOUNCE_MS: 300,
+  /**
+   * Throttle for `NETWORK_SNAPSHOT_UPDATED`. The Rust P2P engine can emit
+   * snapshots faster than React can re-render them. Halving causes dropped
+   * frames during peer churn; doubling lets the dock stale-render connection
+   * counts for a visibly long time.
+   */
+  NETWORK_SNAPSHOT_THROTTLE_MS: 500,
+  /**
+   * Fallback delay for backend template integrity verification when the
+   * browser has no `requestIdleCallback`. Idle is preferred, but Safari-like
+   * engines need an explicit deferral. Halving competes with startup IPC;
+   * doubling leaves templates unverified for longer on those platforms.
+   */
+  TEMPLATE_VERIFICATION_FALLBACK_MS: 3_000,
+  /**
+   * Auth login timeout tripwire documented in comments on
+   * `AUTH_STATE_CHANGED`: if no state event arrives 120s after login is
+   * initiated, the login is cancelled. Defined here for reference; the
+   * actual timer lives in `authStore`.
+   */
+  AUTH_LOGIN_TIMEOUT_MS: 120_000,
+  /**
+   * Concurrent IPC calls during cold-start listener registration.
+   * Tauri's IPC bridge can serialize but not parallelize beyond its thread
+   * pool, and starting >5 listeners in parallel on a cold app produced
+   * noticeable jank in profiling. Halving under-uses the pool; doubling
+   * regresses startup latency on slow machines.
+   */
+  INIT_BATCH_SIZE: 5,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -79,7 +135,7 @@ const registry: EventRegistration[] = [
                 window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
               }
             }
-          }, 100);
+          }, EVENT_BRIDGE_TIMING.AUTH_STATE_DEBOUNCE_MS);
         },
       );
 
@@ -352,10 +408,23 @@ const registry: EventRegistration[] = [
             networkConsecutiveFailures: 0,
             networkError: null,
           };
-          if (!throttleTimer) throttleTimer = setTimeout(flush, 500);
+          if (!throttleTimer) throttleTimer = setTimeout(flush, EVENT_BRIDGE_TIMING.NETWORK_SNAPSHOT_THROTTLE_MS);
         },
       );
-      return [unlisten, () => { if (throttleTimer) clearTimeout(throttleTimer); flush(); }];
+      // Teardown contract: cancel the pending throttle timer AND drop the
+      // pending snapshot. Previously this flushed one last setState on the
+      // way out, which committed a stale network status into a store that
+      // was about to be reset (HMR, logout), producing ghost-network rows
+      // in tests and briefly after logout. Teardown must not mutate app
+      // state — if a snapshot is in flight, it's discarded.
+      return [
+        unlisten,
+        () => {
+          if (throttleTimer) clearTimeout(throttleTimer);
+          throttleTimer = null;
+          pending = undefined;
+        },
+      ];
     },
   },
 
@@ -374,7 +443,7 @@ const registry: EventRegistration[] = [
           debounceTimer = setTimeout(() => {
             debounceTimer = null;
             useAgentStore.getState().fetchPersonaSummaries();
-          }, 300);
+          }, EVENT_BRIDGE_TIMING.PERSONA_HEALTH_DEBOUNCE_MS);
         },
       );
       return [unlisten];
@@ -420,8 +489,8 @@ export async function initAllListeners(): Promise<void> {
   attached = true;
 
   // Register listeners in small batches to avoid flooding the IPC bridge.
-  // 5 concurrent IPC calls is a safe throughput ceiling for cold-start.
-  const BATCH_SIZE = 5;
+  // See EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE for the rationale.
+  const BATCH_SIZE = EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE;
   for (let i = 0; i < registry.length; i += BATCH_SIZE) {
     const batch = registry.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
@@ -449,7 +518,7 @@ export async function initAllListeners(): Promise<void> {
       void import("@/lib/personas/templates/templateCatalog").then((m) =>
         m.verifyTemplatesWithBackend(),
       );
-    }, 3_000);
+    }, EVENT_BRIDGE_TIMING.TEMPLATE_VERIFICATION_FALLBACK_MS);
   }
 }
 

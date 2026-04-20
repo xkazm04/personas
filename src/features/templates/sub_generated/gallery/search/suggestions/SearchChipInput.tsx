@@ -34,7 +34,7 @@ function SearchChipInputImpl({
   const showAutocomplete = !!autocompletePrefix && !aiSearchMode;
 
   return (
-    <div className={`relative flex-1 min-w-0 flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-modal transition-all ${
+    <div className={`relative flex-1 min-w-0 max-w-[400px] flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-modal transition-all ${
       aiSearchMode
         ? 'border-indigo-500/20 focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20'
         : 'border-primary/10 focus-within:border-violet-500/30 focus-within:ring-1 focus-within:ring-violet-500/20'
@@ -103,7 +103,7 @@ function SearchChipInputImpl({
             : aiSearchMode ? t.templates.search.placeholder_ai
             : t.templates.search.placeholder_default
         }
-        className="flex-1 min-w-[120px] py-2 pr-10 typo-body bg-transparent text-foreground/90 placeholder:text-foreground focus-visible:outline-none"
+        className="flex-1 min-w-[120px] py-2 pr-10 typo-body bg-transparent text-foreground/90 placeholder:text-foreground/40 focus-visible:outline-none"
       />
 
       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { silentCatch } from "@/lib/silentCatch";
@@ -31,6 +31,16 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setCopiedCell(null), 2000);
   }, []);
+
+  // Cancel the 2s copy-flash timer if the modal closes while it's still
+  // pending. Without this, setCopiedCell fires on an unmounted component
+  // (React warning + a retention path holding the prior result set).
+  useEffect(
+    () => () => {
+      clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   const copyToClipboard = useCallback((text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => flashCopied(key)).catch(silentCatch("QueryResultTable:copyToClipboard"));

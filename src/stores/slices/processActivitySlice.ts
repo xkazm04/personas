@@ -1,5 +1,22 @@
 import type { StateCreator } from "zustand";
 
+/**
+ * Every status an {@link ActiveProcess} can hold. Acts as the single source
+ * of truth for the FSM — `clearNonActive` is written against this list so
+ * adding a status forces an explicit "survives clear?" decision at the
+ * switch statement below rather than silently inheriting a default.
+ */
+export const ACTIVE_PROCESS_STATUSES = [
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+  "queued",
+  "input_required",
+  "draft_ready",
+] as const;
+export type ActiveProcessStatus = (typeof ACTIVE_PROCESS_STATUSES)[number];
+
 export interface ProcessNavigateTo {
   /** Sidebar section to navigate to */
   section: string;
@@ -16,7 +33,7 @@ export interface ActiveProcess {
   runId?: string;
   label?: string;
   startedAt: number;
-  status: "running" | "completed" | "failed" | "cancelled" | "queued" | "input_required" | "draft_ready";
+  status: ActiveProcessStatus;
   toolCallCount: number;
   costUsd: number;
   lastEvent?: string;
@@ -55,14 +72,70 @@ export interface ProcessActivitySlice {
     personaId?: string,
   ) => void;
   processPromoted: (executionId: string) => void;
-  /** Remove all non-running processes (queued, action_required, draft_ready) and recent history. */
+  /**
+   * Remove every non-`running` entry in `activeProcesses` plus all recent
+   * history. Concretely, drops: `queued`, `input_required`, `draft_ready`,
+   * `completed`, `failed`, `cancelled` — i.e. everything in
+   * {@link ACTIVE_PROCESS_STATUSES} except `"running"`.
+   *
+   * Historical note: earlier doc-comments referenced `"action_required"`,
+   * which was the pre-rename label for today's `"input_required"`. There is
+   * no `"action_required"` value anywhere in the codebase — the status is
+   * `"input_required"` everywhere (see `status_tokens` in `src/i18n/en.ts`).
+   */
   clearNonActive: () => void;
 }
 
 const MAX_RECENT = 10;
 
+/**
+ * Build a storage key from `(domain, runId)`.
+ *
+ * ## Invariant
+ * Neither `domain` nor `runId` may contain `":"`. Execution IDs are UUIDs
+ * and domain names are lowercase identifiers today, so the invariant holds —
+ * but we enforce it here so a future "namespaced" ID scheme like
+ * `"workspace:123"` can't silently collide with another run:
+ *
+ *   processKey("build", "x:y")   vs   processKey("build:x", "y")
+ *
+ * both naively produce `"build:x:y"`. Instead of picking one, we guard at
+ * the construction site.
+ */
 function processKey(domain: string, runId?: string): string {
+  if (domain.includes(":")) {
+    throw new Error(
+      `processKey: domain contains ":" which conflicts with the key separator (got ${JSON.stringify(domain)})`,
+    );
+  }
+  if (runId !== undefined && runId.includes(":")) {
+    throw new Error(
+      `processKey: runId contains ":" which conflicts with the key separator (got ${JSON.stringify(runId)})`,
+    );
+  }
   return runId ? `${domain}:${runId}` : domain;
+}
+
+/**
+ * Look up an `activeProcesses` key using the same fallback rules as
+ * [`enrichProcess`] / [`updateProcessStatus`]: exact `domain[:runId]` match
+ * first, then a `domain:*` prefix fallback when no runId was provided. This
+ * symmetry is why the store used to leak `running` rows when a caller
+ * emitted `processEnded("domain")` for a process that had been stored under
+ * `"domain:runId"`.
+ */
+function findProcessKey(
+  activeProcesses: Record<string, ActiveProcess>,
+  domain: string,
+  runId?: string,
+): string | null {
+  const exact = runId ? processKey(domain, runId) : domain;
+  if (exact in activeProcesses) return exact;
+  if (!runId) {
+    const match = Object.keys(activeProcesses).find((k) => k.startsWith(`${domain}:`));
+    if (match) return match;
+  }
+  return null;
 }
 
 export const createProcessActivitySlice: StateCreator<
@@ -94,8 +167,13 @@ export const createProcessActivitySlice: StateCreator<
   },
 
   processEnded: (domain, action, runId) => {
-    const key = processKey(domain, runId);
     set((state) => {
+      // Mirror the prefix-match fallback in enrichProcess / updateProcessStatus
+      // so `processEnded("execution")` can still reap a row stored under
+      // `"execution:<id>"`. Without this, async enrichment that added the
+      // runId would leave a "running" row forever after completion.
+      const key = findProcessKey(state.activeProcesses, domain, runId);
+      if (!key) return state;
       const process = state.activeProcesses[key];
       if (!process) return state;
 
@@ -108,14 +186,9 @@ export const createProcessActivitySlice: StateCreator<
   },
 
   enrichProcess: (domain, updates) => {
-    // Try exact domain key first, then look for domain:* prefix
     set((state) => {
-      let key = domain;
-      if (!(key in state.activeProcesses)) {
-        const match = Object.keys(state.activeProcesses).find((k) => k.startsWith(`${domain}:`));
-        if (match) key = match;
-        else return state;
-      }
+      const key = findProcessKey(state.activeProcesses, domain);
+      if (!key) return state;
       const existing = state.activeProcesses[key];
       if (!existing) return state;
 
@@ -135,12 +208,8 @@ export const createProcessActivitySlice: StateCreator<
 
   updateProcessStatus: (domain, status, opts) => {
     set((state) => {
-      let key = opts?.runId ? processKey(domain, opts.runId) : domain;
-      if (!(key in state.activeProcesses)) {
-        const match = Object.keys(state.activeProcesses).find((k) => k.startsWith(`${domain}:`));
-        if (match) key = match;
-        else return state;
-      }
+      const key = findProcessKey(state.activeProcesses, domain, opts?.runId);
+      if (!key) return state;
       const existing = state.activeProcesses[key];
       if (!existing) return state;
 
@@ -205,9 +274,37 @@ export const createProcessActivitySlice: StateCreator<
     set((state) => {
       const kept: Record<string, ActiveProcess> = {};
       for (const [key, proc] of Object.entries(state.activeProcesses)) {
-        if (proc.status === "running") kept[key] = proc;
+        // Explicit switch rather than `!== 'running'` so adding a new value to
+        // ACTIVE_PROCESS_STATUSES is a TypeScript exhaustiveness error here
+        // instead of silently inheriting "dropped" semantics.
+        if (shouldSurviveClearNonActive(proc.status)) kept[key] = proc;
       }
       return { activeProcesses: kept, recentProcesses: [] };
     });
   },
 });
+
+/**
+ * Decide whether a given {@link ActiveProcessStatus} survives
+ * [`ProcessActivitySlice.clearNonActive`]. Only `"running"` stays — every
+ * other status is ephemeral from the activity-dock's perspective. Extracted
+ * as a named predicate so adding a new status forces an explicit case here
+ * via the `never` exhaustiveness check.
+ */
+export function shouldSurviveClearNonActive(status: ActiveProcessStatus): boolean {
+  switch (status) {
+    case "running":
+      return true;
+    case "queued":
+    case "input_required":
+    case "draft_ready":
+    case "completed":
+    case "failed":
+    case "cancelled":
+      return false;
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
+  }
+}

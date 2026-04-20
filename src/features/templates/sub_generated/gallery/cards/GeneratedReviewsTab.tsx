@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-gallery');
@@ -14,21 +13,18 @@ import { useModalStack } from '../modals/useModalStack';
 import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
 import { EmptyState } from '../explore/EmptyState';
-import { ExploreView } from '../explore/ExploreView';
 import { ExploreVariantA } from '../explore/ExploreVariantA';
-import { ExploreVariantB } from '../explore/ExploreVariantB';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
+import { TemplateDetailModal } from '../modals/TemplateDetailModal';
 import { TemplateVirtualList } from './TemplateVirtualList';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useGalleryActions } from './useGalleryActions';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
-import type { ViewMode, TemplateModal } from './reviewParseCache';
+import type { TemplateModal } from './reviewParseCache';
 import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
-
-export type { ViewMode };
 
 // Re-export for barrel compatibility
 export { getCachedLightFields, getCachedDesignResult };
@@ -48,14 +44,11 @@ export default function GeneratedReviewsTab({
   onViewFlows,
   onTotalChange,
 }: Props) {
-  const { t } = useTranslation();
   const templateAdoptActive = useSystemStore((s) => s.templateAdoptActive);
   const adoptionDraft = useSystemStore((s) => s.adoptionDraft);
   const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [density, setDensityRaw] = useState<Density>('comfortable');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [exploreVariant, setExploreVariant] = useState<'classic' | 'role' | 'need'>('role');
 
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
@@ -123,7 +116,8 @@ export default function GeneratedReviewsTab({
   }
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
-  const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters;
+  const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters && density !== 'role';
+  const isRoleView = density === 'role';
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -181,8 +175,6 @@ export default function GeneratedReviewsTab({
         availableComponents={actions.availableComponents}
         density={density}
         onDensityChange={setDensity}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         aiSearchMode={gallery.aiSearchMode}
         onAiSearchToggle={() => {
           gallery.setAiSearchMode(!gallery.aiSearchMode);
@@ -193,13 +185,11 @@ export default function GeneratedReviewsTab({
         aiSearchActive={gallery.aiSearchActive}
         onAiSearchSubmit={(q) => gallery.triggerAiSearch(q)}
         aiCliLog={gallery.aiCliLog}
-        hasRecommendations={gallery.recommendedTemplates.length > 0}
-        onOpenRecommended={() => modals.open({ type: 'recommended' })}
         onDifficultyFilterChange={setDifficultyFilter}
         onSetupFilterChange={setSetupFilter}
       />
 
-      {viewMode === 'list' && showTrending && (
+      {showTrending && (
         <TrendingCarousel
           trendingTemplates={gallery.trendingTemplates}
           onSelectTemplate={(t) => {
@@ -209,82 +199,65 @@ export default function GeneratedReviewsTab({
         />
       )}
 
-      {viewMode === 'explore' ? (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Explore variant picker */}
-          <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/10 flex-shrink-0">
-            {([['role', t.templates.explore.by_role], ['need', t.templates.explore.by_need], ['classic', t.templates.explore.classic]] as const).map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setExploreVariant(id)}
-                className={`px-3 py-1.5 typo-body rounded-card transition-colors ${
-                  exploreVariant === id ? 'bg-primary/10 text-foreground font-medium' : 'text-foreground hover:text-foreground/80 hover:bg-secondary/30'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <ErrorBoundary name={`Explore ${exploreVariant}`}>
-          {exploreVariant === 'role' ? (
+      <div className="relative flex-1 flex flex-col overflow-hidden">
+        {isRoleView ? (
+          <ErrorBoundary name="Explore By Role">
             <ExploreVariantA
               availableCategories={gallery.availableCategories}
               allItems={gallery.allItems}
               readyTemplates={gallery.readyTemplates}
               userServiceTypes={credentialServiceTypesArray}
-              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
+              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setDensityRaw('comfortable'); }}
               onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
             />
-          ) : exploreVariant === 'need' ? (
-            <ExploreVariantB
-              availableCategories={gallery.availableCategories}
-              allItems={gallery.allItems}
-              readyTemplates={gallery.readyTemplates}
-              userServiceTypes={credentialServiceTypesArray}
-              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
-              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
-              onSearchFocus={() => setViewMode('list')}
-            />
-          ) : (
-            <ExploreView
-              availableCategories={gallery.availableCategories}
-              allItems={gallery.allItems}
-              readyTemplates={gallery.readyTemplates}
-              userServiceTypes={credentialServiceTypesArray}
-              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
-              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
-            />
-          )}
           </ErrorBoundary>
-        </div>
-      ) : (
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TemplateVirtualList
-          displayItems={actions.displayItems}
-          density={density}
-          expandedRow={expandedRow}
-          searchQuery={gallery.search.trim()}
-          isAiResult={gallery.aiSearchActive}
-          installedConnectorNames={actions.installedConnectorNames}
-          credentialServiceTypes={actions.credentialServiceTypes}
-          modals={modals}
-          onToggleExpand={(id, isExpanded) => setExpandedRow(isExpanded ? null : id)}
-          onViewFlows={onViewFlows}
-          onDeleteReview={actions.handleDeleteReview}
-          onAddCredential={actions.handleAddCredential}
-          rebuildReviewId={rebuild.reviewId}
-          rebuildPhase={rebuild.phase}
-          onResetRebuild={() => rebuild.resetRebuild()}
-          previewReviewId={preview.reviewId}
-          previewPhase={preview.phase}
-          onResetPreview={() => preview.resetPreview()}
-          isFetchingMore={gallery.isFetchingMore}
-          hasMore={gallery.hasMore}
-          isLoading={gallery.isLoading}
-          fetchMore={gallery.fetchMore}
+        ) : (
+          <TemplateVirtualList
+            displayItems={actions.displayItems}
+            density={density}
+            expandedRow={expandedRow}
+            searchQuery={gallery.search.trim()}
+            isAiResult={gallery.aiSearchActive}
+            installedConnectorNames={actions.installedConnectorNames}
+            credentialServiceTypes={actions.credentialServiceTypes}
+            modals={modals}
+            onToggleExpand={(id, isExpanded) => setExpandedRow(isExpanded ? null : id)}
+            onViewFlows={onViewFlows}
+            onDeleteReview={actions.handleDeleteReview}
+            onAddCredential={actions.handleAddCredential}
+            rebuildReviewId={rebuild.reviewId}
+            rebuildPhase={rebuild.phase}
+            onResetRebuild={() => rebuild.resetRebuild()}
+            previewReviewId={preview.reviewId}
+            previewPhase={preview.phase}
+            onResetPreview={() => preview.resetPreview()}
+            isFetchingMore={gallery.isFetchingMore}
+            hasMore={gallery.hasMore}
+            isLoading={gallery.isLoading}
+            fetchMore={gallery.fetchMore}
+          />
+        )}
+
+        {/* Detail modal — rendered here so `absolute inset-0` scopes it to the table area */}
+        <TemplateDetailModal
+          isOpen={modals.isOpen('detail')}
+          onClose={() => modals.close('detail')}
+          review={modals.find('detail')?.review ?? null}
+          onAdopt={(review) => modals.open({ type: 'adopt', review })}
+          onDelete={actions.handleDeleteReview}
+          onViewFlows={(review) => {
+            modals.close('detail');
+            onViewFlows(review);
+          }}
+          onTryIt={(review) => {
+            if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+              preview.resetPreview();
+            }
+            modals.close('detail');
+            modals.open({ type: 'preview', review });
+          }}
         />
       </div>
-      )}
 
       <TemplateModals
         modals={modals}

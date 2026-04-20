@@ -1,9 +1,8 @@
-import { useState, useRef, useCallback, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
-import { MoreVertical, Eye, RefreshCw, Trash2 } from 'lucide-react';
+import { MoreVertical, Eye, RefreshCw, Trash2, X } from 'lucide-react';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
+import { BaseModal } from '@/lib/ui/BaseModal';
 
 interface RowActionMenuProps {
   reviewId: string;
@@ -20,75 +19,86 @@ export function RowActionMenu({
 }: RowActionMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const closeMenu = useCallback(() => setOpen(false), []);
-  useClickOutside(menuRef, open, closeMenu);
-
-  useLayoutEffect(() => {
-    if (open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPos({ top: rect.top - 4, left: rect.right - 180 });
-    }
-  }, [open]);
+  const close = () => setOpen(false);
 
   return (
-    <div className="relative">
+    <>
       <button
-        ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation();
-          setOpen((prev) => !prev);
+          setOpen(true);
         }}
         className="p-1 rounded-card opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-secondary/60 transition-all"
         aria-label={t.templates.row_actions.row_actions_label}
       >
         <MoreVertical className="w-4.5 h-4.5 text-foreground" />
       </button>
-      {open && createPortal(
-        <div ref={menuRef} className="fixed z-[9999] min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm" style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              onViewDetails();
-            }}
-            data-testid="menu-view-details"
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
-          >
-            <Eye className="w-4 h-4" />
-            {t.templates.row_actions.view_details}
-          </button>
-          {import.meta.env.DEV && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                  onRebuild();
-                }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {t.templates.row_actions.rebuild}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                  onDelete(reviewId);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
-              >
-                <Trash2 className="w-4 h-4" />
-                {t.templates.row_actions.delete_template}
-              </button>
-            </>
-          )}
-        </div>,
-        document.body,
-      )}
-    </div>
+      <BaseModal
+        isOpen={open}
+        onClose={close}
+        titleId="row-actions-title"
+        size="sm"
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+        portal
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex flex-col"
+        >
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
+            <h2 id="row-actions-title" className="typo-heading font-semibold text-foreground/90">
+              {t.templates.row_actions.row_actions_label}
+            </h2>
+            <button
+              onClick={close}
+              className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="py-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                close();
+                onViewDetails();
+              }}
+              data-testid="menu-view-details"
+              className="w-full flex items-center gap-3 px-5 py-3 typo-body text-foreground hover:bg-primary/5 transition-colors text-left"
+            >
+              <Eye className="w-4 h-4" />
+              {t.templates.row_actions.view_details}
+            </button>
+            {import.meta.env.DEV && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    close();
+                    onRebuild();
+                  }}
+                  className="w-full flex items-center gap-3 px-5 py-3 typo-body text-blue-400 hover:bg-blue-500/10 transition-colors text-left"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {t.templates.row_actions.rebuild}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    close();
+                    onDelete(reviewId);
+                  }}
+                  className={`w-full flex items-center gap-3 px-5 py-3 typo-body transition-colors text-left ${BUTTON_VARIANTS.delete.text} ${BUTTON_VARIANTS.delete.hover}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {t.templates.row_actions.delete_template}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </BaseModal>
+    </>
   );
 }

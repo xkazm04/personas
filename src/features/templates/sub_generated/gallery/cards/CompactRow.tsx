@@ -34,7 +34,7 @@ export function CompactRow({
       data-testid={`template-row-${review.id}`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="typo-body font-medium text-foreground truncate">
+        <span className="typo-body font-medium template-name-themed truncate">
           {highlightMatch(review.test_case_name, searchQuery)}
         </span>
         {isAiResult && (

@@ -1,32 +1,76 @@
 import type { TriggerFormState } from './configs/buildTriggerConfig';
 
+/**
+ * Non-fatal advisory emitted when the parser rewrote a user-supplied value to
+ * satisfy a platform constraint. Previously the parser silently clamped
+ * sub-minute interval values to 60s, so the user saw "every 5 seconds"
+ * accepted but the trigger actually ran every 60 seconds — classic Success
+ * Theater. The UI renders these warnings inline next to the parsed result.
+ */
+export interface NlParseWarning {
+  code: 'interval_clamped';
+  message: string;
+}
+
 export interface NlParseResult {
   triggerType: string;
   label: string;
   confidence: 'high' | 'medium' | 'low';
   formOverrides: Partial<TriggerFormState>;
+  warnings: NlParseWarning[];
 }
 
 interface ParseRule {
   patterns: RegExp[];
   triggerType: string;
-  extract: (input: string, match: RegExpMatchArray) => Partial<TriggerFormState>;
-  label: (input: string, match: RegExpMatchArray) => string;
+  extract: (input: string, match: RegExpMatchArray, ctx: ParseContext) => Partial<TriggerFormState>;
+  label: (input: string, match: RegExpMatchArray, ctx: ParseContext) => string;
 }
+
+/**
+ * Per-parse mutable bag that transformations can push warnings onto. Scoped
+ * to a single parse call so warnings don't leak between inputs.
+ */
+interface ParseContext {
+  warnings: NlParseWarning[];
+}
+
+/** Minimum interval in seconds enforced by the scheduler. */
+const MIN_INTERVAL_SECONDS = 60;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract a time interval in seconds from natural language. */
-function parseInterval(input: string): number | null {
+/**
+ * Extract a time interval in seconds from natural language.
+ *
+ * Emits an `interval_clamped` warning into `ctx.warnings` when the user-typed
+ * value is below {@link MIN_INTERVAL_SECONDS} — surfacing the constraint to
+ * the UI instead of silently rewriting the value (which the previous
+ * implementation did).
+ */
+function parseInterval(input: string, ctx: ParseContext): number | null {
   const m = input.match(/(?:every|each)\s+(\d+)\s*(second|sec|minute|min|hour|hr|day)s?/i);
   if (!m || !m[1] || !m[2]) return null;
   const n = parseInt(m[1]);
-  switch (m[2].toLowerCase().replace(/s$/, '')) {
-    case 'second': case 'sec': return Math.max(60, n);
-    case 'minute': case 'min': return n * 60;
-    case 'hour': case 'hr': return n * 3600;
+  const unit = m[2].toLowerCase().replace(/s$/, '');
+  switch (unit) {
+    case 'second':
+    case 'sec': {
+      if (n < MIN_INTERVAL_SECONDS) {
+        ctx.warnings.push({
+          code: 'interval_clamped',
+          message: `Sub-minute intervals are not supported. Clamped "every ${n} second${n === 1 ? '' : 's'}" to ${MIN_INTERVAL_SECONDS}s — the minimum schedule interval.`,
+        });
+        return MIN_INTERVAL_SECONDS;
+      }
+      return n;
+    }
+    case 'minute':
+    case 'min': return n * 60;
+    case 'hour':
+    case 'hr': return n * 3600;
     case 'day': return n * 86400;
     default: return null;
   }
@@ -294,7 +338,7 @@ const RULES: ParseRule[] = [
       /\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|weekday|weekend)\b/i,
     ],
     triggerType: 'schedule',
-    extract: (input) => {
+    extract: (input, _match, ctx) => {
       const cron = parseCron(input);
       if (cron) {
         return {
@@ -303,7 +347,7 @@ const RULES: ParseRule[] = [
           cronExpression: cron,
         };
       }
-      const interval = parseInterval(input);
+      const interval = parseInterval(input, ctx);
       if (interval) {
         return {
           triggerType: 'schedule',
@@ -313,10 +357,13 @@ const RULES: ParseRule[] = [
       }
       return { triggerType: 'schedule', scheduleMode: 'interval' as const, interval: '3600' };
     },
-    label: (input) => {
+    label: (input, _match, ctx) => {
       const cron = parseCron(input);
       if (cron) return `Schedule: ${cron}`;
-      const interval = parseInterval(input);
+      // `label` runs after `extract` in `parseNaturalLanguageTrigger`, so the
+      // clamp warning has already been appended to ctx by that point — we
+      // pass ctx here only for symmetry and future extensions.
+      const interval = parseInterval(input, ctx);
       if (interval) {
         if (interval >= 86400) return `Every ${interval / 86400} day(s)`;
         if (interval >= 3600) return `Every ${interval / 3600} hour(s)`;
@@ -333,9 +380,9 @@ const RULES: ParseRule[] = [
       /\bcheck\s+(?:an?\s+)?(?:endpoint|url|api|site|page)\b/i,
     ],
     triggerType: 'polling',
-    extract: (input) => {
+    extract: (input, _match, ctx) => {
       const urlMatch = input.match(/(?:https?:\/\/\S+)/i);
-      const interval = parseInterval(input) ?? 300;
+      const interval = parseInterval(input, ctx) ?? 300;
       return {
         triggerType: 'polling',
         endpoint: urlMatch?.[0] ?? '',
@@ -358,19 +405,32 @@ export function parseNaturalLanguageTrigger(input: string): NlParseResult | null
     for (const pattern of rule.patterns) {
       const match = trimmed.match(pattern);
       if (match) {
-        const formOverrides = rule.extract(trimmed, match);
-        const label = rule.label(trimmed, match);
+        const ctx: ParseContext = { warnings: [] };
+        const formOverrides = rule.extract(trimmed, match, ctx);
+        const label = rule.label(trimmed, match, ctx);
 
         // Confidence heuristic: longer inputs that match specific patterns = higher confidence
         let confidence: 'high' | 'medium' | 'low' = 'medium';
         if (trimmed.length > 20 && rule.patterns.length > 1) confidence = 'high';
         if (trimmed.length < 10) confidence = 'low';
 
+        // Some rules call parseInterval twice (once in extract, once in label);
+        // deduplicate by (code + message) so the UI doesn't render "clamped
+        // to 60s" twice for the same trigger.
+        const seen = new Set<string>();
+        const warnings = ctx.warnings.filter((w) => {
+          const key = `${w.code}|${w.message}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
         return {
           triggerType: rule.triggerType,
           label,
           confidence,
           formOverrides,
+          warnings,
         };
       }
     }

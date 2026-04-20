@@ -14,8 +14,54 @@
  */
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { createLogger } from '@/lib/log';
+import * as Sentry from '@sentry/react';
 
 const logger = createLogger('template-overlays');
+
+/** Structured record of an overlay that referenced an unknown canonical id. */
+export interface OverlayIdMismatch {
+  /** Which canonical container the mismatch happened in (array path within the template). */
+  container: string;
+  /** The field that's supposed to match canonical (id, name, key, event_type). */
+  matchKey: string;
+  /** The overlay value that had no match in canonical. */
+  overlayValue: string;
+}
+
+/**
+ * Collected mismatches for the most recent merge — consumed by the locale
+ * parity script / tests to fail the build when a translator renames a
+ * canonical id. In prod we only `logger.warn` (non-fatal, test via Sentry).
+ */
+const _currentMergeMismatches: OverlayIdMismatch[] = [];
+
+function recordIdMismatch(mismatch: OverlayIdMismatch, locale?: LocaleCode, templateId?: string) {
+  _currentMergeMismatches.push(mismatch);
+  logger.warn('Overlay references unknown canonical id', { ...mismatch, locale, templateId });
+  try {
+    Sentry.addBreadcrumb({
+      category: 'template-overlay',
+      level: 'warning',
+      message: `Overlay id mismatch in ${mismatch.container}`,
+      data: { ...mismatch, locale, templateId },
+    });
+  } catch { /* intentional: Sentry may be uninitialized in dev */ }
+  // In test (vitest), throw so locale-parity suites fail loudly; in dev warn
+  // via the logger above; in prod the breadcrumb + warn is enough.
+  const env = (import.meta as unknown as { vitest?: unknown; env?: { MODE?: string } });
+  if (env?.vitest !== undefined || env?.env?.MODE === 'test') {
+    throw new Error(
+      `Overlay id mismatch: ${mismatch.container}.${mismatch.matchKey}="${mismatch.overlayValue}" has no canonical entry` +
+        (templateId ? ` (template ${templateId})` : '') +
+        (locale ? ` (locale ${locale})` : ''),
+    );
+  }
+}
+
+/** Drain the most recent merge's mismatches — for use by parity tests. */
+export function drainOverlayMismatches(): OverlayIdMismatch[] {
+  return _currentMergeMismatches.splice(0, _currentMergeMismatches.length);
+}
 
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 
@@ -43,7 +89,15 @@ function findMatchKey(obj: Record<string, Json>): string | undefined {
   return undefined;
 }
 
-function mergeArray(canonical: Json[], overlay: Json[]): Json[] {
+/** Merge context threaded through recursion so mismatch reports know their path. */
+interface MergeCtx {
+  locale?: LocaleCode;
+  templateId?: string;
+  /** Dotted path to the current node from the template root (for mismatch logs). */
+  path: string;
+}
+
+function mergeArray(canonical: Json[], overlay: Json[], ctx: MergeCtx): Json[] {
   // Primitive array (strings, numbers): overlay wholly replaces.
   // This is how we handle principles[], constraints[], decision_principles[],
   // options[], etc. Overlay must provide the entire translated list.
@@ -73,10 +127,24 @@ function mergeArray(canonical: Json[], overlay: Json[]): Json[] {
       const key = overlayItem[matchKey];
       if (typeof key !== 'string') continue;
       const idx = canonIndex.get(key);
-      if (idx === undefined) continue; // overlay references unknown item — skip
+      if (idx === undefined) {
+        // Overlay references a canonical id that doesn't exist — likely a
+        // translator renamed a use-case id, a connector key, or an
+        // adoption_questions.id. Silently skipping leaves the English string
+        // in place with no signal; surface the mismatch instead.
+        recordIdMismatch(
+          { container: ctx.path, matchKey, overlayValue: key },
+          ctx.locale,
+          ctx.templateId,
+        );
+        continue;
+      }
       const canonItem = result[idx];
       if (isPlainObject(canonItem)) {
-        result[idx] = mergeObject(canonItem, overlayItem);
+        result[idx] = mergeObject(canonItem, overlayItem, {
+          ...ctx,
+          path: `${ctx.path}[${key}]`,
+        });
       }
     }
     return result;
@@ -88,7 +156,10 @@ function mergeArray(canonical: Json[], overlay: Json[]): Json[] {
     const canonItem = result[i];
     const overlayItem = overlay[i];
     if (isPlainObject(canonItem) && isPlainObject(overlayItem)) {
-      result[i] = mergeObject(canonItem, overlayItem);
+      result[i] = mergeObject(canonItem, overlayItem, {
+        ...ctx,
+        path: `${ctx.path}[${i}]`,
+      });
     }
   }
   return result;
@@ -97,15 +168,17 @@ function mergeArray(canonical: Json[], overlay: Json[]): Json[] {
 function mergeObject(
   canonical: Record<string, Json>,
   overlay: Record<string, Json>,
+  ctx: MergeCtx,
 ): Record<string, Json> {
   const result: Record<string, Json> = { ...canonical };
   for (const [k, overlayValue] of Object.entries(overlay)) {
     if (overlayValue === null || overlayValue === undefined) continue;
     const canonValue = canonical[k];
+    const childCtx: MergeCtx = { ...ctx, path: ctx.path ? `${ctx.path}.${k}` : k };
     if (isPlainObject(overlayValue) && isPlainObject(canonValue)) {
-      result[k] = mergeObject(canonValue, overlayValue);
+      result[k] = mergeObject(canonValue, overlayValue, childCtx);
     } else if (Array.isArray(overlayValue) && Array.isArray(canonValue)) {
-      result[k] = mergeArray(canonValue, overlayValue);
+      result[k] = mergeArray(canonValue, overlayValue, childCtx);
     } else {
       // Primitive or type-mismatch: overlay wins.
       result[k] = overlayValue;
@@ -119,13 +192,21 @@ function mergeObject(
  * canonical English template. `overlay` may be a partial — fields absent
  * from the overlay fall through to canonical. `{{param.X}}` tokens in
  * either source are preserved verbatim.
+ *
+ * The optional `ctx` is used only for mismatch diagnostics; the merge itself
+ * doesn't depend on it, so tests and parity scripts can still call with no args.
  */
-export function mergeTemplateOverlay<T>(canonical: T, overlay: unknown): T {
+export function mergeTemplateOverlay<T>(
+  canonical: T,
+  overlay: unknown,
+  ctx: { locale?: LocaleCode; templateId?: string } = {},
+): T {
   if (!isPlainObject(overlay)) return canonical;
   if (!isPlainObject(canonical as unknown)) return canonical;
   return mergeObject(
     canonical as unknown as Record<string, Json>,
     overlay as Record<string, Json>,
+    { ...ctx, path: '' },
   ) as unknown as T;
 }
 
@@ -189,12 +270,38 @@ export function loadOverlaysForLanguage(lang: LocaleCode): Promise<Map<string, u
           const overlay = (await loader()) as Record<string, unknown>;
           const id = typeof overlay.id === 'string' ? overlay.id : null;
           if (!id) {
-            logger.warn('Overlay missing id field, skipping', { path });
+            // Expected template id can be recovered from the filename: the
+            // canonical is `<name>.json` and the overlay is `<name>.<lang>.json`.
+            const filename = path.split('/').pop() ?? path;
+            const expectedTemplateId = filename.replace(OVERLAY_SUFFIX_RE, '');
+            const overlayKeys = Object.keys(overlay);
+            logger.warn('Overlay missing id field, skipping', {
+              path,
+              locale: lang,
+              expectedTemplateId,
+              overlayKeys,
+            });
+            try {
+              Sentry.addBreadcrumb({
+                category: 'template-overlay',
+                level: 'warning',
+                message: `Overlay missing id: ${filename}`,
+                data: { path, locale: lang, expectedTemplateId, overlayKeys },
+              });
+            } catch { /* intentional: Sentry may be uninitialized */ }
             return null;
           }
           return [id, overlay] as const;
         } catch (err) {
-          logger.warn('Failed to load overlay', { path, err });
+          logger.warn('Failed to load overlay', { path, locale: lang, err });
+          try {
+            Sentry.addBreadcrumb({
+              category: 'template-overlay',
+              level: 'error',
+              message: 'Failed to load overlay file',
+              data: { path, locale: lang, error: err instanceof Error ? err.message : String(err) },
+            });
+          } catch { /* intentional */ }
           return null;
         }
       }),

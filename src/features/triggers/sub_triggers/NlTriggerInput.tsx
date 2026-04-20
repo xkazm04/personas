@@ -154,6 +154,22 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           </div>
         )}
 
+        {/* Surface non-fatal parse warnings (e.g. interval clamped to 60s)
+            so users see when the parser silently rewrote their input. */}
+        {result && result.warnings.length > 0 && (
+          <ul className="animate-fade-slide-in space-y-1">
+            {result.warnings.map((w, i) => (
+              <li
+                key={`${w.code}-${i}`}
+                className="flex items-start gap-2 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10 typo-caption text-amber-200"
+              >
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>{w.message}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {noMatch && input.trim().length >= 3 && (
           <div
             key="no-match"

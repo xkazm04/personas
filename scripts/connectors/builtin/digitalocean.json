@@ -1,0 +1,41 @@
+{
+  "id": "builtin-digitalocean",
+  "name": "digitalocean",
+  "label": "DigitalOcean",
+  "color": "#0080FF",
+  "icon_url": "/icons/connectors/digitalocean.svg",
+  "category": "cloud",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "dop_v1_...",
+      "helpText": "Generate at cloud.digitalocean.com/account/api/tokens",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.digitalocean.com/v2/account",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates token via account endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "DigitalOcean cloud platform for Droplets, Kubernetes, Spaces, and App Platform.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://docs.digitalocean.com/reference/api/",
+    "setup_guide": "1. Go to cloud.digitalocean.com/account/api/tokens\n2. Click 'Generate New Token'\n3. Give it a name, pick scopes (read/write)\n4. Copy the dop_v1_... value and paste here",
+    "pricing_tier": "paid",
+    "auth_methods": [
+      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

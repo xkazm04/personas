@@ -125,7 +125,8 @@ export function TemplateDetailModal({
       onClose={onClose}
       titleId="template-detail-title"
       maxWidthClass="max-w-7xl"
-      panelClassName="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+      containerClassName="absolute inset-0 z-50 flex items-center justify-center p-4"
+      panelClassName="h-full max-h-full bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header with gradient accent */}
         <div className="relative flex-shrink-0 overflow-hidden">

@@ -59,7 +59,62 @@ interface VerifiedEntry {
   relPath: string;
 }
 
+/**
+ * Why a candidate template was dropped during verification.
+ * - `missing_checksum` — template has no entry in TEMPLATE_CHECKSUMS (build-time bug).
+ * - `checksum_mismatch` — content hash differs from the embedded checksum (tamper/corruption).
+ * - `unpublished` — `is_published: false` in the JSON (intentional hide, not an error).
+ */
+export type CatalogSkipReason = 'missing_checksum' | 'checksum_mismatch' | 'unpublished';
+
+/**
+ * Thrown when two template JSON files claim the same `id`. This is always a
+ * source bug (copy-paste without renaming), and silently last-wins dedupe is
+ * platform-dependent (glob order differs Linux vs Windows), so we fail loudly
+ * at catalog load and expose the colliding paths so the author can diff them.
+ */
+export class CatalogIntegrityError extends Error {
+  constructor(
+    public readonly duplicates: Record<string, string[]>,
+    message?: string,
+  ) {
+    super(
+      message ??
+        `Duplicate template ids detected in catalog: ${Object.entries(duplicates)
+          .map(([id, paths]) => `"${id}" → [${paths.join(', ')}]`)
+          .join('; ')}`,
+    );
+    this.name = 'CatalogIntegrityError';
+  }
+}
+
+export interface CatalogSkippedEntry {
+  /** Relative path under `scripts/templates/`. */
+  relPath: string;
+  /** Template id if we could read it from the JSON, else null. */
+  id: string | null;
+  reason: CatalogSkipReason;
+}
+
+/**
+ * Discriminated catalog load result. Lets the gallery tell the difference
+ * between "no published templates" and "every template failed verification".
+ *
+ * - `ok`       → non-empty `templates`, no `skipped` due to errors.
+ * - `partial`  → non-empty `templates`, but some were dropped for error reasons.
+ * - `failed`   → zero `templates` AND at least one was dropped for an error reason.
+ * - `empty`    → zero `templates`, every candidate was intentionally `unpublished`.
+ */
+export type CatalogLoadStatus = 'ok' | 'partial' | 'failed' | 'empty';
+
+export interface CatalogLoadResult {
+  status: CatalogLoadStatus;
+  templates: TemplateCatalogEntry[];
+  skipped: CatalogSkippedEntry[];
+}
+
 let _cached: VerifiedEntry[] | null = null;
+let _cachedSkipped: CatalogSkippedEntry[] = [];
 let _loading: Promise<VerifiedEntry[]> | null = null;
 
 async function loadAndVerify(): Promise<VerifiedEntry[]> {
@@ -75,14 +130,22 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
   );
 
   const verified: VerifiedEntry[] = [];
+  const skipped: CatalogSkippedEntry[] = [];
   for (const { modulePath, template } of modules) {
-    if ((template as unknown as Record<string, unknown>).is_published === false) continue;
-
     const relPath = templatePathFromModulePath(modulePath);
+    const id = (template as unknown as { id?: unknown })?.id;
+    const safeId = typeof id === 'string' ? id : null;
+
+    if ((template as unknown as Record<string, unknown>).is_published === false) {
+      skipped.push({ relPath, id: safeId, reason: 'unpublished' });
+      continue;
+    }
+
     const expectedChecksum = TEMPLATE_CHECKSUMS[relPath];
 
     if (!expectedChecksum) {
       logger.warn('Missing checksum for built-in template, skipping', { relPath });
+      skipped.push({ relPath, id: safeId, reason: 'missing_checksum' });
       continue;
     }
 
@@ -90,13 +153,33 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
     const actualChecksum = computeContentHashSync(canonicalContent);
     if (actualChecksum !== expectedChecksum) {
       logger.warn('Integrity mismatch for built-in template, skipping', { relPath, expectedChecksum, actualChecksum });
+      skipped.push({ relPath, id: safeId, reason: 'checksum_mismatch' });
       continue;
     }
     verified.push({ template, relPath });
   }
 
+  // Detect id collisions before anyone downstream does a Map-by-id lookup
+  // (e.g. overlays.get(template.id)). Silent last-wins dedupe depends on
+  // glob ordering which differs between Linux and Windows, so we refuse to
+  // serve a catalog that can't be uniquely addressed by id.
+  const byId = new Map<string, string[]>();
+  for (const v of verified) {
+    const paths = byId.get(v.template.id);
+    if (paths) paths.push(v.relPath);
+    else byId.set(v.template.id, [v.relPath]);
+  }
+  const duplicates: Record<string, string[]> = {};
+  for (const [id, paths] of byId) {
+    if (paths.length > 1) duplicates[id] = paths;
+  }
+  if (Object.keys(duplicates).length > 0) {
+    throw new CatalogIntegrityError(duplicates);
+  }
+
   // Register all catalog templates as verified built-ins
   registerBuiltinTemplates(verified.map((v) => v.template.id));
+  _cachedSkipped = skipped;
 
   return verified;
 }
@@ -110,6 +193,23 @@ export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
   if (!_loading) _loading = loadAndVerify();
   _cached = await _loading;
   return _cached.map((v) => v.template);
+}
+
+/**
+ * Load the catalog and return a discriminated result so the UI can tell
+ * empty-but-healthy from everything-failed.
+ */
+export async function getTemplateCatalogStatus(): Promise<CatalogLoadResult> {
+  const templates = await getTemplateCatalog();
+  const skipped = _cachedSkipped;
+  const errorSkips = skipped.filter((s) => s.reason !== 'unpublished');
+  let status: CatalogLoadStatus;
+  if (templates.length === 0) {
+    status = errorSkips.length > 0 ? 'failed' : 'empty';
+  } else {
+    status = errorSkips.length > 0 ? 'partial' : 'ok';
+  }
+  return { status, templates, skipped };
 }
 
 /**
@@ -160,15 +260,41 @@ export async function getLocalizedTemplateCatalog(
 
     if (overlays.size === 0) return canonical;
 
+    // Detect overlays that reference a template id that no longer exists in
+    // the canonical set — another silent-translation-regression surface.
+    const canonicalIds = new Set(canonical.map((c) => c.id));
+    for (const overlayId of overlays.keys()) {
+      if (!canonicalIds.has(overlayId)) {
+        logger.warn('Overlay references unknown template id', {
+          locale: lang,
+          overlayTemplateId: overlayId,
+        });
+      }
+    }
+
     return canonical.map((template) => {
       const overlay = overlays.get(template.id);
       if (!overlay) return template;
-      return mergeTemplateOverlay(template, overlay);
+      return mergeTemplateOverlay(template, overlay, { locale: lang, templateId: template.id });
     });
   })();
 
   _localizedCache.set(lang, promise);
   return promise;
+}
+
+/**
+ * Localized variant of {@link getTemplateCatalogStatus}. Base-catalog skip
+ * reasons are carried through unchanged — overlay mismatches are logged
+ * separately (see `drainOverlayMismatches`) since they don't drop templates.
+ */
+export async function getLocalizedTemplateCatalogStatus(
+  lang: LocaleCode,
+): Promise<CatalogLoadResult> {
+  const base = await getTemplateCatalogStatus();
+  if (lang === 'en') return base;
+  const localized = await getLocalizedTemplateCatalog(lang);
+  return { ...base, templates: localized };
 }
 
 // -- Layer 2: Backend verification (async, authoritative) ----------------

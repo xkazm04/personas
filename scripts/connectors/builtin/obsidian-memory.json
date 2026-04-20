@@ -28,7 +28,6 @@
     "always_active": false,
     "requires_plugin": "obsidian-brain",
     "connection_mode": "desktop_bridge",
-    "min_tier": "builder",
     "summary": "Graph-aware operations over your Obsidian vault — semantic search, backlink walking, MOC discovery, and daily-journal authoring. Powered by the Obsidian Brain plugin and exposed automatically once a vault is configured.",
     "auth_type": "builtin",
     "auth_type_label": "Vault",

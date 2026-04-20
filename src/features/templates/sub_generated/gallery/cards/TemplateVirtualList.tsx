@@ -72,14 +72,15 @@ export function TemplateVirtualList({
 
   useEffect(() => { virtualizer.measure(); }, [density, virtualizer]);
 
+  const virtualItems = virtualizer.getVirtualItems();
+  const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1;
+
   useEffect(() => {
-    const virtualItems = virtualizer.getVirtualItems();
-    const lastItem = virtualItems[virtualItems.length - 1];
-    if (!lastItem) return;
-    if (lastItem.index >= displayItems.length - 10 && hasMore && !isFetchingMore && !isLoading) {
+    if (lastVisibleIndex < 0) return;
+    if (lastVisibleIndex >= displayItems.length - 10 && hasMore && !isFetchingMore && !isLoading) {
       fetchMore();
     }
-  }, [virtualizer.getVirtualItems(), displayItems.length, hasMore, isFetchingMore, isLoading, fetchMore]);
+  }, [lastVisibleIndex, displayItems.length, hasMore, isFetchingMore, isLoading, fetchMore]);
 
   if (displayItems.length === 0) {
     return <SearchEmptyState />;
@@ -101,9 +102,13 @@ export function TemplateVirtualList({
       </div>
 
       {/* Scrollable virtual list */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto"
+        style={{ scrollbarGutter: 'stable' }}
+      >
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-          {virtualizer.getVirtualItems().map((virtualRow) => {
+          {virtualItems.map((virtualRow) => {
             const review = displayItems[virtualRow.index];
             if (!review) return null;
             const isExpanded = density === 'comfortable' && expandedRow === review.id;

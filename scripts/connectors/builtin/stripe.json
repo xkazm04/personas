@@ -1,0 +1,41 @@
+{
+  "id": "builtin-stripe",
+  "name": "stripe",
+  "label": "Stripe",
+  "color": "#635BFF",
+  "icon_url": "/icons/connectors/stripe.svg",
+  "category": "finance",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "Secret Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "sk_live_... or sk_test_...",
+      "helpText": "Find at dashboard.stripe.com/apikeys. Use restricted keys where possible.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.stripe.com/v1/account",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates key via account endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Stripe payment processing platform -- charges, subscriptions, invoices, and Connect.",
+    "auth_type": "api_key",
+    "auth_type_label": "Secret Key",
+    "docs_url": "https://stripe.com/docs/api",
+    "setup_guide": "1. Go to dashboard.stripe.com/apikeys\n2. Copy the Secret Key (sk_live_... or sk_test_...)\n3. For production, prefer a restricted key with the minimum scopes your flows need",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "api_key", "label": "Secret Key", "type": "credential", "is_default": true}
+    ]
+  }
+}

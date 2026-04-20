@@ -2118,5 +2118,15 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added traceparent column to persona_executions");
     }
 
+    // -- Drop retired desktop-bridge catalog entries -----------------------------
+    // `desktop_terminal` and `desktop_vscode` were removed from the credential
+    // catalog; existing installs may still have the seeded rows. Remove them so
+    // they stop appearing in the picker. Only builtin rows are touched — any
+    // user credentials referencing them via the canonical tables remain intact.
+    conn.execute(
+        "DELETE FROM connector_definitions WHERE name IN ('desktop_terminal','desktop_vscode') AND is_builtin = 1",
+        [],
+    )?;
+
     Ok(())
 }

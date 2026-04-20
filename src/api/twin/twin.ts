@@ -5,6 +5,17 @@ import type { TwinPendingMemory } from "@/lib/bindings/TwinPendingMemory";
 import type { TwinCommunication } from "@/lib/bindings/TwinCommunication";
 import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
+import type {
+  TwinChannelKind,
+  TwinInteractionDirection,
+  TwinPendingMemoryStatus,
+} from "@/api/enums";
+
+export type {
+  TwinChannelKind,
+  TwinInteractionDirection,
+  TwinPendingMemoryStatus,
+} from "@/api/enums";
 
 // ============================================================================
 // Twin Profiles (P0)
@@ -80,12 +91,12 @@ export const setActiveProfile = (id: string) =>
 export const listTones = (twinId: string) =>
   invoke<TwinTone[]>("twin_list_tones", { twinId });
 
-export const getTone = (twinId: string, channel: string) =>
+export const getTone = (twinId: string, channel: TwinChannelKind) =>
   invoke<TwinTone>("twin_get_tone", { twinId, channel });
 
 export const upsertTone = (
   twinId: string,
-  channel: string,
+  channel: TwinChannelKind,
   voiceDirectives: string,
   examplesJson?: string | null,
   constraintsJson?: string | null,
@@ -117,7 +128,7 @@ export const unbindKnowledgeBase = (twinId: string) =>
 // Pending Memories (P2)
 // ============================================================================
 
-export const listPendingMemories = (twinId: string, status?: string) =>
+export const listPendingMemories = (twinId: string, status?: TwinPendingMemoryStatus) =>
   invoke<TwinPendingMemory[]>("twin_list_pending_memories", { twinId, status });
 
 export const reviewMemory = (id: string, approved: boolean, reviewerNotes?: string) =>
@@ -127,13 +138,13 @@ export const reviewMemory = (id: string, approved: boolean, reviewerNotes?: stri
 // Communications (P2)
 // ============================================================================
 
-export const listCommunications = (twinId: string, channel?: string, limit?: number) =>
+export const listCommunications = (twinId: string, channel?: TwinChannelKind, limit?: number) =>
   invoke<TwinCommunication[]>("twin_list_communications", { twinId, channel, limit });
 
 export const recordInteraction = (
   twinId: string,
-  channel: string,
-  direction: string,
+  channel: TwinChannelKind,
+  direction: TwinInteractionDirection,
   content: string,
   contactHandle?: string,
   summary?: string,
@@ -189,7 +200,7 @@ export const listChannels = (twinId: string) =>
 
 export const createChannel = (
   twinId: string,
-  channelType: string,
+  channelType: TwinChannelKind,
   credentialId: string,
   personaId?: string,
   label?: string,

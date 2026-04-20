@@ -20,8 +20,16 @@ use crate::AppState;
 fn hash_file(path: &Path) -> Result<String, AppError> {
     let bytes = std::fs::read(path)
         .map_err(|e| AppError::Validation(format!("Cannot read file: {e}")))?;
-    let digest = Sha256::digest(&bytes);
-    Ok(format!("sha256:{}", hex::encode(digest)))
+    Ok(hash_bytes(&bytes))
+}
+
+/// Hash an in-memory byte slice with SHA-256 (same `sha256:` prefix format as
+/// [`hash_file`]). Use this when you already hold the bytes to avoid a
+/// second disk read — required for [`sign_document`] which otherwise had a
+/// TOCTOU window between hashing and signing.
+fn hash_bytes(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    format!("sha256:{}", hex::encode(digest))
 }
 
 #[tauri::command]
@@ -43,15 +51,19 @@ pub fn sign_document(
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".into());
 
-    // Hash the file
-    let file_hash = hash_file(&path)?;
+    // Read the file ONCE and derive the hash + signature from the same byte
+    // buffer. Two separate `std::fs::read` calls (hash first, then read-to-sign)
+    // opened a TOCTOU window: an editor autosave / build tool / cloud-sync
+    // between them produced a record whose stored hash referred to content
+    // the signature was not taken over, making `verify_document` report
+    // "signature invalid" on files that were never tampered with.
+    let file_bytes = std::fs::read(&path)
+        .map_err(|e| AppError::Internal(format!("Cannot read file for signing: {e}")))?;
+    let file_hash = hash_bytes(&file_bytes);
 
     // Get or create the local identity
     let ident = identity::get_or_create_identity(&state.db)?;
 
-    // Read file bytes and sign
-    let file_bytes = std::fs::read(&path)
-        .map_err(|e| AppError::Internal(format!("Cannot read file for signing: {e}")))?;
     let signature_b64 = identity::sign_message(&state.db, &file_bytes)?;
 
     let now = Utc::now().to_rfc3339();

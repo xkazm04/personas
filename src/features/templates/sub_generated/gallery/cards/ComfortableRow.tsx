@@ -84,7 +84,7 @@ export function ComfortableRow({
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="typo-body-lg font-semibold text-foreground">
+                <span className="typo-body-lg font-semibold template-name-themed">
                   {highlightMatch(review.test_case_name, searchQuery)}
                 </span>
                 {isAiResult && (

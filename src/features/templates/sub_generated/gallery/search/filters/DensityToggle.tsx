@@ -1,7 +1,7 @@
-import { LayoutList, AlignJustify } from 'lucide-react';
+import { LayoutList, AlignJustify, LayoutGrid } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
-export type Density = 'comfortable' | 'compact';
+export type Density = 'comfortable' | 'compact' | 'role';
 
 interface DensityToggleProps {
   density: Density;
@@ -33,6 +33,17 @@ export function DensityToggle({ density, onChange }: DensityToggleProps) {
         title={t.templates.search.compact_view}
       >
         <AlignJustify className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => onChange('role')}
+        className={`p-1.5 transition-colors ${
+          density === 'role'
+            ? 'bg-violet-500/20 text-violet-300'
+            : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
+        }`}
+        title={t.templates.explore.by_role}
+      >
+        <LayoutGrid className="w-3.5 h-3.5" />
       </button>
     </div>
   );

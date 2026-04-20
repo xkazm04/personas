@@ -22,7 +22,6 @@ import {
   Shield,
   LifeBuoy,
   TestTube2,
-  Settings,
   Briefcase,
   BarChart3,
   Bot,
@@ -153,10 +152,9 @@ export interface RoleGroup {
 }
 
 export const CATEGORY_ROLE_GROUPS: RoleGroup[] = [
-  { role: 'software',   icon: Code2,     label: 'Software',        description: 'Development, CI/CD, testing & quality',        categories: ['development', 'devops', 'testing', 'quality'] },
-  { role: 'operations', icon: Settings,  label: 'Operations',      description: 'Monitoring, security & maintenance',            categories: ['monitoring', 'security', 'maintenance', 'pipeline'] },
-  { role: 'business',   icon: Briefcase, label: 'Business',        description: 'Sales, marketing, finance & HR',                categories: ['sales', 'marketing', 'finance', 'hr', 'legal'] },
-  { role: 'content',    icon: FileText,  label: 'Content',         description: 'Content creation, docs & research',             categories: ['content', 'documentation', 'research'] },
-  { role: 'customer',   icon: Users,     label: 'Customer',        description: 'Support, communication & email',                categories: ['support', 'communication', 'email'] },
-  { role: 'data',       icon: BarChart3, label: 'Data & Analytics', description: 'Data, productivity & project management',      categories: ['data', 'productivity', 'project-management'] },
+  { role: 'software',     icon: Code2,        label: 'Software',     description: '', categories: ['development', 'devops', 'security', 'testing', 'quality'] },
+  { role: 'business',     icon: Briefcase,    label: 'Business',     description: '', categories: ['sales', 'marketing', 'finance', 'hr', 'legal'] },
+  { role: 'research',     icon: FlaskConical, label: 'Research',     description: '', categories: ['research', 'content', 'documentation'] },
+  { role: 'customer',     icon: Users,        label: 'Customer',     description: '', categories: ['support', 'email', 'communication'] },
+  { role: 'productivity', icon: Zap,          label: 'Productivity', description: '', categories: ['productivity', 'project-management', 'operations', 'monitoring'] },
 ];

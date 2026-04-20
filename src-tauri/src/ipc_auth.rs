@@ -485,19 +485,24 @@ fn constant_time_eq(a: &str, b: &str) -> bool {
 /// Generate the JavaScript initialization script that injects the IPC session
 /// token into all Tauri invoke calls via the `x-ipc-token` header.
 ///
-/// The token is captured in a closure scope (not a global) to make extraction
-/// harder for XSS payloads.  Combined with CSP, this provides meaningful
-/// defense-in-depth against content injection attacks.
+/// The token is exposed as `window.__IPC_TOKEN` so the frontend
+/// `invokeWithTimeout` wrapper can inject it explicitly as a fallback when the
+/// `__TAURI_INTERNALS__.invoke` monkey-patch races with the first privileged
+/// call (observed on Windows WebView2). CSP + the wrapper-level validation
+/// still gate abuse.
 pub fn generate_ipc_auth_script(token: &str) -> String {
     // Monkey-patch __TAURI_INTERNALS__.invoke if it's already available,
     // and set up a retry for when it appears later
     // (Tauri 2.x init script timing: internals may not exist yet).
-    // The token is kept only in the closure variable `_t` — never
-    // assigned to a window global — so XSS cannot trivially extract it.
+    // We ALSO assign the token to `window.__IPC_TOKEN` so the frontend
+    // wrapper can inject the header itself when the monkey-patch is late --
+    // both paths must attach the token, otherwise privileged calls like
+    // `create_credential` reject with "IPC authentication failed".
     format!(
         r#"(function() {{
   'use strict';
   var _t = '{}';
+  try {{ window.__IPC_TOKEN = _t; }} catch(_e) {{}}
   function patchInvoke() {{
     if (!window.__TAURI_INTERNALS__ || !window.__TAURI_INTERNALS__.invoke) return false;
     if (window.__TAURI_INTERNALS__.__ipc_patched) return true;

@@ -1,6 +1,3 @@
-import { Star } from 'lucide-react';
-import { List, Compass } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { DensityToggle, type Density } from './filters/DensityToggle';
 import { SortDropdown } from './filters/SortDropdown';
 import { FilterChips } from './filters/FilterChips';
@@ -9,8 +6,6 @@ import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
 
 interface TemplateSearchFilterRowProps {
-  viewMode?: 'list' | 'explore';
-  onViewModeChange?: (v: 'list' | 'explore') => void;
   density?: Density;
   onDensityChange?: (d: Density) => void;
   sortBy: string;
@@ -19,9 +14,6 @@ interface TemplateSearchFilterRowProps {
   onSortDirChange: (value: string) => void;
   total: number;
   loadedCount: number;
-  // Recommended
-  hasRecommendations?: boolean;
-  onOpenRecommended?: () => void;
   // Filter row
   selectedCategory: string | null;
   connectorFilter: string[];
@@ -45,8 +37,6 @@ interface TemplateSearchFilterRowProps {
 }
 
 export function TemplateSearchControls({
-  viewMode,
-  onViewModeChange,
   density,
   onDensityChange,
   sortBy,
@@ -55,10 +45,8 @@ export function TemplateSearchControls({
   onSortDirChange,
   total,
   loadedCount,
-  hasRecommendations,
-  onOpenRecommended,
-}: Pick<TemplateSearchFilterRowProps, 'viewMode' | 'onViewModeChange' | 'density' | 'onDensityChange' | 'sortBy' | 'onSortByChange' | 'sortDir' | 'onSortDirChange' | 'total' | 'loadedCount' | 'hasRecommendations' | 'onOpenRecommended'>) {
-  const { t } = useTranslation();
+}: Pick<TemplateSearchFilterRowProps, 'density' | 'onDensityChange' | 'sortBy' | 'onSortByChange' | 'sortDir' | 'onSortDirChange' | 'total' | 'loadedCount'>) {
+  const showListControls = density !== 'role';
   return (
     <>
       {/* Count */}
@@ -68,41 +56,13 @@ export function TemplateSearchControls({
         </span>
       )}
 
-      {/* View mode toggle */}
-      {onViewModeChange && (
-        <div className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0">
-          <button
-            onClick={() => onViewModeChange('list')}
-            className={`p-1.5 transition-colors ${
-              viewMode === 'list'
-                ? 'bg-violet-500/20 text-violet-300'
-                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
-            }`}
-            title={t.templates.search.list_view}
-          >
-            <List className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onViewModeChange('explore')}
-            className={`p-1.5 transition-colors ${
-              viewMode === 'explore'
-                ? 'bg-violet-500/20 text-violet-300'
-                : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
-            }`}
-            title={t.templates.search.explore_view}
-          >
-            <Compass className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Density toggle (list mode only) */}
-      {viewMode !== 'explore' && density && onDensityChange && (
+      {/* Density toggle (includes By Role) */}
+      {density && onDensityChange && (
         <DensityToggle density={density} onChange={onDensityChange} />
       )}
 
-      {/* Sort (list mode only) */}
-      {viewMode !== 'explore' && (
+      {/* Sort (list modes only) */}
+      {showListControls && (
         <SortDropdown
           sortBy={sortBy}
           sortDir={sortDir}
@@ -112,23 +72,12 @@ export function TemplateSearchControls({
           }}
         />
       )}
-
-      {/* Recommended for You */}
-      {hasRecommendations && onOpenRecommended && (
-        <button
-          onClick={onOpenRecommended}
-          className="p-2 rounded-card border border-primary/10 hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors flex-shrink-0"
-          title={t.templates.search.recommended_for_you}
-        >
-          <Star className="w-4 h-4" />
-        </button>
-      )}
     </>
   );
 }
 
 export function TemplateSearchFilterRow({
-  viewMode,
+  density,
   selectedCategory,
   connectorFilter,
   onCategoryFilterChange,
@@ -147,7 +96,7 @@ export function TemplateSearchFilterRow({
   onBackfillTools,
   isBackfillingTools,
 }: TemplateSearchFilterRowProps) {
-  if (viewMode === 'explore') return null;
+  if (density === 'role') return null;
 
   return (
     <div className="px-4 pb-2.5 flex items-center gap-2">

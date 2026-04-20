@@ -14,6 +14,7 @@ import {
   type SyncLogEntry,
   type SyncConflict,
   type PushSyncResult,
+  type ObsidianConflictResolution,
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 
@@ -90,7 +91,7 @@ export default function SyncPanel() {
     }
   }, [addToast, setSyncRunning, setLastSyncAt, setPendingConflicts]);
 
-  const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: string) => {
+  const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {
       await obsidianBrainResolveConflict(conflict, resolution);
       setConflicts((prev) => prev.filter((c) => c.id !== conflict.id));

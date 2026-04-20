@@ -72,6 +72,9 @@ adoption-reports/
 # Debug / intermediate artifacts
 scripts/templates/_debug/
 
+# Temporary scratch files
+tmp/
+
 # Planning docs (GSD)
 .planning/
 

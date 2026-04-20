@@ -66,11 +66,14 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // -- Google ----------------------------------------------------
   gmail:              { label: 'Gmail',              color: '#EA4335', iconUrl: '/icons/connectors/gmail.svg',                        Icon: Mail },
   google_calendar:    { label: 'Google Calendar',    color: '#4285F4', iconUrl: 'https://cdn.simpleicons.org/googlecalendar/4285F4',  Icon: Calendar },
-  google_drive:       { label: 'Google Drive',       color: '#0F9D58', iconUrl: 'https://cdn.simpleicons.org/googledrive/0F9D58',     Icon: HardDrive },
+  google_drive:       { label: 'Google Drive',       color: '#0F9D58', iconUrl: '/icons/connectors/google-drive.svg',                Icon: HardDrive },
   google_workspace:   { label: 'Google Workspace',   color: '#4285F4', iconUrl: 'https://cdn.simpleicons.org/google/4285F4',          Icon: Mail },
   google_sheets:      { label: 'Google Sheets',      color: '#34A853', iconUrl: '/icons/connectors/google-sheets.svg',                Icon: Table },
   google_ads:         { label: 'Google Ads',         color: '#4285F4', iconUrl: '/icons/connectors/google-ads.svg',                    Icon: Megaphone },
   google_analytics:   { label: 'Google Analytics',   color: '#E37400', iconUrl: 'https://cdn.simpleicons.org/googleanalytics/E37400', Icon: BarChart },
+  gemini_vision:      { label: 'Gemini Vision',      color: '#8E75B2', iconUrl: '/icons/connectors/gemini-vision.svg',                Icon: Bot },
+  meta_ads:           { label: 'Meta Ads',           color: '#0668E1', iconUrl: '/icons/connectors/meta-ads.svg',                     Icon: Megaphone },
+  linkedin_ads:       { label: 'LinkedIn Ads',       color: '#0A66C2', iconUrl: '/icons/connectors/linkedin-ads.svg',                 Icon: Megaphone },
 
   // -- Microsoft ------------------------------------------------
   microsoft_outlook:  { label: 'Microsoft Outlook',          color: '#0078D4', iconUrl: '/icons/connectors/microsoft-outlook.svg',  Icon: Mail },
@@ -119,6 +122,9 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   vercel:             { label: 'Vercel',             color: '#000000', iconUrl: 'https://cdn.simpleicons.org/vercel/f0f0f0',           Icon: Triangle },
   netlify:            { label: 'Netlify',            color: '#00C7B7', iconUrl: 'https://cdn.simpleicons.org/netlify/00C7B7',          Icon: Globe },
   cloudflare:         { label: 'Cloudflare',         color: '#F38020', iconUrl: 'https://cdn.simpleicons.org/cloudflare/F38020',       Icon: Shield },
+  digitalocean:       { label: 'DigitalOcean',       color: '#0080FF', iconUrl: '/icons/connectors/digitalocean.svg',                 Icon: Cloud },
+  fly_io:             { label: 'Fly.io',             color: '#7B3FE4', iconUrl: '/icons/connectors/fly-io.svg',                       Icon: Cloud },
+  railway:            { label: 'Railway',            color: '#0B0D0E', iconUrl: '/icons/connectors/railway.svg',                      Icon: Cloud },
   aws:                { label: 'AWS',                color: '#FF9900', iconUrl: '/icons/connectors/aws.svg',                            Icon: Cloud },
   firebase:           { label: 'Firebase',           color: '#DD2C00', iconUrl: 'https://cdn.simpleicons.org/firebase/DD2C00',         Icon: Flame },
   kubernetes:         { label: 'Kubernetes',         color: '#326CE5', iconUrl: '/icons/connectors/kubernetes.svg',                     Icon: Cloud },
@@ -176,7 +182,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // -- Finance & Payments ----------------------------------------
   alpha_vantage:      { label: 'Alpha Vantage',      color: '#222832', iconUrl: '/icons/connectors/alpha-vantage.svg',                 Icon: BarChart3 },
-  stripe:             { label: 'Stripe',             color: '#635BFF', iconUrl: 'https://cdn.simpleicons.org/stripe/635BFF',           Icon: CreditCard },
+  stripe:             { label: 'Stripe',             color: '#635BFF', iconUrl: '/icons/connectors/stripe.svg',                        Icon: CreditCard },
   paddle:             { label: 'Paddle',             color: '#FDDD35', iconUrl: 'https://cdn.simpleicons.org/paddle/FDDD35',           Icon: CreditCard },
   quickbooks:         { label: 'QuickBooks',         color: '#2CA01C', iconUrl: 'https://cdn.simpleicons.org/quickbooks/2CA01C',       Icon: Calculator },
   xero:               { label: 'Xero',               color: '#13B5EA', iconUrl: 'https://cdn.simpleicons.org/xero/13B5EA',            Icon: Calculator },
@@ -190,7 +196,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // -- Time Tracking ---------------------------------------------
   clockify:           { label: 'Clockify',           color: '#03A9F4', iconUrl: 'https://cdn.simpleicons.org/clockify/03A9F4',         Icon: Activity },
   toggl:              { label: 'Toggl Track',        color: '#E57CD8', iconUrl: 'https://cdn.simpleicons.org/toggltrack/E57CD8',       Icon: Activity },
-  harvest:            { label: 'Harvest',            color: '#F36F21', iconUrl: 'https://cdn.simpleicons.org/harvest/F36F21',          Icon: Activity },
+  harvest:            { label: 'Harvest',            color: '#FA5D00', iconUrl: '/icons/connectors/harvest.svg',                      Icon: Activity },
 
   // -- CMS -------------------------------------------------------
   wordpress:          { label: 'WordPress',          color: '#21759B', iconUrl: 'https://cdn.simpleicons.org/wordpress/21759B',        Icon: Globe },
@@ -260,9 +266,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   'in-app-messaging': { label: 'In-app Messaging',   color: '#10B981', iconUrl: null,                                                   Icon: Bell },
 
   // -- Desktop Apps --------------------------------------------
-  desktop_vscode:     { label: 'VS Code',            color: '#007ACC', iconUrl: '/icons/connectors/vscode.svg',                          Icon: MonitorCheck },
   desktop_docker:     { label: 'Docker',             color: '#2496ED', iconUrl: '/icons/connectors/docker.svg',                          Icon: HardDrive },
-  desktop_terminal:   { label: 'Terminal',           color: '#4D4D4D', iconUrl: '/icons/connectors/terminal.svg',                        Icon: MonitorCheck },
   desktop_obsidian:   { label: 'Obsidian',           color: '#7C3AED', iconUrl: '/icons/connectors/obsidian.svg',                        Icon: FileText },
   desktop_browser:    { label: 'Browser',            color: '#4285F4', iconUrl: '/icons/connectors/chrome.svg',                          Icon: Globe },
 };

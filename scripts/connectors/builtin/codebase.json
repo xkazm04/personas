@@ -36,7 +36,6 @@
     "is_builtin": true,
     "always_active": true,
     "connection_mode": "desktop_bridge",
-    "min_tier": "builder",
     "summary": "Access local codebases registered in Dev Tools. Provides file access, context maps for quick orientation, and idea/task management for backlog tracking. Enables agents to read, search, analyze project files, create and triage ideas, and execute implementation tasks.",
     "auth_type": "builtin",
     "auth_type_label": "Project",

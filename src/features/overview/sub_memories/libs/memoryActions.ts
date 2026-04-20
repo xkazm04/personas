@@ -1,5 +1,6 @@
 import type { MemoryReviewDetail } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export type MemoryActionKind = 'throttle' | 'schedule' | 'alert' | 'config' | 'routing';
 
@@ -18,17 +19,61 @@ export interface MemoryAction {
 
 const STORAGE_KEY = 'dolla:memory-actions';
 
+/**
+ * In-memory mirror of the last successful load. Acts as a session-scoped
+ * backup so a mid-session corruption of `localStorage[STORAGE_KEY]` (truncation,
+ * manual edit, quota eviction) doesn't discard the rules the user has already
+ * seen in this session. `saveActions` keeps it in sync.
+ */
+let _sessionBackup: MemoryAction[] = [];
+let _hasReportedCorruption = false;
+
 export function loadActions(): MemoryAction[] {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as MemoryAction[];
-  } catch { return []; }
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch (err) {
+    // Storage access denied (private mode, disabled cookies, etc.) — no user
+    // toast, but route to Sentry so we know how common this is.
+    silentCatch('memoryActions:loadActions:getItem')(err);
+    return [..._sessionBackup];
+  }
+  if (!raw) return [..._sessionBackup];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      // Shape-guard — legitimately treat "not an array" as corruption so
+      // later callers don't iterate on a non-iterable.
+      throw new Error(`expected array, got ${typeof parsed}`);
+    }
+    _sessionBackup = parsed as MemoryAction[];
+    return parsed as MemoryAction[];
+  } catch (err) {
+    // Hard data-loss path: report once per session and prefer the in-memory
+    // backup over silently wiping the user's rules.
+    if (!_hasReportedCorruption) {
+      _hasReportedCorruption = true;
+      toastCatch(
+        'memoryActions:loadActions:parse',
+        _sessionBackup.length > 0
+          ? 'Your saved memory-action rules could not be read and were restored from this session.'
+          : 'Your saved memory-action rules could not be read and may need to be re-created.',
+      )(err);
+    } else {
+      silentCatch('memoryActions:loadActions:parse')(err);
+    }
+    return [..._sessionBackup];
+  }
 }
 
 export function saveActions(actions: MemoryAction[]): void {
+  _sessionBackup = actions.slice();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(actions)); }
-  catch { /* storage full */ }
+  catch (err) {
+    // Quota exceeded or storage disabled — not a data-loss bug (the in-memory
+    // backup still holds the rules), but Sentry should see it.
+    silentCatch('memoryActions:saveActions')(err);
+  }
 }
 
 const KIND_PATTERNS: Array<{ kind: MemoryActionKind; patterns: RegExp[] }> = [

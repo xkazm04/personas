@@ -1,6 +1,5 @@
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { isTierVisible, type Tier } from '@/lib/constants/uiModes';
 import { useSystemStore } from '@/stores/systemStore';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { PickerGrid } from './PickerGrid';
@@ -14,16 +13,7 @@ interface CredentialPickerProps {
   searchTerm?: string;
 }
 
-export function CredentialPicker({ connectors: rawConnectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
-  const viewMode = useSystemStore((s) => s.viewMode);
-
-  // Filter out connectors gated behind a higher tier than the user's current mode
-  const connectors = useMemo(() => rawConnectors.filter((c) => {
-    const meta = (c.metadata ?? {}) as Record<string, unknown>;
-    const minTier = meta.min_tier as Tier | undefined;
-    return !minTier || isTierVisible(minTier, viewMode);
-  }), [rawConnectors, viewMode]);
-
+export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
   const filters = usePickerFilters(connectors, credentials, searchTerm);
   const recipeIndicators = useRecipeIndicators();
   const tourActive = useSystemStore((s) => s.tourActive);

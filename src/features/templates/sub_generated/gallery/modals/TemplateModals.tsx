@@ -1,5 +1,4 @@
 import { ConnectorCredentialModal } from '@/features/vault/sub_credentials/components/forms/ConnectorCredentialModal';
-import { TemplateDetailModal } from './TemplateDetailModal';
 import AdoptionWizardModal from '../../adoption/AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
@@ -39,9 +38,7 @@ interface TemplateModalsProps {
 
 export function TemplateModals({
   modals,
-  onDeleteReview,
   onPersonaCreated,
-  onViewFlows,
   rebuild,
   preview,
   recommendedTemplates,
@@ -52,26 +49,6 @@ export function TemplateModals({
 }: TemplateModalsProps) {
   return (
     <>
-      {/* Detail Modal */}
-      <TemplateDetailModal
-        isOpen={modals.isOpen('detail')}
-        onClose={() => modals.close('detail')}
-        review={modals.find('detail')?.review ?? null}
-        onAdopt={(review) => modals.open({ type: 'adopt', review })}
-        onDelete={onDeleteReview}
-        onViewFlows={(review) => {
-          modals.close('detail');
-          onViewFlows(review);
-        }}
-        onTryIt={(review) => {
-          if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
-            preview.resetPreview();
-          }
-          modals.close('detail');
-          modals.open({ type: 'preview', review });
-        }}
-      />
-
       {/* Adoption Wizard Modal */}
       <AdoptionWizardModal
         isOpen={modals.isOpen('adopt')}

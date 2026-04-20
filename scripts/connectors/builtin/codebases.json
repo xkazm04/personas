@@ -54,7 +54,6 @@
     "is_builtin": true,
     "always_active": true,
     "connection_mode": "desktop_bridge",
-    "min_tier": "builder",
     "summary": "Aggregate view across all Dev Tools projects. Provides cross-project impact analysis, unified code search, dependency graph comparison, an agent-driven implementation pipeline (branching, diffing, testing, committing), and portfolio-level intelligence (health scores, tech radar, risk matrix). Designed as a composable puzzle piece for agentic workflows.",
     "auth_type": "builtin",
     "auth_type_label": "All Projects",

@@ -9,9 +9,7 @@ import type { DiscoveredApp } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const APP_ICONS: Record<string, string> = {
-  desktop_vscode: 'VS Code',
   desktop_docker: 'Docker',
-  desktop_terminal: 'Terminal',
   desktop_obsidian: 'Obsidian',
   desktop_browser: 'Browser',
 };
@@ -33,7 +31,7 @@ function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip
   );
 }
 
-const HIGH_RISK_APPS = new Set(['desktop_docker', 'desktop_terminal']);
+const HIGH_RISK_APPS = new Set(['desktop_docker']);
 
 export function DesktopDiscoveryStep({
   apps,

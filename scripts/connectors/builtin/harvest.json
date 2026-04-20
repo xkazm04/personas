@@ -2,8 +2,8 @@
   "id": "builtin-harvest",
   "name": "harvest",
   "label": "Harvest",
-  "color": "#F36F21",
-  "icon_url": "https://cdn.simpleicons.org/harvest/F36F21",
+  "color": "#FA5D00",
+  "icon_url": "/icons/connectors/harvest.svg",
   "category": "time-tracking",
   "fields": [
     {

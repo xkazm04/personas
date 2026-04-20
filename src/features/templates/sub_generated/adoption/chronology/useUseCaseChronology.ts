@@ -13,6 +13,7 @@
  */
 import { useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import type { UseCaseFlow, FlowNode, FlowEdge } from '@/lib/types/frontendTypes';
 
 export type DimensionPresence = 'linked' | 'shared' | 'none';
 
@@ -516,6 +517,78 @@ export function useUseCaseChronology(): ChronologyRow[] {
   const buildDraft = useAgentStore((s) => s.buildDraft);
   return useMemo(
     () => buildChronology(buildDraft as Record<string, unknown> | null),
+    [buildDraft],
+  );
+}
+
+/* ── Flow lookup ─────────────────────────────────────────────────────
+ * Returns a map keyed by use-case id → UseCaseFlow with full nodes+edges.
+ * Used by the Wildcard variant to open ActivityDiagramModal scoped to a
+ * single capability. The hook stays minimal on purpose: it reads the same
+ * buildDraft the chronology hook does and extracts the subset needed by
+ * the diagram modal, so both views stay consistent.
+ */
+const FLOW_NODE_TYPES: ReadonlyArray<FlowNode['type']> =
+  ['start', 'end', 'action', 'decision', 'connector', 'event', 'error'];
+
+function coerceNodeType(raw: string): FlowNode['type'] {
+  return (FLOW_NODE_TYPES as readonly string[]).includes(raw)
+    ? (raw as FlowNode['type'])
+    : 'action';
+}
+
+function buildFlowLookup(draft: Record<string, unknown> | null): Map<string, UseCaseFlow> {
+  const out = new Map<string, UseCaseFlow>();
+  if (!draft) return out;
+  const d = draft as Record<string, unknown>;
+
+  const raw = asArray(d.use_case_flows).length > 0
+    ? asArray(d.use_case_flows)
+    : asArray(d.use_cases);
+
+  for (const uc of raw) {
+    const o = asObj(uc);
+    const id = asStr(o.id);
+    if (!id) continue;
+    const nodesRaw = asArray(o.nodes);
+    const edgesRaw = asArray(o.edges);
+    if (nodesRaw.length === 0) continue;
+
+    const nodes: FlowNode[] = nodesRaw.map((n, i) => {
+      const no = asObj(n);
+      return {
+        id: asStr(no.id, `n${i}`),
+        type: coerceNodeType(asStr(no.type, 'action')),
+        label: asStr(no.label, `Step ${i + 1}`),
+        detail: asStr(no.detail) || undefined,
+        connector: asStr(no.connector) || undefined,
+      };
+    });
+    const edges: FlowEdge[] = edgesRaw.map((e, i) => {
+      const eo = asObj(e);
+      return {
+        id: asStr(eo.id, `e${i}`),
+        source: asStr(eo.source),
+        target: asStr(eo.target),
+        label: asStr(eo.label) || undefined,
+      };
+    }).filter((e) => e.source && e.target);
+
+    out.set(id, {
+      id,
+      name: asStr(o.name ?? o.title, id),
+      description: asStr(o.description),
+      nodes,
+      edges,
+    });
+  }
+  return out;
+}
+
+export function useUseCaseFlows(): Map<string, UseCaseFlow> {
+  const buildDraft = useAgentStore((s) => s.buildDraft);
+  return useMemo(
+    () => buildFlowLookup(buildDraft as Record<string, unknown> | null),
     [buildDraft],
   );
 }
