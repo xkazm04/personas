@@ -17,6 +17,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("event-bridge");
@@ -352,6 +353,56 @@ const registry: EventRegistration[] = [
           } else {
             store.processEnded(payload.domain, payload.action, payload.run_id);
           }
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Execution status → Notification Center ---------------------------------
+  // Surfaces failed / cancelled / incomplete executions in the TitleBar
+  // notification bell. PROCESS_ACTIVITY already drives the live dock indicator,
+  // but its payload lacks the error message — EXECUTION_STATUS carries it, so
+  // that's the right event for a user-facing notification. The process record
+  // populated by PROCESS_ACTIVITY is re-used to recover the persona name.
+  {
+    event: EventName.EXECUTION_STATUS,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.EXECUTION_STATUS,
+        (payload) => {
+          const { status, execution_id, error } = payload;
+          if (status !== "failed" && status !== "cancelled" && status !== "incomplete") {
+            return;
+          }
+
+          // PROCESS_ACTIVITY "failed"/"cancelled" fires just before this event
+          // and may have already moved the row from activeProcesses to
+          // recentProcesses — check both.
+          const overview = useOverviewStore.getState();
+          const proc =
+            overview.activeProcesses[`execution:${execution_id}`]
+            ?? overview.recentProcesses.find((p) => p.runId === execution_id);
+
+          const notificationStatus =
+            status === "cancelled" ? "canceled"
+            : status === "incomplete" ? "warning"
+            : "failed";
+
+          const fallbackSummary =
+            status === "cancelled" ? "Execution was cancelled"
+            : status === "incomplete" ? "Execution finished incomplete"
+            : "Execution failed";
+
+          useNotificationCenterStore.getState().addProcessNotification({
+            processType: "execution",
+            personaId: proc?.personaId ?? null,
+            personaName: proc?.label ?? null,
+            status: notificationStatus,
+            summary: error ?? fallbackSummary,
+            redirectSection: "agents",
+            redirectTab: null,
+          });
         },
       );
       return [unlisten];
