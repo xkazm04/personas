@@ -1,18 +1,21 @@
 /**
- * Shared helpers + types for the three UseCasePickerStep variants
- * (Grid / Split / Stack). Each variant renders the same data with the
- * same behavior contract, differing only in layout + interaction.
+ * Shared helpers + types for UseCasePickerStep (Neon).
  *
- * Keeping the behavior here means the variants are swappable at the
- * tab-switcher level without any backend/data contract drift.
+ * Manual is the implicit default state (no chip, no family active).
+ * Time and Event are two mutually-exclusive trigger families the user
+ * can enable or disable per capability. Custom cron is intentionally
+ * not exposed in the UI.
  */
-import { Calendar, Clock, Zap, Settings2, Hand, type LucideIcon } from 'lucide-react';
+import { Calendar, Clock, type LucideIcon } from 'lucide-react';
 
 /**
  * User's trigger choice for a single capability. The materializer in
  * MatrixAdoptionView.triggerSelectionToTrigger converts this into the
  * concrete {trigger_type, config, description} shape the persona
  * builder expects.
+ *
+ * `preset: 'custom' + empty customCron` encodes the Manual state (no
+ * schedule, no event listener).
  */
 export interface TriggerSelection {
   preset: 'daily' | 'weekly' | 'hourly' | 'event' | 'custom';
@@ -46,47 +49,49 @@ export interface UseCasePickerVariantProps {
   onContinue: () => void;
 }
 
-export type PresetKey = TriggerSelection['preset'] | 'manual';
+export type TimePreset = 'hourly' | 'daily' | 'weekly';
 
-export interface PresetMeta {
-  key: PresetKey;
+export interface TimePresetMeta {
+  key: TimePreset;
   label: string;
   icon: LucideIcon;
 }
 
-export const PRESETS: PresetMeta[] = [
-  { key: 'manual', label: 'Manual', icon: Hand },
+/** Time-family sub-presets. Event is its own family (no sub-presets). */
+export const TIME_PRESETS: TimePresetMeta[] = [
   { key: 'hourly', label: 'Hourly', icon: Clock },
   { key: 'daily', label: 'Daily', icon: Calendar },
   { key: 'weekly', label: 'Weekly', icon: Calendar },
-  { key: 'event', label: 'Event', icon: Zap },
-  { key: 'custom', label: 'Custom cron', icon: Settings2 },
 ];
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-/**
- * "manual" is a UI concept — internally maps to preset:"custom" with
- * empty customCron. The cron-to-schedule materializer interprets that
- * as trigger_type: "manual" and drops the cron field.
- */
+export type TriggerFamily = 'time' | 'event' | 'none';
+
+/** Classify a selection into its family. Non-standard custom crons
+ *  collapse to 'none' (Manual) because Custom is no longer in the UI. */
+export function getFamily(sel: TriggerSelection | undefined): TriggerFamily {
+  if (!sel) return 'none';
+  if (sel.preset === 'event') return 'event';
+  if (sel.preset === 'hourly' || sel.preset === 'daily' || sel.preset === 'weekly') return 'time';
+  return 'none';
+}
+
+/** True when the card is in the Manual default state (no family active). */
 export function isManual(sel: TriggerSelection | undefined): boolean {
-  return sel?.preset === 'custom' && !sel.customCron?.trim();
+  return getFamily(sel) === 'none';
 }
 
-export function presetKeyForSelection(sel: TriggerSelection | undefined): PresetKey {
-  if (!sel) return 'manual';
-  if (isManual(sel)) return 'manual';
-  return sel.preset;
-}
-
-export function selectionForPreset(
-  key: PresetKey,
+/**
+ * Build a TriggerSelection that activates the Time family with a
+ * specific sub-preset, reusing any previously-set hour/weekday so the
+ * user doesn't lose values when flipping between hourly/daily/weekly.
+ */
+export function selectionForTimePreset(
+  key: TimePreset,
   prev: TriggerSelection | undefined,
 ): TriggerSelection {
   switch (key) {
-    case 'manual':
-      return { preset: 'custom', customCron: '' };
     case 'hourly':
       return { preset: 'hourly' };
     case 'daily':
@@ -97,38 +102,35 @@ export function selectionForPreset(
         hourOfDay: prev?.hourOfDay ?? 9,
         weekday: prev?.weekday ?? 1,
       };
-    case 'event':
-      return { preset: 'event', eventType: prev?.eventType };
-    case 'custom':
-      return { preset: 'custom', customCron: prev?.customCron ?? '' };
   }
+}
+
+/** Reset to Manual — both families off. */
+export function manualSelection(): TriggerSelection {
+  return { preset: 'custom', customCron: '' };
+}
+
+/** Enable the Time family. Picks daily 9am as the default sub-preset
+ *  if nothing usable comes from prev. */
+export function enableTimeFamily(prev: TriggerSelection | undefined): TriggerSelection {
+  if (prev && getFamily(prev) === 'time') return prev;
+  return selectionForTimePreset('daily', prev);
+}
+
+/** Enable the Event family. Pre-fills the first available event when
+ *  the user hasn't picked one yet. */
+export function enableEventFamily(
+  prev: TriggerSelection | undefined,
+  availableEvents: string[],
+): TriggerSelection {
+  if (prev && getFamily(prev) === 'event') return prev;
+  return { preset: 'event', eventType: prev?.eventType ?? availableEvents[0] };
 }
 
 export function clampHour(raw: string): number {
   const n = parseInt(raw, 10);
   if (Number.isNaN(n)) return 0;
   return Math.max(0, Math.min(23, n));
-}
-
-/**
- * One-line human-readable summary of a trigger selection, used in the
- * split-pane list and the stack's collapsed rows.
- */
-export function describeSelection(sel: TriggerSelection | undefined): string {
-  if (!sel) return 'Manual';
-  if (isManual(sel)) return 'Manual';
-  switch (sel.preset) {
-    case 'hourly':
-      return 'Hourly';
-    case 'daily':
-      return `Daily at ${String(sel.hourOfDay ?? 9).padStart(2, '0')}:00`;
-    case 'weekly':
-      return `${WEEKDAYS[sel.weekday ?? 1] ?? 'Mon'} at ${String(sel.hourOfDay ?? 9).padStart(2, '0')}:00`;
-    case 'event':
-      return sel.eventType ? `On ${sel.eventType}` : 'Event-driven (unconfigured)';
-    case 'custom':
-      return `Cron: ${sel.customCron ?? ''}`;
-  }
 }
 
 /**
