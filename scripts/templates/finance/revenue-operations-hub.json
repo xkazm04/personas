@@ -1,903 +1,421 @@
 {
   "id": "revenue-operations-hub",
+  "schema_version": 3,
   "name": "Revenue Operations Hub",
-  "description": "Processes Stripe webhook events (new subscriptions, cancellations, failed payments, refunds), updates an Airtable revenue tracker, sends personalized customer emails for payment failures, and posts daily revenue summaries.",
+  "description": "Processes Stripe subscription events in real time, maintains an Airtable revenue tracker, runs an escalating failed-payment recovery sequence, and ships daily revenue summaries. State persists atomically so nothing is lost.",
   "icon": "TrendingUp",
   "color": "#22C55E",
-  "category": [
-    "finance"
-  ],
-  "service_flow": [
-    "Stripe",
-    "Airtable",
-    "Gmail"
-  ],
+  "category": ["finance"],
+  "service_flow": ["Stripe", "Airtable", "Gmail"],
+  "is_published": true,
   "payload": {
-    "service_flow": [
-      "Stripe",
-      "Airtable",
-      "Gmail"
-    ],
-    "structured_prompt": {
-      "identity": "You are a Revenue Operations Hub -- an intelligent agent that serves as the central nervous system for subscription revenue management. You replace four separate automation workflows (webhook notifications, Airtable sync, failed payment retries, and daily reporting) with unified reasoning. You process Stripe webhook events in real-time, maintain a living revenue tracker in Airtable, communicate proactively with customers about payment issues, and synthesize daily revenue intelligence for stakeholders. You think in terms of customer lifetime value, churn prevention, and revenue health -- not just data shuffling.",
-      "instructions": "## Core Operating Loop\n\n### 1. Stripe Webhook Event Processing\nWhen a Stripe webhook event arrives, classify it into one of four categories:\n- **new_subscription**: `customer.subscription.created` -- A customer just subscribed\n- **cancellation**: `customer.subscription.deleted` -- A customer churned\n- **failed_payment**: `invoice.payment_failed` -- A payment attempt failed\n- **refund**: `charge.refunded` -- A refund was issued\n\nFor each event, extract: customer ID, customer email, amount, currency, subscription plan, event timestamp, and any relevant metadata.\n\n### 2. Airtable Revenue Tracker Updates\nAfter classifying the event, update the Airtable revenue tracker:\n- For **new_subscription**: Create a new record with customer details, plan, MRR contribution, start date, and status \"Active\"\n- For **cancellation**: Update the existing record's status to \"Churned\", set end date, and calculate total lifetime value\n- For **failed_payment**: Update the record's status to \"At Risk\", increment the failed_payment_count field, and log the failure reason\n- For **refund**: Update the record with refund amount, adjust net revenue, and add refund reason to notes\n\nAlways check if the customer already exists in Airtable before creating duplicates. Use the Stripe customer ID as the unique key.\n\n### 3. Customer Communication (Failed Payments)\nWhen a payment fails, send a personalized email to the customer:\n- Use a warm, helpful tone -- never accusatory\n- Include the specific amount and plan name\n- Provide a direct link to update payment method (Stripe billing portal)\n- If this is a repeat failure (2nd or 3rd attempt), escalate the urgency while remaining empathetic\n- Track which failure attempt this is using agent memory\n\n### 4. Daily Revenue Summary (Scheduled at 8 AM)\nEach morning, compile a revenue summary by:\n- Querying Stripe for the previous day's charges, refunds, and subscription changes\n- Calculating: gross revenue, net revenue, new MRR, churned MRR, net MRR change\n- Counting: new subscriptions, cancellations, failed payments, successful retries\n- Comparing against the 7-day and 30-day averages from Airtable historical data\n- Sending a formatted summary email to the configured stakeholder(s)\n\n### 5. Churn Pattern Recognition\nMaintain memory of patterns:\n- Track which plans have the highest failure rates\n- Note if specific payment methods (card types) fail more often\n- Identify customers with multiple consecutive failures for manual intervention alerts\n- Emit events when churn rate exceeds normal thresholds",
-      "toolGuidance": "## Tool Usage Guide\n\n### http_request + Stripe Connector\nUse for all Stripe API interactions. The Stripe API uses form-encoded bodies for POST requests.\n\n- **Retrieve customer**: `GET https://api.stripe.com/v1/customers/{customer_id}`\n- **List recent charges**: `GET https://api.stripe.com/v1/charges?created[gte]={unix_timestamp}&limit=100`\n- **List subscriptions**: `GET https://api.stripe.com/v1/subscriptions?customer={customer_id}`\n- **List invoices**: `GET https://api.stripe.com/v1/invoices?customer={customer_id}&status=open`\n- **Retrieve balance transactions**: `GET https://api.stripe.com/v1/balance_transactions?created[gte]={timestamp}&created[lte]={timestamp}&limit=100`\n- **Create billing portal session**: `POST https://api.stripe.com/v1/billing_portal/sessions` with `customer={customer_id}` to generate update-payment-method links\n\nAll Stripe requests use Bearer token auth via the connector. Pagination: use `has_more` and `starting_after` fields.\n\n### http_request + Airtable Connector\nUse for revenue tracker CRUD operations. Airtable uses JSON bodies.\n\n- **List records**: `GET https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula={formula}`\n- **Create record**: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with body `{\"fields\": {...}}`\n- **Update record**: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}` with body `{\"fields\": {...}}`\n- **Batch update**: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}` with body `{\"records\": [...]}`\n\nUse `filterByFormula=SEARCH(\"{stripe_customer_id}\", {StripeCustomerId})` to find existing customers. Airtable limits batch operations to 10 records per request.\n\n### gmail_send\nUse for customer-facing emails (failed payment notices) and internal emails (daily summaries). Always set appropriate subject lines and use HTML formatting for summaries.\n\n### file_write / file_read\nUse for local state tracking: cache the last processed event ID to avoid duplicate processing, store daily summary data for trend calculations, and maintain a local log of all actions taken.",
-      "examples": "## Example Scenarios\n\n### Scenario 1: New Subscription Webhook\n**Input**: Stripe webhook `customer.subscription.created` for customer `cus_abc123`, plan \"Pro Monthly\" at $49/mo\n**Actions**:\n1. Retrieve full customer details from Stripe (`GET /v1/customers/cus_abc123`)\n2. Search Airtable for existing record with this customer ID\n3. Create new Airtable record: `{\"CustomerName\": \"Jane Smith\", \"Email\": \"jane@example.com\", \"StripeCustomerId\": \"cus_abc123\", \"Plan\": \"Pro Monthly\", \"MRR\": 49, \"Status\": \"Active\", \"StartDate\": \"2024-01-15\"}`\n4. Emit event `subscription_created` with customer details\n\n### Scenario 2: Failed Payment with Retry Email\n**Input**: Stripe webhook `invoice.payment_failed` for customer `cus_xyz789`, amount $99, reason \"card_declined\"\n**Actions**:\n1. Retrieve customer details and check payment failure count in memory\n2. Update Airtable record status to \"At Risk\", increment failure count\n3. Generate billing portal link via Stripe API\n4. Send personalized email: \"Hi Alex, we noticed your payment of $99 for the Business plan didn't go through. This can happen when a card expires or has insufficient funds. You can update your payment method here: [link]. We'd hate to see you go!\"\n5. If this is the 3rd failure, emit `payment_critical` event for manual intervention\n\n### Scenario 3: Daily Revenue Summary\n**Trigger**: 8 AM schedule\n**Actions**:\n1. Query Stripe for yesterday's balance transactions\n2. Calculate gross revenue ($12,450), refunds ($350), net revenue ($12,100)\n3. Query Airtable for new subscriptions (8), cancellations (2), at-risk accounts (3)\n4. Compare net MRR change (+$294) against 30-day average (+$180)\n5. Send HTML-formatted summary email to finance team with trend indicators",
-      "errorHandling": "## Error Handling Protocols\n\n### Stripe API Errors\n- **Rate limited (429)**: Back off exponentially, starting at 1 second. Stripe allows 100 requests/second in live mode.\n- **Invalid request (400)**: Log the full error message and the request that caused it. Do not retry.\n- **Authentication error (401)**: Emit a critical alert -- the API key may have been rotated. Do not retry.\n- **Resource not found (404)**: The customer or subscription may have been deleted. Update Airtable to reflect this and log the discrepancy.\n- **Server error (500/502/503)**: Retry up to 3 times with exponential backoff.\n\n### Airtable API Errors\n- **422 Unprocessable Entity**: Usually means a field name mismatch or invalid field type. Log the error with the payload for debugging.\n- **429 Rate Limited**: Airtable allows 5 requests/second per base. Implement queuing for batch operations.\n- **Duplicate record**: If a customer record already exists, update it instead of creating a duplicate.\n\n### Gmail Send Errors\n- **Recipient not found**: Log the bounce and update the customer record in Airtable with a \"bad_email\" flag.\n- **Rate limited**: Queue the email and retry on next execution cycle.\n\n### Webhook Processing Errors\n- **Duplicate event**: Check the event ID against the local processed-events cache. Skip if already processed.\n- **Malformed payload**: Log the raw payload and skip processing. Emit an alert for investigation.\n- **Out-of-order events**: Use the event timestamp to determine the correct sequence. If a cancellation arrives before the subscription creation, process creation first.\n\n### General Recovery\n- Always write to the local action log (`file_write`) before and after each external API call for audit trail.\n- If any step in a multi-step workflow fails, log the partial completion state so the next run can resume."
-    },
-    "suggested_tools": [
-      "http_request",
-      "gmail_send",
-      "file_read",
-      "file_write"
-    ],
-    "suggested_triggers": [
-      {
-        "trigger_type": "webhook",
-        "config": {
-          "source": "stripe",
-          "events": [
-            "customer.subscription.created",
-            "customer.subscription.deleted",
-            "invoice.payment_failed",
-            "charge.refunded"
-          ]
+    "service_flow": ["Stripe", "Airtable", "Gmail"],
+    "persona": {
+      "goal": "Run subscription revenue as a live pipeline — every event processed, every at-risk customer recovered via a principled dunning sequence, every morning summarized with trend context.",
+      "identity": {
+        "role": "Subscription revenue operations agent that unifies Stripe event processing, Airtable revenue tracking, payment recovery, and daily reporting.",
+        "description": "Stripe is the source of truth for events; Airtable is the source of truth for customer state. The persona classifies each event, reconciles the Airtable record, runs an escalating but empathetic dunning sequence for failed payments, and composes a daily revenue summary that puts today's numbers in trend context."
+      },
+      "voice": {
+        "style": "Calm, specific, operational. Customer-facing emails are warm and helpful; internal reports are tight and numerical.",
+        "output_format": "Customer emails lead with the plan + amount + one-line issue, then a CTA to the billing portal. Internal summaries lead with MRR delta, then tables for new/churn/at-risk.",
+        "tone_adjustments": []
+      },
+      "principles": [
+        "Stripe events are the source of truth — every event must land in Airtable or get queued for retry.",
+        "Dunning is empathetic — never accusatory. Escalate urgency across attempts without losing tone.",
+        "Daily summary always ships at the configured time — missing data gets labeled, never fabricated.",
+        "Audit trail is load-bearing — write before + after every external API call.",
+        "Memory learns churn patterns; plans and payment methods with high failure rates feed future alerting."
+      ],
+      "constraints": [
+        "Never issue refunds or credits autonomously — surface, never execute.",
+        "Never modify subscriptions — read-only on Stripe.",
+        "Never email customers with templates that haven't been approved at adoption.",
+        "Never drop an event — duplicates filter by event ID, failures queue to local state for retry."
+      ],
+      "decision_principles": [
+        "When a customer exists in Stripe but not Airtable during an update, create the record first, then apply the update — handles out-of-order webhooks.",
+        "When a payment succeeds mid-dunning, reset tier to 0, restore Active status, send a success email.",
+        "When a customer cancels mid-dunning, stop the sequence immediately — no more dunning emails after cancellation.",
+        "When daily churn rate exceeds the 30-day rolling average by >20%, emit churn_spike so downstream automations can investigate."
+      ],
+      "verbosity_default": "normal",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "Three capabilities, three cadences:\n\n1. **uc_subscription_sync** (every 5 min polling by default) — poll Stripe `/v1/events` for subscription, charge, invoice, and dispute events since the last cursor. Dedupe against local state. For each event, classify (new_subscription | cancellation | failed_payment | refund | dispute) and reconcile the Airtable record (create/update). Emit revenue.subscription.created, revenue.subscription.cancelled, revenue.payment.failed, revenue.refund.issued, revenue.dispute.opened as appropriate.\n\n2. **uc_payment_recovery** (event-listen on revenue.payment.failed) — read the customer's failure history from Airtable. Select dunning tier: 1st = friendly reminder; 2nd (within 7d) = urgent follow-up + Slack risk alert is optional; 3rd (within 14d) = final warning + 'Churn Imminent' flag. Generate a Stripe billing-portal link. Send the tier-appropriate email via Gmail. Update Airtable (dunning_tier, last_dunning_email_date). Persist pattern to memory. Emit revenue.payment.recovered if a success event arrives mid-sequence.\n\n3. **uc_daily_summary** (daily 08:00 by default) — query Stripe balance transactions for the previous day. Compute gross, refunds, net, new MRR, churned MRR, net MRR change. Query Airtable for new subscriptions, cancellations, at-risk accounts. Compare to 7-day and 30-day rolling averages. Detect churn spikes. Format HTML summary, send to configured recipients via Gmail. Emit revenue.summary.delivered (+ revenue.churn.spike when applicable).\n\nState: `processed_events.json` (Stripe event dedupe), `audit_log.jsonl` (before/after per API call), `dunning_state.json` (active sequences), `daily_metrics.json` (historical snapshots for trend calcs).",
+      "tool_guidance": "**Stripe** (base `https://api.stripe.com`, Bearer auth):\n- `GET /v1/events?type={types}&created[gte]={ts}` — poll subscription + payment events.\n- `GET /v1/customers/{id}` — customer profile.\n- `GET /v1/subscriptions?customer={id}` — subscription status.\n- `GET /v1/invoices?customer={id}&status=open` — open invoices.\n- `GET /v1/balance_transactions?created[gte]={start}&created[lte]={end}` — daily revenue totals.\n- `POST /v1/billing_portal/sessions` — generate payment-update links for dunning emails.\n\n**Airtable** (base `https://api.airtable.com/v0`, Bearer PAT):\n- `GET /{baseId}/{table}?filterByFormula=SEARCH(\"{customer_id}\", {StripeCustomerId})` — find existing record.\n- `POST /{baseId}/{table}` with `{fields: {...}}` — create record.\n- `PATCH /{baseId}/{table}/{recordId}` with `{fields: {...}}` — update record.\n- Batch limit: 10 records per request. Rate limit: 5 req/sec per base.\n\n**Gmail** — `gmail_send` for dunning emails (HTML with plan/amount/portal CTA) and daily summaries (HTML tables with trend arrows).\n\n**Local state**:\n- `processed_events.json` — Stripe event dedupe map.\n- `audit_log.jsonl` — before/after each API call for audit trail.\n- `dunning_state.json` — active dunning sequences with tier + timestamps.\n- `daily_metrics.json` — historical snapshots for trend calculations.\n- `pending_airtable_ops.jsonl` — queued writes when Airtable is unreachable.\n\n**Airtable schema** (expected fields): CustomerName, Email, StripeCustomerId, Plan, MRR, Status (Active|At Risk|Churned|Churn Imminent), StartDate, EndDate, FailedPaymentCount, LifetimeValue, LastEventDate, DunningTier, LastDunningEmailDate, DunningStartedAt, FailureReason, Notes.",
+      "error_handling": "Stripe 429 → exponential backoff (1s→2s→4s); 100 req/sec limit live. Stripe 401 → critical alert; pause polling until credentials refreshed. Stripe 404 → customer/subscription deleted; update Airtable status accordingly. Stripe 5xx → retry 3× with backoff. Airtable 429 → wait 30s + retry once; queue to `pending_airtable_ops.jsonl` on continued failure. Airtable 422 (field mismatch) → log the payload; skip the write; alert user for schema mismatch. Airtable duplicate → update instead of create. Gmail bounce → flag customer record with bad_email; no retry. Gmail 5xx → queue email; retry next cycle. Duplicate events → dedupe by event ID in `processed_events.json`. Malformed payload → log raw to `data/logs/malformed_events.jsonl`; alert. Out-of-order events → use timestamp to resequence; create Airtable record before update if missing. Refund above approval threshold → create with 'Pending Review' status rather than auto-logging.",
+      "examples": [],
+      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "connectors": [
+        {
+          "name": "stripe",
+          "label": "Stripe",
+          "auth_type": "api_key",
+          "role": "payment_processing",
+          "category": "finance",
+          "required": true,
+          "api_base_url": "https://api.stripe.com/v1",
+          "credential_fields": [
+            {
+              "key": "api_key",
+              "label": "Secret Key",
+              "type": "password",
+              "placeholder": "sk_live_...",
+              "helpText": "Stripe Dashboard → Developers → API keys. Use sk_live_ for production, sk_test_ for testing.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Log in to Stripe Dashboard at dashboard.stripe.com.\n2. Developers → API keys → copy your Secret key.\n3. (Optional) Developers → Webhooks → add endpoint, subscribe to: customer.subscription.*, invoice.payment_failed, charge.refunded, charge.dispute.*.\n4. Paste the secret key above."
         },
-        "description": "Receives Stripe webhook events for subscription lifecycle changes, payment failures, and refunds. Processes each event through the classification and action pipeline in real-time."
-      },
-      {
-        "trigger_type": "schedule",
-        "config": {
-          "cron": "0 8 * * *"
+        {
+          "name": "airtable",
+          "label": "Airtable",
+          "auth_type": "pat",
+          "role": "knowledge_base",
+          "category": "productivity",
+          "required": true,
+          "api_base_url": "https://api.airtable.com/v0",
+          "credential_fields": [
+            {
+              "key": "pat",
+              "label": "Personal Access Token",
+              "type": "password",
+              "placeholder": "pat...",
+              "helpText": "airtable.com/create/tokens. Scopes: data.records:read, data.records:write on your revenue tracker base.",
+              "required": true
+            },
+            {
+              "key": "base_id",
+              "label": "Base ID",
+              "type": "text",
+              "placeholder": "appXXXXXXXXXXXXXX",
+              "helpText": "From your Airtable base URL (airtable.com/appXXXXXX/...) or the API docs page.",
+              "required": true
+            },
+            {
+              "key": "table_name",
+              "label": "Revenue Tracker Table Name",
+              "type": "text",
+              "placeholder": "Revenue Tracker",
+              "helpText": "Name of the table holding revenue records. See schema in tool_guidance.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. airtable.com/create/tokens → create a new Personal Access Token with data.records:read + data.records:write.\n2. Grant access to the base containing your revenue tracker.\n3. In that base, create a table with fields listed in tool_guidance (CustomerName, Email, StripeCustomerId, Plan, MRR, Status, ...).\n4. Copy the Base ID from the base URL and the exact table name.\n5. Paste all three fields above."
         },
-        "description": "Fires daily at 8:00 AM to compile the previous day's revenue summary. Queries Stripe for transactions, calculates KPIs, compares trends from Airtable history, and emails the formatted report to stakeholders."
-      }
-    ],
-    "full_prompt_markdown": "# Revenue Operations Hub\n\nYou are a Revenue Operations Hub -- an intelligent agent that serves as the central nervous system for subscription revenue management. You replace four separate automation workflows with unified reasoning: webhook notifications, Airtable revenue sync, failed payment customer outreach, and daily revenue reporting.\n\n## Identity & Purpose\n\nYou process Stripe webhook events in real-time, maintain a living revenue tracker in Airtable, communicate proactively with customers about payment issues, and synthesize daily revenue intelligence for stakeholders. You think in terms of customer lifetime value, churn prevention, and revenue health.\n\n## Webhook Event Processing\n\nWhen a Stripe webhook arrives, classify it:\n- **customer.subscription.created** -> New subscription: extract customer details, plan, MRR\n- **customer.subscription.deleted** -> Cancellation: mark churned, calculate lifetime value\n- **invoice.payment_failed** -> Failed payment: flag at-risk, send recovery email\n- **charge.refunded** -> Refund: adjust net revenue, log reason\n\nFor every event, extract: customer ID, email, amount, currency, plan name, timestamp, and metadata.\n\n## Airtable Revenue Tracker\n\nMaintain the revenue tracker as the single source of truth:\n- Use Stripe customer ID as the unique key -- always search before creating\n- **New subscription**: Create record with status \"Active\", plan details, MRR contribution\n- **Cancellation**: Set status \"Churned\", end date, total lifetime value\n- **Failed payment**: Set status \"At Risk\", increment failure count, log reason\n- **Refund**: Deduct refund amount, adjust net revenue, add notes\n\nAPI pattern: `GET/POST/PATCH https://api.airtable.com/v0/{baseId}/{tableName}`\n\n## Customer Communication\n\nFor failed payments, send personalized recovery emails:\n- Warm, helpful tone -- never accusatory\n- Include amount, plan name, and billing portal link\n- Escalate urgency on 2nd and 3rd attempts while staying empathetic\n- Track attempt count in agent memory\n\nGenerate Stripe billing portal links via `POST /v1/billing_portal/sessions`.\n\n## Daily Revenue Summary (8 AM)\n\nEach morning, compile and send a revenue intelligence report:\n1. Query Stripe balance transactions for the previous day\n2. Calculate: gross revenue, refunds, net revenue, new MRR, churned MRR, net MRR change\n3. Count: new subscriptions, cancellations, failed payments, successful retries\n4. Compare against 7-day and 30-day averages from Airtable\n5. Format as HTML email with trend indicators and send to stakeholders\n\n## Tool Usage\n\n### Stripe (via http_request + stripe connector)\n- `GET /v1/customers/{id}` -- Retrieve customer\n- `GET /v1/charges?created[gte]={ts}` -- List recent charges\n- `GET /v1/subscriptions?customer={id}` -- Customer subscriptions\n- `GET /v1/invoices?customer={id}&status=open` -- Open invoices\n- `GET /v1/balance_transactions?created[gte]={ts}&created[lte]={ts}` -- Daily transactions\n- `POST /v1/billing_portal/sessions` -- Generate payment update link\n\n### Airtable (via http_request + airtable connector)\n- `GET /v0/{baseId}/{table}?filterByFormula=...` -- Search records\n- `POST /v0/{baseId}/{table}` -- Create record\n- `PATCH /v0/{baseId}/{table}/{recordId}` -- Update record\n- Batch limit: 10 records per request. Rate limit: 5 req/sec.\n\n### Gmail (via gmail_send)\n- Failed payment recovery emails to customers\n- Daily revenue summary to internal stakeholders\n- Use HTML formatting for summary reports\n\n### Local Files (via file_read/file_write)\n- Track last processed event ID to prevent duplicates\n- Cache daily metrics for trend calculations\n- Maintain audit log of all actions\n\n## Churn Intelligence\n\nMaintain memory of patterns:\n- Plans with highest failure rates\n- Payment methods that fail most often\n- Customers with multiple consecutive failures -> emit alert for manual intervention\n- Emit event when churn rate exceeds rolling average by >20%\n\n## Error Handling\n\n- **Stripe 429**: Exponential backoff from 1s (100 req/s limit)\n- **Stripe 401**: Critical alert -- API key may be rotated\n- **Airtable 429**: Queue and retry (5 req/s limit)\n- **Airtable 422**: Log field mismatch, skip record\n- **Duplicate webhooks**: Check event ID against local cache\n- **Gmail bounces**: Flag bad email in Airtable record\n- **Out-of-order events**: Use timestamps to sequence correctly\n- Always log before/after each API call for audit trail\n\n## Communication Protocols\n\n- **user_message**: Revenue alerts for significant events (large refunds, churn spikes, new enterprise subscriptions)\n- **agent_memory**: Store churn patterns, failure trends, customer interaction history\n- **emit_event**: `payment_failed` for failed payment alerts, `payment_critical` for 3rd failures, `churn_spike` for abnormal churn rates, `subscription_created` for new customers",
-    "summary": "The Revenue Operations Hub is an intelligent agent that unifies four separate Stripe automation workflows into a single reasoning-capable system. It processes webhook events (subscriptions, cancellations, failed payments, refunds) in real-time, maintains an Airtable revenue tracker as the single source of truth, sends personalized recovery emails for failed payments with escalating urgency, and compiles daily revenue intelligence reports with trend analysis. The agent also builds institutional memory around churn patterns, identifying at-risk customers and payment failure trends to enable proactive intervention before revenue is lost.",
-    "design_highlights": [
-      {
-        "category": "Real-Time Event Processing",
-        "icon": "⚡",
-        "color": "blue",
-        "items": [
-          "Classifies Stripe webhooks into subscription, cancellation, failure, and refund events",
-          "Deduplicates events using local event ID cache",
-          "Handles out-of-order events with timestamp-based sequencing",
-          "Processes each event through a multi-step action pipeline"
-        ]
-      },
-      {
-        "category": "Revenue Intelligence",
-        "icon": "📊",
-        "color": "green",
-        "items": [
-          "Daily summary with gross/net revenue, MRR changes, and customer counts",
-          "7-day and 30-day trend comparisons from Airtable historical data",
-          "Churn pattern recognition across plans and payment methods",
-          "Automated alerting when metrics exceed normal thresholds"
-        ]
-      },
-      {
-        "category": "Customer Recovery",
-        "icon": "💬",
-        "color": "purple",
-        "items": [
-          "Personalized failed-payment emails with empathetic, escalating tone",
-          "Direct Stripe billing portal links for easy payment method updates",
-          "Tracks failure attempt count per customer for appropriate urgency",
-          "Flags customers at critical risk after 3rd consecutive failure"
-        ]
-      },
-      {
-        "category": "Operational Resilience",
-        "icon": "🛡️",
-        "color": "orange",
-        "items": [
-          "Exponential backoff for rate-limited API calls",
-          "Audit logging of all actions via local file system",
-          "Graceful handling of API authentication failures with critical alerts",
-          "Duplicate detection and partial-completion recovery"
-        ]
-      }
-    ],
-    "suggested_connectors": [
-      {
-        "name": "stripe",
-        "label": "Stripe",
-        "auth_type": "api_key",
-        "credential_fields": [
-          {
-            "key": "api_key",
-            "label": "Secret Key",
-            "type": "password",
-            "placeholder": "sk_live_...",
-            "helpText": "Find this in Stripe Dashboard -> Developers -> API keys. Use the Secret key (starts with sk_live_ or sk_test_).",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Log into your Stripe Dashboard at dashboard.stripe.com\n2. Go to Developers -> API keys\n3. Copy your Secret key (use test mode key for testing: sk_test_...)\n4. For webhooks: go to Developers -> Webhooks -> Add endpoint\n5. Subscribe to events: customer.subscription.created, customer.subscription.deleted, invoice.payment_failed, charge.refunded\n6. Copy the webhook signing secret for event verification",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          0
-        ],
-        "api_base_url": "https://api.stripe.com/v1",
-        "role": "payment_processing",
-        "category": "finance"
-      },
-      {
-        "name": "airtable",
-        "label": "Airtable",
-        "auth_type": "pat",
-        "credential_fields": [
-          {
-            "key": "pat",
-            "label": "Personal Access Token",
-            "type": "password",
-            "placeholder": "pat...",
-            "helpText": "Create a token at airtable.com/create/tokens with scopes: data.records:read, data.records:write for your revenue tracker base.",
-            "required": true
-          },
-          {
-            "key": "base_id",
-            "label": "Base ID",
-            "type": "text",
-            "placeholder": "appXXXXXXXXXXXXXX",
-            "helpText": "Find this in your Airtable base URL: airtable.com/appXXXXXX/... or in the API docs at airtable.com/developers/web/api/introduction",
-            "required": true
-          },
-          {
-            "key": "table_name",
-            "label": "Revenue Tracker Table Name",
-            "type": "text",
-            "placeholder": "Revenue Tracker",
-            "helpText": "The name of the table in your Airtable base that tracks revenue data. Create one with fields: CustomerName, Email, StripeCustomerId, Plan, MRR, Status, StartDate, EndDate, FailedPaymentCount, Notes.",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to airtable.com/create/tokens and create a new Personal Access Token\n2. Grant scopes: data.records:read, data.records:write\n3. Select the base that contains (or will contain) your revenue tracker table\n4. Create a table with these fields: CustomerName (text), Email (email), StripeCustomerId (text), Plan (single select), MRR (currency), Status (single select: Active/Churned/At Risk), StartDate (date), EndDate (date), FailedPaymentCount (number), LifetimeValue (currency), Notes (long text)\n5. Copy the Base ID from the URL or API docs page",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0",
-        "role": "knowledge_base",
-        "category": "productivity"
-      },
-      {
-        "name": "gmail",
-        "label": "Gmail",
-        "auth_type": "oauth2",
-        "credential_fields": [
-          {
-            "key": "client_id",
-            "label": "OAuth Client ID",
-            "type": "text",
-            "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
-            "required": true
-          },
-          {
-            "key": "client_secret",
-            "label": "OAuth Client Secret",
-            "type": "password",
-            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
-            "helpText": "From the same OAuth 2.0 Client ID configuration page",
-            "required": true
-          },
-          {
-            "key": "refresh_token",
-            "label": "Refresh Token",
-            "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
-            "helpText": "Obtained after completing the OAuth consent flow",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
-        "api_base_url": "https://www.googleapis.com",
-        "role": "email",
-        "category": "email",
-        "related_tools": [
-          "gmail_send"
-        ],
-        "related_triggers": []
-      }
-    ],
-    "suggested_notification_channels": [
-      {
-        "type": "email",
-        "description": "Primary channel for customer-facing failed payment recovery emails and internal daily revenue summary reports",
-        "required_connector": "gmail",
-        "config_hints": {
-          "customer_emails": "Pulled from Stripe customer data",
-          "summary_recipients": "Configure stakeholder email addresses for daily reports"
+        {
+          "name": "gmail",
+          "label": "Gmail",
+          "auth_type": "oauth2",
+          "role": "email",
+          "category": "email",
+          "required": true,
+          "api_base_url": "https://gmail.googleapis.com",
+          "credential_fields": [
+            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
+            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
+            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+          ],
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send. 4. Paste client_id, client_secret, refresh_token above."
         }
-      }
-    ],
-    "suggested_event_subscriptions": [
+      ],
+      "notification_channels_default": [
+        { "type": "email", "description": "Customer-facing dunning emails + internal daily revenue summary." }
+      ],
+      "core_memories": []
+    },
+    "use_cases": [
       {
-        "event_type": "payment_failed",
-        "description": "Emitted when a Stripe invoice.payment_failed webhook is processed. Consumers can use this to trigger additional recovery workflows, update dashboards, or alert on-call teams."
-      },
-      {
-        "event_type": "payment_critical",
-        "description": "Emitted when a customer's payment has failed 3 or more consecutive times. Signals that automated recovery is unlikely to succeed and manual intervention is recommended."
-      },
-      {
-        "event_type": "subscription_created",
-        "description": "Emitted when a new subscription is successfully processed and recorded. Can trigger welcome sequences, onboarding workflows, or team notifications."
-      },
-      {
-        "event_type": "churn_spike",
-        "description": "Emitted when the daily cancellation rate exceeds the 30-day rolling average by more than 20%. Indicates a potential systemic issue requiring immediate investigation."
-      }
-    ],
-    "use_case_flows": [
-      {
-        "id": "flow_webhook_processing",
-        "name": "Stripe Webhook Event Processing",
-        "description": "Real-time processing of Stripe webhook events: classifies the event type, enriches with customer data, updates the Airtable revenue tracker, and routes to the appropriate action (email, alert, or logging).",
-        "nodes": [
+        "id": "uc_subscription_sync",
+        "title": "Subscription Event Sync",
+        "description": "Polls Stripe for subscription and payment events since the last cursor, classifies each, and reconciles the Airtable revenue tracker. Emits per-event signals so downstream capabilities (recovery, reporting) can react. Default every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Real-time Stripe → Airtable reconciliation with event classification.",
+        "category": "analysis",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "description": "Default every 5 minutes — final cadence set at the trigger-composition step. Can be replaced by a webhook trigger once webhook infrastructure is configured."
+        },
+        "connectors": ["stripe", "airtable"],
+        "notification_channels": [],
+        "review_policy": { "mode": "never", "context": null },
+        "memory_policy": {
+          "enabled": true,
+          "context": "`processed_events.json` — Stripe event dedupe. `audit_log.jsonl` — before/after each API call for audit trail."
+        },
+        "event_subscriptions": [
           {
-            "id": "n1",
-            "type": "start",
-            "label": "Stripe Webhook Received",
-            "detail": "Webhook fires for subscription, payment, or refund event"
+            "event_type": "revenue.subscription.created",
+            "direction": "emit",
+            "description": "Payload: customer_id, email, plan, mrr, start_date. Fires on customer.subscription.created."
           },
           {
-            "id": "n2",
-            "type": "action",
-            "label": "Deduplicate Event",
-            "detail": "Check event ID against local processed-events cache via file_read"
+            "event_type": "revenue.subscription.cancelled",
+            "direction": "emit",
+            "description": "Payload: customer_id, plan, mrr_lost, cancellation_date, reason. Fires on customer.subscription.deleted."
           },
           {
-            "id": "n3",
-            "type": "decision",
-            "label": "Already Processed?",
-            "detail": "Skip if event ID exists in the local cache"
+            "event_type": "revenue.payment.failed",
+            "direction": "emit",
+            "description": "Payload: customer_id, amount, attempt_count, failure_reason. Consumed by uc_payment_recovery."
           },
           {
-            "id": "n4",
-            "type": "action",
-            "label": "Classify Event Type",
-            "detail": "Categorize as new_subscription, cancellation, failed_payment, or refund"
+            "event_type": "revenue.refund.issued",
+            "direction": "emit",
+            "description": "Payload: customer_id, amount, reason. Fires on charge.refunded."
           },
           {
-            "id": "n5",
-            "type": "connector",
-            "label": "Fetch Customer Details",
-            "detail": "GET /v1/customers/{customer_id} for full customer profile",
-            "connector": "stripe"
-          },
-          {
-            "id": "n6",
-            "type": "connector",
-            "label": "Search Airtable for Customer",
-            "detail": "GET /v0/{baseId}/{table}?filterByFormula=SEARCH(customer_id)",
-            "connector": "airtable"
-          },
-          {
-            "id": "n7",
-            "type": "decision",
-            "label": "Customer Record Exists?",
-            "detail": "Determine whether to create or update the Airtable record"
-          },
-          {
-            "id": "n8",
-            "type": "connector",
-            "label": "Create Airtable Record",
-            "detail": "POST /v0/{baseId}/{table} with customer details, plan, MRR, status",
-            "connector": "airtable"
-          },
-          {
-            "id": "n9",
-            "type": "connector",
-            "label": "Update Airtable Record",
-            "detail": "PATCH /v0/{baseId}/{table}/{recordId} with event-specific field changes",
-            "connector": "airtable"
-          },
-          {
-            "id": "n10",
-            "type": "decision",
-            "label": "Is Failed Payment?",
-            "detail": "Route to customer email if this is a payment failure event"
-          },
-          {
-            "id": "n11",
-            "type": "connector",
-            "label": "Generate Billing Portal Link",
-            "detail": "POST /v1/billing_portal/sessions with customer ID",
-            "connector": "stripe"
-          },
-          {
-            "id": "n12",
-            "type": "action",
-            "label": "Send Recovery Email",
-            "detail": "gmail_send with personalized message, amount, plan name, and portal link"
-          },
-          {
-            "id": "n13",
-            "type": "event",
-            "label": "Emit Event",
-            "detail": "Emit payment_failed, subscription_created, or payment_critical based on context"
-          },
-          {
-            "id": "n14",
-            "type": "action",
-            "label": "Log to Audit File",
-            "detail": "file_write action details, timestamp, and event ID to local audit log"
-          },
-          {
-            "id": "n15",
-            "type": "end",
-            "label": "Processing Complete"
-          },
-          {
-            "id": "n16",
-            "type": "error",
-            "label": "API Error Handler",
-            "detail": "Log error, apply retry logic with exponential backoff, emit alert if critical"
-          },
-          {
-            "id": "n17",
-            "type": "end",
-            "label": "Skipped (Duplicate)"
+            "event_type": "revenue.dispute.opened",
+            "direction": "emit",
+            "description": "Payload: customer_id, amount, reason. Fires on charge.dispute.created."
           }
         ],
-        "edges": [
+        "error_handling": "Dedupe by event ID. Out-of-order events → create Airtable record before update if missing. Malformed payload → log raw + alert; do not process. Airtable write fail → queue to `pending_airtable_ops.jsonl`.",
+        "input_schema": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
+            "name": "business_type",
+            "type": "enum",
+            "options": ["b2b_saas", "b2c_saas", "ecommerce_subscription", "marketplace"],
+            "default": "b2b_saas",
+            "description": "Shapes MRR calculation conventions and email framing."
           },
           {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n17",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          },
-          {
-            "id": "e7",
-            "source": "n6",
-            "target": "n7"
-          },
-          {
-            "id": "e8",
-            "source": "n7",
-            "target": "n8",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e9",
-            "source": "n7",
-            "target": "n9",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e10",
-            "source": "n8",
-            "target": "n10"
-          },
-          {
-            "id": "e11",
-            "source": "n9",
-            "target": "n10"
-          },
-          {
-            "id": "e12",
-            "source": "n10",
-            "target": "n11",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e13",
-            "source": "n10",
-            "target": "n13",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e14",
-            "source": "n11",
-            "target": "n12"
-          },
-          {
-            "id": "e15",
-            "source": "n12",
-            "target": "n13"
-          },
-          {
-            "id": "e16",
-            "source": "n13",
-            "target": "n14"
-          },
-          {
-            "id": "e17",
-            "source": "n14",
-            "target": "n15"
-          },
-          {
-            "id": "e18",
-            "source": "n5",
-            "target": "n16",
-            "variant": "error"
-          },
-          {
-            "id": "e19",
-            "source": "n16",
-            "target": "n15",
-            "variant": "error"
-          }
-        ]
-      },
-      {
-        "id": "flow_daily_summary",
-        "name": "Daily Revenue Summary Report",
-        "description": "Scheduled morning workflow that compiles the previous day's revenue data from Stripe and Airtable, calculates key metrics with trend comparisons, and emails a formatted intelligence report to stakeholders.",
-        "nodes": [
-          {
-            "id": "n1",
-            "type": "start",
-            "label": "8 AM Schedule Trigger",
-            "detail": "Daily cron fires at 8:00 AM local time"
-          },
-          {
-            "id": "n2",
-            "type": "connector",
-            "label": "Fetch Yesterday's Transactions",
-            "detail": "GET /v1/balance_transactions?created[gte]={yesterday_start}&created[lte]={yesterday_end}",
-            "connector": "stripe"
-          },
-          {
-            "id": "n3",
-            "type": "connector",
-            "label": "Fetch Subscription Changes",
-            "detail": "GET /v1/subscriptions?created[gte]={yesterday_start} and canceled subscriptions",
-            "connector": "stripe"
-          },
-          {
-            "id": "n4",
-            "type": "action",
-            "label": "Calculate Daily Metrics",
-            "detail": "Compute gross revenue, refunds, net revenue, new MRR, churned MRR, net MRR change"
-          },
-          {
-            "id": "n5",
-            "type": "connector",
-            "label": "Query Airtable History",
-            "detail": "GET /v0/{baseId}/{table} with date filters for 7-day and 30-day historical records",
-            "connector": "airtable"
-          },
-          {
-            "id": "n6",
-            "type": "action",
-            "label": "Compute Trend Comparisons",
-            "detail": "Compare today's metrics against 7-day and 30-day rolling averages"
-          },
-          {
-            "id": "n7",
-            "type": "decision",
-            "label": "Anomalies Detected?",
-            "detail": "Check if any metric deviates more than 20% from rolling average"
-          },
-          {
-            "id": "n8",
-            "type": "event",
-            "label": "Emit Churn Spike Alert",
-            "detail": "Emit churn_spike event if cancellation rate exceeds threshold"
-          },
-          {
-            "id": "n9",
-            "type": "action",
-            "label": "Format HTML Report",
-            "detail": "Build styled HTML email with metrics table, trend arrows, and anomaly highlights"
-          },
-          {
-            "id": "n10",
-            "type": "action",
-            "label": "Send Summary Email",
-            "detail": "gmail_send HTML report to configured stakeholder recipients"
-          },
-          {
-            "id": "n11",
-            "type": "action",
-            "label": "Cache Daily Metrics",
-            "detail": "file_write daily metrics to local cache for future trend calculations"
-          },
-          {
-            "id": "n12",
-            "type": "end",
-            "label": "Summary Delivered"
-          },
-          {
-            "id": "n13",
-            "type": "error",
-            "label": "Data Fetch Error",
-            "detail": "If Stripe or Airtable API fails, send partial report with available data and error notice"
+            "name": "refund_review_threshold",
+            "type": "enum",
+            "options": ["100", "500", "1000", "no_threshold"],
+            "default": "500",
+            "description": "USD amount above which refunds require human approval before logging as resolved."
           }
         ],
-        "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4"
-          },
-          {
-            "id": "e4",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e5",
-            "source": "n5",
-            "target": "n6"
-          },
-          {
-            "id": "e6",
-            "source": "n6",
-            "target": "n7"
-          },
-          {
-            "id": "e7",
-            "source": "n7",
-            "target": "n8",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e8",
-            "source": "n7",
-            "target": "n9",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e9",
-            "source": "n8",
-            "target": "n9"
-          },
-          {
-            "id": "e10",
-            "source": "n9",
-            "target": "n10"
-          },
-          {
-            "id": "e11",
-            "source": "n10",
-            "target": "n11"
-          },
-          {
-            "id": "e12",
-            "source": "n11",
-            "target": "n12"
-          },
-          {
-            "id": "e13",
-            "source": "n2",
-            "target": "n13",
-            "variant": "error"
-          },
-          {
-            "id": "e14",
-            "source": "n13",
-            "target": "n9",
-            "variant": "error"
-          }
-        ]
+        "sample_input": {
+          "business_type": "{{param.aq_business_type}}",
+          "refund_review_threshold": "{{param.aq_refund_review_threshold}}"
+        },
+        "tool_hints": ["http_request", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "s1", "type": "start", "label": "Polling tick" },
+            { "id": "s2", "type": "connector", "label": "Fetch + dedupe Stripe events", "connector": "stripe" },
+            { "id": "s3", "type": "action", "label": "Classify event type" },
+            { "id": "s4", "type": "connector", "label": "Search or create Airtable record", "connector": "airtable" },
+            { "id": "s5", "type": "connector", "label": "Update Airtable with event changes", "connector": "airtable" },
+            { "id": "s6", "type": "event", "label": "Emit revenue.subscription.* / payment.failed / refund.issued / dispute.opened" },
+            { "id": "s7", "type": "action", "label": "Audit log write" },
+            { "id": "s8", "type": "end", "label": "Cycle complete" }
+          ],
+          "edges": [
+            { "source": "s1", "target": "s2" },
+            { "source": "s2", "target": "s3" },
+            { "source": "s3", "target": "s4" },
+            { "source": "s4", "target": "s5" },
+            { "source": "s5", "target": "s6" },
+            { "source": "s6", "target": "s7" },
+            { "source": "s7", "target": "s8" }
+          ]
+        }
       },
       {
-        "id": "flow_churn_recovery",
-        "name": "Escalating Payment Recovery",
-        "description": "Multi-attempt payment failure recovery workflow that tracks failure count per customer, sends increasingly urgent but empathetic emails, and escalates to manual intervention after repeated failures.",
-        "nodes": [
+        "id": "uc_payment_recovery",
+        "title": "Payment Recovery Sequence",
+        "description": "Event-driven: on each payment failure, reads customer failure history and sends the tier-appropriate email (friendly → urgent → final). Updates Airtable dunning state. Reverses state if a payment succeeds mid-sequence. Stops immediately on cancellation.",
+        "capability_summary": "3-tier escalating dunning sequence with mid-sequence reversal handling.",
+        "category": "communication",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "event_listener",
+          "config": { "event_type": "revenue.payment.failed" },
+          "description": "Fires on every payment failure from uc_subscription_sync. Not user-configurable — event triggers bypass the composition picker."
+        },
+        "connectors": ["stripe", "airtable", "gmail"],
+        "notification_channels": [
+          { "type": "email", "description": "Tier-appropriate dunning emails to the customer with Stripe billing-portal link." }
+        ],
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Tier 3 (final warning) can be set to require human approval before sending via the aq_escalation_mode setting. Tiers 1–2 always auto-send within suppression windows."
+        },
+        "memory_policy": {
+          "enabled": true,
+          "context": "`dunning_state.json` — per-customer tier + timestamps. Memory learns plans and payment methods with high failure rates — feeds future alerting."
+        },
+        "event_subscriptions": [
           {
-            "id": "n1",
-            "type": "start",
-            "label": "Payment Failure Detected",
-            "detail": "Triggered from webhook processing flow when event is invoice.payment_failed"
+            "event_type": "revenue.payment.failed",
+            "direction": "listen",
+            "description": "Failure event incoming from uc_subscription_sync."
           },
           {
-            "id": "n2",
-            "type": "action",
-            "label": "Check Failure History",
-            "detail": "Read agent memory for this customer's consecutive failure count"
+            "event_type": "revenue.payment.recovered",
+            "direction": "emit",
+            "description": "Payload: customer_id, tier_at_recovery. Fires when a payment succeeds mid-dunning — resets state + sends success email."
           },
           {
-            "id": "n3",
-            "type": "decision",
-            "label": "Which Attempt?",
-            "detail": "Route based on failure count: 1st, 2nd, or 3rd+"
-          },
-          {
-            "id": "n4",
-            "type": "connector",
-            "label": "Create Billing Portal Session",
-            "detail": "POST /v1/billing_portal/sessions for payment method update link",
-            "connector": "stripe"
-          },
-          {
-            "id": "n5",
-            "type": "action",
-            "label": "Send Gentle Reminder",
-            "detail": "gmail_send friendly first notice: 'Your payment didn't go through -- here's how to fix it'"
-          },
-          {
-            "id": "n6",
-            "type": "action",
-            "label": "Send Urgent Follow-Up",
-            "detail": "gmail_send with stronger language: 'Action needed to keep your subscription active'"
-          },
-          {
-            "id": "n7",
-            "type": "action",
-            "label": "Send Final Warning",
-            "detail": "gmail_send last chance notice: 'Your subscription will be canceled without payment update'"
-          },
-          {
-            "id": "n8",
-            "type": "event",
-            "label": "Emit payment_critical",
-            "detail": "Alert operations team that automated recovery has been exhausted"
-          },
-          {
-            "id": "n9",
-            "type": "connector",
-            "label": "Update Airtable Status",
-            "detail": "PATCH record with updated failure count, status, and last contact date",
-            "connector": "airtable"
-          },
-          {
-            "id": "n10",
-            "type": "action",
-            "label": "Store Updated Memory",
-            "detail": "Update agent memory with new failure count and last email sent timestamp"
-          },
-          {
-            "id": "n11",
-            "type": "end",
-            "label": "Recovery Action Complete"
-          },
-          {
-            "id": "n12",
-            "type": "error",
-            "label": "Email Send Failure",
-            "detail": "Log failed send, flag customer record with bad_email if bounced"
+            "event_type": "revenue.payment.escalated",
+            "direction": "emit",
+            "description": "Payload: customer_id, tier (1|2|3), attempt_count. Fires per tier-3 escalation."
           }
         ],
-        "edges": [
+        "error_handling": "Gmail send fail for dunning → critical; retry once; queue locally on second failure and emit a Slack-equivalent alert. Airtable dunning state write fail → retry; on failure, queue to `pending_airtable_ops.jsonl`. Customer cancels mid-sequence → stop immediately; mark Canceled in Airtable. Payment succeeds mid-sequence → reset dunning_tier to 0, restore Active, send success email.",
+        "input_schema": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
+            "name": "escalation_mode",
+            "type": "enum",
+            "options": ["auto_send_all_tiers", "human_approval_for_tier_3", "alert_team_at_tier_2", "never_escalate"],
+            "default": "human_approval_for_tier_3",
+            "description": "Controls how aggressive the automated recovery is. Tier 3 is the final warning email; human_approval_for_tier_3 means the team reviews the draft before sending."
           },
           {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "1st attempt",
-            "variant": "yes"
-          },
-          {
-            "id": "e4",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e5",
-            "source": "n3",
-            "target": "n6",
-            "label": "2nd attempt",
-            "variant": "no"
-          },
-          {
-            "id": "e6",
-            "source": "n3",
-            "target": "n7",
-            "label": "3rd+ attempt"
-          },
-          {
-            "id": "e7",
-            "source": "n7",
-            "target": "n8"
-          },
-          {
-            "id": "e8",
-            "source": "n5",
-            "target": "n9"
-          },
-          {
-            "id": "e9",
-            "source": "n6",
-            "target": "n9"
-          },
-          {
-            "id": "e10",
-            "source": "n8",
-            "target": "n9"
-          },
-          {
-            "id": "e11",
-            "source": "n9",
-            "target": "n10"
-          },
-          {
-            "id": "e12",
-            "source": "n10",
-            "target": "n11"
-          },
-          {
-            "id": "e13",
-            "source": "n5",
-            "target": "n12",
-            "variant": "error"
-          },
-          {
-            "id": "e14",
-            "source": "n12",
-            "target": "n9",
-            "variant": "error"
+            "name": "tone",
+            "type": "enum",
+            "options": ["warm_empathetic", "direct_urgent", "neutral_transactional"],
+            "default": "warm_empathetic",
+            "description": "Tone of the dunning email copy generated at each tier."
           }
-        ]
-      }
-    ],
-    "customSections": [
-      {
-        "key": "revenue_metrics",
-        "label": "Key Revenue Metrics Tracked",
-        "content": "The agent maintains and reports on these core metrics:\n- **MRR (Monthly Recurring Revenue)**: Sum of all active subscription amounts\n- **Net MRR Change**: New MRR minus churned MRR for the period\n- **Gross Revenue**: Total charges collected before refunds\n- **Net Revenue**: Gross revenue minus refunds\n- **Churn Rate**: Cancellations divided by total active subscriptions\n- **Failed Payment Rate**: Failed invoices divided by total invoices\n- **Customer Lifetime Value**: Total revenue from a customer over their subscription lifetime\n- **Recovery Rate**: Percentage of failed payments that are eventually recovered"
+        ],
+        "sample_input": {
+          "escalation_mode": "{{param.aq_escalation_mode}}",
+          "tone": "{{param.aq_tone}}"
+        },
+        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "r1", "type": "start", "label": "revenue.payment.failed received" },
+            { "id": "r2", "type": "connector", "label": "Read failure history from Airtable", "connector": "airtable" },
+            { "id": "r3", "type": "decision", "label": "Which tier?" },
+            { "id": "r4", "type": "connector", "label": "Generate Stripe billing portal link", "connector": "stripe" },
+            { "id": "r5", "type": "connector", "label": "Send tier-appropriate email", "connector": "gmail" },
+            { "id": "r6", "type": "connector", "label": "Update Airtable dunning state", "connector": "airtable" },
+            { "id": "r7", "type": "event", "label": "Emit revenue.payment.escalated (tier 3 only)" },
+            { "id": "r8", "type": "end", "label": "Recovery step complete" }
+          ],
+          "edges": [
+            { "source": "r1", "target": "r2" },
+            { "source": "r2", "target": "r3" },
+            { "source": "r3", "target": "r4", "label": "1st / 2nd / 3rd" },
+            { "source": "r4", "target": "r5" },
+            { "source": "r5", "target": "r6" },
+            { "source": "r6", "target": "r7" },
+            { "source": "r7", "target": "r8" }
+          ]
+        }
       },
       {
-        "key": "airtable_schema",
-        "label": "Recommended Airtable Schema",
-        "content": "Revenue Tracker table fields:\n| Field | Type | Description |\n|-------|------|-------------|\n| CustomerName | Text | Full name from Stripe |\n| Email | Email | Customer email |\n| StripeCustomerId | Text | Unique key (cus_xxx) |\n| Plan | Single Select | Subscription plan name |\n| MRR | Currency | Monthly contribution |\n| Status | Single Select | Active / Churned / At Risk |\n| StartDate | Date | Subscription start |\n| EndDate | Date | Cancellation date (if churned) |\n| FailedPaymentCount | Number | Consecutive failures |\n| LifetimeValue | Currency | Total revenue to date |\n| LastEventDate | Date | Most recent Stripe event |\n| Notes | Long Text | Refund reasons, special notes |"
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "manual_review",
-        "label": "Escalation to human for critical or ambiguous items",
-        "context": "Escalation logic detected in instructions"
-      },
-      {
-        "type": "user_message",
-        "label": "Email notifications for reports, digests, and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
-        "context": "1 notification channel(s) configured: email"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Historical baselines and trend data for comparative analysis",
-        "context": "Tracks: recurring patterns, calibrated thresholds"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
-        "context": "4 event subscription(s) configured -- agent participates in event bus"
+        "id": "uc_daily_summary",
+        "title": "Daily Revenue Summary",
+        "description": "Compiles yesterday's revenue from Stripe balance transactions, enriches with Airtable context, computes trends against 7-day and 30-day baselines, and delivers an HTML report with anomaly detection. Default daily 08:00 — final cadence set at the trigger-composition step.",
+        "capability_summary": "Daily revenue intelligence report with trend analysis and anomaly detection.",
+        "category": "reporting",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "description": "Default daily 08:00 — final cadence set at the trigger-composition step."
+        },
+        "connectors": ["stripe", "airtable", "gmail"],
+        "notification_channels": [
+          { "type": "email", "description": "Daily HTML revenue summary to configured stakeholder recipients." }
+        ],
+        "review_policy": { "mode": "never", "context": null },
+        "memory_policy": {
+          "enabled": true,
+          "context": "`daily_metrics.json` — rolling historical snapshots for 7/30-day trend comparisons. Written after every daily run."
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "revenue.summary.delivered",
+            "direction": "emit",
+            "description": "Payload: date, gross, net, mrr_delta. Fires on successful delivery."
+          },
+          {
+            "event_type": "revenue.churn.spike",
+            "direction": "emit",
+            "description": "Payload: date, cancel_count, baseline_30d, delta_pct. Fires when cancellation rate exceeds 30-day baseline by >20%."
+          }
+        ],
+        "error_handling": "Stripe fetch fail → deliver partial summary with explicit gap note. Airtable history fail → skip trend section; still ship daily totals. Gmail fail → queue + alert; retry next cycle.",
+        "input_schema": [
+          {
+            "name": "recipients",
+            "type": "text",
+            "description": "Comma-separated email addresses for the daily summary."
+          },
+          {
+            "name": "kpi_focus",
+            "type": "enum",
+            "options": ["mrr_movement", "cash_collected", "churn_signals", "all_with_narrative"],
+            "default": "all_with_narrative",
+            "description": "Which KPIs to lead the summary with."
+          }
+        ],
+        "sample_input": {
+          "recipients": "{{param.aq_recipients}}",
+          "kpi_focus": "{{param.aq_kpi_focus}}"
+        },
+        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "d1", "type": "start", "label": "Daily tick" },
+            { "id": "d2", "type": "connector", "label": "Fetch yesterday's Stripe balance_transactions", "connector": "stripe" },
+            { "id": "d3", "type": "connector", "label": "Query Airtable for new subs / cancels / at-risk", "connector": "airtable" },
+            { "id": "d4", "type": "action", "label": "Compute daily metrics + trend deltas" },
+            { "id": "d5", "type": "decision", "label": "Churn spike detected?" },
+            { "id": "d6", "type": "event", "label": "Emit revenue.churn.spike" },
+            { "id": "d7", "type": "connector", "label": "Deliver summary via Gmail", "connector": "gmail" },
+            { "id": "d8", "type": "event", "label": "Emit revenue.summary.delivered" },
+            { "id": "d9", "type": "end", "label": "Daily cycle complete" }
+          ],
+          "edges": [
+            { "source": "d1", "target": "d2" },
+            { "source": "d2", "target": "d3" },
+            { "source": "d3", "target": "d4" },
+            { "source": "d4", "target": "d5" },
+            { "source": "d5", "target": "d6", "variant": "yes", "label": "Yes" },
+            { "source": "d5", "target": "d7", "variant": "no", "label": "No" },
+            { "source": "d6", "target": "d7" },
+            { "source": "d7", "target": "d8" },
+            { "source": "d8", "target": "d9" }
+          ]
+        }
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_intent_1",
-        "category": "intent",
-        "question": "Which revenue operation is your highest priority to automate first?",
-        "type": "select",
-        "options": [
-          "Failed payment recovery — reducing churn from involuntary cancellations",
-          "Real-time Airtable sync — keeping revenue tracker current as events arrive",
-          "Daily revenue reporting — morning summaries for stakeholders",
-          "Full pipeline — all three equally important"
-        ],
-        "default": "Full pipeline — all three equally important",
-        "context": "Determines which flow to tune most carefully and which edge cases to handle with the most detail.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_domain_1",
+        "id": "aq_business_type",
+        "scope": "capability",
+        "use_case_ids": ["uc_subscription_sync"],
         "category": "domain",
-        "question": "What type of subscription business are you running?",
+        "question": "What type of subscription business does this hub operate?",
         "type": "select",
         "options": [
-          "B2B SaaS — monthly/annual seats or usage plans",
-          "B2C SaaS — consumer app subscriptions",
-          "E-commerce / subscription box — physical or digital products",
-          "Marketplace / platform — subscriptions plus transaction fees"
+          "B2B SaaS (monthly/annual seats or usage plans)",
+          "B2C SaaS (consumer app subscriptions)",
+          "E-commerce / subscription box",
+          "Marketplace / platform (subscriptions + transaction fees)"
         ],
-        "default": "B2B SaaS — monthly/annual seats or usage plans",
-        "context": "Shapes how MRR is calculated, what plan tiers exist, and how customer emails should be framed.",
+        "default": "B2B SaaS (monthly/annual seats or usage plans)",
+        "maps_to": "use_cases[uc_subscription_sync].sample_input.business_type",
+        "variable_name": "business_type",
+        "context": "Shapes how MRR is calculated, what plan tiers exist, and how customer emails are framed.",
         "dimension": "use-cases"
       },
       {
-        "id": "aq_domain_2",
-        "category": "domain",
-        "question": "Who receives the daily revenue summary report?",
-        "type": "select",
-        "options": [
-          "Founder / CEO only",
-          "Finance and leadership team",
-          "Sales and customer success teams",
-          "A shared Slack channel via email-to-channel"
-        ],
-        "default": "Finance and leadership team",
-        "context": "Determines report depth, tone, and which KPIs to highlight (e.g., executives want trends; CS teams want churn names).",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_boundaries_1",
+        "id": "aq_refund_review_threshold",
+        "scope": "capability",
+        "use_case_ids": ["uc_subscription_sync"],
         "category": "boundaries",
-        "question": "What actions should this agent NEVER take autonomously?",
-        "type": "select",
-        "options": [
-          "Never issue refunds or credits — only flag for human review",
-          "Never cancel or modify subscriptions — read-only on Stripe",
-          "Never email customers without a human-approved template",
-          "Never write to Airtable — reporting and alerting only"
-        ],
-        "default": "Never issue refunds or credits — only flag for human review",
-        "context": "Sets hard guardrails so the agent doesn't take irreversible financial or customer-facing actions without oversight.",
-        "dimension": "error-handling"
-      },
-      {
-        "id": "aq_human_in_the_loop_1",
-        "category": "human_in_the_loop",
-        "question": "After how many failed payment attempts should the agent escalate to a human instead of sending another automated email?",
-        "type": "select",
-        "options": [
-          "After 1 failure — notify team immediately",
-          "After 2 failures — escalate if card still declined",
-          "After 3 failures — standard Stripe retry cycle",
-          "Never escalate — let automated emails run until cancellation"
-        ],
-        "default": "After 3 failures — standard Stripe retry cycle",
-        "context": "Controls when automated recovery hands off to a human CS rep to prevent over-emailing and preserve customer relationships.",
-        "dimension": "human-review"
-      },
-      {
-        "id": "aq_human_in_the_loop_2",
-        "category": "human_in_the_loop",
-        "question": "Above what refund amount (USD) should the agent require human approval before logging it as resolved?",
+        "question": "Above what refund amount (USD) should the agent require human approval before logging as resolved?",
         "type": "select",
         "options": [
           "$100 — flag any non-trivial refund",
@@ -906,40 +424,86 @@
           "No threshold — log all refunds automatically"
         ],
         "default": "$500 — flag significant refunds",
-        "context": "Prevents large-dollar refund events from being silently absorbed into the tracker without finance team awareness.",
+        "maps_to": "use_cases[uc_subscription_sync].sample_input.refund_review_threshold",
+        "variable_name": "refund_review_threshold",
+        "context": "Prevents large-dollar refunds from being silently absorbed into the tracker without finance team awareness.",
         "dimension": "human-review"
       },
       {
-        "id": "aq_configuration_1",
-        "category": "configuration",
-        "question": "What tone should failed-payment recovery emails use?",
+        "id": "aq_escalation_mode",
+        "scope": "capability",
+        "use_case_ids": ["uc_payment_recovery"],
+        "category": "human_in_the_loop",
+        "question": "How should the payment recovery sequence escalate when automated emails aren't working?",
         "type": "select",
         "options": [
-          "Warm and empathetic — assume good faith, avoid alarm",
-          "Direct and urgent — emphasize service interruption risk",
-          "Neutral and transactional — minimal prose, clear CTA only",
-          "Brand-matched — I'll provide example email copy during setup"
+          "Auto-send all 3 tiers — full automation",
+          "Require human approval before tier-3 final warning (recommended)",
+          "Alert the team at tier 2 — human decides whether to proceed to tier 3",
+          "Never escalate — send tier-1 reminders only, let Stripe handle retries"
         ],
-        "default": "Warm and empathetic — assume good faith, avoid alarm",
-        "context": "Directly shapes the copy generated for dunning emails sent via Gmail to customers with failed payments.",
-        "dimension": "connectors"
+        "default": "Require human approval before tier-3 final warning (recommended)",
+        "maps_to": "use_cases[uc_payment_recovery].sample_input.escalation_mode",
+        "variable_name": "escalation_mode",
+        "context": "Controls when automated recovery hands off to a human to preserve customer relationships.",
+        "dimension": "human-review"
       },
       {
-        "id": "aq_quality_1",
-        "category": "quality",
-        "question": "Which KPIs are most important to highlight in the daily revenue summary?",
+        "id": "aq_tone",
+        "scope": "capability",
+        "use_case_ids": ["uc_payment_recovery"],
+        "category": "configuration",
+        "question": "What tone should the failed-payment recovery emails use?",
         "type": "select",
         "options": [
-          "MRR movement — new, expansion, contraction, churn delta",
-          "Cash collected — gross revenue and refunds net of fees",
-          "Churn signals — at-risk accounts and cancellation reasons",
+          "Warm and empathetic — assume good faith",
+          "Direct and urgent — emphasize service interruption",
+          "Neutral and transactional — minimal prose, clear CTA"
+        ],
+        "default": "Warm and empathetic — assume good faith",
+        "maps_to": "use_cases[uc_payment_recovery].sample_input.tone",
+        "variable_name": "tone",
+        "context": "Directly shapes the copy generated at each dunning tier.",
+        "dimension": "voice"
+      },
+      {
+        "id": "aq_recipients",
+        "scope": "capability",
+        "use_case_ids": ["uc_daily_summary"],
+        "category": "configuration",
+        "question": "Who should receive the daily revenue summary?",
+        "type": "text",
+        "placeholder": "cfo@company.com, ops@company.com",
+        "default": "",
+        "maps_to": "use_cases[uc_daily_summary].sample_input.recipients",
+        "variable_name": "recipients",
+        "context": "Comma-separated. Changes take effect immediately on the next daily run.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_kpi_focus",
+        "scope": "capability",
+        "use_case_ids": ["uc_daily_summary"],
+        "category": "quality",
+        "question": "Which KPIs should the daily summary lead with?",
+        "type": "select",
+        "options": [
+          "MRR movement (new / expansion / contraction / churn delta)",
+          "Cash collected (gross revenue, refunds, net)",
+          "Churn signals (at-risk accounts, cancellation reasons)",
           "All of the above with a brief narrative interpretation"
         ],
         "default": "All of the above with a brief narrative interpretation",
-        "context": "Determines what the agent calculates and surfaces in the morning report versus what it tracks silently in Airtable.",
-        "dimension": "use-cases"
+        "maps_to": "use_cases[uc_daily_summary].sample_input.kpi_focus",
+        "variable_name": "kpi_focus",
+        "context": "Shapes the report's lead section and table ordering.",
+        "dimension": "messages"
       }
-    ]
-  },
-  "is_published": true
+    ],
+    "persona_meta": {
+      "name": "T: Revenue Operations Hub",
+      "icon": "TrendingUp",
+      "color": "#22C55E"
+    }
+  }
 }

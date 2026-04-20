@@ -1,884 +1,511 @@
 {
   "id": "subscription-billing-use-case",
+  "schema_version": 3,
   "name": "Subscription Billing Use Case",
-  "description": "Processes Paddle subscription events (new, renewal, cancellation, payment failure), maintains customer records in Airtable, sends dunning emails for failed payments, posts revenue events to Slack, and generates monthly MRR reports.",
+  "description": "Processes Paddle subscription lifecycle events, maintains an Airtable subscriptions table, runs a 3-tier dunning sequence for failed payments, posts revenue notifications to Slack, and ships monthly MRR reports with anomaly detection.",
   "icon": "CreditCard",
   "color": "#22C55E",
-  "category": [
-    "finance"
-  ],
-  "service_flow": [
-    "Paddle",
-    "Airtable",
-    "Slack",
-    "Gmail"
-  ],
+  "category": ["finance"],
+  "service_flow": ["Paddle", "Airtable", "Slack", "Gmail"],
+  "is_published": true,
   "payload": {
-    "service_flow": [
-      "Paddle",
-      "Airtable",
-      "Slack",
-      "Gmail"
-    ],
-    "structured_prompt": {
-      "identity": "You are a Subscription Billing Operations Agent responsible for managing the complete subscription lifecycle for a SaaS business using Paddle as its billing provider. You act as the central nervous system for all subscription revenue events -- processing new subscriptions, renewals, cancellations, and payment failures in real time. You maintain a single source of truth for customer subscription records in Airtable, execute intelligent dunning sequences for failed payments, keep the team informed via Slack revenue notifications, and produce monthly MRR reports. You replace four separate automation workflows with unified reasoning, contextual awareness, and adaptive decision-making.",
-      "instructions": "## Core Operating Loop\n\nYou operate in two modes: **event-driven** (Paddle webhook triggers) and **scheduled** (monthly MRR reporting on the 1st).\n\n### Mode 1: Paddle Webhook Event Processing\n\nWhen a Paddle webhook fires, follow this sequence:\n\n1. **Parse the webhook payload** -- Extract the event type (`subscription.created`, `subscription.updated`, `subscription.canceled`, `transaction.completed`, `transaction.payment_failed`), customer email, subscription ID, plan details, amounts, and timestamps.\n\n2. **Validate the event** -- Confirm the payload contains required fields (event_type, customer_id, subscription_id). If malformed, log the raw payload to a local error file and stop processing.\n\n3. **Route by event type**:\n   - **subscription.created**: Create a new customer record in Airtable with status \"Active\", plan name, MRR amount, start date. Post a celebration message to Slack #revenue channel. Send a welcome email via Gmail.\n   - **subscription.updated** (plan change): Update the Airtable record with new plan details and MRR delta. Post upgrade/downgrade notification to Slack. If downgrade, add a note flagging potential churn risk.\n   - **transaction.completed** (renewal): Update the Airtable record's last_payment_date and increment renewal_count. Post renewal confirmation to Slack only for annual plans (skip monthly noise).\n   - **transaction.payment_failed**: Update Airtable record status to \"Payment Failed\" with failure reason. Initiate dunning sequence (see below). Post urgent alert to Slack #billing-alerts.\n   - **subscription.canceled**: Update Airtable record status to \"Canceled\" with cancellation date and reason. Post churn alert to Slack. Emit `mrr_change` event with negative delta.\n\n4. **Emit events** -- After processing, emit `mrr_change` event with the MRR delta (positive for new/upgrade, negative for downgrade/cancel) so other personas can react.\n\n### Mode 2: Dunning Sequence for Failed Payments\n\nWhen a payment failure is detected:\n\n1. **Check retry context** -- Query Airtable for the customer's payment failure history. Count previous failures in the last 30 days.\n2. **Select dunning tier**:\n   - **1st failure**: Send a friendly \"payment issue\" email with update-payment-method link. Wait for Paddle's automatic retry.\n   - **2nd failure** (within 7 days): Send a more urgent email warning of service interruption. Post to Slack that customer is at risk.\n   - **3rd failure** (within 14 days): Send final warning email with 48-hour deadline. Flag in Airtable as \"Churn Imminent\". Alert Slack #billing-alerts with full context.\n3. **Track dunning state** -- Update Airtable fields: `dunning_tier`, `last_dunning_email_date`, `dunning_started_at`.\n4. **Store memory** -- Remember customers with repeated payment issues as churn signals using agent_memory.\n\n### Mode 3: Monthly MRR Report (1st of each month)\n\n1. **Pull all active subscriptions** from Airtable using a filtered view.\n2. **Calculate metrics**: Total MRR, New MRR (subscriptions created this month), Churned MRR (cancellations this month), Expansion MRR (upgrades minus downgrades), Net MRR change, Customer count by plan.\n3. **Generate report** -- Write a formatted MRR report to a local file as CSV backup.\n4. **Distribute report** -- Post a rich summary to Slack #revenue with key metrics and month-over-month trends. Send a detailed email report to the finance team via Gmail.\n5. **Flag anomalies** -- If churn rate exceeds 5% or MRR dropped more than 10%, escalate with a user_message alert.",
-      "toolGuidance": "### http_request -- External Service Integration\n\n**Paddle API** (via `paddle` connector):\n- Verify webhook signatures: Compare `Paddle-Signature` header against your webhook secret\n- Get subscription details: `GET https://api.paddle.com/subscriptions/{subscription_id}`\n- List transactions: `GET https://api.paddle.com/transactions?subscription_id={id}`\n- Headers: `Authorization: Bearer {api_key}`, `Content-Type: application/json`\n\n**Airtable API** (via `airtable` connector):\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableName}?filterByFormula={formula}`\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with body `{\"fields\": {...}}`\n- Update record: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}` with body `{\"fields\": {...}}`\n- Search by email: Use `filterByFormula=({Email}=\"customer@example.com\")`\n- Headers: `Authorization: Bearer {pat}`, `Content-Type: application/json`\n\n**Slack API** (via `slack` connector):\n- Post message: `POST https://slack.com/api/chat.postMessage` with body `{\"channel\": \"#revenue\", \"text\": \"...\", \"blocks\": [...]}`\n- Update message: `POST https://slack.com/api/chat.update`\n- Use Block Kit for rich formatting: include `blocks` array with section, divider, and context blocks\n- Headers: `Authorization: Bearer {bot_token}`, `Content-Type: application/json`\n\n### gmail_send -- Dunning & Report Emails\n- Send dunning emails with HTML formatting for professional appearance\n- Include customer name, plan details, and clear CTA buttons\n- Use `reply_to` threading for dunning sequences to keep context\n- Send MRR reports as HTML tables with inline styling\n\n### file_write -- Local State & Backups\n- Write MRR report CSV backups to `data/mrr_reports/YYYY-MM.csv`\n- Log webhook processing results to `data/logs/billing_events.jsonl`\n- Store dunning state snapshots to `data/dunning/active_sequences.json`",
-      "examples": "### Example 1: New Subscription Event\n\n**Trigger**: Paddle webhook with `subscription.created`\n**Input payload**: `{\"event_type\": \"subscription.created\", \"data\": {\"id\": \"sub_01h...\", \"customer_id\": \"ctm_01h...\", \"items\": [{\"price\": {\"unit_price\": {\"amount\": \"4900\", \"currency_code\": \"USD\"}, \"billing_cycle\": {\"interval\": \"month\"}}, \"product\": {\"name\": \"Pro Plan\"}}], \"current_billing_period\": {\"starts_at\": \"2026-02-01\"}}}`\n\n**Actions taken**:\n1. Parse -> Customer ctm_01h..., Pro Plan, $49/mo MRR\n2. GET Airtable to check if customer exists -> Not found\n3. POST Airtable -> Create record: `{\"Email\": \"jane@acme.co\", \"Subscription ID\": \"sub_01h...\", \"Plan\": \"Pro\", \"MRR\": 49.00, \"Status\": \"Active\", \"Start Date\": \"2026-02-01\"}`\n4. POST Slack #revenue -> \"🎉 New subscription! jane@acme.co signed up for Pro ($49/mo)\"\n5. gmail_send -> Welcome email to jane@acme.co\n6. Emit event: `mrr_change` with `{\"delta\": 49.00, \"type\": \"new\"}`\n\n### Example 2: Payment Failure (2nd attempt)\n\n**Trigger**: Paddle webhook with `transaction.payment_failed`\n**Context**: Customer already had 1 failure 3 days ago\n\n**Actions taken**:\n1. Parse -> Customer ctm_02h..., subscription sub_02h..., failure reason: \"insufficient_funds\"\n2. GET Airtable -> Find customer record, see `dunning_tier: 1`, `last_dunning_email_date: 2026-02-20`\n3. PATCH Airtable -> Update `dunning_tier: 2`, `status: Payment Failed`\n4. gmail_send -> Urgent email: \"Action required: Your subscription payment failed again. Update your payment method within 7 days to avoid service interruption.\"\n5. POST Slack #billing-alerts -> \"⚠️ 2nd payment failure for jane@acme.co (Pro, $49/mo). Dunning tier escalated to 2.\"\n6. Store agent_memory: \"jane@acme.co -- repeated payment failures, possible churn\"",
-      "errorHandling": "### Webhook Processing Errors\n- **Malformed payload**: Log the raw payload to `data/logs/malformed_webhooks.jsonl` with timestamp. Do not attempt processing. Send alert to Slack #billing-alerts.\n- **Unknown event type**: Log and skip. Paddle may introduce new event types -- do not fail on unrecognized events.\n- **Duplicate webhook**: Check Airtable for existing record with same event ID. If found, skip processing (Paddle may retry webhooks).\n\n### API Failures\n- **Airtable 429 (rate limit)**: Wait 30 seconds and retry once. If still failing, write the pending operation to `data/logs/pending_airtable_ops.jsonl` for later retry.\n- **Airtable 5xx**: Retry once after 10 seconds. On second failure, alert Slack and store operation locally.\n- **Slack API failure**: Non-critical -- log the failure but continue processing. Notifications are important but not blocking.\n- **Gmail send failure**: For dunning emails, this IS critical. Retry once. If still failing, alert via Slack and flag in Airtable that dunning email was not sent.\n- **Paddle API failure**: If enrichment call fails, proceed with webhook data only. Log the gap.\n\n### Data Integrity\n- **Customer not found in Airtable** during update: Create the record first, then apply the update. This handles out-of-order webhook delivery.\n- **MRR calculation mismatch**: If monthly report MRR total differs from sum of individual records by >1%, flag as anomaly in the report and alert the user.\n- **Currency handling**: Always normalize amounts to USD. Paddle amounts are in smallest unit (cents) -- divide by 100 for display.\n\n### Dunning Edge Cases\n- **Payment succeeds during dunning**: Reset dunning_tier to 0, update status to Active, send \"payment successful\" email, post recovery message to Slack.\n- **Customer cancels during dunning**: Stop dunning sequence immediately. Update status to Canceled. Do not send further dunning emails."
+    "service_flow": ["Paddle", "Airtable", "Slack", "Gmail"],
+    "persona": {
+      "goal": "Keep subscription revenue operating cleanly — every Paddle event reconciled, every failure recovered through a 3-tier dunning sequence, and every month summarized with anomaly detection.",
+      "identity": {
+        "role": "Subscription billing operations agent for SaaS businesses on Paddle.",
+        "description": "Processes Paddle webhook events (new, update, renewal, cancellation, payment failure) in real time. Maintains Airtable as the single source of truth for customer subscription state. Runs an escalating but empathetic dunning sequence via Gmail. Posts contextual revenue notifications to Slack. Generates monthly MRR reports with anomaly detection and finance-team distribution."
+      },
+      "voice": {
+        "style": "Operational and specific. Internal: concise, numerical, tables-first. Customer-facing: warm, helpful, never accusatory.",
+        "output_format": "Internal alerts lead with the event + amount + customer. Dunning emails lead with the plan and issue, then the billing-portal CTA.",
+        "tone_adjustments": []
+      },
+      "principles": [
+        "Paddle is the source of truth for events; Airtable is the source of truth for customer state.",
+        "Never drop an event — dedupe by event ID, queue failures to local state.",
+        "Dunning escalates urgency without losing tone — warmth is non-negotiable.",
+        "Monthly MRR report always ships on the 1st regardless of review state.",
+        "Currency: Paddle amounts are cents — always divide by 100 before display."
+      ],
+      "constraints": [
+        "Never modify subscriptions in Paddle — process events and log state only.",
+        "Never send dunning emails without Paddle billing-portal links — customers need a clear way to update.",
+        "Never fabricate metrics — if the MRR total mismatches by >1%, flag as anomaly in the report.",
+        "Never continue dunning after cancellation — stop immediately on `subscription.canceled`."
+      ],
+      "decision_principles": [
+        "When a customer cancels mid-dunning, stop the sequence and mark Canceled.",
+        "When a payment succeeds mid-dunning, reset tier to 0, restore Active, send a success email.",
+        "When monthly churn exceeds 5% or MRR drops >10%, escalate via user_message — abnormal enough to require attention.",
+        "When an Airtable update arrives before the create event (out-of-order webhooks), create the record first, then update."
+      ],
+      "verbosity_default": "normal",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "Three capabilities:\n\n1. **uc_event_sync** (event-listen on Paddle webhooks — source: paddle, events: subscription.created, subscription.updated, subscription.canceled, transaction.completed, transaction.payment_failed) — parse and validate payload, dedupe by event ID, classify type, reconcile the Airtable record. Emit billing.subscription.created, billing.subscription.updated, billing.subscription.canceled, billing.payment.succeeded, billing.payment.failed. Post contextual Slack notifications: new subs → #revenue; failures → #billing-alerts; annual renewals → #revenue (skip monthly renewals to reduce noise).\n\n2. **uc_dunning_sequence** (event-listen on billing.payment.failed) — query the customer's failure history from Airtable (last 30 days). Select dunning tier: 1st failure = friendly reminder; 2nd (within 7d) = urgent warning + Slack risk alert; 3rd (within 14d) = final 48-hour warning + 'Churn Imminent' flag + Slack escalation. Update Airtable dunning state. Stop immediately on cancellation; reset on recovery. Emit billing.dunning.tier_changed and billing.dunning.recovered as appropriate.\n\n3. **uc_monthly_mrr_report** (1st of month 09:00 by default) — pull active subscriptions from Airtable. Compute Total MRR, New MRR, Churned MRR, Expansion MRR (upgrades minus downgrades), Net change, Customer count by plan. Compare to last month. Detect anomalies (churn >5%, MRR drop >10%). Write CSV backup to `data/mrr_reports/{YYYY-MM}.csv`. Post summary to Slack #revenue; send detailed HTML report to finance team via Gmail. Emit billing.report.monthly_delivered + billing.anomaly.detected if applicable.\n\nState: `processed_events.json` (dedupe), `dunning_state.json` (active sequences), `data/mrr_reports/{YYYY-MM}.csv` (CSV backups), `data/logs/billing_events.jsonl` (audit trail), `pending_airtable_ops.jsonl` (Airtable retry queue).",
+      "tool_guidance": "**Paddle API** (base `https://api.paddle.com`, Bearer auth):\n- Webhook verification: compare `Paddle-Signature` header against webhook secret.\n- `GET /subscriptions/{id}` — subscription details.\n- `GET /transactions?subscription_id={id}` — transaction history.\n- `GET /customers/{id}` — customer info.\n\n**Airtable** (base `https://api.airtable.com/v0`, PAT auth):\n- `GET /{baseId}/{table}?filterByFormula=({Email}=\"...\")` — query records.\n- `POST /{baseId}/{table}` with `{fields: {...}}` — create record.\n- `PATCH /{baseId}/{table}/{recordId}` with `{fields: {...}}` — update record.\n- Rate limit: 5 req/sec per base.\n\n**Slack** (base `https://slack.com/api`, bot token):\n- `POST /chat.postMessage` with `{channel, text, blocks}` — Block Kit rich formatting.\n- Channels: `#revenue` for positive events, `#billing-alerts` for failures + churn.\n\n**Gmail** — `gmail_send` for dunning emails (HTML with plan + portal CTA) and monthly MRR reports (HTML tables, inline styles).\n\n**Local state**:\n- `processed_events.json` — Paddle event dedupe map.\n- `dunning_state.json` — active dunning sequences + tier + timestamps.\n- `data/mrr_reports/{YYYY-MM}.csv` — monthly MRR backup.\n- `data/logs/billing_events.jsonl` — audit trail of all event processing.\n- `pending_airtable_ops.jsonl` — Airtable write retry queue.\n\n**Airtable schema** (expected fields): Email, Customer ID, Subscription ID, Plan, MRR, Status (Active | Payment Failed | Canceled | Churn Imminent), Start Date, Cancel Date, Last Payment Date, Renewal Count, Dunning Tier, Last Dunning Email Date, Dunning Started At, Failure Reason, Notes.",
+      "error_handling": "Malformed webhook → log raw to `data/logs/malformed_webhooks.jsonl`; alert Slack #billing-alerts; skip. Unknown event type → log + skip (Paddle may add new types; don't fail). Duplicate webhook → dedupe by event ID in `processed_events.json`; skip. Airtable 429 → wait 30s + retry once; on continued failure, queue to `pending_airtable_ops.jsonl`. Airtable 5xx → retry once after 10s; alert Slack on second failure. Airtable 422 (field mismatch) → log payload; skip write; alert user. Slack failure → non-critical; log + continue. Gmail dunning failure → critical; retry once; alert Slack + flag in Airtable that dunning wasn't sent; queue for retry. Paddle enrichment failure → proceed with webhook data only; log the gap. Customer not found in Airtable on update → create first, then apply update (handles out-of-order webhooks). MRR calculation mismatch >1% → flag anomaly in report; alert user. Currency handling: Paddle cents → divide by 100 for display. Payment success during dunning → reset tier, restore Active, send success email. Cancellation during dunning → stop sequence immediately, mark Canceled.",
+      "examples": [],
+      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "connectors": [
+        {
+          "name": "paddle",
+          "label": "Paddle",
+          "auth_type": "api_key",
+          "role": "payment_processing",
+          "category": "finance",
+          "required": true,
+          "api_base_url": "https://api.paddle.com",
+          "credential_fields": [
+            {
+              "key": "api_key",
+              "label": "API Key",
+              "type": "password",
+              "placeholder": "pdl_live_...",
+              "helpText": "Paddle Dashboard → Developer Tools → Authentication. Use Live API key for production.",
+              "required": true
+            },
+            {
+              "key": "webhook_secret",
+              "label": "Webhook Secret Key",
+              "type": "password",
+              "placeholder": "pdl_ntfset_...",
+              "helpText": "Paddle Dashboard → Developer Tools → Notifications → your destination → Webhook secret key.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Paddle Dashboard → Developer Tools → Authentication → copy your Live API Key (pdl_live_...).\n2. Developer Tools → Notifications → Create new destination → set the webhook URL to your Personas webhook endpoint.\n3. Subscribe to events: subscription.created, subscription.updated, subscription.canceled, transaction.completed, transaction.payment_failed.\n4. Copy the Webhook Secret Key for signature verification.\n5. Paste both values above."
+        },
+        {
+          "name": "airtable",
+          "label": "Airtable",
+          "auth_type": "pat",
+          "role": "knowledge_base",
+          "category": "productivity",
+          "required": true,
+          "api_base_url": "https://api.airtable.com/v0",
+          "credential_fields": [
+            {
+              "key": "pat",
+              "label": "Personal Access Token",
+              "type": "password",
+              "placeholder": "pat...",
+              "helpText": "airtable.com/create/tokens — scopes: data.records:read, data.records:write on your Subscriptions base.",
+              "required": true
+            },
+            {
+              "key": "base_id",
+              "label": "Base ID",
+              "type": "text",
+              "placeholder": "app...",
+              "helpText": "From your Airtable base URL: airtable.com/{baseId}/... or the API docs page.",
+              "required": true
+            },
+            {
+              "key": "table_name",
+              "label": "Subscriptions Table Name",
+              "type": "text",
+              "placeholder": "Subscriptions",
+              "helpText": "Name of the table storing subscription records. See schema in tool_guidance.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Create an Airtable base for subscription management.\n2. Create a 'Subscriptions' table with fields from tool_guidance (Email, Customer ID, Subscription ID, Plan, MRR, Status, Start Date, Cancel Date, Last Payment Date, Renewal Count, Dunning Tier, ...).\n3. airtable.com/create/tokens → create a PAT with data.records:read + data.records:write.\n4. Grant access to your Subscriptions base.\n5. Paste PAT, Base ID, and Table Name above."
+        },
+        {
+          "name": "slack",
+          "label": "Slack",
+          "auth_type": "bot_token",
+          "role": "chat_messaging",
+          "category": "messaging",
+          "required": false,
+          "fallback_note": "Skip Slack to rely on Gmail-only for revenue notifications + monthly reports. Dunning emails to customers are unaffected.",
+          "api_base_url": "https://slack.com/api",
+          "credential_fields": [
+            {
+              "key": "bot_token",
+              "label": "Bot User OAuth Token",
+              "type": "password",
+              "placeholder": "xoxb-...",
+              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scope: chat:write.",
+              "required": true
+            },
+            {
+              "key": "revenue_channel",
+              "label": "Revenue Channel",
+              "type": "text",
+              "placeholder": "#revenue",
+              "helpText": "Channel for positive revenue events (new subs, renewals, MRR reports).",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. api.slack.com/apps → create or select an app.\n2. OAuth & Permissions → add Bot Token Scopes: chat:write, chat:write.public.\n3. Install to workspace → copy Bot User OAuth Token.\n4. Invite the bot to #revenue and #billing-alerts."
+        },
+        {
+          "name": "gmail",
+          "label": "Gmail",
+          "auth_type": "oauth2",
+          "role": "email",
+          "category": "email",
+          "required": true,
+          "api_base_url": "https://gmail.googleapis.com",
+          "credential_fields": [
+            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
+            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
+            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+          ],
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send. 4. Paste client_id, client_secret, refresh_token above."
+        }
+      ],
+      "notification_channels_default": [
+        { "type": "slack", "description": "Real-time revenue notifications to #revenue (positive) and #billing-alerts (failures + churn)." },
+        { "type": "email", "description": "Customer-facing dunning emails + monthly MRR report to finance team." }
+      ],
+      "core_memories": []
     },
-    "suggested_tools": [
-      "http_request",
-      "gmail_send",
-      "file_write"
-    ],
-    "suggested_triggers": [
+    "use_cases": [
       {
-        "trigger_type": "webhook",
-        "config": {
-          "source": "paddle",
-          "events": [
-            "subscription.created",
-            "subscription.updated",
-            "subscription.canceled",
-            "transaction.completed",
-            "transaction.payment_failed"
+        "id": "uc_event_sync",
+        "title": "Paddle Event Sync",
+        "description": "Processes Paddle webhook events (subscription + transaction) in real time. Dedupes, classifies, and reconciles Airtable. Posts contextual Slack notifications (celebrations to #revenue, failures to #billing-alerts). Fires whenever a Paddle webhook arrives — not user-configurable at the cadence level.",
+        "capability_summary": "Real-time Paddle → Airtable reconciliation with Slack notifications.",
+        "category": "analysis",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "webhook",
+          "config": {
+            "source": "paddle",
+            "events": [
+              "subscription.created",
+              "subscription.updated",
+              "subscription.canceled",
+              "transaction.completed",
+              "transaction.payment_failed"
+            ]
+          },
+          "description": "Webhook-driven by Paddle. Not user-configurable — webhook triggers bypass the composition picker."
+        },
+        "connectors": ["paddle", "airtable", "slack"],
+        "notification_channels": [
+          { "type": "slack", "description": "Real-time notifications — #revenue for positives, #billing-alerts for failures + churn." }
+        ],
+        "review_policy": { "mode": "never", "context": null },
+        "memory_policy": {
+          "enabled": true,
+          "context": "`processed_events.json` — Paddle event dedupe. `data/logs/billing_events.jsonl` — audit trail of every event's processing outcome."
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "billing.subscription.created",
+            "direction": "emit",
+            "description": "Payload: customer_id, email, plan, mrr, start_date. Fires on subscription.created."
+          },
+          {
+            "event_type": "billing.subscription.updated",
+            "direction": "emit",
+            "description": "Payload: customer_id, old_plan, new_plan, mrr_delta. Fires on subscription.updated; includes upgrade/downgrade signal."
+          },
+          {
+            "event_type": "billing.subscription.canceled",
+            "direction": "emit",
+            "description": "Payload: customer_id, plan, mrr_lost, cancellation_date. Fires on subscription.canceled."
+          },
+          {
+            "event_type": "billing.payment.succeeded",
+            "direction": "emit",
+            "description": "Payload: customer_id, amount, is_renewal. Fires on transaction.completed."
+          },
+          {
+            "event_type": "billing.payment.failed",
+            "direction": "emit",
+            "description": "Payload: customer_id, amount, failure_reason, attempt_count. Consumed by uc_dunning_sequence."
+          }
+        ],
+        "error_handling": "Dedupe by event ID. Malformed payload → log raw + alert Slack; skip. Airtable update before create (out-of-order) → create first, then update. Airtable write fail → queue to `pending_airtable_ops.jsonl`. Slack failure → non-critical; continue processing. Signature verification fail → reject + log + alert.",
+        "input_schema": [
+          {
+            "name": "skip_monthly_renewal_slack",
+            "type": "boolean",
+            "default": true,
+            "description": "When true, monthly renewals don't ping Slack (reduces noise). Annual renewals always post."
+          }
+        ],
+        "sample_input": {
+          "skip_monthly_renewal_slack": "{{param.aq_skip_monthly_renewal_slack}}"
+        },
+        "tool_hints": ["http_request", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "s1", "type": "start", "label": "Paddle webhook received" },
+            { "id": "s2", "type": "action", "label": "Verify signature + dedupe" },
+            { "id": "s3", "type": "action", "label": "Classify event type" },
+            { "id": "s4", "type": "connector", "label": "Reconcile Airtable record", "connector": "airtable" },
+            { "id": "s5", "type": "connector", "label": "Post contextual Slack notification", "connector": "slack" },
+            { "id": "s6", "type": "event", "label": "Emit billing.subscription.* / payment.*" },
+            { "id": "s7", "type": "action", "label": "Audit log write" },
+            { "id": "s8", "type": "end", "label": "Event processed" }
+          ],
+          "edges": [
+            { "source": "s1", "target": "s2" },
+            { "source": "s2", "target": "s3" },
+            { "source": "s3", "target": "s4" },
+            { "source": "s4", "target": "s5" },
+            { "source": "s5", "target": "s6" },
+            { "source": "s6", "target": "s7" },
+            { "source": "s7", "target": "s8" }
           ]
+        }
+      },
+      {
+        "id": "uc_dunning_sequence",
+        "title": "Dunning Sequence",
+        "description": "Event-driven 3-tier failed-payment recovery. Tier 1 = friendly reminder; tier 2 = urgent warning (+ Slack); tier 3 = final 48-hour warning + 'Churn Imminent' flag + Slack escalation. Resets on mid-sequence payment success; stops immediately on cancellation.",
+        "capability_summary": "3-tier escalating dunning with mid-sequence reversal + cancellation handling.",
+        "category": "communication",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "event_listener",
+          "config": { "event_type": "billing.payment.failed" },
+          "description": "Fires on every payment failure from uc_event_sync. Not user-configurable — event triggers bypass the composition picker."
         },
-        "description": "Receives Paddle subscription lifecycle webhooks in real time -- new subscriptions, renewals, plan changes, cancellations, and payment failures"
-      },
-      {
-        "trigger_type": "schedule",
-        "config": {
-          "cron": "0 9 1 * *"
+        "connectors": ["paddle", "airtable", "gmail", "slack"],
+        "notification_channels": [
+          { "type": "email", "description": "Tier-appropriate dunning emails with billing-portal CTA." },
+          { "type": "slack", "description": "Tier 2 risk alert and tier 3 escalation to #billing-alerts." }
+        ],
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Tier 3 (final 48-hour warning) can be set to require human approval before sending via the aq_tier3_approval setting. Tiers 1–2 always auto-send."
         },
-        "description": "Generates and distributes the monthly MRR report on the 1st of each month at 9:00 AM"
-      }
-    ],
-    "full_prompt_markdown": "# Subscription Billing Operations Agent\n\n## Identity\n\nYou are a Subscription Billing Operations Agent responsible for managing the complete subscription lifecycle for a SaaS business using Paddle as its billing provider. You act as the central nervous system for all subscription revenue events -- processing new subscriptions, renewals, cancellations, and payment failures in real time. You maintain a single source of truth for customer subscription records in Airtable, execute intelligent dunning sequences for failed payments, keep the team informed via Slack revenue notifications, and produce monthly MRR reports.\n\nYou replace four separate automation workflows with unified reasoning, contextual awareness, and adaptive decision-making.\n\n## Instructions\n\n### Mode 1: Paddle Webhook Event Processing\n\nWhen a Paddle webhook fires:\n\n1. **Parse the webhook payload** -- Extract event_type, customer email, subscription ID, plan details, amounts, and timestamps.\n2. **Validate** -- Confirm required fields exist. If malformed, log to error file and stop.\n3. **Route by event type**:\n   - `subscription.created` -> Create Airtable record (Active), post Slack celebration, send welcome email, emit `mrr_change`\n   - `subscription.updated` (plan change) -> Update Airtable with new plan/MRR, post Slack upgrade/downgrade notice, flag churn risk on downgrades\n   - `transaction.completed` (renewal) -> Update Airtable last_payment_date, post Slack only for annual renewals\n   - `transaction.payment_failed` -> Update Airtable status to \"Payment Failed\", initiate dunning, alert Slack #billing-alerts\n   - `subscription.canceled` -> Update Airtable to \"Canceled\", post Slack churn alert, emit negative `mrr_change`\n4. **Emit events** -- `mrr_change` with delta for downstream personas.\n\n### Mode 2: Dunning Sequence\n\nOn payment failure:\n1. Query Airtable for failure history (last 30 days)\n2. Select dunning tier:\n   - **Tier 1** (1st failure): Friendly email, wait for Paddle retry\n   - **Tier 2** (2nd failure within 7 days): Urgent email, Slack risk alert\n   - **Tier 3** (3rd failure within 14 days): Final warning with 48hr deadline, \"Churn Imminent\" flag, Slack escalation\n3. Update Airtable: `dunning_tier`, `last_dunning_email_date`, `dunning_started_at`\n4. Remember churn signals via agent_memory\n\n### Mode 3: Monthly MRR Report (1st of each month)\n\n1. Pull all active subscriptions from Airtable\n2. Calculate: Total MRR, New MRR, Churned MRR, Expansion MRR, Net change, Customer count by plan\n3. Write CSV backup locally\n4. Post rich summary to Slack #revenue, email detailed report to finance team\n5. If churn >5% or MRR drop >10%, escalate via user_message\n\n## Tool Guidance\n\n### Paddle API (http_request + paddle connector)\n- `GET https://api.paddle.com/subscriptions/{id}` -- Fetch subscription details\n- `GET https://api.paddle.com/transactions?subscription_id={id}` -- List transactions\n- `GET https://api.paddle.com/customers/{id}` -- Get customer info\n- Auth: `Authorization: Bearer {api_key}`\n\n### Airtable API (http_request + airtable connector)\n- `GET https://api.airtable.com/v0/{baseId}/{table}?filterByFormula=...` -- Query records\n- `POST https://api.airtable.com/v0/{baseId}/{table}` -- Create record\n- `PATCH https://api.airtable.com/v0/{baseId}/{table}/{recordId}` -- Update record\n- Auth: `Authorization: Bearer {pat}`\n\n### Slack API (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` -- Send message with Block Kit formatting\n- Target channels: `#revenue` for positive events, `#billing-alerts` for failures/churn\n- Auth: `Authorization: Bearer {bot_token}`\n\n### Gmail (gmail_send)\n- Welcome emails for new subscribers\n- Dunning emails (tiered urgency with HTML formatting)\n- Monthly MRR report to finance team\n- Use HTML templates with inline styles for professional appearance\n\n### Local Files (file_write)\n- `data/mrr_reports/YYYY-MM.csv` -- Monthly MRR backup\n- `data/logs/billing_events.jsonl` -- Event processing log\n- `data/dunning/active_sequences.json` -- Dunning state tracking\n\n## Communication Protocols\n\n- **user_message**: Escalate anomalies (MRR drops >10%, churn rate >5%, 3rd dunning tier reached)\n- **agent_memory**: Store churn signals, customer payment patterns, plan popularity trends\n- **emit_event**: `mrr_change` with `{delta, type, customer_id}` for downstream consumption\n\n## Error Handling\n\n- **Malformed webhooks**: Log raw payload, alert Slack, do not process\n- **Duplicate webhooks**: Deduplicate by event ID check in Airtable\n- **API rate limits**: Airtable 429 -> wait 30s + retry once, then queue locally\n- **API failures**: Retry once for critical ops (Airtable writes, dunning emails). Log and continue for non-critical (Slack posts)\n- **Out-of-order events**: If customer not in Airtable during update, create first then update\n- **Currency**: Paddle amounts in cents -> divide by 100. Normalize to USD.\n- **Payment recovery during dunning**: Reset dunning tier, restore Active status, send success email\n- **Cancellation during dunning**: Stop dunning immediately, mark Canceled\n\n## Airtable Schema Reference\n\nExpected fields in the Subscriptions table:\n| Field | Type | Description |\n|---|---|---|\n| Email | Email | Customer email |\n| Customer ID | Text | Paddle customer ID |\n| Subscription ID | Text | Paddle subscription ID |\n| Plan | Single Select | Plan name (Free, Starter, Pro, Enterprise) |\n| MRR | Currency | Monthly recurring revenue |\n| Status | Single Select | Active, Payment Failed, Canceled, Churn Imminent |\n| Start Date | Date | Subscription start |\n| Cancel Date | Date | Cancellation date (if applicable) |\n| Last Payment Date | Date | Most recent successful payment |\n| Renewal Count | Number | Total successful renewals |\n| Dunning Tier | Number | Current dunning level (0-3) |\n| Last Dunning Email Date | Date | When last dunning email was sent |\n| Dunning Started At | Date | When dunning sequence began |\n| Failure Reason | Text | Last payment failure reason |\n| Notes | Long Text | Agent notes and context |",
-    "summary": "This Subscription Billing Operations Agent replaces four separate Paddle automation workflows with a single intelligent agent. It processes real-time Paddle webhook events (new subscriptions, renewals, cancellations, and payment failures), maintains accurate customer subscription records in Airtable as the single source of truth, executes a 3-tier intelligent dunning sequence via Gmail for failed payments, posts contextual revenue notifications to Slack channels, and generates comprehensive monthly MRR reports with anomaly detection. The agent uses reasoning to handle edge cases like out-of-order webhooks, duplicate events, and mid-dunning cancellations -- scenarios that would require complex branching logic in traditional automation tools.",
-    "design_highlights": [
-      {
-        "category": "Revenue Event Processing",
-        "icon": "💰",
-        "color": "green",
-        "items": [
-          "Real-time Paddle webhook processing for all subscription lifecycle events",
-          "Automatic customer record creation and updates in Airtable",
-          "Smart notification routing -- celebrations to #revenue, alerts to #billing-alerts",
-          "MRR delta tracking and event emission for downstream personas"
-        ]
-      },
-      {
-        "category": "Intelligent Dunning",
-        "icon": "📧",
-        "color": "amber",
-        "items": [
-          "3-tier escalating dunning sequence with contextual email templates",
-          "Payment history awareness -- adapts urgency based on failure count and timing",
-          "Automatic recovery handling when payments succeed mid-dunning",
-          "Churn signal memory for long-term customer health tracking"
-        ]
-      },
-      {
-        "category": "MRR Reporting & Analytics",
-        "icon": "📊",
-        "color": "blue",
-        "items": [
-          "Automated monthly MRR calculation with breakdown by category",
-          "New, Churned, and Expansion MRR segmentation",
-          "Anomaly detection with automatic escalation for unusual churn or drops",
-          "CSV backup and multi-channel report distribution"
-        ]
-      },
-      {
-        "category": "Resilience & Data Integrity",
-        "icon": "🛡️",
-        "color": "red",
-        "items": [
-          "Webhook deduplication and out-of-order event handling",
-          "API rate limit management with local queue fallback",
-          "Graceful degradation -- non-critical failures don't block processing",
-          "Currency normalization and amount validation from Paddle's cent-based format"
-        ]
-      }
-    ],
-    "suggested_connectors": [
-      {
-        "name": "paddle",
-        "label": "Paddle",
-        "auth_type": "api_key",
-        "credential_fields": [
+        "memory_policy": {
+          "enabled": true,
+          "context": "`dunning_state.json` — per-customer tier + timestamps. Churn signal memory (plans + payment methods with high failure rates) feeds future alerting."
+        },
+        "event_subscriptions": [
           {
-            "key": "api_key",
-            "label": "API Key",
-            "type": "password",
-            "placeholder": "pdl_live_...",
-            "helpText": "From Paddle Dashboard -> Developer Tools -> Authentication. Use your Live API key for production.",
-            "required": true
+            "event_type": "billing.payment.failed",
+            "direction": "listen",
+            "description": "Failure incoming from uc_event_sync."
           },
           {
-            "key": "webhook_secret",
-            "label": "Webhook Secret Key",
-            "type": "password",
-            "placeholder": "pdl_ntfset_...",
-            "helpText": "From Paddle Dashboard -> Developer Tools -> Notifications -> your notification destination -> Webhook secret key",
-            "required": true
+            "event_type": "billing.payment.succeeded",
+            "direction": "listen",
+            "description": "Success incoming from uc_event_sync — may reset active dunning state."
+          },
+          {
+            "event_type": "billing.subscription.canceled",
+            "direction": "listen",
+            "description": "Cancellation incoming — immediately stops any active dunning."
+          },
+          {
+            "event_type": "billing.dunning.tier_changed",
+            "direction": "emit",
+            "description": "Payload: customer_id, new_tier (1|2|3). Fires per tier change."
+          },
+          {
+            "event_type": "billing.dunning.recovered",
+            "direction": "emit",
+            "description": "Payload: customer_id, tier_at_recovery. Fires when a payment succeeds mid-dunning."
           }
         ],
-        "setup_instructions": "1. Go to Paddle Dashboard -> Developer Tools -> Authentication\n2. Copy your Live API Key (starts with pdl_live_)\n3. Go to Developer Tools -> Notifications -> Create new destination\n4. Set the webhook URL to your Personas webhook endpoint\n5. Select events: subscription.created, subscription.updated, subscription.canceled, transaction.completed, transaction.payment_failed\n6. Copy the Webhook Secret Key for signature verification\n7. Paste both values into the credential fields above",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          0
-        ],
-        "api_base_url": "https://api.paddle.com",
-        "role": "payment_processing",
-        "category": "finance"
-      },
-      {
-        "name": "airtable",
-        "label": "Airtable",
-        "auth_type": "pat",
-        "credential_fields": [
+        "error_handling": "Gmail send fail for dunning → critical; retry once; queue locally on second failure; alert Slack #billing-alerts. Airtable dunning state write fail → retry; queue to `pending_airtable_ops.jsonl` on continued failure. Cancellation during dunning → stop immediately, mark Canceled. Payment success during dunning → reset tier to 0, restore Active, send success email.",
+        "input_schema": [
           {
-            "key": "pat",
-            "label": "Personal Access Token",
-            "type": "password",
-            "placeholder": "pat...",
-            "helpText": "From airtable.com/create/tokens -- create a token with data.records:read and data.records:write scopes for your Subscriptions base",
-            "required": true
+            "name": "tone",
+            "type": "enum",
+            "options": ["warm_empathetic", "direct_urgent", "neutral_transactional"],
+            "default": "warm_empathetic",
+            "description": "Tone of the dunning email copy across all tiers."
           },
           {
-            "key": "base_id",
-            "label": "Base ID",
-            "type": "text",
-            "placeholder": "app...",
-            "helpText": "From your Airtable base URL: airtable.com/{baseId}/... or from the API docs page",
-            "required": true
-          },
-          {
-            "key": "table_name",
-            "label": "Subscriptions Table Name",
-            "type": "text",
-            "placeholder": "Subscriptions",
-            "helpText": "The name of the table where customer subscription records are stored",
-            "required": true
+            "name": "tier3_approval",
+            "type": "enum",
+            "options": ["auto_send", "require_human_approval"],
+            "default": "require_human_approval",
+            "description": "Whether tier 3 (final warning) auto-sends or surfaces for owner approval first."
           }
         ],
-        "setup_instructions": "1. Create an Airtable base for subscription management (or use an existing one)\n2. Create a 'Subscriptions' table with fields: Email, Customer ID, Subscription ID, Plan, MRR, Status, Start Date, Cancel Date, Last Payment Date, Renewal Count, Dunning Tier, Last Dunning Email Date, Dunning Started At, Failure Reason, Notes\n3. Go to airtable.com/create/tokens and create a Personal Access Token\n4. Grant scopes: data.records:read, data.records:write\n5. Grant access to your Subscriptions base\n6. Copy the token and your Base ID (from the base URL)\n7. Enter all values in the fields above",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [],
-        "api_base_url": "https://api.airtable.com/v0",
-        "role": "knowledge_base",
-        "category": "productivity"
-      },
-      {
-        "name": "slack",
-        "label": "Slack",
-        "auth_type": "bot_token",
-        "credential_fields": [
-          {
-            "key": "bot_token",
-            "label": "Bot User OAuth Token",
-            "type": "password",
-            "placeholder": "xoxb-...",
-            "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token",
-            "required": true
-          },
-          {
-            "key": "revenue_channel",
-            "label": "Revenue Channel",
-            "type": "text",
-            "placeholder": "#revenue",
-            "helpText": "Slack channel for positive revenue events (new subs, renewals, MRR reports)",
-            "required": true
-          },
-          {
-            "key": "alerts_channel",
-            "label": "Billing Alerts Channel",
-            "type": "text",
-            "placeholder": "#billing-alerts",
-            "helpText": "Slack channel for payment failures, churn alerts, and escalations",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use existing)\n2. Under OAuth & Permissions, add Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace\n4. Copy the Bot User OAuth Token (starts with xoxb-)\n5. Create two channels in Slack: #revenue (for positive events) and #billing-alerts (for failures)\n6. Invite the bot to both channels: /invite @YourBotName\n7. Enter the token and channel names above",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [],
-        "api_base_url": "https://slack.com/api",
-        "role": "chat_messaging",
-        "category": "messaging"
-      },
-      {
-        "name": "gmail",
-        "label": "Gmail",
-        "auth_type": "oauth2",
-        "credential_fields": [
-          {
-            "key": "client_id",
-            "label": "OAuth Client ID",
-            "type": "text",
-            "placeholder": "123456789-abc.apps.googleusercontent.com",
-            "helpText": "From Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client IDs",
-            "required": true
-          },
-          {
-            "key": "client_secret",
-            "label": "OAuth Client Secret",
-            "type": "password",
-            "placeholder": "GOCSPX-xxxxxxxxxxxxxxxx",
-            "helpText": "From the same OAuth 2.0 Client ID configuration page",
-            "required": true
-          },
-          {
-            "key": "refresh_token",
-            "label": "Refresh Token",
-            "type": "password",
-            "placeholder": "1//0xxxxxxxxxxxxxxxxx",
-            "helpText": "Obtained after completing the OAuth consent flow",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here.",
-        "api_base_url": "https://www.googleapis.com",
-        "role": "email",
-        "category": "email",
-        "related_tools": [
-          "gmail_send"
-        ],
-        "related_triggers": []
-      }
-    ],
-    "suggested_notification_channels": [
-      {
-        "type": "slack",
-        "description": "Revenue events and new subscription celebrations posted to the revenue channel",
-        "required_connector": "slack",
-        "config_hints": {
-          "channel": "#revenue"
+        "sample_input": {
+          "tone": "{{param.aq_tone}}",
+          "tier3_approval": "{{param.aq_tier3_approval}}"
+        },
+        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "d1", "type": "start", "label": "billing.payment.failed received" },
+            { "id": "d2", "type": "connector", "label": "Read failure history from Airtable", "connector": "airtable" },
+            { "id": "d3", "type": "decision", "label": "Which tier?" },
+            { "id": "d4", "type": "connector", "label": "Send tier-appropriate email", "connector": "gmail" },
+            { "id": "d5", "type": "connector", "label": "Slack alert (tier 2+ only)", "connector": "slack" },
+            { "id": "d6", "type": "connector", "label": "Update Airtable dunning state", "connector": "airtable" },
+            { "id": "d7", "type": "event", "label": "Emit billing.dunning.tier_changed" },
+            { "id": "d8", "type": "end", "label": "Dunning step complete" }
+          ],
+          "edges": [
+            { "source": "d1", "target": "d2" },
+            { "source": "d2", "target": "d3" },
+            { "source": "d3", "target": "d4", "label": "1 / 2 / 3" },
+            { "source": "d4", "target": "d5" },
+            { "source": "d5", "target": "d6" },
+            { "source": "d6", "target": "d7" },
+            { "source": "d7", "target": "d8" }
+          ]
         }
       },
       {
-        "type": "slack",
-        "description": "Payment failures, churn alerts, and billing escalations posted to the alerts channel",
-        "required_connector": "slack",
-        "config_hints": {
-          "channel": "#billing-alerts"
+        "id": "uc_monthly_mrr_report",
+        "title": "Monthly MRR Report",
+        "description": "Pulls active subscriptions from Airtable, computes MRR (total, new, churned, expansion, net), compares to last month, detects anomalies (churn >5%, MRR drop >10%). Writes CSV backup locally, posts a summary to Slack #revenue, and emails the detailed HTML report to the finance team. Default 1st of month 09:00 — final cadence set at the trigger-composition step.",
+        "capability_summary": "Monthly MRR waterfall + anomaly detection + multi-channel distribution.",
+        "category": "reporting",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "description": "Default 1st of month 09:00 — final cadence set at the trigger-composition step."
+        },
+        "connectors": ["airtable", "slack", "gmail"],
+        "notification_channels": [
+          { "type": "slack", "description": "Summary posted to #revenue." },
+          { "type": "email", "description": "Detailed HTML report to finance team recipients." }
+        ],
+        "review_policy": { "mode": "never", "context": null },
+        "memory_policy": {
+          "enabled": true,
+          "context": "CSV snapshot per month (`data/mrr_reports/{YYYY-MM}.csv`) used as the base for next month's comparisons and anomaly thresholds."
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "billing.report.monthly_delivered",
+            "direction": "emit",
+            "description": "Payload: month, total_mrr, new_mrr, churned_mrr, expansion_mrr, net_delta. Fires on successful delivery."
+          },
+          {
+            "event_type": "billing.anomaly.detected",
+            "direction": "emit",
+            "description": "Payload: month, anomaly_type (churn_spike | mrr_drop), magnitude. Fires when churn >5% or MRR drops >10%."
+          }
+        ],
+        "error_handling": "Airtable read fail → deliver partial report with explicit gap note. MRR mismatch >1% → flag anomaly in the report. Gmail fail → queue + alert via Slack; retry next cycle. No data (first month) → ship 'first month' report; note trend comparison will start next month.",
+        "input_schema": [
+          {
+            "name": "finance_recipients",
+            "type": "text",
+            "description": "Comma-separated email addresses for the detailed monthly MRR report."
+          }
+        ],
+        "sample_input": {
+          "finance_recipients": "{{param.aq_finance_recipients}}"
+        },
+        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "m1", "type": "start", "label": "Monthly tick (1st)" },
+            { "id": "m2", "type": "connector", "label": "Pull active subscriptions", "connector": "airtable" },
+            { "id": "m3", "type": "action", "label": "Compute MRR totals + deltas vs last month" },
+            { "id": "m4", "type": "decision", "label": "Anomaly detected?" },
+            { "id": "m5", "type": "event", "label": "Emit billing.anomaly.detected" },
+            { "id": "m6", "type": "action", "label": "Write CSV backup" },
+            { "id": "m7", "type": "connector", "label": "Post summary to Slack #revenue", "connector": "slack" },
+            { "id": "m8", "type": "connector", "label": "Email detailed report to finance", "connector": "gmail" },
+            { "id": "m9", "type": "end", "label": "Monthly cycle complete" }
+          ],
+          "edges": [
+            { "source": "m1", "target": "m2" },
+            { "source": "m2", "target": "m3" },
+            { "source": "m3", "target": "m4" },
+            { "source": "m4", "target": "m5", "variant": "yes", "label": "Yes" },
+            { "source": "m4", "target": "m6", "variant": "no", "label": "No" },
+            { "source": "m5", "target": "m6" },
+            { "source": "m6", "target": "m7" },
+            { "source": "m7", "target": "m8" },
+            { "source": "m8", "target": "m9" }
+          ]
         }
-      },
-      {
-        "type": "email",
-        "description": "Monthly MRR reports and anomaly alerts sent to the finance team",
-        "required_connector": "gmail",
-        "config_hints": {
-          "to": "finance@yourcompany.com"
-        }
-      }
-    ],
-    "suggested_event_subscriptions": [
-      {
-        "event_type": "payment_recovered",
-        "description": "Listen for successful payment events on customers currently in a dunning sequence, so the agent can reset dunning state and send a recovery confirmation"
-      },
-      {
-        "event_type": "customer_support_escalation",
-        "description": "Listen for support escalations related to billing issues, allowing the agent to provide subscription context and payment history to support agents"
-      }
-    ],
-    "use_case_flows": [
-      {
-        "id": "flow_subscription_event",
-        "name": "Subscription Event Processing",
-        "description": "Processes incoming Paddle webhook events for new subscriptions, renewals, plan changes, and cancellations -- syncing state to Airtable and notifying via Slack",
-        "nodes": [
-          {
-            "id": "n1",
-            "type": "start",
-            "label": "Paddle Webhook Received",
-            "detail": "Paddle fires a webhook for a subscription lifecycle event"
-          },
-          {
-            "id": "n2",
-            "type": "action",
-            "label": "Parse & Validate Payload",
-            "detail": "Extract event_type, customer_id, subscription_id, plan, amount. Validate required fields exist."
-          },
-          {
-            "id": "n3",
-            "type": "decision",
-            "label": "Valid Payload?",
-            "detail": "Check if all required fields are present and event_type is recognized"
-          },
-          {
-            "id": "n4",
-            "type": "error",
-            "label": "Log Malformed Webhook",
-            "error_message": "Malformed or unrecognized webhook payload -- logged to data/logs/malformed_webhooks.jsonl"
-          },
-          {
-            "id": "n5",
-            "type": "connector",
-            "label": "Check Existing Customer",
-            "detail": "GET Airtable records filtered by Subscription ID to check if customer exists",
-            "connector": "airtable"
-          },
-          {
-            "id": "n6",
-            "type": "decision",
-            "label": "Event Type?",
-            "detail": "Route based on: subscription.created, subscription.updated, transaction.completed, subscription.canceled"
-          },
-          {
-            "id": "n7",
-            "type": "connector",
-            "label": "Create/Update Airtable Record",
-            "detail": "POST (new) or PATCH (existing) subscription record with status, plan, MRR, dates",
-            "connector": "airtable"
-          },
-          {
-            "id": "n8",
-            "type": "connector",
-            "label": "Post Slack Notification",
-            "detail": "POST chat.postMessage to #revenue (positive events) or #billing-alerts (negative events) with Block Kit formatting",
-            "connector": "slack"
-          },
-          {
-            "id": "n9",
-            "type": "action",
-            "label": "Send Welcome Email",
-            "detail": "For new subscriptions: send welcome email via gmail_send with plan details and getting-started resources"
-          },
-          {
-            "id": "n10",
-            "type": "event",
-            "label": "Emit mrr_change Event",
-            "detail": "Emit mrr_change event with delta amount, type (new/expansion/contraction/churn), and customer_id"
-          },
-          {
-            "id": "n11",
-            "type": "end",
-            "label": "Event Processed",
-            "detail": "Subscription event fully processed -- Airtable updated, notifications sent, events emitted"
-          }
-        ],
-        "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "Invalid",
-            "variant": "no"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
-            "label": "Valid",
-            "variant": "yes"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n11",
-            "variant": "error"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          },
-          {
-            "id": "e7",
-            "source": "n6",
-            "target": "n7"
-          },
-          {
-            "id": "e8",
-            "source": "n7",
-            "target": "n8"
-          },
-          {
-            "id": "e9",
-            "source": "n6",
-            "target": "n9",
-            "label": "New Sub"
-          },
-          {
-            "id": "e10",
-            "source": "n9",
-            "target": "n8"
-          },
-          {
-            "id": "e11",
-            "source": "n8",
-            "target": "n10"
-          },
-          {
-            "id": "e12",
-            "source": "n10",
-            "target": "n11"
-          }
-        ]
-      },
-      {
-        "id": "flow_dunning",
-        "name": "Failed Payment Dunning Sequence",
-        "description": "Handles payment failures with an escalating 3-tier dunning sequence -- checking history, selecting the appropriate response tier, sending dunning emails, and managing recovery",
-        "nodes": [
-          {
-            "id": "d1",
-            "type": "start",
-            "label": "Payment Failure Detected",
-            "detail": "Paddle webhook fires transaction.payment_failed event"
-          },
-          {
-            "id": "d2",
-            "type": "connector",
-            "label": "Fetch Customer History",
-            "detail": "GET Airtable record by Subscription ID -- retrieve dunning_tier, failure count, last_dunning_email_date",
-            "connector": "airtable"
-          },
-          {
-            "id": "d3",
-            "type": "decision",
-            "label": "Dunning Tier?",
-            "detail": "Evaluate current dunning_tier and days since dunning started to determine escalation level"
-          },
-          {
-            "id": "d4",
-            "type": "action",
-            "label": "Tier 1: Friendly Notice",
-            "detail": "First failure -- compose friendly 'payment issue' email with update-payment-method CTA link"
-          },
-          {
-            "id": "d5",
-            "type": "action",
-            "label": "Tier 2: Urgent Warning",
-            "detail": "Second failure within 7 days -- compose urgent email warning of service interruption"
-          },
-          {
-            "id": "d6",
-            "type": "action",
-            "label": "Tier 3: Final Warning",
-            "detail": "Third failure within 14 days -- compose final warning with 48-hour deadline, flag as Churn Imminent"
-          },
-          {
-            "id": "d7",
-            "type": "action",
-            "label": "Compose Dunning Email",
-            "detail": "Build HTML email with customer name, plan details, failure reason, and tier-appropriate urgency and CTA"
-          },
-          {
-            "id": "d8",
-            "type": "connector",
-            "label": "Send Dunning Email",
-            "detail": "Send tiered dunning email via gmail_send with HTML formatting and reply threading",
-            "connector": "gmail"
-          },
-          {
-            "id": "d9",
-            "type": "connector",
-            "label": "Update Airtable Dunning State",
-            "detail": "PATCH record: update dunning_tier, last_dunning_email_date, status field. Set 'Churn Imminent' for Tier 3",
-            "connector": "airtable"
-          },
-          {
-            "id": "d10",
-            "type": "connector",
-            "label": "Alert Slack",
-            "detail": "POST to #billing-alerts with failure details, dunning tier, customer context, and MRR at risk",
-            "connector": "slack"
-          },
-          {
-            "id": "d11",
-            "type": "action",
-            "label": "Store Churn Signal",
-            "detail": "Save customer payment failure pattern to agent_memory for long-term churn risk tracking"
-          },
-          {
-            "id": "d12",
-            "type": "end",
-            "label": "Dunning Step Complete",
-            "detail": "Dunning email sent, state updated, team alerted -- awaiting Paddle retry or customer action"
-          }
-        ],
-        "edges": [
-          {
-            "id": "de1",
-            "source": "d1",
-            "target": "d2"
-          },
-          {
-            "id": "de2",
-            "source": "d2",
-            "target": "d3"
-          },
-          {
-            "id": "de3",
-            "source": "d3",
-            "target": "d4",
-            "label": "Tier 1",
-            "variant": "yes"
-          },
-          {
-            "id": "de4",
-            "source": "d3",
-            "target": "d5",
-            "label": "Tier 2"
-          },
-          {
-            "id": "de5",
-            "source": "d3",
-            "target": "d6",
-            "label": "Tier 3",
-            "variant": "no"
-          },
-          {
-            "id": "de6",
-            "source": "d4",
-            "target": "d7"
-          },
-          {
-            "id": "de7",
-            "source": "d5",
-            "target": "d7"
-          },
-          {
-            "id": "de8",
-            "source": "d6",
-            "target": "d7"
-          },
-          {
-            "id": "de9",
-            "source": "d7",
-            "target": "d8"
-          },
-          {
-            "id": "de10",
-            "source": "d8",
-            "target": "d9"
-          },
-          {
-            "id": "de11",
-            "source": "d9",
-            "target": "d10"
-          },
-          {
-            "id": "de12",
-            "source": "d10",
-            "target": "d11"
-          },
-          {
-            "id": "de13",
-            "source": "d11",
-            "target": "d12"
-          }
-        ]
-      },
-      {
-        "id": "flow_mrr_report",
-        "name": "Monthly MRR Report Generation",
-        "description": "Scheduled monthly workflow that aggregates subscription data from Airtable, calculates MRR metrics, detects anomalies, and distributes reports via Slack and email",
-        "nodes": [
-          {
-            "id": "m1",
-            "type": "start",
-            "label": "Monthly Schedule Fires",
-            "detail": "Cron trigger activates on the 1st of each month at 9:00 AM"
-          },
-          {
-            "id": "m2",
-            "type": "connector",
-            "label": "Pull Active Subscriptions",
-            "detail": "GET all Airtable records with Status = Active, paginating through all results",
-            "connector": "airtable"
-          },
-          {
-            "id": "m3",
-            "type": "connector",
-            "label": "Pull Churned Subscriptions",
-            "detail": "GET Airtable records where Cancel Date falls within the previous month",
-            "connector": "airtable"
-          },
-          {
-            "id": "m4",
-            "type": "action",
-            "label": "Calculate MRR Metrics",
-            "detail": "Compute: Total MRR, New MRR, Churned MRR, Expansion MRR, Net MRR change, customer count by plan, churn rate percentage"
-          },
-          {
-            "id": "m5",
-            "type": "decision",
-            "label": "Anomaly Detected?",
-            "detail": "Check if churn rate >5% or MRR dropped >10% month-over-month"
-          },
-          {
-            "id": "m6",
-            "type": "event",
-            "label": "Escalate Anomaly",
-            "detail": "Send user_message alert with anomaly details -- high churn or significant MRR drop requiring attention"
-          },
-          {
-            "id": "m7",
-            "type": "action",
-            "label": "Generate Report",
-            "detail": "Format MRR metrics into structured report with month-over-month comparisons and plan breakdown"
-          },
-          {
-            "id": "m8",
-            "type": "action",
-            "label": "Write CSV Backup",
-            "detail": "Write detailed MRR data to data/mrr_reports/YYYY-MM.csv as local backup"
-          },
-          {
-            "id": "m9",
-            "type": "connector",
-            "label": "Post Slack Summary",
-            "detail": "POST rich Block Kit message to #revenue with key metrics, trends, and visual indicators",
-            "connector": "slack"
-          },
-          {
-            "id": "m10",
-            "type": "connector",
-            "label": "Email Finance Report",
-            "detail": "Send detailed HTML MRR report to finance team via gmail_send with tables and charts",
-            "connector": "gmail"
-          },
-          {
-            "id": "m11",
-            "type": "end",
-            "label": "Report Distributed",
-            "detail": "Monthly MRR report generated, backed up locally, and distributed to Slack and email"
-          }
-        ],
-        "edges": [
-          {
-            "id": "me1",
-            "source": "m1",
-            "target": "m2"
-          },
-          {
-            "id": "me2",
-            "source": "m2",
-            "target": "m3"
-          },
-          {
-            "id": "me3",
-            "source": "m3",
-            "target": "m4"
-          },
-          {
-            "id": "me4",
-            "source": "m4",
-            "target": "m5"
-          },
-          {
-            "id": "me5",
-            "source": "m5",
-            "target": "m6",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "me6",
-            "source": "m5",
-            "target": "m7",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "me7",
-            "source": "m6",
-            "target": "m7"
-          },
-          {
-            "id": "me8",
-            "source": "m7",
-            "target": "m8"
-          },
-          {
-            "id": "me9",
-            "source": "m8",
-            "target": "m9"
-          },
-          {
-            "id": "me10",
-            "source": "m9",
-            "target": "m10"
-          },
-          {
-            "id": "me11",
-            "source": "m10",
-            "target": "m11"
-          }
-        ]
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "manual_review",
-        "label": "Escalation to human for critical or ambiguous items",
-        "context": "Escalation logic detected in instructions"
-      },
-      {
-        "type": "user_message",
-        "label": "Real-time Slack alerts plus email digests and summaries (periodic digests, critical alerts, completion confirmations, error notifications)",
-        "context": "3 notification channel(s) configured: slack, slack, email"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Deduplication memory tracking known items across runs",
-        "context": "Tracks: recurring patterns, known items for deduplication"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: item created, threshold breached, escalation triggered",
-        "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_intent_1",
-        "category": "intent",
-        "question": "What is your primary goal for automating subscription billing operations?",
-        "type": "select",
-        "options": [
-          "Recover failed payments and reduce involuntary churn",
-          "Maintain accurate real-time subscription records in Airtable",
-          "Keep the team informed on revenue events via Slack",
-          "Generate accurate MRR reports for finance and leadership"
-        ],
-        "default": "Recover failed payments and reduce involuntary churn",
-        "context": "Determines which flows to prioritize and tune — dunning logic, record accuracy, Slack verbosity, or reporting depth.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_domain_1",
-        "category": "domain",
-        "question": "What type of SaaS business are you running?",
-        "type": "select",
-        "options": [
-          "B2B SaaS (business customers, annual/monthly contracts)",
-          "B2C subscription (consumer product, monthly billing)",
-          "Usage-based or hybrid billing",
-          "Marketplace or multi-tenant platform"
-        ],
-        "default": "B2B SaaS (business customers, annual/monthly contracts)",
-        "context": "Shapes dunning email tone, MRR segmentation logic, and whether cancellations trigger retention flows vs. immediate record closure.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_domain_2",
-        "category": "domain",
-        "question": "Which Slack channels should receive subscription events and MRR reports? (e.g., #revenue, #billing-alerts, #finance)",
-        "type": "select",
-        "default": "#revenue",
-        "context": "Ensures Slack notifications route to the right audience — sales team, finance, or exec — without spamming unrelated channels.",
-        "dimension": "connectors",
-        "vault_category": "messaging",
-        "option_service_types": [
-          "slack"
-        ],
-        "dynamic_source": {
-          "service_type": "slack",
-          "operation": "list_channels",
-          "multi": true
-        }
-      },
-      {
-        "id": "aq_configuration_1",
+        "id": "aq_skip_monthly_renewal_slack",
+        "scope": "capability",
+        "use_case_ids": ["uc_event_sync"],
         "category": "configuration",
-        "question": "How should the 3-tier dunning sequence be spaced? (days between each attempt)",
+        "question": "Should monthly renewal events skip Slack notifications (to reduce noise)?",
         "type": "select",
         "options": [
-          "Aggressive: Day 1, Day 3, Day 7",
-          "Standard: Day 1, Day 7, Day 14",
-          "Gentle: Day 3, Day 10, Day 21",
-          "Custom — I'll specify in the persona instructions"
+          "Yes — only post annual renewals to #revenue (recommended)",
+          "No — post every successful renewal"
         ],
-        "default": "Standard: Day 1, Day 7, Day 14",
-        "context": "Controls the escalation cadence for failed payment recovery. Aggressive suits low-margin B2C; gentle suits high-touch B2B accounts.",
-        "dimension": "use-cases"
+        "default": "Yes — only post annual renewals to #revenue (recommended)",
+        "maps_to": "use_cases[uc_event_sync].sample_input.skip_monthly_renewal_slack",
+        "variable_name": "skip_monthly_renewal_slack",
+        "context": "Monthly renewals are high-volume + repetitive. Annual renewals mark retention milestones worth celebrating.",
+        "dimension": "messages"
       },
       {
-        "id": "aq_configuration_2",
+        "id": "aq_tone",
+        "scope": "capability",
+        "use_case_ids": ["uc_dunning_sequence"],
         "category": "configuration",
-        "question": "What is the name of your Airtable base and table used to store customer subscription records?",
-        "type": "select",
-        "default": "Billing / Subscriptions",
-        "context": "Required to correctly target Airtable API calls for record creation, updates, and MRR aggregation queries.",
-        "dimension": "connectors",
-        "vault_category": "database",
-        "option_service_types": [
-          "airtable"
-        ],
-        "dynamic_source": {
-          "service_type": "airtable",
-          "operation": "list_bases"
-        }
-      },
-      {
-        "id": "aq_boundaries_1",
-        "category": "boundaries",
-        "question": "What should this agent NEVER do automatically without a human decision?",
+        "question": "What tone should the dunning emails use?",
         "type": "select",
         "options": [
-          "Never cancel a subscription — only flag for human review",
-          "Never issue refunds or credit adjustments",
-          "Never send customer-facing emails without approval",
-          "Never post MRR figures to Slack — finance channel only"
+          "Warm and empathetic — assume good faith",
+          "Direct and urgent — emphasize service interruption",
+          "Neutral and transactional — minimal prose, clear CTA"
         ],
-        "default": "Never cancel a subscription — only flag for human review",
-        "context": "Sets hard guardrails so the agent doesn't take irreversible billing actions that could harm customer relationships or revenue.",
-        "dimension": "error-handling"
+        "default": "Warm and empathetic — assume good faith",
+        "maps_to": "use_cases[uc_dunning_sequence].sample_input.tone",
+        "variable_name": "tone",
+        "context": "Shapes the copy across all 3 tiers. Urgency still escalates tier-by-tier regardless of tone.",
+        "dimension": "voice"
       },
       {
-        "id": "aq_human_in_the_loop_1",
+        "id": "aq_tier3_approval",
+        "scope": "capability",
+        "use_case_ids": ["uc_dunning_sequence"],
         "category": "human_in_the_loop",
-        "question": "Which dunning actions require human approval before the agent proceeds?",
+        "question": "Should tier 3 (the final 48-hour warning email) require human approval before sending?",
         "type": "select",
         "options": [
-          "Fully automated — send all three dunning tiers without approval",
-          "Approve only the final warning email (Tier 3) before sending",
-          "Approve every dunning email before it goes out",
-          "Approve any action on accounts over a set MRR threshold"
+          "Auto-send — trust the sequence",
+          "Require human approval for tier 3 (recommended)"
         ],
-        "default": "Approve only the final warning email (Tier 3) before sending",
-        "context": "Balances speed of recovery with human oversight — especially important for high-value accounts where a bad email could accelerate churn.",
+        "default": "Require human approval for tier 3 (recommended)",
+        "maps_to": "use_cases[uc_dunning_sequence].sample_input.tier3_approval",
+        "variable_name": "tier3_approval",
+        "context": "Tier 3 is the last shot before cancellation. Approval-gated sends preserve the customer relationship in edge cases; auto-send scales better once the team trusts the templates.",
         "dimension": "human-review"
       },
       {
-        "id": "aq_quality_1",
-        "category": "quality",
-        "question": "What level of detail do you need in the monthly MRR report?",
-        "type": "select",
-        "options": [
-          "Executive summary: total MRR, net new MRR, churn rate",
-          "Plan breakdown: MRR segmented by subscription tier",
-          "Full cohort view: new, expansion, contraction, churned, reactivated",
-          "Anomaly-focused: only surface significant deviations from prior month"
-        ],
-        "default": "Executive summary: total MRR, net new MRR, churn rate",
-        "context": "Determines the depth of Airtable queries and report structure — a founder needs a one-pager, a finance team needs full cohort reconciliation.",
-        "dimension": "use-cases"
+        "id": "aq_finance_recipients",
+        "scope": "capability",
+        "use_case_ids": ["uc_monthly_mrr_report"],
+        "category": "configuration",
+        "question": "Who should receive the detailed monthly MRR report via email?",
+        "type": "text",
+        "placeholder": "cfo@company.com, finance@company.com",
+        "default": "",
+        "maps_to": "use_cases[uc_monthly_mrr_report].sample_input.finance_recipients",
+        "variable_name": "finance_recipients",
+        "context": "Comma-separated. The Slack summary posts to #revenue regardless.",
+        "dimension": "messages"
       }
-    ]
-  },
-  "is_published": true
+    ],
+    "persona_meta": {
+      "name": "T: Subscription Billing",
+      "icon": "CreditCard",
+      "color": "#22C55E"
+    }
+  }
 }
