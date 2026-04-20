@@ -98,6 +98,9 @@ import codebases from '../../../scripts/connectors/builtin/codebases.json';
 import clockify from '../../../scripts/connectors/builtin/clockify.json';
 import toggl from '../../../scripts/connectors/builtin/toggl.json';
 import harvest from '../../../scripts/connectors/builtin/harvest.json';
+import metaAds from '../../../scripts/connectors/builtin/meta-ads.json';
+import linkedinAds from '../../../scripts/connectors/builtin/linkedin-ads.json';
+import googleDrive from '../../../scripts/connectors/builtin/google-drive.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -197,4 +200,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   clockify,
   toggl,
   harvest,
+  metaAds,
+  linkedinAds,
+  googleDrive,
 ] as BuiltinConnectorDef[];

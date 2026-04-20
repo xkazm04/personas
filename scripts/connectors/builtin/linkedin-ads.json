@@ -1,0 +1,70 @@
+{
+  "id": "builtin-linkedin-ads",
+  "name": "linkedin_ads",
+  "label": "LinkedIn Ads",
+  "color": "#0A66C2",
+  "icon_url": "/icons/connectors/linkedin-ads.svg",
+  "category": "advertising",
+  "fields": [
+    {
+      "key": "account_urn",
+      "label": "Ad Account URN",
+      "type": "text",
+      "required": true,
+      "placeholder": "urn:li:sponsoredAccount:123456789",
+      "helpText": "Your sponsored account URN. Find at Campaign Manager → Account Asset → the numeric ID after /accounts/, wrap as urn:li:sponsoredAccount:<ID>."
+    },
+    {
+      "key": "client_id",
+      "label": "Client ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "78abcdef1234",
+      "helpText": "LinkedIn OAuth 2.0 Client ID from your Developer App."
+    },
+    {
+      "key": "client_secret",
+      "label": "Client Secret",
+      "type": "password",
+      "required": true,
+      "sensitive": true,
+      "placeholder": "••••••••••••••••",
+      "helpText": "LinkedIn OAuth 2.0 Client Secret. Keep private — used to exchange auth codes for access tokens."
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.linkedin.com/rest/adAccounts/{{account_id}}",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}",
+      "LinkedIn-Version": "202410",
+      "X-Restli-Protocol-Version": "2.0.0"
+    },
+    "description": "Fetches the ad account record — verifies OAuth token scopes and account permissions."
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "LinkedIn Ads — B2B campaign analytics via the LinkedIn Marketing API. Use for sponsored-content performance, lead-gen-form conversions, and audience insights on LinkedIn's surfaces.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_type": "linkedin",
+    "oauth_scopes": [
+      "r_ads",
+      "r_ads_reporting",
+      "rw_ads"
+    ],
+    "docs_url": "https://learn.microsoft.com/en-us/linkedin/marketing/integrations/ads-reporting/ads-reporting",
+    "setup_guide": "1. Go to linkedin.com/developers → Create App — associate it with a LinkedIn Company Page.\n2. In the Products tab, request 'Advertising API' access (requires LinkedIn approval; 2-5 business days).\n3. Once approved, copy Client ID and Client Secret from the Auth tab.\n4. In Campaign Manager, copy your account numeric ID and format as urn:li:sponsoredAccount:<ID>.\n5. In Personas, paste Client ID, Client Secret, and Ad Account URN.\n6. Click Authorize with LinkedIn — grant r_ads, r_ads_reporting, rw_ads scopes.\n7. Refresh tokens expire after 365 days; re-auth when prompted.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
+    ]
+  }
+}

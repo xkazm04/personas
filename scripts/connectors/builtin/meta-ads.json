@@ -1,0 +1,68 @@
+{
+  "id": "builtin-meta-ads",
+  "name": "meta_ads",
+  "label": "Meta Ads",
+  "color": "#1877F2",
+  "icon_url": "/icons/connectors/meta-ads.svg",
+  "category": "advertising",
+  "fields": [
+    {
+      "key": "ad_account_id",
+      "label": "Ad Account ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "act_1234567890",
+      "helpText": "Your Meta Ads account ID, including the 'act_' prefix. Find it in Ads Manager → top-left account selector."
+    },
+    {
+      "key": "app_id",
+      "label": "App ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "1234567890123456",
+      "helpText": "Meta App ID from developers.facebook.com → your app → Settings → Basic."
+    },
+    {
+      "key": "app_secret",
+      "label": "App Secret",
+      "type": "password",
+      "required": true,
+      "sensitive": true,
+      "placeholder": "••••••••••••••••",
+      "helpText": "Meta App Secret. Keep this private — it authenticates your app to the Graph API."
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://graph.facebook.com/v19.0/me/adaccounts?limit=1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Lists ad accounts accessible by the OAuth token — verifies scopes and token validity."
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Meta (Facebook/Instagram) Ads — pulls campaign performance via Graph API v19. Use for ad spend, CTR, CPA, ROAS, and conversion tracking across paid social on Meta surfaces.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_type": "meta",
+    "oauth_scopes": [
+      "ads_read",
+      "ads_management",
+      "business_management"
+    ],
+    "docs_url": "https://developers.facebook.com/docs/marketing-api/overview",
+    "setup_guide": "1. Go to developers.facebook.com → My Apps → Create App (type: Business).\n2. Add the 'Marketing API' product.\n3. In Settings → Basic, copy App ID and App Secret.\n4. In Ads Manager, copy your Ad Account ID (format act_XXXXXXXXX).\n5. In Personas, paste App ID, App Secret, and Ad Account ID.\n6. Click Authorize with Meta — grant ads_read + ads_management + business_management scopes.\n7. Tokens are stored encrypted; refresh happens automatically.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
+    ]
+  }
+}

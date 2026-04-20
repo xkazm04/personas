@@ -1,0 +1,49 @@
+{
+  "id": "builtin-google-drive",
+  "name": "google_drive",
+  "label": "Google Drive",
+  "color": "#1FA463",
+  "icon_url": "/icons/connectors/google-drive.svg",
+  "category": "storage",
+  "fields": [
+    {
+      "key": "default_folder_id",
+      "label": "Default Folder ID (optional)",
+      "type": "text",
+      "required": false,
+      "placeholder": "1a2B3c4D5e6F7g8H9i0J",
+      "helpText": "Drive folder ID where personas will save generated artifacts by default. Leave blank to let each persona specify its own. Find the ID in the folder URL: drive.google.com/drive/folders/<ID>."
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://www.googleapis.com/drive/v3/about?fields=user,storageQuota",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Fetches the authenticated user's Drive profile and quota — verifies OAuth token and drive.file scope."
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Google Drive storage — read/write files and folders via the Drive v3 API. Use as a persona's storage target for generated artifacts (reports, sprite sheets, videos, exports).",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_type": "google",
+    "oauth_scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ],
+    "docs_url": "https://developers.google.com/drive/api/guides/about-sdk",
+    "setup_guide": "1. Open console.cloud.google.com — create or pick a project.\n2. Enable the Google Drive API.\n3. Configure the OAuth consent screen (external or internal, matching your Workspace policy).\n4. Create an OAuth 2.0 Client ID of type 'Desktop app'.\n5. (Optional) In Personas, paste your target folder ID — the folder you want artifacts written to.\n6. Click Authorize with Google; grant the drive.file scope (scoped access to files the app creates).\n7. Tokens are refreshed automatically.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
+    ]
+  }
+}
