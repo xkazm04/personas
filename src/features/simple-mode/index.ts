@@ -17,3 +17,6 @@ export type { InboxKind, Severity, UnifiedInboxItem } from './types';
 
 export { useIllustration, resolveIllustration, CATEGORIES } from './hooks/useIllustration';
 export type { IllustrationCategory, ResolvedIllustration } from './hooks/useIllustration';
+
+export { useSimpleSummary } from './hooks/useSimpleSummary';
+export type { SimpleSummary } from './hooks/useSimpleSummary';
