@@ -285,7 +285,7 @@ function InlineCredentialForm({
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          className="w-full px-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       </div>
 
@@ -313,8 +313,8 @@ function InlineCredentialForm({
         <div
           className={`flex items-start gap-2 p-3 rounded-card border ${
             healthState.success
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-              : 'bg-red-500/10 border-red-500/20 text-red-300'
+              ? 'bg-status-success/10 border-status-success/20 text-status-success'
+              : 'bg-status-error/10 border-status-error/20 text-status-error'
           }`}
         >
           {healthState.success ? (
@@ -354,13 +354,13 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
     <div className="space-y-1.5">
       <label className="typo-body text-foreground/80 font-medium">
         {field.label}
-        {field.required && <span className="text-red-400 ml-0.5">*</span>}
+        {field.required && <span className="text-status-error ml-0.5">*</span>}
       </label>
       {isSelect ? (
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
+          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground focus:outline-none focus:border-primary/30 transition-all"
         >
           <option value="">— Select —</option>
           {(field.options ?? []).map((opt) => (
@@ -374,7 +374,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder ?? ''}
           autoComplete="off"
-          className="w-full px-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+          className="w-full px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       )}
       {field.helpText && (

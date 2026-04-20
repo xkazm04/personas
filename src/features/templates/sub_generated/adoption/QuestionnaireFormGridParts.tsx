@@ -99,7 +99,7 @@ function DynamicSelectBody({
   if (state.error) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 typo-body text-rose-300/80">
+        <div className="flex items-center gap-2 typo-body text-status-error">
           <AlertCircle className="w-3.5 h-3.5" />
           {state.error}
         </div>
@@ -120,7 +120,7 @@ function DynamicSelectBody({
               <button
                 type="button"
                 onClick={() => onAddCredential(categoryForAdd)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/20 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.templates.adopt_modal.add_credential}
