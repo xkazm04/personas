@@ -7988,6 +7988,20 @@ export type Translations = {
     console_relative_m_ago: string;
     console_relative_h_ago: string;
     console_relative_d_ago: string;
+    modes: {
+      simple_title: string;
+      simple_subtitle: string;
+      simple_bullet_1: string;
+      simple_bullet_2: string;
+      simple_bullet_3: string;
+      power_title: string;
+      power_subtitle: string;
+      power_bullet_1: string;
+      power_bullet_2: string;
+      power_bullet_3: string;
+      active_badge: string;
+      switch_cta: string;
+    };
     inbox: {
       header_title: string;
       header_subtitle: string;

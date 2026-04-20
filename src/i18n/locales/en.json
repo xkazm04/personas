@@ -7998,6 +7998,20 @@
     "console_relative_m_ago": "{m}m ago",
     "console_relative_h_ago": "{h}h ago",
     "console_relative_d_ago": "{d}d ago",
+    "modes": {
+      "simple_title": "Simple",
+      "simple_subtitle": "Everything at a glance, nothing in the way",
+      "simple_bullet_1": "Your assistants, outputs, and connections on one warm home page",
+      "simple_bullet_2": "Review and approve without digging through menus",
+      "simple_bullet_3": "Keyboard-first inbox for daily decisions",
+      "power_title": "Power",
+      "power_subtitle": "Full control for builders and tinkerers",
+      "power_bullet_1": "Sidebar access to agents, pipelines, vault, plugins, and more",
+      "power_bullet_2": "Deep agent editor with prompt, tools, connectors, lab experiments",
+      "power_bullet_3": "Full activity logs, dependency graphs, and observability panels",
+      "active_badge": "Current",
+      "switch_cta": "Switch"
+    },
     "inbox": {
       "header_title": "Your inbox",
       "header_subtitle": "Decide what to do with the output of your assistants",
