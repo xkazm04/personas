@@ -7389,6 +7389,8 @@
     "risk_safe_tooltip": "Read-only access, safe to allow",
     "appearance_heading": "Set up your preferences",
     "appearance_description": "Configure language, text size, and theme. You can change these anytime in Settings.",
+    "interface_mode_heading": "Choose your interface",
+    "interface_mode_description": "You can change this later in Settings.",
     "language_label": "Language",
     "text_size_label": "Text Size",
     "dark_label": "Dark",
@@ -8011,6 +8013,12 @@
       "power_bullet_3": "Full activity logs, dependency graphs, and observability panels",
       "active_badge": "Current",
       "switch_cta": "Switch"
+    },
+    "graduate": {
+      "title": "Switch to Power mode?",
+      "subtitle": "You can come back to Simple any time from Settings.",
+      "confirm": "Switch to Power",
+      "cancel": "Stay in Simple"
     },
     "inbox": {
       "header_title": "Your inbox",

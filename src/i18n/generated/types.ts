@@ -7379,6 +7379,8 @@ export type Translations = {
     risk_safe_tooltip: string;
     appearance_heading: string;
     appearance_description: string;
+    interface_mode_heading: string;
+    interface_mode_description: string;
     language_label: string;
     text_size_label: string;
     dark_label: string;
@@ -8001,6 +8003,12 @@ export type Translations = {
       power_bullet_3: string;
       active_badge: string;
       switch_cta: string;
+    };
+    graduate: {
+      title: string;
+      subtitle: string;
+      confirm: string;
+      cancel: string;
     };
     inbox: {
       header_title: string;
