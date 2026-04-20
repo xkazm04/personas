@@ -20,3 +20,11 @@ export type { IllustrationCategory, ResolvedIllustration } from './hooks/useIllu
 
 export { useSimpleSummary } from './hooks/useSimpleSummary';
 export type { SimpleSummary } from './hooks/useSimpleSummary';
+
+export { useInboxActions } from './hooks/useInboxActions';
+export type {
+  InboxActions,
+  InboxActionDescriptor,
+  InboxActionLabelKey,
+  ActionTone,
+} from './hooks/useInboxActions';
