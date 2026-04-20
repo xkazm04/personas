@@ -25,6 +25,7 @@ export interface UseCaseOption {
 
 interface Props {
   templateName?: string;
+  templateGoal?: string | null;
   useCases: UseCaseOption[];
   selectedIds: Set<string>;
   onToggle: (id: string) => void;
@@ -33,6 +34,7 @@ interface Props {
 
 export function UseCasePickerStep({
   templateName,
+  templateGoal,
   useCases,
   selectedIds,
   onToggle,
@@ -56,6 +58,11 @@ export function UseCasePickerStep({
             {templateName ? `${templateName} · ` : ''}
             {t.templates.adopt_modal.use_cases_subtitle}
           </p>
+          {templateGoal ? (
+            <p className="typo-body italic text-foreground/60 max-w-2xl mx-auto mt-1">
+              {templateGoal}
+            </p>
+          ) : null}
           <div className="mt-3 text-sm text-foreground/70 tabular-nums">
             {tx(t.templates.adopt_modal.use_cases_enabled_count, {
               count: selectedCount,

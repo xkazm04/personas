@@ -73,6 +73,13 @@ export function useTemplateCardData(
   }, [isActive, review, installedConnectorNames, credentialServiceTypes]);
   const tier = readinessScore >= 0 ? readinessTier(readinessScore) : null;
 
+  const personaGoal = useMemo(() => {
+    const raw = designResult as unknown as Record<string, unknown> | null;
+    const persona = raw?.persona as Record<string, unknown> | undefined;
+    const goal = persona?.goal;
+    return typeof goal === 'string' && goal.trim() ? goal.trim() : null;
+  }, [designResult]);
+
   const systemPromptPreview = useMemo(() => {
     if (!designResult?.structured_prompt) return null;
     const identity = designResult.structured_prompt.identity || '';
@@ -101,5 +108,6 @@ export function useTemplateCardData(
     setupLevel,
     setupMeta,
     setupMinutes,
+    personaGoal,
   };
 }

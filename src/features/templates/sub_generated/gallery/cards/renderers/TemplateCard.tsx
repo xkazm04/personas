@@ -53,6 +53,7 @@ export const TemplateCard = memo(function TemplateCard({
     difficultyMeta,
     setupMeta,
     setupMinutes,
+    personaGoal,
   } = useTemplateCardData(review, installedConnectorNames, credentialServiceTypes, hasInteracted);
 
   return (
@@ -67,6 +68,7 @@ export const TemplateCard = memo(function TemplateCard({
       >
         <TemplateCardHeader
           name={review.test_case_name}
+          goal={personaGoal}
           instruction={review.instruction}
           verification={verification}
           readinessScore={readinessScore}

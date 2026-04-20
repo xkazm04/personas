@@ -10,6 +10,7 @@ import type { DifficultyLevel, DifficultyMeta, SetupMeta } from '../../../shared
 
 interface TemplateCardHeaderProps {
   name: string;
+  goal?: string | null;
   instruction: string;
   verification: TemplateVerification;
   readinessScore: number | null;
@@ -25,6 +26,7 @@ interface TemplateCardHeaderProps {
 
 export function TemplateCardHeader({
   name,
+  goal,
   instruction,
   verification,
   readinessScore,
@@ -83,11 +85,17 @@ export function TemplateCardHeader({
             </span>
           )}
         </div>
-        <p className="typo-body text-foreground mt-1 line-clamp-2 leading-relaxed">
-          {instruction.length > 120
-            ? instruction.slice(0, 120) + '...'
-            : instruction}
-        </p>
+        {goal ? (
+          <p className="typo-body text-foreground/85 mt-1 line-clamp-2 leading-relaxed italic">
+            {goal}
+          </p>
+        ) : (
+          <p className="typo-body text-foreground mt-1 line-clamp-2 leading-relaxed">
+            {instruction.length > 120
+              ? instruction.slice(0, 120) + '...'
+              : instruction}
+          </p>
+        )}
       </div>
       <div ref={menuRef} className="relative flex-shrink-0">
         {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}

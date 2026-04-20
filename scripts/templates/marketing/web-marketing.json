@@ -42,7 +42,7 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing:\n\n1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining.\n\n2. **uc_optimization_proposals** — from the scan data, generate 5-8 specific proposals (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week).\n\n3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity.\n\nAll three sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
+      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing:\n\n1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining.\n\n2. **uc_optimization_proposals** — from the scan data, generate `proposal_count` specific proposals (if `proposal_count == \"Leave up to LLM\"`, dynamically size 5-8 based on signal density — richer data = more proposals, thin data = fewer; otherwise cast the string to int and honor it exactly) (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week).\n\n3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity.\n\nAll three sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
       "tool_guidance": "**Ad platform endpoints** (shape depends on which connector the user chose at adoption):\n- Google Ads: `POST /v17/customers/{cid}/googleAds:searchStream` with GAQL for campaign + keyword + search-term performance.\n- Meta Ads: `GET /v19.0/act_{aid}/insights?date_preset=last_7d&level=campaign&fields=impressions,clicks,spend,actions,cpc,ctr`.\n- LinkedIn Ads: `GET /rest/adAnalytics?q=analytics&pivot=CAMPAIGN`.\n- Mailchimp: `GET /3.0/reports?count=10&sort_field=send_time`.\n\n**Analytics endpoints**:\n- GA4 Data API: `POST /v1beta/properties/{pid}:runReport` with dateRanges + metrics + dimensions.\n- Search Console: `POST /webmasters/v3/sites/{site}/searchAnalytics/query` with dimensions=[query, page] for ranking data.\n- PostHog: `POST /api/projects/{id}/query` (HogQL).\n- Mixpanel: `POST /api/2.0/insights` or raw export `/api/2.0/export`.\n\n**Rate-limit strategy**: Google Ads 15K ops/day — batch campaigns in one GAQL query. Meta Ads — one call per account with breakdowns. Search Console — 1200 QPM limit; chunk by date if >3 months. GA4 — property-level quota; reduce date range before dimensions.\n\n**Local state**: `marketing_config.json` (connected tools, account/property IDs, site URLs from adoption). `performance_history.json` (rolling 4-week metrics per campaign + per page). `proposal_patterns.json` (accepted/rejected count by category, last 52 weeks). `latest_report.json` (fallback on Messages failure).",
       "error_handling": "Ad platform 401/403 → skip paid section; include re-auth CTA in report. 429 → exponential backoff; if still blocked, use `performance_history.json` with staleness label. Analytics quota exceeded → reduce date range or dimension count; cached baselines otherwise. Single-channel-only (paid fails, organic OK, or vice-versa) → deliver partial report with clear 'paid unavailable' / 'organic unavailable' labels. Total data blindness → Messages alert only, no report. Zero conversions in a campaign → skip CPA proposals for it, focus on traffic/engagement metrics. First run (no memory) → use industry benchmarks; note in report that recommendations sharpen with feedback. `marketing_config.json` missing → post setup message, skip run. Messages delivery failure → write full report to `latest_report.json`; retry once.",
       "examples": [],
@@ -267,11 +267,10 @@
         "input_schema": [
           {
             "name": "proposal_count",
-            "type": "number",
-            "default": 6,
-            "min": 3,
-            "max": 12,
-            "description": "Target proposals per week. Start with 6; tune after you've triaged a few weeks."
+            "type": "string",
+            "default": "Leave up to LLM",
+            "enum": ["Leave up to LLM", "3", "5", "6", "8", "10"],
+            "description": "Target proposals per week. 'Leave up to LLM' → size to signal density (aim 5-8 when data is rich, fewer when thin). A numeric string pins the count (cast to int at runtime)."
           }
         ],
         "sample_input": { "proposal_count": "{{param.aq_proposal_count}}" },
@@ -434,11 +433,11 @@
         "category": "quality",
         "question": "How many optimization proposals per week?",
         "type": "select",
-        "options": ["3", "5", "6", "8", "10"],
-        "default": "6",
+        "options": ["Leave up to LLM", "3", "5", "6", "8", "10"],
+        "default": "Leave up to LLM",
         "maps_to": "use_cases[uc_optimization_proposals].sample_input.proposal_count",
         "variable_name": "proposal_count",
-        "context": "Fewer = less triage load, higher average quality. Start at 6; tune after a few weeks of triaging.",
+        "context": "Choose 'Leave up to LLM' to let the persona size each week's proposal batch to signal density (it will target 5-8 when data is rich, fewer when signals are thin). Pick a fixed number to cap triage load.",
         "dimension": "use-cases"
       },
       {

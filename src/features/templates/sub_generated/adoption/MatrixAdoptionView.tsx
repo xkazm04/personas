@@ -258,6 +258,11 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   })();
 
   const templateName = review.test_case_name ?? "Template";
+  const templateGoal = (() => {
+    const persona = designResult?.persona as Record<string, unknown> | undefined;
+    const goal = persona?.goal;
+    return typeof goal === 'string' && goal.trim() ? goal.trim() : null;
+  })();
 
   // Adoption questions from template — memoized so dependent hooks (filter,
   // dynamic-options, seed) don't see a new array identity on every render.
@@ -743,6 +748,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       return (
         <UseCasePickerStep
           templateName={templateName}
+          templateGoal={templateGoal}
           useCases={availableUseCases}
           selectedIds={selectedUseCaseIds}
           onToggle={toggleUseCase}
