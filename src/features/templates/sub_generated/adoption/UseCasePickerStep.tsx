@@ -1,38 +1,40 @@
 /**
  * Combined capability + trigger composition step. All three variants
- * share the same layout (2-column tile grid with inline trigger config
- * per card) and the same props contract. They differ purely in visual
- * language so the user can pick the styling that fits best.
+ * rebuild the original Chip Grid baseline that tested well (cyan
+ * accents, mono flourishes, composition badge top bar, shared-mode
+ * strip, 2-col card grid, inline chips + contextual inputs) — they
+ * differ only in visual language.
  *
- * Styling variants (per ui-variant-prototype skill):
- *   - outline   → neutral borders, minimal hue, current-app aesthetic
- *   - filled    → pill chips with accent-per-preset colors, soft glow
- *                 on enabled cards, gradient CTA
- *   - segmented → joined segmented-control chips, monochrome palette,
- *                 underline-only inputs, Apple-settings-like
+ * Styling variants:
+ *   - terminal  → the resurrected baseline. Cyan accents, rounded-xl
+ *                 cards, chip pills with ring-on-active.
+ *   - neon      → same DNA amplified. Cyan→violet gradient surface on
+ *                 enabled cards, glow-on-active chips, gradient CTA.
+ *   - blueprint → schematic feel. Hairline borders, graph-paper card
+ *                 background, slate-blue accent, underline-active chips.
  *
- * Swapping is pure UI — behavior, data flow, and trigger materialization
- * are unaffected.
+ * Behavior, data flow, and trigger materialization are identical
+ * across all three.
  */
 import { useState } from 'react';
-import { SquareDashed, Zap, Minus, type LucideIcon } from 'lucide-react';
-import { UseCasePickerStepGridOutline } from './UseCasePickerStepGridOutline';
-import { UseCasePickerStepGridFilled } from './UseCasePickerStepGridFilled';
-import { UseCasePickerStepGridSegmented } from './UseCasePickerStepGridSegmented';
+import { Terminal, Zap, Ruler, type LucideIcon } from 'lucide-react';
+import { UseCasePickerStepTerminal } from './UseCasePickerStepTerminal';
+import { UseCasePickerStepNeon } from './UseCasePickerStepNeon';
+import { UseCasePickerStepBlueprint } from './UseCasePickerStepBlueprint';
 import type { UseCaseOption, UseCasePickerVariantProps } from './useCasePickerShared';
 
 export type { UseCaseOption };
 
-type Variant = 'outline' | 'filled' | 'segmented';
+type Variant = 'terminal' | 'neon' | 'blueprint';
 
 const VARIANTS: { key: Variant; label: string; icon: LucideIcon }[] = [
-  { key: 'outline', label: 'Outline', icon: SquareDashed },
-  { key: 'filled', label: 'Filled', icon: Zap },
-  { key: 'segmented', label: 'Segmented', icon: Minus },
+  { key: 'terminal', label: 'Terminal', icon: Terminal },
+  { key: 'neon', label: 'Neon', icon: Zap },
+  { key: 'blueprint', label: 'Blueprint', icon: Ruler },
 ];
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
-  const [variant, setVariant] = useState<Variant>('outline');
+  const [variant, setVariant] = useState<Variant>('terminal');
 
   return (
     <div className="relative flex flex-col h-full min-h-0">
@@ -61,9 +63,9 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
       </div>
 
       <div className="flex-1 min-h-0">
-        {variant === 'outline' && <UseCasePickerStepGridOutline {...props} />}
-        {variant === 'filled' && <UseCasePickerStepGridFilled {...props} />}
-        {variant === 'segmented' && <UseCasePickerStepGridSegmented {...props} />}
+        {variant === 'terminal' && <UseCasePickerStepTerminal {...props} />}
+        {variant === 'neon' && <UseCasePickerStepNeon {...props} />}
+        {variant === 'blueprint' && <UseCasePickerStepBlueprint {...props} />}
       </div>
     </div>
   );
