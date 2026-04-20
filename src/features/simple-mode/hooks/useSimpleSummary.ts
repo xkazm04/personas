@@ -94,7 +94,11 @@ export function useSimpleSummary(): SimpleSummary {
       user?.display_name ?? (user?.email ? user.email.split('@')[0] ?? null : null);
     const activePersonas = personas.filter((p) => p.enabled !== false);
     const okCreds = credentials.filter((c) => c.healthcheck_last_success === true);
-    const todayPoint = executionDashboard?.daily_points?.at(-1);
+    // Avoid `.at(-1)` — not every TS target in this repo includes it. Using
+    // explicit index access keeps us compatible with ES2021 and the plan
+    // semantics are identical (empty array → undefined → fall back to 0).
+    const points = executionDashboard?.daily_points;
+    const todayPoint = points && points.length > 0 ? points[points.length - 1] : undefined;
     const needsMe = inbox.filter(
       (i) => i.kind === 'approval' || i.severity === 'critical',
     ).length;
