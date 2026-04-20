@@ -131,7 +131,7 @@ export function QuestionnaireFormGrid({
   const body = (
       <div className={inline ? "flex flex-col h-full min-h-0" : "flex flex-col max-h-[85vh]"}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-white/[0.06]">
+        <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-5 h-5 text-primary/80" />
@@ -142,7 +142,7 @@ export function QuestionnaireFormGrid({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-card text-foreground hover:text-foreground/80 hover:bg-foreground/[0.06] transition-colors"
             >
               <X className="w-4.5 h-4.5" />
             </button>
@@ -155,21 +155,21 @@ export function QuestionnaireFormGrid({
           {/* Prominent blocked-state callout — shown when any required vault
               category has no matching credentials in the user's vault */}
           {blockedCategories.length > 0 && onAddCredential && (
-            <div className="mb-5 rounded-modal border border-rose-500/30 bg-rose-500/[0.06] p-4">
+            <div className="mb-5 rounded-modal border border-status-error/30 bg-status-error/10 p-4">
               <div className="flex items-start gap-3 mb-3">
-                <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-rose-300 mb-1">
+                  <h3 className="text-base font-semibold text-status-error mb-1">
                     {t.templates.adopt_modal.credentials_required_title}
                   </h3>
-                  <p className="text-sm text-rose-300/80 leading-relaxed">
+                  <p className="text-sm text-status-error/80 leading-relaxed">
                     {t.templates.adopt_modal.credentials_required_body}
                   </p>
                 </div>
               </div>
               <div className="space-y-2 ml-8">
                 {blockedCategories.map(({ category, questionLabels }) => (
-                  <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-rose-500/[0.04] border border-rose-500/15">
+                  <div key={category} className="flex items-center justify-between gap-3 p-2.5 rounded-card bg-status-error/10 border border-status-error/20">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground/90 capitalize">{category}</div>
                       <div className="text-xs text-foreground truncate">
@@ -179,7 +179,7 @@ export function QuestionnaireFormGrid({
                     <button
                       type="button"
                       onClick={() => onAddCredential(category)}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-card bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 transition-colors flex-shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors flex-shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       {t.templates.adopt_modal.add_credential}
@@ -213,8 +213,8 @@ export function QuestionnaireFormGrid({
                   section.scope === 'persona'
                     ? 'text-primary/90'
                     : section.scope === 'capability'
-                      ? 'text-emerald-300'
-                      : 'text-amber-300';
+                      ? 'text-status-success'
+                      : 'text-status-warning';
 
                 return (
                   <section
@@ -222,7 +222,7 @@ export function QuestionnaireFormGrid({
                     data-testid={`questionnaire-scope-${section.key}`}
                     data-scope={section.scope}
                     data-subject-id={section.subjectId ?? ''}
-                    className="rounded-modal border border-white/[0.06] bg-white/[0.02] px-4 pt-3 pb-4"
+                    className="rounded-modal border border-border bg-foreground/[0.02] px-4 pt-3 pb-4"
                   >
                     <header className="flex items-center justify-between mb-3">
                       <h3 className={`text-sm font-semibold tracking-wide ${accent}`}>
@@ -342,7 +342,7 @@ export function QuestionnaireFormGrid({
         </div>
 
         {/* ── Footer ─────────────────────────────────────────── */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-t border-white/[0.06]">
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-t border-border">
           <button
             type="button"
             onClick={onClose}
@@ -353,7 +353,7 @@ export function QuestionnaireFormGrid({
 
           <div className="flex items-center gap-3">
             {blockedCount > 0 && (
-              <span className="text-xs text-rose-300/70 flex items-center gap-1.5">
+              <span className="text-xs text-status-error/80 flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" />
                 {t.templates.adopt_modal.blocked_blocking_submit.replace('{count}', String(blockedCount))}
               </span>
@@ -365,7 +365,7 @@ export function QuestionnaireFormGrid({
               className={`flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-modal transition-all ${
                 canSubmit
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-3 shadow-primary/20'
-                  : 'bg-white/[0.06] text-foreground cursor-not-allowed'
+                  : 'bg-foreground/[0.06] text-foreground cursor-not-allowed'
               }`}
             >
               <Send className="w-3.5 h-3.5" />

@@ -187,7 +187,7 @@ export function QuestionnaireFormFocus({
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
       {/* Header — progress + live counter */}
-      <div className="flex-shrink-0 border-b border-white/[0.06]">
+      <div className="flex-shrink-0 border-b border-border">
         <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-2.5">
@@ -205,7 +205,7 @@ export function QuestionnaireFormFocus({
                 })}
               </span>
               {blockedCount > 0 && (
-                <span className="text-rose-300/80 flex items-center gap-1">
+                <span className="text-status-error/80 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5" />
                   {tx(t.templates.adopt_modal.blocked_count, { count: blockedCount })}
                 </span>
@@ -229,10 +229,10 @@ export function QuestionnaireFormFocus({
                     isActive
                       ? 'w-10 bg-primary'
                       : isBlocked
-                        ? 'w-3 bg-rose-500/60'
+                        ? 'w-3 bg-status-error/60'
                         : isAnswered
-                          ? 'w-5 bg-emerald-500/60 hover:bg-emerald-500'
-                          : 'w-3 bg-white/[0.12] hover:bg-white/[0.2]'
+                          ? 'w-5 bg-status-success/60 hover:bg-status-success'
+                          : 'w-3 bg-foreground/[0.12] hover:bg-foreground/[0.2]'
                   }`}
                   aria-label={tx(t.templates.adopt_modal.question_number_aria, { number: i + 1 })}
                 />
@@ -247,7 +247,7 @@ export function QuestionnaireFormFocus({
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-0 h-full">
           {/* LEFT — one question */}
-          <div className="relative px-8 py-8 border-r border-white/[0.04]">
+          <div className="relative px-8 py-8 border-r border-border">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentQuestion.id}
@@ -288,17 +288,17 @@ export function QuestionnaireFormFocus({
                     step (to submit), so the hint is suppressed everywhere else
                     to avoid teaching a shortcut that won't work mid-flow. */}
                 <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-foreground">
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
+                  <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] font-mono text-[10px]">
                     ←
                   </kbd>
-                  <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
+                  <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] font-mono text-[10px]">
                     →
                   </kbd>
                   <span>{t.templates.adopt_modal.navigate_hint}</span>
                   {isAtEnd && canSubmit && (
                     <>
                       <span className="text-foreground">·</span>
-                      <kbd className="px-1.5 py-0.5 rounded border border-white/[0.1] bg-white/[0.03] font-mono text-[10px]">
+                      <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.03] font-mono text-[10px]">
                         Enter
                       </kbd>
                       <span>{t.templates.adopt_modal.enter_to_advance}</span>
@@ -310,7 +310,7 @@ export function QuestionnaireFormFocus({
           </div>
 
           {/* RIGHT — live persona preview */}
-          <div className="px-6 py-8 bg-white/[0.015]">
+          <div className="px-6 py-8 bg-foreground/[0.015]">
             <div className="sticky top-0">
             <div className="flex items-center gap-2 mb-4 text-xs uppercase tracking-wider text-primary/70">
               <Zap className="w-3.5 h-3.5" />
@@ -340,7 +340,7 @@ export function QuestionnaireFormFocus({
                         {meta.label}
                       </span>
                     </div>
-                    <div className="space-y-1 pl-4 border-l border-white/[0.06]">
+                    <div className="space-y-1 pl-4 border-l border-border">
                       {qs.map((q) => {
                         const answer = userAnswers[q.id];
                         const hasAnswer = !!answer;
@@ -355,15 +355,15 @@ export function QuestionnaireFormFocus({
                               setActiveIdx(questions.findIndex((qq) => qq.id === q.id))
                             }
                             className={`flex items-start gap-2 w-full text-left rounded-input px-1.5 py-1 -mx-1.5 transition-colors ${
-                              isCurrent ? 'bg-primary/10' : 'hover:bg-white/[0.03]'
+                              isCurrent ? 'bg-primary/10' : 'hover:bg-foreground/[0.03]'
                             }`}
                           >
                             {isBlocked ? (
-                              <AlertCircle className="w-3.5 h-3.5 text-rose-400 mt-0.5 flex-shrink-0" />
+                              <AlertCircle className="w-3.5 h-3.5 text-status-error mt-0.5 flex-shrink-0" />
                             ) : hasAnswer ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                              <Check className="w-3.5 h-3.5 text-status-success mt-0.5 flex-shrink-0" />
                             ) : (
-                              <CircleDot className="w-3.5 h-3.5 text-amber-400/60 mt-0.5 flex-shrink-0" />
+                              <CircleDot className="w-3.5 h-3.5 text-status-warning/70 mt-0.5 flex-shrink-0" />
                             )}
                             <div className="min-w-0 flex-1">
                               <div className="text-xs text-foreground truncate">
@@ -380,7 +380,7 @@ export function QuestionnaireFormFocus({
                                   ? summarizeAnswer(answer, q.type, t)
                                   : t.templates.adopt_modal.not_yet_set}
                                 {isAuto && hasAnswer && (
-                                  <span className="ml-1.5 text-[10px] uppercase tracking-wider text-violet-400/80">
+                                  <span className="ml-1.5 text-[10px] uppercase tracking-wider text-brand-purple/80">
                                     {t.templates.adopt_modal.auto_badge}
                                   </span>
                                 )}
@@ -404,7 +404,7 @@ export function QuestionnaireFormFocus({
       </div>
 
       {/* Footer nav — centered in max-w-5xl shell to align with the stage */}
-      <div className="flex-shrink-0 border-t border-white/[0.06]">
+      <div className="flex-shrink-0 border-t border-border">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
           <button
             type="button"

@@ -94,8 +94,8 @@ export default function AdoptionWizardModal({
       <div className="relative h-full overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Grid3X3 className="w-4.5 h-4.5 text-violet-400" />
+            <div className="w-9 h-9 rounded-modal bg-brand-purple/15 border border-brand-purple/25 flex items-center justify-center">
+              <Grid3X3 className="w-4.5 h-4.5 text-brand-purple" />
             </div>
             <div>
               <h2 id="adoption-matrix-title" className="typo-heading font-semibold text-foreground/90">

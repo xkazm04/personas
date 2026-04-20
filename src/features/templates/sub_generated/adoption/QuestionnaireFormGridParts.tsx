@@ -31,7 +31,7 @@ export function ProgressBar({ answered, total }: { answered: number; total: numb
   const pct = total === 0 ? 0 : (answered / total) * 100;
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
         <motion.div
           className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary"
           initial={{ width: 0 }}
@@ -107,7 +107,7 @@ function DynamicSelectBody({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-white/[0.03] border border-white/[0.1] text-foreground hover:bg-white/[0.06] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-foreground/[0.03] border border-border text-foreground hover:bg-foreground/[0.06] transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             {t.templates.adopt_modal.retry}
@@ -134,7 +134,7 @@ function DynamicSelectBody({
           value={answer}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder={question.default ?? t.templates.adopt_modal.type_a_value}
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
       </div>
     );
@@ -167,7 +167,7 @@ function DynamicSelectBody({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
+      <div className="flex items-center gap-1.5 text-xs text-status-success/80">
         <Zap className="w-3 h-3" />
         {tx(t.templates.adopt_modal.loaded_live_from, { service: src.service_type })}
       </div>
@@ -206,9 +206,9 @@ function BooleanToggle({
             className={`flex-1 px-3 py-1.5 text-xs rounded-card border transition-all ${
               selected
                 ? opt === 'Yes'
-                  ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400 font-medium'
-                  : 'bg-rose-500/15 border-rose-500/25 text-rose-400 font-medium'
-                : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06]'
+                  ? 'bg-status-success/15 border-status-success/30 text-status-success font-medium'
+                  : 'bg-status-error/15 border-status-error/30 text-status-error font-medium'
+                : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06]'
             }`}
           >
             {opt}
@@ -283,7 +283,7 @@ export function QuestionCard({
   return (
     <div
       className={`relative overflow-hidden rounded-card px-3 py-2.5 transition-colors ${
-        isBlocked ? 'bg-rose-500/[0.04] border border-rose-500/15' : 'bg-transparent'
+        isBlocked ? 'bg-status-error/10 border border-status-error/20' : 'bg-transparent'
       }`}
     >
       {/* Radial green pulse wave — emanates from the center to the edges when
@@ -304,17 +304,17 @@ export function QuestionCard({
           `mb-4` gives the question room to breathe before the answer row. */}
       <div className="flex items-start gap-2 mb-4">
         {isBlocked ? (
-          <AlertCircle className="w-5 h-5 text-rose-400 mt-1 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-status-error mt-1 flex-shrink-0" />
         ) : isAnswered ? (
-          <Check className="w-5 h-5 text-emerald-400 mt-1 flex-shrink-0" />
+          <Check className="w-5 h-5 text-status-success mt-1 flex-shrink-0" />
         ) : (
-          <CircleDot className="w-5 h-5 text-amber-400/60 mt-1 flex-shrink-0" />
+          <CircleDot className="w-5 h-5 text-status-warning/70 mt-1 flex-shrink-0" />
         )}
         <span className="flex-1 text-xl font-medium text-foreground/90 leading-snug">
           {question.question}
         </span>
         {isAutoDetected && !isBlocked && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-violet-500/10 border border-violet-500/20 text-violet-400 flex-shrink-0 mt-0.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-0.5">
             <KeyRound className="w-3 h-3" />
             {t.templates.adopt_modal.auto_detected}
           </span>
@@ -338,7 +338,7 @@ export function QuestionCard({
 
       {/* Context — collapsed by default, expands on Info icon click */}
       {hasTip && tipOpen && (
-        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-input bg-white/[0.02] border border-white/[0.05]">
+        <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-input bg-foreground/[0.02] border border-border">
           <span className="text-sm text-foreground leading-relaxed">
             {question.context}
           </span>
@@ -348,13 +348,13 @@ export function QuestionCard({
       {/* Blocked state: show the "Add credential" call-to-action */}
       {isBlocked && question.vault_category ? (
         <div className="ml-5.5 space-y-2">
-          <p className="text-xs text-rose-300/80 leading-relaxed">
+          <p className="text-xs text-status-error/80 leading-relaxed">
             {t.templates.adopt_modal.credential_required.replace('{category}', question.vault_category)}
           </p>
           <button
             type="button"
             onClick={() => onAddCredential?.(question.vault_category!)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-card bg-status-error/15 border border-status-error/30 text-status-error hover:bg-status-error/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.templates.adopt_modal.add_credential}
@@ -420,7 +420,7 @@ export function QuestionCard({
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
             rows={3}
-            className="w-full max-w-lg px-3 py-2 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
+            className="w-full max-w-lg px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all resize-y min-h-[60px]"
           />
         ) : (
           <input
@@ -429,7 +429,7 @@ export function QuestionCard({
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
             placeholder={question.default ?? t.templates.adopt_modal.type_your_answer}
-            className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+            className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
           />
         )}
       </div>
