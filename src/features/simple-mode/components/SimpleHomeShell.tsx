@@ -42,16 +42,16 @@ export function SimpleHomeShell({
   const { t } = useTranslation();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="simple-surface h-full flex flex-col">
       <header className="flex items-center gap-4 px-5 py-2.5 border-b border-border/60 bg-background/80">
         {/* Left: title + subtitle */}
         <div className="flex flex-col min-w-0 flex-shrink-0">
-          <div className="text-sm font-semibold text-foreground leading-tight">
+          <h1 className="typo-heading simple-display text-foreground leading-tight">
             {t.simple_mode.title}
-          </div>
-          <div className="text-xs text-foreground/55 leading-tight truncate">
+          </h1>
+          <p className="typo-caption text-foreground/60 leading-tight truncate">
             {t.simple_mode.subtitle}
-          </div>
+          </p>
         </div>
 
         {/* Center: tab switcher */}
@@ -70,7 +70,7 @@ export function SimpleHomeShell({
                 aria-selected={isActive}
                 onClick={() => onTabChange(id)}
                 className={[
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-colors',
+                  'typo-caption flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors',
                   isActive
                     ? 'bg-foreground/[0.06] border border-primary/15 text-foreground'
                     : 'border border-transparent text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground',
@@ -95,10 +95,10 @@ export function SimpleHomeShell({
             <Settings className="w-4 h-4" />
           </button>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
             onClick={onSwitchToPower}
-            className="border-primary/15 bg-foreground/[0.03]"
+            className="simple-accent-violet-text simple-accent-violet-border simple-accent-violet-soft border hover:brightness-110"
           >
             {t.simple_mode.switch_to_power}
           </Button>
