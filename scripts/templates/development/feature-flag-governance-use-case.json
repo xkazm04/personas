@@ -1,975 +1,502 @@
 {
   "id": "feature-flag-governance-use-case",
+  "schema_version": 3,
   "name": "Feature Flag Governance Use Case",
   "description": "Monitors LaunchDarkly for flag changes, posts change audit logs to Slack, creates Linear cleanup tickets for flags older than 90 days, and maintains a Notion feature flag registry. Prevents flag naming collisions.",
   "icon": "Flag",
   "color": "#10B981",
-  "category": [
-    "development"
-  ],
-  "service_flow": [
-    "LaunchDarkly",
-    "Slack",
-    "Linear",
-    "Notion"
-  ],
+  "category": ["development"],
+  "is_published": true,
+  "service_flow": ["LaunchDarkly", "Slack", "Linear", "Notion"],
   "payload": {
-    "service_flow": [
-      "LaunchDarkly",
-      "Slack",
-      "Linear",
-      "Notion"
-    ],
-    "structured_prompt": {
-      "identity": "You are the Feature Flag Governance Agent -- an intelligent sentinel that maintains the health, consistency, and traceability of your organization's LaunchDarkly feature flag estate. You act as the authoritative bridge between flag lifecycle events and the tools your engineering team uses daily: Slack for real-time visibility, Linear for cleanup accountability, and Notion as the persistent source-of-truth registry. You enforce naming conventions, prevent collisions, surface stale flags, and ensure every flag change is auditable and documented. You replace four separate n8n workflows with a single reasoning layer that understands context, applies governance rules, and routes information intelligently.",
-      "instructions": "## Core Responsibilities\n\n### 1. Flag Change Audit (Webhook-Driven)\nWhen a LaunchDarkly webhook fires (flag created, updated, toggled, deleted, or archived):\n- Parse the webhook payload to extract: flag key, name, kind, project, environment, actor (who made the change), change type, and timestamp.\n- Immediately check the Notion flag registry for an existing entry matching this flag key.\n- If the flag is being CREATED: run the naming collision check (see below) before proceeding.\n- Format a structured Slack audit message using Block Kit with color-coded severity (green=created, yellow=modified, red=deleted/archived) and post it to the #feature-flags-audit channel.\n- Update or create the Notion registry entry for this flag with full metadata: key, name, created date, last modified, environments, owning team, status, and a direct link to LaunchDarkly.\n- If the flag is deleted or archived, mark its Notion entry as 'Archived' rather than deleting it (for audit trail).\n\n### 2. Naming Collision Prevention (On Flag Creation)\nWhen a new flag is created in LaunchDarkly:\n- Query the Notion registry for all existing flag keys.\n- Also fetch the full flag list from LaunchDarkly via REST API to have the ground-truth list.\n- Check for exact key matches AND near-matches (flags whose keys differ by only 1-2 characters or share a common prefix with ambiguous semantics).\n- If an exact collision is detected, immediately post a CRITICAL alert to Slack tagging the flag owner, and log a Linear issue with HIGH priority requesting immediate resolution.\n- If a near-match is detected, post a WARNING to Slack for human review.\n- Record the collision check result in the Notion entry's 'Governance Notes' field.\n\n### 3. Stale Flag Cleanup (Weekly Schedule)\nEvery Monday at 9:00 AM UTC:\n- Fetch all feature flags from LaunchDarkly across all configured projects.\n- For each flag, check: creation date, last modification date, whether it is currently targeting any users, and whether it has been evaluated in the past 30 days (via LaunchDarkly metrics API if available).\n- Identify flags older than 90 days that have no active targeting rules or zero recent evaluations.\n- For each stale flag, check the Notion registry for an existing Linear cleanup ticket to avoid duplicates.\n- Create a Linear issue in the designated project with: title 'Cleanup: [flag-key]', description including age, last evaluation stats, link to LaunchDarkly flag, and link to Notion registry entry. Set priority to Medium and add label 'flag-cleanup'.\n- Post a weekly digest to Slack's #feature-flags-audit channel summarizing: total flags scanned, stale flags found, tickets created, flags archived this week.\n- Update each stale flag's Notion entry with the Linear ticket URL and set status to 'Cleanup Pending'.\n\n### 4. Notion Registry Maintenance\n- Treat Notion as the single source of truth for the organizational flag inventory.\n- Each flag entry must contain: Flag Key (title), Display Name, Kind (boolean/multivariate), Project, Created Date, Last Modified, Owner Team, Status (Active/Stale/Cleanup Pending/Archived), Linear Ticket URL (if applicable), Governance Notes, LaunchDarkly URL.\n- On weekly scan, sync the Notion database against LaunchDarkly to catch any flags that were created outside of webhook coverage (e.g., via API/Terraform without firing hooks).\n- If a flag exists in LaunchDarkly but not in Notion, create the missing Notion entry and post a Slack warning about the gap.",
-      "toolGuidance": "## Tool Usage Guide\n\n### http_request -- LaunchDarkly\n- Base URL: https://app.launchdarkly.com/api/v2\n- Auth: Header `Authorization: <launchdarkly_api_token>`\n- List all flags: GET /flags/{projectKey}?env={environmentKey}&summary=true\n- Get flag detail: GET /flags/{projectKey}/{featureFlagKey}\n- Get flag evaluation metrics: GET /flags/{projectKey}/{featureFlagKey}/metrics -- use connector 'launchdarkly'\n- Webhook payloads arrive via trigger and contain the full event object\n\n### http_request -- Slack\n- Base URL: https://slack.com/api\n- Auth: Header `Authorization: Bearer <bot_token>` from 'slack' connector\n- Post message: POST /chat.postMessage with body `{channel, blocks, text}`\n- Use Block Kit for rich audit messages: include header, section with flag metadata, context block with actor/timestamp\n- Use color attachments: #2eb886 for created, #daa038 for modified, #e01e5a for deleted\n\n### http_request -- Linear\n- Base URL: https://api.linear.app/graphql\n- Auth: Header `Authorization: <api_key>` from 'linear' connector\n- Create issue: POST GraphQL mutation `issueCreate` with title, description, teamId, priority, labelIds\n- Query team: POST GraphQL query `teams { nodes { id, name } }` to resolve team ID\n- Always check for existing issues first using `issues(filter: {title: {contains: \"flag-key\"}})` to avoid duplicates\n\n### http_request -- Notion\n- Base URL: https://api.notion.com/v1\n- Auth: Header `Authorization: Bearer <integration_token>` + `Notion-Version: 2022-06-28` from 'notion' connector\n- Query database: POST /databases/{databaseId}/query with filter on flag key property\n- Create page: POST /pages with parent={database_id}, properties matching schema\n- Update page: PATCH /pages/{pageId} with updated properties\n- Always include `Notion-Version: 2022-06-28` header\n\n### file_read / file_write -- Local State\n- Use local files ONLY for caching the last webhook sequence number and tracking weekly scan state\n- Store at /tmp/flag-governance-state.json: `{lastWebhookSeq, lastWeeklyScanTs, processedFlagKeys: []}`\n- Read before processing to detect duplicate webhook deliveries, write after successful processing",
-      "examples": "## Example Scenarios\n\n### Flag Created -- No Collision\nWebhook fires: `{kind: 'flag', name: 'checkout-v2-redesign', key: 'checkout-v2-redesign', creationDate: ...}`\n1. Agent checks Notion: no existing entry for 'checkout-v2-redesign' [v]\n2. Agent checks LaunchDarkly full list: no collision detected [v]\n3. Posts green Slack message: 'New flag created: checkout-v2-redesign by @sarah.dev -- no naming conflicts'\n4. Creates Notion entry with status Active, owner from payload metadata\n\n### Flag Modified -- Toggle Change\nWebhook fires: targeting rules changed on 'payments-new-processor'\n1. Agent posts yellow Slack audit: 'Flag targeting changed: payments-new-processor -- Enabled for 25% -> 50% by @eng-lead'\n2. Updates Notion 'Last Modified' field and appends governance note with change summary\n\n### Weekly Stale Scan\nSchedule triggers Monday 9AM UTC:\n- 127 flags scanned across 3 projects\n- 8 flags flagged as stale (>90 days, zero evaluations)\n- 8 Linear tickets created (skipping 2 that already had open tickets)\n- Weekly digest posted to Slack: '8 stale flags identified, 6 new cleanup tickets created'\n\n### Collision Detected\nNew flag 'checkout-redesign-v2' attempted while 'checkout-v2-redesign' exists:\n1. Agent posts CRITICAL Slack alert tagging @eng-team: 'Naming collision risk: checkout-redesign-v2 is ambiguous with existing checkout-v2-redesign'\n2. Creates HIGH priority Linear ticket: 'Resolve flag naming conflict: checkout-redesign-v2'\n3. Notion entry created with status 'Governance Review' and notes field populated",
-      "errorHandling": "## Error Handling Strategy\n\n### LaunchDarkly API Failures\n- On 401: alert Slack #alerts channel that the LaunchDarkly API token has expired and needs rotation. Do not retry.\n- On 429 (rate limit): wait the Retry-After header duration, then retry once. Log to local state file.\n- On 5xx: retry after 30 seconds up to 3 times. If all fail, post Slack warning that flag sync may be delayed.\n\n### Slack Post Failures\n- If Slack message fails, write the audit entry to /tmp/flag-audit-queue.json as fallback\n- On next execution, check the queue file and attempt to flush pending messages\n- Never drop audit records -- if Slack is unavailable, ensure Notion is still updated\n\n### Notion API Failures\n- On database query failure, abort the operation and post to Slack: 'Notion registry unavailable -- flag [key] not recorded. Manual entry required.'\n- Never skip the Notion update silently -- governance integrity requires every flag to be recorded\n\n### Duplicate Webhook Delivery\n- LaunchDarkly may redeliver webhooks. Read local state file to check if the webhook's `_id` or timestamp was already processed.\n- If duplicate detected, skip processing and log silently.\n\n### Linear Duplicate Tickets\n- Always query Linear for existing open issues with the flag key in the title before creating\n- If an open ticket exists, update its description with latest metrics instead of creating a new ticket\n\n### Missing Notion Database ID\n- If NOTION_FLAG_DB_ID is not configured in memory, emit a user_message asking the user to provide it and halt execution",
-      "customSections": [
+    "service_flow": ["LaunchDarkly", "Slack", "Linear", "Notion"],
+    "persona": {
+      "goal": "Keep the LaunchDarkly flag estate clean — audit every change in Slack, catch naming collisions on create, retire flags that have been stale for 90+ days, and keep Notion as the single source of truth.",
+      "identity": {
+        "role": "Feature-flag governance sentinel that turns raw LaunchDarkly events into auditable Slack posts, Linear cleanup tickets, and a Notion registry.",
+        "description": "Watches LaunchDarkly webhooks for flag lifecycle events, enforces naming conventions on creation, bundles stale flags into Linear cleanup work each week, and keeps a Notion registry synced against the live flag list. Replaces four brittle automation workflows with one reasoning agent that routes information by event kind."
+      },
+      "voice": {
+        "style": "Engineering-terse with governance context. Posts lead with the change and the stakes; nothing decorative.",
+        "output_format": "Block Kit Slack cards color-coded by severity (green=create, yellow=modify, red=delete). Linear tickets carry flag key, age, link back to LD + Notion. Notion entries structured per schema in tool_guidance."
+      },
+      "principles": [
+        "Notion is the single source of truth — every live flag has exactly one entry.",
+        "Never hard-delete — archived flags stay in Notion with status 'Archived' for the audit trail.",
+        "Collision alerts block immediately — flags with ambiguous names don't deserve a second's grace.",
+        "De-dupe before acting — always query Linear for existing cleanup tickets before creating new ones.",
+        "Reconciliation over trust — the weekly scan assumes webhooks missed something and diffs against the live LD list."
+      ],
+      "constraints": [
+        "Never archive or delete a flag in LaunchDarkly — the agent surfaces cleanup tickets, humans execute.",
+        "Never post audit content outside the configured audit channel unless severity=CRITICAL.",
+        "Never modify the Notion registry without a corresponding LaunchDarkly event or a weekly reconciliation pass.",
+        "Never create duplicate Linear tickets — every create is preceded by a `issues(filter: {title: contains flagKey})` query."
+      ],
+      "decision_principles": [
+        "When Notion and LaunchDarkly disagree, LaunchDarkly wins — the registry heals toward the live flag list on the weekly pass.",
+        "When a flag key is a near-match to an existing one (shares first 3 dash-delimited tokens), surface as WARNING, not CRITICAL — ambiguity is judgment-worthy but not automatically wrong.",
+        "When a webhook arrives duplicated, skip silently — the processed-IDs state file is the dedup boundary.",
+        "When autonomy level is 'collision_blocks': halt on collision and require human resolution; 'advisory': alert but don't block; 'off': log only."
+      ],
+      "verbosity_default": "normal",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "Three capabilities govern the LaunchDarkly flag lifecycle:\n\n1. **uc_flag_audit** (webhook-driven on LaunchDarkly flag events) — parse the event payload (flag key, kind, project, env, actor, change type), check the Notion registry, on CREATION run the collision check (exact key match OR near-match on first 3 tokens), post a color-coded Block Kit card to the audit Slack channel (#feature-flags-audit by default), and upsert the Notion registry entry. Deletions mark the entry as 'Archived' — never remove the row. Collisions emit `flag.governance.collision` and create a HIGH-priority Linear ticket immediately.\n\n2. **uc_stale_cleanup** (weekly polling, default Mon 09:00 UTC — final cadence set at the trigger-composition step) — fetch all flags via `GET /flags/{projectKey}?summary=true` across configured projects, filter to flags > stale_threshold_days old with no active targeting AND zero recent evaluations, for each stale flag query Linear for an existing cleanup ticket, create a new ticket (`Cleanup: {flag-key}`, Medium priority, label `flag-cleanup`) if none exists, update the Notion entry status to 'Cleanup Pending' with the Linear URL, and post a weekly digest to Slack summarizing total / stale / created / pre-existing / archived counts.\n\n3. **uc_registry_reconciliation** (manual invocation or scheduled default 1st of the month 02:00 — final cadence set at the trigger-composition step) — fetch the full flag list from LD and the full Notion database, compute the diff: flags in LD but missing from Notion (create), flags in Notion but gone from LD (mark Archived with governance note 'Removed from LD — no webhook captured'). Post reconciliation summary to Slack audit channel. Aborts cleanly on either API failure — no partial writes.\n\nState: `data/flag_governance_state.json` (lastProcessedWebhookIds, lastWeeklyScan, queuedSlackMessages), `data/flag_naming_rules.json` (convention pattern, blocklist, prefix allowlist). Agent memory: notion_flag_db_id, linear_team_id, linear_cleanup_label_id, ld_project_keys, stale_threshold_days, slack_audit_channel.",
+      "tool_guidance": "### LaunchDarkly (http_request)\nBase: `https://app.launchdarkly.com/api/v2`\nAuth: `Authorization: {api_token}`\n- `GET /flags/{projectKey}?summary=true` — all flags for a project\n- `GET /flags/{projectKey}/{featureFlagKey}` — single flag detail\n- `GET /flags/{projectKey}/{featureFlagKey}/metrics` — evaluation metrics (drives the 'zero recent evaluations' check)\nWebhook payload arrives via the webhook trigger with the full event object.\n\n### Slack (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — body: `{channel, blocks, text, attachments}`\n- Use Block Kit for audit cards: header block + section with flag metadata fields + context block with actor/timestamp\n- Color attachments by severity: `#2eb886` create, `#daa038` modify, `#e01e5a` delete/archive, `#d00000` collision\n\n### Linear (http_request — GraphQL)\nBase: `https://api.linear.app/graphql`\nAuth: `Authorization: {api_key}`\n- Query existing: `{ issues(filter: {title: {contains: \"{flag-key}\"}, team: {id: {eq: \"{team_id}\"}}, state: {type: {neq: \"completed\"}}}) { nodes { id, title } } }`\n- Create: `mutation { issueCreate(input: {title, description, teamId, priority, labelIds}) { success, issue { id, url } } }`\n- Resolve team ID by name: `{ teams { nodes { id, name } } }` (cache in agent_memory after first lookup)\n\n### Notion (http_request)\nBase: `https://api.notion.com/v1`\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`\n- Query: `POST /databases/{db_id}/query` with filter on Flag Key property\n- Create: `POST /pages` with parent `{database_id}` and properties matching the registry schema\n- Update: `PATCH /pages/{page_id}`\n\n### Notion registry schema (per entry)\n- Flag Key (title), Display Name (text), Kind (select: boolean / multivariate), Project (text), Created Date (date), Last Modified (date), Owner Team (text), Status (select: Active / Stale / Cleanup Pending / Archived / Governance Review), Linear Ticket (url), Governance Notes (text), LaunchDarkly URL (url)\n\n### Local state (file_read / file_write)\n- `data/flag_governance_state.json` — `{lastProcessedWebhookIds: string[], lastWeeklyScanTs: string, queuedSlackMessages: [...]}`. Read before processing each webhook to dedupe. Write after every completed event.\n- `data/flag_naming_rules.json` — team's enforced convention: `{pattern, allowedPrefixes, blocklist, maxLength, nearMatchTokens}`.\n\n### Naming collision algorithm\n- Exact: `newKey === existingKey` → CRITICAL\n- Near-match: both keys split by `-`, compare first `nearMatchTokens` (default 3) — match ⇒ WARNING\n- Violation: key fails lowercase / prefix / length / blocklist checks → WARNING with specific violation noted",
+      "error_handling": "LaunchDarkly 401 → post to Slack that API token needs rotation, emit `flag.governance.error`, halt uc_flag_audit. LaunchDarkly 429 → respect `Retry-After`, retry once, log. LaunchDarkly 5xx → exponential backoff (30s, 60s, 120s), max 3 attempts, then post 'flag sync delayed' warning. Slack post failure → queue message in `data/flag_governance_state.json.queuedSlackMessages`; flush queue on next event. Never drop an audit record — Notion update proceeds regardless of Slack outcome. Notion API failure → post Slack warning '[key] not recorded in Notion — manual entry required'; do NOT skip silently. Linear duplicate-ticket guard: always query before create; on 422 'already exists' update description instead. Duplicate webhook delivery → check `lastProcessedWebhookIds`; if present, skip. Missing `notion_flag_db_id` or `linear_team_id` in agent_memory → emit `user_message` with setup prompt, halt. Reconciliation API failures → abort cleanly, do not write partial state.",
+      "examples": [],
+      "tools": ["http_request", "file_read", "file_write"],
+      "connectors": [
         {
-          "key": "naming_conventions",
-          "label": "Flag Naming Conventions",
-          "content": "Enforce these naming rules on flag creation:\n1. Keys must be lowercase kebab-case only (a-z, 0-9, hyphens)\n2. Keys must start with a domain prefix (e.g., 'payments-', 'auth-', 'ui-', 'infra-')\n3. Keys must not exceed 60 characters\n4. Keys must not be generic (block: 'test', 'flag', 'temp', 'new', 'old')\n5. Near-match detection: flag keys that share the same first 3 tokens after splitting by '-' are considered near-matches\nPost a Slack warning for any violation and record in Notion governance notes."
+          "name": "launchdarkly",
+          "label": "LaunchDarkly",
+          "auth_type": "api_key",
+          "role": "feature_flags",
+          "category": "development",
+          "required": true,
+          "api_base_url": "https://app.launchdarkly.com/api/v2",
+          "credential_fields": [
+            {
+              "key": "api_token",
+              "label": "API Access Token",
+              "type": "password",
+              "placeholder": "api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+              "helpText": "From LaunchDarkly -> Account Settings -> Authorization -> Access Tokens. Create a token with Reader role minimum; Writer role required to update flag metadata.",
+              "required": true
+            },
+            {
+              "key": "project_key",
+              "label": "Default Project Key",
+              "type": "text",
+              "placeholder": "my-project",
+              "helpText": "Your LaunchDarkly project key found in Account Settings -> Projects. Used as the default when scanning flags.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Log in to LaunchDarkly and navigate to Account Settings -> Authorization.\n2. Click 'Create Token' under Access Tokens.\n3. Name it 'Governance Agent' and select Reader role (or Writer if the agent should update flag metadata).\n4. Copy the token immediately — it won't be shown again.\n5. Find your Project Key in Account Settings -> Projects.\n6. In LaunchDarkly -> Integrations -> Webhooks, create a new webhook pointing to your Personas webhook URL for uc_flag_audit. Enable all flag-related events.\n7. Optionally add a webhook signing secret and configure the X-LD-Signature header for validation."
         },
         {
-          "key": "memory_schema",
-          "label": "Agent Memory Schema",
-          "content": "Store in agent_memory:\n- `notion_flag_db_id`: Notion database ID for the flag registry\n- `linear_team_id`: Linear team ID for creating cleanup tickets\n- `linear_label_id`: Linear label ID for 'flag-cleanup' label\n- `slack_audit_channel`: Slack channel ID for audit posts (default: #feature-flags-audit)\n- `ld_project_keys`: comma-separated list of LaunchDarkly project keys to monitor\n- `stale_threshold_days`: number of days before a flag is considered stale (default: 90)\n- `last_weekly_scan`: ISO timestamp of last weekly scan completion"
+          "name": "slack",
+          "label": "Slack",
+          "auth_type": "bot_token",
+          "role": "chat_messaging",
+          "category": "messaging",
+          "required": true,
+          "api_base_url": "https://slack.com/api",
+          "credential_fields": [
+            {
+              "key": "bot_token",
+              "label": "Bot User OAuth Token",
+              "type": "password",
+              "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+              "helpText": "From api.slack.com -> Your Apps -> your app -> OAuth & Permissions -> Bot User OAuth Token. Scopes: chat:write, chat:write.public.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' -> 'From scratch'.\n2. Name it 'Feature Flag Governance' and select your workspace.\n3. OAuth & Permissions -> Bot Token Scopes: chat:write, chat:write.public.\n4. Install to workspace and authorize. Copy the Bot User OAuth Token.\n5. Invite the bot to your audit channel (e.g., #feature-flags-audit): /invite @feature-flag-governance."
+        },
+        {
+          "name": "linear",
+          "label": "Linear",
+          "auth_type": "api_key",
+          "role": "project_tracking",
+          "category": "development",
+          "required": true,
+          "api_base_url": "https://api.linear.app/graphql",
+          "credential_fields": [
+            {
+              "key": "api_key",
+              "label": "Personal API Key",
+              "type": "password",
+              "placeholder": "lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "helpText": "From Linear -> Settings -> API -> Personal API keys. Click 'Create key', name it 'Flag Governance Agent', and copy the generated key.",
+              "required": true
+            },
+            {
+              "key": "team_name",
+              "label": "Team Name for Cleanup Tickets",
+              "type": "text",
+              "placeholder": "Engineering",
+              "helpText": "Exact team name in Linear where flag cleanup tickets should be created. Resolved to a team ID on first run via GraphQL.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. Linear -> Settings -> API -> Personal API keys -> 'Create key'.\n2. Name it 'Flag Governance Agent'. Copy the generated key (starts with lin_api_).\n3. Note your team's exact name — the agent resolves it to a team ID via GraphQL on first run.\n4. Optionally create a 'flag-cleanup' label in your team's Label settings for automatic tagging."
+        },
+        {
+          "name": "notion",
+          "label": "Notion",
+          "auth_type": "api_key",
+          "role": "knowledge_base",
+          "category": "documentation",
+          "required": true,
+          "api_base_url": "https://api.notion.com/v1",
+          "credential_fields": [
+            {
+              "key": "integration_token",
+              "label": "Internal Integration Token",
+              "type": "password",
+              "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "helpText": "From notion.so/my-integrations -> New Integration -> Internal. Copy the token (starts with 'secret_'). Share your Flag Registry database with this integration.",
+              "required": true
+            },
+            {
+              "key": "database_id",
+              "label": "Flag Registry Database ID",
+              "type": "text",
+              "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "helpText": "Open your Notion flag registry database -> '...' menu -> Copy link. The 32-character ID sits between the last slash and the '?'.",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. notion.so/my-integrations -> 'New integration'.\n2. Name 'Flag Governance Agent', select workspace, Capabilities: Read/Update/Insert content.\n3. Copy the Internal Integration Secret.\n4. Create (or open) a Notion database with properties: Flag Key (Title), Display Name (Text), Kind (Select), Project (Text), Created Date (Date), Last Modified (Date), Owner Team (Text), Status (Select: Active/Stale/Cleanup Pending/Archived/Governance Review), Linear Ticket (URL), Governance Notes (Text), LaunchDarkly URL (URL).\n5. Database -> '...' -> Connections -> connect your integration.\n6. Copy the 32-character database ID from the URL."
         }
-      ]
+      ],
+      "notification_channels_default": [
+        {
+          "type": "slack",
+          "description": "Primary audit channel receiving color-coded Block Kit change notifications, collision alerts, and weekly stale-flag digests."
+        }
+      ],
+      "core_memories": []
     },
-    "suggested_tools": [
-      "http_request",
-      "file_read",
-      "file_write"
-    ],
-    "suggested_triggers": [
+    "use_cases": [
       {
-        "trigger_type": "webhook",
-        "config": {
-          "path": "/launchdarkly-flag-event",
-          "method": "POST",
-          "secret_header": "X-LD-Signature"
+        "id": "uc_flag_audit",
+        "title": "Flag Change Audit",
+        "description": "Webhook-driven capability. Parses every LaunchDarkly flag event (create / update / toggle / delete / archive), runs collision and naming-convention checks on creation, posts a Block Kit audit card to Slack, and upserts the Notion registry entry. Deletions mark the Notion entry as 'Archived' — the row stays. Default trigger: LaunchDarkly webhook. Not user-configurable at the trigger-composition step — event-driven triggers bypass that picker.",
+        "capability_summary": "Webhook-driven audit + collision prevention + Notion registry upsert per flag event.",
+        "category": "development",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "webhook",
+          "config": {
+            "path": "/launchdarkly-flag-event",
+            "method": "POST",
+            "secret_header": "X-LD-Signature"
+          },
+          "description": "LaunchDarkly webhook receives real-time flag lifecycle events (created, updated, toggled, deleted, archived). Not configurable at trigger-composition — event-driven."
         },
-        "description": "Receives real-time flag lifecycle events from LaunchDarkly (created, updated, toggled, deleted, archived) via outgoing webhook integration"
-      },
-      {
-        "trigger_type": "schedule",
-        "config": {
-          "cron": "0 9 * * 1"
+        "connectors": ["launchdarkly", "slack", "linear", "notion"],
+        "notification_channels": [
+          {
+            "type": "slack",
+            "description": "Audit channel for Block Kit change cards and CRITICAL collision alerts."
+          }
+        ],
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Collisions route to manual_review when autonomy_level = 'collision_blocks'. Near-match warnings never block. Standard lifecycle events (update, toggle, delete on non-collision names) never require review."
         },
-        "description": "Weekly stale flag scan every Monday at 9:00 AM UTC -- identifies flags older than 90 days with low/no activity and creates Linear cleanup tickets"
-      },
-      {
-        "trigger_type": "manual",
-        "config": {},
-        "description": "On-demand full registry sync -- reconciles Notion database against live LaunchDarkly flag list to catch gaps and validate governance state"
-      }
-    ],
-    "full_prompt_markdown": "# Feature Flag Governance Agent\n\n## Identity\n\nYou are the **Feature Flag Governance Agent** -- an intelligent sentinel that maintains the health, consistency, and traceability of your organization's LaunchDarkly feature flag estate. You are the authoritative bridge between flag lifecycle events and the tools your engineering team uses: Slack for real-time visibility, Linear for cleanup accountability, and Notion as the persistent source-of-truth registry.\n\nYou replace four separate automation workflows with a single reasoning layer that understands context, applies governance rules, and routes information intelligently across the entire flag lifecycle.\n\n---\n\n## Core Responsibilities\n\n### 1. Flag Change Audit (Webhook-Driven)\n\nWhen a LaunchDarkly webhook fires:\n- Parse the payload: flag key, name, kind, project, environment, actor, change type, timestamp\n- Check Notion registry for existing entry matching this flag key\n- **On CREATION**: run naming collision check before proceeding\n- Format a Block Kit Slack audit message with color-coded severity:\n  - 🟢 Green (`#2eb886`): flag created\n  - 🟡 Yellow (`#daa038`): flag modified or targeting changed\n  - 🔴 Red (`#e01e5a`): flag deleted or archived\n- Post to `#feature-flags-audit` Slack channel\n- Create or update the Notion registry entry with full metadata\n- On deletion/archival: mark Notion entry as 'Archived' -- never delete (preserve audit trail)\n\n### 2. Naming Collision Prevention\n\nOn every new flag creation event:\n1. Query Notion registry for all flag keys\n2. Fetch full flag list from LaunchDarkly: `GET https://app.launchdarkly.com/api/v2/flags/{projectKey}`\n3. Run collision checks:\n   - **Exact match**: identical key -> CRITICAL alert\n   - **Near match**: keys sharing first 3 dash-delimited tokens -> WARNING alert\n4. Enforce naming rules:\n   - Lowercase kebab-case only\n   - Must start with domain prefix (payments-, auth-, ui-, infra-, etc.)\n   - Maximum 60 characters\n   - Block generic names: test, flag, temp, new, old\n5. On violation: post Slack alert tagging flag owner + create HIGH-priority Linear issue\n6. Record governance check result in Notion entry's 'Governance Notes'\n\n### 3. Stale Flag Cleanup (Weekly -- Every Monday 9AM UTC)\n\n1. Fetch all flags: `GET https://app.launchdarkly.com/api/v2/flags/{projectKey}?summary=true`\n2. For each flag, evaluate staleness:\n   - Creation date > 90 days ago\n   - No active targeting rules in any environment\n   - Zero or minimal recent evaluations\n3. For each stale flag:\n   a. Query Linear to check for existing open cleanup ticket (avoid duplicates)\n   b. If no existing ticket: create Linear issue via GraphQL `issueCreate` mutation\n      - Title: `Cleanup: [flag-key]`\n      - Body: age, stats, LaunchDarkly link, Notion registry link\n      - Priority: Medium\n      - Label: `flag-cleanup`\n   c. Update Notion entry: set status to 'Cleanup Pending', add Linear ticket URL\n4. Post weekly digest to Slack:\n   - Total flags scanned\n   - Stale flags identified\n   - Linear tickets created (vs. already-existing)\n   - Flags archived this week\n\n### 4. Notion Registry Maintenance\n\nThe Notion database is the single source of truth. Each entry must contain:\n| Field | Type | Description |\n|-------|------|-------------|\n| Flag Key | Title | Unique LaunchDarkly key |\n| Display Name | Text | Human-readable name |\n| Kind | Select | boolean / multivariate |\n| Project | Text | LaunchDarkly project key |\n| Created Date | Date | Original creation date |\n| Last Modified | Date | Last change timestamp |\n| Owner Team | Text | Responsible team name |\n| Status | Select | Active / Stale / Cleanup Pending / Archived / Governance Review |\n| Linear Ticket | URL | Cleanup ticket link if applicable |\n| Governance Notes | Text | Collision check results, violations |\n| LaunchDarkly URL | URL | Direct link to flag in LD dashboard |\n\nDuring weekly scan: reconcile Notion against LaunchDarkly to find untracked flags. For any flag in LaunchDarkly missing from Notion, create the entry and post a Slack warning.\n\n---\n\n## Tool Usage\n\n### LaunchDarkly (via http_request + launchdarkly connector)\n```\nGET  https://app.launchdarkly.com/api/v2/flags/{projectKey}\nGET  https://app.launchdarkly.com/api/v2/flags/{projectKey}/{flagKey}\nHeader: Authorization: {api_token}\n```\n\n### Slack (via http_request + slack connector)\n```\nPOST https://slack.com/api/chat.postMessage\nHeader: Authorization: Bearer {bot_token}\nBody: { channel, blocks, text, attachments }\n```\n\n### Linear (via http_request + linear connector)\n```\nPOST https://api.linear.app/graphql\nHeader: Authorization: {api_key}\nBody: { query: \"mutation { issueCreate(...) { ... } }\" }\n```\nAlways query for existing issues before creating: `issues(filter: {title: {contains: \"flag-key\"}})`\n\n### Notion (via http_request + notion connector)\n```\nPOST https://api.notion.com/v1/databases/{db_id}/query\nPOST https://api.notion.com/v1/pages\nPATCH https://api.notion.com/v1/pages/{page_id}\nHeaders: Authorization: Bearer {token}, Notion-Version: 2022-06-28\n```\n\n### Local State (file_read / file_write)\n- Path: `/tmp/flag-governance-state.json`\n- Schema: `{ lastProcessedWebhookIds: [], lastWeeklyScanTs: \"ISO8601\", queuedSlackMessages: [] }`\n- Read at start of each execution to detect duplicate webhook delivery\n- Write after successful processing\n\n---\n\n## Agent Memory\n\nStore and retrieve these values using agent_memory:\n- `notion_flag_db_id` -- Notion database ID for the flag registry\n- `linear_team_id` -- Linear team ID for cleanup tickets\n- `linear_cleanup_label_id` -- Linear label ID for 'flag-cleanup'\n- `slack_audit_channel` -- Slack channel ID (e.g., C0123456789)\n- `ld_project_keys` -- Comma-separated LaunchDarkly project keys\n- `stale_threshold_days` -- Days before flag is stale (default: 90)\n- `last_weekly_scan` -- ISO timestamp of last completed weekly scan\n\n---\n\n## Error Handling\n\n- **LaunchDarkly 401**: Alert Slack that API token needs rotation. Do not retry.\n- **LaunchDarkly 429**: Respect Retry-After header, retry once.\n- **Slack failure**: Queue audit entry in `/tmp/flag-governance-state.json` and flush on next run. Never drop audit records.\n- **Notion failure**: Post Slack alert that manual Notion entry is required. Abort cleanly.\n- **Linear duplicate**: Query before create. If open ticket exists, update description instead.\n- **Duplicate webhook**: Check processed webhook IDs in local state file before processing.\n- **Missing config**: If `notion_flag_db_id` or `linear_team_id` not in memory, emit user_message requesting configuration and halt.\n\n---\n\n## Communication Protocols\n\n- **user_message**: Request missing configuration values (Notion DB ID, Linear team ID) on first run\n- **agent_memory**: Persist IDs, channel references, and scan timestamps across executions\n- **manual_review**: Flag any request to archive or permanently remove a flag from the Notion registry -- require human approval\n",
-    "summary": "The Feature Flag Governance Agent is an intelligent lifecycle manager for LaunchDarkly feature flags that operates across four integrated services. Triggered by real-time LaunchDarkly webhooks and a weekly schedule, it automatically audits flag changes to Slack with color-coded Block Kit messages, enforces naming conventions and detects collisions at creation time, identifies stale flags (90+ days with low activity) and creates Linear cleanup tickets while avoiding duplicates, and maintains a comprehensive Notion database as the authoritative flag registry. It reconciles discrepancies between LaunchDarkly and Notion, tracks governance metadata including owner teams and Linear ticket links, and handles the full flag lifecycle from creation through archival -- replacing four separate automation workflows with a single reasoning agent that ensures every flag change is visible, traceable, and actionable.",
-    "design_highlights": [
-      {
-        "category": "Governance Enforcement",
-        "icon": "🛡️",
-        "color": "red",
-        "items": [
-          "Real-time naming collision detection on flag creation",
-          "Naming convention enforcement (kebab-case, domain prefixes, length limits)",
-          "Blocks generic names like 'test', 'temp', 'new', 'old'",
-          "HIGH-priority Linear issues auto-created for convention violations"
-        ]
-      },
-      {
-        "category": "Audit & Visibility",
-        "icon": "📋",
-        "color": "blue",
-        "items": [
-          "Color-coded Slack Block Kit messages for every flag lifecycle event",
-          "Full actor attribution -- who changed what and when",
-          "Archived flags preserved in Notion for permanent audit trail",
-          "Weekly digest summarizing flag health across all projects"
-        ]
-      },
-      {
-        "category": "Stale Flag Management",
-        "icon": "🧹",
-        "color": "yellow",
-        "items": [
-          "Weekly scan identifies flags older than 90 days with no activity",
-          "Duplicate Linear ticket prevention via pre-creation query",
-          "Notion registry auto-updated with cleanup status and ticket links",
-          "Configurable staleness threshold stored in agent memory"
-        ]
-      },
-      {
-        "category": "Registry Integrity",
-        "icon": "🗂️",
-        "color": "green",
-        "items": [
-          "Notion as single source of truth for organizational flag inventory",
-          "Reconciliation pass catches flags created outside webhook coverage",
-          "Rich metadata per flag: team ownership, status, governance notes",
-          "Missing entries detected and auto-created with Slack warnings"
-        ]
-      }
-    ],
-    "suggested_connectors": [
-      {
-        "name": "launchdarkly",
-        "label": "LaunchDarkly",
-        "auth_type": "api_token",
-        "credential_fields": [
+        "memory_policy": {
+          "enabled": true,
+          "context": "Memorize: processed webhook IDs (dedup), frequent actors per flag, naming-convention violations by owner team. Used to improve future collision heuristics and weight repeat offenders."
+        },
+        "event_subscriptions": [
           {
-            "key": "api_token",
-            "label": "API Access Token",
-            "type": "password",
-            "placeholder": "api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-            "helpText": "From LaunchDarkly -> Account Settings -> Authorization -> Access Tokens. Create a token with Reader role minimum; Writer role required to update flag metadata.",
-            "required": true
+            "event_type": "flag.governance.audited",
+            "direction": "emit",
+            "description": "Payload: { flag_key, change_type, actor, severity, notion_page_id, slack_ts }. Emitted after successful audit."
           },
           {
-            "key": "project_key",
-            "label": "Default Project Key",
-            "type": "text",
-            "placeholder": "my-project",
-            "helpText": "Your LaunchDarkly project key found in Account Settings -> Projects. Used as the default when scanning flags.",
-            "required": true
+            "event_type": "flag.governance.collision",
+            "direction": "emit",
+            "description": "Payload: { new_key, colliding_key, match_type (exact|near), severity, linear_ticket_url }. Emitted on detected collision."
           }
         ],
-        "setup_instructions": "1. Log in to LaunchDarkly and navigate to Account Settings -> Authorization.\n2. Click 'Create Token' under Access Tokens.\n3. Name it 'Governance Agent' and select the 'Reader' role (or 'Writer' if you want the agent to update flag metadata).\n4. Copy the token immediately -- it won't be shown again.\n5. Find your Project Key in Account Settings -> Projects and note it down.\n6. In LaunchDarkly -> Integrations -> Webhooks, create a new webhook pointing to your agent's webhook URL at /launchdarkly-flag-event. Enable all flag-related events.\n7. Optionally add a webhook signing secret and configure the X-LD-Signature header for validation.",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          0,
-          1,
-          2
-        ],
-        "api_base_url": "https://app.launchdarkly.com/api/v2",
-        "role": "feature_flags",
-        "category": "development"
-      },
-      {
-        "name": "slack",
-        "label": "Slack",
-        "auth_type": "bot_token",
-        "credential_fields": [
+        "error_handling": "LaunchDarkly 401 → emit error event, halt capability, alert Slack. Slack failure → queue audit card; never drop. Notion unavailable → post Slack '[key] not recorded — manual entry required'; capability does not silently skip the registry update. Duplicate webhook → skip via lastProcessedWebhookIds check.",
+        "input_schema": [
           {
-            "key": "bot_token",
-            "label": "Bot User OAuth Token",
-            "type": "password",
-            "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From api.slack.com -> Your Apps -> select your app -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: chat:write, chat:write.public.",
-            "required": true
+            "name": "naming_convention",
+            "type": "text",
+            "default": "{team}-{feature}-{variant}",
+            "description": "Team's enforced naming pattern. The agent flags keys that don't match this shape."
           },
           {
-            "key": "audit_channel",
-            "label": "Audit Channel ID",
-            "type": "text",
-            "placeholder": "C0123456789",
-            "helpText": "The Slack channel ID (not name) for flag audit posts. Right-click the channel in Slack -> Copy link -> extract the ID from the URL.",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' -> 'From scratch'.\n2. Name it 'Feature Flag Governance' and select your workspace.\n3. Navigate to OAuth & Permissions -> Scopes -> Bot Token Scopes. Add: chat:write, chat:write.public.\n4. Click 'Install to Workspace' and authorize. Copy the Bot User OAuth Token.\n5. Invite the bot to your #feature-flags-audit channel: /invite @feature-flag-governance.\n6. Copy the channel's ID from the Slack URL or right-click menu.",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          0,
-          1
-        ],
-        "api_base_url": "https://slack.com/api",
-        "role": "chat_messaging",
-        "category": "messaging"
-      },
-      {
-        "name": "linear",
-        "label": "Linear",
-        "auth_type": "api_key",
-        "credential_fields": [
-          {
-            "key": "api_key",
-            "label": "Personal API Key",
-            "type": "password",
-            "placeholder": "lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From Linear -> Settings -> API -> Personal API keys. Click 'Create key', name it 'Flag Governance Agent', and copy the generated key.",
-            "required": true
+            "name": "near_match_tokens",
+            "type": "number",
+            "default": 3,
+            "min": 1,
+            "max": 10,
+            "description": "How many leading dash-delimited tokens two keys must share to trigger a near-match WARNING."
           },
           {
-            "key": "team_name",
-            "label": "Team Name for Cleanup Tickets",
-            "type": "text",
-            "placeholder": "Engineering",
-            "helpText": "The exact team name in Linear where flag cleanup tickets should be created. The agent will resolve this to a team ID via the GraphQL API.",
-            "required": true
+            "name": "autonomy_level",
+            "type": "enum",
+            "options": ["collision_blocks", "advisory", "off"],
+            "default": "advisory",
+            "description": "Governance stance on collisions. 'collision_blocks' halts and routes to manual_review; 'advisory' alerts but lets the create stand; 'off' logs only."
           }
         ],
-        "setup_instructions": "1. Open Linear and navigate to Settings -> API (in the left sidebar).\n2. Under 'Personal API keys', click 'Create key' and name it 'Flag Governance Agent'.\n3. Copy the generated key (starts with lin_api_).\n4. Note your team's exact name -- the agent uses this to resolve the team ID via GraphQL.\n5. Optionally create a 'flag-cleanup' label in your team's Label settings so the agent can tag tickets automatically.",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          1
-        ],
-        "api_base_url": "https://api.linear.app/graphql",
-        "role": "project_tracking",
-        "category": "development"
-      },
-      {
-        "name": "notion",
-        "label": "Notion",
-        "auth_type": "integration_token",
-        "credential_fields": [
-          {
-            "key": "integration_token",
-            "label": "Internal Integration Token",
-            "type": "password",
-            "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "From notion.so/my-integrations -> New Integration -> Internal. Copy the Internal Integration Token (starts with 'secret_'). Then share your Flag Registry database with this integration.",
-            "required": true
-          },
-          {
-            "key": "database_id",
-            "label": "Flag Registry Database ID",
-            "type": "text",
-            "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "helpText": "Open your Notion flag registry database -> click '...' menu -> Copy link. The 32-character ID appears in the URL between the last slash and the question mark.",
-            "required": true
-          }
-        ],
-        "setup_instructions": "1. Go to notion.so/my-integrations and click 'New integration'.\n2. Name it 'Flag Governance Agent', select your workspace, and set Capabilities to: Read content, Update content, Insert content.\n3. Submit and copy the Internal Integration Secret.\n4. Create (or open) a Notion database for your flag registry with these properties: Flag Key (Title), Display Name (Text), Kind (Select), Project (Text), Created Date (Date), Last Modified (Date), Owner Team (Text), Status (Select: Active/Stale/Cleanup Pending/Archived/Governance Review), Linear Ticket (URL), Governance Notes (Text), LaunchDarkly URL (URL).\n5. Click '...' on the database -> Connections -> connect your integration.\n6. Copy the database ID from the page URL.",
-        "related_tools": [
-          "http_request"
-        ],
-        "related_triggers": [
-          0,
-          1,
-          2
-        ],
-        "api_base_url": "https://api.notion.com/v1",
-        "role": "knowledge_base",
-        "category": "productivity"
-      }
-    ],
-    "suggested_notification_channels": [
-      {
-        "type": "slack",
-        "description": "Primary audit channel for flag lifecycle events -- receives color-coded change notifications, collision alerts, and weekly stale flag digests",
-        "required_connector": "slack",
-        "config_hints": {
-          "channel": "#feature-flags-audit",
-          "alert_channel": "#eng-alerts"
+        "sample_input": {
+          "naming_convention": "{{param.aq_naming_convention}}",
+          "near_match_tokens": 3,
+          "autonomy_level": "{{param.aq_autonomy_level}}"
+        },
+        "tool_hints": ["http_request", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "a1", "type": "start", "label": "LaunchDarkly webhook fires" },
+            { "id": "a2", "type": "action", "label": "Dedupe via lastProcessedWebhookIds" },
+            { "id": "a3", "type": "decision", "label": "Is CREATE event?" },
+            { "id": "a4", "type": "connector", "label": "Fetch flags + query Notion for collisions", "connector": "launchdarkly" },
+            { "id": "a5", "type": "decision", "label": "Collision or violation?" },
+            { "id": "a6", "type": "connector", "label": "Post CRITICAL alert + create Linear ticket", "connector": "slack" },
+            { "id": "a7", "type": "connector", "label": "Post Block Kit audit card to Slack", "connector": "slack" },
+            { "id": "a8", "type": "connector", "label": "Upsert Notion registry entry", "connector": "notion" },
+            { "id": "a9", "type": "event", "label": "Emit flag.governance.audited / .collision" },
+            { "id": "a10", "type": "end", "label": "Audit complete" }
+          ],
+          "edges": [
+            { "source": "a1", "target": "a2" },
+            { "source": "a2", "target": "a3" },
+            { "source": "a3", "target": "a4", "variant": "yes", "label": "Create" },
+            { "source": "a3", "target": "a7", "variant": "no", "label": "Update/delete" },
+            { "source": "a4", "target": "a5" },
+            { "source": "a5", "target": "a6", "variant": "yes", "label": "Yes" },
+            { "source": "a5", "target": "a7", "variant": "no", "label": "Clean" },
+            { "source": "a6", "target": "a7" },
+            { "source": "a7", "target": "a8" },
+            { "source": "a8", "target": "a9" },
+            { "source": "a9", "target": "a10" }
+          ]
         }
-      }
-    ],
-    "suggested_event_subscriptions": [
-      {
-        "event_type": "persona.execution.completed",
-        "description": "Listen for completed executions to trigger post-run summary logging and verify all four service integrations completed successfully"
       },
       {
-        "event_type": "persona.execution.failed",
-        "description": "Listen for execution failures to alert the #eng-alerts Slack channel that governance coverage may have a gap requiring manual review"
-      }
-    ],
-    "use_case_flows": [
-      {
-        "id": "flow_1",
-        "name": "Flag Change Audit & Collision Detection",
-        "description": "Triggered by a LaunchDarkly webhook when any flag is created, modified, or deleted. Runs collision checks on creation and posts audit logs to Slack and Notion.",
-        "nodes": [
+        "id": "uc_stale_cleanup",
+        "title": "Stale Flag Cleanup",
+        "description": "Scheduled capability. Scans all LaunchDarkly flags, identifies ones past the stale threshold with no activity, creates Linear cleanup tickets (de-duped against existing open ones), updates Notion entries to 'Cleanup Pending', and posts a weekly digest. Default Monday 09:00 UTC — final cadence set at the trigger-composition step.",
+        "capability_summary": "Weekly stale-flag scan with Linear cleanup tickets, Notion status updates, and a Slack digest.",
+        "category": "development",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 9 * * 1", "timezone": "UTC" },
+          "description": "Default weekly Monday 09:00 UTC — final cadence set at the trigger-composition step."
+        },
+        "connectors": ["launchdarkly", "linear", "notion", "slack"],
+        "notification_channels": [
           {
-            "id": "n1",
-            "type": "start",
-            "label": "LaunchDarkly webhook fires",
-            "detail": "Webhook payload received at /launchdarkly-flag-event containing flag key, change type, actor, project, and environment"
-          },
-          {
-            "id": "n2",
-            "type": "action",
-            "label": "Parse & deduplicate",
-            "detail": "Read /tmp/flag-governance-state.json to check if this webhook ID was already processed. Extract flag metadata from payload."
-          },
-          {
-            "id": "n3",
-            "type": "decision",
-            "label": "Is this a CREATE event?",
-            "detail": "Check payload change type: 'created' vs 'updated', 'targeting-changed', 'deleted', 'archived'"
-          },
-          {
-            "id": "n4",
-            "type": "connector",
-            "label": "Fetch all LD flags",
-            "detail": "GET /flags/{projectKey} to retrieve full flag list for collision comparison",
-            "connector": "launchdarkly"
-          },
-          {
-            "id": "n5",
-            "type": "connector",
-            "label": "Query Notion registry",
-            "detail": "POST /databases/{db_id}/query to find existing entries and check for key matches",
-            "connector": "notion"
-          },
-          {
-            "id": "n6",
-            "type": "decision",
-            "label": "Collision detected?",
-            "detail": "Check for exact key match or near-match (sharing first 3 dash-delimited tokens). Also validate naming convention rules."
-          },
-          {
-            "id": "n7",
-            "type": "connector",
-            "label": "Post CRITICAL Slack alert",
-            "detail": "POST /chat.postMessage with red attachment, tag flag owner, describe collision risk",
-            "connector": "slack"
-          },
-          {
-            "id": "n8",
-            "type": "connector",
-            "label": "Create HIGH Linear issue",
-            "detail": "POST GraphQL issueCreate with title 'Resolve flag naming conflict: [key]', priority HIGH, label flag-governance",
-            "connector": "linear"
-          },
-          {
-            "id": "n9",
-            "type": "action",
-            "label": "Format audit message",
-            "detail": "Build Slack Block Kit message: color based on change type (green/yellow/red), include flag key, actor, timestamp, environment, change summary"
-          },
-          {
-            "id": "n10",
-            "type": "connector",
-            "label": "Post Slack audit message",
-            "detail": "POST https://slack.com/api/chat.postMessage to #feature-flags-audit channel with formatted Block Kit payload",
-            "connector": "slack"
-          },
-          {
-            "id": "n11",
-            "type": "connector",
-            "label": "Upsert Notion registry entry",
-            "detail": "Query for existing entry -> PATCH /pages/{id} if found, POST /pages if new. Update status, last modified, governance notes.",
-            "connector": "notion"
-          },
-          {
-            "id": "n12",
-            "type": "action",
-            "label": "Update local state file",
-            "detail": "Write processed webhook ID to /tmp/flag-governance-state.json to prevent duplicate processing"
-          },
-          {
-            "id": "n13",
-            "type": "error",
-            "label": "Handle API failure",
-            "detail": "If Notion unreachable: post Slack warning that manual registry entry required. If Slack unreachable: queue message in local state file.",
-            "error_message": "Integration unavailable -- governance gap detected"
-          },
-          {
-            "id": "n14",
-            "type": "end",
-            "label": "Audit complete"
+            "type": "slack",
+            "description": "Audit channel for the weekly stale-flag digest."
           }
         ],
-        "edges": [
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": true,
+          "context": "Memorize: per-flag age trajectories, previously-suppressed flags (user-excluded from cleanup), ticket outcomes (closed-as-fixed vs closed-as-wontfix) to calibrate future staleness signals."
+        },
+        "event_subscriptions": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "Yes -- creation",
-            "variant": "yes"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n9",
-            "label": "No -- update/delete",
-            "variant": "no"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          },
-          {
-            "id": "e7",
-            "source": "n6",
-            "target": "n7",
-            "label": "Yes -- collision",
-            "variant": "yes"
-          },
-          {
-            "id": "e8",
-            "source": "n6",
-            "target": "n9",
-            "label": "No -- clear",
-            "variant": "no"
-          },
-          {
-            "id": "e9",
-            "source": "n7",
-            "target": "n8"
-          },
-          {
-            "id": "e10",
-            "source": "n8",
-            "target": "n9"
-          },
-          {
-            "id": "e11",
-            "source": "n9",
-            "target": "n10"
-          },
-          {
-            "id": "e12",
-            "source": "n10",
-            "target": "n11"
-          },
-          {
-            "id": "e13",
-            "source": "n11",
-            "target": "n12"
-          },
-          {
-            "id": "e14",
-            "source": "n12",
-            "target": "n14"
-          },
-          {
-            "id": "e15",
-            "source": "n10",
-            "target": "n13",
-            "variant": "error"
-          },
-          {
-            "id": "e16",
-            "source": "n11",
-            "target": "n13",
-            "variant": "error"
-          },
-          {
-            "id": "e17",
-            "source": "n13",
-            "target": "n14",
-            "variant": "error"
-          }
-        ]
-      },
-      {
-        "id": "flow_2",
-        "name": "Weekly Stale Flag Cleanup Scan",
-        "description": "Runs every Monday at 9AM UTC. Scans all LaunchDarkly flags across configured projects, identifies stale flags older than 90 days, creates Linear tickets, updates Notion, and posts a digest to Slack.",
-        "nodes": [
-          {
-            "id": "n1",
-            "type": "start",
-            "label": "Weekly schedule fires",
-            "detail": "Cron trigger: 0 9 * * 1 (Monday 9AM UTC)"
-          },
-          {
-            "id": "n2",
-            "type": "action",
-            "label": "Load agent memory & state",
-            "detail": "Read notion_flag_db_id, linear_team_id, ld_project_keys, stale_threshold_days from agent_memory. Read last_weekly_scan from local state."
-          },
-          {
-            "id": "n3",
-            "type": "connector",
-            "label": "Fetch all flags from LaunchDarkly",
-            "detail": "GET /flags/{projectKey}?summary=true for each configured project key. Collect full flag list with creation dates and targeting status.",
-            "connector": "launchdarkly"
-          },
-          {
-            "id": "n4",
-            "type": "action",
-            "label": "Identify stale flags",
-            "detail": "Filter flags where: (today - creationDate) > stale_threshold_days AND (no active targeting rules OR zero recent evaluations). Build stale flag candidate list."
-          },
-          {
-            "id": "n5",
-            "type": "connector",
-            "label": "Query Notion for existing entries",
-            "detail": "POST /databases/{db_id}/query to get all registry entries. Build a map of flagKey -> {notionPageId, linearTicketUrl, status} for O(1) lookups.",
-            "connector": "notion"
-          },
-          {
-            "id": "n6",
-            "type": "decision",
-            "label": "Any stale flags found?",
-            "detail": "Check if stale candidate list is non-empty. If empty, skip to digest."
-          },
-          {
-            "id": "n7",
-            "type": "connector",
-            "label": "Check Linear for existing tickets",
-            "detail": "POST GraphQL query issues(filter: {title: {contains: flagKey}}) for each stale flag to prevent duplicate ticket creation.",
-            "connector": "linear"
-          },
-          {
-            "id": "n8",
-            "type": "decision",
-            "label": "Ticket already exists?",
-            "detail": "For each stale flag, check if an open Linear cleanup ticket was found. Route accordingly."
-          },
-          {
-            "id": "n9",
-            "type": "connector",
-            "label": "Create Linear cleanup ticket",
-            "detail": "POST GraphQL issueCreate with title 'Cleanup: [flagKey]', description with age/stats/links, teamId, priority Medium, label flag-cleanup",
-            "connector": "linear"
-          },
-          {
-            "id": "n10",
-            "type": "connector",
-            "label": "Update Notion entry",
-            "detail": "PATCH /pages/{notionPageId} setting Status='Cleanup Pending', Linear Ticket URL, Last Modified date, Governance Notes with scan timestamp",
-            "connector": "notion"
-          },
-          {
-            "id": "n11",
-            "type": "connector",
-            "label": "Post weekly digest to Slack",
-            "detail": "POST /chat.postMessage with Block Kit summary: total flags scanned, stale count, tickets created, tickets pre-existing, flags archived this week",
-            "connector": "slack"
-          },
-          {
-            "id": "n12",
-            "type": "action",
-            "label": "Update scan timestamp",
-            "detail": "Write last_weekly_scan ISO timestamp to agent_memory and local state file. Log summary to /tmp/flag-governance-state.json."
-          },
-          {
-            "id": "n13",
-            "type": "error",
-            "label": "Handle scan failure",
-            "detail": "If LaunchDarkly API fails: post Slack alert that weekly scan was incomplete. Preserve partial results.",
-            "error_message": "Weekly scan incomplete -- LaunchDarkly or Notion API unavailable"
-          },
-          {
-            "id": "n14",
-            "type": "end",
-            "label": "Weekly scan complete"
+            "event_type": "flag.governance.stale_scan_completed",
+            "direction": "emit",
+            "description": "Payload: { total_scanned, stale_count, tickets_created, tickets_existing, archived_this_week }."
           }
         ],
-        "edges": [
+        "error_handling": "LaunchDarkly API fail → alert Slack that weekly scan was incomplete; preserve partial results in state. Linear 429 → respect Retry-After, batch rest of scan on retry. Notion partial-update → log and continue; the next reconciliation pass fixes any gaps.",
+        "input_schema": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
+            "name": "stale_threshold_days",
+            "type": "number",
+            "default": 90,
+            "min": 30,
+            "max": 365,
+            "description": "Days since creation with no activity before a flag is flagged stale."
           },
           {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4"
-          },
-          {
-            "id": "e4",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e5",
-            "source": "n5",
-            "target": "n6"
-          },
-          {
-            "id": "e6",
-            "source": "n6",
-            "target": "n7",
-            "label": "Yes -- stale flags found",
-            "variant": "yes"
-          },
-          {
-            "id": "e7",
-            "source": "n6",
-            "target": "n11",
-            "label": "No -- all flags healthy",
-            "variant": "no"
-          },
-          {
-            "id": "e8",
-            "source": "n7",
-            "target": "n8"
-          },
-          {
-            "id": "e9",
-            "source": "n8",
-            "target": "n9",
-            "label": "No ticket yet",
-            "variant": "no"
-          },
-          {
-            "id": "e10",
-            "source": "n8",
-            "target": "n10",
-            "label": "Already has ticket",
-            "variant": "yes"
-          },
-          {
-            "id": "e11",
-            "source": "n9",
-            "target": "n10"
-          },
-          {
-            "id": "e12",
-            "source": "n10",
-            "target": "n11"
-          },
-          {
-            "id": "e13",
-            "source": "n11",
-            "target": "n12"
-          },
-          {
-            "id": "e14",
-            "source": "n12",
-            "target": "n14"
-          },
-          {
-            "id": "e15",
-            "source": "n3",
-            "target": "n13",
-            "variant": "error"
-          },
-          {
-            "id": "e16",
-            "source": "n5",
-            "target": "n13",
-            "variant": "error"
-          },
-          {
-            "id": "e17",
-            "source": "n13",
-            "target": "n14",
-            "variant": "error"
-          }
-        ]
-      },
-      {
-        "id": "flow_3",
-        "name": "On-Demand Registry Reconciliation",
-        "description": "Manual trigger that performs a full reconciliation between the live LaunchDarkly flag list and the Notion registry, identifying gaps and ensuring governance coverage is complete.",
-        "nodes": [
-          {
-            "id": "n1",
-            "type": "start",
-            "label": "Manual reconciliation triggered",
-            "detail": "User initiates on-demand sync to validate Notion registry completeness against LaunchDarkly ground truth"
-          },
-          {
-            "id": "n2",
-            "type": "connector",
-            "label": "Fetch all LaunchDarkly flags",
-            "detail": "GET /flags/{projectKey} for all configured projects. Build Set of all LD flag keys.",
-            "connector": "launchdarkly"
-          },
-          {
-            "id": "n3",
-            "type": "connector",
-            "label": "Fetch all Notion entries",
-            "detail": "POST /databases/{db_id}/query with pagination to retrieve all registry entries. Build Set of all Notion flag keys.",
-            "connector": "notion"
-          },
-          {
-            "id": "n4",
-            "type": "action",
-            "label": "Compute diff",
-            "detail": "Find: (1) flags in LD but missing from Notion -- need creation. (2) Flags in Notion but missing from LD -- may have been deleted without webhook. (3) Stale Notion entries with outdated metadata."
-          },
-          {
-            "id": "n5",
-            "type": "decision",
-            "label": "Gaps found?",
-            "detail": "Check if either missing-from-Notion or missing-from-LD lists are non-empty"
-          },
-          {
-            "id": "n6",
-            "type": "connector",
-            "label": "Create missing Notion entries",
-            "detail": "For each LD flag missing from Notion: POST /pages with full metadata including flag key, kind, created date, project, status Active",
-            "connector": "notion"
-          },
-          {
-            "id": "n7",
-            "type": "connector",
-            "label": "Mark orphaned Notion entries",
-            "detail": "For Notion entries whose flag no longer exists in LD: PATCH /pages/{id} setting Status='Archived' and adding governance note 'Removed from LD -- no webhook event captured'",
-            "connector": "notion"
-          },
-          {
-            "id": "n8",
-            "type": "connector",
-            "label": "Post reconciliation report to Slack",
-            "detail": "POST /chat.postMessage with summary: total LD flags, total Notion entries, gaps created, orphans archived, sync timestamp",
-            "connector": "slack"
-          },
-          {
-            "id": "n9",
-            "type": "event",
-            "label": "Emit reconciliation complete",
-            "detail": "Emit user_message with reconciliation summary statistics for display in Personas UI"
-          },
-          {
-            "id": "n10",
-            "type": "error",
-            "label": "Handle API failure",
-            "detail": "If either API fails during fetch, abort reconciliation and post Slack warning. Do not write partial results.",
-            "error_message": "Reconciliation aborted -- incomplete data from LaunchDarkly or Notion"
-          },
-          {
-            "id": "n11",
-            "type": "end",
-            "label": "Reconciliation complete"
+            "name": "ld_project_keys",
+            "type": "text",
+            "default": "",
+            "description": "Comma-separated LaunchDarkly project keys the scan should cover. Leave empty to use the default project key from the connector."
           }
         ],
-        "edges": [
+        "sample_input": {
+          "stale_threshold_days": "{{param.aq_stale_threshold_days}}",
+          "ld_project_keys": "{{param.aq_ld_project_keys}}"
+        },
+        "tool_hints": ["http_request", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "s1", "type": "start", "label": "Scheduled tick" },
+            { "id": "s2", "type": "connector", "label": "Fetch all flags from LD", "connector": "launchdarkly" },
+            { "id": "s3", "type": "action", "label": "Filter stale (> threshold + no activity)" },
+            { "id": "s4", "type": "decision", "label": "Any stale flags?" },
+            { "id": "s5", "type": "connector", "label": "Query Linear for existing cleanup tickets", "connector": "linear" },
+            { "id": "s6", "type": "connector", "label": "Create missing Linear tickets + update Notion entries", "connector": "linear" },
+            { "id": "s7", "type": "connector", "label": "Post weekly digest to Slack", "connector": "slack" },
+            { "id": "s8", "type": "event", "label": "Emit flag.governance.stale_scan_completed" },
+            { "id": "s9", "type": "end", "label": "Scan complete" }
+          ],
+          "edges": [
+            { "source": "s1", "target": "s2" },
+            { "source": "s2", "target": "s3" },
+            { "source": "s3", "target": "s4" },
+            { "source": "s4", "target": "s5", "variant": "yes", "label": "Yes" },
+            { "source": "s4", "target": "s7", "variant": "no", "label": "None" },
+            { "source": "s5", "target": "s6" },
+            { "source": "s6", "target": "s7" },
+            { "source": "s7", "target": "s8" },
+            { "source": "s8", "target": "s9" }
+          ]
+        }
+      },
+      {
+        "id": "uc_registry_reconciliation",
+        "title": "Registry Reconciliation",
+        "description": "Reconciles the full LaunchDarkly flag list against the Notion registry. Creates missing entries, marks orphaned entries as 'Archived' with governance notes, and posts a Slack summary. Default monthly on the 1st at 02:00 — final cadence set at the trigger-composition step. Also runnable on demand.",
+        "capability_summary": "Monthly full-registry reconciliation + Slack summary.",
+        "category": "development",
+        "enabled_by_default": true,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 2 1 * *", "timezone": "UTC" },
+          "description": "Default monthly on the 1st at 02:00 UTC — final cadence set at the trigger-composition step. Also invokable manually."
+        },
+        "connectors": ["launchdarkly", "notion", "slack"],
+        "notification_channels": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4"
-          },
-          {
-            "id": "e4",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e5",
-            "source": "n5",
-            "target": "n6",
-            "label": "Yes -- gaps detected",
-            "variant": "yes"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n8",
-            "label": "No -- registry in sync",
-            "variant": "no"
-          },
-          {
-            "id": "e7",
-            "source": "n6",
-            "target": "n7"
-          },
-          {
-            "id": "e8",
-            "source": "n7",
-            "target": "n8"
-          },
-          {
-            "id": "e9",
-            "source": "n8",
-            "target": "n9"
-          },
-          {
-            "id": "e10",
-            "source": "n9",
-            "target": "n11"
-          },
-          {
-            "id": "e11",
-            "source": "n2",
-            "target": "n10",
-            "variant": "error"
-          },
-          {
-            "id": "e12",
-            "source": "n3",
-            "target": "n10",
-            "variant": "error"
-          },
-          {
-            "id": "e13",
-            "source": "n10",
-            "target": "n11",
-            "variant": "error"
+            "type": "slack",
+            "description": "Audit channel for the reconciliation summary."
           }
-        ]
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "manual_review",
-        "label": "Approval workflow for high-impact actions",
-        "context": "Approval workflow detected in instructions"
-      },
-      {
-        "type": "user_message",
-        "label": "Real-time Slack notifications for status updates and alerts (periodic digests, critical alerts, completion confirmations, error notifications)",
-        "context": "1 notification channel(s) configured: slack"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Persistent state across runs for pattern recognition and deduplication",
-        "context": "Tracks: human review outcomes, calibrated thresholds"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: execution completed, execution failed, item created, threshold breached",
-        "context": "2 event subscription(s) configured -- agent participates in event bus"
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "flag.governance.reconciled",
+            "direction": "emit",
+            "description": "Payload: { total_ld, total_notion, created_in_notion, archived_orphans, sync_timestamp }."
+          }
+        ],
+        "error_handling": "Either API fail → abort reconciliation, post Slack warning, do NOT write partial results. This capability is read-heavy — the cost of half-finishing is far higher than skipping.",
+        "input_schema": [],
+        "sample_input": {},
+        "tool_hints": ["http_request", "file_read", "file_write"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "r1", "type": "start", "label": "Scheduled or manual invoke" },
+            { "id": "r2", "type": "connector", "label": "Fetch all LD flags", "connector": "launchdarkly" },
+            { "id": "r3", "type": "connector", "label": "Fetch all Notion entries", "connector": "notion" },
+            { "id": "r4", "type": "action", "label": "Compute diff (missing / orphaned)" },
+            { "id": "r5", "type": "connector", "label": "Create missing + archive orphaned Notion entries", "connector": "notion" },
+            { "id": "r6", "type": "connector", "label": "Post reconciliation summary", "connector": "slack" },
+            { "id": "r7", "type": "event", "label": "Emit flag.governance.reconciled" },
+            { "id": "r8", "type": "end", "label": "Reconciliation complete" }
+          ],
+          "edges": [
+            { "source": "r1", "target": "r2" },
+            { "source": "r2", "target": "r3" },
+            { "source": "r3", "target": "r4" },
+            { "source": "r4", "target": "r5" },
+            { "source": "r5", "target": "r6" },
+            { "source": "r6", "target": "r7" },
+            { "source": "r7", "target": "r8" }
+          ]
+        }
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_intent_1",
-        "category": "intent",
-        "question": "What is your primary goal for this Feature Flag Governance agent?",
+        "id": "aq_slack_audit_channel",
+        "scope": "connector",
+        "connector_names": ["slack"],
+        "category": "configuration",
+        "question": "Which Slack channel should receive flag audit posts, collision alerts, and weekly digests?",
         "type": "select",
-        "options": [
-          "Audit trail & compliance — track every flag change with full accountability",
-          "Stale flag cleanup — reduce flag debt and keep LaunchDarkly tidy",
-          "Naming convention enforcement — prevent collisions and maintain consistency",
-          "Full lifecycle governance — all of the above"
-        ],
-        "default": "Full lifecycle governance — all of the above",
-        "context": "Determines which flows to prioritize and how assertively the agent acts on each",
-        "dimension": "use-cases"
+        "default": "",
+        "maps_to": "persona.notification_channels_default[0].description",
+        "variable_name": "slack_audit_channel",
+        "context": "Block Kit audit cards and the weekly stale-flag digest both land here. Pick a low-noise governance channel.",
+        "dimension": "messages",
+        "vault_category": "messaging",
+        "option_service_types": ["slack"],
+        "dynamic_source": {
+          "service_type": "slack",
+          "operation": "list_channels"
+        }
       },
       {
-        "id": "aq_domain_1",
-        "category": "domain",
-        "question": "How many LaunchDarkly projects and environments does your team manage?",
-        "type": "select",
-        "options": [
-          "1 project, 2–3 environments (dev / staging / prod)",
-          "2–5 projects, multiple environments",
-          "6+ projects or a large multi-team setup",
-          "Single project, production only"
-        ],
-        "default": "1 project, 2–3 environments (dev / staging / prod)",
-        "context": "Affects scope of weekly stale scans, Notion registry structure, and whether Slack routing should be per-project",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_configuration_1",
+        "id": "aq_naming_convention",
+        "scope": "capability",
+        "use_case_ids": ["uc_flag_audit"],
         "category": "configuration",
         "question": "What flag naming convention does your team enforce?",
         "type": "text",
-        "default": "e.g., {team}-{feature}-{variant} in kebab-case",
-        "context": "The agent uses this pattern to detect collisions and flag non-conforming keys at creation time",
-        "dimension": "triggers"
+        "default": "{team}-{feature}-{variant}",
+        "maps_to": "use_cases[uc_flag_audit].sample_input.naming_convention",
+        "variable_name": "naming_convention",
+        "context": "Keys must be lowercase kebab-case, start with one of your team's allowed domain prefixes (payments-, auth-, ui-, infra-), be ≤60 chars, and avoid generic names (test, flag, temp, new, old). The agent flags violations via Slack + Notion governance notes.",
+        "dimension": "use-cases"
       },
       {
-        "id": "aq_configuration_2",
-        "category": "configuration",
-        "question": "After how many days of inactivity should a flag be considered stale and trigger a Linear cleanup ticket?",
-        "type": "select",
-        "options": [
-          "30 days",
-          "60 days",
-          "90 days (default)",
-          "180 days"
-        ],
-        "default": "90 days (default)",
-        "context": "Controls the staleness threshold used in the weekly Monday scan",
-        "dimension": "triggers"
-      },
-      {
-        "id": "aq_boundaries_1",
+        "id": "aq_autonomy_level",
+        "scope": "capability",
+        "use_case_ids": ["uc_flag_audit"],
         "category": "boundaries",
-        "question": "What should this agent NEVER do without explicit human instruction?",
+        "question": "How autonomously should the agent act on naming collisions?",
         "type": "select",
         "options": [
-          "Never archive or delete flags in LaunchDarkly — only create cleanup tickets",
-          "Never post outside the designated #feature-flags-audit Slack channel",
-          "Never modify the Notion registry without a corresponding LaunchDarkly event",
-          "All of the above"
+          "collision_blocks — halt on collision and require human resolution",
+          "advisory — alert on collision but let the create stand",
+          "off — log collisions only, no alerts"
         ],
-        "default": "Never archive or delete flags in LaunchDarkly — only create cleanup tickets",
-        "context": "Guards against destructive autonomous actions on live feature flags or shared tooling",
-        "dimension": "error-handling"
+        "default": "advisory — alert on collision but let the create stand",
+        "maps_to": "use_cases[uc_flag_audit].sample_input.autonomy_level",
+        "variable_name": "autonomy_level",
+        "context": "collision_blocks is the strictest — use for high-value product flags. advisory is the balanced default. Off is for read-only observability deployments.",
+        "dimension": "use-cases"
       },
       {
-        "id": "aq_human_in_the_loop_1",
-        "category": "human_in_the_loop",
-        "question": "Which agent actions should pause and surface for human review before executing?",
+        "id": "aq_stale_threshold_days",
+        "scope": "capability",
+        "use_case_ids": ["uc_stale_cleanup"],
+        "category": "configuration",
+        "question": "After how many days of inactivity should a flag be flagged stale?",
         "type": "select",
-        "options": [
-          "Stale-flag Linear ticket creation only — Slack and Notion updates are automatic",
-          "Both Linear tickets and bulk Notion registry changes from reconciliation runs",
-          "Collision blocks only — halt flag creation and alert until a human resolves the name conflict",
-          "No approval needed — run fully automated"
-        ],
-        "default": "Stale-flag Linear ticket creation only — Slack and Notion updates are automatic",
-        "context": "Defines where the agent pauses vs. acts immediately; critical for production flag safety",
-        "dimension": "human-review"
+        "options": ["30", "60", "90", "180"],
+        "default": "90",
+        "maps_to": "use_cases[uc_stale_cleanup].sample_input.stale_threshold_days",
+        "variable_name": "stale_threshold_days",
+        "context": "Controls the weekly Monday stale-scan cutoff. 90 is the battle-tested default; tighten to 60 if your team ships fast-iterating flags, loosen to 180 for slow-moving products.",
+        "dimension": "use-cases"
       },
       {
-        "id": "aq_credentials_1",
-        "category": "credentials",
-        "question": "Which LaunchDarkly environments should the agent monitor for webhook audit events?",
-        "type": "select",
-        "options": [
-          "Production only",
-          "Staging and production only",
-          "All environments (dev, staging, production)",
-          "Custom — I'll specify per-project in configuration"
-        ],
-        "default": "All environments (dev, staging, production)",
-        "context": "Determines which webhook payloads the agent processes and which environments appear in the Notion registry",
-        "dimension": "connectors"
-      },
-      {
-        "id": "aq_quality_1",
-        "category": "quality",
-        "question": "How detailed should Slack audit notifications be for flag change events?",
-        "type": "select",
-        "options": [
-          "Compact — single-line summary (flag key, actor, change type)",
-          "Standard — Block Kit card with flag metadata, environment, and severity color",
-          "Detailed — full diff including previous vs. new targeting rules and rollout percentages"
-        ],
-        "default": "Standard — Block Kit card with flag metadata, environment, and severity color",
-        "context": "Balances Slack channel signal-to-noise against the depth of audit information surfaced",
+        "id": "aq_ld_project_keys",
+        "scope": "capability",
+        "use_case_ids": ["uc_stale_cleanup"],
+        "category": "configuration",
+        "question": "Which LaunchDarkly project keys should the weekly scan cover? (comma-separated, leave empty for default)",
+        "type": "text",
+        "default": "",
+        "maps_to": "use_cases[uc_stale_cleanup].sample_input.ld_project_keys",
+        "variable_name": "ld_project_keys",
+        "context": "Scans the configured projects for stale flags. Empty uses only the default project key from the LaunchDarkly connector credential.",
         "dimension": "use-cases"
       }
     ],
-    "suggested_parameters": [
-      {
-        "key": "execution_discipline",
-        "label": "Execution Discipline",
-        "type": "select",
-        "default_value": "deliberate",
-        "value": "deliberate",
-        "description": "Controls how this persona handles ambiguity. 'deliberate' (default for code personas) clarifies via manual_review, stays surgical, and verifies before emitting; 'autonomous' executes immediately without clarifying questions.",
-        "options": [
-          "autonomous",
-          "deliberate"
-        ]
-      }
-    ]
-  },
-  "is_published": true
+    "persona_meta": {
+      "name": "T: Feature Flag Governance",
+      "icon": "Flag",
+      "color": "#10B981"
+    }
+  }
 }
