@@ -60,6 +60,7 @@ import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
+import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
 // ---------------------------------------------------------------------------
 // Tone selection
@@ -635,34 +636,6 @@ function firstGrapheme(s: string): string {
   return arr[0] ?? '';
 }
 
-/**
- * Rough relative-time label using i18n keys:
- *   - < 1 minute     → "just now"
- *   - < 1 hour       → "{m}m ago"
- *   - < 24 hours     → "{h}h ago"
- *   - otherwise      → "{d}d ago"
- *
- * Accepts null for personas that have never run; returns em-dash as a
- * stable placeholder so tile layouts don't reflow when the value lands.
- *
- * File-local for now. Phase 09 Inbox may extract this to a shared util if
- * it needs the same labels; not worth the indirection at one caller.
- */
-function formatRelativeTime(t: TMap, iso: string | null): string {
-  if (!iso) return '—';
-  const ts = Date.parse(iso);
-  if (Number.isNaN(ts)) return '—';
-  const delta = Date.now() - ts;
-  const min = Math.floor(delta / 60000);
-  if (min < 1) return t.console_relative_just_now;
-  if (min < 60) return interpolate(t.console_relative_m_ago, { m: min });
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return interpolate(t.console_relative_h_ago, { h: hr });
-  const d = Math.floor(hr / 24);
-  return interpolate(t.console_relative_d_ago, { d });
-}
-
-/** Minimal single-brace interpolation matching `tx()`'s semantics. */
-function interpolate(template: string, vars: Record<string, number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
-}
+// Relative-time helper extracted to `../../utils/formatRelativeTime` in
+// Phase 09 so the Inbox variant (Task 4) can render the same labels. See
+// that file for bucketing rules.
