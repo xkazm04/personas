@@ -28,3 +28,6 @@ export type {
   InboxActionLabelKey,
   ActionTone,
 } from './hooks/useInboxActions';
+
+export { ModeComparisonCard } from './components/ModeComparisonCard';
+export type { ModeComparisonCardProps } from './components/ModeComparisonCard';
