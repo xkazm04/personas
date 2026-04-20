@@ -1674,7 +1674,38 @@ async fn handle_execution_result(
     scheduler: Option<Arc<SchedulerState>>,
     healing_personas: Arc<Mutex<HashSet<String>>>,
 ) {
-    let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
+    // Evaluate output assertions BEFORE the status write so critical-severity
+    // failures can downgrade an otherwise-successful execution to Incomplete.
+    // This catches silent setup failures (e.g. "credentials are not configured"
+    // prose) that the CLI-exit-code success gate misses — the baseline
+    // `NotContains` assertion injected by `template_v3::hoist_output_assertions`
+    // fires here, and Phase 5's notification bridge surfaces `Incomplete` as
+    // a `warning` in the TitleBar bell.
+    let pre_output = result.output.as_deref().unwrap_or("");
+    let assertion_summary = if result.success && !pre_output.is_empty() {
+        Some(output_assertions::evaluate_assertions(pool, exec_id, persona_id, pre_output))
+    } else {
+        None
+    };
+    let assertion_downgrade = assertion_summary
+        .as_ref()
+        .filter(|s| s.critical_failures > 0);
+
+    let status = if !result.success {
+        ExecutionState::Failed
+    } else if assertion_downgrade.is_some() {
+        ExecutionState::Incomplete
+    } else {
+        ExecutionState::Completed
+    };
+
+    // When assertions force a downgrade, attach the first critical failure
+    // as the execution's error message so the notification center shows the
+    // reason ("Baseline blocker detection: ...") instead of a blank warning.
+    let effective_error = match (&assertion_downgrade, &result.error) {
+        (Some(summary), _) => summary.first_critical_failure.clone().or_else(|| result.error.clone()),
+        (None, err) => err.clone(),
+    };
 
     // Write final status to DB. Use conditional write to avoid overwriting
     // a terminal status if a concurrent cancel already finalized the execution.
@@ -1685,7 +1716,7 @@ async fn handle_execution_result(
         UpdateExecutionStatus {
             status,
             output_data: result.output.clone(),
-            error_message: result.error.clone(),
+            error_message: effective_error,
             duration_ms: Some(result.duration_ms as i64),
             log_file_path: result.log_file_path.clone(),
             execution_flows: result.execution_flows.clone(),
@@ -1758,25 +1789,21 @@ async fn handle_execution_result(
         );
     }
 
-    // Output assertion evaluation -- continuous declarative checks
-    if result.success {
-        let output_text = exec_repo::get_by_id(pool, exec_id)
-            .ok()
-            .and_then(|e| e.output_data)
-            .unwrap_or_default();
-        if !output_text.is_empty() {
-            let summary = output_assertions::evaluate_assertions(pool, exec_id, persona_id, &output_text);
-            if summary.total > 0 {
-                tracing::info!(
-                    execution_id = %exec_id,
-                    persona_id,
-                    total = summary.total,
-                    passed = summary.passed,
-                    failed = summary.failed,
-                    "Output assertions evaluated"
-                );
-                let _ = app.emit(event_name::ASSERTION_RESULTS, &summary);
-            }
+    // Output assertion summary — already evaluated pre-persist so the status
+    // downgrade could be factored in. Log + emit here so downstream consumers
+    // (Execution Detail assertion tab, notification center) see the result.
+    if let Some(ref summary) = assertion_summary {
+        if summary.total > 0 {
+            tracing::info!(
+                execution_id = %exec_id,
+                persona_id,
+                total = summary.total,
+                passed = summary.passed,
+                failed = summary.failed,
+                critical_failures = summary.critical_failures,
+                "Output assertions evaluated"
+            );
+            let _ = app.emit(event_name::ASSERTION_RESULTS, summary);
         }
     }
 

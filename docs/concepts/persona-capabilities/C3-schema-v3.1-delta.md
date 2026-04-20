@@ -216,7 +216,88 @@ No schema change — documentation update. Authoring convention:
 `<domain>.<subdomain>.<action>`. Linter-level check in the checksum
 tool optional (not in this delta).
 
-### 2.6 Removals
+### 2.6 `payload.persona.output_assertions[]` + `payload.use_cases[i].output_assertions[]`
+
+**Addendum — 2026-04-21 (Phase 6 of EXEC-VERIF-PLAN):**
+
+Declarative post-execution checks against the LLM output. Evaluated by the
+existing `output_assertions.rs` engine; `critical`-severity failures downgrade
+the execution status from `Completed` → `Incomplete`, which Phase 5's
+notification bridge surfaces as a `warning` in the TitleBar bell.
+
+```jsonc
+"persona": {
+  ...
+  "output_assertions": [
+    {
+      "name": "No silent PR abort",
+      "description": "Fires when the LLM admits it opened a PR without green tests.",
+      "type": "not_contains",                  // regex | json_path | contains | not_contains | json_schema | length
+      "config": {                              // shape depends on type — see output_assertions.rs
+        "patterns": ["opening PR despite test failures", "skipped running tests"],
+        "case_sensitive": false
+      },
+      "severity": "critical",                  // info | warning | critical  — only `critical` downgrades status
+      "on_failure": "log",                     // log | review | heal
+      "enabled": true                          // default true
+    }
+  ],
+  // Opt out of the baseline NotContains assertion that the normalizer
+  // otherwise auto-injects (credentials-missing / no-access phrases).
+  // Use only when the baseline's phrase set conflicts with legitimate output
+  // (e.g. a security-audit persona that NEEDS to say "I don't have access to").
+  "output_assertions_opt_out_baseline": false
+}
+
+"use_cases": [
+  {
+    "id": "uc_backlog_scan",
+    ...
+    "output_assertions": [ /* per-UC additions; same shape as above */ ]
+  }
+]
+```
+
+**Baseline injection** (always active unless the persona-level opt-out is
+set) — `template_v3::baseline_not_contains_assertion` adds:
+
+```jsonc
+{
+  "name": "Baseline blocker detection",
+  "type": "not_contains",
+  "severity": "critical",
+  "config": {
+    "patterns": [
+      "credentials are not configured",
+      "cannot proceed without",
+      "skipping this step because",
+      "I don't have access to",
+      "is not available in this environment"
+    ],
+    "case_sensitive": false
+  }
+}
+```
+
+**Persist path:** normalizer's `hoist_output_assertions` merges persona + per-UC
+entries into `payload.suggested_output_assertions[]`, which deserializes into
+`AgentIr.output_assertions`. At promote time,
+`build_sessions.rs::create_output_assertions_in_tx` inserts one row per
+entry into the `output_assertions` table — joining automatically with the
+existing evaluation pipeline.
+
+**Runtime downgrade:** `engine/mod.rs::handle_execution_result` now evaluates
+assertions *before* the status write. If `summary.critical_failures > 0`, the
+execution is persisted as `Incomplete` with the first critical failure's
+explanation as the error message.
+
+**Per-UC scope:** the `use_case_id` field on each entry is populated by the
+normalizer (null for persona-level, the UC id for per-UC). The evaluation
+engine currently ignores this field — all enabled assertions run against
+every execution. Per-UC targeting is a follow-up (tracked in EXEC-VERIF-PLAN
+Phase 10).
+
+### 2.7 Removals
 
 - **`payload.adoption_questions[i]` — remove any question whose
   intent is "toggle this use case on/off"**. The picker owns that.

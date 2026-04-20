@@ -102,5 +102,16 @@ pub struct ExecutionAssertionSummary {
     pub passed: i64,
     #[ts(type = "number")]
     pub failed: i64,
+    /// Subset of `failed` whose owning assertion had `severity: "critical"`.
+    /// Drives the post-execution status downgrade from `Completed` →
+    /// `Incomplete` so semantic blockers surface in the notification center.
+    #[serde(default)]
+    #[ts(type = "number")]
+    pub critical_failures: i64,
+    /// First critical-severity failure explanation — used as the execution's
+    /// error message when a downgrade occurs. `None` when no critical
+    /// assertion failed.
+    #[serde(default)]
+    pub first_critical_failure: Option<String>,
     pub results: Vec<AssertionResult>,
 }

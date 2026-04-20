@@ -37,7 +37,20 @@ actually enforces:
 
 ## Phase 5 — Execution lifecycle → Notification Center
 
-**Status:** in progress
+**Status:** complete (2026-04-20, commit `42f3af58`)
+
+**What shipped:**
+- Added an `EXECUTION_STATUS` listener entry to `src/lib/eventBridge.ts`
+  that bridges `failed | cancelled | incomplete` terminal states into
+  `useNotificationCenterStore.addProcessNotification(...)`.
+- Persona name recovered from the overview store's `activeProcesses` /
+  `recentProcesses` tracker (populated earlier by `PROCESS_ACTIVITY`).
+- `incomplete` normalized to `warning`, `cancelled` to `canceled`,
+  `failed` stays `failed`.
+- Error message preferred from `payload.error`; falls back to a
+  status-specific string if missing.
+- Zero Rust change; existing `PROCESS_ACTIVITY` handler still drives
+  the live dock indicator.
 
 **Goal:** Every failed / cancelled execution appears in the `TitleBar` bell
 with status, persona name, error summary, and a click-through to the execution
@@ -67,7 +80,36 @@ detail page.
 
 ## Phase 6 — Pre-execution connector healthcheck + semantic output assertions
 
-**Status:** pending
+**Status:** partially complete (2026-04-21) — assertions shipped; healthcheck gate deferred to Phase 6b.
+
+**What shipped in Phase 6a:**
+- `docs/concepts/persona-capabilities/C3-schema-v3.1-delta.md` §2.6 addendum
+  documenting `output_assertions[]` + opt-out.
+- `src-tauri/src/engine/template_v3.rs::hoist_output_assertions` merges
+  persona-level + per-UC assertions into `suggested_output_assertions[]`,
+  auto-injects the baseline `NotContains` unless `output_assertions_opt_out_baseline: true`.
+- `src-tauri/src/db/models/agent_ir.rs` — `AgentIr.output_assertions` field
+  (aliased to `suggested_output_assertions`).
+- `src-tauri/src/commands/design/build_sessions.rs::create_output_assertions_in_tx`
+  persists each entry into `output_assertions` table atomically inside the
+  promote transaction.
+- `src-tauri/src/db/models/output_assertion.rs` — `ExecutionAssertionSummary`
+  gains `critical_failures: i64` + `first_critical_failure: Option<String>`.
+- `src-tauri/src/engine/output_assertions.rs::evaluate_assertions` counts
+  critical failures + captures the first one's explanation.
+- `src-tauri/src/engine/mod.rs::handle_execution_result` evaluates assertions
+  *before* the status write. `critical_failures > 0` downgrades
+  `Completed → Incomplete` and uses the first critical failure as the error
+  message (so Phase 5's notification shows it).
+- `scripts/templates/development/dev-clone.json` — reference `output_assertions[]`
+  example.
+- Checksums regenerated (107 templates).
+
+**Deferred to Phase 6b:** pre-execution healthcheck gate. The assertion layer
+already catches the Telegram-style symptom ("credentials are not configured"
+baseline pattern) from the LLM's output. The healthcheck gate is belt-and-
+suspenders — valuable for sparing LLM tokens, but needs more care on
+network-bound timeouts and healthcheck result caching than fits here.
 
 **Goal:** Personas never burn LLM tokens faking around a broken connector;
 and prose-level blockers (e.g. "credentials not configured") are caught post-run.

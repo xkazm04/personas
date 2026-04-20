@@ -1,22 +1,349 @@
-import { Inbox } from 'lucide-react';
+/**
+ * InboxVariant — Phase 09 Simple-mode "Inbox" tab.
+ *
+ * Third and deepest consumer of the Phase 05-11 foundation. Where Mosaic
+ * (Phase 07) is a glanceable magazine and Console (Phase 08) is a live
+ * dashboard, Inbox is the surface where the user TAKES action: approve a
+ * payment, reject an automation decision, fix a broken connector, read a
+ * message.
+ *
+ * Layout (master-detail):
+ *   ┌────────────────────┬──────────────────────────────────┐
+ *   │ FILTERS            │  DETAIL HEADER                   │
+ *   ├────────────────────┼──────────────────────────────────┤
+ *   │                    │                                  │
+ *   │   MASTER LIST      │   DETAIL BODY (per-kind)         │
+ *   │   (~320px wide)    │                                  │
+ *   │   scrollable       │   scrollable                     │
+ *   │                    │                                  │
+ *   ├────────────────────┼──────────────────────────────────┤
+ *   │ NAV HINT (X of Y)  │   ACTION ZONE (tertiary/primary) │
+ *   └────────────────────┴──────────────────────────────────┘
+ *
+ * Everything else:
+ *   - `useUnifiedInbox()` is the single read surface (same as Mosaic/Console).
+ *   - `useInboxActions(selected)` returns a stable { primary, secondary,
+ *     tertiary } triple driving the bottom action zone.
+ *   - Selection auto-falls-back to the first item if the current selection
+ *     disappears (e.g. after an approval resolves and the store re-fetches).
+ *   - Keyboard: ArrowDown/ArrowUp navigate, Enter fires the primary action.
+ *     Arrow+Enter are suppressed while a textarea/input is focused so the
+ *     notes field keeps working.
+ *   - Busy state disables buttons + swaps label to inb.action_running.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { Check } from 'lucide-react';
+
+import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
+
+import { SimpleEmptyState } from '../SimpleEmptyState';
+import { InboxDetail } from '../inbox/InboxDetail';
+import { InboxList } from '../inbox/InboxList';
+import { useInboxActions, type InboxActionDescriptor, type InboxActions } from '../../hooks/useInboxActions';
+import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
+import type { UnifiedInboxItem } from '../../types';
+
+type InboxT = Translations['simple_mode']['inbox'];
+
+type FilterKey = 'all' | 'needsme';
 
 /**
- * Empty Inbox variant shell for Phase 05. The full review experience
- * (approvals + unread messages + healing issues) lands in Phase 09.
+ * Needsme filter rule: only items that actively need the human.
+ * Approvals are always "needs me" (they can't proceed without a decision).
+ * Critical-severity items of any other kind also qualify.
  */
+function isNeedsMe(item: UnifiedInboxItem): boolean {
+  return item.kind === 'approval' || item.severity === 'critical';
+}
+
 export default function InboxVariant() {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
+  const s = t.simple_mode;
+  const inb = s.inbox;
+
+  const personas = useAgentStore((st) => st.personas);
+  const startOnboarding = useSystemStore((st) => st.startOnboarding);
+
+  const items = useUnifiedInbox();
+  const [filter, setFilter] = useState<FilterKey>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const filtered = useMemo(
+    () => (filter === 'needsme' ? items.filter(isNeedsMe) : items),
+    [items, filter],
+  );
+
+  // Current selection, with auto-fallback to the first filtered item.
+  const selected: UnifiedInboxItem | null =
+    filtered.find((i) => i.id === selectedId) ?? filtered[0] ?? null;
+
+  // Reconcile selectedId when filter/items change. Kept in an effect (not
+  // memoized into `selected`) so the caller-visible state actually flips —
+  // otherwise the next render would re-derive an outdated "old" id.
+  useEffect(() => {
+    if (!filtered.find((i) => i.id === selectedId)) {
+      setSelectedId(filtered[0]?.id ?? null);
+    }
+  }, [filtered, selectedId]);
+
+  // Clear notes when switching items — "why did I approve X" should not leak
+  // into "why am I approving Y".
+  useEffect(() => {
+    setNotes('');
+  }, [selected?.id]);
+
+  const actions = useInboxActions(selected);
+
+  const runPrimary = async (): Promise<void> => {
+    if (!actions.primary || busy) return;
+    setBusy(true);
+    try {
+      await actions.primary.run(notes);
+      setNotes('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runTertiary = async (): Promise<void> => {
+    if (!actions.tertiary || busy) return;
+    setBusy(true);
+    try {
+      await actions.tertiary.run(notes);
+      setNotes('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runSecondary = async (): Promise<void> => {
+    if (!actions.secondary || busy) return;
+    setBusy(true);
+    try {
+      await actions.secondary.run(notes);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Keyboard nav. ArrowDown/Up walk the list; Enter fires the primary
+  // action. Suppressed while focus is inside a textarea/input so the notes
+  // field (and any future inline search box) keeps working.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase() ?? '';
+      if (tag === 'textarea' || tag === 'input') return;
+
+      const idx = filtered.findIndex((i) => i.id === (selected?.id ?? null));
+
+      if (e.key === 'ArrowDown' && idx < filtered.length - 1) {
+        e.preventDefault();
+        const next = filtered[idx + 1];
+        if (next) setSelectedId(next.id);
+      } else if (e.key === 'ArrowUp' && idx > 0) {
+        e.preventDefault();
+        const prev = filtered[idx - 1];
+        if (prev) setSelectedId(prev.id);
+      } else if (e.key === 'Enter' && actions.primary && !busy) {
+        e.preventDefault();
+        void runPrimary();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, selected?.id, actions, busy, notes]);
+
+  // Zero-persona onboarding beats zero-inbox empty state. Delegated to the
+  // shared SimpleEmptyState (same component Mosaic/Console render).
+  if (personas.length === 0) {
+    return <SimpleEmptyState onCreate={startOnboarding} />;
+  }
+
+  // Zero-inbox empty state (there ARE personas, but no actionable items).
+  if (items.length === 0) {
+    return <InboxEmptyState inb={inb} />;
+  }
+
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3 p-8">
-      <div className="w-14 h-14 rounded-3xl border simple-accent-violet-soft simple-accent-violet-border flex items-center justify-center">
-        <Inbox className="w-6 h-6 simple-accent-violet-text" />
+    <div className="h-full grid grid-cols-[minmax(280px,320px)_minmax(0,1fr)] overflow-hidden">
+      <InboxList
+        items={filtered}
+        totalCount={items.length}
+        selectedId={selected?.id ?? null}
+        onSelect={setSelectedId}
+        filter={filter}
+        onFilterChange={setFilter}
+      />
+
+      {selected ? (
+        <div className="flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <InboxDetail item={selected} notes={notes} onNotesChange={setNotes} />
+          </div>
+          <ActionZone
+            inb={inb}
+            actions={actions}
+            busy={busy}
+            onPrimary={runPrimary}
+            onSecondary={runSecondary}
+            onTertiary={runTertiary}
+          />
+        </div>
+      ) : (
+        // Filtered to zero but unfiltered still has items — soft empty state.
+        <InboxEmptyState inb={inb} />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Action zone
+// ---------------------------------------------------------------------------
+
+interface ActionZoneProps {
+  inb: InboxT;
+  actions: InboxActions;
+  busy: boolean;
+  onPrimary: () => void;
+  onSecondary: () => void;
+  onTertiary: () => void;
+}
+
+/**
+ * Bottom band of the detail column. Renders up to three buttons:
+ *   - Tertiary (left)   — Reject / Dismiss (rose or neutral tone)
+ *   - Secondary (mid)   — Defer (neutral)
+ *   - Primary (right)   — Approve / Resolve / Mark read (tone-colored)
+ *
+ * When `busy` is true every button is disabled and the primary label swaps
+ * to `inb.action_running`. Buttons that aren't part of the current item's
+ * action triple (e.g. no secondary for a message) are simply not rendered.
+ */
+function ActionZone({ inb, actions, busy, onPrimary, onSecondary, onTertiary }: ActionZoneProps) {
+  return (
+    <footer className="shrink-0 px-6 py-3 border-t border-foreground/10 bg-background/60 flex items-center gap-2">
+      {actions.tertiary ? (
+        <ActionButton
+          descriptor={actions.tertiary}
+          inb={inb}
+          onClick={onTertiary}
+          disabled={busy}
+          busy={busy}
+        />
+      ) : null}
+
+      <div className="flex-1" />
+
+      {actions.secondary ? (
+        <ActionButton
+          descriptor={actions.secondary}
+          inb={inb}
+          onClick={onSecondary}
+          disabled={busy}
+          busy={busy}
+        />
+      ) : null}
+
+      {actions.primary ? (
+        <ActionButton
+          descriptor={actions.primary}
+          inb={inb}
+          onClick={onPrimary}
+          disabled={busy}
+          busy={busy}
+          primary
+        />
+      ) : null}
+    </footer>
+  );
+}
+
+interface ActionButtonProps {
+  descriptor: InboxActionDescriptor;
+  inb: InboxT;
+  onClick: () => void;
+  disabled: boolean;
+  busy: boolean;
+  primary?: boolean;
+}
+
+function ActionButton({ descriptor, inb, onClick, disabled, busy, primary = false }: ActionButtonProps) {
+  const label = busy && primary ? inb.action_running : inb[descriptor.labelKey];
+
+  // Primary gets a filled tone; tertiary/secondary get a bordered tone.
+  // `null` tone means a neutral (un-accented) button.
+  if (primary && descriptor.tone) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={[
+          'typo-body px-4 py-2 rounded-2xl border shrink-0 disabled:opacity-50',
+          `simple-accent-${descriptor.tone}-solid`,
+          `simple-accent-${descriptor.tone}-border`,
+          'hover:opacity-90 transition-opacity',
+        ].join(' ')}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  if (descriptor.tone) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={[
+          'typo-body px-4 py-2 rounded-2xl border shrink-0 disabled:opacity-50',
+          `simple-accent-${descriptor.tone}-border`,
+          `simple-accent-${descriptor.tone}-soft`,
+          `simple-accent-${descriptor.tone}-text`,
+          'hover:opacity-90 transition-opacity',
+        ].join(' ')}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="typo-body px-4 py-2 rounded-2xl border border-foreground/15 bg-foreground/[0.02] text-foreground/75 hover:text-foreground hover:border-foreground/25 transition-colors shrink-0 disabled:opacity-50"
+    >
+      {label}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+function InboxEmptyState({ inb }: { inb: InboxT }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-12 text-center">
+      <div className="w-14 h-14 rounded-3xl border simple-accent-emerald-border simple-accent-emerald-soft flex items-center justify-center">
+        <Check className="w-7 h-7 simple-accent-emerald-text" />
       </div>
-      <div className="typo-heading simple-display text-foreground">{t.simple_mode.tab_inbox}</div>
-      <div className="typo-caption text-foreground/60 text-center max-w-sm">
-        {tx(t.simple_mode.wiring_next_phase, { phase: '09' })} ·{' '}
-        {t.simple_mode.wiring_inbox_hint}
-      </div>
+      <h1 className="typo-heading simple-display text-foreground">{inb.empty_title}</h1>
+      <p className="typo-body-lg text-foreground/70 max-w-md">{inb.empty_body}</p>
     </div>
   );
 }

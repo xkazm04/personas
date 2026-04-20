@@ -443,6 +443,8 @@ pub fn evaluate_assertions(
                 total: 0,
                 passed: 0,
                 failed: 0,
+                critical_failures: 0,
+                first_critical_failure: None,
                 results: vec![],
             };
         }
@@ -454,6 +456,8 @@ pub fn evaluate_assertions(
             total: 0,
             passed: 0,
             failed: 0,
+            critical_failures: 0,
+            first_critical_failure: None,
             results: vec![],
         };
     }
@@ -461,6 +465,8 @@ pub fn evaluate_assertions(
     let mut results = Vec::with_capacity(assertions.len());
     let mut passed_count = 0i64;
     let mut failed_count = 0i64;
+    let mut critical_failures = 0i64;
+    let mut first_critical_failure: Option<String> = None;
 
     for assertion in &assertions {
         let mut result = evaluate_one(assertion, output);
@@ -470,6 +476,15 @@ pub fn evaluate_assertions(
             passed_count += 1;
         } else {
             failed_count += 1;
+            if assertion.severity.eq_ignore_ascii_case("critical") {
+                critical_failures += 1;
+                if first_critical_failure.is_none() {
+                    first_critical_failure = Some(format!(
+                        "{}: {}",
+                        assertion.name, result.explanation
+                    ));
+                }
+            }
         }
 
         // Persist result
@@ -495,6 +510,8 @@ pub fn evaluate_assertions(
         total: results.len() as i64,
         passed: passed_count,
         failed: failed_count,
+        critical_failures,
+        first_critical_failure,
         results,
     }
 }

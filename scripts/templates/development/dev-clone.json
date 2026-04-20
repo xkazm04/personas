@@ -119,7 +119,25 @@
           "description": "Backlog reports after each hourly scan; triage requests per candidate; PR-created + PR-merged notifications; release-approval requests; abort / escalation alerts."
         }
       ],
-      "core_memories": []
+      "core_memories": [],
+      "output_assertions": [
+        {
+          "name": "No silent PR abort",
+          "description": "Fails when the output admits it created a PR but tests didn't pass — the template promises `run_tests` green is a prerequisite.",
+          "type": "not_contains",
+          "config": {
+            "patterns": [
+              "PR created but tests are failing",
+              "opening PR despite test failures",
+              "skipped running tests"
+            ],
+            "case_sensitive": false
+          },
+          "severity": "critical",
+          "on_failure": "log",
+          "enabled": true
+        }
+      ]
     },
     "use_cases": [
       {

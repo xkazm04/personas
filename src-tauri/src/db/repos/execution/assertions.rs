@@ -203,11 +203,17 @@ pub fn get_summary_by_execution(
         let passed = results.iter().filter(|r| r.passed).count() as i64;
         let failed = total - passed;
 
+        // `critical_failures` and `first_critical_failure` aren't stored
+        // alongside results today — they're only meaningful in the live
+        // evaluation summary emitted by `evaluate_assertions`. Historical
+        // summaries read back from the DB leave them zeroed/None.
         Ok(ExecutionAssertionSummary {
             execution_id: execution_id.to_string(),
             total,
             passed,
             failed,
+            critical_failures: 0,
+            first_critical_failure: None,
             results,
         })
     })

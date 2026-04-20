@@ -85,6 +85,14 @@ pub struct AgentIr {
 
     #[serde(default)]
     pub error_handling: Option<serde_json::Value>,
+
+    /// v3.1 — Declarative assertions evaluated post-execution against the
+    /// LLM output (see `output_assertions.rs`). Populated by the v3
+    /// normalizer's `hoist_output_assertions` pass from `persona.output_assertions[]`
+    /// + `use_cases[i].output_assertions[]`. Consumed at promote time to
+    /// insert rows into the `output_assertions` table.
+    #[serde(default, alias = "suggested_output_assertions")]
+    pub output_assertions: Vec<serde_json::Value>,
 }
 
 // ---- Sub-types ----

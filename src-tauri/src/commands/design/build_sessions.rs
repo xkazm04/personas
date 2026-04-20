@@ -1066,6 +1066,44 @@ fn create_event_subscriptions_in_tx(
 }
 
 // ============================================================================
+// Transaction: create output assertions from v3.1 `output_assertions[]`
+// ============================================================================
+
+/// Persist every entry in `ir.output_assertions` as a row in
+/// `output_assertions`. The normalizer (`template_v3::hoist_output_assertions`)
+/// already merged persona-level + per-UC entries and injected the baseline
+/// NotContains assertion. Each row is enabled by default; authors can opt out
+/// per-assertion with `"enabled": false`.
+fn create_output_assertions_in_tx(
+    tx: &rusqlite::Transaction<'_>,
+    persona_id: &str,
+    ir: &crate::db::models::AgentIr,
+    now: &str,
+) -> Result<u32, AppError> {
+    let mut created = 0u32;
+    for a in &ir.output_assertions {
+        let name = a.get("name").and_then(|v| v.as_str()).unwrap_or("Unnamed assertion");
+        let description = a.get("description").and_then(|v| v.as_str());
+        let assertion_type = a.get("type").and_then(|v| v.as_str()).unwrap_or("not_contains");
+        let config_value = a.get("config").cloned().unwrap_or_else(|| serde_json::json!({}));
+        let config = serde_json::to_string(&config_value).unwrap_or_else(|_| "{}".into());
+        let severity = a.get("severity").and_then(|v| v.as_str()).unwrap_or("warning");
+        let on_failure = a.get("on_failure").and_then(|v| v.as_str()).unwrap_or("log");
+        let enabled: i32 = if a.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true) { 1 } else { 0 };
+
+        let id = uuid::Uuid::new_v4().to_string();
+        tx.execute(
+            "INSERT INTO output_assertions
+             (id, persona_id, name, description, assertion_type, config, severity, on_failure, enabled, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+            rusqlite::params![id, persona_id, name, description, assertion_type, config, severity, on_failure, enabled, now],
+        ).map_err(AppError::Database)?;
+        created += 1;
+    }
+    Ok(created)
+}
+
+// ============================================================================
 // Transaction: update persona row with promoted fields
 // ============================================================================
 
@@ -1287,6 +1325,7 @@ pub async fn promote_build_draft_inner(
     let tools_created = create_tools_in_tx(&tx, &persona_id, &tool_actions, &now)?;
     let (triggers_created, created_trigger_ids) = create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &now)?;
     let subscriptions_created = create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &now)?;
+    let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
     update_persona_in_tx(&tx, &persona_id, &ir, &notification_channels, &design_context_str, &design_result_str, &now)?;
     create_version_snapshot_in_tx(&tx, &persona_id, &ir, &design_context_str, &design_result_str, &session.resolved_cells, &now)?;
 
@@ -1309,6 +1348,7 @@ pub async fn promote_build_draft_inner(
         "triggers_created": triggers_created,
         "tools_created": tools_created,
         "subscriptions_created": subscriptions_created,
+        "assertions_created": assertions_created,
         "connectors_needing_setup": connectors_needing_setup,
     }))
 }

@@ -66,6 +66,109 @@ pub fn normalize_v3_to_flat(payload: &mut Value) {
     migrate_adoption_questions(obj);
     default_connector_required(obj);
     hoist_composition_fields(obj);
+    hoist_output_assertions(obj);
+}
+
+/// v3.1 — Collect persona-level and per-UC `output_assertions[]` into the flat
+/// `suggested_output_assertions[]` list that `promote_build_draft_inner`
+/// persists to the `output_assertions` table at promote time. Each entry is
+/// tagged with the originating `use_case_id` (null for persona-level entries).
+///
+/// Also injects a baseline `not_contains` assertion that flags common
+/// "credentials are not configured" / "no access" prose — the symptom of a
+/// silent setup failure that the CLI-exit-code success gate misses. Authors
+/// can opt out persona-wide by setting
+/// `persona.output_assertions_opt_out_baseline: true`, or per-UC by setting
+/// `use_cases[i].skip_baseline_assertions: true` (the baseline still applies
+/// persona-wide unless opted out at the persona level).
+fn hoist_output_assertions(obj: &mut Map<String, Value>) {
+    use serde_json::Value as V;
+    let mut flat: Vec<Value> = Vec::new();
+    let mut persona_opts_out = false;
+
+    // Persona-level assertions
+    if let Some(persona) = obj.get("persona").and_then(|v| v.as_object()) {
+        persona_opts_out = persona
+            .get("output_assertions_opt_out_baseline")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if let Some(arr) = persona.get("output_assertions").and_then(|v| v.as_array()) {
+            for a in arr {
+                let mut entry = a.clone();
+                if let Some(o) = entry.as_object_mut() {
+                    o.insert("use_case_id".to_string(), V::Null);
+                }
+                flat.push(entry);
+            }
+        }
+    }
+
+    // Per-UC assertions
+    if let Some(ucs) = obj.get("use_cases").and_then(|v| v.as_array()) {
+        for uc in ucs {
+            let Some(uc_obj) = uc.as_object() else { continue };
+            let uc_id = uc_obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| V::String(s.to_string()))
+                .unwrap_or(V::Null);
+            if let Some(arr) = uc_obj.get("output_assertions").and_then(|v| v.as_array()) {
+                for a in arr {
+                    let mut entry = a.clone();
+                    if let Some(o) = entry.as_object_mut() {
+                        o.insert("use_case_id".to_string(), uc_id.clone());
+                    }
+                    flat.push(entry);
+                }
+            }
+        }
+    }
+
+    // Baseline injection — runs unless the persona explicitly opts out. Even
+    // when authors declare their own assertions, the baseline is still
+    // additive so a careless author can't disable the "credentials missing"
+    // safety net by accident.
+    if !persona_opts_out {
+        let has_baseline = flat
+            .iter()
+            .any(|a| a.get("name").and_then(|n| n.as_str()) == Some(BASELINE_ASSERTION_NAME));
+        if !has_baseline {
+            flat.push(baseline_not_contains_assertion());
+        }
+    }
+
+    if !flat.is_empty() {
+        obj.insert("suggested_output_assertions".to_string(), Value::Array(flat));
+    }
+}
+
+const BASELINE_ASSERTION_NAME: &str = "Baseline blocker detection";
+
+/// Phrase set that every persona runs against its final output. These are all
+/// signals that the LLM produced prose instead of actually doing the work —
+/// typically because a connector was misconfigured but the CLI still returned
+/// 0. Fails with `severity: critical` so the post-exec downgrade path flips
+/// the execution from `completed` to `incomplete`.
+fn baseline_not_contains_assertion() -> Value {
+    json!({
+        "name": BASELINE_ASSERTION_NAME,
+        "description": "Flags LLM output that admits a silent setup failure (missing credentials, unavailable tool, skipped step). When this fires, the execution is downgraded to `incomplete` so it surfaces in the notification center.",
+        "type": "not_contains",
+        "config": {
+            "patterns": [
+                "credentials are not configured",
+                "cannot proceed without",
+                "skipping this step because",
+                "I don't have access to",
+                "is not available in this environment"
+            ],
+            "case_sensitive": false
+        },
+        "severity": "critical",
+        "on_failure": "log",
+        "enabled": true,
+        "use_case_id": null
+    })
 }
 
 /// v3.1 — Migrate deprecated singular `use_case_id` on adoption questions
