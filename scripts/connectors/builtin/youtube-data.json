@@ -5,6 +5,11 @@
   "color": "#FF0000",
   "icon_url": "/icons/connectors/youtube-data.svg",
   "category": "social",
+  "categories": [
+    "social",
+    "video_platform",
+    "media_feed"
+  ],
   "fields": [
     {
       "key": "api_key",
@@ -32,7 +37,12 @@
     "setup_guide": "1. Go to Google Cloud Console (console.cloud.google.com)\n2. Create a project or pick an existing one\n3. Navigate to APIs & Services → Library\n4. Search for 'YouTube Data API v3' and click Enable\n5. Go to APIs & Services → Credentials → Create credentials → API key\n6. Copy the API key and paste it here\n\nFree quota: 10,000 units/day (each search costs 100 units, a video lookup costs 1 unit).",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

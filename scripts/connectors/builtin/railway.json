@@ -5,6 +5,9 @@
   "color": "#0B0D0E",
   "icon_url": "/icons/connectors/railway.svg",
   "category": "cloud",
+  "categories": [
+    "cloud"
+  ],
   "fields": [
     {
       "key": "api_key",
@@ -37,7 +40,12 @@
     "setup_guide": "1. Go to railway.app/account/tokens\n2. Click 'Create Token' and give it a name\n3. Copy the token and paste here",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Token",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

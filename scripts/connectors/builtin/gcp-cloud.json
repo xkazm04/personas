@@ -5,6 +5,10 @@
   "color": "#4285F4",
   "icon_url": "/icons/connectors/google.svg",
   "category": "cloud",
+  "categories": [
+    "cloud",
+    "google_workspace"
+  ],
   "fields": [
     {
       "key": "service_account_json",

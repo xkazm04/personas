@@ -5,6 +5,9 @@
   "color": "#6C47FF",
   "icon_url": "/icons/connectors/knock.svg",
   "category": "notifications",
+  "categories": [
+    "notifications"
+  ],
   "fields": [
     {
       "key": "api_key",

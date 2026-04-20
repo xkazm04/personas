@@ -5,6 +5,9 @@
   "color": "#000000",
   "icon_url": "/icons/connectors/vercel.svg",
   "category": "cloud",
+  "categories": [
+    "cloud"
+  ],
   "fields": [
     {
       "key": "access_token",

@@ -5,6 +5,11 @@
   "color": "#168EEA",
   "icon_url": "/icons/connectors/buffer.svg",
   "category": "social",
+  "categories": [
+    "social",
+    "social_publishing",
+    "social_scheduling"
+  ],
   "fields": [
     {
       "key": "access_token",

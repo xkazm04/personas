@@ -5,6 +5,10 @@
   "color": "#0078D4",
   "icon_url": "/icons/connectors/microsoft-calendar.svg",
   "category": "scheduling",
+  "categories": [
+    "scheduling",
+    "calendar"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://graph.microsoft.com/v1.0/me",

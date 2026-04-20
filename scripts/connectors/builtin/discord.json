@@ -5,6 +5,11 @@
   "color": "#5865F2",
   "icon_url": "/icons/connectors/discord.svg",
   "category": "messaging",
+  "categories": [
+    "messaging",
+    "chat",
+    "community"
+  ],
   "fields": [
     {
       "key": "bot_token",

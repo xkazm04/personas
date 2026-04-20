@@ -5,6 +5,10 @@
   "color": "#B31B1B",
   "icon_url": "/icons/connectors/arxiv.svg",
   "category": "research",
+  "categories": [
+    "research",
+    "academic_papers"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "http://export.arxiv.org/api/query?search_query=all:test&max_results=1",

@@ -5,6 +5,11 @@
   "color": "#4285F4",
   "icon_url": "/icons/connectors/gemini-vision.svg",
   "category": "ai",
+  "categories": [
+    "ai",
+    "vision",
+    "ocr"
+  ],
   "fields": [
     {
       "key": "api_key",

@@ -5,6 +5,9 @@
   "color": "#F38020",
   "icon_url": "/icons/connectors/cloudflare.svg",
   "category": "cloud",
+  "categories": [
+    "cloud"
+  ],
   "fields": [
     {
       "key": "api_token",

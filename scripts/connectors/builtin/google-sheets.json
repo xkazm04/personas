@@ -5,6 +5,10 @@
   "color": "#34A853",
   "icon_url": "/icons/connectors/google-sheets.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "spreadsheet"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
@@ -31,8 +35,24 @@
     "setup_guide": "1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Sheets API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@googleworkspace/cli", "transport": "stdio", "suggested_env": {"GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": ""}}
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@googleworkspace/cli",
+        "transport": "stdio",
+        "suggested_env": {
+          "GOOGLE_CLIENT_ID": "",
+          "GOOGLE_CLIENT_SECRET": "",
+          "GOOGLE_REFRESH_TOKEN": ""
+        }
+      }
     ],
     "llm_usage_hint": {
       "overview": "Google Sheets API v4. OAuth bearer token in $GOOGLE_ACCESS_TOKEN. Base URL: https://sheets.googleapis.com/v4/spreadsheets. Use A1 notation (e.g. 'Sheet1!A1:C10') for ranges.",

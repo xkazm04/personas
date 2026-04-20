@@ -5,6 +5,10 @@
   "color": "#FF4A00",
   "icon_url": "/icons/connectors/zapier.svg",
   "category": "automation",
+  "categories": [
+    "automation",
+    "workflow_automation"
+  ],
   "fields": [
     {
       "key": "api_key",

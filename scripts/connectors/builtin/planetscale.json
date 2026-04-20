@@ -5,6 +5,9 @@
   "color": "#000000",
   "icon_url": "/icons/connectors/planetscale.svg",
   "category": "database",
+  "categories": [
+    "database"
+  ],
   "fields": [
     {
       "key": "service_token_id",

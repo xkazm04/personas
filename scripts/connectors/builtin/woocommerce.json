@@ -5,6 +5,9 @@
   "color": "#96588A",
   "icon_url": "/icons/connectors/woocommerce.svg",
   "category": "ecommerce",
+  "categories": [
+    "ecommerce"
+  ],
   "fields": [
     {
       "key": "base_url",

@@ -5,6 +5,9 @@
   "color": "#FF9900",
   "icon_url": "/icons/connectors/aws-s3.svg",
   "category": "cloud",
+  "categories": [
+    "cloud"
+  ],
   "fields": [
     {
       "key": "access_key_id",

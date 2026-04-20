@@ -5,7 +5,12 @@
   "color": "#F9BD2B",
   "icon_url": "/icons/connectors/posthog.svg",
   "category": "analytics",
-  "categories": ["analytics"],
+  "categories": [
+    "analytics",
+    "product_analytics",
+    "feature_flags",
+    "session_replay"
+  ],
   "fields": [
     {
       "key": "personal_api_key",

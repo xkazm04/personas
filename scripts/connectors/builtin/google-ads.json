@@ -4,8 +4,11 @@
   "label": "Google Ads",
   "color": "#4285F4",
   "icon_url": "/icons/connectors/google-ads.svg",
-  "category": "analytics",
-  "categories": ["advertising"],
+  "category": "advertising",
+  "categories": [
+    "advertising",
+    "analytics"
+  ],
   "fields": [
     {
       "key": "developer_token",

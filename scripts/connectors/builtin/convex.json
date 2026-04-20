@@ -5,6 +5,10 @@
   "color": "#F97316",
   "icon_url": "/icons/connectors/convex.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "backend_as_service"
+  ],
   "fields": [
     {
       "key": "deployment_url",

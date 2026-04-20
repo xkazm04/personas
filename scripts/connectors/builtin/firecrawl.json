@@ -5,6 +5,11 @@
   "color": "#F97316",
   "icon_url": "/icons/connectors/firecrawl.svg",
   "category": "integration",
+  "categories": [
+    "integration",
+    "web_scraping",
+    "data_extraction"
+  ],
   "fields": [
     {
       "key": "api_key",

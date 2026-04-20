@@ -4,7 +4,11 @@
   "label": "Twilio",
   "color": "#F22F46",
   "icon_url": "/icons/connectors/twilio.svg",
-  "category": "email",
+  "category": "messaging",
+  "categories": [
+    "messaging",
+    "sms"
+  ],
   "fields": [
     {
       "key": "account_sid",

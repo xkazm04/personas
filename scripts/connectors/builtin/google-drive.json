@@ -5,6 +5,12 @@
   "color": "#1FA463",
   "icon_url": "/icons/connectors/google-drive.svg",
   "category": "storage",
+  "categories": [
+    "storage",
+    "documents",
+    "collaboration",
+    "google_workspace"
+  ],
   "fields": [
     {
       "key": "default_folder_id",

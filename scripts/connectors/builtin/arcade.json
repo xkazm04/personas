@@ -5,6 +5,10 @@
   "color": "#F97316",
   "icon_url": "/icons/connectors/arcade.svg",
   "category": "integration",
+  "categories": [
+    "integration",
+    "mcp_gateway"
+  ],
   "fields": [
     {
       "key": "api_key",

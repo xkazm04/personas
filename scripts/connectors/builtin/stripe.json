@@ -5,6 +5,13 @@
   "color": "#635BFF",
   "icon_url": "/icons/connectors/stripe.svg",
   "category": "finance",
+  "categories": [
+    "finance",
+    "payments",
+    "billing",
+    "subscriptions",
+    "ecommerce"
+  ],
   "fields": [
     {
       "key": "api_key",
@@ -35,7 +42,12 @@
     "setup_guide": "1. Go to dashboard.stripe.com/apikeys\n2. Copy the Secret Key (sk_live_... or sk_test_...)\n3. For production, prefer a restricted key with the minimum scopes your flows need",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "Secret Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "Secret Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

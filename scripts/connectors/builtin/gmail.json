@@ -5,6 +5,10 @@
   "color": "#EA4335",
   "icon_url": "/icons/connectors/gmail.svg",
   "category": "email",
+  "categories": [
+    "email",
+    "google_workspace"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",

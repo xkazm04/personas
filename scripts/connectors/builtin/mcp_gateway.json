@@ -5,6 +5,10 @@
   "color": "#6366F1",
   "icon_url": "/icons/connectors/mcp_gateway.svg",
   "category": "integration",
+  "categories": [
+    "integration",
+    "mcp_gateway"
+  ],
   "fields": [
     {
       "key": "label",

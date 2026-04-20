@@ -5,6 +5,10 @@
   "color": "#F06A6A",
   "icon_url": "/icons/connectors/asana.svg",
   "category": "project-mgmt",
+  "categories": [
+    "project-mgmt",
+    "project_management"
+  ],
   "fields": [
     {
       "key": "personal_access_token",

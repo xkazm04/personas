@@ -5,6 +5,11 @@
   "color": "#0078D4",
   "icon_url": "/icons/connectors/microsoft-outlook.svg",
   "category": "email",
+  "categories": [
+    "email",
+    "microsoft365",
+    "calendar"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://graph.microsoft.com/v1.0/me",

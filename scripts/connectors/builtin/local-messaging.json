@@ -5,14 +5,27 @@
   "color": "#8B5CF6",
   "icon_url": null,
   "category": "messaging",
+  "categories": [
+    "messaging",
+    "in_app_notifications"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "send_notification", "label": "Send Notification" },
-    { "toolName": "send_message", "label": "Send Message" }
+    {
+      "toolName": "send_notification",
+      "label": "Send Notification"
+    },
+    {
+      "toolName": "send_message",
+      "label": "Send Message"
+    }
   ],
   "events": [
-    { "eventType": "message_received", "label": "Message Received" }
+    {
+      "eventType": "message_received",
+      "label": "Message Received"
+    }
   ],
   "metadata": {
     "template_enabled": true,
@@ -20,7 +33,10 @@
     "auth_type": "none",
     "auth_type_label": "Built-in (Local)",
     "connection_mode": "local",
-    "capabilities": ["messaging", "notifications"],
+    "capabilities": [
+      "messaging",
+      "notifications"
+    ],
     "docs_url": "",
     "setup_guide": "Local messaging works out of the box. No configuration needed — agents publish messages to the in-app inbox."
   }

@@ -5,6 +5,10 @@
   "color": "#EA4B71",
   "icon_url": "/icons/connectors/n8n.svg",
   "category": "automation",
+  "categories": [
+    "automation",
+    "workflow_automation"
+  ],
   "fields": [
     {
       "key": "base_url",

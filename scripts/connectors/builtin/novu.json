@@ -5,6 +5,9 @@
   "color": "#FF4981",
   "icon_url": "/icons/connectors/novu.svg",
   "category": "notifications",
+  "categories": [
+    "notifications"
+  ],
   "fields": [
     {
       "key": "api_key",

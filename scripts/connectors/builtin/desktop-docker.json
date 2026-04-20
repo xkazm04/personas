@@ -5,6 +5,11 @@
   "color": "#2496ED",
   "icon_url": "/icons/connectors/docker.svg",
   "category": "devops",
+  "categories": [
+    "devops",
+    "containers",
+    "local_runtime"
+  ],
   "fields": [
     {
       "key": "binary_path",

@@ -5,6 +5,12 @@
   "color": "#246DFF",
   "icon_url": "/icons/connectors/apify.svg",
   "category": "automation",
+  "categories": [
+    "automation",
+    "browser_automation",
+    "scraping",
+    "data_extraction"
+  ],
   "fields": [
     {
       "key": "api_token",
@@ -35,7 +41,12 @@
     "pricing_tier": "freemium",
     "mcp_server": "@apify/actors-mcp-server",
     "auth_methods": [
-      {"id": "api_key", "label": "API Token", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Token",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

@@ -5,6 +5,10 @@
   "color": "#3CCF91",
   "icon_url": "/icons/connectors/tally.svg",
   "category": "forms",
+  "categories": [
+    "forms",
+    "surveys"
+  ],
   "fields": [
     {
       "key": "access_token",

@@ -5,22 +5,63 @@
   "color": "#7C3AED",
   "icon_url": "/icons/connectors/obsidian.svg",
   "category": "knowledge",
+  "categories": [
+    "knowledge",
+    "knowledge_base",
+    "vector_search"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "vault_search", "label": "Search Vault" },
-    { "toolName": "vault_outgoing_links", "label": "Get Outgoing Links" },
-    { "toolName": "vault_backlinks", "label": "Get Backlinks" },
-    { "toolName": "vault_list_orphans", "label": "List Orphan Notes" },
-    { "toolName": "vault_list_mocs", "label": "List Maps of Content" },
-    { "toolName": "vault_stats", "label": "Get Vault Stats" },
-    { "toolName": "vault_append_daily_note", "label": "Append to Daily Note" },
-    { "toolName": "vault_write_meeting_note", "label": "Write Meeting Note" }
+    {
+      "toolName": "vault_search",
+      "label": "Search Vault"
+    },
+    {
+      "toolName": "vault_outgoing_links",
+      "label": "Get Outgoing Links"
+    },
+    {
+      "toolName": "vault_backlinks",
+      "label": "Get Backlinks"
+    },
+    {
+      "toolName": "vault_list_orphans",
+      "label": "List Orphan Notes"
+    },
+    {
+      "toolName": "vault_list_mocs",
+      "label": "List Maps of Content"
+    },
+    {
+      "toolName": "vault_stats",
+      "label": "Get Vault Stats"
+    },
+    {
+      "toolName": "vault_append_daily_note",
+      "label": "Append to Daily Note"
+    },
+    {
+      "toolName": "vault_write_meeting_note",
+      "label": "Write Meeting Note"
+    }
   ],
   "events": [
-    { "id": "daily_note_written", "name": "Daily Note Written", "description": "Fired when an agent appends a section to today's daily note" },
-    { "id": "meeting_note_written", "name": "Meeting Note Written", "description": "Fired when an agent writes a structured meeting note" },
-    { "id": "vault_search_executed", "name": "Vault Search Executed", "description": "Fired when an agent searches the vault" }
+    {
+      "id": "daily_note_written",
+      "name": "Daily Note Written",
+      "description": "Fired when an agent appends a section to today's daily note"
+    },
+    {
+      "id": "meeting_note_written",
+      "name": "Meeting Note Written",
+      "description": "Fired when an agent writes a structured meeting note"
+    },
+    {
+      "id": "vault_search_executed",
+      "name": "Vault Search Executed",
+      "description": "Fired when an agent searches the vault"
+    }
   ],
   "metadata": {
     "template_enabled": true,
@@ -32,7 +73,12 @@
     "auth_type": "builtin",
     "auth_type_label": "Vault",
     "auth_methods": [
-      { "id": "vault", "label": "Obsidian Brain Vault", "type": "credential", "is_default": true }
+      {
+        "id": "vault",
+        "label": "Obsidian Brain Vault",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

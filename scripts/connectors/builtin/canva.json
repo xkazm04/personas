@@ -5,6 +5,9 @@
   "color": "#00C4CC",
   "icon_url": "/icons/connectors/canva.svg",
   "category": "design",
+  "categories": [
+    "design"
+  ],
   "fields": [
     {
       "key": "access_token",

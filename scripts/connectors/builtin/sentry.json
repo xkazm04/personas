@@ -5,6 +5,11 @@
   "color": "#362D59",
   "icon_url": "/icons/connectors/sentry.svg",
   "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "observability",
+    "error_tracking"
+  ],
   "fields": [
     {
       "key": "auth_token",

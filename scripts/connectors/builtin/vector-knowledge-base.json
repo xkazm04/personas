@@ -5,12 +5,26 @@
   "color": "#8B5CF6",
   "icon_url": "/icons/connectors/vector-db.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "vector_search",
+    "knowledge_base"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "kb_semantic_search", "label": "Semantic Search" },
-    { "toolName": "kb_list_documents", "label": "List Documents" },
-    { "toolName": "kb_ingest_text", "label": "Ingest Text" }
+    {
+      "toolName": "kb_semantic_search",
+      "label": "Semantic Search"
+    },
+    {
+      "toolName": "kb_list_documents",
+      "label": "List Documents"
+    },
+    {
+      "toolName": "kb_ingest_text",
+      "label": "Ingest Text"
+    }
   ],
   "events": [],
   "metadata": {
@@ -19,7 +33,11 @@
     "auth_type": "none",
     "auth_type_label": "Built-in (Local)",
     "connection_mode": "local",
-    "capabilities": ["file_read", "vector_search", "embedding"],
+    "capabilities": [
+      "file_read",
+      "vector_search",
+      "embedding"
+    ],
     "docs_url": "",
     "setup_guide": "Knowledge bases are stored locally. Drop files or paste text to build your knowledge base. Embedding is done on-device using a lightweight AI model (~23MB download on first use)."
   }

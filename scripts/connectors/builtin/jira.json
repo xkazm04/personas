@@ -5,6 +5,12 @@
   "color": "#0052CC",
   "icon_url": "/icons/connectors/jira.svg",
   "category": "project-mgmt",
+  "categories": [
+    "project-mgmt",
+    "project_management",
+    "issue_tracker",
+    "ticketing"
+  ],
   "fields": [
     {
       "key": "domain",

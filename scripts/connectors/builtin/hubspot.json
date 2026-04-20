@@ -5,6 +5,11 @@
   "color": "#FF7A59",
   "icon_url": "/icons/connectors/hubspot.svg",
   "category": "crm",
+  "categories": [
+    "crm",
+    "marketing_automation",
+    "sales_pipeline"
+  ],
   "fields": [
     {
       "key": "access_token",

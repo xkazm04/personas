@@ -5,6 +5,10 @@
   "color": "#343434",
   "icon_url": "/icons/connectors/circleci.svg",
   "category": "devops",
+  "categories": [
+    "devops",
+    "ci_cd"
+  ],
   "fields": [
     {
       "key": "personal_token",

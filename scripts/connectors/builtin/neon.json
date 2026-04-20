@@ -5,6 +5,9 @@
   "color": "#00E699",
   "icon_url": "/icons/connectors/neon.svg",
   "category": "database",
+  "categories": [
+    "database"
+  ],
   "fields": [
     {
       "key": "api_key",

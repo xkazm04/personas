@@ -5,6 +5,11 @@
   "color": "#4DE4B2",
   "icon_url": "/icons/connectors/kalshi.svg",
   "category": "finance",
+  "categories": [
+    "finance",
+    "market_data",
+    "prediction_markets"
+  ],
   "fields": [
     {
       "key": "api_key",
@@ -33,7 +38,12 @@
     "pricing_tier": "freemium",
     "mcp_package": "@newyorkcompute/kalshi-mcp",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

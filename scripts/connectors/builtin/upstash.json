@@ -5,6 +5,10 @@
   "color": "#00E9A3",
   "icon_url": "/icons/connectors/upstash.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "cache"
+  ],
   "fields": [
     {
       "key": "redis_url",

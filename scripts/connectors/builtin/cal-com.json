@@ -5,6 +5,11 @@
   "color": "#292929",
   "icon_url": "/icons/connectors/cal-com.svg",
   "category": "scheduling",
+  "categories": [
+    "scheduling",
+    "calendar",
+    "booking"
+  ],
   "fields": [
     {
       "key": "api_key",

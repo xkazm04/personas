@@ -5,6 +5,9 @@
   "color": "#47A248",
   "icon_url": "/icons/connectors/mongodb.svg",
   "category": "database",
+  "categories": [
+    "database"
+  ],
   "fields": [
     {
       "key": "connection_string",

@@ -5,6 +5,9 @@
   "color": "#336791",
   "icon_url": "/icons/connectors/postgres.svg",
   "category": "database",
+  "categories": [
+    "database"
+  ],
   "fields": [
     {
       "key": "connection_string",

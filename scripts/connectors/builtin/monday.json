@@ -5,6 +5,11 @@
   "color": "#FF3D57",
   "icon_url": "/icons/connectors/monday.svg",
   "category": "project-mgmt",
+  "categories": [
+    "project-mgmt",
+    "project_management",
+    "crm"
+  ],
   "fields": [
     {
       "key": "api_key_v2",

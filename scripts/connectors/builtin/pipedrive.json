@@ -5,6 +5,10 @@
   "color": "#017737",
   "icon_url": "/icons/connectors/pipedrive.svg",
   "category": "crm",
+  "categories": [
+    "crm",
+    "sales_pipeline"
+  ],
   "fields": [
     {
       "key": "api_token",

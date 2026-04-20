@@ -5,6 +5,10 @@
   "color": "#03A9F4",
   "icon_url": "https://cdn.simpleicons.org/clockify/03A9F4",
   "category": "time-tracking",
+  "categories": [
+    "time-tracking",
+    "time_tracking"
+  ],
   "fields": [
     {
       "key": "api_key",

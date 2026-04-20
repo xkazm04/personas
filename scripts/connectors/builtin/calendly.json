@@ -5,6 +5,10 @@
   "color": "#006BFF",
   "icon_url": "/icons/connectors/calendly.svg",
   "category": "scheduling",
+  "categories": [
+    "scheduling",
+    "booking"
+  ],
   "fields": [
     {
       "key": "api_key",

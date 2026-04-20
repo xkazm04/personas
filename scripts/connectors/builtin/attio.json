@@ -5,6 +5,9 @@
   "color": "#4F46E5",
   "icon_url": "/icons/connectors/attio.svg",
   "category": "crm",
+  "categories": [
+    "crm"
+  ],
   "fields": [
     {
       "key": "access_token",

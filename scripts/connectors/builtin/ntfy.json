@@ -5,6 +5,9 @@
   "color": "#317F6E",
   "icon_url": "/icons/connectors/ntfy.svg",
   "category": "notifications",
+  "categories": [
+    "notifications"
+  ],
   "fields": [
     {
       "key": "base_url",

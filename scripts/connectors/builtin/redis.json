@@ -5,6 +5,10 @@
   "color": "#DC382D",
   "icon_url": "/icons/connectors/redis.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "cache"
+  ],
   "fields": [
     {
       "key": "connection_url",

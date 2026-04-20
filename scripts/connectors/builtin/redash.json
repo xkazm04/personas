@@ -5,6 +5,11 @@
   "color": "#FF7964",
   "icon_url": "/icons/connectors/redash.svg",
   "category": "analytics",
+  "categories": [
+    "analytics",
+    "bi",
+    "sql"
+  ],
   "fields": [
     {
       "key": "base_url",

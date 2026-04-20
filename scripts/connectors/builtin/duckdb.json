@@ -5,6 +5,10 @@
   "color": "#FFC107",
   "icon_url": "/icons/connectors/duckdb.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "analytics"
+  ],
   "fields": [
     {
       "key": "database_path",

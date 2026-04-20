@@ -5,11 +5,19 @@
   "color": "#4285F4",
   "icon_url": "/icons/connectors/google.svg",
   "category": "productivity",
+  "categories": [
+    "productivity",
+    "email",
+    "storage",
+    "calendar"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{access_token}}" },
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
     "description": "Validates Google OAuth identity access"
   },
   "services": [],
@@ -24,8 +32,24 @@
     "auth_type_label": "OAuth",
     "docs_url": "https://console.cloud.google.com/apis/credentials",
     "auth_methods": [
-      { "id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true },
-      { "id": "mcp", "label": "MCP", "type": "mcp", "package": "@anthropic/mcp-google-workspace", "transport": "stdio", "suggested_env": { "GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": "" } }
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@anthropic/mcp-google-workspace",
+        "transport": "stdio",
+        "suggested_env": {
+          "GOOGLE_CLIENT_ID": "",
+          "GOOGLE_CLIENT_SECRET": "",
+          "GOOGLE_REFRESH_TOKEN": ""
+        }
+      }
     ]
   }
 }

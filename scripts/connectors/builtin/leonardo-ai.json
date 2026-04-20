@@ -5,7 +5,11 @@
   "color": "#6C3AEF",
   "icon_url": "/icons/connectors/leonardo-ai.svg",
   "category": "ai",
-  "categories": ["image_generation", "video_generation"],
+  "categories": [
+    "ai",
+    "image_generation",
+    "video_generation"
+  ],
   "fields": [
     {
       "key": "api_key",

@@ -5,6 +5,9 @@
   "color": "#569A31",
   "icon_url": "/icons/connectors/aws-s3.svg",
   "category": "storage",
+  "categories": [
+    "storage"
+  ],
   "fields": [
     {
       "key": "access_key_id",

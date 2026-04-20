@@ -5,6 +5,10 @@
   "color": "#06B6D4",
   "icon_url": "",
   "category": "database",
+  "categories": [
+    "database",
+    "local_storage"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [],
@@ -17,7 +21,12 @@
     "auth_type": "builtin",
     "auth_type_label": "Built-in",
     "auth_methods": [
-      { "id": "builtin", "label": "Built-in", "type": "credential", "is_default": true }
+      {
+        "id": "builtin",
+        "label": "Built-in",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

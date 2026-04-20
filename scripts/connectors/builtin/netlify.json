@@ -5,6 +5,9 @@
   "color": "#00C7B7",
   "icon_url": "/icons/connectors/netlify.svg",
   "category": "cloud",
+  "categories": [
+    "cloud"
+  ],
   "fields": [
     {
       "key": "access_token",

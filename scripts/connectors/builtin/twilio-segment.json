@@ -5,6 +5,11 @@
   "color": "#52BD94",
   "icon_url": "/icons/connectors/twilio.svg",
   "category": "analytics",
+  "categories": [
+    "analytics",
+    "cdp",
+    "event_tracking"
+  ],
   "fields": [
     {
       "key": "write_key",

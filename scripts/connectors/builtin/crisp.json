@@ -5,6 +5,12 @@
   "color": "#4B60F5",
   "icon_url": "/icons/connectors/crisp.svg",
   "category": "support",
+  "categories": [
+    "support",
+    "messaging",
+    "chat",
+    "customer_support"
+  ],
   "fields": [
     {
       "key": "token_id",

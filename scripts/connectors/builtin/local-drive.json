@@ -5,6 +5,10 @@
   "color": "#0EA5E9",
   "icon_url": "/illustrations/logo-v1-geometric-nobg.png",
   "category": "storage",
+  "categories": [
+    "storage",
+    "local_storage"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [],
@@ -20,7 +24,12 @@
       "LOCAL_DRIVE_ROOT": "resolved at runtime from drive_get_root"
     },
     "auth_methods": [
-      { "id": "builtin", "label": "Built-in", "type": "credential", "is_default": true }
+      {
+        "id": "builtin",
+        "label": "Built-in",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

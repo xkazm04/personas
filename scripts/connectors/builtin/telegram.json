@@ -5,6 +5,10 @@
   "color": "#26A5E4",
   "icon_url": "/icons/connectors/telegram.svg",
   "category": "messaging",
+  "categories": [
+    "messaging",
+    "chat"
+  ],
   "fields": [
     {
       "key": "bot_token",

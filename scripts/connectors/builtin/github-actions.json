@@ -5,6 +5,11 @@
   "color": "#2088FF",
   "icon_url": "/icons/connectors/github.svg",
   "category": "automation",
+  "categories": [
+    "automation",
+    "ci_cd",
+    "source_control"
+  ],
   "fields": [
     {
       "key": "personal_access_token",

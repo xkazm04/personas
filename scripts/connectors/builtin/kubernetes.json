@@ -5,6 +5,10 @@
   "color": "#326CE5",
   "icon_url": "/icons/connectors/kubernetes.svg",
   "category": "cloud",
+  "categories": [
+    "cloud",
+    "containers"
+  ],
   "fields": [
     {
       "key": "api_server",

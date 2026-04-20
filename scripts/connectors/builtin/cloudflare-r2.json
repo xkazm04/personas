@@ -5,6 +5,9 @@
   "color": "#F38020",
   "icon_url": "/icons/connectors/cloudflare-r2.svg",
   "category": "storage",
+  "categories": [
+    "storage"
+  ],
   "fields": [
     {
       "key": "account_id",

@@ -5,6 +5,11 @@
   "color": "#18BFFF",
   "icon_url": "/icons/connectors/airtable.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "spreadsheet",
+    "project_management"
+  ],
   "fields": [
     {
       "key": "api_key",

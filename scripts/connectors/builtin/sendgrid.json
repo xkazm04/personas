@@ -5,6 +5,10 @@
   "color": "#1A82E2",
   "icon_url": "/icons/connectors/sendgrid.svg",
   "category": "email",
+  "categories": [
+    "email",
+    "transactional_email"
+  ],
   "fields": [
     {
       "key": "api_key",

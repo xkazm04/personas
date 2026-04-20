@@ -5,6 +5,11 @@
   "color": "#3ECF8E",
   "icon_url": "/icons/connectors/supabase.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "backend_as_service",
+    "auth"
+  ],
   "fields": [
     {
       "key": "project_url",

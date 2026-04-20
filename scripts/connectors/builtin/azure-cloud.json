@@ -5,6 +5,10 @@
   "color": "#0078D4",
   "icon_url": "/icons/connectors/azure-devops.svg",
   "category": "cloud",
+  "categories": [
+    "cloud",
+    "microsoft365"
+  ],
   "fields": [
     {
       "key": "client_id",

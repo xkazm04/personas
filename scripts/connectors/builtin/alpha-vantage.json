@@ -5,6 +5,10 @@
   "color": "#222832",
   "icon_url": "/icons/connectors/alpha-vantage.svg",
   "category": "finance",
+  "categories": [
+    "finance",
+    "market_data"
+  ],
   "fields": [
     {
       "key": "api_key",

@@ -5,6 +5,11 @@
   "color": "#6264A7",
   "icon_url": "/icons/connectors/microsoft-teams.svg",
   "category": "messaging",
+  "categories": [
+    "messaging",
+    "chat",
+    "microsoft365"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://graph.microsoft.com/v1.0/me",

@@ -5,6 +5,11 @@
   "color": "#FFCD1C",
   "icon_url": "/icons/connectors/ramp.svg",
   "category": "finance",
+  "categories": [
+    "finance",
+    "accounting",
+    "expense_management"
+  ],
   "fields": [
     {
       "key": "client_id",

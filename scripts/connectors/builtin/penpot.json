@@ -5,6 +5,9 @@
   "color": "#0D1117",
   "icon_url": "/icons/connectors/penpot.svg",
   "category": "design",
+  "categories": [
+    "design"
+  ],
   "fields": [
     {
       "key": "access_token",

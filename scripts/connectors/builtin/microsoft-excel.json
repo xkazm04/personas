@@ -5,6 +5,10 @@
   "color": "#217346",
   "icon_url": "/icons/connectors/microsoft-excel.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "spreadsheet"
+  ],
   "fields": [],
   "healthcheck_config": {
     "endpoint": "https://graph.microsoft.com/v1.0/me",

@@ -5,6 +5,12 @@
   "color": "#172B4D",
   "icon_url": "/icons/connectors/confluence.svg",
   "category": "productivity",
+  "categories": [
+    "productivity",
+    "knowledge_base",
+    "documentation",
+    "wiki"
+  ],
   "fields": [
     {
       "key": "domain",

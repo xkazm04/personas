@@ -5,6 +5,9 @@
   "color": "#E21E29",
   "icon_url": "/icons/connectors/backblaze-b2.svg",
   "category": "storage",
+  "categories": [
+    "storage"
+  ],
   "fields": [
     {
       "key": "application_key_id",

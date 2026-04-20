@@ -4,32 +4,101 @@
   "label": "Codebase",
   "color": "#6366F1",
   "icon_url": "/icons/connectors/codebase.svg",
-  "category": "integration",
+  "category": "development",
+  "categories": [
+    "development",
+    "source_code"
+  ],
   "fields": [],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "read_file", "label": "Read File" },
-    { "toolName": "list_files", "label": "List Files" },
-    { "toolName": "search_code", "label": "Search Code" },
-    { "toolName": "get_contexts", "label": "Get Context Map" },
-    { "toolName": "get_context_detail", "label": "Get Context Detail" },
-    { "toolName": "list_ideas", "label": "List Ideas" },
-    { "toolName": "create_idea", "label": "Create Idea" },
-    { "toolName": "update_idea_status", "label": "Triage Idea" },
-    { "toolName": "list_tasks", "label": "List Tasks" },
-    { "toolName": "create_task", "label": "Create Task" },
-    { "toolName": "create_branch", "label": "Create Branch" },
-    { "toolName": "apply_diff", "label": "Apply Diff" },
-    { "toolName": "run_tests", "label": "Run Tests" },
-    { "toolName": "get_git_status", "label": "Get Git Status" },
-    { "toolName": "commit_changes", "label": "Commit Changes" }
+    {
+      "toolName": "read_file",
+      "label": "Read File"
+    },
+    {
+      "toolName": "list_files",
+      "label": "List Files"
+    },
+    {
+      "toolName": "search_code",
+      "label": "Search Code"
+    },
+    {
+      "toolName": "get_contexts",
+      "label": "Get Context Map"
+    },
+    {
+      "toolName": "get_context_detail",
+      "label": "Get Context Detail"
+    },
+    {
+      "toolName": "list_ideas",
+      "label": "List Ideas"
+    },
+    {
+      "toolName": "create_idea",
+      "label": "Create Idea"
+    },
+    {
+      "toolName": "update_idea_status",
+      "label": "Triage Idea"
+    },
+    {
+      "toolName": "list_tasks",
+      "label": "List Tasks"
+    },
+    {
+      "toolName": "create_task",
+      "label": "Create Task"
+    },
+    {
+      "toolName": "create_branch",
+      "label": "Create Branch"
+    },
+    {
+      "toolName": "apply_diff",
+      "label": "Apply Diff"
+    },
+    {
+      "toolName": "run_tests",
+      "label": "Run Tests"
+    },
+    {
+      "toolName": "get_git_status",
+      "label": "Get Git Status"
+    },
+    {
+      "toolName": "commit_changes",
+      "label": "Commit Changes"
+    }
   ],
   "events": [
-    { "id": "idea_created", "name": "Idea Created", "description": "Fired when a new idea is added to the backlog" },
-    { "id": "task_completed", "name": "Task Completed", "description": "Fired when a dev task finishes execution" },
-    { "id": "scan_completed", "name": "Scan Completed", "description": "Fired when a codebase scan finishes with new ideas" },
-    { "id": "branch_created", "name": "Branch Created", "description": "Fired when an agent creates a new branch" },
-    { "id": "tests_completed", "name": "Tests Completed", "description": "Fired when test execution finishes" }
+    {
+      "id": "idea_created",
+      "name": "Idea Created",
+      "description": "Fired when a new idea is added to the backlog"
+    },
+    {
+      "id": "task_completed",
+      "name": "Task Completed",
+      "description": "Fired when a dev task finishes execution"
+    },
+    {
+      "id": "scan_completed",
+      "name": "Scan Completed",
+      "description": "Fired when a codebase scan finishes with new ideas"
+    },
+    {
+      "id": "branch_created",
+      "name": "Branch Created",
+      "description": "Fired when an agent creates a new branch"
+    },
+    {
+      "id": "tests_completed",
+      "name": "Tests Completed",
+      "description": "Fired when test execution finishes"
+    }
   ],
   "metadata": {
     "template_enabled": true,
@@ -40,7 +109,12 @@
     "auth_type": "builtin",
     "auth_type_label": "Project",
     "auth_methods": [
-      { "id": "project", "label": "Dev Tools Project", "type": "credential", "is_default": true }
+      {
+        "id": "project",
+        "label": "Dev Tools Project",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

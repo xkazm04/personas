@@ -5,6 +5,10 @@
   "color": "#000000",
   "icon_url": "/icons/connectors/x-twitter.svg",
   "category": "social",
+  "categories": [
+    "social",
+    "social_feed"
+  ],
   "fields": [
     {
       "key": "bearer_token",
@@ -34,7 +38,12 @@
     "setup_guide": "1. Go to developer.x.com and sign up for a developer account\n2. Create a Project + App\n3. Generate a Bearer Token in Keys and tokens\n4. Paste the Bearer Token here\n\nNote: Most read endpoints require the Basic tier ($200/mo) or higher. The Free tier is limited to posting tweets and the user lookup endpoints.",
     "pricing_tier": "paid",
     "auth_methods": [
-      {"id": "api_key", "label": "Bearer Token", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "Bearer Token",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

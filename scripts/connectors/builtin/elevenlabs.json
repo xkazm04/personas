@@ -5,6 +5,12 @@
   "color": "#000000",
   "icon_url": "/icons/connectors/elevenlabs.svg",
   "category": "ai",
+  "categories": [
+    "ai",
+    "audio_generation",
+    "tts",
+    "voice_generation"
+  ],
   "fields": [
     {
       "key": "api_key",

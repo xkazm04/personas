@@ -5,6 +5,10 @@
   "color": "#326599",
   "icon_url": "/icons/connectors/pubmed.svg",
   "category": "research",
+  "categories": [
+    "research",
+    "academic_papers"
+  ],
   "fields": [
     {
       "key": "api_key",

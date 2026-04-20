@@ -5,6 +5,11 @@
   "color": "#7C3AED",
   "icon_url": "/icons/connectors/humbalytics.svg",
   "category": "analytics",
+  "categories": [
+    "analytics",
+    "web_analytics",
+    "experimentation"
+  ],
   "fields": [
     {
       "key": "api_key",

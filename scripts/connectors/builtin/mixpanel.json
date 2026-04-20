@@ -5,7 +5,10 @@
   "color": "#7856FF",
   "icon_url": "/icons/connectors/mixpanel.svg",
   "category": "analytics",
-  "categories": ["analytics"],
+  "categories": [
+    "analytics",
+    "product_analytics"
+  ],
   "fields": [
     {
       "key": "service_account_username",

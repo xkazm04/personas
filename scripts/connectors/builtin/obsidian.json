@@ -5,6 +5,11 @@
   "color": "#7C3AED",
   "icon_url": "/icons/connectors/obsidian.svg",
   "category": "productivity",
+  "categories": [
+    "productivity",
+    "knowledge_base",
+    "note_taking"
+  ],
   "fields": [
     {
       "key": "base_url",

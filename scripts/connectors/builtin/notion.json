@@ -5,6 +5,12 @@
   "color": "#000000",
   "icon_url": "/icons/connectors/notion.svg",
   "category": "database",
+  "categories": [
+    "database",
+    "knowledge_base",
+    "documentation",
+    "wiki"
+  ],
   "fields": [
     {
       "key": "api_key",

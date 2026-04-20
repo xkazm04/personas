@@ -5,6 +5,11 @@
   "color": "#00C4B8",
   "icon_url": "/icons/connectors/formbricks.svg",
   "category": "forms",
+  "categories": [
+    "forms",
+    "surveys",
+    "feedback"
+  ],
   "fields": [
     {
       "key": "api_key",

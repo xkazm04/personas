@@ -5,6 +5,11 @@
   "color": "#4A154B",
   "icon_url": "/icons/connectors/slack.svg",
   "category": "messaging",
+  "categories": [
+    "messaging",
+    "chat",
+    "team_messaging"
+  ],
   "fields": [
     {
       "key": "bot_token",

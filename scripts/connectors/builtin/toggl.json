@@ -5,6 +5,10 @@
   "color": "#E57CD8",
   "icon_url": "https://cdn.simpleicons.org/toggltrack/E57CD8",
   "category": "time-tracking",
+  "categories": [
+    "time-tracking",
+    "time_tracking"
+  ],
   "fields": [
     {
       "key": "api_token",

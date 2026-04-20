@@ -5,6 +5,10 @@
   "color": "#4285F4",
   "icon_url": "/icons/connectors/chrome.svg",
   "category": "desktop",
+  "categories": [
+    "desktop",
+    "browser_automation"
+  ],
   "fields": [
     {
       "key": "binary_path",

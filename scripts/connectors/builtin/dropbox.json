@@ -5,6 +5,9 @@
   "color": "#0061FF",
   "icon_url": "/icons/connectors/dropbox.svg",
   "category": "storage",
+  "categories": [
+    "storage"
+  ],
   "fields": [
     {
       "key": "access_token",

@@ -5,6 +5,11 @@
   "color": "#E5484D",
   "icon_url": "/icons/connectors/betterstack.svg",
   "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "observability",
+    "uptime"
+  ],
   "fields": [
     {
       "key": "api_token",
