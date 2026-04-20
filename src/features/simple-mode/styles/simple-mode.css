@@ -1,0 +1,107 @@
+/*
+ * Simple-mode design tokens
+ * -------------------------
+ * A closed palette of five accent tones (amber, violet, emerald, rose, gold).
+ * Each tone exposes four utilities: -text, -soft, -border, -solid.
+ * Dark-theme values are authored defaults; [data-theme^="light"] overrides
+ * keep every utility legible in light themes.
+ *
+ * Compose with typo-* classes from typography.css for size/weight, and with
+ * the .simple-surface + .simple-display helpers for pages that want the warm
+ * editorial look.
+ *
+ * Do NOT add new tones without ROADMAP approval — the palette is intentionally
+ * closed to keep Simple mode visually coherent.
+ */
+
+/* ---------- Amber ---------- */
+.simple-accent-amber-text   { color: #fde68a; }
+.simple-accent-amber-soft   { background-color: rgba(245, 158, 11, 0.08); }
+.simple-accent-amber-border { border-color: rgba(245, 158, 11, 0.25); }
+.simple-accent-amber-solid  { background-color: #f59e0b; color: #422006; }
+
+[data-theme^="light"] .simple-accent-amber-text   { color: #92400e; }
+[data-theme^="light"] .simple-accent-amber-soft   { background-color: rgba(245, 158, 11, 0.10); }
+[data-theme^="light"] .simple-accent-amber-border { border-color: rgba(180, 83, 9, 0.35); }
+[data-theme^="light"] .simple-accent-amber-solid  { background-color: #b45309; color: #fffbeb; }
+
+/* ---------- Violet ---------- */
+.simple-accent-violet-text   { color: #ddd6fe; }
+.simple-accent-violet-soft   { background-color: rgba(139, 92, 246, 0.08); }
+.simple-accent-violet-border { border-color: rgba(139, 92, 246, 0.25); }
+.simple-accent-violet-solid  { background-color: #8b5cf6; color: #1e1b4b; }
+
+[data-theme^="light"] .simple-accent-violet-text   { color: #5b21b6; }
+[data-theme^="light"] .simple-accent-violet-soft   { background-color: rgba(139, 92, 246, 0.10); }
+[data-theme^="light"] .simple-accent-violet-border { border-color: rgba(91, 33, 182, 0.35); }
+[data-theme^="light"] .simple-accent-violet-solid  { background-color: #6d28d9; color: #f5f3ff; }
+
+/* ---------- Emerald ---------- */
+.simple-accent-emerald-text   { color: #a7f3d0; }
+.simple-accent-emerald-soft   { background-color: rgba(16, 185, 129, 0.08); }
+.simple-accent-emerald-border { border-color: rgba(16, 185, 129, 0.25); }
+.simple-accent-emerald-solid  { background-color: #10b981; color: #022c22; }
+
+[data-theme^="light"] .simple-accent-emerald-text   { color: #065f46; }
+[data-theme^="light"] .simple-accent-emerald-soft   { background-color: rgba(16, 185, 129, 0.10); }
+[data-theme^="light"] .simple-accent-emerald-border { border-color: rgba(6, 95, 70, 0.35); }
+[data-theme^="light"] .simple-accent-emerald-solid  { background-color: #047857; color: #ecfdf5; }
+
+/* ---------- Rose ---------- */
+.simple-accent-rose-text   { color: #fecdd3; }
+.simple-accent-rose-soft   { background-color: rgba(244, 63, 94, 0.08); }
+.simple-accent-rose-border { border-color: rgba(244, 63, 94, 0.30); }
+.simple-accent-rose-solid  { background-color: #f43f5e; color: #4c0519; }
+
+[data-theme^="light"] .simple-accent-rose-text   { color: #9f1239; }
+[data-theme^="light"] .simple-accent-rose-soft   { background-color: rgba(244, 63, 94, 0.10); }
+[data-theme^="light"] .simple-accent-rose-border { border-color: rgba(159, 18, 57, 0.35); }
+[data-theme^="light"] .simple-accent-rose-solid  { background-color: #be123c; color: #fff1f2; }
+
+/* ---------- Gold ---------- */
+.simple-accent-gold-text   { color: #fde68a; }
+.simple-accent-gold-soft   { background-color: rgba(234, 179, 8, 0.08); }
+.simple-accent-gold-border { border-color: rgba(234, 179, 8, 0.25); }
+.simple-accent-gold-solid  { background-color: #eab308; color: #3f2d00; }
+
+[data-theme^="light"] .simple-accent-gold-text   { color: #713f12; }
+[data-theme^="light"] .simple-accent-gold-soft   { background-color: rgba(234, 179, 8, 0.10); }
+[data-theme^="light"] .simple-accent-gold-border { border-color: rgba(113, 63, 18, 0.35); }
+[data-theme^="light"] .simple-accent-gold-solid  { background-color: #a16207; color: #fefce8; }
+
+/* ---------- Surface ---------- */
+/*
+ * Warm editorial background: subtle dual radial wash (amber top-left,
+ * violet bottom-right) layered over the semantic --background token.
+ * Light theme desaturates the radials to stay creamy, not gaudy.
+ */
+.simple-surface {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(245, 158, 11, 0.05), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 85% 90%, rgba(139, 92, 246, 0.05), transparent 60%),
+    var(--background);
+}
+
+[data-theme^="light"] .simple-surface {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(245, 158, 11, 0.09), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 85% 90%, rgba(139, 92, 246, 0.08), transparent 60%),
+    var(--background);
+}
+
+/* ---------- Display ---------- */
+/*
+ * Serif-editorial heading helper. Intended usage: pair with a typo-* size
+ * class, e.g. `class="typo-hero simple-display"`. Size and line-height come
+ * from typography.css; this layer only adjusts family, weight, and tracking.
+ */
+.simple-display {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.simple-display-italic {
+  font-style: italic;
+  font-weight: 500;
+}
