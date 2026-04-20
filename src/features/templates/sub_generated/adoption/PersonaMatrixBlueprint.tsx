@@ -45,7 +45,7 @@ interface PersonaMatrixBlueprintProps {
 
 const DIMENSIONS = [
   { key: 'use-cases', icon: UseCasesIcon, colorClass: 'text-violet-400', accentBg: 'bg-violet-400' },
-  { key: 'connectors', icon: ConnectorsIcon, colorClass: 'text-cyan-400', accentBg: 'bg-cyan-400' },
+  { key: 'connectors', icon: ConnectorsIcon, colorClass: 'text-brand-cyan', accentBg: 'bg-cyan-400' },
   { key: 'triggers', icon: TriggersIcon, colorClass: 'text-amber-400', accentBg: 'bg-amber-400' },
   { key: 'human-review', icon: HumanReviewIcon, colorClass: 'text-rose-400', accentBg: 'bg-rose-400' },
   { key: 'messages', icon: MessagesIcon, colorClass: 'text-blue-400', accentBg: 'bg-blue-400' },
@@ -75,14 +75,14 @@ function statusIndicator(status: CellBuildStatus | undefined): { dotColor: strin
   switch (status) {
     case 'resolved':
     case 'updated':
-      return { dotColor: 'bg-emerald-400', label: 'OK' };
+      return { dotColor: 'bg-status-success', label: 'OK' };
     case 'pending':
       return { dotColor: 'bg-primary/50 animate-pulse', label: 'WAIT' };
     case 'error':
-      return { dotColor: 'bg-red-400', label: 'ERR' };
+      return { dotColor: 'bg-status-error', label: 'ERR' };
     case 'filling':
     case 'highlighted':
-      return { dotColor: 'bg-cyan-400 animate-pulse', label: 'FILL' };
+      return { dotColor: 'bg-brand-cyan animate-pulse', label: 'FILL' };
     default:
       return { dotColor: 'bg-foreground/15', label: '---' };
   }
@@ -92,13 +92,13 @@ function phaseIcon(phase: BuildPhase | undefined) {
   switch (phase) {
     case 'completed':
     case 'promoted':
-      return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+      return <CheckCircle2 className="w-4 h-4 text-status-success" />;
     case 'failed':
-      return <AlertCircle className="w-4 h-4 text-red-400" />;
+      return <AlertCircle className="w-4 h-4 text-status-error" />;
     case 'resolving':
     case 'analyzing':
     case 'testing':
-      return <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />;
+      return <Loader2 className="w-4 h-4 text-brand-cyan animate-spin" />;
     default:
       return <Terminal className="w-4 h-4 text-foreground" />;
   }
@@ -240,12 +240,12 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
       <div className="flex-1 flex flex-col justify-center">
         {buildActivity && (
           <div className="font-mono text-[11px] text-foreground mb-4 leading-relaxed">
-            <span className="text-cyan-400">&gt;</span> {buildActivity}
+            <span className="text-brand-cyan">&gt;</span> {buildActivity}
           </div>
         )}
         {isRunning && (
           <div className="flex items-center gap-2 font-mono text-[11px] text-foreground mb-4">
-            <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
+            <Loader2 className="w-3 h-3 animate-spin text-brand-cyan" />
             <span>{t.templates.matrix_variants.processing}</span>
           </div>
         )}
@@ -259,17 +259,17 @@ function CenterHub({ buildPhase, completeness, isRunning, buildActivity, onStart
           </button>
         )}
         {buildPhase === 'testing' && (
-          <div className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/20 font-mono typo-code text-emerald-400/70">
+          <div className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-status-success/30 font-mono typo-code text-status-success/80">
             <span className="flex gap-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '300ms' }} />
             </span>
             {t.templates.matrix_variants.testing_dots}
           </div>
         )}
         {buildPhase === 'test_complete' && onApproveTest && (
-          <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-emerald-500/30 font-mono typo-code text-emerald-400 cursor-pointer hover:bg-emerald-500/10 transition-colors">
+          <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-status-success/40 font-mono typo-code text-status-success cursor-pointer hover:bg-status-success/10 transition-colors">
             <Sparkles className="w-3.5 h-3.5" /> APPROVE
           </button>
         )}

@@ -80,9 +80,9 @@ function StatusPill({ status }: { status?: CellBuildStatus }) {
   const base = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium tracking-wide backdrop-blur-sm';
 
   if (status === 'resolved' || status === 'updated')
-    return <span className={`${base} bg-emerald-500/15 border border-emerald-500/25 text-emerald-400`}><CheckCircle2 className="w-3 h-3" /> Resolved</span>;
+    return <span className={`${base} bg-status-success/15 border border-status-success/30 text-status-success`}><CheckCircle2 className="w-3 h-3" /> Resolved</span>;
   if (status === 'error')
-    return <span className={`${base} bg-red-500/15 border border-red-500/25 text-red-400`}><AlertCircle className="w-3 h-3" /> Error</span>;
+    return <span className={`${base} bg-status-error/15 border border-status-error/30 text-status-error`}><AlertCircle className="w-3 h-3" /> Error</span>;
   if (status === 'pending' || status === 'filling')
     return <span className={`${base} bg-primary/10 border border-primary/15 animate-pulse text-foreground`}><Loader2 className="w-3 h-3 animate-spin" /> {status === 'filling' ? 'Filling' : 'Pending'}</span>;
   return <span className={`${base} bg-primary/10 border border-primary/15 text-foreground`}><HelpCircle className="w-3 h-3" /> {status.charAt(0).toUpperCase() + status.slice(1)}</span>;
@@ -249,15 +249,15 @@ function CenterHub({
           {buildPhase === 'testing' && (
             <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md bg-primary/5 border border-primary/10 text-[13px] font-medium text-foreground">
               <span className="flex gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-bounce" style={{ animationDelay: '300ms' }} />
               </span>
               {t.templates.matrix_variants.testing_agent}
             </div>
           )}
           {onApproveTest && buildPhase === 'test_complete' && (
-            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
+            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal backdrop-blur-md cursor-pointer bg-status-success/15 border border-status-success/30 hover:bg-status-success/25 transition-all duration-200 text-status-success text-[13px] font-medium">
               <CheckCircle2 className="w-4 h-4" /> {t.templates.matrix_variants.approve_and_promote}
             </button>
           )}
