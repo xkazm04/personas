@@ -192,7 +192,7 @@ export function UseCaseEditCell({ editState, callbacks }: UseCaseEditCellProps) 
     <div className="w-full space-y-1.5">
       {useCases.slice(0, 3).map((uc) => (
         <div key={uc.id} className="flex items-center gap-1.5 group">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400/50 flex-shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-purple/60 flex-shrink-0" />
           <span className="typo-body text-foreground leading-snug flex-1 truncate">{uc.title}</span>
           {callbacks.onUseCaseRemove && (
             <button type="button" onClick={() => callbacks.onUseCaseRemove!(uc.id)}

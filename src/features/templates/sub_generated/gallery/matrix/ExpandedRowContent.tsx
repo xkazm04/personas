@@ -103,7 +103,7 @@ export function ExpandedRowContent({
         {flows.length > 0 && onViewFlows && (
           <button
             onClick={() => onViewFlows(review)}
-            className="px-3 py-1.5 typo-body rounded-modal border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors inline-flex items-center gap-1.5"
+            className="px-3 py-1.5 typo-body rounded-modal border border-brand-purple/25 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20 transition-colors inline-flex items-center gap-1.5"
           >
             <Workflow className="w-3.5 h-3.5" />
             {t.templates.expanded.flows}

@@ -226,13 +226,13 @@ export function MatrixCommandCenter({
         )}
         <div className="flex gap-1.5">
           {onStartTest && (
-            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
+            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-status-success/10 text-status-success border border-status-success/25 hover:bg-status-success/20 transition-colors">
               <Play className="w-3.5 h-3.5" />
               {t.templates.matrix_cmd.test_agent}
             </button>
           )}
           {onSaveVersion && (
-            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
+            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-card typo-caption font-medium bg-brand-purple/10 text-brand-purple border border-brand-purple/25 hover:bg-brand-purple/20 transition-colors">
               <Save className="w-3.5 h-3.5" />
               {t.templates.matrix_cmd.save_version}
             </button>
