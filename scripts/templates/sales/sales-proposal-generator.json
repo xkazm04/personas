@@ -5,11 +5,21 @@
   "description": "Monitors the CRM for newly qualified deals, researches prospect companies via web intelligence, and generates three-tier personalized proposals in Notion (startup / standard / enterprise) with executive summary, needs analysis, solution mapping, timeline, ROI pricing, and next steps. Every proposal flagged for human review before client delivery.",
   "icon": "FileText",
   "color": "#3B82F6",
-  "category": ["sales"],
-  "service_flow": ["CRM", "Web Research", "Notion"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "CRM",
+    "Web Research",
+    "Notion"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["CRM", "Web Research", "Notion"],
+    "service_flow": [
+      "CRM",
+      "Web Research",
+      "Notion"
+    ],
     "persona": {
       "goal": "Turn every newly qualified deal into a polished, prospect-grounded proposal — tiered by deal size, anchored in live research, and gated behind human review before anything reaches the client.",
       "identity": {
@@ -49,7 +59,12 @@
       "tool_guidance": "**CRM connector** (required; service_type: crm):\n- Query unprocessed deals: SELECT / REST equivalent for status ∈ {qualified, discovery_complete, proposal_requested} AND deal_id NOT IN processed_deals, ORDER BY deal_value DESC LIMIT max_proposals_per_run.\n- Deal details: JOIN with contacts + companies for full context.\n- Deal notes / activity: extract competitor mentions, pain points, timeline urgency.\n- Adapt queries per provider (Salesforce SOQL, HubSpot REST, Pipedrive search, local database).\n\n**Web research** (built-in `web_search` tool):\n- Company website: `site:{website}` + homepage / about / products pages.\n- Recent news: `{company} news` limited to last 90 days.\n- Industry trends: `{industry} trends challenges {year}`.\n- Competitors: `{competitor} vs alternatives limitations` when deal notes mention one.\n- Contact: `{contact_name} {company} LinkedIn` for background calibration.\n- 15s timeout per search. Store all findings in `research_{proposal_id}.json`.\n\n**Notion connector** (required; service_type: knowledge_base):\n- Create page: POST /v1/pages with parent database_id + properties.\n- Append body: POST /v1/blocks/{page_id}/children with heading_2 / heading_3 / paragraph / bulleted_list_item / quote / divider / callout blocks.\n- 2000-char block limit — split longer paragraphs.\n- Query related: POST /v1/databases/{id}/query filtered by Industry for prior-proposal reference.\n- Rate limit: ~3 req/s.\n\n**Local state**:\n- `processed_deals.json` — deal id → proposal id deduplication map.\n- `proposal_log.json` — lifecycle records (id, status, timestamps, outcomes).\n- `proposal_counter.json` — `{ counter: N }` for sequential ids.\n- `research_{proposal_id}.json` — raw research findings per proposal.\n- `proposal_analytics.json` — approval rates + revision patterns + template performance.",
       "error_handling": "Incomplete deal data → log + emit `sales.proposal.deal_incomplete` with missing fields list; do NOT retry until CRM updated. Research failures → proceed with partial findings, set confidence=low, note in executive summary. Research rate limit → queue for next cycle, flag as `partial_research`. Notion 401 → store proposal locally as fallback, emit credential-refresh alert. Notion 404 → config error, emit user_message, store locally. Notion 429 → exponential backoff (1, 2, 4, 8s). Unknown industry → default to standard template with neutral language, flag for review. State corruption → archive corrupted file, reinit; never generate duplicate proposals.",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "crm",
@@ -79,11 +94,11 @@
           "setup_instructions": "1. Generate a read-scope API token in your CRM.\n2. Ensure deals carry company name, contact email, deal value, and industry.\n3. Paste token + instance URL above."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -127,10 +142,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "notion"],
+        "connectors": [
+          "crm",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -165,7 +186,12 @@
           {
             "name": "proposal_template",
             "type": "enum",
-            "options": ["auto", "startup", "standard", "enterprise"],
+            "options": [
+              "auto",
+              "startup",
+              "standard",
+              "enterprise"
+            ],
             "default": "auto",
             "description": "Template override. 'auto' picks tier from deal value."
           },
@@ -183,36 +209,131 @@
           "proposal_template": "{{param.aq_template_override}}",
           "max_proposals_per_run": "{{param.aq_max_per_run}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "g1", "type": "start", "label": "Poll tick" },
-            { "id": "g2", "type": "connector", "label": "Query unprocessed qualified deals", "connector": "crm" },
-            { "id": "g3", "type": "action", "label": "Validate required fields" },
-            { "id": "g4", "type": "decision", "label": "Data complete?" },
-            { "id": "g5", "type": "action", "label": "Generate proposal id + select tier" },
-            { "id": "g6", "type": "action", "label": "Research company / news / industry / competitors / contact" },
-            { "id": "g7", "type": "action", "label": "Compose six-section proposal" },
-            { "id": "g8", "type": "connector", "label": "Create Notion proposal page", "connector": "notion" },
-            { "id": "g9", "type": "action", "label": "Flag for manual review" },
-            { "id": "g10", "type": "event", "label": "Emit sales.proposal.created" },
-            { "id": "g11", "type": "event", "label": "Emit sales.proposal.deal_incomplete" },
-            { "id": "g12", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "g1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "g2",
+              "type": "connector",
+              "label": "Query unprocessed qualified deals",
+              "connector": "crm"
+            },
+            {
+              "id": "g3",
+              "type": "action",
+              "label": "Validate required fields"
+            },
+            {
+              "id": "g4",
+              "type": "decision",
+              "label": "Data complete?"
+            },
+            {
+              "id": "g5",
+              "type": "action",
+              "label": "Generate proposal id + select tier"
+            },
+            {
+              "id": "g6",
+              "type": "action",
+              "label": "Research company / news / industry / competitors / contact"
+            },
+            {
+              "id": "g7",
+              "type": "action",
+              "label": "Compose six-section proposal"
+            },
+            {
+              "id": "g8",
+              "type": "connector",
+              "label": "Create Notion proposal page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "g9",
+              "type": "action",
+              "label": "Flag for manual review"
+            },
+            {
+              "id": "g10",
+              "type": "event",
+              "label": "Emit sales.proposal.created"
+            },
+            {
+              "id": "g11",
+              "type": "event",
+              "label": "Emit sales.proposal.deal_incomplete"
+            },
+            {
+              "id": "g12",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "g1", "target": "g2" },
-            { "source": "g2", "target": "g3" },
-            { "source": "g3", "target": "g4" },
-            { "source": "g4", "target": "g5", "variant": "yes", "label": "Complete" },
-            { "source": "g4", "target": "g11", "variant": "no", "label": "Incomplete" },
-            { "source": "g5", "target": "g6" },
-            { "source": "g6", "target": "g7" },
-            { "source": "g7", "target": "g8" },
-            { "source": "g8", "target": "g9" },
-            { "source": "g9", "target": "g10" },
-            { "source": "g10", "target": "g12" },
-            { "source": "g11", "target": "g12" }
+            {
+              "source": "g1",
+              "target": "g2"
+            },
+            {
+              "source": "g2",
+              "target": "g3"
+            },
+            {
+              "source": "g3",
+              "target": "g4"
+            },
+            {
+              "source": "g4",
+              "target": "g5",
+              "variant": "yes",
+              "label": "Complete"
+            },
+            {
+              "source": "g4",
+              "target": "g11",
+              "variant": "no",
+              "label": "Incomplete"
+            },
+            {
+              "source": "g5",
+              "target": "g6"
+            },
+            {
+              "source": "g6",
+              "target": "g7"
+            },
+            {
+              "source": "g7",
+              "target": "g8"
+            },
+            {
+              "source": "g8",
+              "target": "g9"
+            },
+            {
+              "source": "g9",
+              "target": "g10"
+            },
+            {
+              "source": "g10",
+              "target": "g12"
+            },
+            {
+              "source": "g11",
+              "target": "g12"
+            }
           ]
         }
       },
@@ -227,12 +348,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "sales.review.completed" },
+          "config": {
+            "event_type": "sales.review.completed"
+          },
           "description": "Fires when a manual review completes. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Approval patterns (winning framings by industry + tier) and revision patterns (common reviewer complaints) stored for progressive learning. Approval-rate analytics per industry + tier in `proposal_analytics.json`."
@@ -257,34 +385,121 @@
         "error_handling": "Notion update failure → retry once, then emit user_message; proposal state preserved in `proposal_log.json`. Feedback parse failure → request clarification from reviewer via messaging, don't regenerate blindly.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "l1", "type": "start", "label": "review.completed received" },
-            { "id": "l2", "type": "decision", "label": "Approved or revision?" },
-            { "id": "l3", "type": "connector", "label": "Update Notion → approved", "connector": "notion" },
-            { "id": "l4", "type": "action", "label": "Log winning pattern to memory" },
-            { "id": "l5", "type": "event", "label": "Emit proposal.approved" },
-            { "id": "l6", "type": "action", "label": "Parse feedback + regenerate flagged sections" },
-            { "id": "l7", "type": "connector", "label": "Update Notion → re-review", "connector": "notion" },
-            { "id": "l8", "type": "action", "label": "Log revision pattern to memory" },
-            { "id": "l9", "type": "event", "label": "Emit proposal.revision_needed" },
-            { "id": "l10", "type": "action", "label": "Update proposal_analytics.json" },
-            { "id": "l11", "type": "end", "label": "Learning cycle complete" }
+            {
+              "id": "l1",
+              "type": "start",
+              "label": "review.completed received"
+            },
+            {
+              "id": "l2",
+              "type": "decision",
+              "label": "Approved or revision?"
+            },
+            {
+              "id": "l3",
+              "type": "connector",
+              "label": "Update Notion → approved",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "l4",
+              "type": "action",
+              "label": "Log winning pattern to memory"
+            },
+            {
+              "id": "l5",
+              "type": "event",
+              "label": "Emit proposal.approved"
+            },
+            {
+              "id": "l6",
+              "type": "action",
+              "label": "Parse feedback + regenerate flagged sections"
+            },
+            {
+              "id": "l7",
+              "type": "connector",
+              "label": "Update Notion → re-review",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "l8",
+              "type": "action",
+              "label": "Log revision pattern to memory"
+            },
+            {
+              "id": "l9",
+              "type": "event",
+              "label": "Emit proposal.revision_needed"
+            },
+            {
+              "id": "l10",
+              "type": "action",
+              "label": "Update proposal_analytics.json"
+            },
+            {
+              "id": "l11",
+              "type": "end",
+              "label": "Learning cycle complete"
+            }
           ],
           "edges": [
-            { "source": "l1", "target": "l2" },
-            { "source": "l2", "target": "l3", "variant": "yes", "label": "Approved" },
-            { "source": "l2", "target": "l6", "variant": "no", "label": "Revision" },
-            { "source": "l3", "target": "l4" },
-            { "source": "l4", "target": "l5" },
-            { "source": "l5", "target": "l10" },
-            { "source": "l6", "target": "l7" },
-            { "source": "l7", "target": "l8" },
-            { "source": "l8", "target": "l9" },
-            { "source": "l9", "target": "l10" },
-            { "source": "l10", "target": "l11" }
+            {
+              "source": "l1",
+              "target": "l2"
+            },
+            {
+              "source": "l2",
+              "target": "l3",
+              "variant": "yes",
+              "label": "Approved"
+            },
+            {
+              "source": "l2",
+              "target": "l6",
+              "variant": "no",
+              "label": "Revision"
+            },
+            {
+              "source": "l3",
+              "target": "l4"
+            },
+            {
+              "source": "l4",
+              "target": "l5"
+            },
+            {
+              "source": "l5",
+              "target": "l10"
+            },
+            {
+              "source": "l6",
+              "target": "l7"
+            },
+            {
+              "source": "l7",
+              "target": "l8"
+            },
+            {
+              "source": "l8",
+              "target": "l9"
+            },
+            {
+              "source": "l9",
+              "target": "l10"
+            },
+            {
+              "source": "l10",
+              "target": "l11"
+            }
           ]
         }
       }
@@ -293,7 +508,9 @@
       {
         "id": "aq_crm_source",
         "scope": "connector",
-        "connector_names": ["crm"],
+        "connector_names": [
+          "crm"
+        ],
         "category": "configuration",
         "question": "Which CRM credential holds the deal pipeline?",
         "type": "select",
@@ -310,7 +527,9 @@
       {
         "id": "aq_research_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_proposal_generation"],
+        "use_case_ids": [
+          "uc_proposal_generation"
+        ],
         "category": "quality",
         "question": "How deep should prospect research go?",
         "type": "select",
@@ -328,11 +547,18 @@
       {
         "id": "aq_template_override",
         "scope": "capability",
-        "use_case_ids": ["uc_proposal_generation"],
+        "use_case_ids": [
+          "uc_proposal_generation"
+        ],
         "category": "configuration",
         "question": "Template tier selection?",
         "type": "select",
-        "options": ["auto (by deal value)", "startup (concise)", "standard (balanced)", "enterprise (comprehensive)"],
+        "options": [
+          "auto (by deal value)",
+          "startup (concise)",
+          "standard (balanced)",
+          "enterprise (comprehensive)"
+        ],
         "default": "auto (by deal value)",
         "maps_to": "use_cases[uc_proposal_generation].sample_input.proposal_template",
         "variable_name": "proposal_template",
@@ -342,16 +568,43 @@
       {
         "id": "aq_max_per_run",
         "scope": "capability",
-        "use_case_ids": ["uc_proposal_generation"],
+        "use_case_ids": [
+          "uc_proposal_generation"
+        ],
         "category": "quality",
         "question": "Max proposals generated per polling run?",
         "type": "select",
-        "options": ["3", "5", "10", "25", "50"],
+        "options": [
+          "3",
+          "5",
+          "10",
+          "25",
+          "50"
+        ],
         "default": "10",
         "maps_to": "use_cases[uc_proposal_generation].sample_input.max_proposals_per_run",
         "variable_name": "max_proposals_per_run",
         "context": "Caps review-queue load. Deals processed in descending deal-value order so the highest-impact deals get proposals first.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,21 @@
   "description": "Monitors a Notion \"Ready for Review\" database view. When items appear, emails the assigned reviewer, posts to a Slack approval channel with action context, and waits for approval. On approval, moves the item to \"Published\" and notifies the author.",
   "icon": "CheckCircle2",
   "color": "#F59E0B",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Notion", "Gmail", "Slack"],
+  "service_flow": [
+    "Notion",
+    "Gmail",
+    "Slack"
+  ],
   "payload": {
-    "service_flow": ["Notion", "Gmail", "Slack"],
+    "service_flow": [
+      "Notion",
+      "Gmail",
+      "Slack"
+    ],
     "persona": {
       "goal": "Keep content moving from draft to published — route every Ready-for-Review item to the right reviewer, gather the decision, and close the loop with the author.",
       "identity": {
@@ -46,14 +56,20 @@
       "tool_guidance": "**Notion API** (`http_request` + `notion` connector, base `https://api.notion.com/v1`, header `Notion-Version: 2022-06-28`):\n- Query ready: `POST /databases/{database_id}/query` with `{filter: {property: 'Status', status: {equals: 'Ready for Review'}}}`.\n- Get page: `GET /pages/{page_id}`.\n- Update status: `PATCH /pages/{page_id}` with `{properties: {Status: {status: {name: 'Published'}}}}`.\n- Add comment: `POST /comments` with `{parent: {page_id}, rich_text: [...]}`.\n\n**Gmail** (`gmail_send` / `gmail_read` native tools): use `gmail_send` for review requests, published confirmations, and revision-needed notices. Use `gmail_read` to pick up reviewer replies containing feedback. Subject conventions: `[Review Requested] {title}`, `[Published] {title}`, `[Revision Needed] {title}`.\n\n**Slack API** (`http_request` + `slack` connector, base `https://slack.com/api`):\n- Post card: `POST /chat.postMessage` with `{channel, blocks: [...]}`.\n- Update card: `POST /chat.update` with the original message ts.\n- Thread reply: reuse the original ts via `thread_ts`.\n- Block Kit: header block (title) + section block (metadata fields) + context block (Notion link, timestamps) + actions block (Approve/Reject buttons).\n\n**State file I/O** (`file_read` / `file_write`): `approval_state.json` with read-modify-write pattern. Never leave the file in a partial state.",
       "error_handling": "Notion 429 → exponential backoff starting 1s, 3 retries. Notion 404 → alert operator (DB ID or permissions may have changed). Notion 400 validation → log full request body. Missing reviewer email → post Slack warning requesting manual assignment, skip email, still create approval gate. Gmail send failure → retry once, then notify via Slack. Slack channel_not_found → resolve by name via `conversations.list`, else DM operator. Slack 429 → respect Retry-After header. Invalid blocks → fall back to plain text. Corrupted state file → reinitialize empty; may cause one duplicate notification cycle (acceptable). Notion update fails on approval → emit persona.error, do NOT send author 'Published' — half-complete state is worse than silence.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_read", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_read",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "credential_fields": [
             {
@@ -76,8 +92,8 @@
           "setup_instructions": "1. notion.so/my-integrations → create internal integration.\n2. Copy the token (secret_…).\n3. Open the content DB → ... → Connections → add integration.\n4. Copy database ID from the URL.\n5. Ensure Status property includes options: 'Ready for Review', 'Published', 'Needs Revision', 'Blocked'."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -111,8 +127,8 @@
           "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Credentials → OAuth 2.0 Client ID (Desktop).\n3. Complete consent flow with gmail.send / readonly / modify scopes.\n4. Paste client_id, client_secret, refresh_token."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -162,12 +178,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/2 * * * *" },
+          "config": {
+            "cron": "*/2 * * * *"
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "gmail", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Per-content-type reviewer routing history, past SLA performance, content-type → urgency framing."
@@ -184,21 +209,36 @@
           {
             "name": "content_type",
             "type": "enum",
-            "options": ["blog_posts", "marketing_campaigns", "product_docs", "social_media", "internal_comms"],
+            "options": [
+              "blog_posts",
+              "marketing_campaigns",
+              "product_docs",
+              "social_media",
+              "internal_comms"
+            ],
             "default": "blog_posts",
             "description": "Primary content kind managed by the workflow — shapes urgency framing and email tone."
           },
           {
             "name": "team_structure",
             "type": "enum",
-            "options": ["designated_reviewer", "shared_pool", "sequential_editor_manager", "parallel_all_signoff"],
+            "options": [
+              "designated_reviewer",
+              "shared_pool",
+              "sequential_editor_manager",
+              "parallel_all_signoff"
+            ],
             "default": "designated_reviewer",
             "description": "Shapes how the agent routes notifications and determines when an item is truly approved."
           },
           {
             "name": "communication_tone",
             "type": "enum",
-            "options": ["formal_professional", "friendly_direct", "urgent_action_oriented"],
+            "options": [
+              "formal_professional",
+              "friendly_direct",
+              "urgent_action_oriented"
+            ],
             "default": "friendly_direct",
             "description": "Tone for reviewer emails and Slack messages."
           },
@@ -217,30 +257,104 @@
           "communication_tone": "{{param.aq_communication_tone}}",
           "notion_database_ref": "{{param.aq_notion_database_ref}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick" },
-            { "id": "i2", "type": "connector", "label": "Query Notion: Status=Ready for Review", "connector": "notion" },
-            { "id": "i3", "type": "action", "label": "Diff against approval_state.json" },
-            { "id": "i4", "type": "decision", "label": "Reviewer email present?" },
-            { "id": "i5", "type": "connector", "label": "Email reviewer", "connector": "gmail" },
-            { "id": "i6", "type": "connector", "label": "Post Block Kit approval card", "connector": "slack" },
-            { "id": "i7", "type": "event", "label": "Emit content.review.requested" },
-            { "id": "i8", "type": "action", "label": "Persist pending_review state" },
-            { "id": "i9", "type": "end", "label": "Awaiting reviewer decision" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Query Notion: Status=Ready for Review",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "i3",
+              "type": "action",
+              "label": "Diff against approval_state.json"
+            },
+            {
+              "id": "i4",
+              "type": "decision",
+              "label": "Reviewer email present?"
+            },
+            {
+              "id": "i5",
+              "type": "connector",
+              "label": "Email reviewer",
+              "connector": "email"
+            },
+            {
+              "id": "i6",
+              "type": "connector",
+              "label": "Post Block Kit approval card",
+              "connector": "messaging"
+            },
+            {
+              "id": "i7",
+              "type": "event",
+              "label": "Emit content.review.requested"
+            },
+            {
+              "id": "i8",
+              "type": "action",
+              "label": "Persist pending_review state"
+            },
+            {
+              "id": "i9",
+              "type": "end",
+              "label": "Awaiting reviewer decision"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5", "variant": "yes" },
-            { "source": "i4", "target": "i6", "variant": "no", "label": "Slack warning, skip email" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" },
-            { "source": "i7", "target": "i8" },
-            { "source": "i8", "target": "i9" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5",
+              "variant": "yes"
+            },
+            {
+              "source": "i4",
+              "target": "i6",
+              "variant": "no",
+              "label": "Slack warning, skip email"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            }
           ]
         }
       },
@@ -255,10 +369,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "content.review.requested" },
+          "config": {
+            "event_type": "content.review.requested"
+          },
           "description": "Event-triggered — resolves pending reviews when decisions land. Not user-configurable at adoption."
         },
-        "connectors": ["notion", "gmail", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -290,14 +410,24 @@
           {
             "name": "hard_stops",
             "type": "enum",
-            "options": ["never_publish_without_notion_human", "never_reassign_reviewer", "max_one_reminder_per_cycle", "rejection_feedback_dm_only"],
+            "options": [
+              "never_publish_without_notion_human",
+              "never_reassign_reviewer",
+              "max_one_reminder_per_cycle",
+              "rejection_feedback_dm_only"
+            ],
             "default": "never_publish_without_notion_human",
             "description": "Hard limits the agent will never cross autonomously."
           },
           {
             "name": "rejection_delivery",
             "type": "enum",
-            "options": ["email_only", "slack_dm_only", "email_and_slack_dm", "notion_comment_plus_slack_dm"],
+            "options": [
+              "email_only",
+              "slack_dm_only",
+              "email_and_slack_dm",
+              "notion_comment_plus_slack_dm"
+            ],
             "default": "notion_comment_plus_slack_dm",
             "description": "How rejection feedback reaches the author."
           }
@@ -306,30 +436,106 @@
           "hard_stops": "{{param.aq_hard_stops}}",
           "rejection_delivery": "{{param.aq_rejection_delivery}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Reviewer decision received" },
-            { "id": "r2", "type": "decision", "label": "Approve or reject?" },
-            { "id": "r3", "type": "connector", "label": "Notion → Published", "connector": "notion" },
-            { "id": "r4", "type": "connector", "label": "Notion → Needs Revision + comment", "connector": "notion" },
-            { "id": "r5", "type": "connector", "label": "Email author (decision)", "connector": "gmail" },
-            { "id": "r6", "type": "connector", "label": "Slack threaded reply", "connector": "slack" },
-            { "id": "r7", "type": "action", "label": "Persist resolution state" },
-            { "id": "r8", "type": "event", "label": "Emit approved / rejected" },
-            { "id": "r9", "type": "end", "label": "Review closed" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Reviewer decision received"
+            },
+            {
+              "id": "r2",
+              "type": "decision",
+              "label": "Approve or reject?"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "Notion → Published",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Notion → Needs Revision + comment",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Email author (decision)",
+              "connector": "email"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Slack threaded reply",
+              "connector": "messaging"
+            },
+            {
+              "id": "r7",
+              "type": "action",
+              "label": "Persist resolution state"
+            },
+            {
+              "id": "r8",
+              "type": "event",
+              "label": "Emit approved / rejected"
+            },
+            {
+              "id": "r9",
+              "type": "end",
+              "label": "Review closed"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3", "variant": "yes", "label": "Approve" },
-            { "source": "r2", "target": "r4", "variant": "no", "label": "Reject" },
-            { "source": "r3", "target": "r5" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "r2",
+              "target": "r4",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "r3",
+              "target": "r5"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            }
           ]
         }
       },
@@ -344,12 +550,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 * * * *" },
+          "config": {
+            "cron": "0 * * * *"
+          },
           "description": "Default hourly — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "gmail", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Per-reviewer stall rate, escalation success rate, SLA breach frequency by content type."
@@ -366,14 +581,24 @@
           {
             "name": "sla_hours",
             "type": "enum",
-            "options": ["4", "24", "48", "72"],
+            "options": [
+              "4",
+              "24",
+              "48",
+              "72"
+            ],
             "default": "24",
             "description": "Hours before reviewer SLA is considered breached."
           },
           {
             "name": "escalation_policy",
             "type": "enum",
-            "options": ["remind_then_notify_author", "escalate_to_backup", "notify_author_flag_blocked", "wait_indefinitely"],
+            "options": [
+              "remind_then_notify_author",
+              "escalate_to_backup",
+              "notify_author_flag_blocked",
+              "wait_indefinitely"
+            ],
             "default": "remind_then_notify_author",
             "description": "What the agent does when SLA is breached."
           }
@@ -382,24 +607,73 @@
           "sla_hours": "{{param.aq_sla_hours}}",
           "escalation_policy": "{{param.aq_escalation_policy}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Hourly tick" },
-            { "id": "s2", "type": "action", "label": "Scan pending reviews vs SLA" },
-            { "id": "s3", "type": "decision", "label": "Any overdue?" },
-            { "id": "s4", "type": "action", "label": "Execute configured escalation" },
-            { "id": "s5", "type": "event", "label": "Emit content.review.stalled" },
-            { "id": "s6", "type": "end", "label": "Watch cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Hourly tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Scan pending reviews vs SLA"
+            },
+            {
+              "id": "s3",
+              "type": "decision",
+              "label": "Any overdue?"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Execute configured escalation"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit content.review.stalled"
+            },
+            {
+              "id": "s6",
+              "type": "end",
+              "label": "Watch cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4", "variant": "yes" },
-            { "source": "s3", "target": "s6", "variant": "no" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4",
+              "variant": "yes"
+            },
+            {
+              "source": "s3",
+              "target": "s6",
+              "variant": "no"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            }
           ]
         }
       }
@@ -408,7 +682,9 @@
       {
         "id": "aq_content_type",
         "scope": "capability",
-        "use_case_ids": ["uc_review_initiation"],
+        "use_case_ids": [
+          "uc_review_initiation"
+        ],
         "category": "domain",
         "question": "What type of content does this approval workflow primarily manage?",
         "type": "select",
@@ -428,7 +704,9 @@
       {
         "id": "aq_team_structure",
         "scope": "capability",
-        "use_case_ids": ["uc_review_initiation"],
+        "use_case_ids": [
+          "uc_review_initiation"
+        ],
         "category": "domain",
         "question": "How is your review team structured?",
         "type": "select",
@@ -447,7 +725,9 @@
       {
         "id": "aq_communication_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_review_initiation"],
+        "use_case_ids": [
+          "uc_review_initiation"
+        ],
         "category": "quality",
         "question": "What tone should reviewer notifications use?",
         "type": "select",
@@ -465,8 +745,12 @@
       {
         "id": "aq_notion_database_ref",
         "scope": "connector",
-        "connector_names": ["notion"],
-        "use_case_ids": ["uc_review_initiation"],
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "use_case_ids": [
+          "uc_review_initiation"
+        ],
         "category": "configuration",
         "question": "Which Notion database should the agent poll for Ready-for-Review items?",
         "type": "select",
@@ -483,7 +767,9 @@
       {
         "id": "aq_hard_stops",
         "scope": "capability",
-        "use_case_ids": ["uc_approval_resolution"],
+        "use_case_ids": [
+          "uc_approval_resolution"
+        ],
         "category": "boundaries",
         "question": "What should the agent NEVER do without explicit human action?",
         "type": "select",
@@ -502,7 +788,9 @@
       {
         "id": "aq_rejection_delivery",
         "scope": "capability",
-        "use_case_ids": ["uc_approval_resolution"],
+        "use_case_ids": [
+          "uc_approval_resolution"
+        ],
         "category": "configuration",
         "question": "How should rejection feedback reach the content author?",
         "type": "select",
@@ -521,7 +809,9 @@
       {
         "id": "aq_sla_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "What is your standard review SLA?",
         "type": "select",
@@ -540,7 +830,9 @@
       {
         "id": "aq_escalation_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "human_in_the_loop",
         "question": "If a reviewer has not responded within your SLA, what should the agent do?",
         "type": "select",
@@ -555,6 +847,63 @@
         "variable_name": "escalation_policy",
         "context": "Defines escalation so stalled reviews don't silently block publication pipelines.",
         "dimension": "human-review"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

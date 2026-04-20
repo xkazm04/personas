@@ -5,11 +5,21 @@
   "description": "Monitors Gmail for important emails, posts summaries to relevant Slack channels based on sender/topic, and optionally creates structured Notion database entries for tracking. Learns sender patterns over time via agent memory.",
   "icon": "Inbox",
   "color": "#3B82F6",
-  "category": ["email"],
-  "service_flow": ["Gmail", "Slack", "Notion"],
+  "category": [
+    "email"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Slack",
+    "Notion"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Slack", "Notion"],
+    "service_flow": [
+      "Gmail",
+      "Slack",
+      "Notion"
+    ],
     "persona": {
       "goal": "Turn a noisy inbox into routed, tracked intelligence — every important email classified, summarized, and dropped in front of the right team before anyone has to go looking.",
       "identity": {
@@ -47,11 +57,18 @@
       "tool_guidance": "**Gmail tools**:\n- `gmail_search` — primary poll query `is:unread -category:promotions -category:social`. Returns message IDs + basic metadata.\n- `gmail_read` — fetch full message by ID (From, Subject, Date, Body, Attachments).\n- `gmail_mark_read` — call only after every enabled step succeeds. Apply `processed/intake` label: `{addLabelIds:[\"Label_processed\"], removeLabelIds:[\"UNREAD\"]}`.\n\n**Slack via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — body `{channel:\"#intake-{topic}\", blocks:[...]}`. Use Block Kit: section (summary), context (metadata), divider. Urgency emojis 🔴 Critical, 🟡 Normal, 🟢 Low.\n- `POST https://slack.com/api/chat.update` — amend a posted summary when new context arrives.\n- Headers: `Authorization: Bearer xoxb-…` (injected), `Content-Type: application/json`.\n\n**Notion via http_request** (optional):\n- `POST https://api.notion.com/v1/pages` — create tracking row with `{parent:{database_id:…}, properties:{Title, Sender, Date, Category, Urgency, Slack Channel, Status:\"New\", Summary, Gmail ID}}`.\n- `POST https://api.notion.com/v1/databases/{id}/query` — duplicate check before create.\n- Headers: `Authorization: Bearer ntn_…` (injected), `Notion-Version: 2022-06-28`.\n\n**Local state**:\n- `sender_patterns.json` — {email|domain → {category, urgency, count, confidence}}. Read at cycle start, rewritten atomically at end.\n- `processing_errors.json` — timestamped error log keyed by message ID.\n- `failed_posts.json` / `notion_backlog.json` — queues for retry on next cycle when a downstream step fails.\n\n**Classification keyword table**:\n| Category | Keywords | Channel |\n|---|---|---|\n| Urgent | URGENT, ASAP, incident, outage, blocker, P0, P1 | #intake-urgent |\n| Support | bug, issue, ticket, customer, complaint | #intake-support |\n| Sales | proposal, partnership, pricing, demo, trial | #intake-sales |\n| Engineering | deploy, build, CI, PR, release, API, error | #intake-engineering |\n| Finance | invoice, payment, billing, expense, budget | #intake-finance |\n| General | (everything else) | #intake-general |",
       "error_handling": "Gmail auth expired (401) → skip cycle, post alert to the urgent channel, emit `connector_auth_expired`. Gmail 429 → exponential backoff from 30s, resume next cycle. Gmail 404 on read → skip message, log as potentially deleted. Slack channel_not_found → fall back to the configured fallback channel, log the missing channel name. Slack 429 → queue message in `failed_posts.json`, retry next cycle after `Retry-After`. Message too long → truncate summary to 3000 chars, add `[truncated]` marker + Gmail link. Notion 404 database → log, continue Slack posting, queue entry to `notion_backlog.json`. Notion property mismatch (400) → log full response, retry with Title + Summary only. Any pipeline step failure → do NOT mark email read; retry on next cycle. 3 consecutive failures on the same message → mark read to stop the loop, alert the urgent channel with message ID for manual triage.",
       "examples": [],
-      "tools": ["gmail_read", "gmail_search", "gmail_mark_read", "http_request", "file_read", "file_write"],
+      "tools": [
+        "gmail_read",
+        "gmail_search",
+        "gmail_mark_read",
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -86,8 +103,8 @@
           "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable Gmail API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete the OAuth consent flow for scopes: gmail.readonly, gmail.modify.\n5. Paste all three values here."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -106,11 +123,11 @@
           "setup_instructions": "1. api.slack.com/apps -> create a new app (or select existing).\n2. OAuth & Permissions -> add Bot Token Scopes: chat:write, chat:write.public, channels:read.\n3. Install to workspace, copy the Bot User OAuth Token.\n4. Create the intake channels: #intake-urgent, #intake-support, #intake-sales, #intake-engineering, #intake-finance, #intake-general.\n5. Invite the bot to each channel with /invite @YourBotName."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "integration_token",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Skip Notion to run Gmail-to-Slack only. Emails are still classified and posted to Slack; no tracking database rows are written. Enable Notion later to add structured tracking.",
           "api_base_url": "https://api.notion.com/v1",
@@ -155,10 +172,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "* * * * *", "timezone": "local" },
+          "config": {
+            "cron": "* * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 1 minute — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "slack"],
+        "connectors": [
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -180,21 +203,38 @@
           {
             "name": "focus_type",
             "type": "enum",
-            "options": ["support", "sales", "vendor_ops", "internal_team", "all_equally"],
+            "options": [
+              "support",
+              "sales",
+              "vendor_ops",
+              "internal_team",
+              "all_equally"
+            ],
             "default": "all_equally",
             "description": "Primary email type this inbox emphasizes — adjusts classification vocabulary and routing priority."
           },
           {
             "name": "confidential_categories",
             "type": "enum",
-            "options": ["hr_personnel", "exec_to_exec", "marked_confidential", "legal_compliance", "none"],
+            "options": [
+              "hr_personnel",
+              "exec_to_exec",
+              "marked_confidential",
+              "legal_compliance",
+              "none"
+            ],
             "default": "hr_personnel",
             "description": "Categories that must never be auto-posted to Slack or logged to Notion."
           },
           {
             "name": "urgency_signals",
             "type": "enum",
-            "options": ["keywords_only", "keywords_plus_vip", "keywords_plus_attachments", "no_escalation"],
+            "options": [
+              "keywords_only",
+              "keywords_plus_vip",
+              "keywords_plus_attachments",
+              "no_escalation"
+            ],
             "default": "keywords_only",
             "description": "What triggers the escalation track to #intake-urgent instead of standard routing."
           },
@@ -207,7 +247,11 @@
           {
             "name": "summary_format",
             "type": "enum",
-            "options": ["one_liner", "short_block", "full_digest"],
+            "options": [
+              "one_liner",
+              "short_block",
+              "full_digest"
+            ],
             "default": "short_block",
             "description": "Slack summary verbosity."
           },
@@ -226,29 +270,99 @@
           "summary_format": "{{param.aq_summary_format}}",
           "fallback_channel": "{{param.aq_fallback_channel}}"
         },
-        "tool_hints": ["gmail_read", "gmail_search", "gmail_mark_read", "http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_read",
+          "gmail_search",
+          "gmail_mark_read",
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Polling tick" },
-            { "id": "t2", "type": "connector", "label": "gmail_search (unread, non-promo)", "connector": "gmail" },
-            { "id": "t3", "type": "action", "label": "Load sender memory + read each email" },
-            { "id": "t4", "type": "action", "label": "Classify (sender → keywords → confidence)" },
-            { "id": "t5", "type": "connector", "label": "Post to category Slack channel", "connector": "slack" },
-            { "id": "t6", "type": "action", "label": "Update sender patterns" },
-            { "id": "t7", "type": "event", "label": "Emit email.intake.classified" },
-            { "id": "t8", "type": "connector", "label": "gmail_mark_read (after full success)", "connector": "gmail" },
-            { "id": "t9", "type": "end", "label": "Awaiting next tick" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "gmail_search (unread, non-promo)",
+              "connector": "email"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Load sender memory + read each email"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Classify (sender → keywords → confidence)"
+            },
+            {
+              "id": "t5",
+              "type": "connector",
+              "label": "Post to category Slack channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Update sender patterns"
+            },
+            {
+              "id": "t7",
+              "type": "event",
+              "label": "Emit email.intake.classified"
+            },
+            {
+              "id": "t8",
+              "type": "connector",
+              "label": "gmail_mark_read (after full success)",
+              "connector": "email"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Awaiting next tick"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       },
@@ -263,10 +377,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "email.intake.classified" },
+          "config": {
+            "event_type": "email.intake.classified"
+          },
           "description": "Fires whenever uc_intake_triage emits a classified email. Not user-configurable — event triggers bypass the cadence picker."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -293,7 +411,10 @@
           {
             "name": "status_default",
             "type": "enum",
-            "options": ["New", "In Review"],
+            "options": [
+              "New",
+              "In Review"
+            ],
             "default": "New",
             "description": "Initial Status value written on every new row."
           }
@@ -301,21 +422,57 @@
         "sample_input": {
           "status_default": "New"
         },
-        "tool_hints": ["http_request"],
+        "tool_hints": [
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "email.intake.classified received" },
-            { "id": "n2", "type": "connector", "label": "Duplicate check (database query)", "connector": "notion" },
-            { "id": "n3", "type": "connector", "label": "Create Notion row", "connector": "notion" },
-            { "id": "n4", "type": "event", "label": "Emit email.intake.tracked" },
-            { "id": "n5", "type": "end", "label": "Tracking row written" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "email.intake.classified received"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "Duplicate check (database query)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n3",
+              "type": "connector",
+              "label": "Create Notion row",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n4",
+              "type": "event",
+              "label": "Emit email.intake.tracked"
+            },
+            {
+              "id": "n5",
+              "type": "end",
+              "label": "Tracking row written"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            }
           ]
         }
       }
@@ -324,7 +481,9 @@
       {
         "id": "aq_focus_type",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "intent",
         "question": "What is the primary type of email this processor should focus on?",
         "type": "select",
@@ -344,7 +503,10 @@
       {
         "id": "aq_confidential_categories",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage", "uc_notion_tracking"],
+        "use_case_ids": [
+          "uc_intake_triage",
+          "uc_notion_tracking"
+        ],
         "category": "boundaries",
         "question": "Which email types should NEVER be auto-posted to Slack or logged in Notion?",
         "type": "select",
@@ -364,7 +526,9 @@
       {
         "id": "aq_urgency_signals",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "configuration",
         "question": "What urgency signals should trigger immediate high-priority routing?",
         "type": "select",
@@ -383,7 +547,9 @@
       {
         "id": "aq_sender_seed",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "memory",
         "question": "Optional: list known sender domains or addresses to pre-classify (one per line, e.g., @acme.com → Sales, support@vendor.com → Ops). Leave blank to let the agent learn from scratch.",
         "type": "textarea",
@@ -396,7 +562,9 @@
       {
         "id": "aq_fallback_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "connectors",
         "question": "Which Slack channel should catch unclassified or low-confidence emails?",
         "type": "select",
@@ -406,7 +574,9 @@
         "context": "The agent posts here when no category matches or when classification confidence is below 60%. Category-matched channels (#intake-support, #intake-sales, etc.) are derived from the topic and don't need explicit configuration.",
         "dimension": "connectors",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_credentials",
@@ -416,7 +586,9 @@
       {
         "id": "aq_summary_format",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "quality",
         "question": "How verbose should Slack summaries be?",
         "type": "select",
@@ -430,6 +602,63 @@
         "variable_name": "summary_format",
         "context": "Matches your team's preferred signal-to-noise ratio in Slack.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

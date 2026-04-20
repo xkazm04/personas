@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { Check, Globe, Palette, Sun, Type, Sparkles, LayoutGrid } from 'lucide-react';
+import { Check, Globe, Palette, Sun, Type, Sparkles } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
@@ -11,7 +11,8 @@ import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import { ModePreviewsPanel } from './previews/ModePreviewsPanel';
 import { useSystemStore } from '@/stores/systemStore';
-import { TIERS, TIER_CYCLE, TIER_LABELS } from '@/lib/constants/uiModes';
+import { TIERS } from '@/lib/constants/uiModes';
+import { ModeComparisonCard } from '@/features/simple-mode';
 
 const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -214,31 +215,16 @@ export default function AppearanceSettings() {
               {s.interface_mode_hint}
             </p>
             <div className="grid grid-cols-2 gap-3">
-              {([
-                { mode: TIERS.STARTER, icon: Sparkles, color: 'violet' },
-                { mode: TIERS.TEAM, icon: LayoutGrid, color: 'primary' },
-              ] as const).filter(({ mode }) => TIER_CYCLE.includes(mode)).map(({ mode, icon: Icon, color }) => {
-                const isActive = viewMode === mode;
-                const meta = TIER_LABELS[mode];
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors ${
-                      isActive
-                        ? `border-${color}-500/30 bg-${color}-500/5`
-                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 ${isActive ? `text-${color}-400` : 'text-foreground'}`} />
-                    <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>{meta?.label ?? mode}</span>
-                    <span className="text-[11px] text-foreground text-center">{meta?.desc ?? ''}</span>
-                    {isActive && (
-                      <div className="absolute top-2 right-2"><Check className={`w-3.5 h-3.5 text-${color}-400`} /></div>
-                    )}
-                  </button>
-                );
-              })}
+              <ModeComparisonCard
+                mode="starter"
+                isActive={viewMode === TIERS.STARTER}
+                onSelect={() => setViewMode(TIERS.STARTER)}
+              />
+              <ModeComparisonCard
+                mode="team"
+                isActive={viewMode === TIERS.TEAM}
+                onSelect={() => setViewMode(TIERS.TEAM)}
+              />
             </div>
           </div>
 

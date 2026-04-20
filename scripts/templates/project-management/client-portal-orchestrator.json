@@ -5,11 +5,23 @@
   "description": "Runs the full agency client lifecycle on a relational Notion hub: verifies new signups, builds linked Client + Project pages, sends milestone emails at every phase transition, posts team updates to Telegram, flags stalled projects in Slack, and compiles monthly portfolio reports.",
   "icon": "Briefcase",
   "color": "#0D9488",
-  "category": ["project-management"],
-  "service_flow": ["Notion", "Gmail", "Telegram", "Slack"],
+  "category": [
+    "project-management"
+  ],
+  "service_flow": [
+    "Notion",
+    "Gmail",
+    "Telegram",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Notion", "Gmail", "Telegram", "Slack"],
+    "service_flow": [
+      "Notion",
+      "Gmail",
+      "Telegram",
+      "Slack"
+    ],
     "persona": {
       "goal": "Replace your agency PM SaaS stack with one relational Notion hub — verified signups in, milestone emails and team pings out, stalled projects caught before they rot, monthly portfolio reports on autopilot.",
       "identity": {
@@ -46,14 +58,21 @@
       "tool_guidance": "**Notion** (required) — relational hub:\n- `POST /v1/pages` to create Client (Clients DB) and Project (Projects DB) pages with relation property linking them. Headers: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`.\n- `POST /v1/databases/{database_id}/query` filtered on `last_edited_time` for phase-change detection; sort desc.\n- `PATCH /v1/pages/{page_id}` to flip Phase, Status, Review Date.\n- `GET /v1/blocks/{page_id}/children` to read the closing phase's sub-page for email synthesis.\n- `PATCH /v1/blocks/{page_id}/children` to seed each new Project with the phase-checklist sub-pages.\n\n**Gmail** (required) — client-facing channel:\n- `gmail_send` for verification, welcome, milestone, weekly, and thank-you emails. Use HTML bodies. Preserve `threadId` whenever a prior conversation exists.\n- `gmail_search` (`to:{email} subject:{project_name}`) before sending any milestone email — dedupe via both search AND `email_log.json` within a 24-hour window.\n\n**Telegram** (optional) — team updates:\n- `POST https://api.telegram.org/bot{bot_token}/sendMessage` with `{ chat_id, text, parse_mode: 'HTML' }`. HTML tags: `<b>`, `<i>`, `<a href>`.\n- Messages always include company name + project name + action + link.\n\n**Slack** (optional) — escalation + portfolio:\n- `POST /api/chat.postMessage` to the configured channel for stall alerts and monthly report delivery.\n- `GET /api/users.lookupByEmail` to resolve PM email → Slack user ID for DM escalation.\n\n**Local state** (file_read / file_write):\n- `clients.json` — client record + Notion page IDs + verification status + signup metadata.\n- `project_states.json` — last-known phase per project + last-modified timestamp.\n- `pending_verifications.json` — in-progress OTP signups (24-hour TTL).\n- `stall_alerts.json` — dedupe for escalation ladder (3-day cooldown per project).\n- `email_log.json` — append-only send log; deduplication source of truth.\n- `monthly_reports/{yyyy-mm}.json` — archived portfolio snapshots for trend diff.",
       "error_handling": "**Notion** 401/403 → emit persona.error (token expired); do not retry. 429 → back off per Retry-After; resume next cycle. 5xx → retry once at 5s; on persistent failure log + notify. Partial page creation (Client succeeded, Project failed) → persist partial state, check on retry to avoid dupes.\n\n**Gmail** auth fail → emit persona.error, halt client-facing sends this cycle. Send fail → do NOT auto-retry (dupe risk); queue in `pending_emails.json` (verification emails only can retry).\n\n**Telegram** down → queue in `pending_telegram.json`; after 3 consecutive failures fall back to posting the update in Slack.\n\n**Slack** down → queue in `pending_slack.json`. Critical escalations (14+ day stall) are held until Slack recovers — never dropped.\n\n**Data integrity** — duplicate signup: log + skip, optionally send 'already registered' email. OTP expired: generate fresh, resend. State file corrupt: rebuild from Notion; do NOT send retroactive alerts. First-run: snapshot only, no sends.\n\n**Phase edge cases** — phase skip: email only terminal phase, note skip in Telegram + Slack. Phase regression: Slack alert; client email only for regressions back to Discovery. Multiple projects per client: independent phase tracking; welcome email once per client, not per project. Re-engagement after completion: 'Welcome back' variant, Status flips back to Active.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write", "webhook_response"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "file_read",
+        "file_write",
+        "webhook_response"
+      ],
       "connectors": [
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "project_hub",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
@@ -85,8 +104,8 @@
           "setup_instructions": "1. notion.so/my-integrations → create 'Client Portal Orchestrator' → copy Internal Integration Token.\n2. Create two Notion databases: Clients and Projects.\n3. Clients properties: Contact Name (text), Email (email), Company (text), Status (select: Active/Completed/On Hold), Contract Value (number), Start Date (date), Project Type (select), Budget Range (select).\n4. Projects properties: Client (relation → Clients), Phase (select: Discovery/Proposal/Active/Review/Completed), Start Date (date), Target End Date (date), Budget (number), Project Manager (person), Priority (select).\n5. Share both databases with your integration.\n6. Paste both database IDs above."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "client_communication",
           "category": "email",
@@ -121,8 +140,8 @@
           "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete consent flow with gmail.send, gmail.readonly, gmail.modify scopes.\n4. Paste all three values above."
         },
         {
-          "name": "telegram",
-          "label": "Telegram Bot",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "api_key",
           "role": "team_notifications",
           "category": "messaging",
@@ -148,27 +167,6 @@
             }
           ],
           "setup_instructions": "1. Message @BotFather on Telegram, /newbot, copy the token.\n2. Add the bot to your team Telegram group.\n3. Send a test message in the group, then hit https://api.telegram.org/bot{TOKEN}/getUpdates to find the chat_id.\n4. Paste token and chat_id above."
-        },
-        {
-          "name": "slack",
-          "label": "Slack",
-          "auth_type": "bot_token",
-          "role": "escalation_alerts",
-          "category": "messaging",
-          "required": false,
-          "fallback_note": "Skip Slack to route stall alerts and monthly report posts through the in-app messaging channel instead.",
-          "api_base_url": "https://slack.com/api",
-          "credential_fields": [
-            {
-              "key": "bot_token",
-              "label": "Bot User OAuth Token",
-              "type": "password",
-              "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-              "helpText": "Slack App → OAuth & Permissions. Scopes: chat:write, users:read, users:read.email.",
-              "required": true
-            }
-          ],
-          "setup_instructions": "1. api.slack.com/apps → create app.\n2. OAuth & Permissions → Bot Token Scopes: chat:write, users:read, users:read.email.\n3. Install to workspace, copy Bot User OAuth Token.\n4. /invite @YourBotName to your alerts channel."
         }
       ],
       "notification_channels_default": [
@@ -191,10 +189,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "webhook",
-          "config": { "method": "POST", "path": "/client-signup" },
+          "config": {
+            "method": "POST",
+            "path": "/client-signup"
+          },
           "description": "Signup and verification webhooks — not user-configurable at the trigger-composition step."
         },
-        "connectors": ["notion", "gmail", "telegram", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -216,7 +221,12 @@
           {
             "name": "email_tone",
             "type": "enum",
-            "options": ["professional_formal", "friendly_approachable", "casual_conversational", "technical_precise"],
+            "options": [
+              "professional_formal",
+              "friendly_approachable",
+              "casual_conversational",
+              "technical_precise"
+            ],
             "default": "friendly_approachable",
             "description": "Voice style used in welcome, milestone, and testimonial emails."
           }
@@ -224,27 +234,89 @@
         "sample_input": {
           "email_tone": "{{param.aq_email_tone}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write", "webhook_response"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write",
+          "webhook_response"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "POST /client-signup" },
-            { "id": "o2", "type": "action", "label": "Validate + dedupe + OTP" },
-            { "id": "o3", "type": "connector", "label": "Send verification email", "connector": "gmail" },
-            { "id": "o4", "type": "start", "label": "POST /verify-email" },
-            { "id": "o5", "type": "connector", "label": "Create Client + Project + sub-pages", "connector": "notion" },
-            { "id": "o6", "type": "connector", "label": "Send welcome email + Telegram ping", "connector": "gmail" },
-            { "id": "o7", "type": "event", "label": "Emit client.lifecycle.onboarded" },
-            { "id": "o8", "type": "end", "label": "Onboarding complete" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "POST /client-signup"
+            },
+            {
+              "id": "o2",
+              "type": "action",
+              "label": "Validate + dedupe + OTP"
+            },
+            {
+              "id": "o3",
+              "type": "connector",
+              "label": "Send verification email",
+              "connector": "email"
+            },
+            {
+              "id": "o4",
+              "type": "start",
+              "label": "POST /verify-email"
+            },
+            {
+              "id": "o5",
+              "type": "connector",
+              "label": "Create Client + Project + sub-pages",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "o6",
+              "type": "connector",
+              "label": "Send welcome email + Telegram ping",
+              "connector": "email"
+            },
+            {
+              "id": "o7",
+              "type": "event",
+              "label": "Emit client.lifecycle.onboarded"
+            },
+            {
+              "id": "o8",
+              "type": "end",
+              "label": "Onboarding complete"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o4" },
-            { "source": "o4", "target": "o5" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o7" },
-            { "source": "o7", "target": "o8" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o4"
+            },
+            {
+              "source": "o4",
+              "target": "o5"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o7"
+            },
+            {
+              "source": "o7",
+              "target": "o8"
+            }
           ]
         }
       },
@@ -259,10 +331,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/15 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/15 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "gmail", "telegram"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -289,7 +368,12 @@
           {
             "name": "weekly_progress_cadence",
             "type": "enum",
-            "options": ["monday", "friday", "biweekly", "off"],
+            "options": [
+              "monday",
+              "friday",
+              "biweekly",
+              "off"
+            ],
             "default": "monday",
             "description": "When Active-phase progress emails are sent (or off)."
           }
@@ -297,28 +381,97 @@
         "sample_input": {
           "weekly_progress_cadence": "{{param.aq_weekly_progress}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Poll tick" },
-            { "id": "p2", "type": "connector", "label": "Query Projects (last_edited)", "connector": "notion" },
-            { "id": "p3", "type": "decision", "label": "Phase changed?" },
-            { "id": "p4", "type": "connector", "label": "Read phase sub-page", "connector": "notion" },
-            { "id": "p5", "type": "action", "label": "Compose milestone email + dedupe" },
-            { "id": "p6", "type": "connector", "label": "Send email + Telegram update", "connector": "gmail" },
-            { "id": "p7", "type": "event", "label": "Emit phase_changed / completed" },
-            { "id": "p8", "type": "end", "label": "State persisted" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Query Projects (last_edited)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p3",
+              "type": "decision",
+              "label": "Phase changed?"
+            },
+            {
+              "id": "p4",
+              "type": "connector",
+              "label": "Read phase sub-page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Compose milestone email + dedupe"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Send email + Telegram update",
+              "connector": "email"
+            },
+            {
+              "id": "p7",
+              "type": "event",
+              "label": "Emit phase_changed / completed"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "State persisted"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4", "variant": "yes", "label": "Changed" },
-            { "source": "p3", "target": "p8", "variant": "no", "label": "No change" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4",
+              "variant": "yes",
+              "label": "Changed"
+            },
+            {
+              "source": "p3",
+              "target": "p8",
+              "variant": "no",
+              "label": "No change"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            }
           ]
         }
       },
@@ -333,10 +486,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 * * * *",
+            "timezone": "local"
+          },
           "description": "Default hourly — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "slack", "gmail"],
+        "connectors": [
+          "knowledge_base",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -358,7 +517,11 @@
           {
             "name": "stall_threshold_days",
             "type": "enum",
-            "options": ["5", "7", "14"],
+            "options": [
+              "5",
+              "7",
+              "14"
+            ],
             "default": "7",
             "description": "Days of inactivity before a project is flagged as stalled. 7 is the recommended balance."
           }
@@ -366,29 +529,100 @@
         "sample_input": {
           "stall_threshold_days": "{{param.aq_stall_threshold}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Scan tick" },
-            { "id": "d2", "type": "connector", "label": "Query non-Completed projects", "connector": "notion" },
-            { "id": "d3", "type": "decision", "label": "Stall tier?" },
-            { "id": "d4", "type": "connector", "label": "Slack channel alert (7–13d)", "connector": "slack" },
-            { "id": "d5", "type": "connector", "label": "Slack DM escalation (14–20d)", "connector": "slack" },
-            { "id": "d6", "type": "connector", "label": "Client re-engagement email (21+d)", "connector": "gmail" },
-            { "id": "d7", "type": "event", "label": "Emit client.lifecycle.stalled" },
-            { "id": "d8", "type": "end", "label": "Alert history updated" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Scan tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Query non-Completed projects",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d3",
+              "type": "decision",
+              "label": "Stall tier?"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Slack channel alert (7–13d)",
+              "connector": "messaging"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Slack DM escalation (14–20d)",
+              "connector": "messaging"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Client re-engagement email (21+d)",
+              "connector": "email"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit client.lifecycle.stalled"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Alert history updated"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4", "label": "7–13d" },
-            { "source": "d3", "target": "d5", "label": "14–20d" },
-            { "source": "d3", "target": "d6", "label": "21+d" },
-            { "source": "d4", "target": "d7" },
-            { "source": "d5", "target": "d7" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4",
+              "label": "7–13d"
+            },
+            {
+              "source": "d3",
+              "target": "d5",
+              "label": "14–20d"
+            },
+            {
+              "source": "d3",
+              "target": "d6",
+              "label": "21+d"
+            },
+            {
+              "source": "d4",
+              "target": "d7"
+            },
+            {
+              "source": "d5",
+              "target": "d7"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       },
@@ -403,10 +637,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 1 * *",
+            "timezone": "local"
+          },
           "description": "Default 1st of month at 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "slack", "gmail"],
+        "connectors": [
+          "knowledge_base",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -434,25 +674,79 @@
         "sample_input": {
           "report_recipients": "{{param.aq_report_recipients}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Monthly tick" },
-            { "id": "m2", "type": "connector", "label": "Pull Notion clients + projects", "connector": "notion" },
-            { "id": "m3", "type": "action", "label": "Compute metrics + diff prior month" },
-            { "id": "m4", "type": "connector", "label": "Post Slack report", "connector": "slack" },
-            { "id": "m5", "type": "connector", "label": "Email stakeholder summary", "connector": "gmail" },
-            { "id": "m6", "type": "event", "label": "Emit client.portfolio.reported" },
-            { "id": "m7", "type": "end", "label": "Archived" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Monthly tick"
+            },
+            {
+              "id": "m2",
+              "type": "connector",
+              "label": "Pull Notion clients + projects",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "m3",
+              "type": "action",
+              "label": "Compute metrics + diff prior month"
+            },
+            {
+              "id": "m4",
+              "type": "connector",
+              "label": "Post Slack report",
+              "connector": "messaging"
+            },
+            {
+              "id": "m5",
+              "type": "connector",
+              "label": "Email stakeholder summary",
+              "connector": "email"
+            },
+            {
+              "id": "m6",
+              "type": "event",
+              "label": "Emit client.portfolio.reported"
+            },
+            {
+              "id": "m7",
+              "type": "end",
+              "label": "Archived"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            }
           ]
         }
       }
@@ -461,7 +755,10 @@
       {
         "id": "aq_email_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_client_onboarding", "uc_phase_monitoring"],
+        "use_case_ids": [
+          "uc_client_onboarding",
+          "uc_phase_monitoring"
+        ],
         "category": "configuration",
         "question": "What tone should client emails use?",
         "type": "select",
@@ -480,7 +777,9 @@
       {
         "id": "aq_weekly_progress",
         "scope": "capability",
-        "use_case_ids": ["uc_phase_monitoring"],
+        "use_case_ids": [
+          "uc_phase_monitoring"
+        ],
         "category": "configuration",
         "question": "Should clients receive weekly progress emails during the Active phase?",
         "type": "select",
@@ -499,7 +798,9 @@
       {
         "id": "aq_stall_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_stall_escalation"],
+        "use_case_ids": [
+          "uc_stall_escalation"
+        ],
         "category": "configuration",
         "question": "How long should a project be inactive before it's flagged as stalled?",
         "type": "select",
@@ -517,7 +818,9 @@
       {
         "id": "aq_report_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_portfolio_report"],
+        "use_case_ids": [
+          "uc_portfolio_report"
+        ],
         "category": "configuration",
         "question": "Who should receive the monthly portfolio report by email (in addition to Slack)?",
         "type": "text",
@@ -526,6 +829,63 @@
         "variable_name": "report_recipients",
         "context": "Comma-separated email addresses. Leave blank to send only to Slack.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

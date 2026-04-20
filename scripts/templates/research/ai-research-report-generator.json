@@ -5,11 +5,21 @@
   "description": "Accepts research topics via webhook or chat, searches multiple web sources grounded in user-defined reference sources, synthesizes consultant-quality reports with confidence-scored conclusions, stores them in a knowledge base, and delivers via email and chat with full source citations.",
   "icon": "BookOpen",
   "color": "#6366F1",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Messaging", "Knowledge Base", "Email"],
+  "service_flow": [
+    "Messaging",
+    "Knowledge Base",
+    "Email"
+  ],
   "payload": {
-    "service_flow": ["Messaging", "Knowledge Base", "Email"],
+    "service_flow": [
+      "Messaging",
+      "Knowledge Base",
+      "Email"
+    ],
     "persona": {
       "goal": "Turn a topic request into a defensible, source-cited research report — grounded in the user's reference sources, not a keyword-guess scrape.",
       "identity": {
@@ -46,7 +56,12 @@
       "tool_guidance": "**Web search pattern per angle**:\n- Time-qualified: `\"{topic}\" {angle} {year}` / `\"{topic}\" latest news OR announcement`.\n- Rate limit: 1s spacing, 20s timeout, max 50 requests/session.\n- Extract: URL, title, author, publication date, source type, excerpt → reliability score 1-5.\n- Dedup by normalized URL.\n\n**Source reliability rubric**:\n- 5 — primary source (government, company investor material, peer-reviewed).\n- 4 — established outlet with named author + citations.\n- 3 — reputable aggregator / analyst secondary coverage.\n- 2 — blog / newsletter with clear stance.\n- 1 — forum / unsigned / unclear provenance.\n\n**Knowledge base write**:\n- Create page with properties: Title, Research ID, Topic, Scope (quick|standard|deep), Status (in_progress → delivered | failed), Date, Sources Count, Confidence (High|Medium|Low), Requester, Tags, Channel.\n- Append body blocks: executive_summary → key_findings (per angle, heading + paragraph + sources) → detailed_analysis → recommendations → source_appendix → metadata.\n\n**Delivery channels**:\n- Email: HTML executive summary + KB link. Subject `[Research Report] {topic} — {research_id}`.\n- Chat/messaging: 500-char condensed summary + KB link. Split if >4096 chars.\n- In-app: deliver the full report body as a persona message.\n\n**Local state**: atomic read-merge-write for `research_counter.json` / `research_log.json`.",
       "error_handling": "Web search unavailable → proceed with user reference sources only; note the limitation in the exec summary. <3 sources at standard scope → downgrade confidence to Low + add a prominent caveat. Knowledge-base 401/404 → fall back to `data/reports/{id}_report.md` + emit `research.delivery.failed`. Email send fails → keep chat delivery, log the failure, include a retry next run. Corrupted `research_counter.json` → initialize from directory scan. Corrupted `research_log.json` → archive with timestamp suffix, start fresh, emit user_message. Rate-limited search → respect Retry-After; back off once, then proceed with partial coverage labeled.",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "knowledge_base",
@@ -126,7 +141,11 @@
           "config": {},
           "description": "Default manual — final cadence (manual / webhook / scheduled digest) set at the trigger-composition step."
         },
-        "connectors": ["knowledge_base", "email", "messaging"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -168,14 +187,22 @@
           {
             "name": "default_scope",
             "type": "enum",
-            "options": ["quick", "standard", "deep"],
+            "options": [
+              "quick",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Fallback scope when the incoming request doesn't specify. Quick = 3-5 sources, Standard = 8-12 sources, Deep = 15-25 sources."
           },
           {
             "name": "default_audience",
             "type": "enum",
-            "options": ["executive", "technical", "general"],
+            "options": [
+              "executive",
+              "technical",
+              "general"
+            ],
             "default": "executive",
             "description": "Tone calibration when request doesn't specify. Executive = concise + strategic; Technical = methodology-visible; General = accessible."
           }
@@ -186,29 +213,96 @@
           "default_scope": "{{param.aq_default_scope}}",
           "default_audience": "{{param.aq_default_audience}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Research request received" },
-            { "id": "r2", "type": "action", "label": "Parse topic + scope + focus; generate research_id" },
-            { "id": "r3", "type": "action", "label": "Read user reference sources" },
-            { "id": "r4", "type": "action", "label": "Decompose into angles + web-search complementary coverage" },
-            { "id": "r5", "type": "action", "label": "Score source reliability + synthesize consensus/conflicts/gaps" },
-            { "id": "r6", "type": "connector", "label": "Write structured report to knowledge base", "connector": "knowledge_base" },
-            { "id": "r7", "type": "connector", "label": "Deliver summary via messaging + email", "connector": "messaging" },
-            { "id": "r8", "type": "event", "label": "Emit research.report.delivered" },
-            { "id": "r9", "type": "end", "label": "Report delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Research request received"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Parse topic + scope + focus; generate research_id"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Read user reference sources"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Decompose into angles + web-search complementary coverage"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Score source reliability + synthesize consensus/conflicts/gaps"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Write structured report to knowledge base",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r7",
+              "type": "connector",
+              "label": "Deliver summary via messaging + email",
+              "connector": "messaging"
+            },
+            {
+              "id": "r8",
+              "type": "event",
+              "label": "Emit research.report.delivered"
+            },
+            {
+              "id": "r9",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            }
           ]
         }
       },
@@ -223,10 +317,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -246,23 +345,65 @@
         "error_handling": "Empty week → deliver terse 'no research sessions this week' note. Corrupted log → archive + start fresh; note the data gap in the digest.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read"],
+        "tool_hints": [
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Weekly tick" },
-            { "id": "d2", "type": "action", "label": "Load research_log for past 7 days" },
-            { "id": "d3", "type": "action", "label": "Compute topic frequency + scope mix + avg confidence" },
-            { "id": "d4", "type": "connector", "label": "Deliver digest via messaging", "connector": "messaging" },
-            { "id": "d5", "type": "event", "label": "Emit research.history.digest" },
-            { "id": "d6", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load research_log for past 7 days"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compute topic frequency + scope mix + avg confidence"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Deliver digest via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "d5",
+              "type": "event",
+              "label": "Emit research.history.digest"
+            },
+            {
+              "id": "d6",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            }
           ]
         }
       }
@@ -271,7 +412,9 @@
       {
         "id": "aq_research_sources",
         "scope": "capability",
-        "use_case_ids": ["uc_research_report"],
+        "use_case_ids": [
+          "uc_research_report"
+        ],
         "category": "domain",
         "question": "Which reference sources should ground the research?",
         "type": "source_definition",
@@ -284,7 +427,9 @@
       {
         "id": "aq_research_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_research_report"],
+        "use_case_ids": [
+          "uc_research_report"
+        ],
         "category": "domain",
         "question": "How should the persona interpret the topic and work with your sources?",
         "type": "textarea",
@@ -298,7 +443,9 @@
       {
         "id": "aq_default_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_research_report"],
+        "use_case_ids": [
+          "uc_research_report"
+        ],
         "category": "configuration",
         "question": "What default scope should be used when a request doesn't specify?",
         "type": "select",
@@ -316,7 +463,9 @@
       {
         "id": "aq_default_audience",
         "scope": "capability",
-        "use_case_ids": ["uc_research_report"],
+        "use_case_ids": [
+          "uc_research_report"
+        ],
         "category": "quality",
         "question": "Who is the primary audience for delivered reports?",
         "type": "select",
@@ -334,7 +483,9 @@
       {
         "id": "aq_knowledge_base",
         "scope": "connector",
-        "connector_names": ["knowledge_base"],
+        "connector_names": [
+          "knowledge_base"
+        ],
         "category": "configuration",
         "question": "Which knowledge-base workspace should store reports?",
         "type": "select",
@@ -351,7 +502,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should deliver report summaries?",
         "type": "select",
@@ -363,6 +516,25 @@
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
         "context": "Pick from your `messaging`-category credentials (Slack, Telegram, Discord, in-app). Skip if you prefer email-only delivery.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

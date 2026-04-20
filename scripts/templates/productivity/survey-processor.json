@@ -5,11 +5,23 @@
   "description": "Polls Google Forms for new survey responses, scores answers using a configurable rubric, writes structured records to Airtable, posts tier-aware summaries to Slack, and sends personalized tier-based follow-up emails via Gmail.",
   "icon": "ClipboardList",
   "color": "#7C3AED",
-  "category": ["productivity"],
-  "service_flow": ["Google Forms", "Airtable", "Slack", "Gmail"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Google Forms",
+    "Airtable",
+    "Slack",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Google Forms", "Airtable", "Slack", "Gmail"],
+    "service_flow": [
+      "Google Forms",
+      "Airtable",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Turn every survey response into a structured record, a team notification, and a personalized follow-up — without duplicates, without delays, without losing detractors in the noise.",
       "identity": {
@@ -44,54 +56,46 @@
       "tool_guidance": "**Google Sheets (http_request via google_sheets connector)**:\n- List responses: `GET https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/{SHEET_NAME}` — returns rows as arrays.\n- Read your `last_processed_row` from agent_memory before slicing.\n\n**Airtable (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}` with `{\"fields\": {Name, Email, Submission Time, NPS Score, Comment, Computed Score, Tier, Flags, Row Index}}`.\n- List for dedup: `GET https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}?filterByFormula=...`.\n\n**Slack (http_request via slack connector)**:\n- `POST https://slack.com/api/chat.postMessage` with Block Kit blocks per response.\n- Detractor path: additional post to support-urgent channel with `@rep_user_id` tag.\n\n**Gmail (gmail_send)**:\n- Tier templates: Promoter / Neutral / Detractor.\n- Always include unsubscribe footer for compliance.\n\n**Retry state**:\n- `failed_records.json` — Airtable payloads for retry.\n- `pending_emails.json` — email send backlog with attempt count.",
       "error_handling": "Google Sheets 401/403 → alert operator, stop processing until resolved. Google Sheets 429 → back off 60s, retry next cycle. Airtable write fail → save to `failed_records.json`, retry next cycle before processing new responses. Airtable 422 field mismatch → flag operator with specific field names. Slack fail → non-blocking, log; after 3 consecutive cycles emit user_message. Gmail fail → save to `pending_emails.json`, retry up to 3 times across cycles. Dedup protection → check row_index against agent_memory before each process. Missing email → skip send, create Airtable record with email=null, flag Slack '[no email]'.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → enable Google Sheets API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete OAuth consent with scope spreadsheets.readonly (or drive.file).\n4. Paste client ID, secret, refresh token."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
-          "auth_type": "api_key",
-          "role": "knowledge_base",
-          "category": "productivity",
-          "required": true,
-          "api_base_url": "https://api.airtable.com/v0",
-          "credential_fields": [
-            {
-              "key": "personal_access_token",
-              "label": "Personal Access Token",
-              "type": "password",
-              "placeholder": "patXXXXXXXXXXXXXX.xxxxxxxxxxxxxxxx",
-              "helpText": "airtable.com/create/tokens with data.records:write on target base.",
-              "required": true
-            },
-            {
-              "key": "base_id",
-              "label": "Airtable Base ID",
-              "type": "text",
-              "placeholder": "appXXXXXXXXXXXXXX",
-              "helpText": "From your Airtable URL.",
-              "required": true
-            }
-          ],
-          "setup_instructions": "1. Open or create your Airtable base.\n2. Create a 'Survey Responses' table with fields: Name (Text), Email (Email), Submission Time (Date), NPS Score (Number), Comment (Long Text), Computed Score (Number), Tier (Single Select: Promoter/Neutral/Detractor), Flags (Text), Row Index (Number).\n3. airtable.com/create/tokens → create PAT with data.records:write scoped to the base.\n4. Copy Base ID from the browser URL."
-        },
-        {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -111,8 +115,8 @@
           "setup_instructions": "1. api.slack.com/apps → create app.\n2. OAuth & Permissions → Bot Token Scope chat:write.\n3. Install to workspace, copy Bot User OAuth Token.\n4. /invite @YourBotName to the target channel."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -120,16 +124,37 @@
           "fallback_note": "Skip Gmail to run as a CRM/notification-only processor. Tier-based follow-up emails disappear; Airtable + Slack still operate.",
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app) with scope gmail.send.\n3. Complete OAuth consent.\n4. Paste client ID, secret, refresh token."
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Slack response summaries with tier-based routing." },
-        { "type": "email", "description": "Tier-personalized follow-up emails to respondents." }
+        {
+          "type": "messaging",
+          "description": "Slack response summaries with tier-based routing."
+        },
+        {
+          "type": "email",
+          "description": "Tier-personalized follow-up emails to respondents."
+        }
       ],
       "core_memories": []
     },
@@ -145,12 +170,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "interval_seconds": 120 },
+          "config": {
+            "interval_seconds": 120
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_sheets", "airtable", "slack"],
+        "connectors": [
+          "spreadsheet",
+          "messaging"
+        ],
         "notification_channels": [
-          { "type": "messaging", "description": "Slack summaries + detractor tagging." }
+          {
+            "type": "messaging",
+            "description": "Slack summaries + detractor tagging."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -209,34 +242,123 @@
           "slack_channel": "{{param.aq_slack_channel}}",
           "detractor_gate": "{{param.aq_detractor_gate}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Polling tick" },
-            { "id": "p2", "type": "connector", "label": "Fetch Sheet rows", "connector": "google_sheets" },
-            { "id": "p3", "type": "action", "label": "Slice > last_processed_row" },
-            { "id": "p4", "type": "action", "label": "Score + classify tier + flags" },
-            { "id": "p5", "type": "connector", "label": "Create Airtable record", "connector": "airtable" },
-            { "id": "p6", "type": "connector", "label": "Post Slack summary", "connector": "slack" },
-            { "id": "p7", "type": "decision", "label": "Detractor or urgency flag?" },
-            { "id": "p8", "type": "connector", "label": "Tag support-urgent channel", "connector": "slack" },
-            { "id": "p9", "type": "event", "label": "Emit survey.response.processed (+ detractor if applicable)" },
-            { "id": "p10", "type": "action", "label": "Update last_processed_row" },
-            { "id": "p11", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Fetch Sheet rows",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Slice > last_processed_row"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Score + classify tier + flags"
+            },
+            {
+              "id": "p5",
+              "type": "connector",
+              "label": "Create Airtable record",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Post Slack summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "p7",
+              "type": "decision",
+              "label": "Detractor or urgency flag?"
+            },
+            {
+              "id": "p8",
+              "type": "connector",
+              "label": "Tag support-urgent channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "p9",
+              "type": "event",
+              "label": "Emit survey.response.processed (+ detractor if applicable)"
+            },
+            {
+              "id": "p10",
+              "type": "action",
+              "label": "Update last_processed_row"
+            },
+            {
+              "id": "p11",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8", "label": "Yes", "variant": "yes" },
-            { "source": "p7", "target": "p9", "label": "No", "variant": "no" },
-            { "source": "p8", "target": "p9" },
-            { "source": "p9", "target": "p10" },
-            { "source": "p10", "target": "p11" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "p7",
+              "target": "p9",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            },
+            {
+              "source": "p9",
+              "target": "p10"
+            },
+            {
+              "source": "p10",
+              "target": "p11"
+            }
           ]
         }
       },
@@ -251,18 +373,28 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "survey.response.processed" },
+          "config": {
+            "event_type": "survey.response.processed"
+          },
           "description": "Fires per processed response. Not user-configurable — event triggers hide the cadence picker."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [
-          { "type": "email", "description": "Tier-adaptive follow-up to the respondent." }
+          {
+            "type": "email",
+            "description": "Tier-adaptive follow-up to the respondent."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
           "context": "Detractor follow-ups route through manual_review if adoption chose the 'All Detractors' gate."
         },
-        "memory_policy": { "enabled": false, "context": null },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "survey.response.processed",
@@ -293,28 +425,93 @@
         "sample_input": {
           "email_tone": "{{param.aq_email_tone}}"
         },
-        "tool_hints": ["gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "survey.response.processed received" },
-            { "id": "e2", "type": "action", "label": "Select tier template" },
-            { "id": "e3", "type": "action", "label": "Substitute name + key answers" },
-            { "id": "e4", "type": "decision", "label": "Detractor gate active?" },
-            { "id": "e5", "type": "action", "label": "Route to manual_review" },
-            { "id": "e6", "type": "connector", "label": "Send email", "connector": "gmail" },
-            { "id": "e7", "type": "event", "label": "Emit survey.followup.sent" },
-            { "id": "e8", "type": "end", "label": "Follow-up complete" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "survey.response.processed received"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Select tier template"
+            },
+            {
+              "id": "e3",
+              "type": "action",
+              "label": "Substitute name + key answers"
+            },
+            {
+              "id": "e4",
+              "type": "decision",
+              "label": "Detractor gate active?"
+            },
+            {
+              "id": "e5",
+              "type": "action",
+              "label": "Route to manual_review"
+            },
+            {
+              "id": "e6",
+              "type": "connector",
+              "label": "Send email",
+              "connector": "email"
+            },
+            {
+              "id": "e7",
+              "type": "event",
+              "label": "Emit survey.followup.sent"
+            },
+            {
+              "id": "e8",
+              "type": "end",
+              "label": "Follow-up complete"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5", "label": "Yes", "variant": "yes" },
-            { "source": "e4", "target": "e6", "label": "No", "variant": "no" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "e4",
+              "target": "e6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            }
           ]
         }
       }
@@ -323,7 +520,9 @@
       {
         "id": "aq_rubric",
         "scope": "capability",
-        "use_case_ids": ["uc_process_responses"],
+        "use_case_ids": [
+          "uc_process_responses"
+        ],
         "category": "configuration",
         "question": "Which response classification should the processor apply?",
         "type": "select",
@@ -342,7 +541,9 @@
       {
         "id": "aq_slack_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_process_responses"],
+        "use_case_ids": [
+          "uc_process_responses"
+        ],
         "category": "configuration",
         "question": "Where should Slack response summaries be posted?",
         "type": "select",
@@ -360,7 +561,9 @@
       {
         "id": "aq_detractor_gate",
         "scope": "capability",
-        "use_case_ids": ["uc_process_responses"],
+        "use_case_ids": [
+          "uc_process_responses"
+        ],
         "category": "human_in_the_loop",
         "question": "Which responses should pause the pipeline for human review?",
         "type": "select",
@@ -379,7 +582,9 @@
       {
         "id": "aq_email_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_send_followup_email"],
+        "use_case_ids": [
+          "uc_send_followup_email"
+        ],
         "category": "quality",
         "question": "What tone should follow-up emails use?",
         "type": "select",
@@ -394,6 +599,63 @@
         "variable_name": "email_tone",
         "context": "Guides the Gmail template so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

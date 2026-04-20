@@ -5,11 +5,21 @@
   "description": "Polls Gmail for receipts and invoices, extracts vendor/amount/date/category with AI, logs everything to a Google Sheet, and flags anomalies (duplicates, high-amounts, missing recurring charges) via Slack. Ships a weekly expense summary every Friday.",
   "icon": "Receipt",
   "color": "#14B8A6",
-  "category": ["finance"],
-  "service_flow": ["Gmail", "Google Sheets", "Slack"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Google Sheets",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Google Sheets", "Slack"],
+    "service_flow": [
+      "Gmail",
+      "Google Sheets",
+      "Slack"
+    ],
     "persona": {
       "goal": "Every business receipt lands in the right row of the right sheet — no shoebox, no manual entry, and nothing quietly double-counted.",
       "identity": {
@@ -47,15 +57,23 @@
       "tool_guidance": "**Gmail** (polling):\n- Search rotation: `subject:(receipt OR invoice OR order confirmation OR payment confirmation OR subscription) has:attachment newer_than:1h`, `from:(noreply OR billing OR invoices OR receipts OR payments OR accounting) has:attachment newer_than:1h`, `subject:(purchase OR transaction OR statement) has:attachment newer_than:1h`.\n- Also check known vendor senders from `vendor_patterns.json` (Stripe, PayPal, Amazon often embed receipts inline).\n- Mark processed with Gmail label `Processed/Expenses`.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS` — append expense row.\n- `GET /{id}/values/{range}` — dedupe check across last 100 rows.\n- `GET /{id}/values/Sheet1!1:1` — verify header; `PUT` to create if absent.\n- 13-column schema: Date | Vendor | Description | Amount | Currency | Category | Tax | Payment Method | Receipt # | Source Email | Confidence | Notes | Processed At.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` for anomaly alerts and weekly summary. Keep messages ≤ 50 blocks; split if needed.\n\n**Local state**: `expense_log.json` (message-ID-keyed master log), `vendor_patterns.json` (normalization + category mappings), `recurring_tracker.json` (expected subscriptions), `pending_review.json` (held items), `weekly_reports/report_{date}.json` (archived summaries), `error_log.json` (failures).\n\n**Categories**: Travel, Meals & Entertainment, Software & SaaS, Office Supplies, Marketing, Professional Services, Utilities, Other.",
       "error_handling": "Gmail auth 401/403 → emit persona-error; continue Sheets/Slack ops if possible. Gmail 429 → 60s backoff then skip cycle. Sheets 429 → queue in `pending_sheets.json`, retry. Sheets 401 → emit persona-error, keep extracted data queued. Slack unreachable → queue in `pending_slack.json`, never block ingest. Unreadable attachment → log to `error_log.json`, Slack notify for manual entry. Partial extraction → log with confidence=low and descriptive note. Foreign currency → store original; do not convert. Forwarded receipts → use transaction date, not email date. Refunds → log with negative amount, category 'Refund/Credit'.",
       "examples": [],
-      "tools": ["gmail_search", "gmail_read", "http_request", "file_read", "file_write"],
+      "tools": [
+        "gmail_search",
+        "gmail_read",
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
-          "categories": ["email"],
+          "categories": [
+            "email"
+          ],
           "required": true,
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
@@ -87,12 +105,14 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         },
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
-          "categories": ["spreadsheet"],
+          "category": "spreadsheet",
+          "categories": [
+            "spreadsheet"
+          ],
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
@@ -124,12 +144,14 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
-          "categories": ["messaging"],
+          "categories": [
+            "messaging"
+          ],
           "required": false,
           "fallback_note": "Without Slack, anomaly alerts and weekly summaries are written to `data/latest_alerts.json` / `data/weekly_reports/` locally. You can re-enable Slack later and past alerts won't be lost.",
           "api_base_url": "https://slack.com/api",
@@ -166,10 +188,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/10 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 10 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "google_sheets"],
+        "connectors": [
+          "email",
+          "spreadsheet"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -207,7 +235,12 @@
           {
             "name": "arrival_pattern",
             "type": "enum",
-            "options": ["attachment_first", "body_first", "mixed", "forwarded"],
+            "options": [
+              "attachment_first",
+              "body_first",
+              "mixed",
+              "forwarded"
+            ],
             "default": "mixed",
             "description": "Primary parsing strategy. Agent always checks both body + attachments; this sets the priority."
           }
@@ -217,31 +250,108 @@
           "categories": "{{param.aq_categories}}",
           "arrival_pattern": "{{param.aq_arrival_pattern}}"
         },
-        "tool_hints": ["gmail_search", "gmail_read", "http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_search",
+          "gmail_read",
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick" },
-            { "id": "i2", "type": "connector", "label": "Search Gmail for receipts", "connector": "gmail" },
-            { "id": "i3", "type": "action", "label": "Dedupe by message ID vs expense_log" },
-            { "id": "i4", "type": "connector", "label": "Read email body + attachments", "connector": "gmail" },
-            { "id": "i5", "type": "action", "label": "AI extract + normalize vendor + categorize" },
-            { "id": "i6", "type": "connector", "label": "Sheets dedupe check (vendor+amount+date)", "connector": "google_sheets" },
-            { "id": "i7", "type": "connector", "label": "Append row to Sheets", "connector": "google_sheets" },
-            { "id": "i8", "type": "action", "label": "Update vendor_patterns + expense_log + Gmail label" },
-            { "id": "i9", "type": "event", "label": "Emit expense.ledger.logged" },
-            { "id": "i10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Search Gmail for receipts",
+              "connector": "email"
+            },
+            {
+              "id": "i3",
+              "type": "action",
+              "label": "Dedupe by message ID vs expense_log"
+            },
+            {
+              "id": "i4",
+              "type": "connector",
+              "label": "Read email body + attachments",
+              "connector": "email"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "AI extract + normalize vendor + categorize"
+            },
+            {
+              "id": "i6",
+              "type": "connector",
+              "label": "Sheets dedupe check (vendor+amount+date)",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "i7",
+              "type": "connector",
+              "label": "Append row to Sheets",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "i8",
+              "type": "action",
+              "label": "Update vendor_patterns + expense_log + Gmail label"
+            },
+            {
+              "id": "i9",
+              "type": "event",
+              "label": "Emit expense.ledger.logged"
+            },
+            {
+              "id": "i10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" },
-            { "source": "i7", "target": "i8" },
-            { "source": "i8", "target": "i9" },
-            { "source": "i9", "target": "i10" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            },
+            {
+              "source": "i9",
+              "target": "i10"
+            }
           ]
         }
       },
@@ -256,10 +366,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "expense.ledger.logged" },
+          "config": {
+            "event_type": "expense.ledger.logged"
+          },
           "description": "Event-triggered on every logged expense. Also runs a daily recurring-charge sweep."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -286,14 +400,23 @@
           {
             "name": "anomaly_threshold",
             "type": "enum",
-            "options": ["100", "250", "500", "1000"],
+            "options": [
+              "100",
+              "250",
+              "500",
+              "1000"
+            ],
             "default": "500",
             "description": "Individual Slack alert fires for any expense at or above this amount."
           },
           {
             "name": "category_spike_multiplier",
             "type": "enum",
-            "options": ["1.5", "2.0", "3.0"],
+            "options": [
+              "1.5",
+              "2.0",
+              "3.0"
+            ],
             "default": "2.0",
             "description": "Flag a category in the weekly summary when its current-week spend exceeds this multiple of the 4-week rolling average."
           }
@@ -302,25 +425,76 @@
           "anomaly_threshold": "{{param.aq_anomaly_threshold}}",
           "category_spike_multiplier": "{{param.aq_spike_multiplier}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Logged event OR daily sweep" },
-            { "id": "a2", "type": "action", "label": "Check high-amount + duplicate (real-time)" },
-            { "id": "a3", "type": "action", "label": "Check recurring + category spike (daily)" },
-            { "id": "a4", "type": "action", "label": "Dedupe against alert_history" },
-            { "id": "a5", "type": "connector", "label": "Post Block Kit alerts to Slack", "connector": "slack" },
-            { "id": "a6", "type": "event", "label": "Emit expense.anomaly.detected per alert" },
-            { "id": "a7", "type": "end", "label": "Alerts delivered" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Logged event OR daily sweep"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Check high-amount + duplicate (real-time)"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Check recurring + category spike (daily)"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Dedupe against alert_history"
+            },
+            {
+              "id": "a5",
+              "type": "connector",
+              "label": "Post Block Kit alerts to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "a6",
+              "type": "event",
+              "label": "Emit expense.anomaly.detected per alert"
+            },
+            {
+              "id": "a7",
+              "type": "end",
+              "label": "Alerts delivered"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            }
           ]
         }
       },
@@ -335,10 +509,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5", "timezone": "local" },
+          "config": {
+            "cron": "0 17 * * 5",
+            "timezone": "local"
+          },
           "description": "Default Fridays 5:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_sheets", "slack"],
+        "connectors": [
+          "spreadsheet",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -367,29 +547,95 @@
         "sample_input": {
           "monthly_budget": "{{param.aq_monthly_budget}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Friday tick" },
-            { "id": "w2", "type": "connector", "label": "Read week's rows from Sheets", "connector": "google_sheets" },
-            { "id": "w3", "type": "action", "label": "Compute totals, categories, top vendors" },
-            { "id": "w4", "type": "action", "label": "Compute MTD + projected month-end" },
-            { "id": "w5", "type": "action", "label": "Collect anomalies + pending review items" },
-            { "id": "w6", "type": "connector", "label": "Post Block Kit summary to Slack", "connector": "slack" },
-            { "id": "w7", "type": "action", "label": "Archive report + clear resolved pending items" },
-            { "id": "w8", "type": "event", "label": "Emit expense.summary.delivered" },
-            { "id": "w9", "type": "end", "label": "Summary delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Friday tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Read week's rows from Sheets",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute totals, categories, top vendors"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Compute MTD + projected month-end"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Collect anomalies + pending review items"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "Post Block Kit summary to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Archive report + clear resolved pending items"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Emit expense.summary.delivered"
+            },
+            {
+              "id": "w9",
+              "type": "end",
+              "label": "Summary delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            }
           ]
         }
       }
@@ -398,7 +644,10 @@
       {
         "id": "aq_expense_sheet",
         "scope": "capability",
-        "use_case_ids": ["uc_receipt_ingest", "uc_weekly_summary"],
+        "use_case_ids": [
+          "uc_receipt_ingest",
+          "uc_weekly_summary"
+        ],
         "category": "configuration",
         "question": "Which Google Sheet should hold the expense ledger?",
         "type": "select",
@@ -415,7 +664,9 @@
       {
         "id": "aq_arrival_pattern",
         "scope": "capability",
-        "use_case_ids": ["uc_receipt_ingest"],
+        "use_case_ids": [
+          "uc_receipt_ingest"
+        ],
         "category": "configuration",
         "question": "How do receipts typically arrive in your inbox?",
         "type": "select",
@@ -434,7 +685,9 @@
       {
         "id": "aq_categories",
         "scope": "capability",
-        "use_case_ids": ["uc_receipt_ingest"],
+        "use_case_ids": [
+          "uc_receipt_ingest"
+        ],
         "category": "configuration",
         "question": "Which expense categories should the agent use?",
         "type": "text",
@@ -448,11 +701,18 @@
       {
         "id": "aq_anomaly_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_anomaly_alerts"],
+        "use_case_ids": [
+          "uc_anomaly_alerts"
+        ],
         "category": "configuration",
         "question": "Flag individual expenses above what amount?",
         "type": "select",
-        "options": ["100", "250", "500", "1000"],
+        "options": [
+          "100",
+          "250",
+          "500",
+          "1000"
+        ],
         "default": "500",
         "maps_to": "use_cases[uc_anomaly_alerts].sample_input.anomaly_threshold",
         "variable_name": "anomaly_threshold",
@@ -462,7 +722,9 @@
       {
         "id": "aq_spike_multiplier",
         "scope": "capability",
-        "use_case_ids": ["uc_anomaly_alerts"],
+        "use_case_ids": [
+          "uc_anomaly_alerts"
+        ],
         "category": "configuration",
         "question": "When should a category's weekly spend be flagged as a spike?",
         "type": "select",
@@ -480,7 +742,9 @@
       {
         "id": "aq_monthly_budget",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_summary"],
+        "use_case_ids": [
+          "uc_weekly_summary"
+        ],
         "category": "configuration",
         "question": "What is your monthly expense budget to track against?",
         "type": "text",
@@ -490,6 +754,63 @@
         "variable_name": "monthly_budget",
         "context": "Used in the weekly summary to show month-to-date spend vs budget and a projected month-end based on the current run rate. Leave empty to skip the budget gauge.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

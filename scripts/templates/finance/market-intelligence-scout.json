@@ -5,11 +5,22 @@
   "description": "Watches Kalshi prediction markets for new listings, rapid probability shifts, and pricing anomalies, cross-references findings with breaking news, and emails a daily intelligence digest. Every finding is scored for confidence and reviewed — memory tightens the noise filter over time.",
   "icon": "Eye",
   "color": "#4DE4B2",
-  "category": ["finance", "research"],
-  "service_flow": ["Kalshi", "News API", "Gmail"],
+  "category": [
+    "finance",
+    "research"
+  ],
+  "service_flow": [
+    "Kalshi",
+    "News API",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Kalshi", "News API", "Gmail"],
+    "service_flow": [
+      "Kalshi",
+      "News API",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Surface mispriced or news-correlated prediction markets on Kalshi — confidence-scored, reviewed, and delivered as one actionable daily digest.",
       "identity": {
@@ -47,7 +58,13 @@
       "tool_guidance": "**Kalshi API** (base `https://trading-api.kalshi.com/trade-api/v2`, Bearer auth):\n- `GET /exchange/status` — check trading_active before scans.\n- `GET /markets?status=open&limit=200` — list open markets with pricing; paginate via cursor.\n- `GET /markets/{ticker}` — full detail for flagged markets.\n- `GET /events/{event_ticker}` — parent event + sibling markets for internal consistency checks.\n- `GET /markets/{ticker}/orderbook` — depth assessment on flagged markets.\nRate limit: 10 req/sec. Batch via list endpoints; only fetch orderbook/detail for flagged items.\n\n**News API** (base `https://newsapi.org/v2`, X-Api-Key header):\n- `GET /everything?q={keywords}&sortBy=publishedAt&from={24h_ago}` — full-text search.\n- `GET /top-headlines?category={category}` — breaking stories by category.\nFree tier = 100 req/day. Batch keyword queries when >3 markets share a theme.\n\n**Gmail** (via the builtin Gmail connector) — `gmail_send` with HTML body for the daily digest.\n\n**Local state**:\n- `tracked_markets.json` — ticker, title, category, last known YES/NO, last_checked, status.\n- `daily_findings.json` — accumulator for findings within the current 24h window, flushed after digest.\n- `confidence_calibration.json` — predicted vs actual review outcomes; drives weight adjustment.\n- `data/alerts/{date}_{ticker}.json` — archived high-confidence finding payloads.",
       "error_handling": "Kalshi 401/403 → auth failure; skip Kalshi-dependent steps, still run news scan against general market headlines and deliver a partial digest with an explicit gap note. 429 → exponential backoff (2s/4s/8s); if still limited, restrict scan to previously-flagged markets. 5xx → retry once after 5s; skip cycle if still failing. Exchange closed → skip cycle; do not emit anomalies on stale pre-close prices. News API 401 → continue with Kalshi-only scoring; news component = 0.00; note the gap in the digest. News API 429 → batch keyword queries into broader searches; fall back to web_search for top findings only. Gmail send failure → queue the digest to `data/pending_digest/{date}.html` and notify via Messages; retry on next cycle. Missing tracked_markets.json → initialize fresh; treat all currently open markets as new; note re-initialization in the digest. Orderbook empty → depth component = 0.00 (thin). Non-English news articles → filter before relevance scoring.",
       "examples": [],
-      "tools": ["http_request", "web_search", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "kalshi",
@@ -91,17 +108,32 @@
           "setup_instructions": "1. Register at https://newsapi.org/register.\n2. Copy the API key shown on the dashboard.\n3. Paste above. You can skip this — price-only scoring still works as a fallback."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth consent flow with the gmail.send scope. 4. Paste client_id, client_secret, refresh_token above."
         }
@@ -126,12 +158,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 07:00 — final cadence set at the trigger-composition step (shared across all UCs)."
         },
-        "connectors": ["kalshi"],
+        "connectors": [
+          "kalshi"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`tracked_markets.json` — per-ticker last-known pricing and timestamps. Drives probability-shift detection vs previous scan."
@@ -158,7 +198,11 @@
           {
             "name": "sensitivity",
             "type": "enum",
-            "options": ["conservative", "balanced", "aggressive"],
+            "options": [
+              "conservative",
+              "balanced",
+              "aggressive"
+            ],
             "default": "balanced",
             "description": "Conservative = 20% shift threshold. Balanced = 15%. Aggressive = 10%."
           }
@@ -167,23 +211,68 @@
           "focus_categories": "{{param.aq_focus_categories}}",
           "sensitivity": "{{param.aq_sensitivity}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Daily tick (shared)" },
-            { "id": "w2", "type": "connector", "label": "Check exchange status + list open markets", "connector": "kalshi" },
-            { "id": "w3", "type": "action", "label": "Detect new listings + compute shifts/spreads" },
-            { "id": "w4", "type": "connector", "label": "Fetch orderbook for flagged markets", "connector": "kalshi" },
-            { "id": "w5", "type": "event", "label": "Emit stocks.markets.new / stocks.markets.anomaly" },
-            { "id": "w6", "type": "end", "label": "Flagged set ready for news correlation" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Daily tick (shared)"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Check exchange status + list open markets",
+              "connector": "kalshi"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Detect new listings + compute shifts/spreads"
+            },
+            {
+              "id": "w4",
+              "type": "connector",
+              "label": "Fetch orderbook for flagged markets",
+              "connector": "kalshi"
+            },
+            {
+              "id": "w5",
+              "type": "event",
+              "label": "Emit stocks.markets.new / stocks.markets.anomaly"
+            },
+            {
+              "id": "w6",
+              "type": "end",
+              "label": "Flagged set ready for news correlation"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            }
           ]
         }
       },
@@ -198,12 +287,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 07:00 — final cadence set at the trigger-composition step (shared)."
         },
-        "connectors": ["news_api"],
+        "connectors": [
+          "news_api"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": false,
           "context": null
@@ -234,23 +331,68 @@
         "sample_input": {
           "max_news_articles": "{{param.aq_max_news_articles}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Flagged markets received from uc_market_watch" },
-            { "id": "c2", "type": "action", "label": "Extract keywords per flagged market" },
-            { "id": "c3", "type": "connector", "label": "Query News API everything + top-headlines", "connector": "news_api" },
-            { "id": "c4", "type": "action", "label": "Score articles; keep top 3 per market" },
-            { "id": "c5", "type": "event", "label": "Emit stocks.markets.correlated for strong matches" },
-            { "id": "c6", "type": "end", "label": "Correlated set ready for digest" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Flagged markets received from uc_market_watch"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Extract keywords per flagged market"
+            },
+            {
+              "id": "c3",
+              "type": "connector",
+              "label": "Query News API everything + top-headlines",
+              "connector": "news_api"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Score articles; keep top 3 per market"
+            },
+            {
+              "id": "c5",
+              "type": "event",
+              "label": "Emit stocks.markets.correlated for strong matches"
+            },
+            {
+              "id": "c6",
+              "type": "end",
+              "label": "Correlated set ready for digest"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            }
           ]
         }
       },
@@ -265,12 +407,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 07:00 — final cadence set at the trigger-composition step (shared)."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [
-          { "type": "email", "description": "Combined daily intelligence digest via Gmail." }
+          {
+            "type": "email",
+            "description": "Combined daily intelligence digest via Gmail."
+          }
         ],
         "review_policy": {
           "mode": "always",
@@ -297,7 +447,11 @@
           {
             "name": "digest_depth",
             "type": "enum",
-            "options": ["executive", "standard", "deep"],
+            "options": [
+              "executive",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Executive = top 5 only. Standard = all findings above threshold + category heatmap. Deep = + near-misses and full orderbook breakdowns."
           },
@@ -311,27 +465,85 @@
           "digest_depth": "{{param.aq_digest_depth}}",
           "recipient_email": "{{param.aq_recipient_email}}"
         },
-        "tool_hints": ["gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Flagged + correlated findings received" },
-            { "id": "d2", "type": "action", "label": "Compute composite confidence per finding" },
-            { "id": "d3", "type": "action", "label": "Apply memory calibration (suppress noise categories)" },
-            { "id": "d4", "type": "action", "label": "Compile combined digest (new markets / shifts / spread / top 5 / heatmap)" },
-            { "id": "d5", "type": "connector", "label": "Deliver digest via Gmail", "connector": "gmail" },
-            { "id": "d6", "type": "action", "label": "Route findings for review; persist review outcomes" },
-            { "id": "d7", "type": "event", "label": "Emit stocks.markets.digest_delivered + review_outcome" },
-            { "id": "d8", "type": "end", "label": "Cycle complete; memory updated" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Flagged + correlated findings received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Compute composite confidence per finding"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Apply memory calibration (suppress noise categories)"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Compile combined digest (new markets / shifts / spread / top 5 / heatmap)"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Deliver digest via Gmail",
+              "connector": "email"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Route findings for review; persist review outcomes"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit stocks.markets.digest_delivered + review_outcome"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Cycle complete; memory updated"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       }
@@ -340,7 +552,9 @@
       {
         "id": "aq_focus_categories",
         "scope": "capability",
-        "use_case_ids": ["uc_market_watch"],
+        "use_case_ids": [
+          "uc_market_watch"
+        ],
         "category": "domain",
         "question": "Which Kalshi market categories should the scan prioritize?",
         "type": "select",
@@ -362,7 +576,9 @@
       {
         "id": "aq_sensitivity",
         "scope": "capability",
-        "use_case_ids": ["uc_market_watch"],
+        "use_case_ids": [
+          "uc_market_watch"
+        ],
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -380,11 +596,18 @@
       {
         "id": "aq_max_news_articles",
         "scope": "capability",
-        "use_case_ids": ["uc_news_correlation"],
+        "use_case_ids": [
+          "uc_news_correlation"
+        ],
         "category": "configuration",
         "question": "How many news articles should the correlation step retrieve per flagged market?",
         "type": "select",
-        "options": ["5", "10", "15", "20"],
+        "options": [
+          "5",
+          "10",
+          "15",
+          "20"
+        ],
         "default": "10",
         "maps_to": "use_cases[uc_news_correlation].sample_input.max_news_articles",
         "variable_name": "max_news_articles",
@@ -394,7 +617,9 @@
       {
         "id": "aq_digest_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_confidence_digest"],
+        "use_case_ids": [
+          "uc_confidence_digest"
+        ],
         "category": "quality",
         "question": "How detailed should the daily digest be?",
         "type": "select",
@@ -412,7 +637,9 @@
       {
         "id": "aq_recipient_email",
         "scope": "capability",
-        "use_case_ids": ["uc_confidence_digest"],
+        "use_case_ids": [
+          "uc_confidence_digest"
+        ],
         "category": "configuration",
         "question": "What email address should receive the daily intelligence digest?",
         "type": "text",
@@ -422,6 +649,25 @@
         "variable_name": "recipient_email",
         "context": "The digest arrives every morning at the configured cadence. You can update this address at any time.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

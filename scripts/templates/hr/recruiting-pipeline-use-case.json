@@ -5,11 +5,21 @@
   "description": "Monitors Greenhouse for candidate stage transitions, sends personalized emails at each stage (acknowledgment, interview prep, rejection, offer), posts updates to hiring Slack channels, and compiles weekly recruiting funnel metrics.",
   "icon": "UserPlus",
   "color": "#EC4899",
-  "category": ["hr"],
-  "service_flow": ["Greenhouse", "Gmail", "Slack"],
+  "category": [
+    "hr"
+  ],
+  "service_flow": [
+    "Greenhouse",
+    "Gmail",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Greenhouse", "Gmail", "Slack"],
+    "service_flow": [
+      "Greenhouse",
+      "Gmail",
+      "Slack"
+    ],
     "persona": {
       "goal": "Run the recruiting communication loop end-to-end — every candidate moved through Greenhouse gets the right email at the right moment, the hiring team stays in sync on Slack, and leadership sees the funnel every Monday.",
       "identity": {
@@ -47,7 +57,13 @@
       "tool_guidance": "**Greenhouse via http_request**:\n- `GET https://harvest.greenhouse.io/v1/candidates?updated_after={ts}&per_page=100` — poll for stage changes. Paginate with `page`.\n- `GET /v1/candidates/{id}` — full candidate details including current stage.\n- `GET /v1/candidates/{id}/activity_feed` — activity history for email context.\n- `GET /v1/jobs/{job_id}` and `/v1/jobs/{job_id}/stages` — job + stage definitions for stage-name mapping and email personalization.\n- `GET /v1/scheduled_interviews?candidate_id={id}` — interview details (date, time, interviewers, format) for prep emails.\n- `GET /v1/offers?candidate_id={id}` — offer context for draft email (NEVER include compensation in the draft).\n- Auth: HTTP Basic with API key as username, empty password. Header `Authorization: Basic {base64(api_key:)}`.\n\n**Gmail tools**:\n- `gmail_send` — dispatch candidate emails. Always set `from` to the configured recruiting alias. Use `html_body` for branded formatting. Use `reply_to` for threaded follow-ups to the same candidate.\n- `gmail_search` — find prior threads with `to:{candidate_email} subject:\"Application\"` for dedup and reply-threading.\n\n**Slack via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — `{channel: \"#hiring-*\", blocks: [...]}`. Use `thread_ts` from state when available to thread replies under the candidate's original message.\n- `GET https://slack.com/api/conversations.history?channel={id}&limit=20` — locate existing threads when `slack_thread_map` is empty.\n- Auth: `Authorization: Bearer xoxb-…`, `Content-Type: application/json`.\n\n**Local state**:\n- `recruiting_state.json` — `{ last_poll_ts, candidate_stage_map: {id → stage}, slack_thread_map: {id → thread_ts}, sent_dedup: {\"{id}|{stage}\": sent_ts}, offer_drafts: {id → {subject, body, role, drafted_at}} }`. Atomic writes only.\n- `metrics_history.json` — array of weekly snapshots `{ week_start, applications, screens, interviews, offers, accepted, rejected, conversion_rates, avg_time_in_stage }`.\n\n**Stage name mapping** — Greenhouse stage names are workspace-specific. The agent infers transition type by stage-name substring matching (application / review / screen / interview / offer / hired / rejected). Authoring the exact mapping belongs in the adoption questionnaire if it matters for routing.",
       "error_handling": "Greenhouse 401 → emit auth-expired alert to recruiting-ops, skip cycle, do not retry. Greenhouse 429 → exponential backoff (30s / 60s / 120s), track req count per cycle. Greenhouse 404 on candidate → drop from state, log as deleted/merged. Greenhouse 5xx → retry up to 3 times with 10s delay; persistent → skip cycle, alert. Gmail bounce / invalid email → log failed send, annotate candidate record, do NOT retry. Gmail quota pressure → defer acknowledgments and rejections; preserve offer + interview sends. Gmail 401 → emit auth-expired alert. Slack channel_not_found → log warning, continue (email is the primary surface). Slack not_in_channel → DM the configured admin. Slack 429 → queue and drain at 1 msg/sec/channel. State corruption (`recruiting_state.json` unreadable) → reinitialize with `updated_after = now - 24h` to catch up without massive duplication. Duplicate prevention: before any send, check `sent_dedup[{candidate_id}|{stage}]` — skip if present.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "greenhouse",
@@ -70,8 +86,8 @@
           "setup_instructions": "1. Log into Greenhouse as an admin.\n2. Configure -> Dev Center -> API Credential Management.\n3. Create New API Key -> type 'Harvest' -> name 'Recruiting Pipeline Agent'.\n4. Grant GET permissions: Candidates, Jobs, Scheduled Interviews, Activity Feed.\n5. Copy the generated API key.\n6. Note: Greenhouse uses HTTP Basic Auth — the API key is the username with an empty password."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -106,8 +122,8 @@
           "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable Gmail API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete OAuth consent flow with scopes: gmail.send, gmail.readonly, gmail.modify.\n5. Paste all three values here."
         },
         {
-          "name": "slack",
-          "label": "Slack Workspace",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -150,10 +166,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["greenhouse", "gmail", "slack"],
+        "connectors": [
+          "greenhouse",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -185,35 +208,59 @@
           {
             "name": "email_scope",
             "type": "enum",
-            "options": ["all_stages", "acknowledgment_and_interview_only", "acknowledgment_only", "notifications_only"],
+            "options": [
+              "all_stages",
+              "acknowledgment_and_interview_only",
+              "acknowledgment_only",
+              "notifications_only"
+            ],
             "default": "acknowledgment_and_interview_only",
             "description": "Which candidate-facing email touchpoints the agent sends autonomously. Offer is always gated by manual review regardless."
           },
           {
             "name": "volume_tier",
             "type": "enum",
-            "options": ["small", "medium", "high_volume"],
+            "options": [
+              "small",
+              "medium",
+              "high_volume"
+            ],
             "default": "medium",
             "description": "Typical monthly hiring volume — affects polling strategy and Slack routing granularity."
           },
           {
             "name": "hard_boundary",
             "type": "enum",
-            "options": ["never_reject_emails", "never_offer_communications", "never_duplicate_per_stage", "never_any_candidate_email"],
+            "options": [
+              "never_reject_emails",
+              "never_offer_communications",
+              "never_duplicate_per_stage",
+              "never_any_candidate_email"
+            ],
             "default": "never_reject_emails",
             "description": "Hard guardrail — actions the agent must never take without explicit human instruction."
           },
           {
             "name": "slack_routing",
             "type": "enum",
-            "options": ["shared_recruiting_channel", "per_role_channels", "hiring_manager_dms", "shared_plus_per_role"],
+            "options": [
+              "shared_recruiting_channel",
+              "per_role_channels",
+              "hiring_manager_dms",
+              "shared_plus_per_role"
+            ],
             "default": "shared_recruiting_channel",
             "description": "How Slack notifications are distributed across channels."
           },
           {
             "name": "email_tone",
             "type": "enum",
-            "options": ["warm_conversational", "professional_concise", "highly_personalized", "template_bound"],
+            "options": [
+              "warm_conversational",
+              "professional_concise",
+              "highly_personalized",
+              "template_bound"
+            ],
             "default": "warm_conversational",
             "description": "Tone and personalization level for all candidate emails."
           },
@@ -232,30 +279,106 @@
           "email_tone": "{{param.aq_email_tone}}",
           "sender_alias": "{{param.aq_sender_alias}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Polling tick" },
-            { "id": "s2", "type": "connector", "label": "GET /candidates?updated_after", "connector": "greenhouse" },
-            { "id": "s3", "type": "action", "label": "Diff against recruiting_state" },
-            { "id": "s4", "type": "decision", "label": "Offer stage?" },
-            { "id": "s5", "type": "event", "label": "Emit hr.recruiting.offer_ready" },
-            { "id": "s6", "type": "connector", "label": "gmail_send stage email", "connector": "gmail" },
-            { "id": "s7", "type": "connector", "label": "Post Slack update (threaded)", "connector": "slack" },
-            { "id": "s8", "type": "action", "label": "Persist state atomically" },
-            { "id": "s9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "GET /candidates?updated_after",
+              "connector": "greenhouse"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Diff against recruiting_state"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Offer stage?"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit hr.recruiting.offer_ready"
+            },
+            {
+              "id": "s6",
+              "type": "connector",
+              "label": "gmail_send stage email",
+              "connector": "email"
+            },
+            {
+              "id": "s7",
+              "type": "connector",
+              "label": "Post Slack update (threaded)",
+              "connector": "messaging"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Persist state atomically"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5", "variant": "yes", "label": "Offer" },
-            { "source": "s4", "target": "s6", "variant": "no", "label": "Other" },
-            { "source": "s5", "target": "s7" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "variant": "yes",
+              "label": "Offer"
+            },
+            {
+              "source": "s4",
+              "target": "s6",
+              "variant": "no",
+              "label": "Other"
+            },
+            {
+              "source": "s5",
+              "target": "s7"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -270,10 +393,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "hr.recruiting.offer_ready" },
+          "config": {
+            "event_type": "hr.recruiting.offer_ready"
+          },
           "description": "Fires when uc_stage_transitions detects an offer-stage move. Not user-configurable — event triggers bypass the cadence picker."
         },
-        "connectors": ["greenhouse", "gmail", "slack"],
+        "connectors": [
+          "greenhouse",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -305,14 +434,23 @@
           {
             "name": "approval_scope",
             "type": "enum",
-            "options": ["offers_only", "rejections_and_offers", "all_candidate_emails", "no_approval"],
+            "options": [
+              "offers_only",
+              "rejections_and_offers",
+              "all_candidate_emails",
+              "no_approval"
+            ],
             "default": "rejections_and_offers",
             "description": "Which outgoing communications require recruiter approval before sending."
           },
           {
             "name": "hiring_manager_mention",
             "type": "enum",
-            "options": ["always", "offer_only", "never"],
+            "options": [
+              "always",
+              "offer_only",
+              "never"
+            ],
             "default": "offer_only",
             "description": "Whether the Slack approval message @-mentions the hiring manager."
           }
@@ -321,28 +459,96 @@
           "approval_scope": "{{param.aq_approval_scope}}",
           "hiring_manager_mention": "{{param.aq_hiring_manager_mention}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "offer_ready received" },
-            { "id": "o2", "type": "connector", "label": "Fetch offer context", "connector": "greenhouse" },
-            { "id": "o3", "type": "action", "label": "Draft congratulations email" },
-            { "id": "o4", "type": "decision", "label": "Reviewer approves?" },
-            { "id": "o5", "type": "connector", "label": "gmail_send offer", "connector": "gmail" },
-            { "id": "o6", "type": "connector", "label": "Post ✅ to hiring channel", "connector": "slack" },
-            { "id": "o7", "type": "action", "label": "Log rejection + reason" },
-            { "id": "o8", "type": "end", "label": "Approval loop complete" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "offer_ready received"
+            },
+            {
+              "id": "o2",
+              "type": "connector",
+              "label": "Fetch offer context",
+              "connector": "greenhouse"
+            },
+            {
+              "id": "o3",
+              "type": "action",
+              "label": "Draft congratulations email"
+            },
+            {
+              "id": "o4",
+              "type": "decision",
+              "label": "Reviewer approves?"
+            },
+            {
+              "id": "o5",
+              "type": "connector",
+              "label": "gmail_send offer",
+              "connector": "email"
+            },
+            {
+              "id": "o6",
+              "type": "connector",
+              "label": "Post ✅ to hiring channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "o7",
+              "type": "action",
+              "label": "Log rejection + reason"
+            },
+            {
+              "id": "o8",
+              "type": "end",
+              "label": "Approval loop complete"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o4" },
-            { "source": "o4", "target": "o5", "variant": "yes", "label": "Approved" },
-            { "source": "o4", "target": "o7", "variant": "no", "label": "Rejected" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o8" },
-            { "source": "o7", "target": "o8" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o4"
+            },
+            {
+              "source": "o4",
+              "target": "o5",
+              "variant": "yes",
+              "label": "Approved"
+            },
+            {
+              "source": "o4",
+              "target": "o7",
+              "variant": "no",
+              "label": "Rejected"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o8"
+            },
+            {
+              "source": "o7",
+              "target": "o8"
+            }
           ]
         }
       },
@@ -357,10 +563,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 09:00 local — final cadence set at the trigger-composition step."
         },
-        "connectors": ["greenhouse", "gmail", "slack"],
+        "connectors": [
+          "greenhouse",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -382,7 +595,12 @@
           {
             "name": "retention_policy",
             "type": "enum",
-            "options": ["30_days", "90_days", "1_year", "indefinite"],
+            "options": [
+              "30_days",
+              "90_days",
+              "1_year",
+              "indefinite"
+            ],
             "default": "90_days",
             "description": "How long to retain closed-candidate data in metrics_history for re-engagement and compliance reviews."
           },
@@ -397,29 +615,97 @@
           "retention_policy": "{{param.aq_retention_policy}}",
           "report_recipients": "{{param.aq_report_recipients}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Monday 09:00 tick" },
-            { "id": "w2", "type": "connector", "label": "Fetch 7-day candidate + job data", "connector": "greenhouse" },
-            { "id": "w3", "type": "action", "label": "Compute funnel + conversions + trends" },
-            { "id": "w4", "type": "action", "label": "Build report" },
-            { "id": "w5", "type": "connector", "label": "Post to Slack hiring channel", "connector": "slack" },
-            { "id": "w6", "type": "connector", "label": "Email to recruiting list", "connector": "gmail" },
-            { "id": "w7", "type": "action", "label": "Archive snapshot" },
-            { "id": "w8", "type": "event", "label": "Emit hr.recruiting.funnel_delivered" },
-            { "id": "w9", "type": "end", "label": "Report delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Monday 09:00 tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Fetch 7-day candidate + job data",
+              "connector": "greenhouse"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute funnel + conversions + trends"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Build report"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "Post to Slack hiring channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "Email to recruiting list",
+              "connector": "email"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Archive snapshot"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Emit hr.recruiting.funnel_delivered"
+            },
+            {
+              "id": "w9",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            }
           ]
         }
       }
@@ -428,7 +714,9 @@
       {
         "id": "aq_email_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions"],
+        "use_case_ids": [
+          "uc_stage_transitions"
+        ],
         "category": "intent",
         "question": "Which candidate-facing email touchpoints should the agent send autonomously?",
         "type": "select",
@@ -447,7 +735,9 @@
       {
         "id": "aq_volume_tier",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions"],
+        "use_case_ids": [
+          "uc_stage_transitions"
+        ],
         "category": "domain",
         "question": "What is your typical monthly hiring volume and how many open roles does this agent track simultaneously?",
         "type": "select",
@@ -465,7 +755,9 @@
       {
         "id": "aq_hard_boundary",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions"],
+        "use_case_ids": [
+          "uc_stage_transitions"
+        ],
         "category": "boundaries",
         "question": "What should the agent NEVER do without explicit human instruction?",
         "type": "select",
@@ -484,7 +776,9 @@
       {
         "id": "aq_approval_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_offer_approval"],
+        "use_case_ids": [
+          "uc_offer_approval"
+        ],
         "category": "human_in_the_loop",
         "question": "Which outgoing communications require a recruiter to approve the draft before sending?",
         "type": "select",
@@ -503,7 +797,9 @@
       {
         "id": "aq_hiring_manager_mention",
         "scope": "capability",
-        "use_case_ids": ["uc_offer_approval"],
+        "use_case_ids": [
+          "uc_offer_approval"
+        ],
         "category": "configuration",
         "question": "When should the agent @-mention the hiring manager in Slack?",
         "type": "select",
@@ -521,7 +817,10 @@
       {
         "id": "aq_slack_routing",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions", "uc_weekly_funnel_report"],
+        "use_case_ids": [
+          "uc_stage_transitions",
+          "uc_weekly_funnel_report"
+        ],
         "category": "connectors",
         "question": "Which Slack channel layout should receive candidate stage updates and the weekly report?",
         "type": "select",
@@ -540,7 +839,9 @@
       {
         "id": "aq_email_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions"],
+        "use_case_ids": [
+          "uc_stage_transitions"
+        ],
         "category": "quality",
         "question": "What tone and personalization level should candidate emails use?",
         "type": "select",
@@ -559,7 +860,9 @@
       {
         "id": "aq_retention_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_funnel_report"],
+        "use_case_ids": [
+          "uc_weekly_funnel_report"
+        ],
         "category": "memory",
         "question": "How long should the agent retain candidate history after a pipeline closes (hired or rejected)?",
         "type": "select",
@@ -578,7 +881,9 @@
       {
         "id": "aq_sender_alias",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_transitions"],
+        "use_case_ids": [
+          "uc_stage_transitions"
+        ],
         "category": "configuration",
         "question": "Which Gmail address should send all candidate and hiring team communications?",
         "type": "text",
@@ -591,7 +896,9 @@
       {
         "id": "aq_report_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_funnel_report"],
+        "use_case_ids": [
+          "uc_weekly_funnel_report"
+        ],
         "category": "messages",
         "question": "Who should receive the emailed weekly funnel report?",
         "type": "text",
@@ -600,6 +907,44 @@
         "variable_name": "report_recipients",
         "context": "Distribution list for the Monday email. The Slack post goes to the hiring channel in parallel.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

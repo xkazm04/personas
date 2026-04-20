@@ -5,11 +5,21 @@
   "description": "Subscribes to Supabase database webhooks for specific table changes (new users, order updates, flag changes). Posts enriched notifications to Slack, triggers welcome email sequences for new signups, and logs anomalous data patterns.",
   "icon": "Database",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Supabase", "Slack", "Gmail"],
+  "service_flow": [
+    "Supabase",
+    "Slack",
+    "Gmail"
+  ],
   "payload": {
-    "service_flow": ["Supabase", "Slack", "Gmail"],
+    "service_flow": [
+      "Supabase",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Turn raw Supabase row changes into enriched, channel-routed Slack posts, onboarding emails, and anomaly alerts — replacing four brittle automation workflows with one reasoning agent.",
       "identity": {
@@ -46,7 +56,12 @@
       "tool_guidance": "### Supabase (http_request)\nBase: `https://{project}.supabase.co/rest/v1`\nAuth: `apikey: {service_role_key}`, `Authorization: Bearer {service_role_key}`\n- `GET /users?id=eq.{user_id}&select=*` — user profile\n- `GET /orders?id=eq.{order_id}&select=*,order_items(*)` — order with line items\n- `GET /feature_flags?name=eq.{flag_name}&select=*` — flag state\n- `GET /users?created_at=gte.{ts}&select=count` — recent signup count for spike detection\n- Use `Prefer: return=representation` on writes (though this persona is read-only on Supabase)\n\n### Slack (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — body `{channel, text, blocks, attachments}`. Always include a plain `text` fallback alongside blocks.\n- `POST /chat.update` — update a prior message (e.g., order status transitions in-place)\n\n### Gmail (gmail_send)\n- Send welcome: `to, subject: 'Welcome to [Product]!', html_body: <personalized HTML>`\n- Send order confirmation: `to, subject: 'Order #{id} confirmed', html_body: <order details>`\n- Never send to `+test@` or `@example.com` addresses\n\n### Channel routing defaults\n- new signups → `#new-signups`\n- orders → `#orders`\n- flag changes → `#engineering`\n- anomalies → `#alerts`\n- weekly digest → `#ops-summary`\n\n### Anomaly heuristics\n- Order value outlier: `|value - mean| > 3 * stdev`\n- Signup spike: `current_10min_signups > 5 * baseline_signup_rate`\n- Fraud signal: `account_age < 1h AND order_value > $500`\n- Integrity: NULL in required fields, negative quantities, impossible dates (future created_at, etc.)\n\n### Severity map\n- LOW: minor deviation, informational only\n- MEDIUM: notable anomaly, warrants human review\n- HIGH: significant deviation, possible fraud or system error\n- CRITICAL: data integrity violation or extreme outlier\n\n### Local state\n- `state/anomaly_baselines.json` — `{order_mean, order_stdev, signup_rate_per_10min, field_distributions}`\n- `state/email_dedup.json` — hashmap of `{user_id}_{event_type}_{date}` keys\n- `state/enterprise_domains.json` — accumulated enterprise email domains\n- `logs/anomalies.jsonl` — append-only, one JSON object per line\n- `logs/malformed_webhooks.jsonl` — payload errors for debugging",
       "error_handling": "Supabase 401 → Slack #alerts 'auth failed, check service role key', do not retry. Supabase 404 → record deleted between webhook and enrichment; proceed with partial context, tag in notification. Supabase 429 → exponential backoff (1s, 2s, 4s, max 30s), max 3 retries, then post with unenriched data. Supabase 5xx → retry 3× at 2s, then alert + queue for reprocess. Slack channel_not_found → fall back to #ops-alerts + warn operator. Slack rate_limited → respect Retry-After, queue and retry. Gmail send failure → log and retry once; on second failure post to #alerts 'welcome email for user X failed'. Welcome email duplicate → check dedup cache, skip silently if already sent today. Malformed webhook → log raw payload to `logs/malformed_webhooks.jsonl`, post to #alerts, do NOT crash. Unknown table → log + skip, post informational to #engineering. First run (no state files) → initialize with empty defaults. Corrupted baselines → back up corrupted file, reinitialize, alert operator.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "supabase",
@@ -77,8 +92,8 @@
           "setup_instructions": "1. Supabase Dashboard (app.supabase.com) -> Settings -> API.\n2. Copy the Project URL and the service_role key (NOT the anon key).\n3. Database -> Webhooks -> Create a new webhook.\n4. Select tables (users, orders, feature_flags) and events (INSERT, UPDATE, DELETE).\n5. Set the webhook URL to your Personas uc_event_routing webhook endpoint.\n6. Ensure the webhook payload includes both the new record and old_record for UPDATE events."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -97,8 +112,8 @@
           "setup_instructions": "1. api.slack.com/apps -> create (or select) an app.\n2. OAuth & Permissions -> Bot Token Scopes: chat:write, chat:write.public, channels:read.\n3. Install to workspace, copy the Bot User OAuth Token (xoxb-).\n4. Invite the bot to the channels it posts to: #new-signups, #orders, #engineering, #alerts, #ops-summary."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -156,12 +171,24 @@
           "trigger_type": "webhook",
           "config": {
             "source": "supabase",
-            "tables": ["users", "orders", "feature_flags"],
-            "events": ["INSERT", "UPDATE", "DELETE"]
+            "tables": [
+              "users",
+              "orders",
+              "feature_flags"
+            ],
+            "events": [
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ]
           },
           "description": "Supabase database webhook. Event-driven — not configurable at the trigger-composition step."
         },
-        "connectors": ["supabase", "slack", "gmail"],
+        "connectors": [
+          "supabase",
+          "messaging",
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -203,21 +230,36 @@
           {
             "name": "channel_routing",
             "type": "enum",
-            "options": ["separate_by_type", "separate_by_severity", "single_ops_channel", "team_specific"],
+            "options": [
+              "separate_by_type",
+              "separate_by_severity",
+              "single_ops_channel",
+              "team_specific"
+            ],
             "default": "separate_by_type",
             "description": "How to route Slack notifications. separate_by_type uses distinct channels per event kind; separate_by_severity routes by LOW/MEDIUM/HIGH/CRITICAL; single_ops_channel funnels everything into one; team_specific maps to growth / engineering / ops."
           },
           {
             "name": "anomaly_sensitivity",
             "type": "enum",
-            "options": ["strict", "moderate", "loose", "disabled"],
+            "options": [
+              "strict",
+              "moderate",
+              "loose",
+              "disabled"
+            ],
             "default": "moderate",
             "description": "Order-value anomaly multiplier. Strict: >2× mean. Moderate: >3× mean. Loose: >5× mean. Disabled turns the detector off."
           },
           {
             "name": "enrichment_depth",
             "type": "enum",
-            "options": ["minimal", "standard", "rich", "adaptive"],
+            "options": [
+              "minimal",
+              "standard",
+              "rich",
+              "adaptive"
+            ],
             "default": "adaptive",
             "description": "Notification detail. Minimal: event + table + timestamp. Standard: + key fields. Rich: full enriched payload. Adaptive: brief for routine events, rich for anomalies."
           }
@@ -227,33 +269,123 @@
           "anomaly_sensitivity": "{{param.aq_anomaly_sensitivity}}",
           "enrichment_depth": "{{param.aq_enrichment_depth}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "Supabase webhook fires" },
-            { "id": "e2", "type": "action", "label": "Parse + classify (table + operation)" },
-            { "id": "e3", "type": "connector", "label": "Enrich via Supabase REST", "connector": "supabase" },
-            { "id": "e4", "type": "decision", "label": "Anomaly detected?" },
-            { "id": "e5", "type": "connector", "label": "Post #alerts card + emit db.anomaly.detected", "connector": "slack" },
-            { "id": "e6", "type": "connector", "label": "Post to topic channel (signups/orders/engineering)", "connector": "slack" },
-            { "id": "e7", "type": "decision", "label": "Email-triggering event?" },
-            { "id": "e8", "type": "connector", "label": "Send welcome / confirmation email", "connector": "gmail" },
-            { "id": "e9", "type": "event", "label": "Emit db.user.created / .order.completed / .flag.changed" },
-            { "id": "e10", "type": "end", "label": "Event handled" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "Supabase webhook fires"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Parse + classify (table + operation)"
+            },
+            {
+              "id": "e3",
+              "type": "connector",
+              "label": "Enrich via Supabase REST",
+              "connector": "supabase"
+            },
+            {
+              "id": "e4",
+              "type": "decision",
+              "label": "Anomaly detected?"
+            },
+            {
+              "id": "e5",
+              "type": "connector",
+              "label": "Post #alerts card + emit db.anomaly.detected",
+              "connector": "messaging"
+            },
+            {
+              "id": "e6",
+              "type": "connector",
+              "label": "Post to topic channel (signups/orders/engineering)",
+              "connector": "messaging"
+            },
+            {
+              "id": "e7",
+              "type": "decision",
+              "label": "Email-triggering event?"
+            },
+            {
+              "id": "e8",
+              "type": "connector",
+              "label": "Send welcome / confirmation email",
+              "connector": "email"
+            },
+            {
+              "id": "e9",
+              "type": "event",
+              "label": "Emit db.user.created / .order.completed / .flag.changed"
+            },
+            {
+              "id": "e10",
+              "type": "end",
+              "label": "Event handled"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5", "variant": "yes", "label": "Yes" },
-            { "source": "e4", "target": "e6", "variant": "no", "label": "No" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8", "variant": "yes", "label": "Yes" },
-            { "source": "e7", "target": "e9", "variant": "no", "label": "No" },
-            { "source": "e8", "target": "e9" },
-            { "source": "e9", "target": "e10" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "e4",
+              "target": "e6",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "e7",
+              "target": "e9",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "e8",
+              "target": "e9"
+            },
+            {
+              "source": "e9",
+              "target": "e10"
+            }
           ]
         }
       },
@@ -268,10 +400,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 */6 * * *" },
+          "config": {
+            "cron": "0 */6 * * *"
+          },
           "description": "Default every 6 hours — final cadence set at the trigger-composition step."
         },
-        "connectors": ["supabase"],
+        "connectors": [
+          "supabase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -291,23 +427,67 @@
         "error_handling": "Supabase query fails → retain existing baselines, alert #alerts that refresh failed. Corrupted baselines file → back up, reinitialize from query, alert operator.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Scheduled tick" },
-            { "id": "b2", "type": "connector", "label": "Query 30-day orders + signups", "connector": "supabase" },
-            { "id": "b3", "type": "action", "label": "Compute mean / stdev / rate" },
-            { "id": "b4", "type": "action", "label": "Write state/anomaly_baselines.json" },
-            { "id": "b5", "type": "event", "label": "Emit db.baselines.refreshed" },
-            { "id": "b6", "type": "end", "label": "Baselines current" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "b2",
+              "type": "connector",
+              "label": "Query 30-day orders + signups",
+              "connector": "supabase"
+            },
+            {
+              "id": "b3",
+              "type": "action",
+              "label": "Compute mean / stdev / rate"
+            },
+            {
+              "id": "b4",
+              "type": "action",
+              "label": "Write state/anomaly_baselines.json"
+            },
+            {
+              "id": "b5",
+              "type": "event",
+              "label": "Emit db.baselines.refreshed"
+            },
+            {
+              "id": "b6",
+              "type": "end",
+              "label": "Baselines current"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3"
+            },
+            {
+              "source": "b3",
+              "target": "b4"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            }
           ]
         }
       },
@@ -322,10 +502,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1" },
+          "config": {
+            "cron": "0 9 * * 1"
+          },
           "description": "Default Monday 09:00 local — final cadence set at the trigger-composition step."
         },
-        "connectors": ["supabase", "slack"],
+        "connectors": [
+          "supabase",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -359,25 +544,76 @@
         "sample_input": {
           "digest_channel": "{{param.aq_digest_channel}}"
         },
-        "tool_hints": ["http_request", "file_read"],
+        "tool_hints": [
+          "http_request",
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Scheduled tick" },
-            { "id": "w2", "type": "connector", "label": "Query weekly + prior week metrics", "connector": "supabase" },
-            { "id": "w3", "type": "action", "label": "Read anomaly log + compute WoW deltas" },
-            { "id": "w4", "type": "action", "label": "Format Block Kit digest" },
-            { "id": "w5", "type": "connector", "label": "Post digest to Slack", "connector": "slack" },
-            { "id": "w6", "type": "event", "label": "Emit db.weekly_digest.posted" },
-            { "id": "w7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Query weekly + prior week metrics",
+              "connector": "supabase"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Read anomaly log + compute WoW deltas"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Format Block Kit digest"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "Post digest to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit db.weekly_digest.posted"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -386,7 +622,9 @@
       {
         "id": "aq_channel_routing",
         "scope": "capability",
-        "use_case_ids": ["uc_event_routing"],
+        "use_case_ids": [
+          "uc_event_routing"
+        ],
         "category": "configuration",
         "question": "How should Slack notifications be routed?",
         "type": "select",
@@ -405,7 +643,10 @@
       {
         "id": "aq_anomaly_sensitivity",
         "scope": "capability",
-        "use_case_ids": ["uc_event_routing", "uc_baseline_refresh"],
+        "use_case_ids": [
+          "uc_event_routing",
+          "uc_baseline_refresh"
+        ],
         "category": "configuration",
         "question": "How sensitive should the order-value anomaly detector be?",
         "type": "select",
@@ -424,7 +665,9 @@
       {
         "id": "aq_enrichment_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_event_routing"],
+        "use_case_ids": [
+          "uc_event_routing"
+        ],
         "category": "quality",
         "question": "How much enrichment context should Slack notifications include?",
         "type": "select",
@@ -443,7 +686,9 @@
       {
         "id": "aq_digest_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_digest"],
+        "use_case_ids": [
+          "uc_weekly_digest"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive the weekly operations digest?",
         "type": "select",
@@ -453,7 +698,9 @@
         "context": "The Monday 09:00 digest posts here. Typically a low-frequency summary channel.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -462,7 +709,9 @@
       {
         "id": "aq_anomaly_review_level",
         "scope": "capability",
-        "use_case_ids": ["uc_event_routing"],
+        "use_case_ids": [
+          "uc_event_routing"
+        ],
         "category": "human_in_the_loop",
         "question": "At what anomaly severity should the agent route to manual_review instead of auto-escalating?",
         "type": "select",
@@ -477,6 +726,44 @@
         "variable_name": "anomaly_review_level",
         "context": "Balances responsiveness against alert fatigue. HIGH-only catches the signals that usually warrant a human eye.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

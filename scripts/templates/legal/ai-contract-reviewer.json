@@ -67,8 +67,8 @@
       ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -103,11 +103,11 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
@@ -131,8 +131,8 @@
           "setup_instructions": "1. Go to notion.so/my-integrations and create a new integration.\n2. Name it 'AI Contract Reviewer' and select the workspace.\n3. Copy the Internal Integration Token.\n4. Create a new Notion database for contract reviews with these properties: Name (title), Parties (rich_text), Contract Type (select), Risk Level (select: Low/Medium/High/Critical), Red Flags (number), Status (select: Processing/Reviewed/Archived), Reviewed Date (date).\n5. Share the database with your integration (click '...' on the database -> Connections -> Add your integration).\n6. Copy the database ID from the URL."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -176,10 +176,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/10 * * * *",
+            "timezone": "local"
+          },
           "description": "Default poll Gmail every 10 minutes for labelled contracts — final cadence set at the trigger-composition step. Webhook upload also supported for instant processing."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -206,7 +211,11 @@
           {
             "name": "risk_tolerance",
             "type": "enum",
-            "options": ["conservative", "moderate", "aggressive"],
+            "options": [
+              "conservative",
+              "moderate",
+              "aggressive"
+            ],
             "default": "moderate",
             "description": "Conservative flags anything non-standard; moderate flags unfavorable + missing protections; aggressive only flags critical risks."
           }
@@ -215,30 +224,105 @@
           "contract_types": "{{param.aq_contract_types}}",
           "risk_tolerance": "{{param.aq_risk_tolerance}}"
         },
-        "tool_hints": ["http_request", "gmail_search", "gmail_get_attachment", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_search",
+          "gmail_get_attachment",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Contract received (Gmail label or webhook)" },
-            { "id": "a2", "type": "connector", "label": "Download + extract text", "connector": "gmail" },
-            { "id": "a3", "type": "decision", "label": "Valid format + extractable?" },
-            { "id": "a4", "type": "action", "label": "Log intake + identify contract type" },
-            { "id": "a5", "type": "action", "label": "Pass 1-3: key terms / financials / obligations" },
-            { "id": "a6", "type": "action", "label": "Pass 4-6: risk / red flags / market comparison" },
-            { "id": "a7", "type": "event", "label": "Emit contract.review.completed" },
-            { "id": "a8", "type": "error", "label": "Notify sender of format/encryption/OCR issue" },
-            { "id": "a9", "type": "end", "label": "Analysis record ready" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Contract received (Gmail label or webhook)"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "Download + extract text",
+              "connector": "email"
+            },
+            {
+              "id": "a3",
+              "type": "decision",
+              "label": "Valid format + extractable?"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Log intake + identify contract type"
+            },
+            {
+              "id": "a5",
+              "type": "action",
+              "label": "Pass 1-3: key terms / financials / obligations"
+            },
+            {
+              "id": "a6",
+              "type": "action",
+              "label": "Pass 4-6: risk / red flags / market comparison"
+            },
+            {
+              "id": "a7",
+              "type": "event",
+              "label": "Emit contract.review.completed"
+            },
+            {
+              "id": "a8",
+              "type": "error",
+              "label": "Notify sender of format/encryption/OCR issue"
+            },
+            {
+              "id": "a9",
+              "type": "end",
+              "label": "Analysis record ready"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4", "variant": "yes", "label": "Valid" },
-            { "source": "a3", "target": "a8", "variant": "no", "label": "Invalid" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a9" },
-            { "source": "a8", "target": "a9", "variant": "error" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4",
+              "variant": "yes",
+              "label": "Valid"
+            },
+            {
+              "source": "a3",
+              "target": "a8",
+              "variant": "no",
+              "label": "Invalid"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a9"
+            },
+            {
+              "source": "a8",
+              "target": "a9",
+              "variant": "error"
+            }
           ]
         }
       },
@@ -253,10 +337,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "contract.review.completed" },
+          "config": {
+            "event_type": "contract.review.completed"
+          },
           "description": "Fires whenever uc_analyze_contract completes. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["notion", "gmail", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -296,28 +386,96 @@
           "legal_team_channel": "{{param.aq_legal_team_channel}}",
           "high_risk_threshold": 3
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "review.completed received" },
-            { "id": "p2", "type": "connector", "label": "Create Notion page + append analysis blocks", "connector": "notion" },
-            { "id": "p3", "type": "connector", "label": "gmail_send summary to submitter", "connector": "gmail" },
-            { "id": "p4", "type": "decision", "label": "High-risk (3+ flags)?" },
-            { "id": "p5", "type": "connector", "label": "Slack alert to legal channel", "connector": "slack" },
-            { "id": "p6", "type": "action", "label": "Update contract_log + deadline tracker" },
-            { "id": "p7", "type": "event", "label": "Emit contract.risk.high_flagged (conditional)" },
-            { "id": "p8", "type": "end", "label": "Report published, stakeholders notified" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "review.completed received"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Create Notion page + append analysis blocks",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p3",
+              "type": "connector",
+              "label": "gmail_send summary to submitter",
+              "connector": "email"
+            },
+            {
+              "id": "p4",
+              "type": "decision",
+              "label": "High-risk (3+ flags)?"
+            },
+            {
+              "id": "p5",
+              "type": "connector",
+              "label": "Slack alert to legal channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "p6",
+              "type": "action",
+              "label": "Update contract_log + deadline tracker"
+            },
+            {
+              "id": "p7",
+              "type": "event",
+              "label": "Emit contract.risk.high_flagged (conditional)"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "Report published, stakeholders notified"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5", "variant": "yes", "label": "Yes" },
-            { "source": "p4", "target": "p6", "variant": "no", "label": "No" },
-            { "source": "p5", "target": "p7" },
-            { "source": "p7", "target": "p6" },
-            { "source": "p6", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "p4",
+              "target": "p6",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "p5",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p8"
+            }
           ]
         }
       },
@@ -332,10 +490,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "slack"],
+        "connectors": [
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -363,26 +527,85 @@
         "sample_input": {
           "reminder_recipients": "{{param.aq_reminder_recipients}}"
         },
-        "tool_hints": ["gmail_send", "http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Daily sweep tick" },
-            { "id": "d2", "type": "action", "label": "Load contract_deadlines.json" },
-            { "id": "d3", "type": "action", "label": "Filter to deadlines within 30d; select tier" },
-            { "id": "d4", "type": "decision", "label": "Tier already sent?" },
-            { "id": "d5", "type": "connector", "label": "gmail_send + Slack reminder", "connector": "gmail" },
-            { "id": "d6", "type": "action", "label": "Mark tier sent; emit deadline.approaching" },
-            { "id": "d7", "type": "end", "label": "Sweep complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Daily sweep tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load contract_deadlines.json"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Filter to deadlines within 30d; select tier"
+            },
+            {
+              "id": "d4",
+              "type": "decision",
+              "label": "Tier already sent?"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "gmail_send + Slack reminder",
+              "connector": "email"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Mark tier sent; emit deadline.approaching"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Sweep complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5", "variant": "no", "label": "Not sent" },
-            { "source": "d4", "target": "d7", "variant": "yes", "label": "Already sent" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5",
+              "variant": "no",
+              "label": "Not sent"
+            },
+            {
+              "source": "d4",
+              "target": "d7",
+              "variant": "yes",
+              "label": "Already sent"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       }
@@ -391,7 +614,9 @@
       {
         "id": "aq_contract_types",
         "scope": "capability",
-        "use_case_ids": ["uc_analyze_contract"],
+        "use_case_ids": [
+          "uc_analyze_contract"
+        ],
         "category": "domain",
         "question": "What types of contracts do you review most frequently?",
         "type": "select",
@@ -415,7 +640,9 @@
       {
         "id": "aq_risk_tolerance",
         "scope": "capability",
-        "use_case_ids": ["uc_analyze_contract"],
+        "use_case_ids": [
+          "uc_analyze_contract"
+        ],
         "category": "configuration",
         "question": "What is your organization's general risk tolerance for contract terms?",
         "type": "select",
@@ -433,7 +660,9 @@
       {
         "id": "aq_gmail_label",
         "scope": "capability",
-        "use_case_ids": ["uc_analyze_contract"],
+        "use_case_ids": [
+          "uc_analyze_contract"
+        ],
         "category": "configuration",
         "question": "What Gmail label will you use for contracts submitted for review?",
         "type": "select",
@@ -443,7 +672,9 @@
         "variable_name": "gmail_label",
         "context": "Create this label in Gmail and apply it to emails containing contracts you want analyzed. The picker lists labels on your configured Gmail account.",
         "dimension": "connectors",
-        "option_service_types": ["gmail"],
+        "option_service_types": [
+          "gmail"
+        ],
         "dynamic_source": {
           "service_type": "email",
           "operation": "list_gmail_labels",
@@ -453,7 +684,9 @@
       {
         "id": "aq_legal_team_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_publish_and_alert"],
+        "use_case_ids": [
+          "uc_publish_and_alert"
+        ],
         "category": "configuration",
         "question": "What Slack channel should high-risk contract alerts be posted to?",
         "type": "select",
@@ -463,7 +696,9 @@
         "variable_name": "legal_team_channel",
         "context": "The Slack channel where your legal team monitors alerts. Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -473,7 +708,9 @@
       {
         "id": "aq_reminder_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_deadline_reminders"],
+        "use_case_ids": [
+          "uc_deadline_reminders"
+        ],
         "category": "configuration",
         "question": "Who should receive deadline reminders besides the original submitter?",
         "type": "text",
@@ -483,6 +720,63 @@
         "variable_name": "reminder_recipients",
         "context": "Comma-separated email addresses. Leave blank for submitter-only reminders.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

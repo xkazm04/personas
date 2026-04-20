@@ -5,11 +5,21 @@
   "description": "Monitors PostHog feature flag changes and experiment results, posts summaries to Slack product channels, creates Linear follow-up tickets for winning experiment variants, and archives flags that haven't been modified in 30+ days.",
   "icon": "FlaskConical",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["PostHog", "Slack", "Linear"],
+  "service_flow": [
+    "PostHog",
+    "Slack",
+    "Linear"
+  ],
   "payload": {
-    "service_flow": ["PostHog", "Slack", "Linear"],
+    "service_flow": [
+      "PostHog",
+      "Slack",
+      "Linear"
+    ],
     "persona": {
       "goal": "Turn experiment results into rollout decisions and feature flag drift into backlog hygiene — detect winners with statistical rigor, ship them to Linear, and quiet the stale flag noise.",
       "identity": {
@@ -45,7 +55,11 @@
       "tool_guidance": "### PostHog (http_request + posthog connector)\n- Base: `https://app.posthog.com/api` (or your self-hosted URL)\n- `GET /api/projects/{project_id}/feature_flags/?limit=100` — list flags (paginate via `next` cursor).\n- `GET /api/projects/{project_id}/feature_flags/{id}/` — single flag detail.\n- `GET /api/projects/{project_id}/experiments/` — list experiments.\n- `GET /api/projects/{project_id}/experiments/{id}/results/` — variant performance + significance.\n- `GET /api/projects/{project_id}/experiments/?status=running` — for running-experiment exclusion in stale digest.\n- Header: `Authorization: Bearer {api_key}`.\n\n### Linear (http_request + linear connector)\n- Endpoint: `POST https://api.linear.app/graphql`.\n- Search: `{ issues(filter: { title: { contains: \"{experiment_name}\" } }) { nodes { id identifier url } } }`\n- Create: `mutation { issueCreate(input: { title, description, teamId, priority }) { success issue { id identifier url } } }` — priority 1 (Urgent) / 2 (High) / 3 (Normal) by lift magnitude.\n- Team resolve (cache): `query { teams { nodes { id key name } } }`.\n- Header: `Authorization: {api_key}`.\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — Block Kit messages.\n- `POST https://slack.com/api/chat.update` — update prior digest.\n- Header: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/posthog_flags_state.json` — single-file persistent state.\n- On corruption: back up as `.backup.json`, reinitialize, note reset in Slack.",
       "error_handling": "PostHog 401 → skip cycle + Slack warning; halt until credential refresh. PostHog 429 → respect Retry-After. PostHog 5xx → retry 3× exp backoff (5s/15s/45s) → degraded notice. Slack channel_not_found → fall back to default. Linear auth error → skip ticket creation; include 'Linear ticket could not be created' in Slack note. Linear duplicate (search found existing) → skip create, reuse id. State file missing → first-sync mode (no notifications). State file JSON error → back up + reinitialize + Slack note.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "posthog",
@@ -76,8 +90,8 @@
           "setup_instructions": "1. Log into PostHog.\n2. Settings → Personal API Keys → Create Personal API Key (e.g. 'Personas Flag Analyst').\n3. Copy immediately — it's shown once.\n4. Note your Project ID from Settings → Project.\n5. Ensure the key has read access to Feature Flags and Experiments."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -96,11 +110,11 @@
           "setup_instructions": "1. api.slack.com/apps → create or select an app.\n2. OAuth & Permissions → Bot Token Scopes: chat:write, channels:read.\n3. Install to workspace; copy Bot User OAuth Token.\n4. Invite the bot to your target channels: /invite @YourBotName."
         },
         {
-          "name": "linear",
-          "label": "Linear",
+          "name": "ticketing",
+          "label": "Ticketing System",
           "auth_type": "api_key",
           "role": "project_tracking",
-          "category": "development",
+          "category": "ticketing",
           "required": false,
           "fallback_note": "Optional. Without Linear, winning-experiment summaries still post to Slack but no rollout ticket is filed. Stale-flag digest and flag-change monitoring work unchanged.",
           "api_base_url": "https://api.linear.app/graphql",
@@ -145,10 +159,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 * * * *" },
+          "config": {
+            "cron": "*/10 * * * *"
+          },
           "description": "Default every 10 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["posthog", "slack"],
+        "connectors": [
+          "posthog",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -189,30 +208,103 @@
           "change_channel": "{{param.aq_change_channel}}",
           "deny_list_prefixes": "{{param.aq_deny_list_prefixes}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "Polling tick" },
-            { "id": "f2", "type": "action", "label": "Load posthog_flags_state.json" },
-            { "id": "f3", "type": "connector", "label": "GET /feature_flags/", "connector": "posthog" },
-            { "id": "f4", "type": "action", "label": "Diff vs cache (respect deny-list)" },
-            { "id": "f5", "type": "decision", "label": "Changes?" },
-            { "id": "f6", "type": "connector", "label": "Post change alerts to Slack", "connector": "slack" },
-            { "id": "f7", "type": "action", "label": "Persist new state" },
-            { "id": "f8", "type": "event", "label": "Emit posthog.flags.changed" },
-            { "id": "f9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "f2",
+              "type": "action",
+              "label": "Load posthog_flags_state.json"
+            },
+            {
+              "id": "f3",
+              "type": "connector",
+              "label": "GET /feature_flags/",
+              "connector": "posthog"
+            },
+            {
+              "id": "f4",
+              "type": "action",
+              "label": "Diff vs cache (respect deny-list)"
+            },
+            {
+              "id": "f5",
+              "type": "decision",
+              "label": "Changes?"
+            },
+            {
+              "id": "f6",
+              "type": "connector",
+              "label": "Post change alerts to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "f7",
+              "type": "action",
+              "label": "Persist new state"
+            },
+            {
+              "id": "f8",
+              "type": "event",
+              "label": "Emit posthog.flags.changed"
+            },
+            {
+              "id": "f9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5" },
-            { "source": "f5", "target": "f6", "label": "Yes", "variant": "yes" },
-            { "source": "f5", "target": "f7", "label": "No", "variant": "no" },
-            { "source": "f6", "target": "f7" },
-            { "source": "f7", "target": "f8" },
-            { "source": "f8", "target": "f9" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5"
+            },
+            {
+              "source": "f5",
+              "target": "f6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "f5",
+              "target": "f7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "f6",
+              "target": "f7"
+            },
+            {
+              "source": "f7",
+              "target": "f8"
+            },
+            {
+              "source": "f8",
+              "target": "f9"
+            }
           ]
         }
       },
@@ -227,10 +319,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1-5" },
+          "config": {
+            "cron": "0 9 * * 1-5"
+          },
           "description": "Default weekdays 9am — final cadence set at the trigger-composition step."
         },
-        "connectors": ["posthog", "slack", "linear"],
+        "connectors": [
+          "posthog",
+          "messaging",
+          "ticketing"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -257,14 +355,22 @@
           {
             "name": "confidence_threshold",
             "type": "enum",
-            "options": ["0.90", "0.95", "0.99"],
+            "options": [
+              "0.90",
+              "0.95",
+              "0.99"
+            ],
             "default": "0.95",
             "description": "Minimum variant probability to declare a winner."
           },
           {
             "name": "ticket_gate",
             "type": "enum",
-            "options": ["auto_create", "approval_first", "always_gated"],
+            "options": [
+              "auto_create",
+              "approval_first",
+              "always_gated"
+            ],
             "default": "approval_first",
             "description": "Auto = file ticket on win without prompt. Approval-first = post a 'Create ticket' prompt and wait. Always-gated = require approval for every ticket regardless of lift."
           },
@@ -277,7 +383,11 @@
           {
             "name": "summary_verbosity",
             "type": "enum",
-            "options": ["concise", "standard", "verbose"],
+            "options": [
+              "concise",
+              "standard",
+              "verbose"
+            ],
             "default": "standard",
             "description": "How much detail to include in the Slack summary."
           },
@@ -295,37 +405,140 @@
           "summary_verbosity": "{{param.aq_summary_verbosity}}",
           "deny_list_tags": "{{param.aq_deny_list_tags}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "Daily tick" },
-            { "id": "e2", "type": "action", "label": "Load state (reported experiments)" },
-            { "id": "e3", "type": "connector", "label": "GET /experiments/", "connector": "posthog" },
-            { "id": "e4", "type": "decision", "label": "New completed + not deny-listed?" },
-            { "id": "e5", "type": "connector", "label": "GET /experiments/{id}/results/", "connector": "posthog" },
-            { "id": "e6", "type": "decision", "label": "p > threshold?" },
-            { "id": "e7", "type": "action", "label": "Compose winner summary" },
-            { "id": "e8", "type": "connector", "label": "Post Slack summary", "connector": "slack" },
-            { "id": "e9", "type": "connector", "label": "Create Linear ticket (gate-aware)", "connector": "linear" },
-            { "id": "e10", "type": "action", "label": "Post inconclusive note" },
-            { "id": "e11", "type": "event", "label": "Emit posthog.experiment.resolved; persist" },
-            { "id": "e12", "type": "end", "label": "Analysis done" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Load state (reported experiments)"
+            },
+            {
+              "id": "e3",
+              "type": "connector",
+              "label": "GET /experiments/",
+              "connector": "posthog"
+            },
+            {
+              "id": "e4",
+              "type": "decision",
+              "label": "New completed + not deny-listed?"
+            },
+            {
+              "id": "e5",
+              "type": "connector",
+              "label": "GET /experiments/{id}/results/",
+              "connector": "posthog"
+            },
+            {
+              "id": "e6",
+              "type": "decision",
+              "label": "p > threshold?"
+            },
+            {
+              "id": "e7",
+              "type": "action",
+              "label": "Compose winner summary"
+            },
+            {
+              "id": "e8",
+              "type": "connector",
+              "label": "Post Slack summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "e9",
+              "type": "connector",
+              "label": "Create Linear ticket (gate-aware)",
+              "connector": "ticketing"
+            },
+            {
+              "id": "e10",
+              "type": "action",
+              "label": "Post inconclusive note"
+            },
+            {
+              "id": "e11",
+              "type": "event",
+              "label": "Emit posthog.experiment.resolved; persist"
+            },
+            {
+              "id": "e12",
+              "type": "end",
+              "label": "Analysis done"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5", "label": "Yes", "variant": "yes" },
-            { "source": "e4", "target": "e12", "label": "No", "variant": "no" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7", "label": "Yes", "variant": "yes" },
-            { "source": "e6", "target": "e10", "label": "No", "variant": "no" },
-            { "source": "e7", "target": "e8" },
-            { "source": "e8", "target": "e9" },
-            { "source": "e9", "target": "e11" },
-            { "source": "e10", "target": "e11" },
-            { "source": "e11", "target": "e12" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "e4",
+              "target": "e12",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "e6",
+              "target": "e10",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            },
+            {
+              "source": "e8",
+              "target": "e9"
+            },
+            {
+              "source": "e9",
+              "target": "e11"
+            },
+            {
+              "source": "e10",
+              "target": "e11"
+            },
+            {
+              "source": "e11",
+              "target": "e12"
+            }
           ]
         }
       },
@@ -340,10 +553,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1-5" },
+          "config": {
+            "cron": "0 9 * * 1-5"
+          },
           "description": "Default weekdays 9am — final cadence set at the trigger-composition step."
         },
-        "connectors": ["posthog", "slack"],
+        "connectors": [
+          "posthog",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -370,7 +588,12 @@
           {
             "name": "stale_threshold_days",
             "type": "enum",
-            "options": ["14", "30", "60", "90"],
+            "options": [
+              "14",
+              "30",
+              "60",
+              "90"
+            ],
             "default": "30",
             "description": "Days without modification before a flag enters the digest."
           }
@@ -378,30 +601,103 @@
         "sample_input": {
           "stale_threshold_days": "{{param.aq_stale_threshold_days}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Daily tick" },
-            { "id": "t2", "type": "action", "label": "Compute days-since-modified per flag" },
-            { "id": "t3", "type": "connector", "label": "GET /experiments/?status=running", "connector": "posthog" },
-            { "id": "t4", "type": "action", "label": "Exclude running-experiment + deny-list" },
-            { "id": "t5", "type": "action", "label": "Split normal (30–59d) vs escalated (60+d)" },
-            { "id": "t6", "type": "decision", "label": "Any stale?" },
-            { "id": "t7", "type": "connector", "label": "Post digest to Slack", "connector": "slack" },
-            { "id": "t8", "type": "event", "label": "Emit posthog.flags.stale_reported; persist" },
-            { "id": "t9", "type": "end", "label": "Digest done" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Compute days-since-modified per flag"
+            },
+            {
+              "id": "t3",
+              "type": "connector",
+              "label": "GET /experiments/?status=running",
+              "connector": "posthog"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Exclude running-experiment + deny-list"
+            },
+            {
+              "id": "t5",
+              "type": "action",
+              "label": "Split normal (30–59d) vs escalated (60+d)"
+            },
+            {
+              "id": "t6",
+              "type": "decision",
+              "label": "Any stale?"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Post digest to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "t8",
+              "type": "event",
+              "label": "Emit posthog.flags.stale_reported; persist"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Digest done"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7", "label": "Yes", "variant": "yes" },
-            { "source": "t6", "target": "t9", "label": "No", "variant": "no" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "t6",
+              "target": "t9",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       }
@@ -410,7 +706,9 @@
       {
         "id": "aq_results_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_analysis"],
+        "use_case_ids": [
+          "uc_experiment_analysis"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive experiment result summaries and stale flag digests?",
         "type": "select",
@@ -421,7 +719,9 @@
         "context": "Options auto-detected from your Slack credential. Pick a channel the bot has been invited to.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -430,7 +730,9 @@
       {
         "id": "aq_change_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_flag_monitoring"],
+        "use_case_ids": [
+          "uc_flag_monitoring"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive flag change alerts?",
         "type": "select",
@@ -441,7 +743,9 @@
         "context": "Routing flag changes separately from experiment results keeps each channel focused. Same channel is fine if your team prefers consolidated notifications.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -450,11 +754,17 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_analysis"],
+        "use_case_ids": [
+          "uc_experiment_analysis"
+        ],
         "category": "quality",
         "question": "What statistical confidence should trigger a 'winning variant' declaration?",
         "type": "select",
-        "options": ["0.90 — faster decisions, more risk", "0.95 — balanced default", "0.99 — conservative, high-stakes experiments only"],
+        "options": [
+          "0.90 — faster decisions, more risk",
+          "0.95 — balanced default",
+          "0.99 — conservative, high-stakes experiments only"
+        ],
         "default": "0.95 — balanced default",
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -464,7 +774,9 @@
       {
         "id": "aq_ticket_gate",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_analysis"],
+        "use_case_ids": [
+          "uc_experiment_analysis"
+        ],
         "category": "human_in_the_loop",
         "question": "Should winning experiments auto-create Linear tickets, post for approval, or always require explicit approval?",
         "type": "select",
@@ -482,7 +794,9 @@
       {
         "id": "aq_summary_verbosity",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_analysis"],
+        "use_case_ids": [
+          "uc_experiment_analysis"
+        ],
         "category": "quality",
         "question": "How much detail should winning-experiment Slack summaries include?",
         "type": "select",
@@ -500,11 +814,18 @@
       {
         "id": "aq_stale_threshold_days",
         "scope": "capability",
-        "use_case_ids": ["uc_stale_flag_digest"],
+        "use_case_ids": [
+          "uc_stale_flag_digest"
+        ],
         "category": "configuration",
         "question": "After how many days without modification should a feature flag enter the stale digest?",
         "type": "select",
-        "options": ["14 — aggressive hygiene", "30 — default", "60 — relaxed", "90 — only flag true zombies"],
+        "options": [
+          "14 — aggressive hygiene",
+          "30 — default",
+          "60 — relaxed",
+          "90 — only flag true zombies"
+        ],
         "default": "30 — default",
         "maps_to": "use_cases[uc_stale_flag_digest].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",
@@ -514,7 +835,10 @@
       {
         "id": "aq_deny_list_prefixes",
         "scope": "capability",
-        "use_case_ids": ["uc_flag_monitoring", "uc_stale_flag_digest"],
+        "use_case_ids": [
+          "uc_flag_monitoring",
+          "uc_stale_flag_digest"
+        ],
         "category": "boundaries",
         "question": "Which flag-key prefixes should never be reported, archived, or digested?",
         "type": "text",
@@ -527,7 +851,9 @@
       {
         "id": "aq_deny_list_tags",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_analysis"],
+        "use_case_ids": [
+          "uc_experiment_analysis"
+        ],
         "category": "boundaries",
         "question": "Which experiment tags should skip analysis entirely?",
         "type": "text",
@@ -536,6 +862,44 @@
         "variable_name": "deny_list_tags",
         "context": "Embargoed / compliance-sensitive experiments stay out of the feed. Comma-separated.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_ticketing_credential",
+        "scope": "connector",
+        "connector_names": [
+          "ticketing"
+        ],
+        "category": "configuration",
+        "question": "Which ticketing system should this persona write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "ticketing",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
+        "variable_name": "ticketing_credential",
+        "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,21 @@
   "description": "Transforms raw prospect lists in Google Sheets into outreach-ready intelligence dossiers. Five-stage pipeline: verify email → enrich person → enrich company → AI analysis → cold outreach draft generation. Daily Slack summary keeps the sales team on top of pipeline health.",
   "icon": "Crosshair",
   "color": "#7C3AED",
-  "category": ["sales"],
-  "service_flow": ["Google Sheets", "Enrichment", "Messaging"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Google Sheets",
+    "Enrichment",
+    "Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Google Sheets", "Enrichment", "Messaging"],
+    "service_flow": [
+      "Google Sheets",
+      "Enrichment",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Replace manual SDR research — turn raw prospect rows into verified, enriched, AI-analysed, outreach-ready dossiers with personalised drafts.",
       "identity": {
@@ -49,7 +59,11 @@
       "tool_guidance": "**Hunter.io** (enrichment connector, `https://api.hunter.io`):\n- `GET /v2/email-verifier?email={email}&api_key={key}` — `status`: valid / invalid / accept_all / webmail / disposable / unknown.\n- `GET /v2/email-finder?domain={domain}&first_name={first}&last_name={last}&api_key={key}` — best-guess email with confidence score.\n- `GET /v2/domain-search?domain={domain}&api_key={key}&limit=10` — additional contacts at a domain.\n- Rate: 25/min free, 100/min paid.\n\n**Clearbit enrichment** (`https://person.clearbit.com`, `https://company.clearbit.com`):\n- `GET /v2/people/find?email={email}` → name.fullName, title, seniority, linkedin.handle, twitter.handle, bio, location, employment.*.\n- `GET /v2/companies/find?domain={domain}` → name, industry, subIndustry, employeesRange, estimatedAnnualRevenue, foundedYear, location, description, tech[], metrics.raised.\n- `GET /v2/combined/find?email={email}` — person + company in one call (prefer).\n- Auth: `Authorization: Bearer {api_key}`.\n- 404 → expected, continue with partial data.\n\n**Google Sheets** (`https://sheets.googleapis.com`):\n- `GET /v4/spreadsheets/{id}/values/{range}` — read prospect rows (range like `Sheet1!A2:Z`).\n- `PUT /v4/spreadsheets/{id}/values/{range}?valueInputOption=USER_ENTERED` — update a row.\n- `POST /v4/spreadsheets/{id}/values:batchUpdate` — multi-row update (efficient for batch writes).\n- `POST /v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append rows.\n\n**Messaging (Slack Block Kit)**:\n- `POST /api/chat.postMessage` with `{channel, blocks[], text}` for daily summaries + high-score alerts.\n- `GET /api/users.lookupByEmail?email={email}` for @mentions.\n\n**AI analysis pattern** (internal reasoning):\n- Pain points: map (title + seniority) × industry × employees range to known pain matrices. VP Eng @ 50-person Series B ≠ Director Marketing @ 500-person enterprise.\n- Personalisation angles: derive from tech stack (e.g., Datadog = monitoring priority), funding stage, recent news, career trajectory.\n- Channel: C-suite → LinkedIn warm; IC → concise email; decision-maker at mid-market → multi-touch.\n- Score: 1-10 combining data completeness + email deliverability + role fit + company fit.\n\n**Subject-line variants**:\n- Curiosity: `What 50-200 person eng teams get wrong about observability`.\n- Direct: `Quick question about your developer productivity stack`.\n- Company-specific: `Scaling eng at Acme without the tooling tax`.\n\n**Local state**: `data/enrichment_log.json` (per-prospect record: email, name, company, date, sources_used, prospect_score), `data/daily_stats.json` (today's counts for summary), `data/api_usage.json` (rate-limit tracking), `data/pending_sheet_updates.json` (cached rows when Sheets is down), `data/error_log.json`.",
       "error_handling": "Hunter 429 → pause cycle, track remaining quota, resume next cycle with smaller batch. Hunter 401/403 → emit error, pause, wait for rotation. Clearbit 404 → expected; `data_completeness: partial`, continue. Clearbit 429 → backoff 60s, retry once, queue remainder. Clearbit 401/403 → pause enrichment, alert via messaging. Sheets 5xx → exponential backoff 1s/2s/4s; if unavailable after 3 retries, cache to `data/pending_sheet_updates.json` and write when API recovers. Sheets 401 → cache locally, emit error. Messaging failure → queue summary, retry next cycle; enrichment continues. Duplicate prospect in log → skip, update sheet with reference to existing date. Corrupted log → rebuild from sheet's `complete` rows; do not re-enrich. Partial stage failure (person succeeds, company 5xx) → save what you have, `enrichment_status: partial`, retry failed stage next cycle. Schema drift (missing columns) → pause + alert; never write to wrong columns. Domain-only prospects → use Hunter Domain Search to find contacts, create separate rows per discovered contact. Very large lists (500+) → batch 50/cycle. Empty/malformed rows → `enrichment_status: skipped` with reason. First run → full scan capped at 100/cycle.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "enrichment",
@@ -79,11 +93,11 @@
           "setup_instructions": "1. Pick an email-verification provider (Hunter.io is the canonical one; free tier supports 25 verifications/month) and copy the API key.\n2. Pick a person + company enrichment provider (Clearbit or People Data Labs) and copy the API key.\n3. Paste both above. The agent adapts its queries to the chosen provider."
         },
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
@@ -170,12 +184,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/15 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/15 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["enrichment", "google_sheets"],
+        "connectors": [
+          "enrichment",
+          "spreadsheet"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`data/enrichment_log.json` — per-prospect record with email, name, company, enrichment date, sources used, prospect score. Drives 30-day deduplication. Data-completeness patterns per industry (common gaps → adjust AI analysis accordingly). Outreach template performance per sales motion."
@@ -224,29 +247,97 @@
           "batch_size_per_cycle": "{{param.aq_batch_size}}",
           "high_value_score_threshold": "{{param.aq_high_value_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "Polling tick" },
-            { "id": "e2", "type": "connector", "label": "Read new Sheet rows; dedup vs log", "connector": "google_sheets" },
-            { "id": "e3", "type": "connector", "label": "Stage 1: verify email (+ discover if missing)", "connector": "enrichment" },
-            { "id": "e4", "type": "connector", "label": "Stage 2+3: person + company enrichment", "connector": "enrichment" },
-            { "id": "e5", "type": "action", "label": "Stage 4: AI pain points + angles + score" },
-            { "id": "e6", "type": "action", "label": "Stage 5: generate drafts (email + LinkedIn)" },
-            { "id": "e7", "type": "connector", "label": "Write back to Sheet; enrichment_status=complete", "connector": "google_sheets" },
-            { "id": "e8", "type": "event", "label": "Emit prospect.enriched (+ high_value if score ≥ threshold)" },
-            { "id": "e9", "type": "end", "label": "Row complete" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "e2",
+              "type": "connector",
+              "label": "Read new Sheet rows; dedup vs log",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "e3",
+              "type": "connector",
+              "label": "Stage 1: verify email (+ discover if missing)",
+              "connector": "enrichment"
+            },
+            {
+              "id": "e4",
+              "type": "connector",
+              "label": "Stage 2+3: person + company enrichment",
+              "connector": "enrichment"
+            },
+            {
+              "id": "e5",
+              "type": "action",
+              "label": "Stage 4: AI pain points + angles + score"
+            },
+            {
+              "id": "e6",
+              "type": "action",
+              "label": "Stage 5: generate drafts (email + LinkedIn)"
+            },
+            {
+              "id": "e7",
+              "type": "connector",
+              "label": "Write back to Sheet; enrichment_status=complete",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "e8",
+              "type": "event",
+              "label": "Emit prospect.enriched (+ high_value if score ≥ threshold)"
+            },
+            {
+              "id": "e9",
+              "type": "end",
+              "label": "Row complete"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8" },
-            { "source": "e8", "target": "e9" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            },
+            {
+              "source": "e8",
+              "target": "e9"
+            }
           ]
         }
       },
@@ -261,12 +352,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 18 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "0 18 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default weekdays 6:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging", "google_sheets"],
+        "connectors": [
+          "messaging",
+          "spreadsheet"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Running daily/weekly enrichment coverage metrics and error trends."
@@ -281,23 +381,67 @@
         "error_handling": "Empty stats → deliver terse 'No prospects processed today' note. Messaging down → queue summary, retry next cycle.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Weekday 6pm tick" },
-            { "id": "s2", "type": "action", "label": "Read daily_stats.json + today's Sheet rows" },
-            { "id": "s3", "type": "action", "label": "Rank top-3 by prospect_score; compile summary" },
-            { "id": "s4", "type": "connector", "label": "Post Block Kit summary to messaging channel", "connector": "messaging" },
-            { "id": "s5", "type": "event", "label": "Emit batch_summary" },
-            { "id": "s6", "type": "end", "label": "Summary delivered" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Weekday 6pm tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Read daily_stats.json + today's Sheet rows"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Rank top-3 by prospect_score; compile summary"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Post Block Kit summary to messaging channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit batch_summary"
+            },
+            {
+              "id": "s6",
+              "type": "end",
+              "label": "Summary delivered"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            }
           ]
         }
       }
@@ -306,7 +450,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should carry the daily summary and high-value alerts?",
         "type": "select",
@@ -323,11 +469,18 @@
       {
         "id": "aq_dedup_window_days",
         "scope": "capability",
-        "use_case_ids": ["uc_enrichment_pipeline"],
+        "use_case_ids": [
+          "uc_enrichment_pipeline"
+        ],
         "category": "quality",
         "question": "How long should a prospect be skipped before re-enriching?",
         "type": "select",
-        "options": ["14 days", "30 days (recommended)", "60 days", "90 days"],
+        "options": [
+          "14 days",
+          "30 days (recommended)",
+          "60 days",
+          "90 days"
+        ],
         "default": "30 days (recommended)",
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.dedup_window_days",
         "variable_name": "dedup_window_days",
@@ -337,11 +490,18 @@
       {
         "id": "aq_batch_size",
         "scope": "capability",
-        "use_case_ids": ["uc_enrichment_pipeline"],
+        "use_case_ids": [
+          "uc_enrichment_pipeline"
+        ],
         "category": "quality",
         "question": "Max prospects to enrich per polling cycle?",
         "type": "select",
-        "options": ["25", "50 (recommended)", "100", "200"],
+        "options": [
+          "25",
+          "50 (recommended)",
+          "100",
+          "200"
+        ],
         "default": "50 (recommended)",
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.batch_size_per_cycle",
         "variable_name": "batch_size",
@@ -351,16 +511,42 @@
       {
         "id": "aq_high_value_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_enrichment_pipeline"],
+        "use_case_ids": [
+          "uc_enrichment_pipeline"
+        ],
         "category": "quality",
         "question": "What prospect score triggers an immediate messaging alert?",
         "type": "select",
-        "options": ["7+", "8+", "9 (recommended)", "10 only"],
+        "options": [
+          "7+",
+          "8+",
+          "9 (recommended)",
+          "10 only"
+        ],
         "default": "9 (recommended)",
         "maps_to": "use_cases[uc_enrichment_pipeline].sample_input.high_value_score_threshold",
         "variable_name": "high_value_score_threshold",
         "context": "Immediate alerts fire in addition to the daily summary. Tight threshold = fewer interruptions; loose threshold = real-time pipeline visibility.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

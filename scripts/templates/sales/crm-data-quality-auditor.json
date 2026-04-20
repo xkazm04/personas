@@ -5,11 +5,21 @@
   "description": "Weekly HubSpot CRM hygiene agent. Detects duplicates, stale records, missing fields, and formatting inconsistencies; auto-fixes safe formatting; routes risky changes through human review; tracks a 0-100 data quality score with week-over-week trend and ships combined Slack + Notion reports.",
   "icon": "SearchCheck",
   "color": "#0F766E",
-  "category": ["sales"],
-  "service_flow": ["HubSpot", "Notion", "Slack"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "HubSpot",
+    "Notion",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["HubSpot", "Notion", "Slack"],
+    "service_flow": [
+      "HubSpot",
+      "Notion",
+      "Slack"
+    ],
     "persona": {
       "goal": "Keep the CRM clean — detect decay automatically, repair what is safe, route everything else through a human, and make the quality trend visible week over week.",
       "identity": {
@@ -49,11 +59,15 @@
       "tool_guidance": "**HubSpot**:\n- `GET /crm/v3/objects/contacts?limit=100&after={cursor}&properties=firstname,lastname,email,phone,company,jobtitle,lifecyclestage,hs_last_activity_date,lastmodifieddate,hubspot_owner_id` — paginated contact pull.\n- `GET /crm/v3/objects/companies?limit=100&after={cursor}&properties=name,industry,numberofemployees,website,city,country,annualrevenue,hs_lastmodifieddate` — companies.\n- `GET /crm/v3/objects/deals?limit=100&after={cursor}&properties=dealname,dealstage,amount,closedate,pipeline,hubspot_owner_id,hs_lastmodifieddate` — deals.\n- `POST /crm/v3/objects/contacts/search` — filter queries for duplicates / stale detection.\n- `GET /crm/v3/objects/contacts/{id}/associations/{deals|companies}` — cross-object validation.\n- `PATCH /crm/v3/objects/contacts/{id}` / `/companies/{id}` — auto-fix writes.\n- `POST /crm/v3/objects/contacts/merge` — duplicate merge (human-approved only).\n- Auth: `Authorization: Bearer {access_token}`.\n- Rate limit: 100 req / 10s for private apps. Exponential backoff on 429.\n\n**Duplicate detection**: normalize email domain + lowercase last name + company (strip Inc/LLC/Ltd). Fuzzy match scoring: exact email 95%, same last+company+similar first 85%, domain+similar full name 70%, same phone 90%. Primary designation = record with most activity (emails, notes, deals).\n\n**Stale thresholds**: contacts without open deals and no activity in `contact_stale_days` (default 90), deals stuck in the same non-closed stage for `deal_stale_days` (default 60), companies not modified in `company_stale_days` (default 180). Severity: warning = 1x threshold, critical = 2x, archive candidate = 3x.\n\n**Missing-field weights**: contacts — email (critical), company (high), title (medium), phone (medium), lifecycle (high). Companies — industry, employees, website, location, revenue. Deals — amount, close date, pipeline, owner, associated contact/company.\n\n**Inconsistency detection**: AI-powered title normalization (CEO = Chief Executive Officer = C.E.O.), phone format standardization (E.164), company suffix normalization (Inc / Inc. / Incorporated).\n\n**Fix classification**:\n- Safe auto-fix: phone E.164, suffix normalization, whitespace trim, lifecycle inference. Max 50/run. Pre-fix backup in `data/audit_backups/audit_{date}.json`.\n- Suggested (manual review): duplicate merges, stale archives, association corrections.\n- Manual only: deletion, deal amount/date changes, ownership reassignment.\n\n**Quality score (0-100)**: duplicate rate (25%) + completeness (30%) + freshness (25%) + consistency (20%). Keep 52 weeks of history.\n\n**Slack Block Kit**: header block (score + trend), section blocks with fields per category, context blocks for timestamps + WoW trend, divider blocks, action buttons (View in Airtable / HubSpot record links).\n\n**Notion**: `POST /v1/pages` under configured database, `PATCH /v1/blocks/{page_id}/children` for content (heading_2 per category, tables for issue lists, callouts for score highlights, toggles for detailed breakdowns).\n\n**Local state**: `data/audit_results.json` (primary, current score + all issues + auto-fix log + score_history), `data/audit_backups/audit_{date}.json` (pre-run snapshot, last 4 retained), `data/pending_notion.json` / `pending_slack.json` (queued when APIs are down), `data/dismissed_issues.json` (90-day suppression).",
       "error_handling": "HubSpot 429 → exponential backoff 1s→60s; full audit may take 15-20 min on large CRMs. HubSpot 401 → emit error event, do not retry; next run resumes from partial results. Notion down → queue report in `data/pending_notion.json`, Slack remains primary. Slack down → queue messages, save report locally after 2 consecutive cycles of failure. Corrupted audit state → fresh audit, zero auto-fixes on recovery run, report only. Partial audit completion → save with `partial: true`, resume and merge on next run. HubSpot concurrent modification (mismatch between read and write) → re-read, re-evaluate, never overwrite newer human changes. Bulk limit → queue overflow fixes for next cycle. First run → full audit, zero fixes, baseline score. Empty CRM (<10 records) → skip, report insufficient data. 50k+ CRM → 20% sample per week, rotate weekly.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "hubspot",
-          "label": "HubSpot CRM",
+          "name": "crm",
+          "label": "CRM",
           "auth_type": "api_key",
           "role": "crm",
           "category": "crm",
@@ -99,11 +113,11 @@
           "setup_instructions": "1. Choose a messaging credential from the vault with chat-write scope.\n2. Make sure the bot/app is invited to the target channel.\n3. Paste the channel identifier above."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "documentation",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Skip Notion to run with the messaging-channel summary only. Detailed audit data still lives in `data/audit_results.json` locally.",
           "api_base_url": "https://api.notion.com",
@@ -148,12 +162,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 22 * * 0", "timezone": "local" },
+          "config": {
+            "cron": "0 22 * * 0",
+            "timezone": "local"
+          },
           "description": "Default Sunday 10:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["hubspot"],
+        "connectors": [
+          "crm"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "52-week `score_history` in `data/audit_results.json` for trend analysis. Dismissed-issue registry (90-day TTL) in `data/dismissed_issues.json`. Auto-fix history with original values for rollback. Per-category rejection rates for adaptive filtering."
@@ -175,7 +197,11 @@
           {
             "name": "auto_fix_level",
             "type": "enum",
-            "options": ["none", "safe", "moderate"],
+            "options": [
+              "none",
+              "safe",
+              "moderate"
+            ],
             "default": "safe",
             "description": "Which auto-fixes apply without asking. `none` = report only. `safe` = formatting fixes. `moderate` = safe + lifecycle-stage inference."
           },
@@ -210,30 +236,103 @@
           "deal_stale_days": "{{param.aq_deal_stale_days}}",
           "company_stale_days": "{{param.aq_company_stale_days}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Weekly audit tick (shared)" },
-            { "id": "a2", "type": "action", "label": "Backup state; load dismissed-issue registry" },
-            { "id": "a3", "type": "connector", "label": "Pull contacts + companies + deals (paginated)", "connector": "hubspot" },
-            { "id": "a4", "type": "action", "label": "Run 4 scans: duplicates / stale / missing / inconsistency" },
-            { "id": "a5", "type": "decision", "label": "Safe auto-fixes available?" },
-            { "id": "a6", "type": "connector", "label": "Apply safe fixes (max 50); log originals", "connector": "hubspot" },
-            { "id": "a7", "type": "action", "label": "Compute quality score; update score_history" },
-            { "id": "a8", "type": "event", "label": "Emit score_changed + critical_issues_detected" },
-            { "id": "a9", "type": "end", "label": "Audit complete" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Weekly audit tick (shared)"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Backup state; load dismissed-issue registry"
+            },
+            {
+              "id": "a3",
+              "type": "connector",
+              "label": "Pull contacts + companies + deals (paginated)",
+              "connector": "crm"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Run 4 scans: duplicates / stale / missing / inconsistency"
+            },
+            {
+              "id": "a5",
+              "type": "decision",
+              "label": "Safe auto-fixes available?"
+            },
+            {
+              "id": "a6",
+              "type": "connector",
+              "label": "Apply safe fixes (max 50); log originals",
+              "connector": "crm"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "Compute quality score; update score_history"
+            },
+            {
+              "id": "a8",
+              "type": "event",
+              "label": "Emit score_changed + critical_issues_detected"
+            },
+            {
+              "id": "a9",
+              "type": "end",
+              "label": "Audit complete"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6", "variant": "yes", "label": "Yes" },
-            { "source": "a5", "target": "a7", "variant": "no", "label": "None" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "a5",
+              "target": "a7",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            }
           ]
         }
       },
@@ -248,12 +347,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 7:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging", "notion"],
+        "connectors": [
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Most-recent report delivery status (Slack + Notion) for retry logic on API outages."
@@ -268,23 +376,68 @@
         "error_handling": "Notion 5xx → queue in `data/pending_notion.json`, retry next cycle. Slack 5xx → queue in `data/pending_slack.json`, save local fallback report to `data/reports/{date}.md` after 2 consecutive failures. Audit data stale (>24h) → prepend freshness warning to the report.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Weekly report tick (shared)" },
-            { "id": "r2", "type": "action", "label": "Load audit_results.json; compute WoW trend" },
-            { "id": "r3", "type": "action", "label": "Rank top-10 fixes by impact" },
-            { "id": "r4", "type": "connector", "label": "Post Slack Block Kit report", "connector": "messaging" },
-            { "id": "r5", "type": "connector", "label": "Create Notion page (if connector attached)", "connector": "notion" },
-            { "id": "r6", "type": "end", "label": "Report delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Weekly report tick (shared)"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Load audit_results.json; compute WoW trend"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Rank top-10 fixes by impact"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Post Slack Block Kit report",
+              "connector": "messaging"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Create Notion page (if connector attached)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r6",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            }
           ]
         }
       },
@@ -299,10 +452,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "crm.quality.critical_issues_detected" },
+          "config": {
+            "event_type": "crm.quality.critical_issues_detected"
+          },
           "description": "Fires on critical-issue events emitted by uc_weekly_audit. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["hubspot", "messaging"],
+        "connectors": [
+          "crm",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -327,26 +485,84 @@
         "error_handling": "Fix execution failure → log, post alert, keep issue in pending state for retry. Merge conflicts during execution → abort, re-route for review. Messages delivery failure → queue review request.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Suggested fix detected" },
-            { "id": "m2", "type": "action", "label": "Build review request with full context" },
-            { "id": "m3", "type": "decision", "label": "Human decision" },
-            { "id": "m4", "type": "connector", "label": "Execute approved fix on HubSpot", "connector": "hubspot" },
-            { "id": "m5", "type": "action", "label": "Dismiss for 90 days on reject" },
-            { "id": "m6", "type": "event", "label": "Emit fix_applied; notify Slack thread" },
-            { "id": "m7", "type": "end", "label": "Review resolved" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Suggested fix detected"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Build review request with full context"
+            },
+            {
+              "id": "m3",
+              "type": "decision",
+              "label": "Human decision"
+            },
+            {
+              "id": "m4",
+              "type": "connector",
+              "label": "Execute approved fix on HubSpot",
+              "connector": "crm"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Dismiss for 90 days on reject"
+            },
+            {
+              "id": "m6",
+              "type": "event",
+              "label": "Emit fix_applied; notify Slack thread"
+            },
+            {
+              "id": "m7",
+              "type": "end",
+              "label": "Review resolved"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4", "variant": "yes", "label": "Approve" },
-            { "source": "m3", "target": "m5", "variant": "no", "label": "Reject" },
-            { "source": "m4", "target": "m6" },
-            { "source": "m5", "target": "m7" },
-            { "source": "m6", "target": "m7" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "m3",
+              "target": "m5",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "m4",
+              "target": "m6"
+            },
+            {
+              "source": "m5",
+              "target": "m7"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            }
           ]
         }
       }
@@ -355,7 +571,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should carry the weekly audit report?",
         "type": "select",
@@ -372,7 +590,9 @@
       {
         "id": "aq_auto_fix_level",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_audit"],
+        "use_case_ids": [
+          "uc_weekly_audit"
+        ],
         "category": "boundaries",
         "question": "What level of auto-fixing should the auditor perform without asking?",
         "type": "select",
@@ -390,11 +610,18 @@
       {
         "id": "aq_contact_stale_days",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_audit"],
+        "use_case_ids": [
+          "uc_weekly_audit"
+        ],
         "category": "quality",
         "question": "How long without activity before a contact is considered stale?",
         "type": "select",
-        "options": ["30 days", "60 days", "90 days (recommended)", "180 days"],
+        "options": [
+          "30 days",
+          "60 days",
+          "90 days (recommended)",
+          "180 days"
+        ],
         "default": "90 days (recommended)",
         "maps_to": "use_cases[uc_weekly_audit].sample_input.contact_stale_days",
         "variable_name": "contact_stale_days",
@@ -404,11 +631,18 @@
       {
         "id": "aq_deal_stale_days",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_audit"],
+        "use_case_ids": [
+          "uc_weekly_audit"
+        ],
         "category": "quality",
         "question": "How long can a deal sit in the same non-closed stage before flagging?",
         "type": "select",
-        "options": ["30 days", "60 days (recommended)", "90 days", "120 days"],
+        "options": [
+          "30 days",
+          "60 days (recommended)",
+          "90 days",
+          "120 days"
+        ],
         "default": "60 days (recommended)",
         "maps_to": "use_cases[uc_weekly_audit].sample_input.deal_stale_days",
         "variable_name": "deal_stale_days",
@@ -418,16 +652,60 @@
       {
         "id": "aq_company_stale_days",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_audit"],
+        "use_case_ids": [
+          "uc_weekly_audit"
+        ],
         "category": "quality",
         "question": "How long can a company record remain unmodified before flagging?",
         "type": "select",
-        "options": ["90 days", "180 days (recommended)", "365 days"],
+        "options": [
+          "90 days",
+          "180 days (recommended)",
+          "365 days"
+        ],
         "default": "180 days (recommended)",
         "maps_to": "use_cases[uc_weekly_audit].sample_input.company_stale_days",
         "variable_name": "company_stale_days",
         "context": "Companies without updates longer than this are flagged in the audit, but never auto-archived.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_crm_credential",
+        "scope": "connector",
+        "connector_names": [
+          "crm"
+        ],
+        "category": "configuration",
+        "question": "Which CRM should this persona sync with?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "crm",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[crm].credential_fields[provider].value",
+        "variable_name": "crm_credential",
+        "context": "Options are auto-detected from your crm credentials in the Vault (HubSpot, Attio, Pipedrive, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

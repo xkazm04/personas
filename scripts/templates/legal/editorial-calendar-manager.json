@@ -66,11 +66,11 @@
       ],
       "connectors": [
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "integration_token",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -94,11 +94,11 @@
           "setup_instructions": "1. Go to notion.so/my-integrations and click 'New integration'.\n2. Name it 'Editorial Calendar Manager' and select the workspace containing your editorial calendar.\n3. Under Capabilities, enable 'Read content', 'Update content', and 'Read user information'.\n4. Copy the Internal Integration Token (starts with 'ntn_').\n5. In Notion, open your editorial calendar database, click '...' -> 'Connections' -> add your integration.\n6. Copy the database ID from the database URL."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "pat",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
@@ -130,8 +130,8 @@
           "setup_instructions": "1. Go to airtable.com/create/tokens and click 'Create new token'.\n2. Name it 'Editorial Calendar Manager'.\n3. Add scopes: data.records:read, data.records:write, schema.bases:read.\n4. Under Access, select the specific base for editorial tracking.\n5. Create a table with columns: Title (text), Writer (text), Email (email), Status (single select: Draft, In Review, Scheduled, Published, Cancelled, Incomplete), Deadline (date), Content Type (single select), Topic (text), Notion ID (text), Notes (long text).\n6. Copy the base ID from the URL."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -186,10 +186,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "airtable"],
+        "connectors": [
+          "knowledge_base",
+          "spreadsheet"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -209,27 +215,87 @@
         "error_handling": "Notion 429 → retry with 1s backoff up to 3x; on persistent failure, log partial sync and proceed with what was fetched. Airtable 422 → log the failing record, continue with the rest. Missing writer email on a Notion entry → sync with status 'Incomplete' for the gap analysis to flag.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Sync tick" },
-            { "id": "s2", "type": "connector", "label": "Query Notion database (paginated)", "connector": "notion" },
-            { "id": "s3", "type": "connector", "label": "Fetch Airtable records", "connector": "airtable" },
-            { "id": "s4", "type": "action", "label": "Diff by Notion page ID" },
-            { "id": "s5", "type": "connector", "label": "Apply creates / updates / cancellations", "connector": "airtable" },
-            { "id": "s6", "type": "action", "label": "Write sync_log.json counters" },
-            { "id": "s7", "type": "event", "label": "Emit editorial.sync.completed" },
-            { "id": "s8", "type": "end", "label": "Tracker in sync" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Sync tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Query Notion database (paginated)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Fetch Airtable records",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Diff by Notion page ID"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Apply creates / updates / cancellations",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Write sync_log.json counters"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit editorial.sync.completed"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Tracker in sync"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -244,10 +310,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "editorial.sync.completed" },
+          "config": {
+            "event_type": "editorial.sync.completed"
+          },
           "description": "Fires after each sync so reminders act on fresh data. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["airtable", "gmail"],
+        "connectors": [
+          "spreadsheet",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -285,28 +356,96 @@
         "sample_input": {
           "tier_schedule": "{{param.aq_reminder_tiers}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "sync.completed received" },
-            { "id": "r2", "type": "connector", "label": "Query active entries", "connector": "airtable" },
-            { "id": "r3", "type": "action", "label": "Compute days-to-deadline + tier" },
-            { "id": "r4", "type": "action", "label": "Load state; apply per-writer tier shift" },
-            { "id": "r5", "type": "decision", "label": "Already sent this tier?" },
-            { "id": "r6", "type": "connector", "label": "gmail_send reminder", "connector": "gmail" },
-            { "id": "r7", "type": "action", "label": "Record send in state; emit reminder.sent" },
-            { "id": "r8", "type": "end", "label": "Reminders complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "sync.completed received"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Query active entries",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Compute days-to-deadline + tier"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Load state; apply per-writer tier shift"
+            },
+            {
+              "id": "r5",
+              "type": "decision",
+              "label": "Already sent this tier?"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "gmail_send reminder",
+              "connector": "email"
+            },
+            {
+              "id": "r7",
+              "type": "action",
+              "label": "Record send in state; emit reminder.sent"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Reminders complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6", "variant": "no", "label": "Not sent" },
-            { "source": "r5", "target": "r8", "variant": "yes", "label": "Already sent" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6",
+              "variant": "no",
+              "label": "Not sent"
+            },
+            {
+              "source": "r5",
+              "target": "r8",
+              "variant": "yes",
+              "label": "Already sent"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -321,10 +460,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["airtable", "gmail"],
+        "connectors": [
+          "spreadsheet",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -356,7 +501,12 @@
           {
             "name": "gap_alert_mode",
             "type": "enum",
-            "options": ["report_only", "immediate_email", "suggest_topics", "create_placeholder"],
+            "options": [
+              "report_only",
+              "immediate_email",
+              "suggest_topics",
+              "create_placeholder"
+            ],
             "default": "immediate_email",
             "description": "How assertive the agent is when a critical gap is detected between reports."
           }
@@ -365,25 +515,78 @@
           "recipients": "{{param.aq_report_recipients}}",
           "gap_alert_mode": "{{param.aq_gap_alert_mode}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "connector", "label": "Fetch Airtable tracker", "connector": "airtable" },
-            { "id": "w3", "type": "action", "label": "Compute metrics + 30-day gap analysis" },
-            { "id": "w4", "type": "action", "label": "Compose HTML report" },
-            { "id": "w5", "type": "connector", "label": "gmail_send to distribution list", "connector": "gmail" },
-            { "id": "w6", "type": "event", "label": "Emit editorial.report.delivered + gap.detected" },
-            { "id": "w7", "type": "end", "label": "Report delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Fetch Airtable tracker",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute metrics + 30-day gap analysis"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Compose HTML report"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "gmail_send to distribution list",
+              "connector": "email"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit editorial.report.delivered + gap.detected"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -428,7 +631,9 @@
       {
         "id": "aq_reminder_tiers",
         "scope": "capability",
-        "use_case_ids": ["uc_reminders"],
+        "use_case_ids": [
+          "uc_reminders"
+        ],
         "category": "configuration",
         "question": "At what intervals before a deadline should the agent send reminder emails to writers?",
         "type": "select",
@@ -447,7 +652,9 @@
       {
         "id": "aq_boundaries",
         "scope": "capability",
-        "use_case_ids": ["uc_reminders"],
+        "use_case_ids": [
+          "uc_reminders"
+        ],
         "category": "boundaries",
         "question": "Which writer communications should the agent NEVER send without your explicit approval?",
         "type": "select",
@@ -466,7 +673,9 @@
       {
         "id": "aq_report_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "configuration",
         "question": "Who should receive the weekly editorial status report?",
         "type": "select",
@@ -485,7 +694,10 @@
       {
         "id": "aq_content_types",
         "scope": "capability",
-        "use_case_ids": ["uc_sync", "uc_weekly_report"],
+        "use_case_ids": [
+          "uc_sync",
+          "uc_weekly_report"
+        ],
         "category": "domain",
         "question": "What content types does your Notion editorial calendar track?",
         "type": "select",
@@ -504,7 +716,9 @@
       {
         "id": "aq_gap_alert_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "human_in_the_loop",
         "question": "When the agent detects a content gap (e.g., a week with no scheduled posts), what should it do?",
         "type": "select",
@@ -519,6 +733,63 @@
         "variable_name": "gap_alert_mode",
         "context": "Controls how assertive the agent is when schedule gaps surface between weekly reports.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

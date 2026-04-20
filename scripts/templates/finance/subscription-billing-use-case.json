@@ -5,11 +5,23 @@
   "description": "Processes Paddle subscription lifecycle events, maintains an Airtable subscriptions table, runs a 3-tier dunning sequence for failed payments, posts revenue notifications to Slack, and ships monthly MRR reports with anomaly detection.",
   "icon": "CreditCard",
   "color": "#22C55E",
-  "category": ["finance"],
-  "service_flow": ["Paddle", "Airtable", "Slack", "Gmail"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Paddle",
+    "Airtable",
+    "Slack",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Paddle", "Airtable", "Slack", "Gmail"],
+    "service_flow": [
+      "Paddle",
+      "Airtable",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Keep subscription revenue operating cleanly — every Paddle event reconciled, every failure recovered through a 3-tier dunning sequence, and every month summarized with anomaly detection.",
       "identity": {
@@ -47,7 +59,12 @@
       "tool_guidance": "**Paddle API** (base `https://api.paddle.com`, Bearer auth):\n- Webhook verification: compare `Paddle-Signature` header against webhook secret.\n- `GET /subscriptions/{id}` — subscription details.\n- `GET /transactions?subscription_id={id}` — transaction history.\n- `GET /customers/{id}` — customer info.\n\n**Airtable** (base `https://api.airtable.com/v0`, PAT auth):\n- `GET /{baseId}/{table}?filterByFormula=({Email}=\"...\")` — query records.\n- `POST /{baseId}/{table}` with `{fields: {...}}` — create record.\n- `PATCH /{baseId}/{table}/{recordId}` with `{fields: {...}}` — update record.\n- Rate limit: 5 req/sec per base.\n\n**Slack** (base `https://slack.com/api`, bot token):\n- `POST /chat.postMessage` with `{channel, text, blocks}` — Block Kit rich formatting.\n- Channels: `#revenue` for positive events, `#billing-alerts` for failures + churn.\n\n**Gmail** — `gmail_send` for dunning emails (HTML with plan + portal CTA) and monthly MRR reports (HTML tables, inline styles).\n\n**Local state**:\n- `processed_events.json` — Paddle event dedupe map.\n- `dunning_state.json` — active dunning sequences + tier + timestamps.\n- `data/mrr_reports/{YYYY-MM}.csv` — monthly MRR backup.\n- `data/logs/billing_events.jsonl` — audit trail of all event processing.\n- `pending_airtable_ops.jsonl` — Airtable write retry queue.\n\n**Airtable schema** (expected fields): Email, Customer ID, Subscription ID, Plan, MRR, Status (Active | Payment Failed | Canceled | Churn Imminent), Start Date, Cancel Date, Last Payment Date, Renewal Count, Dunning Tier, Last Dunning Email Date, Dunning Started At, Failure Reason, Notes.",
       "error_handling": "Malformed webhook → log raw to `data/logs/malformed_webhooks.jsonl`; alert Slack #billing-alerts; skip. Unknown event type → log + skip (Paddle may add new types; don't fail). Duplicate webhook → dedupe by event ID in `processed_events.json`; skip. Airtable 429 → wait 30s + retry once; on continued failure, queue to `pending_airtable_ops.jsonl`. Airtable 5xx → retry once after 10s; alert Slack on second failure. Airtable 422 (field mismatch) → log payload; skip write; alert user. Slack failure → non-critical; log + continue. Gmail dunning failure → critical; retry once; alert Slack + flag in Airtable that dunning wasn't sent; queue for retry. Paddle enrichment failure → proceed with webhook data only; log the gap. Customer not found in Airtable on update → create first, then apply update (handles out-of-order webhooks). MRR calculation mismatch >1% → flag anomaly in report; alert user. Currency handling: Paddle cents → divide by 100 for display. Payment success during dunning → reset tier, restore Active, send success email. Cancellation during dunning → stop sequence immediately, mark Canceled.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "paddle",
@@ -78,11 +95,11 @@
           "setup_instructions": "1. Paddle Dashboard → Developer Tools → Authentication → copy your Live API Key (pdl_live_...).\n2. Developer Tools → Notifications → Create new destination → set the webhook URL to your Personas webhook endpoint.\n3. Subscribe to events: subscription.created, subscription.updated, subscription.canceled, transaction.completed, transaction.payment_failed.\n4. Copy the Webhook Secret Key for signature verification.\n5. Paste both values above."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "pat",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
@@ -114,8 +131,8 @@
           "setup_instructions": "1. Create an Airtable base for subscription management.\n2. Create a 'Subscriptions' table with fields from tool_guidance (Email, Customer ID, Subscription ID, Plan, MRR, Status, Start Date, Cancel Date, Last Payment Date, Renewal Count, Dunning Tier, ...).\n3. airtable.com/create/tokens → create a PAT with data.records:read + data.records:write.\n4. Grant access to your Subscriptions base.\n5. Paste PAT, Base ID, and Table Name above."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -143,24 +160,45 @@
           "setup_instructions": "1. api.slack.com/apps → create or select an app.\n2. OAuth & Permissions → add Bot Token Scopes: chat:write, chat:write.public.\n3. Install to workspace → copy Bot User OAuth Token.\n4. Invite the bot to #revenue and #billing-alerts."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send. 4. Paste client_id, client_secret, refresh_token above."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "Real-time revenue notifications to #revenue (positive) and #billing-alerts (failures + churn)." },
-        { "type": "email", "description": "Customer-facing dunning emails + monthly MRR report to finance team." }
+        {
+          "type": "slack",
+          "description": "Real-time revenue notifications to #revenue (positive) and #billing-alerts (failures + churn)."
+        },
+        {
+          "type": "email",
+          "description": "Customer-facing dunning emails + monthly MRR report to finance team."
+        }
       ],
       "core_memories": []
     },
@@ -188,11 +226,21 @@
           },
           "description": "Webhook-driven by Paddle. Not user-configurable — webhook triggers bypass the composition picker."
         },
-        "connectors": ["paddle", "airtable", "slack"],
-        "notification_channels": [
-          { "type": "slack", "description": "Real-time notifications — #revenue for positives, #billing-alerts for failures + churn." }
+        "connectors": [
+          "paddle",
+          "spreadsheet",
+          "messaging"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "slack",
+            "description": "Real-time notifications — #revenue for positives, #billing-alerts for failures + churn."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`processed_events.json` — Paddle event dedupe. `data/logs/billing_events.jsonl` — audit trail of every event's processing outcome."
@@ -236,27 +284,86 @@
         "sample_input": {
           "skip_monthly_renewal_slack": "{{param.aq_skip_monthly_renewal_slack}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Paddle webhook received" },
-            { "id": "s2", "type": "action", "label": "Verify signature + dedupe" },
-            { "id": "s3", "type": "action", "label": "Classify event type" },
-            { "id": "s4", "type": "connector", "label": "Reconcile Airtable record", "connector": "airtable" },
-            { "id": "s5", "type": "connector", "label": "Post contextual Slack notification", "connector": "slack" },
-            { "id": "s6", "type": "event", "label": "Emit billing.subscription.* / payment.*" },
-            { "id": "s7", "type": "action", "label": "Audit log write" },
-            { "id": "s8", "type": "end", "label": "Event processed" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Paddle webhook received"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Verify signature + dedupe"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Classify event type"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Reconcile Airtable record",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Post contextual Slack notification",
+              "connector": "messaging"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit billing.subscription.* / payment.*"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Audit log write"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Event processed"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -271,13 +378,26 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "billing.payment.failed" },
+          "config": {
+            "event_type": "billing.payment.failed"
+          },
           "description": "Fires on every payment failure from uc_event_sync. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["paddle", "airtable", "gmail", "slack"],
+        "connectors": [
+          "paddle",
+          "spreadsheet",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [
-          { "type": "email", "description": "Tier-appropriate dunning emails with billing-portal CTA." },
-          { "type": "slack", "description": "Tier 2 risk alert and tier 3 escalation to #billing-alerts." }
+          {
+            "type": "email",
+            "description": "Tier-appropriate dunning emails with billing-portal CTA."
+          },
+          {
+            "type": "slack",
+            "description": "Tier 2 risk alert and tier 3 escalation to #billing-alerts."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -319,14 +439,21 @@
           {
             "name": "tone",
             "type": "enum",
-            "options": ["warm_empathetic", "direct_urgent", "neutral_transactional"],
+            "options": [
+              "warm_empathetic",
+              "direct_urgent",
+              "neutral_transactional"
+            ],
             "default": "warm_empathetic",
             "description": "Tone of the dunning email copy across all tiers."
           },
           {
             "name": "tier3_approval",
             "type": "enum",
-            "options": ["auto_send", "require_human_approval"],
+            "options": [
+              "auto_send",
+              "require_human_approval"
+            ],
             "default": "require_human_approval",
             "description": "Whether tier 3 (final warning) auto-sends or surfaces for owner approval first."
           }
@@ -335,27 +462,90 @@
           "tone": "{{param.aq_tone}}",
           "tier3_approval": "{{param.aq_tier3_approval}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "billing.payment.failed received" },
-            { "id": "d2", "type": "connector", "label": "Read failure history from Airtable", "connector": "airtable" },
-            { "id": "d3", "type": "decision", "label": "Which tier?" },
-            { "id": "d4", "type": "connector", "label": "Send tier-appropriate email", "connector": "gmail" },
-            { "id": "d5", "type": "connector", "label": "Slack alert (tier 2+ only)", "connector": "slack" },
-            { "id": "d6", "type": "connector", "label": "Update Airtable dunning state", "connector": "airtable" },
-            { "id": "d7", "type": "event", "label": "Emit billing.dunning.tier_changed" },
-            { "id": "d8", "type": "end", "label": "Dunning step complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "billing.payment.failed received"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Read failure history from Airtable",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "d3",
+              "type": "decision",
+              "label": "Which tier?"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Send tier-appropriate email",
+              "connector": "email"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Slack alert (tier 2+ only)",
+              "connector": "messaging"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Update Airtable dunning state",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit billing.dunning.tier_changed"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Dunning step complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4", "label": "1 / 2 / 3" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4",
+              "label": "1 / 2 / 3"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       },
@@ -370,15 +560,31 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 1 * *",
+            "timezone": "local"
+          },
           "description": "Default 1st of month 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["airtable", "slack", "gmail"],
-        "notification_channels": [
-          { "type": "slack", "description": "Summary posted to #revenue." },
-          { "type": "email", "description": "Detailed HTML report to finance team recipients." }
+        "connectors": [
+          "spreadsheet",
+          "messaging",
+          "email"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "slack",
+            "description": "Summary posted to #revenue."
+          },
+          {
+            "type": "email",
+            "description": "Detailed HTML report to finance team recipients."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "CSV snapshot per month (`data/mrr_reports/{YYYY-MM}.csv`) used as the base for next month's comparisons and anomaly thresholds."
@@ -406,30 +612,105 @@
         "sample_input": {
           "finance_recipients": "{{param.aq_finance_recipients}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Monthly tick (1st)" },
-            { "id": "m2", "type": "connector", "label": "Pull active subscriptions", "connector": "airtable" },
-            { "id": "m3", "type": "action", "label": "Compute MRR totals + deltas vs last month" },
-            { "id": "m4", "type": "decision", "label": "Anomaly detected?" },
-            { "id": "m5", "type": "event", "label": "Emit billing.anomaly.detected" },
-            { "id": "m6", "type": "action", "label": "Write CSV backup" },
-            { "id": "m7", "type": "connector", "label": "Post summary to Slack #revenue", "connector": "slack" },
-            { "id": "m8", "type": "connector", "label": "Email detailed report to finance", "connector": "gmail" },
-            { "id": "m9", "type": "end", "label": "Monthly cycle complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Monthly tick (1st)"
+            },
+            {
+              "id": "m2",
+              "type": "connector",
+              "label": "Pull active subscriptions",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "m3",
+              "type": "action",
+              "label": "Compute MRR totals + deltas vs last month"
+            },
+            {
+              "id": "m4",
+              "type": "decision",
+              "label": "Anomaly detected?"
+            },
+            {
+              "id": "m5",
+              "type": "event",
+              "label": "Emit billing.anomaly.detected"
+            },
+            {
+              "id": "m6",
+              "type": "action",
+              "label": "Write CSV backup"
+            },
+            {
+              "id": "m7",
+              "type": "connector",
+              "label": "Post summary to Slack #revenue",
+              "connector": "messaging"
+            },
+            {
+              "id": "m8",
+              "type": "connector",
+              "label": "Email detailed report to finance",
+              "connector": "email"
+            },
+            {
+              "id": "m9",
+              "type": "end",
+              "label": "Monthly cycle complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5", "variant": "yes", "label": "Yes" },
-            { "source": "m4", "target": "m6", "variant": "no", "label": "No" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "m4",
+              "target": "m6",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            }
           ]
         }
       }
@@ -438,7 +719,9 @@
       {
         "id": "aq_skip_monthly_renewal_slack",
         "scope": "capability",
-        "use_case_ids": ["uc_event_sync"],
+        "use_case_ids": [
+          "uc_event_sync"
+        ],
         "category": "configuration",
         "question": "Should monthly renewal events skip Slack notifications (to reduce noise)?",
         "type": "select",
@@ -455,7 +738,9 @@
       {
         "id": "aq_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_dunning_sequence"],
+        "use_case_ids": [
+          "uc_dunning_sequence"
+        ],
         "category": "configuration",
         "question": "What tone should the dunning emails use?",
         "type": "select",
@@ -473,7 +758,9 @@
       {
         "id": "aq_tier3_approval",
         "scope": "capability",
-        "use_case_ids": ["uc_dunning_sequence"],
+        "use_case_ids": [
+          "uc_dunning_sequence"
+        ],
         "category": "human_in_the_loop",
         "question": "Should tier 3 (the final 48-hour warning email) require human approval before sending?",
         "type": "select",
@@ -490,7 +777,9 @@
       {
         "id": "aq_finance_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_monthly_mrr_report"],
+        "use_case_ids": [
+          "uc_monthly_mrr_report"
+        ],
         "category": "configuration",
         "question": "Who should receive the detailed monthly MRR report via email?",
         "type": "text",
@@ -500,6 +789,63 @@
         "variable_name": "finance_recipients",
         "context": "Comma-separated. The Slack summary posts to #revenue regardless.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

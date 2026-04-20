@@ -5,11 +5,23 @@
   "description": "Keeps QuickBooks and Google Sheets in sync, chases overdue invoices via Gmail with tiered reminders, flags anomalous expenses against a 30-day rolling baseline, and posts a weekly cash flow summary to Slack.",
   "icon": "Landmark",
   "color": "#22C55E",
-  "category": ["finance"],
-  "service_flow": ["QuickBooks", "Google Sheets", "Gmail", "Slack"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "QuickBooks",
+    "Google Sheets",
+    "Gmail",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["QuickBooks", "Google Sheets", "Gmail", "Slack"],
+    "service_flow": [
+      "QuickBooks",
+      "Google Sheets",
+      "Gmail",
+      "Slack"
+    ],
     "persona": {
       "goal": "Give leadership real-time cash flow clarity — synced books, chased invoices, flagged anomalies, weekly Monday-morning summary.",
       "identity": {
@@ -49,7 +61,13 @@
       "tool_guidance": "**QuickBooks** (`https://quickbooks.api.intuit.com/v3/company/{companyId}`):\n- `GET /query?query=SELECT * FROM Invoice WHERE MetaData.LastUpdatedTime > '{ts}'` — updated invoices.\n- `GET /query?query=SELECT * FROM Purchase WHERE TxnDate >= '{date}'` — daily expenses.\n- `GET /query?query=SELECT * FROM Invoice WHERE DueDate < '{today}' AND Balance > '0'` — overdue.\n- `GET /reports/ProfitAndLoss?start_date={s}&end_date={e}` — weekly P&L.\n- Headers: `Accept: application/json`, `Content-Type: application/json`. Bearer token injected by connector.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — status updates, Dashboard totals.\n- `GET /{id}/values/{range}` — dedupe reads.\n- Tabs: `Invoices`, `Expenses`, `Dashboard`.\n\n**Gmail** — tiered reminder templates (friendly / firm / escalating tone per config). Subject: `Payment Reminder: Invoice #{number}` for friendly, `Overdue Notice: Invoice #{number}` for firm.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` with Block Kit to the finance channel (summary) or alerts channel (anomalies).\n\n**Local state**: `state/last_sync.json` (sync timestamp), `state/reminder_log.json` (sent reminders, dedupe), `state/spending_baselines.json` (30-day rolling), `state/weekly_summary.json` (WoW baseline), `state/pending_sync.json` (Sheet-write fallback), `state/pending_slack.json` (Slack-post fallback).",
       "error_handling": "QuickBooks 401 → do NOT update last_sync; alert re-auth via user_message. QuickBooks 429 → respect Retry-After; batch queries. QuickBooks 5xx → 3 retries with 5/15/45s backoff; if persistent, alert and skip. Sheets 403 → user_message (permissions). Sheets 429 → batch into single request. Sheets append failure → queue to `state/pending_sync.json`. Gmail bounce → flag customer email for manual_review. Slack channel_not_found → user_message to reconfigure. Weekly summary post failure → cache to `state/pending_slack.json`. Anomaly alert cap: max 10 user_messages per day; batch overflow into one digest.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "quickbooks",
@@ -57,7 +75,9 @@
           "auth_type": "oauth2",
           "role": "accounting",
           "category": "finance",
-          "categories": ["accounting"],
+          "categories": [
+            "accounting"
+          ],
           "required": true,
           "api_base_url": "https://quickbooks.api.intuit.com/v3",
           "credential_fields": [
@@ -97,12 +117,14 @@
           "setup_instructions": "1. Go to https://developer.intuit.com and sign in.\n2. Create a new app (or select existing) under 'My Apps'.\n3. Under 'Keys & credentials', copy the Client ID and Client Secret.\n4. Set the redirect URI to your OAuth callback URL.\n5. Use the OAuth 2.0 Playground or your app to authorize and obtain a refresh token.\n6. Find your Company ID (Realm ID) in the QuickBooks Online URL after logging in.\n7. Enter all values in the connector fields above."
         },
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
-          "categories": ["spreadsheet"],
+          "category": "spreadsheet",
+          "categories": [
+            "spreadsheet"
+          ],
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
@@ -134,12 +156,14 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
-          "categories": ["email"],
+          "categories": [
+            "email"
+          ],
           "required": true,
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
@@ -171,12 +195,14 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
-          "categories": ["messaging"],
+          "categories": [
+            "messaging"
+          ],
           "required": false,
           "fallback_note": "Without Slack, the weekly cash flow summary is written to `state/weekly_summary_{date}.json` and queued for retry. Anomaly alerts surface as user_messages inside the app instead.",
           "api_base_url": "https://slack.com/api",
@@ -233,10 +259,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 7:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["quickbooks", "google_sheets"],
+        "connectors": [
+          "quickbooks",
+          "spreadsheet"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -268,7 +300,12 @@
           {
             "name": "anomaly_rule",
             "type": "enum",
-            "options": ["Any expense > $500 outside vendor history", "Any expense > $2,500 OR 3× vendor 90d avg", "Any expense > $10,000 regardless", "Only new vendors"],
+            "options": [
+              "Any expense > $500 outside vendor history",
+              "Any expense > $2,500 OR 3× vendor 90d avg",
+              "Any expense > $10,000 regardless",
+              "Only new vendors"
+            ],
             "default": "Any expense > $2,500 OR 3× vendor 90d avg",
             "description": "Threshold that decides when an expense is flagged rather than just logged."
           }
@@ -277,31 +314,105 @@
           "ledger_spreadsheet_id": "{{param.aq_ledger_sheet}}",
           "anomaly_rule": "{{param.aq_anomaly_rule}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Daily tick" },
-            { "id": "s2", "type": "action", "label": "Read last_sync + baselines" },
-            { "id": "s3", "type": "connector", "label": "Query QB invoices + expenses", "connector": "quickbooks" },
-            { "id": "s4", "type": "connector", "label": "Read Sheets for dedupe", "connector": "google_sheets" },
-            { "id": "s5", "type": "connector", "label": "Append new + update status rows", "connector": "google_sheets" },
-            { "id": "s6", "type": "action", "label": "Run anomaly rules against baselines" },
-            { "id": "s7", "type": "event", "label": "Emit finance.expense.anomaly (capped)" },
-            { "id": "s8", "type": "action", "label": "Persist baselines + last_sync" },
-            { "id": "s9", "type": "event", "label": "Emit finance.sync.complete" },
-            { "id": "s10", "type": "end", "label": "Sync complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Read last_sync + baselines"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Query QB invoices + expenses",
+              "connector": "quickbooks"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Read Sheets for dedupe",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Append new + update status rows",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Run anomaly rules against baselines"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit finance.expense.anomaly (capped)"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Persist baselines + last_sync"
+            },
+            {
+              "id": "s9",
+              "type": "event",
+              "label": "Emit finance.sync.complete"
+            },
+            {
+              "id": "s10",
+              "type": "end",
+              "label": "Sync complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" },
-            { "source": "s9", "target": "s10" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            },
+            {
+              "source": "s9",
+              "target": "s10"
+            }
           ]
         }
       },
@@ -316,10 +427,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 8-18 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "*/10 8-18 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default every 10 minutes during business hours Mon-Fri — final cadence set at the trigger-composition step."
         },
-        "connectors": ["quickbooks", "gmail"],
+        "connectors": [
+          "quickbooks",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -346,21 +463,35 @@
           {
             "name": "reminder_cadence",
             "type": "enum",
-            "options": ["gentle", "standard", "aggressive"],
+            "options": [
+              "gentle",
+              "standard",
+              "aggressive"
+            ],
             "default": "standard",
             "description": "gentle: reminder at 7 and 30 days then escalate. standard: 3/10/21 days. aggressive: 1/5/10/15 days."
           },
           {
             "name": "exclusions",
             "type": "enum",
-            "options": ["VIP/Enterprise", "Invoices with disputes", "Customers on payment plans", "All of the above"],
+            "options": [
+              "VIP/Enterprise",
+              "Invoices with disputes",
+              "Customers on payment plans",
+              "All of the above"
+            ],
             "default": "All of the above",
             "description": "Hardcoded exclusions applied before any reminder is composed. Exclusions escalate to manual review instead."
           },
           {
             "name": "tone",
             "type": "enum",
-            "options": ["friendly", "neutral", "firm", "escalating"],
+            "options": [
+              "friendly",
+              "neutral",
+              "firm",
+              "escalating"
+            ],
             "default": "escalating",
             "description": "Reminder tone. 'escalating' starts friendly and firms up per tier."
           }
@@ -370,32 +501,113 @@
           "exclusions": "{{param.aq_exclusions}}",
           "tone": "{{param.aq_tone}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Polling tick (business hours)" },
-            { "id": "r2", "type": "connector", "label": "Query QB overdue invoices", "connector": "quickbooks" },
-            { "id": "r3", "type": "action", "label": "Load reminder_log + exclusion list" },
-            { "id": "r4", "type": "action", "label": "Classify tier per invoice + check cooldown" },
-            { "id": "r5", "type": "decision", "label": "31+ days or on exclusion?" },
-            { "id": "r6", "type": "event", "label": "Emit finance.reminder.escalated" },
-            { "id": "r7", "type": "connector", "label": "Compose + send reminder", "connector": "gmail" },
-            { "id": "r8", "type": "action", "label": "Log sent to reminder_log" },
-            { "id": "r9", "type": "event", "label": "Emit finance.reminder.sent" },
-            { "id": "r10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Polling tick (business hours)"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Query QB overdue invoices",
+              "connector": "quickbooks"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Load reminder_log + exclusion list"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Classify tier per invoice + check cooldown"
+            },
+            {
+              "id": "r5",
+              "type": "decision",
+              "label": "31+ days or on exclusion?"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit finance.reminder.escalated"
+            },
+            {
+              "id": "r7",
+              "type": "connector",
+              "label": "Compose + send reminder",
+              "connector": "email"
+            },
+            {
+              "id": "r8",
+              "type": "action",
+              "label": "Log sent to reminder_log"
+            },
+            {
+              "id": "r9",
+              "type": "event",
+              "label": "Emit finance.reminder.sent"
+            },
+            {
+              "id": "r10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6", "variant": "yes", "label": "Yes → escalate" },
-            { "source": "r5", "target": "r7", "variant": "no", "label": "No → email" },
-            { "source": "r6", "target": "r10" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9" },
-            { "source": "r9", "target": "r10" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6",
+              "variant": "yes",
+              "label": "Yes → escalate"
+            },
+            {
+              "source": "r5",
+              "target": "r7",
+              "variant": "no",
+              "label": "No → email"
+            },
+            {
+              "source": "r6",
+              "target": "r10"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            },
+            {
+              "source": "r9",
+              "target": "r10"
+            }
           ]
         }
       },
@@ -410,10 +622,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5", "timezone": "local" },
+          "config": {
+            "cron": "0 17 * * 5",
+            "timezone": "local"
+          },
           "description": "Default Fridays 5:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["quickbooks", "slack"],
+        "connectors": [
+          "quickbooks",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -441,29 +659,95 @@
         "sample_input": {
           "slack_channel": "{{param.aq_slack_channel}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Friday tick" },
-            { "id": "w2", "type": "connector", "label": "Pull QB P&L + AR aging", "connector": "quickbooks" },
-            { "id": "w3", "type": "action", "label": "Load last week baseline" },
-            { "id": "w4", "type": "action", "label": "Compute WoW deltas + top 5 categories" },
-            { "id": "w5", "type": "action", "label": "Render Block Kit payload" },
-            { "id": "w6", "type": "connector", "label": "Post to Slack", "connector": "slack" },
-            { "id": "w7", "type": "action", "label": "Save this-week baseline" },
-            { "id": "w8", "type": "event", "label": "Emit finance.summary.delivered" },
-            { "id": "w9", "type": "end", "label": "Summary delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Friday tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Pull QB P&L + AR aging",
+              "connector": "quickbooks"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Load last week baseline"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Compute WoW deltas + top 5 categories"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Render Block Kit payload"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "Post to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Save this-week baseline"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Emit finance.summary.delivered"
+            },
+            {
+              "id": "w9",
+              "type": "end",
+              "label": "Summary delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            }
           ]
         }
       }
@@ -472,7 +756,9 @@
       {
         "id": "aq_ledger_sheet",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_sync"],
+        "use_case_ids": [
+          "uc_daily_sync"
+        ],
         "category": "configuration",
         "question": "Which Google Sheet is the ledger?",
         "type": "select",
@@ -489,7 +775,9 @@
       {
         "id": "aq_anomaly_rule",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_sync"],
+        "use_case_ids": [
+          "uc_daily_sync"
+        ],
         "category": "human_in_the_loop",
         "question": "At what transaction amount should an anomalous expense be flagged?",
         "type": "select",
@@ -508,7 +796,9 @@
       {
         "id": "aq_reminder_cadence",
         "scope": "capability",
-        "use_case_ids": ["uc_overdue_reminders"],
+        "use_case_ids": [
+          "uc_overdue_reminders"
+        ],
         "category": "configuration",
         "question": "What overdue reminder cadence should the agent follow?",
         "type": "select",
@@ -526,7 +816,9 @@
       {
         "id": "aq_exclusions",
         "scope": "capability",
-        "use_case_ids": ["uc_overdue_reminders"],
+        "use_case_ids": [
+          "uc_overdue_reminders"
+        ],
         "category": "boundaries",
         "question": "Which customers/situations should NEVER receive an auto-reminder?",
         "type": "select",
@@ -545,7 +837,9 @@
       {
         "id": "aq_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_overdue_reminders"],
+        "use_case_ids": [
+          "uc_overdue_reminders"
+        ],
         "category": "quality",
         "question": "What tone should payment reminder emails use?",
         "type": "select",
@@ -564,7 +858,9 @@
       {
         "id": "aq_slack_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_summary"],
+        "use_case_ids": [
+          "uc_weekly_summary"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives the weekly cash flow summary?",
         "type": "select",
@@ -577,6 +873,63 @@
         "variable_name": "slack_channel",
         "context": "Options come from your connected Slack credential. The summary is concise Block Kit with trends and a link to the Dashboard sheet.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

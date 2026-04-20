@@ -5,11 +5,21 @@
   "description": "Watches GitHub for new PRs, issues, and releases. Auto-creates/updates linked Jira tickets, posts status updates to Slack dev channels, and flags PRs that exceed size thresholds for manual review.",
   "icon": "GitBranch",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["GitHub", "Jira", "Slack"],
+  "service_flow": [
+    "GitHub",
+    "Jira",
+    "Slack"
+  ],
   "payload": {
-    "service_flow": ["GitHub", "Jira", "Slack"],
+    "service_flow": [
+      "GitHub",
+      "Jira",
+      "Slack"
+    ],
     "persona": {
       "goal": "Zero-drift GitHub↔Jira↔Slack — every PR has a ticket, every ticket reflects real code status, and the team knows without drowning in pings.",
       "identity": {
@@ -45,14 +55,18 @@
       "tool_guidance": "### GitHub (http_request + github connector)\n- `GET /repos/{owner}/{repo}/pulls?state=all&sort=updated&per_page=30&since={iso}` — PRs updated since last tick.\n- `GET /repos/{owner}/{repo}/pulls/{n}` — PR details.\n- `GET /repos/{owner}/{repo}/pulls/{n}/files` — changed files + additions + deletions.\n- `GET /repos/{owner}/{repo}/pulls/{n}/reviews` — review state.\n- `GET /repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` — issues feed.\n- `GET /repos/{owner}/{repo}/issues/{n}` — issue details.\n- `GET /repos/{owner}/{repo}/releases?per_page=10` — releases feed.\n- `GET /repos/{owner}/{repo}/releases/{id}` — release detail.\n- Headers: `Accept: application/vnd.github.v3+json`, `Authorization: Bearer {pat}`.\n- Rate limit: 5000 req/hr. Honor `X-RateLimit-Remaining`.\n\n### Jira (http_request + jira connector)\n- Base: `https://{domain}.atlassian.net/rest/api/3`\n- `GET /search?jql=key=\"PROJ-123\"` — find ticket by key.\n- `POST /issue` with `{ fields: { project: { key }, summary, issuetype: { name }, description (ADF), priority: { name } } }` — create.\n- `PUT /issue/{key}` — update fields (fixVersions, priority, labels).\n- `POST /issue/{key}/transitions` with `{ transition: { id } }` — change status.\n- `POST /issue/{key}/remotelink` — attach GitHub PR URL.\n- `POST /issue/{key}/comment` with ADF body — append comment.\n- `POST /version` with `{ name, projectId, released: true }` — create release version.\n- Auth: `Authorization: Basic {base64(email:api_token)}`.\n\n### Slack (http_request + slack connector)\n- `POST /chat.postMessage` — post with Block Kit.\n- `POST /chat.update` — edit existing (for live status pegs).\n- `POST /chat.postMessage` with `thread_ts` — reply in thread.\n- `GET /conversations.list?types=public_channel&limit=100` — resolve channel id.\n- Auth: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/github_sync_state.json` — per-repo last-processed timestamps + Slack message thread map.\n- `data/retry_queue.json` — failed ops queued for next cycle.\n- `data/repo_mappings.json` — repo → Jira project + Slack channel mapping.",
       "error_handling": "GitHub 403 with `X-RateLimit-Remaining: 0` → pause until `X-RateLimit-Reset`, log warning. GitHub 401 → emit credential alert, halt. GitHub 5xx → retry 3× exp backoff (2s/4s/8s), queue on failure. Jira 401 → emit credential alert. Jira 429 → exp backoff (5s/15s/45s), max 3 retries. Jira missing ticket on branch key → create new, log. Jira state already ahead → comment rather than transition. Slack 429 → respect Retry-After. Slack channel_not_found → fall back to default channel. state file corrupt → reset to empty, rely on processed_{pr,issue}_ids dedup. PR pagination beyond 100 → follow `Link` header. Duplicate PR → link all PRs to the same ticket, note multiple PRs in Slack.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "github",
-          "label": "GitHub",
+          "name": "source_control",
+          "label": "Source Control",
           "auth_type": "pat",
           "role": "source_control",
-          "category": "development",
+          "category": "source_control",
           "required": true,
           "api_base_url": "https://api.github.com",
           "credential_fields": [
@@ -76,11 +90,11 @@
           "setup_instructions": "1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.\n2. Name it (e.g., 'Dev Lifecycle Manager').\n3. Scope to the repositories you want monitored.\n4. Grant Contents (Read), Pull requests (Read), Issues (Read), Metadata (Read).\n5. Paste the token + repo list above."
         },
         {
-          "name": "jira",
-          "label": "Jira",
+          "name": "ticketing",
+          "label": "Ticketing System",
           "auth_type": "api_token",
           "role": "project_tracking",
-          "category": "development",
+          "category": "ticketing",
           "required": true,
           "api_base_url": "https://{domain}.atlassian.net/rest/api/3",
           "credential_fields": [
@@ -120,8 +134,8 @@
           "setup_instructions": "1. id.atlassian.com/manage-profile/security/api-tokens → Create API token.\n2. Copy the token, enter email + domain + default project key above.\n3. Ensure the account can create / edit issues and manage versions in the target project."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -164,10 +178,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/2 * * * *" },
+          "config": {
+            "cron": "*/2 * * * *"
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step. GitHub webhooks also fire this UC when configured."
         },
-        "connectors": ["github", "jira", "slack"],
+        "connectors": [
+          "source_control",
+          "ticketing",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -199,21 +219,36 @@
           {
             "name": "size_thresholds",
             "type": "enum",
-            "options": ["default", "strict", "relaxed", "disabled"],
+            "options": [
+              "default",
+              "strict",
+              "relaxed",
+              "disabled"
+            ],
             "default": "default",
             "description": "Default: LARGE>500, EXTRA_LARGE>1000. Strict: 200/500. Relaxed: 800/2000. Disabled turns off size flagging."
           },
           {
             "name": "oversized_policy",
             "type": "enum",
-            "options": ["tag_reviewer_only", "tag_reviewer_and_gate_jira", "tag_reviewer_and_block_merge_context", "notify_only"],
+            "options": [
+              "tag_reviewer_only",
+              "tag_reviewer_and_gate_jira",
+              "tag_reviewer_and_block_merge_context",
+              "notify_only"
+            ],
             "default": "tag_reviewer_only",
             "description": "What happens when a PR is classified Large or Extra-Large."
           },
           {
             "name": "branch_pattern",
             "type": "enum",
-            "options": ["standard_feature_prefix", "short_key_only", "scan_title_and_body", "mixed"],
+            "options": [
+              "standard_feature_prefix",
+              "short_key_only",
+              "scan_title_and_body",
+              "mixed"
+            ],
             "default": "standard_feature_prefix",
             "description": "How to extract Jira keys from branch names or PR descriptions."
           }
@@ -223,32 +258,114 @@
           "oversized_policy": "{{param.aq_oversized_policy}}",
           "branch_pattern": "{{param.aq_branch_pattern}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Polling tick / PR webhook" },
-            { "id": "n2", "type": "connector", "label": "List PRs updated since last tick", "connector": "github" },
-            { "id": "n3", "type": "connector", "label": "Get PR files; classify size", "connector": "github" },
-            { "id": "n4", "type": "action", "label": "Extract Jira key from branch / body" },
-            { "id": "n5", "type": "connector", "label": "Search / create / transition Jira", "connector": "jira" },
-            { "id": "n6", "type": "decision", "label": "Oversized?" },
-            { "id": "n7", "type": "event", "label": "Emit dev.pr.oversized" },
-            { "id": "n8", "type": "connector", "label": "Post Slack (Block Kit + size badge)", "connector": "slack" },
-            { "id": "n9", "type": "event", "label": "Emit dev.pr.synced; persist state" },
-            { "id": "n10", "type": "end", "label": "PR processed" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Polling tick / PR webhook"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "List PRs updated since last tick",
+              "connector": "source_control"
+            },
+            {
+              "id": "n3",
+              "type": "connector",
+              "label": "Get PR files; classify size",
+              "connector": "source_control"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Extract Jira key from branch / body"
+            },
+            {
+              "id": "n5",
+              "type": "connector",
+              "label": "Search / create / transition Jira",
+              "connector": "ticketing"
+            },
+            {
+              "id": "n6",
+              "type": "decision",
+              "label": "Oversized?"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit dev.pr.oversized"
+            },
+            {
+              "id": "n8",
+              "type": "connector",
+              "label": "Post Slack (Block Kit + size badge)",
+              "connector": "messaging"
+            },
+            {
+              "id": "n9",
+              "type": "event",
+              "label": "Emit dev.pr.synced; persist state"
+            },
+            {
+              "id": "n10",
+              "type": "end",
+              "label": "PR processed"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7", "label": "Yes", "variant": "yes" },
-            { "source": "n6", "target": "n8", "label": "No", "variant": "no" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "n6",
+              "target": "n8",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            },
+            {
+              "source": "n9",
+              "target": "n10"
+            }
           ]
         }
       },
@@ -263,10 +380,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/2 * * * *" },
+          "config": {
+            "cron": "*/2 * * * *"
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step. GitHub webhooks also fire this UC when configured."
         },
-        "connectors": ["github", "jira", "slack"],
+        "connectors": [
+          "source_control",
+          "ticketing",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -300,32 +423,115 @@
         "sample_input": {
           "urgent_labels": "{{param.aq_urgent_labels}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick / issue webhook" },
-            { "id": "i2", "type": "connector", "label": "Fetch issue details", "connector": "github" },
-            { "id": "i3", "type": "decision", "label": "Opened / closed?" },
-            { "id": "i4", "type": "action", "label": "Map labels → Jira type + priority" },
-            { "id": "i5", "type": "connector", "label": "Create / update Jira", "connector": "jira" },
-            { "id": "i6", "type": "connector", "label": "Post Slack (urgent → @channel)", "connector": "slack" },
-            { "id": "i7", "type": "connector", "label": "Transition Jira to Done", "connector": "jira" },
-            { "id": "i8", "type": "connector", "label": "Thread-reply resolution", "connector": "slack" },
-            { "id": "i9", "type": "event", "label": "Emit dev.issue.synced; persist" },
-            { "id": "i10", "type": "end", "label": "Issue processed" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick / issue webhook"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Fetch issue details",
+              "connector": "source_control"
+            },
+            {
+              "id": "i3",
+              "type": "decision",
+              "label": "Opened / closed?"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Map labels → Jira type + priority"
+            },
+            {
+              "id": "i5",
+              "type": "connector",
+              "label": "Create / update Jira",
+              "connector": "ticketing"
+            },
+            {
+              "id": "i6",
+              "type": "connector",
+              "label": "Post Slack (urgent → @channel)",
+              "connector": "messaging"
+            },
+            {
+              "id": "i7",
+              "type": "connector",
+              "label": "Transition Jira to Done",
+              "connector": "ticketing"
+            },
+            {
+              "id": "i8",
+              "type": "connector",
+              "label": "Thread-reply resolution",
+              "connector": "messaging"
+            },
+            {
+              "id": "i9",
+              "type": "event",
+              "label": "Emit dev.issue.synced; persist"
+            },
+            {
+              "id": "i10",
+              "type": "end",
+              "label": "Issue processed"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4", "label": "Opened", "variant": "yes" },
-            { "source": "i3", "target": "i7", "label": "Closed", "variant": "no" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i9" },
-            { "source": "i7", "target": "i8" },
-            { "source": "i8", "target": "i9" },
-            { "source": "i9", "target": "i10" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4",
+              "label": "Opened",
+              "variant": "yes"
+            },
+            {
+              "source": "i3",
+              "target": "i7",
+              "label": "Closed",
+              "variant": "no"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i9"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            },
+            {
+              "source": "i9",
+              "target": "i10"
+            }
           ]
         }
       },
@@ -340,10 +546,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/15 * * * *" },
+          "config": {
+            "cron": "*/15 * * * *"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step. GitHub release webhook also fires this UC when configured."
         },
-        "connectors": ["github", "jira", "slack"],
+        "connectors": [
+          "source_control",
+          "ticketing",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -368,27 +580,88 @@
         "error_handling": "Jira 409 version exists → fetch and update instead of creating. No ticket refs in body → still create version, skip fixVersion step. Slack channel_not_found → fall back to default.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Polling tick / release webhook" },
-            { "id": "r2", "type": "connector", "label": "Fetch release details", "connector": "github" },
-            { "id": "r3", "type": "action", "label": "Parse body for PROJ-\\d+ keys" },
-            { "id": "r4", "type": "connector", "label": "Create or update Jira version", "connector": "jira" },
-            { "id": "r5", "type": "connector", "label": "Set fixVersion on referenced tickets", "connector": "jira" },
-            { "id": "r6", "type": "connector", "label": "Post release announcement to Slack", "connector": "slack" },
-            { "id": "r7", "type": "event", "label": "Emit dev.release.published; persist" },
-            { "id": "r8", "type": "end", "label": "Release processed" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Polling tick / release webhook"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Fetch release details",
+              "connector": "source_control"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Parse body for PROJ-\\d+ keys"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Create or update Jira version",
+              "connector": "ticketing"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Set fixVersion on referenced tickets",
+              "connector": "ticketing"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Post release announcement to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit dev.release.published; persist"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Release processed"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       }
@@ -397,7 +670,10 @@
       {
         "id": "aq_dev_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_lifecycle", "uc_issue_sync"],
+        "use_case_ids": [
+          "uc_pr_lifecycle",
+          "uc_issue_sync"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive PR and issue notifications?",
         "type": "select",
@@ -408,7 +684,9 @@
         "context": "Options are auto-detected from your Slack credential. The bot must be a member of the chosen channel.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -417,7 +695,9 @@
       {
         "id": "aq_releases_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_release_management"],
+        "use_case_ids": [
+          "uc_release_management"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive release announcements?",
         "type": "select",
@@ -428,7 +708,9 @@
         "context": "Separate channel for release changelog posts keeps dev-channel noise down. Pick any channel — the bot must be a member.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -437,7 +719,9 @@
       {
         "id": "aq_size_thresholds",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_lifecycle"],
+        "use_case_ids": [
+          "uc_pr_lifecycle"
+        ],
         "category": "configuration",
         "question": "What line-change thresholds should trigger LARGE / EXTRA_LARGE PR flags?",
         "type": "select",
@@ -456,7 +740,9 @@
       {
         "id": "aq_oversized_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_lifecycle"],
+        "use_case_ids": [
+          "uc_pr_lifecycle"
+        ],
         "category": "human_in_the_loop",
         "question": "When a PR is flagged LARGE or EXTRA_LARGE, what should happen?",
         "type": "select",
@@ -475,7 +761,9 @@
       {
         "id": "aq_branch_pattern",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_lifecycle"],
+        "use_case_ids": [
+          "uc_pr_lifecycle"
+        ],
         "category": "configuration",
         "question": "What branch naming convention links PRs to Jira tickets?",
         "type": "select",
@@ -494,7 +782,9 @@
       {
         "id": "aq_urgent_labels",
         "scope": "capability",
-        "use_case_ids": ["uc_issue_sync"],
+        "use_case_ids": [
+          "uc_issue_sync"
+        ],
         "category": "configuration",
         "question": "Which GitHub labels should trigger an urgent Slack @channel mention?",
         "type": "text",
@@ -521,6 +811,63 @@
         "variable_name": "boundary_rule",
         "context": "Hard guardrails prevent irreversible actions that could corrupt project tracking or spam channels.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_source_control_credential",
+        "scope": "connector",
+        "connector_names": [
+          "source_control"
+        ],
+        "category": "configuration",
+        "question": "Which source-control credential should this persona operate with?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "source_control",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
+        "variable_name": "source_control_credential",
+        "context": "Options are auto-detected from your source_control credentials in the Vault (GitHub, GitLab, Azure DevOps, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_ticketing_credential",
+        "scope": "connector",
+        "connector_names": [
+          "ticketing"
+        ],
+        "category": "configuration",
+        "question": "Which ticketing system should this persona write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "ticketing",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
+        "variable_name": "ticketing_credential",
+        "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

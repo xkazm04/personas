@@ -5,11 +5,25 @@
   "description": "Universal webhook receiver that replaces Zapier for simple automations. Accepts any webhook payload, classifies the event using signature matching + payload analysis + reasoning, and fan-outs to Slack, Gmail, Notion, and Airtable based on configurable routing rules.",
   "icon": "Route",
   "color": "#7C3AED",
-  "category": ["productivity"],
-  "service_flow": ["Webhook Ingestion", "Slack", "Gmail", "Notion", "Airtable"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Webhook Ingestion",
+    "Slack",
+    "Gmail",
+    "Notion",
+    "Airtable"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Webhook Ingestion", "Slack", "Gmail", "Notion", "Airtable"],
+    "service_flow": [
+      "Webhook Ingestion",
+      "Slack",
+      "Gmail",
+      "Notion",
+      "Airtable"
+    ],
     "persona": {
       "goal": "Replace dozens of rigid Zapier zaps with one reasoning agent — accept any webhook, classify it correctly even when unknown, and fan out to the right services based on rules you can edit in natural language.",
       "identity": {
@@ -44,11 +58,16 @@
       "tool_guidance": "**Slack (via slack connector)**:\n- `POST /chat.postMessage` with `{channel, text, blocks}`. Block Kit sections per payload field. `<!channel>` for urgent.\n- `GET /conversations.list` to resolve channel names to IDs.\n\n**Notion (via notion connector)**:\n- `POST https://api.notion.com/v1/pages` with `parent.database_id` and typed properties (title, rich_text, select, multi_select, date, url, email, number).\n- Header `Notion-Version: 2022-06-28`.\n\n**Airtable (via airtable connector)**:\n- `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{records: [{fields: {...}}]}`.\n- Strict type matching; include raw payload in a long-text `Raw Payload` field for reference.\n\n**Gmail (gmail_send)**:\n- Subject: `[Router] {EventType}: {Summary}`. HTML body with data table. Include source + timestamp for traceability.\n\n**Google Sheets (via google_sheets connector, optional)**:\n- `POST /v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED` for append-only event logging.\n\n**Local state**:\n- `routing_rules.json` format: `[{name, match: {source, event_contains, priority?}, routes: [{service, channel?, database?, base?, format?}]}]`.\n- First matching rule wins; multiple routes within a rule all execute (fan-out).",
       "error_handling": "HTTP 4xx on route → log with full request/response, skip retry (config issue), continue remaining routes. HTTP 5xx or timeout → retry once after 3s, then log and continue. Connector auth 401/403 → alert #alerts, skip all routes using that connector. Unparseable payload → route raw dump to catch-all as UNCLASSIFIED. Low classification confidence → prefix all routed messages with [LOW CONFIDENCE]. All routes fail → write full event to `failed_events.json`. Duplicate webhook ID → skip silently, log as duplicate. Payload > 1MB → reject with logged warning. Sensitive fields in payload (password/token/secret patterns) → strip before logging or forwarding.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -67,11 +86,11 @@
           "setup_instructions": "1. api.slack.com/apps → create/select app.\n2. OAuth & Permissions → add scopes chat:write, channels:read, groups:read.\n3. Install to workspace, copy Bot User OAuth Token.\n4. /invite @YourBotName to channels it will post in."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Skip Notion to run as a Slack/email router only. Rules that route to Notion become no-ops.",
           "api_base_url": "https://api.notion.com/v1",
@@ -88,11 +107,11 @@
           "setup_instructions": "1. notion.so/my-integrations → create integration → copy token.\n2. Share target databases with the integration (… → Connections).\n3. Copy database IDs from URLs."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": false,
           "fallback_note": "Skip Airtable to run as a Slack/email/Notion router only. Rules that route to Airtable become no-ops.",
           "api_base_url": "https://api.airtable.com/v0",
@@ -109,8 +128,8 @@
           "setup_instructions": "1. airtable.com/create/tokens → create token.\n2. Scopes: data.records:read, data.records:write.\n3. Access: add specific bases Router should write to.\n4. Note Base IDs from airtable.com/developers/web/api/introduction."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -118,16 +137,37 @@
           "fallback_note": "Skip Gmail to run as a Slack/Notion/Airtable router only. Rules that route to email become no-ops.",
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete consent with scope gmail.send.\n4. Paste client ID, secret, refresh token."
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Primary Slack channel for routed events, with per-category routing rules." },
-        { "type": "email", "description": "Email notifications for high-priority events and credential expiration warnings." }
+        {
+          "type": "messaging",
+          "description": "Primary Slack channel for routed events, with per-category routing rules."
+        },
+        {
+          "type": "email",
+          "description": "Email notifications for high-priority events and credential expiration warnings."
+        }
       ],
       "core_memories": []
     },
@@ -146,10 +186,21 @@
           "config": {},
           "description": "Universal webhook endpoint accepting any POST payload. Not schedule-based — the trigger step hides cadence controls for webhooks."
         },
-        "connectors": ["slack", "notion", "airtable", "gmail"],
+        "connectors": [
+          "messaging",
+          "knowledge_base",
+          "spreadsheet",
+          "email"
+        ],
         "notification_channels": [
-          { "type": "messaging", "description": "Primary fan-out target for most rules." },
-          { "type": "email", "description": "Email routes for specific rules." }
+          {
+            "type": "messaging",
+            "description": "Primary fan-out target for most rules."
+          },
+          {
+            "type": "email",
+            "description": "Email routes for specific rules."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -181,21 +232,37 @@
           {
             "name": "webhook_focus",
             "type": "enum",
-            "options": ["payment_billing", "developer_ci_cd", "forms_crm", "ecommerce", "mixed_custom"],
+            "options": [
+              "payment_billing",
+              "developer_ci_cd",
+              "forms_crm",
+              "ecommerce",
+              "mixed_custom"
+            ],
             "default": "mixed_custom",
             "description": "Primary category of webhook sources; seeds default routing rules."
           },
           {
             "name": "unknown_payload_handling",
             "type": "enum",
-            "options": ["log_and_slack_alert", "catchall_slack_channel", "email_raw_payload", "discard_silently"],
+            "options": [
+              "log_and_slack_alert",
+              "catchall_slack_channel",
+              "email_raw_payload",
+              "discard_silently"
+            ],
             "default": "log_and_slack_alert",
             "description": "What to do when classification can't match any rule."
           },
           {
             "name": "urgent_approval",
             "type": "enum",
-            "options": ["urgent_only", "all_financial", "above_normal", "fully_autonomous"],
+            "options": [
+              "urgent_only",
+              "all_financial",
+              "above_normal",
+              "fully_autonomous"
+            ],
             "default": "urgent_only",
             "description": "Which priority levels require human approval before routes execute."
           }
@@ -205,33 +272,115 @@
           "unknown_payload_handling": "{{param.aq_unknown_payload_handling}}",
           "urgent_approval": "{{param.aq_urgent_approval}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Webhook POST received" },
-            { "id": "r2", "type": "action", "label": "Parse payload + classify (3-tier)" },
-            { "id": "r3", "type": "action", "label": "Load routing_rules + match" },
-            { "id": "r4", "type": "action", "label": "Transform payload per destination" },
-            { "id": "r5", "type": "connector", "label": "Fan-out to Slack / Gmail / Notion / Airtable" },
-            { "id": "r6", "type": "action", "label": "Log to webhook_log.json" },
-            { "id": "r7", "type": "event", "label": "Emit webhook.event.routed" },
-            { "id": "r8", "type": "action", "label": "Apply catchall route" },
-            { "id": "r9", "type": "event", "label": "Emit webhook.event.unclassified" },
-            { "id": "r10", "type": "end", "label": "Event handled" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Webhook POST received"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Parse payload + classify (3-tier)"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Load routing_rules + match"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Transform payload per destination"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Fan-out to Slack / Gmail / Notion / Airtable"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Log to webhook_log.json"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit webhook.event.routed"
+            },
+            {
+              "id": "r8",
+              "type": "action",
+              "label": "Apply catchall route"
+            },
+            {
+              "id": "r9",
+              "type": "event",
+              "label": "Emit webhook.event.unclassified"
+            },
+            {
+              "id": "r10",
+              "type": "end",
+              "label": "Event handled"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "label": "Rule matched", "variant": "yes" },
-            { "source": "r3", "target": "r8", "label": "No rule", "variant": "no" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r10" },
-            { "source": "r8", "target": "r6" },
-            { "source": "r8", "target": "r9" },
-            { "source": "r9", "target": "r10" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "label": "Rule matched",
+              "variant": "yes"
+            },
+            {
+              "source": "r3",
+              "target": "r8",
+              "label": "No rule",
+              "variant": "no"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r10"
+            },
+            {
+              "source": "r8",
+              "target": "r6"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            },
+            {
+              "source": "r9",
+              "target": "r10"
+            }
           ]
         }
       },
@@ -251,9 +400,15 @@
         },
         "connectors": [],
         "notification_channels": [
-          { "type": "built-in", "description": "Confirmation message to the user." }
+          {
+            "type": "built-in",
+            "description": "Confirmation message to the user."
+          }
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Rule history + user corrections. Learns common rule patterns to speed up future edits."
@@ -270,7 +425,11 @@
           {
             "name": "rule_initialization",
             "type": "enum",
-            "options": ["template_defaults", "start_empty", "auto_generate_from_connected"],
+            "options": [
+              "template_defaults",
+              "start_empty",
+              "auto_generate_from_connected"
+            ],
             "default": "template_defaults",
             "description": "How the initial routing_rules.json should be populated."
           }
@@ -278,30 +437,100 @@
         "sample_input": {
           "rule_initialization": "{{param.aq_rule_initialization}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "User message received" },
-            { "id": "m2", "type": "action", "label": "Parse rule intent (source/event/destinations)" },
-            { "id": "m3", "type": "action", "label": "Load routing_rules.json" },
-            { "id": "m4", "type": "decision", "label": "Existing rule for source?" },
-            { "id": "m5", "type": "action", "label": "Update existing rule routes" },
-            { "id": "m6", "type": "action", "label": "Append new rule" },
-            { "id": "m7", "type": "action", "label": "Write routing_rules.json" },
-            { "id": "m8", "type": "event", "label": "Emit webhook.rules.updated + confirm diff to user" },
-            { "id": "m9", "type": "end", "label": "Rule update complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "User message received"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Parse rule intent (source/event/destinations)"
+            },
+            {
+              "id": "m3",
+              "type": "action",
+              "label": "Load routing_rules.json"
+            },
+            {
+              "id": "m4",
+              "type": "decision",
+              "label": "Existing rule for source?"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Update existing rule routes"
+            },
+            {
+              "id": "m6",
+              "type": "action",
+              "label": "Append new rule"
+            },
+            {
+              "id": "m7",
+              "type": "action",
+              "label": "Write routing_rules.json"
+            },
+            {
+              "id": "m8",
+              "type": "event",
+              "label": "Emit webhook.rules.updated + confirm diff to user"
+            },
+            {
+              "id": "m9",
+              "type": "end",
+              "label": "Rule update complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5", "label": "Yes", "variant": "yes" },
-            { "source": "m4", "target": "m6", "label": "No", "variant": "no" },
-            { "source": "m5", "target": "m7" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "m4",
+              "target": "m6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "m5",
+              "target": "m7"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            }
           ]
         }
       }
@@ -310,7 +539,9 @@
       {
         "id": "aq_webhook_focus",
         "scope": "capability",
-        "use_case_ids": ["uc_classify_and_route"],
+        "use_case_ids": [
+          "uc_classify_and_route"
+        ],
         "category": "domain",
         "question": "What are the primary webhook sources you plan to connect?",
         "type": "select",
@@ -330,7 +561,9 @@
       {
         "id": "aq_unknown_payload_handling",
         "scope": "capability",
-        "use_case_ids": ["uc_classify_and_route"],
+        "use_case_ids": [
+          "uc_classify_and_route"
+        ],
         "category": "error-handling",
         "question": "How should Router handle a webhook it can't classify or match to any rule?",
         "type": "select",
@@ -349,7 +582,9 @@
       {
         "id": "aq_urgent_approval",
         "scope": "capability",
-        "use_case_ids": ["uc_classify_and_route"],
+        "use_case_ids": [
+          "uc_classify_and_route"
+        ],
         "category": "human_in_the_loop",
         "question": "Which event priority levels require your approval before routes execute?",
         "type": "select",
@@ -368,7 +603,9 @@
       {
         "id": "aq_rule_initialization",
         "scope": "capability",
-        "use_case_ids": ["uc_manage_rules"],
+        "use_case_ids": [
+          "uc_manage_rules"
+        ],
         "category": "configuration",
         "question": "How should the initial routing_rules.json be populated?",
         "type": "select",
@@ -382,6 +619,82 @@
         "variable_name": "rule_initialization",
         "context": "Determines whether Router has working rules on day one or waits for user configuration.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

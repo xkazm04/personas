@@ -5,11 +5,19 @@
   "description": "Always-on contact harvesting agent. Polls Gmail continuously for new signature data, maintains a living contact database with per-field confidence scoring and full change history, and routes field-level conflicts through a batch human-review pipeline.",
   "icon": "Sparkles",
   "color": "#8b5cf6",
-  "category": ["sales"],
-  "service_flow": ["Gmail", "Local Database"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Local Database"],
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
     "persona": {
       "goal": "Replace manual CRM data entry — watch Gmail continuously, capture every signature field with a confidence score, preserve a full change history, and arbitrate every real conflict through a human.",
       "identity": {
@@ -47,11 +55,15 @@
       "tool_guidance": "**Gmail API**:\n- `GET /gmail/v1/users/me/messages?q=newer_than:1h&maxResults=50` — list recent messages. Use `newer_than` as safety bound, stored timestamp for precision.\n- `GET /gmail/v1/users/me/messages/{id}?format=full` — full payload for body parsing.\n- Batch up to 50 reads per cycle. Skip `SPAM` / `TRASH` labels.\n- Rate limit: 250 quota units/sec. Reduce batch size on 429.\n\n**Signature detection**:\n- Delimiters: `--`, `___`, HTML `<div class=\"gmail_signature\">`, `Sent from …` (marks unreliable tail).\n- Fallback: last 15 lines with heuristic scoring (presence of phone, URL, title).\n- Skip list grows automatically after 5 consecutive no-signature sends from the same address.\n\n**Field extraction**:\n- Phone: `(?:\\+?\\d{1,3}[-.\\s]?)?(?:\\(?\\d{2,4}\\)?[-.\\s]?)?\\d{3,4}[-.\\s]?\\d{3,4}` with 7-15 digit post-validation.\n- Email: RFC-adjacent pattern, filter out noreply/mailer-daemon/unsubscribe.\n- LinkedIn: `https?://(?:www\\.)?linkedin\\.com/in/[\\w-]+`, normalize to canonical prefix.\n- Job title: seniority keyword + department term; pipe-delimited `Name | Title | Company` is highest-confidence.\n\n**Confidence model**: per-field 0.0-1.0 based on pattern clarity + cross-field corroboration (domain matches company, area code matches location). Weighted average → overall confidence. Above `confidence_threshold` auto-applies; 0.5-threshold queues for review; below 0.5 logs only.\n\n**Merge strategies** (user-selected):\n- `newest_wins`: new value replaces old when both have comparable confidence.\n- `existing_wins`: stored value wins unless new confidence is markedly higher.\n- `flag`: all conflicts route to uc_conflict_resolution (default).\n- `merge_non_empty`: fill empty fields; conflicts on non-empty fields flag.\n\n**Local state**: `data/contacts.json` (atomic writes, backup before each write), `data/change_history.json` (append-only with old/new/confidence/source_email/timestamp), `data/sync_state.json`, `data/pending_conflicts.json`, `data/skip_senders.json`, `data/extraction_log.json`.",
       "error_handling": "Gmail 401 → emit error event, pause polling, notify user. Gmail 429 → reduce batch 50%, backoff per Retry-After; 3 consecutive → abort cycle, resume next interval. Gmail 5xx → exponential 2s/4s/8s, abort after 3 failures; state file preserves timestamp for resume. Regex catastrophic backtracking → 500ms timeout per pattern, skip the field and reduce contact confidence. Encoding issues → try ISO-8859-1 / Windows-1252 fallbacks, skip email if all fail. File lock on `contacts.json` → retry 3x with 1s intervals, then write to `contacts_pending.json` and merge next cycle. Corrupted state → recover from backup, else reinitialize and notify user. Disk space < 50MB → skip non-essential writes (change history, extraction log) and alert.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email_reader",
           "category": "email",
@@ -126,10 +138,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/15 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/15 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "personas_database"],
+        "connectors": [
+          "email",
+          "personas_database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -163,7 +181,7 @@
             "type": "number",
             "default": 0.75,
             "min": 0.5,
-            "max": 1.0,
+            "max": 1,
             "description": "Minimum overall confidence for auto-save without review."
           },
           {
@@ -177,7 +195,12 @@
           {
             "name": "conflict_strategy",
             "type": "enum",
-            "options": ["newest_wins", "existing_wins", "flag", "merge_non_empty"],
+            "options": [
+              "newest_wins",
+              "existing_wins",
+              "flag",
+              "merge_non_empty"
+            ],
             "default": "flag",
             "description": "How to handle extracted values that differ from stored values."
           }
@@ -187,28 +210,94 @@
           "max_contacts_per_run": "{{param.aq_max_contacts_per_run}}",
           "conflict_strategy": "{{param.aq_conflict_strategy}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Polling tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch new Gmail since last_poll_timestamp", "connector": "gmail" },
-            { "id": "s3", "type": "action", "label": "Filter skip-list; isolate signature; extract + score" },
-            { "id": "s4", "type": "decision", "label": "Dedup vs contacts.json" },
-            { "id": "s5", "type": "connector", "label": "Merge / create contact; log change", "connector": "personas_database" },
-            { "id": "s6", "type": "event", "label": "Emit conflict_detected if strategy = flag" },
-            { "id": "s7", "type": "event", "label": "Emit batch_completed" },
-            { "id": "s8", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch new Gmail since last_poll_timestamp",
+              "connector": "email"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Filter skip-list; isolate signature; extract + score"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Dedup vs contacts.json"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Merge / create contact; log change",
+              "connector": "personas_database"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit conflict_detected if strategy = flag"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit batch_completed"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5", "variant": "no", "label": "No conflict" },
-            { "source": "s4", "target": "s6", "variant": "yes", "label": "Conflict" },
-            { "source": "s5", "target": "s7" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "variant": "no",
+              "label": "No conflict"
+            },
+            {
+              "source": "s4",
+              "target": "s6",
+              "variant": "yes",
+              "label": "Conflict"
+            },
+            {
+              "source": "s5",
+              "target": "s7"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -223,10 +312,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "contact.sync.conflict_detected" },
+          "config": {
+            "event_type": "contact.sync.conflict_detected"
+          },
           "description": "Fires per conflict emitted by uc_signature_extraction. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["personas_database"],
+        "connectors": [
+          "personas_database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -251,25 +344,75 @@
         "error_handling": "Messages delivery failure → queue review request in `pending_conflicts.json`. Never auto-resolve unreviewed conflicts — they age in the queue.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "conflict_detected received" },
-            { "id": "c2", "type": "action", "label": "Load pending conflicts; group by contact" },
-            { "id": "c3", "type": "action", "label": "Present to human with provenance + recommendation" },
-            { "id": "c4", "type": "connector", "label": "Apply decision to contacts.json", "connector": "personas_database" },
-            { "id": "c5", "type": "action", "label": "Log resolution to change_history.json" },
-            { "id": "c6", "type": "event", "label": "Emit conflict_resolved" },
-            { "id": "c7", "type": "end", "label": "Queue cleared" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "conflict_detected received"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Load pending conflicts; group by contact"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Present to human with provenance + recommendation"
+            },
+            {
+              "id": "c4",
+              "type": "connector",
+              "label": "Apply decision to contacts.json",
+              "connector": "personas_database"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Log resolution to change_history.json"
+            },
+            {
+              "id": "c6",
+              "type": "event",
+              "label": "Emit conflict_resolved"
+            },
+            {
+              "id": "c7",
+              "type": "end",
+              "label": "Queue cleared"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            }
           ]
         }
       },
@@ -284,12 +427,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["personas_database"],
+        "connectors": [
+          "personas_database"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Weekly database health trend (total contacts, stale percentage, average confidence, field-coverage deltas)."
@@ -324,23 +475,66 @@
           "stale_contact_days": "{{param.aq_stale_days}}",
           "change_history_retention_days": "{{param.aq_retention_days}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Weekly tick" },
-            { "id": "a2", "type": "connector", "label": "Load contacts.json", "connector": "personas_database" },
-            { "id": "a3", "type": "action", "label": "Identify stale contacts; compute health metrics" },
-            { "id": "a4", "type": "action", "label": "Prune history past retention" },
-            { "id": "a5", "type": "event", "label": "Emit audit_completed; deliver report" },
-            { "id": "a6", "type": "end", "label": "Audit complete" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "Load contacts.json",
+              "connector": "personas_database"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Identify stale contacts; compute health metrics"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Prune history past retention"
+            },
+            {
+              "id": "a5",
+              "type": "event",
+              "label": "Emit audit_completed; deliver report"
+            },
+            {
+              "id": "a6",
+              "type": "end",
+              "label": "Audit complete"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            }
           ]
         }
       }
@@ -349,11 +543,18 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_signature_extraction"],
+        "use_case_ids": [
+          "uc_signature_extraction"
+        ],
         "category": "quality",
         "question": "What confidence threshold auto-saves a field without review?",
         "type": "select",
-        "options": ["0.6", "0.75 (recommended)", "0.85", "0.95"],
+        "options": [
+          "0.6",
+          "0.75 (recommended)",
+          "0.85",
+          "0.95"
+        ],
         "default": "0.75 (recommended)",
         "maps_to": "use_cases[uc_signature_extraction].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -363,11 +564,19 @@
       {
         "id": "aq_max_contacts_per_run",
         "scope": "capability",
-        "use_case_ids": ["uc_signature_extraction"],
+        "use_case_ids": [
+          "uc_signature_extraction"
+        ],
         "category": "quality",
         "question": "How many emails per polling cycle at most?",
         "type": "select",
-        "options": ["25", "50", "100", "200", "500"],
+        "options": [
+          "25",
+          "50",
+          "100",
+          "200",
+          "500"
+        ],
         "default": "50",
         "maps_to": "use_cases[uc_signature_extraction].sample_input.max_contacts_per_run",
         "variable_name": "max_contacts_per_run",
@@ -377,7 +586,9 @@
       {
         "id": "aq_conflict_strategy",
         "scope": "capability",
-        "use_case_ids": ["uc_signature_extraction"],
+        "use_case_ids": [
+          "uc_signature_extraction"
+        ],
         "category": "configuration",
         "question": "How should conflicts between existing and new contact data be resolved?",
         "type": "select",
@@ -396,11 +607,18 @@
       {
         "id": "aq_stale_days",
         "scope": "capability",
-        "use_case_ids": ["uc_freshness_audit"],
+        "use_case_ids": [
+          "uc_freshness_audit"
+        ],
         "category": "quality",
         "question": "How long without corroboration before a contact is considered stale?",
         "type": "select",
-        "options": ["30 days", "60 days", "90 days (recommended)", "180 days"],
+        "options": [
+          "30 days",
+          "60 days",
+          "90 days (recommended)",
+          "180 days"
+        ],
         "default": "90 days (recommended)",
         "maps_to": "use_cases[uc_freshness_audit].sample_input.stale_contact_days",
         "variable_name": "stale_contact_days",
@@ -410,16 +628,43 @@
       {
         "id": "aq_retention_days",
         "scope": "capability",
-        "use_case_ids": ["uc_freshness_audit"],
+        "use_case_ids": [
+          "uc_freshness_audit"
+        ],
         "category": "configuration",
         "question": "How long to retain change history entries?",
         "type": "select",
-        "options": ["90 days", "180 days", "365 days (recommended)", "730 days", "Unlimited"],
+        "options": [
+          "90 days",
+          "180 days",
+          "365 days (recommended)",
+          "730 days",
+          "Unlimited"
+        ],
         "default": "365 days (recommended)",
         "maps_to": "use_cases[uc_freshness_audit].sample_input.change_history_retention_days",
         "variable_name": "retention_days",
         "context": "Older entries are archived to control file size. Unlimited retention keeps the full audit trail but grows the file indefinitely.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

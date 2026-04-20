@@ -5,11 +5,24 @@
   "description": "Multi-channel communication proxy across Gmail, Slack, and Telegram. Reads inbound messages, drafts replies that match your per-recipient style, routes drafts for human approval, and graduates to auto-send after 20 consecutive unedited approvals per contact. Logs everything to a local SQLite database.",
   "icon": "Fingerprint",
   "color": "#0EA5E9",
-  "category": ["productivity", "email"],
-  "service_flow": ["Gmail", "Slack", "Telegram", "Built-in Database"],
+  "category": [
+    "productivity",
+    "email"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Slack",
+    "Telegram",
+    "Built-in Database"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Slack", "Telegram", "Built-in Database"],
+    "service_flow": [
+      "Gmail",
+      "Slack",
+      "Telegram",
+      "Built-in Database"
+    ],
     "persona": {
       "goal": "Be a faithful extension of the user's voice across every channel — triage inbound, draft context-aware replies in the user's style, earn trust one approval at a time.",
       "identity": {
@@ -44,11 +57,20 @@
       "tool_guidance": "**Gmail (gmail_search, gmail_read, gmail_send, gmail_mark_read)**:\n- Primary poll query: `is:unread -category:promotions -category:social -category:updates`.\n- Thread replies via `threadId` to keep conversations together.\n- Mark processed with label `Personas/Processed` to avoid reprocessing.\n\n**Slack (http_request via slack connector)**:\n- `GET /conversations.list?types=public_channel,private_channel,im,mpim` to enumerate.\n- `GET /conversations.history?channel={id}&oldest={ts}&limit=50` for new messages.\n- `POST /chat.postMessage` with `thread_ts` for threaded replies.\n- `GET /users.info?user={id}` to resolve display names for style profile keys.\n\n**Telegram (http_request via telegram connector)**:\n- `GET /getUpdates?offset={last_update_id+1}` to fetch messages; store highest `update_id` for next poll.\n- `POST /sendMessage` with `reply_to_message_id` for threaded replies.\n- `POST /sendChatAction` before sending to simulate natural typing timing.\n\n**Built-in Database (db_query via personas_database connector)**:\n- Tables: `clone_messages`, `clone_contacts`, `clone_channel_health` (see setup_instructions).\n- Max 500 rows per SELECT, 30s timeout. WAL mode for concurrent access.\n- UNIQUE constraint on `message_ext_id` is the duplicate-detection primitive.\n\n**Style profiles (agent_memory)**:\n- Key format: `style:{platform}:{contact_id}`.\n- Fields: formality (1-5), response_length, greeting/sign-off patterns, emoji_usage, language, vocabulary_notes, channel_notes, samples_analyzed, last_updated, confidence.\n- Learning rate decays: 1-5 samples high, 5-20 medium, 20+ low (only on clear repeated shifts).",
       "error_handling": "Gmail 401 → skip channel, alert user via another active channel to reauthorize. Gmail 429 → exponential backoff from 30s. Gmail send 5xx → keep draft in status='approved', retry next cycle, alert after 3 failures. Slack archived channel → skip silently. Slack 401 → fallback to other channels; mark pending Slack drafts 'blocked'. Telegram bot blocked → mark contact 'blocked', stop drafting for them. Telegram 409 conflict → another instance polling; back off 60s. Database table missing → auto-create on first run (see schema). Disk full → alert immediately via any active channel. Style profile JSON corrupt → fall back to channel defaults, log warning, don't crash. Duplicate message_ext_id → UNIQUE constraint rejects gracefully.",
       "examples": [],
-      "tools": ["gmail_read", "gmail_search", "gmail_send", "gmail_mark_read", "http_request", "db_query", "file_read", "file_write"],
+      "tools": [
+        "gmail_read",
+        "gmail_search",
+        "gmail_send",
+        "gmail_mark_read",
+        "http_request",
+        "db_query",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -59,8 +81,8 @@
           "setup_instructions": "1. Open Google Cloud Console and enable the Gmail API for your project.\n2. Configure OAuth consent and authorized test users.\n3. In Personas, click Authorize with Google and complete consent.\n4. Required scopes: gmail.readonly, gmail.modify, gmail.send."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -80,27 +102,6 @@
           "setup_instructions": "1. api.slack.com/apps → create/select app → OAuth & Permissions.\n2. Add Bot Token Scopes: chat:write, chat:write.public, channels:read, channels:history, groups:read, groups:history, im:read, im:history, mpim:read, mpim:history, users:read.\n3. Install to workspace, copy Bot User OAuth Token.\n4. Invite the bot to monitored channels with /invite @YourBotName."
         },
         {
-          "name": "telegram",
-          "label": "Telegram",
-          "auth_type": "bot_token",
-          "role": "chat_messaging",
-          "category": "messaging",
-          "required": false,
-          "fallback_note": "Skip Telegram to run as a Gmail + Slack clone only. Telegram triage and drafting disappear.",
-          "api_base_url": "https://api.telegram.org",
-          "credential_fields": [
-            {
-              "key": "bot_token",
-              "label": "Bot Token",
-              "type": "password",
-              "placeholder": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
-              "helpText": "From @BotFather on Telegram — /newbot or /token.",
-              "required": true
-            }
-          ],
-          "setup_instructions": "1. Message @BotFather and send /newbot.\n2. Follow the prompts and copy the token.\n3. Start a chat with your bot, or add it to groups it should monitor.\n4. For group messages, disable privacy mode via /setprivacy → Disable."
-        },
-        {
           "name": "personas_database",
           "label": "Built-in Database",
           "auth_type": "local",
@@ -112,7 +113,10 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Periodic digest and graduation alerts delivered via the user's preferred active channel." }
+        {
+          "type": "messaging",
+          "description": "Periodic digest and graduation alerts delivered via the user's preferred active channel."
+        }
       ],
       "core_memories": []
     },
@@ -128,12 +132,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "* * * * *" },
+          "config": {
+            "cron": "* * * * *"
+          },
           "description": "Default polling every minute — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "slack", "telegram", "personas_database"],
+        "connectors": [
+          "email",
+          "messaging",
+          "personas_database"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Polling offsets per channel (last_update_id for Telegram, last_ts per Slack channel, last scan for Gmail). Duplicate detection via message_ext_id UNIQUE constraint."
@@ -150,7 +163,11 @@
           {
             "name": "monitored_channels",
             "type": "enum",
-            "options": ["all_connected", "email_only", "chat_only"],
+            "options": [
+              "all_connected",
+              "email_only",
+              "chat_only"
+            ],
             "default": "all_connected",
             "description": "Which channel set to include in triage."
           }
@@ -158,25 +175,78 @@
         "sample_input": {
           "monitored_channels": "{{param.aq_monitored_channels}}"
         },
-        "tool_hints": ["gmail_search", "gmail_read", "http_request", "db_query"],
+        "tool_hints": [
+          "gmail_search",
+          "gmail_read",
+          "http_request",
+          "db_query"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick" },
-            { "id": "i2", "type": "connector", "label": "Poll each connected channel", "connector": "gmail" },
-            { "id": "i3", "type": "connector", "label": "Insert into clone_messages", "connector": "personas_database" },
-            { "id": "i4", "type": "action", "label": "Classify urgency + intent + entities" },
-            { "id": "i5", "type": "action", "label": "Set requires_reply flag" },
-            { "id": "i6", "type": "event", "label": "Emit clone.inbound.received" },
-            { "id": "i7", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Poll each connected channel",
+              "connector": "email"
+            },
+            {
+              "id": "i3",
+              "type": "connector",
+              "label": "Insert into clone_messages",
+              "connector": "personas_database"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Classify urgency + intent + entities"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "Set requires_reply flag"
+            },
+            {
+              "id": "i6",
+              "type": "event",
+              "label": "Emit clone.inbound.received"
+            },
+            {
+              "id": "i7",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            }
           ]
         }
       },
@@ -191,10 +261,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "clone.inbound.received" },
+          "config": {
+            "event_type": "clone.inbound.received"
+          },
           "description": "Fires when inbound triage emits a needs-reply message. Not user-configurable — event triggers hide the cadence picker."
         },
-        "connectors": ["gmail", "slack", "telegram", "personas_database"],
+        "connectors": [
+          "email",
+          "messaging",
+          "personas_database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -231,14 +307,24 @@
           {
             "name": "auto_send_threshold",
             "type": "enum",
-            "options": ["10", "20", "30", "never"],
+            "options": [
+              "10",
+              "20",
+              "30",
+              "never"
+            ],
             "default": "20",
             "description": "Consecutive unedited approvals required before auto-send."
           },
           {
             "name": "safety_exclusions",
             "type": "enum",
-            "options": ["financial_legal_only", "first_message_to_new_contact", "emotional_sensitive", "all_of_above"],
+            "options": [
+              "financial_legal_only",
+              "first_message_to_new_contact",
+              "emotional_sensitive",
+              "all_of_above"
+            ],
             "default": "all_of_above",
             "description": "Which categories are permanently excluded from auto-send."
           }
@@ -247,32 +333,110 @@
           "auto_send_threshold": "{{param.aq_auto_send_threshold}}",
           "safety_exclusions": "{{param.aq_safety_exclusions}}"
         },
-        "tool_hints": ["gmail_send", "http_request", "db_query"],
+        "tool_hints": [
+          "gmail_send",
+          "http_request",
+          "db_query"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "clone.inbound.received" },
-            { "id": "d2", "type": "action", "label": "Load style profile + conversation context" },
-            { "id": "d3", "type": "action", "label": "Compose draft matching profile" },
-            { "id": "d4", "type": "decision", "label": "Auto-send eligible AND no safety trigger?" },
-            { "id": "d5", "type": "action", "label": "Route to manual_review" },
-            { "id": "d6", "type": "connector", "label": "Send via platform API" },
-            { "id": "d7", "type": "action", "label": "Process review outcome (approve/edit/reject)" },
-            { "id": "d8", "type": "action", "label": "Update style profile + counter" },
-            { "id": "d9", "type": "event", "label": "Emit clone.draft.approved / rejected / graduated" },
-            { "id": "d10", "type": "end", "label": "Draft cycle complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "clone.inbound.received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load style profile + conversation context"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compose draft matching profile"
+            },
+            {
+              "id": "d4",
+              "type": "decision",
+              "label": "Auto-send eligible AND no safety trigger?"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Route to manual_review"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Send via platform API"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Process review outcome (approve/edit/reject)"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "Update style profile + counter"
+            },
+            {
+              "id": "d9",
+              "type": "event",
+              "label": "Emit clone.draft.approved / rejected / graduated"
+            },
+            {
+              "id": "d10",
+              "type": "end",
+              "label": "Draft cycle complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d6", "label": "Yes", "variant": "yes" },
-            { "source": "d4", "target": "d5", "label": "No", "variant": "no" },
-            { "source": "d5", "target": "d7" },
-            { "source": "d7", "target": "d6" },
-            { "source": "d6", "target": "d8" },
-            { "source": "d8", "target": "d9" },
-            { "source": "d9", "target": "d10" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "d4",
+              "target": "d5",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "d5",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            },
+            {
+              "source": "d9",
+              "target": "d10"
+            }
           ]
         }
       },
@@ -287,15 +451,28 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 */4 * * *" },
+          "config": {
+            "cron": "0 */4 * * *"
+          },
           "description": "Default every 4 hours — final cadence set at the trigger-composition step."
         },
-        "connectors": ["personas_database"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Digest delivered to the user's preferred active channel." }
+        "connectors": [
+          "personas_database"
         ],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "notification_channels": [
+          {
+            "type": "messaging",
+            "description": "Digest delivered to the user's preferred active channel."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "clone.digest.delivered",
@@ -308,7 +485,11 @@
           {
             "name": "digest_detail",
             "type": "enum",
-            "options": ["concise_counts", "per_channel_breakdown", "full_with_highlights"],
+            "options": [
+              "concise_counts",
+              "per_channel_breakdown",
+              "full_with_highlights"
+            ],
             "default": "per_channel_breakdown",
             "description": "How verbose the digest should be."
           }
@@ -316,23 +497,65 @@
         "sample_input": {
           "digest_detail": "{{param.aq_digest_detail}}"
         },
-        "tool_hints": ["db_query"],
+        "tool_hints": [
+          "db_query"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "g1", "type": "start", "label": "Digest tick" },
-            { "id": "g2", "type": "connector", "label": "Query counts per channel", "connector": "personas_database" },
-            { "id": "g3", "type": "action", "label": "Compose digest" },
-            { "id": "g4", "type": "action", "label": "Deliver via preferred channel" },
-            { "id": "g5", "type": "event", "label": "Emit clone.digest.delivered" },
-            { "id": "g6", "type": "end", "label": "Digest cycle complete" }
+            {
+              "id": "g1",
+              "type": "start",
+              "label": "Digest tick"
+            },
+            {
+              "id": "g2",
+              "type": "connector",
+              "label": "Query counts per channel",
+              "connector": "personas_database"
+            },
+            {
+              "id": "g3",
+              "type": "action",
+              "label": "Compose digest"
+            },
+            {
+              "id": "g4",
+              "type": "action",
+              "label": "Deliver via preferred channel"
+            },
+            {
+              "id": "g5",
+              "type": "event",
+              "label": "Emit clone.digest.delivered"
+            },
+            {
+              "id": "g6",
+              "type": "end",
+              "label": "Digest cycle complete"
+            }
           ],
           "edges": [
-            { "source": "g1", "target": "g2" },
-            { "source": "g2", "target": "g3" },
-            { "source": "g3", "target": "g4" },
-            { "source": "g4", "target": "g5" },
-            { "source": "g5", "target": "g6" }
+            {
+              "source": "g1",
+              "target": "g2"
+            },
+            {
+              "source": "g2",
+              "target": "g3"
+            },
+            {
+              "source": "g3",
+              "target": "g4"
+            },
+            {
+              "source": "g4",
+              "target": "g5"
+            },
+            {
+              "source": "g5",
+              "target": "g6"
+            }
           ]
         }
       }
@@ -341,7 +564,9 @@
       {
         "id": "aq_monitored_channels",
         "scope": "capability",
-        "use_case_ids": ["uc_inbound_triage"],
+        "use_case_ids": [
+          "uc_inbound_triage"
+        ],
         "category": "configuration",
         "question": "Which channels should the triage pass include?",
         "type": "select",
@@ -359,7 +584,9 @@
       {
         "id": "aq_auto_send_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_draft_and_review"],
+        "use_case_ids": [
+          "uc_draft_and_review"
+        ],
         "category": "configuration",
         "question": "How many consecutive unedited approvals before a contact graduates to auto-send?",
         "type": "select",
@@ -378,7 +605,9 @@
       {
         "id": "aq_safety_exclusions",
         "scope": "capability",
-        "use_case_ids": ["uc_draft_and_review"],
+        "use_case_ids": [
+          "uc_draft_and_review"
+        ],
         "category": "boundaries",
         "question": "Which categories should NEVER be auto-sent regardless of graduation?",
         "type": "select",
@@ -397,7 +626,9 @@
       {
         "id": "aq_digest_detail",
         "scope": "capability",
-        "use_case_ids": ["uc_periodic_digest"],
+        "use_case_ids": [
+          "uc_periodic_digest"
+        ],
         "category": "quality",
         "question": "How detailed should the periodic digest be?",
         "type": "select",
@@ -424,6 +655,44 @@
         "variable_name": "personal_rules",
         "context": "Injected into every drafting prompt. These override learned behavior and never expire.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

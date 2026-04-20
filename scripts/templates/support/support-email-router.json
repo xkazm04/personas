@@ -5,11 +5,21 @@
   "description": "Triages incoming Gmail support emails with multi-signal priority classification, creates structured Notion tickets with SLA deadlines, and proactively escalates approaching SLA breaches.",
   "icon": "Mail",
   "color": "#dc2626",
-  "category": ["support"],
-  "service_flow": ["Gmail", "Notion", "Messages"],
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Notion",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Notion", "Messages"],
+    "service_flow": [
+      "Gmail",
+      "Notion",
+      "Messages"
+    ],
     "persona": {
       "goal": "No support email left behind, no SLA missed — read every email, assign evidence-based priority, file a Notion ticket with the right deadline, and escalate before breaches happen.",
       "identity": {
@@ -48,11 +58,15 @@
       "tool_guidance": "### Gmail (http_request + gmail connector)\n- `GET /gmail/v1/users/me/messages?q=is:unread&maxResults=50` — list unread.\n- `GET /gmail/v1/users/me/messages/{id}?format=full` — fetch headers + body. Use `internalDate` for SLA start.\n- `POST /gmail/v1/users/me/messages/{id}/modify` body `{ \"removeLabelIds\": [\"UNREAD\"], \"addLabelIds\": [\"Label_support_processed\"] }` — mark read + label in one call.\n- Create label if missing: `POST /gmail/v1/users/me/labels` with `{ \"name\": \"Support/Processed\", \"labelListVisibility\": \"labelShow\", \"messageListVisibility\": \"show\" }`.\n- Quota: 250 units/sec; 50-email cycle ≈ 750 units over ~3s.\n\n### Notion (http_request + notion connector)\n- Create ticket: `POST /v1/pages` with database_id parent and properties (Title, Priority, Status=New, Category, Customer Email, Customer Name, SLA Deadline, Created At, Source Email ID, Classification Confidence, Agent Notes). Body = email content as blocks.\n- SLA query: `POST /v1/databases/{database_id}/query` filter `{ and: [ status ≠ Resolved, status ≠ Closed, SLA Deadline ≤ warning_threshold ] }`.\n- Breach update: `PATCH /v1/pages/{page_id}` body `{ properties: { Status: { select: { name: 'SLA Breached' } } } }`.\nHeaders: `Authorization: Bearer {api_key}`, `Notion-Version: 2022-06-28`.\n- Rate limit: 3 req/sec — insert 400ms delay on large batches.\n\n### SLA math\n- SLA deadline = Gmail internalDate + sla_hours[priority].\n- elapsed_pct = (now - Gmail internalDate) / sla_hours[priority].\n- Warning threshold default 80%.\n\n### State files (file_read / file_write)\n- processed_email_ids.json — dedup map.\n- Memory: sender_profiles, vip_domains, correction_history, sla_breach_log.",
       "error_handling": "Gmail 401 → attempt refresh_token refresh; on failure emit support.connector.auth_failed + user_message. Inbox unwatched is a P0. Gmail 403 → send user_message listing missing scopes. Gmail 429 → back off 1s; persistent → reduce batch to 20. Gmail 5xx → retry 3× exponential (1/2/4s); then skip cycle (next cycle picks up unread emails). Notion 401 → emit support.connector.auth_failed; do NOT mark Gmail as read so retry is automatic. Notion 400 → log failing property, manual_review explaining the schema mismatch, continue with others. Notion 404 (database) → halt ticket creation, emit event. Notion 429 → queue + drain at 2 req/sec. Classification confidence < threshold → manual_review, no ticket. Conflicting signals (urgent words + trivial impact) → classify on impact, note discrepancy. Non-English email → manual_review. Empty body → Low priority ticket with note; include raw headers. State file corrupt → rebuild from Gmail Support/Processed label — any labeled email is already ticketed. Duplicate email (same sender + similar subject within 24h) → add note to existing ticket, don't create new. Clock skew → use Gmail internalDate, not agent time.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -87,11 +101,11 @@
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API.\n2. Credentials → Create Credentials → OAuth 2.0 Client ID (Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete OAuth consent flow with scopes gmail.readonly, gmail.modify, gmail.labels.\n5. Paste all three values."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "ticket_database",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
@@ -135,10 +149,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/3 * * * *" },
+          "config": {
+            "cron": "*/3 * * * *"
+          },
           "description": "Default every 3 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "notion"],
+        "connectors": [
+          "email",
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "messaging",
@@ -222,30 +241,104 @@
           "max_per_cycle": 50,
           "categories": "{{param.aq_categories}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Polling tick" },
-            { "id": "t2", "type": "connector", "label": "Fetch unread emails + full content", "connector": "gmail" },
-            { "id": "t3", "type": "action", "label": "Dedup + classify + score confidence" },
-            { "id": "t4", "type": "decision", "label": "Confidence >= threshold?" },
-            { "id": "t5", "type": "connector", "label": "Create Notion ticket with SLA", "connector": "notion" },
-            { "id": "t6", "type": "action", "label": "Submit manual_review" },
-            { "id": "t7", "type": "connector", "label": "Mark read + apply Support/Processed label", "connector": "gmail" },
-            { "id": "t8", "type": "event", "label": "Emit support.ticket.created + persist state" },
-            { "id": "t9", "type": "end", "label": "Triage cycle complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "Fetch unread emails + full content",
+              "connector": "email"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Dedup + classify + score confidence"
+            },
+            {
+              "id": "t4",
+              "type": "decision",
+              "label": "Confidence >= threshold?"
+            },
+            {
+              "id": "t5",
+              "type": "connector",
+              "label": "Create Notion ticket with SLA",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Submit manual_review"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Mark read + apply Support/Processed label",
+              "connector": "email"
+            },
+            {
+              "id": "t8",
+              "type": "event",
+              "label": "Emit support.ticket.created + persist state"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Triage cycle complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5", "label": "Yes", "variant": "yes" },
-            { "source": "t4", "target": "t6", "label": "No", "variant": "no" },
-            { "source": "t5", "target": "t7" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t6", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "t4",
+              "target": "t6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "t5",
+              "target": "t7"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t6",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       },
@@ -260,10 +353,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/3 * * * *" },
+          "config": {
+            "cron": "*/3 * * * *"
+          },
           "description": "Default every 3 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "messaging",
@@ -313,31 +410,107 @@
           "warning_percent": "{{param.aq_warning_percent}}",
           "critical_percent": 90
         },
-        "tool_hints": ["http_request"],
+        "tool_hints": [
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "SLA check tick" },
-            { "id": "s2", "type": "connector", "label": "Query open tickets near SLA", "connector": "notion" },
-            { "id": "s3", "type": "action", "label": "Compute elapsed_pct per ticket" },
-            { "id": "s4", "type": "decision", "label": "Escalation stage?" },
-            { "id": "s5", "type": "action", "label": "Send warning message + emit sla.warning" },
-            { "id": "s6", "type": "action", "label": "manual_review (critical, unassigned)" },
-            { "id": "s7", "type": "connector", "label": "PATCH Status = SLA Breached + emit sla.breached", "connector": "notion" },
-            { "id": "s8", "type": "action", "label": "Record metrics to memory" },
-            { "id": "s9", "type": "end", "label": "SLA check complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "SLA check tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Query open tickets near SLA",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Compute elapsed_pct per ticket"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Escalation stage?"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Send warning message + emit sla.warning"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "manual_review (critical, unassigned)"
+            },
+            {
+              "id": "s7",
+              "type": "connector",
+              "label": "PATCH Status = SLA Breached + emit sla.breached",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Record metrics to memory"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "SLA check complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5", "label": "80-89%", "variant": "yes" },
-            { "source": "s4", "target": "s6", "label": "90-99%", "variant": "no" },
-            { "source": "s4", "target": "s7", "label": ">=100%", "variant": "error" },
-            { "source": "s5", "target": "s8" },
-            { "source": "s6", "target": "s8" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "label": "80-89%",
+              "variant": "yes"
+            },
+            {
+              "source": "s4",
+              "target": "s6",
+              "label": "90-99%",
+              "variant": "no"
+            },
+            {
+              "source": "s4",
+              "target": "s7",
+              "label": ">=100%",
+              "variant": "error"
+            },
+            {
+              "source": "s5",
+              "target": "s8"
+            },
+            {
+              "source": "s6",
+              "target": "s8"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       }
@@ -346,7 +519,9 @@
       {
         "id": "aq_categories",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage"],
+        "use_case_ids": [
+          "uc_email_triage"
+        ],
         "category": "configuration",
         "question": "Which routing categories should tickets use?",
         "type": "select",
@@ -364,11 +539,19 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage"],
+        "use_case_ids": [
+          "uc_email_triage"
+        ],
         "category": "quality",
         "question": "Below what classification confidence should an email route to manual review instead of auto-creating a ticket?",
         "type": "select",
-        "options": ["40", "50", "60", "70", "80"],
+        "options": [
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
         "default": "60",
         "maps_to": "use_cases[uc_email_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -378,11 +561,19 @@
       {
         "id": "aq_sla_high_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage", "uc_sla_monitor"],
+        "use_case_ids": [
+          "uc_email_triage",
+          "uc_sla_monitor"
+        ],
         "category": "configuration",
         "question": "SLA hours for High-priority tickets?",
         "type": "select",
-        "options": ["1", "2", "4", "8"],
+        "options": [
+          "1",
+          "2",
+          "4",
+          "8"
+        ],
         "default": "4",
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_high_hours",
         "variable_name": "sla_high_hours",
@@ -392,11 +583,19 @@
       {
         "id": "aq_sla_medium_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage", "uc_sla_monitor"],
+        "use_case_ids": [
+          "uc_email_triage",
+          "uc_sla_monitor"
+        ],
         "category": "configuration",
         "question": "SLA hours for Medium-priority tickets?",
         "type": "select",
-        "options": ["8", "12", "24", "48"],
+        "options": [
+          "8",
+          "12",
+          "24",
+          "48"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_medium_hours",
         "variable_name": "sla_medium_hours",
@@ -406,11 +605,19 @@
       {
         "id": "aq_sla_low_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage", "uc_sla_monitor"],
+        "use_case_ids": [
+          "uc_email_triage",
+          "uc_sla_monitor"
+        ],
         "category": "configuration",
         "question": "SLA hours for Low-priority tickets?",
         "type": "select",
-        "options": ["24", "48", "72", "168"],
+        "options": [
+          "24",
+          "48",
+          "72",
+          "168"
+        ],
         "default": "72",
         "maps_to": "use_cases[uc_email_triage].sample_input.sla_low_hours",
         "variable_name": "sla_low_hours",
@@ -420,11 +627,18 @@
       {
         "id": "aq_warning_percent",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_monitor"],
+        "use_case_ids": [
+          "uc_sla_monitor"
+        ],
         "category": "configuration",
         "question": "At what percent of SLA elapsed should the warning fire?",
         "type": "select",
-        "options": ["60", "70", "80", "90"],
+        "options": [
+          "60",
+          "70",
+          "80",
+          "90"
+        ],
         "default": "80",
         "maps_to": "use_cases[uc_sla_monitor].sample_input.warning_percent",
         "variable_name": "warning_percent",
@@ -434,7 +648,9 @@
       {
         "id": "aq_notion_database",
         "scope": "connector",
-        "connector_names": ["notion"],
+        "connector_names": [
+          "knowledge_base"
+        ],
         "category": "configuration",
         "question": "Which Notion database should receive support tickets?",
         "type": "select",
@@ -445,12 +661,52 @@
         "context": "Must have columns: Title, Priority, Status, Category, Customer Email, Customer Name, SLA Deadline, Created At, Source Email ID, Classification Confidence, Agent Notes.",
         "dimension": "connectors",
         "vault_category": "database",
-        "option_service_types": ["notion"],
+        "option_service_types": [
+          "notion"
+        ],
         "dynamic_source": {
           "service_type": "notion",
           "operation": "list_databases",
           "source": "vault"
         }
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,23 @@
   "description": "Monitors Freshdesk for tickets breaching response-time SLAs, escalates urgent issues to Slack with full context, logs escalation patterns in Notion, and emails the support lead with a daily escalation summary.",
   "icon": "ArrowUpCircle",
   "color": "#14B8A6",
-  "category": ["support"],
-  "service_flow": ["Freshdesk", "Slack", "Notion", "Gmail"],
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Freshdesk",
+    "Slack",
+    "Notion",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Freshdesk", "Slack", "Notion", "Gmail"],
+    "service_flow": [
+      "Freshdesk",
+      "Slack",
+      "Notion",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Escalate the right ticket to the right person at the right time — detect SLA breaches fast, route by customer tier, flag repeat offenders, and give the lead one clean digest a day.",
       "identity": {
@@ -48,7 +60,12 @@
       "tool_guidance": "### Freshdesk (http_request + freshdesk connector)\n- `GET /api/v2/tickets?updated_since={iso}&include=requester,company&per_page=100` — Basic Auth, API key as username, 'X' as password.\n- `GET /api/v2/tickets/{id}?include=conversations` — full detail.\n- `GET /api/v2/companies/{id}` — tier lookup.\n- `GET /api/v2/sla_policies` — SLA policy reference (cached 6h).\n- Base URL: `https://{domain}.freshdesk.com/api/v2`.\n- Rate limit: ~80 req/min; on 429 back off 60s.\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` body `{ channel, blocks, text }`.\n- DM: `channel` = user_id (e.g. U012AB3CD).\n- Thread reply: include `thread_ts`.\n- Update: `POST /api/chat.update` with `ts` + `channel`.\nHeaders: `Authorization: Bearer {bot_token}`.\n\n### Notion (http_request + notion connector)\n- Query: `POST /v1/databases/{database_id}/query`.\n- Create: `POST /v1/pages` with database_id parent.\n- Update: `PATCH /v1/pages/{page_id}`.\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`.\n\n### Gmail (gmail_send native)\n- Daily summary: `to` = support lead email, subject `Support Escalation Summary — {date}`, HTML body.\n- Critical email alerts supplement Slack DM on repeat failures.\n\n### Severity matrix\n| Breach | Enterprise | Professional | Starter | Free |\n| --- | --- | --- | --- | --- |\n| first_response | Critical | High | High | Medium |\n| resolution | High | Medium | Medium | Low |\n| approaching (within warning_window_minutes) | Low | Low | Low | Low |\n\n### State file ./data/escalation_state.json\n- last_poll, escalated_tickets map, pending_slack queue, daily_counts. Prune entries >24h each cycle.",
       "error_handling": "Freshdesk 401 → emit support.escalation.degraded + Slack warning to the escalation channel; skip cycle. Freshdesk 429 → back off 60s; if persistent, widen polling interval. Slack 5xx → queue in pending_slack_messages; retry next cycle. After 3 failed cycles → fallback email to support lead. Notion 5xx → append to ./data/escalation_fallback.json; retry next cycle. Gmail send fail → retry once after 30s; then Slack fallback post. State file corrupt → reinit empty (may cause one cycle of duplicate alerts — acceptable vs missing breaches). >50 simultaneous breaches → single incident-summary Slack post + support.escalation.flood event. Tier unknown → default P3 + flag for manual tier assignment. Ticket without SLA policy → skip with anomaly log.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "freshdesk",
@@ -79,8 +96,8 @@
           "setup_instructions": "1. Log into Freshdesk admin account.\n2. Click profile picture → Profile Settings.\n3. Copy the API Key.\n4. Enter the API key and subdomain.\n5. Ensure the key's agent has access to all groups you want monitored."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -99,11 +116,11 @@
           "setup_instructions": "1. api.slack.com/apps → Create New App (or use existing).\n2. OAuth & Permissions → Scopes → add chat:write, chat:write.public, channels:read, users:read.\n3. Install to workspace.\n4. Copy the Bot User OAuth Token (xoxb-).\n5. Invite the bot to the escalation channel: /invite @YourBotName."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -127,8 +144,8 @@
           "setup_instructions": "1. notion.so/my-integrations → New integration → name 'Support Escalation Engine'.\n2. Capabilities: Read, Update, Insert content.\n3. Copy the Internal Integration Secret.\n4. Create an escalation database with properties: Ticket ID (Title), Subject (Text), Customer (Text), Tier (Select: Enterprise/Professional/Starter/Free), Breach Type (Select: first_response/resolution), Breach Duration (Number), Assigned Agent (Text), Escalation Time (Date), Resolution Time (Date), Status (Select: Open/Resolved/Repeat Offender), Freshdesk URL (URL), Slack Thread (URL).\n5. Share database with integration via ⋯ → Add connections.\n6. Copy the database ID from the URL."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -187,10 +204,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "interval_seconds": 120 },
+          "config": {
+            "interval_seconds": 120
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["freshdesk", "slack", "notion"],
+        "connectors": [
+          "freshdesk",
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -268,30 +291,105 @@
           "lead_user_id": "{{param.aq_lead_user_id}}",
           "require_confirmation": "{{param.aq_require_confirmation}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Polling tick" },
-            { "id": "n2", "type": "connector", "label": "Fetch open Freshdesk tickets", "connector": "freshdesk" },
-            { "id": "n3", "type": "action", "label": "Classify severity by breach type + tier" },
-            { "id": "n4", "type": "action", "label": "Dedup against state + run pattern checks (Notion)" },
-            { "id": "n5", "type": "connector", "label": "Post Block Kit to escalation channel", "connector": "slack" },
-            { "id": "n6", "type": "connector", "label": "DM support lead on Critical", "connector": "slack" },
-            { "id": "n7", "type": "connector", "label": "Log escalation entry", "connector": "notion" },
-            { "id": "n8", "type": "event", "label": "Emit support.escalation.breach + persist state" },
-            { "id": "n9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "Fetch open Freshdesk tickets",
+              "connector": "freshdesk"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Classify severity by breach type + tier"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Dedup against state + run pattern checks (Notion)"
+            },
+            {
+              "id": "n5",
+              "type": "connector",
+              "label": "Post Block Kit to escalation channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "n6",
+              "type": "connector",
+              "label": "DM support lead on Critical",
+              "connector": "messaging"
+            },
+            {
+              "id": "n7",
+              "type": "connector",
+              "label": "Log escalation entry",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n8",
+              "type": "event",
+              "label": "Emit support.escalation.breach + persist state"
+            },
+            {
+              "id": "n9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6", "label": "Critical", "variant": "yes" },
-            { "source": "n5", "target": "n7", "label": "Non-Critical", "variant": "no" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6",
+              "label": "Critical",
+              "variant": "yes"
+            },
+            {
+              "source": "n5",
+              "target": "n7",
+              "label": "Non-Critical",
+              "variant": "no"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            }
           ]
         }
       },
@@ -306,10 +404,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 18 * * 1-5" },
+          "config": {
+            "cron": "0 18 * * 1-5"
+          },
           "description": "Default weekdays 6 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "gmail", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "email",
@@ -356,25 +460,77 @@
           "lead_email": "{{param.aq_lead_email}}",
           "trend_alert_threshold": 120
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Weekday 6 PM tick" },
-            { "id": "d2", "type": "connector", "label": "Query today + 7-day Notion history", "connector": "notion" },
-            { "id": "d3", "type": "action", "label": "Compile stats + trend vs 7d avg" },
-            { "id": "d4", "type": "action", "label": "Generate recommendations if >threshold" },
-            { "id": "d5", "type": "connector", "label": "Send HTML digest email", "connector": "gmail" },
-            { "id": "d6", "type": "event", "label": "Emit support.escalation.digest" },
-            { "id": "d7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Weekday 6 PM tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Query today + 7-day Notion history",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compile stats + trend vs 7d avg"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Generate recommendations if >threshold"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Send HTML digest email",
+              "connector": "email"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit support.escalation.digest"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       }
@@ -383,11 +539,18 @@
       {
         "id": "aq_warning_window",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "How far in advance of an SLA deadline should the early-warning alert fire?",
         "type": "select",
-        "options": ["0", "15", "30", "60"],
+        "options": [
+          "0",
+          "15",
+          "30",
+          "60"
+        ],
         "default": "15",
         "maps_to": "use_cases[uc_sla_watch].sample_input.warning_window_minutes",
         "variable_name": "warning_window",
@@ -397,7 +560,9 @@
       {
         "id": "aq_tiers_enabled",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "boundaries",
         "question": "Which customer tiers should breach detection include?",
         "type": "select",
@@ -415,7 +580,9 @@
       {
         "id": "aq_escalation_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives SLA escalation alerts?",
         "type": "select",
@@ -426,7 +593,9 @@
         "context": "All Block Kit escalation posts land here. Use a dedicated channel — this can get noisy during incidents.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
@@ -436,7 +605,9 @@
       {
         "id": "aq_lead_user_id",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "Slack user ID of the support lead for Critical-breach DMs?",
         "type": "text",
@@ -449,7 +620,9 @@
       {
         "id": "aq_require_confirmation",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "boundaries",
         "question": "Should Critical escalations require human confirmation before posting to Slack?",
         "type": "boolean",
@@ -462,7 +635,9 @@
       {
         "id": "aq_lead_email",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_digest"],
+        "use_case_ids": [
+          "uc_daily_digest"
+        ],
         "category": "configuration",
         "question": "Email address of the support lead for the daily digest?",
         "type": "text",
@@ -471,6 +646,63 @@
         "variable_name": "lead_email",
         "context": "Recipient of the HTML escalation digest sent each evening.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

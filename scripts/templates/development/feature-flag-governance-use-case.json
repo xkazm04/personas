@@ -5,11 +5,23 @@
   "description": "Monitors LaunchDarkly for flag changes, posts change audit logs to Slack, creates Linear cleanup tickets for flags older than 90 days, and maintains a Notion feature flag registry. Prevents flag naming collisions.",
   "icon": "Flag",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["LaunchDarkly", "Slack", "Linear", "Notion"],
+  "service_flow": [
+    "LaunchDarkly",
+    "Slack",
+    "Linear",
+    "Notion"
+  ],
   "payload": {
-    "service_flow": ["LaunchDarkly", "Slack", "Linear", "Notion"],
+    "service_flow": [
+      "LaunchDarkly",
+      "Slack",
+      "Linear",
+      "Notion"
+    ],
     "persona": {
       "goal": "Keep the LaunchDarkly flag estate clean — audit every change in Slack, catch naming collisions on create, retire flags that have been stale for 90+ days, and keep Notion as the single source of truth.",
       "identity": {
@@ -46,7 +58,11 @@
       "tool_guidance": "### LaunchDarkly (http_request)\nBase: `https://app.launchdarkly.com/api/v2`\nAuth: `Authorization: {api_token}`\n- `GET /flags/{projectKey}?summary=true` — all flags for a project\n- `GET /flags/{projectKey}/{featureFlagKey}` — single flag detail\n- `GET /flags/{projectKey}/{featureFlagKey}/metrics` — evaluation metrics (drives the 'zero recent evaluations' check)\nWebhook payload arrives via the webhook trigger with the full event object.\n\n### Slack (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — body: `{channel, blocks, text, attachments}`\n- Use Block Kit for audit cards: header block + section with flag metadata fields + context block with actor/timestamp\n- Color attachments by severity: `#2eb886` create, `#daa038` modify, `#e01e5a` delete/archive, `#d00000` collision\n\n### Linear (http_request — GraphQL)\nBase: `https://api.linear.app/graphql`\nAuth: `Authorization: {api_key}`\n- Query existing: `{ issues(filter: {title: {contains: \"{flag-key}\"}, team: {id: {eq: \"{team_id}\"}}, state: {type: {neq: \"completed\"}}}) { nodes { id, title } } }`\n- Create: `mutation { issueCreate(input: {title, description, teamId, priority, labelIds}) { success, issue { id, url } } }`\n- Resolve team ID by name: `{ teams { nodes { id, name } } }` (cache in agent_memory after first lookup)\n\n### Notion (http_request)\nBase: `https://api.notion.com/v1`\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`\n- Query: `POST /databases/{db_id}/query` with filter on Flag Key property\n- Create: `POST /pages` with parent `{database_id}` and properties matching the registry schema\n- Update: `PATCH /pages/{page_id}`\n\n### Notion registry schema (per entry)\n- Flag Key (title), Display Name (text), Kind (select: boolean / multivariate), Project (text), Created Date (date), Last Modified (date), Owner Team (text), Status (select: Active / Stale / Cleanup Pending / Archived / Governance Review), Linear Ticket (url), Governance Notes (text), LaunchDarkly URL (url)\n\n### Local state (file_read / file_write)\n- `data/flag_governance_state.json` — `{lastProcessedWebhookIds: string[], lastWeeklyScanTs: string, queuedSlackMessages: [...]}`. Read before processing each webhook to dedupe. Write after every completed event.\n- `data/flag_naming_rules.json` — team's enforced convention: `{pattern, allowedPrefixes, blocklist, maxLength, nearMatchTokens}`.\n\n### Naming collision algorithm\n- Exact: `newKey === existingKey` → CRITICAL\n- Near-match: both keys split by `-`, compare first `nearMatchTokens` (default 3) — match ⇒ WARNING\n- Violation: key fails lowercase / prefix / length / blocklist checks → WARNING with specific violation noted",
       "error_handling": "LaunchDarkly 401 → post to Slack that API token needs rotation, emit `flag.governance.error`, halt uc_flag_audit. LaunchDarkly 429 → respect `Retry-After`, retry once, log. LaunchDarkly 5xx → exponential backoff (30s, 60s, 120s), max 3 attempts, then post 'flag sync delayed' warning. Slack post failure → queue message in `data/flag_governance_state.json.queuedSlackMessages`; flush queue on next event. Never drop an audit record — Notion update proceeds regardless of Slack outcome. Notion API failure → post Slack warning '[key] not recorded in Notion — manual entry required'; do NOT skip silently. Linear duplicate-ticket guard: always query before create; on 422 'already exists' update description instead. Duplicate webhook delivery → check `lastProcessedWebhookIds`; if present, skip. Missing `notion_flag_db_id` or `linear_team_id` in agent_memory → emit `user_message` with setup prompt, halt. Reconciliation API failures → abort cleanly, do not write partial state.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "launchdarkly",
@@ -77,8 +93,8 @@
           "setup_instructions": "1. Log in to LaunchDarkly and navigate to Account Settings -> Authorization.\n2. Click 'Create Token' under Access Tokens.\n3. Name it 'Governance Agent' and select Reader role (or Writer if the agent should update flag metadata).\n4. Copy the token immediately — it won't be shown again.\n5. Find your Project Key in Account Settings -> Projects.\n6. In LaunchDarkly -> Integrations -> Webhooks, create a new webhook pointing to your Personas webhook URL for uc_flag_audit. Enable all flag-related events.\n7. Optionally add a webhook signing secret and configure the X-LD-Signature header for validation."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -97,11 +113,11 @@
           "setup_instructions": "1. Go to api.slack.com/apps and click 'Create New App' -> 'From scratch'.\n2. Name it 'Feature Flag Governance' and select your workspace.\n3. OAuth & Permissions -> Bot Token Scopes: chat:write, chat:write.public.\n4. Install to workspace and authorize. Copy the Bot User OAuth Token.\n5. Invite the bot to your audit channel (e.g., #feature-flags-audit): /invite @feature-flag-governance."
         },
         {
-          "name": "linear",
-          "label": "Linear",
+          "name": "ticketing",
+          "label": "Ticketing System",
           "auth_type": "api_key",
           "role": "project_tracking",
-          "category": "development",
+          "category": "ticketing",
           "required": true,
           "api_base_url": "https://api.linear.app/graphql",
           "credential_fields": [
@@ -125,11 +141,11 @@
           "setup_instructions": "1. Linear -> Settings -> API -> Personal API keys -> 'Create key'.\n2. Name it 'Flag Governance Agent'. Copy the generated key (starts with lin_api_).\n3. Note your team's exact name — the agent resolves it to a team ID via GraphQL on first run.\n4. Optionally create a 'flag-cleanup' label in your team's Label settings for automatic tagging."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -180,7 +196,12 @@
           },
           "description": "LaunchDarkly webhook receives real-time flag lifecycle events (created, updated, toggled, deleted, archived). Not configurable at trigger-composition — event-driven."
         },
-        "connectors": ["launchdarkly", "slack", "linear", "notion"],
+        "connectors": [
+          "launchdarkly",
+          "messaging",
+          "ticketing",
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -226,7 +247,11 @@
           {
             "name": "autonomy_level",
             "type": "enum",
-            "options": ["collision_blocks", "advisory", "off"],
+            "options": [
+              "collision_blocks",
+              "advisory",
+              "off"
+            ],
             "default": "advisory",
             "description": "Governance stance on collisions. 'collision_blocks' halts and routes to manual_review; 'advisory' alerts but lets the create stand; 'off' logs only."
           }
@@ -236,33 +261,122 @@
           "near_match_tokens": 3,
           "autonomy_level": "{{param.aq_autonomy_level}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "LaunchDarkly webhook fires" },
-            { "id": "a2", "type": "action", "label": "Dedupe via lastProcessedWebhookIds" },
-            { "id": "a3", "type": "decision", "label": "Is CREATE event?" },
-            { "id": "a4", "type": "connector", "label": "Fetch flags + query Notion for collisions", "connector": "launchdarkly" },
-            { "id": "a5", "type": "decision", "label": "Collision or violation?" },
-            { "id": "a6", "type": "connector", "label": "Post CRITICAL alert + create Linear ticket", "connector": "slack" },
-            { "id": "a7", "type": "connector", "label": "Post Block Kit audit card to Slack", "connector": "slack" },
-            { "id": "a8", "type": "connector", "label": "Upsert Notion registry entry", "connector": "notion" },
-            { "id": "a9", "type": "event", "label": "Emit flag.governance.audited / .collision" },
-            { "id": "a10", "type": "end", "label": "Audit complete" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "LaunchDarkly webhook fires"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Dedupe via lastProcessedWebhookIds"
+            },
+            {
+              "id": "a3",
+              "type": "decision",
+              "label": "Is CREATE event?"
+            },
+            {
+              "id": "a4",
+              "type": "connector",
+              "label": "Fetch flags + query Notion for collisions",
+              "connector": "launchdarkly"
+            },
+            {
+              "id": "a5",
+              "type": "decision",
+              "label": "Collision or violation?"
+            },
+            {
+              "id": "a6",
+              "type": "connector",
+              "label": "Post CRITICAL alert + create Linear ticket",
+              "connector": "messaging"
+            },
+            {
+              "id": "a7",
+              "type": "connector",
+              "label": "Post Block Kit audit card to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "a8",
+              "type": "connector",
+              "label": "Upsert Notion registry entry",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "a9",
+              "type": "event",
+              "label": "Emit flag.governance.audited / .collision"
+            },
+            {
+              "id": "a10",
+              "type": "end",
+              "label": "Audit complete"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4", "variant": "yes", "label": "Create" },
-            { "source": "a3", "target": "a7", "variant": "no", "label": "Update/delete" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6", "variant": "yes", "label": "Yes" },
-            { "source": "a5", "target": "a7", "variant": "no", "label": "Clean" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" },
-            { "source": "a9", "target": "a10" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4",
+              "variant": "yes",
+              "label": "Create"
+            },
+            {
+              "source": "a3",
+              "target": "a7",
+              "variant": "no",
+              "label": "Update/delete"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "a5",
+              "target": "a7",
+              "variant": "no",
+              "label": "Clean"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            },
+            {
+              "source": "a9",
+              "target": "a10"
+            }
           ]
         }
       },
@@ -277,10 +391,18 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "UTC" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "UTC"
+          },
           "description": "Default weekly Monday 09:00 UTC — final cadence set at the trigger-composition step."
         },
-        "connectors": ["launchdarkly", "linear", "notion", "slack"],
+        "connectors": [
+          "launchdarkly",
+          "ticketing",
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -323,30 +445,105 @@
           "stale_threshold_days": "{{param.aq_stale_threshold_days}}",
           "ld_project_keys": "{{param.aq_ld_project_keys}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Scheduled tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch all flags from LD", "connector": "launchdarkly" },
-            { "id": "s3", "type": "action", "label": "Filter stale (> threshold + no activity)" },
-            { "id": "s4", "type": "decision", "label": "Any stale flags?" },
-            { "id": "s5", "type": "connector", "label": "Query Linear for existing cleanup tickets", "connector": "linear" },
-            { "id": "s6", "type": "connector", "label": "Create missing Linear tickets + update Notion entries", "connector": "linear" },
-            { "id": "s7", "type": "connector", "label": "Post weekly digest to Slack", "connector": "slack" },
-            { "id": "s8", "type": "event", "label": "Emit flag.governance.stale_scan_completed" },
-            { "id": "s9", "type": "end", "label": "Scan complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch all flags from LD",
+              "connector": "launchdarkly"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Filter stale (> threshold + no activity)"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Any stale flags?"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Query Linear for existing cleanup tickets",
+              "connector": "ticketing"
+            },
+            {
+              "id": "s6",
+              "type": "connector",
+              "label": "Create missing Linear tickets + update Notion entries",
+              "connector": "ticketing"
+            },
+            {
+              "id": "s7",
+              "type": "connector",
+              "label": "Post weekly digest to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "s8",
+              "type": "event",
+              "label": "Emit flag.governance.stale_scan_completed"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Scan complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5", "variant": "yes", "label": "Yes" },
-            { "source": "s4", "target": "s7", "variant": "no", "label": "None" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "s4",
+              "target": "s7",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -361,10 +558,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 2 1 * *", "timezone": "UTC" },
+          "config": {
+            "cron": "0 2 1 * *",
+            "timezone": "UTC"
+          },
           "description": "Default monthly on the 1st at 02:00 UTC — final cadence set at the trigger-composition step. Also invokable manually."
         },
-        "connectors": ["launchdarkly", "notion", "slack"],
+        "connectors": [
+          "launchdarkly",
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -389,27 +593,88 @@
         "error_handling": "Either API fail → abort reconciliation, post Slack warning, do NOT write partial results. This capability is read-heavy — the cost of half-finishing is far higher than skipping.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Scheduled or manual invoke" },
-            { "id": "r2", "type": "connector", "label": "Fetch all LD flags", "connector": "launchdarkly" },
-            { "id": "r3", "type": "connector", "label": "Fetch all Notion entries", "connector": "notion" },
-            { "id": "r4", "type": "action", "label": "Compute diff (missing / orphaned)" },
-            { "id": "r5", "type": "connector", "label": "Create missing + archive orphaned Notion entries", "connector": "notion" },
-            { "id": "r6", "type": "connector", "label": "Post reconciliation summary", "connector": "slack" },
-            { "id": "r7", "type": "event", "label": "Emit flag.governance.reconciled" },
-            { "id": "r8", "type": "end", "label": "Reconciliation complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Scheduled or manual invoke"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Fetch all LD flags",
+              "connector": "launchdarkly"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "Fetch all Notion entries",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Compute diff (missing / orphaned)"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Create missing + archive orphaned Notion entries",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Post reconciliation summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit flag.governance.reconciled"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Reconciliation complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       }
@@ -418,7 +683,9 @@
       {
         "id": "aq_slack_audit_channel",
         "scope": "connector",
-        "connector_names": ["slack"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive flag audit posts, collision alerts, and weekly digests?",
         "type": "select",
@@ -428,7 +695,9 @@
         "context": "Block Kit audit cards and the weekly stale-flag digest both land here. Pick a low-noise governance channel.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -437,7 +706,9 @@
       {
         "id": "aq_naming_convention",
         "scope": "capability",
-        "use_case_ids": ["uc_flag_audit"],
+        "use_case_ids": [
+          "uc_flag_audit"
+        ],
         "category": "configuration",
         "question": "What flag naming convention does your team enforce?",
         "type": "text",
@@ -450,7 +721,9 @@
       {
         "id": "aq_autonomy_level",
         "scope": "capability",
-        "use_case_ids": ["uc_flag_audit"],
+        "use_case_ids": [
+          "uc_flag_audit"
+        ],
         "category": "boundaries",
         "question": "How autonomously should the agent act on naming collisions?",
         "type": "select",
@@ -468,11 +741,18 @@
       {
         "id": "aq_stale_threshold_days",
         "scope": "capability",
-        "use_case_ids": ["uc_stale_cleanup"],
+        "use_case_ids": [
+          "uc_stale_cleanup"
+        ],
         "category": "configuration",
         "question": "After how many days of inactivity should a flag be flagged stale?",
         "type": "select",
-        "options": ["30", "60", "90", "180"],
+        "options": [
+          "30",
+          "60",
+          "90",
+          "180"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_stale_cleanup].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",
@@ -482,7 +762,9 @@
       {
         "id": "aq_ld_project_keys",
         "scope": "capability",
-        "use_case_ids": ["uc_stale_cleanup"],
+        "use_case_ids": [
+          "uc_stale_cleanup"
+        ],
         "category": "configuration",
         "question": "Which LaunchDarkly project keys should the weekly scan cover? (comma-separated, leave empty for default)",
         "type": "text",
@@ -491,6 +773,63 @@
         "variable_name": "ld_project_keys",
         "context": "Scans the configured projects for stale flags. Empty uses only the default project key from the LaunchDarkly connector credential.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_ticketing_credential",
+        "scope": "connector",
+        "connector_names": [
+          "ticketing"
+        ],
+        "category": "configuration",
+        "question": "Which ticketing system should this persona write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "ticketing",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
+        "variable_name": "ticketing_credential",
+        "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

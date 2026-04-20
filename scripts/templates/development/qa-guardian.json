@@ -5,11 +5,21 @@
   "description": "Autonomous code reviewer that reacts to pull requests, analyzes code quality and security via the codebase connector, runs tests, scores PRs on a 1-10 scale, posts structured review comments on GitHub, and writes missing tests when coverage is poor. Designed as a companion to Dev Clone but works with any PR workflow.",
   "icon": "ShieldCheck",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["GitHub", "Codebase", "Messages"],
+  "service_flow": [
+    "GitHub",
+    "Codebase",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["GitHub", "Codebase", "Messages"],
+    "service_flow": [
+      "GitHub",
+      "Codebase",
+      "Messages"
+    ],
     "persona": {
       "goal": "Be the always-on senior reviewer — fetch every PR, score it across five dimensions, post structured GitHub reviews, and when coverage is thin, write the missing tests.",
       "identity": {
@@ -46,7 +56,11 @@
       "tool_guidance": "### GitHub REST API (http_request)\nBase: `https://api.github.com`\nAuth: `Authorization: Bearer {GITHUB_PAT}`\n\n- `GET /repos/{owner}/{repo}/pulls/{n}` — PR metadata\n- `GET /repos/{owner}/{repo}/pulls/{n}` with `Accept: application/vnd.github.diff` — unified diff\n- `GET /repos/{owner}/{repo}/pulls/{n}/files` — changed files with patches\n- `POST /repos/{owner}/{repo}/pulls/{n}/reviews` — formal review. Body: `{body, event: APPROVE|REQUEST_CHANGES|COMMENT, comments: [{path, position, body}]}`. `position` is the line number within the diff hunk, not the file.\n- `POST /repos/{owner}/{repo}/pulls/{n}/comments/{comment_id}/replies` — reply inline\n- `GET /repos/{owner}/{repo}/commits/{ref}/check-runs` — CI status\n\nRate limit: 5000 req/hr PAT auth. On 422 'cannot review own PR': fall back to POST a regular issue comment instead.\n\n### Codebase connector\n- `read_file(path)` — full file context beyond the diff\n- `search_code(query)` — pattern compliance + test pattern discovery\n- `search_across_projects(query)` — cross-project convention check\n- `get_context_detail(module)` — architecture context for boundary checks\n- `analyze_cross_impact(files)` — will PR changes affect other projects?\n- `get_dependency_graph()` — detect circular dependencies\n- `run_tests()` — execute full suite on the PR branch; returns pass/fail per test, duration\n- `apply_diff(file, diff)` — write test files (uc_test_remediation only)\n- `commit_changes(message)` — commit written tests to PR branch\n\n### Scoring matrix\n| Dimension | Weight | Criteria |\n|---|---|---|\n| Correctness | 30% | PR does what its description claims; edge cases handled. |\n| Security | 20% | No auth gaps, injection vectors, secret leaks, or unsafe deserialization. |\n| Code Quality | 20% | Follows codebase patterns; clean naming; appropriate abstractions. |\n| Test Coverage | 15% | New code has tests; existing tests pass. |\n| Architecture | 15% | Respects module boundaries; no unintended cross-project impact. |\n\nComposite = weighted average. Apply per-module, per-author memory adjustments.\n\nVerdict thresholds:\n- Score ≥ `{{param.approve_threshold}}` → APPROVE\n- Score in [5, threshold) → COMMENT\n- Score < 5 → REQUEST_CHANGES\n\n### Local state\n- `data/qa_config.json` — {dimension_weights, approve_threshold, connected_repos}\n- `data/review_history.json` — {[pr_number]: {score, verdict, dimension_breakdown, findings, outcome}}\n- `data/latest_review.json` — fallback when Messages fails",
       "error_handling": "GitHub 401/403 → Messages alert that PAT needs rotation; do not retry. GitHub 404 → PR closed/deleted between event and processing; skip silently. GitHub 422 'cannot review own PR' → fall back to issue comment. GitHub 429 → pause until `X-RateLimit-Reset`, queue pending reviews. Codebase connector offline → review based on GitHub diff alone; note the degraded analysis in the review; score conservatively. `run_tests` fails to execute → fall back to GitHub CI status via `/check-runs`; note in review. Test remediation fails after 1 retry → discard test changes, flag in review 'test generation attempted but couldn't be validated'. Small PR (<10 lines config/typo) → don't penalize missing tests. Large PR (>500 lines) → add size as a finding. First run (no memory) → use default dimension weights; all conventions learned from scratch. Conflicting memory (approved+rejected same pattern) → weight the most recent 3 decisions. Messages delivery fails → save to `data/latest_review.json`; GitHub review is still the primary delivery.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -68,11 +82,11 @@
           "setup_instructions": "1. Install the Personas CLI or desktop app locally.\n2. Register a codebase at Settings -> Connectors -> Codebase -> Add.\n3. Point it at the repository root. Initial indexing takes 30-90s for most projects.\n4. QA Guardian picks the registered codebase automatically — if you have several, it asks you to choose during adoption."
         },
         {
-          "name": "github",
-          "label": "GitHub",
+          "name": "source_control",
+          "label": "Source Control",
           "auth_type": "api_key",
           "role": "vcs",
-          "category": "development",
+          "category": "source_control",
           "required": true,
           "api_base_url": "https://api.github.com",
           "credential_fields": [
@@ -124,10 +138,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "dev.pr.created" },
+          "config": {
+            "event_type": "dev.pr.created"
+          },
           "description": "Primary trigger: Dev Clone's dev.pr.created event. Secondary trigger: GitHub pull_request webhook — configured at connector setup. Event-driven; not configurable at the trigger-composition step."
         },
-        "connectors": ["codebase", "github"],
+        "connectors": [
+          "codebase",
+          "source_control"
+        ],
         "notification_channels": [
           {
             "type": "messaging",
@@ -185,7 +204,12 @@
           {
             "name": "dimension_weighting",
             "type": "enum",
-            "options": ["balanced", "security_first", "quality_focused", "test_driven"],
+            "options": [
+              "balanced",
+              "security_first",
+              "quality_focused",
+              "test_driven"
+            ],
             "default": "balanced",
             "description": "Initial dimension weight profile. Balanced: 30/20/20/15/15. Security-first: 25/35/15/15/10. Quality-focused: 25/10/30/20/15. Test-driven: 25/15/20/30/10."
           },
@@ -211,34 +235,123 @@
           "max_inline_comments": 10,
           "write_tests": "{{param.aq_write_tests}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "q1", "type": "start", "label": "PR event received" },
-            { "id": "q2", "type": "connector", "label": "Fetch diff + changed files", "connector": "github" },
-            { "id": "q3", "type": "connector", "label": "Analyze via codebase (patterns + security + architecture)", "connector": "codebase" },
-            { "id": "q4", "type": "connector", "label": "run_tests independently", "connector": "codebase" },
-            { "id": "q5", "type": "action", "label": "Compute 5-dim weighted score" },
-            { "id": "q6", "type": "decision", "label": "Coverage gaps + write_tests?" },
-            { "id": "q7", "type": "event", "label": "Emit qa.review.coverage_gap" },
-            { "id": "q8", "type": "connector", "label": "POST /pulls/{n}/reviews (APPROVE/COMMENT/REQUEST_CHANGES)", "connector": "github" },
-            { "id": "q9", "type": "action", "label": "Send Messages summary + persist to memory" },
-            { "id": "q10", "type": "event", "label": "Emit qa.review.completed" },
-            { "id": "q11", "type": "end", "label": "Review delivered" }
+            {
+              "id": "q1",
+              "type": "start",
+              "label": "PR event received"
+            },
+            {
+              "id": "q2",
+              "type": "connector",
+              "label": "Fetch diff + changed files",
+              "connector": "source_control"
+            },
+            {
+              "id": "q3",
+              "type": "connector",
+              "label": "Analyze via codebase (patterns + security + architecture)",
+              "connector": "codebase"
+            },
+            {
+              "id": "q4",
+              "type": "connector",
+              "label": "run_tests independently",
+              "connector": "codebase"
+            },
+            {
+              "id": "q5",
+              "type": "action",
+              "label": "Compute 5-dim weighted score"
+            },
+            {
+              "id": "q6",
+              "type": "decision",
+              "label": "Coverage gaps + write_tests?"
+            },
+            {
+              "id": "q7",
+              "type": "event",
+              "label": "Emit qa.review.coverage_gap"
+            },
+            {
+              "id": "q8",
+              "type": "connector",
+              "label": "POST /pulls/{n}/reviews (APPROVE/COMMENT/REQUEST_CHANGES)",
+              "connector": "source_control"
+            },
+            {
+              "id": "q9",
+              "type": "action",
+              "label": "Send Messages summary + persist to memory"
+            },
+            {
+              "id": "q10",
+              "type": "event",
+              "label": "Emit qa.review.completed"
+            },
+            {
+              "id": "q11",
+              "type": "end",
+              "label": "Review delivered"
+            }
           ],
           "edges": [
-            { "source": "q1", "target": "q2" },
-            { "source": "q2", "target": "q3" },
-            { "source": "q3", "target": "q4" },
-            { "source": "q4", "target": "q5" },
-            { "source": "q5", "target": "q6" },
-            { "source": "q6", "target": "q7", "variant": "yes", "label": "Gaps" },
-            { "source": "q6", "target": "q8", "variant": "no", "label": "Covered" },
-            { "source": "q7", "target": "q8" },
-            { "source": "q8", "target": "q9" },
-            { "source": "q9", "target": "q10" },
-            { "source": "q10", "target": "q11" }
+            {
+              "source": "q1",
+              "target": "q2"
+            },
+            {
+              "source": "q2",
+              "target": "q3"
+            },
+            {
+              "source": "q3",
+              "target": "q4"
+            },
+            {
+              "source": "q4",
+              "target": "q5"
+            },
+            {
+              "source": "q5",
+              "target": "q6"
+            },
+            {
+              "source": "q6",
+              "target": "q7",
+              "variant": "yes",
+              "label": "Gaps"
+            },
+            {
+              "source": "q6",
+              "target": "q8",
+              "variant": "no",
+              "label": "Covered"
+            },
+            {
+              "source": "q7",
+              "target": "q8"
+            },
+            {
+              "source": "q8",
+              "target": "q9"
+            },
+            {
+              "source": "q9",
+              "target": "q10"
+            },
+            {
+              "source": "q10",
+              "target": "q11"
+            }
           ]
         }
       },
@@ -253,10 +366,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "qa.review.coverage_gap" },
+          "config": {
+            "event_type": "qa.review.coverage_gap"
+          },
           "description": "Fires when uc_pr_review emits qa.review.coverage_gap. Event-driven; not configurable at the trigger-composition step."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -281,30 +398,104 @@
         "error_handling": "apply_diff conflict → regenerate diff from current file state, retry once. run_tests fails after 1 retry → discard changes via git reset, flag in review 'test generation attempted but couldn't be validated'. commit_changes fails → discard, flag in review.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "qa.review.coverage_gap received" },
-            { "id": "t2", "type": "connector", "label": "Analyze project test patterns", "connector": "codebase" },
-            { "id": "t3", "type": "connector", "label": "apply_diff to write test files", "connector": "codebase" },
-            { "id": "t4", "type": "connector", "label": "run_tests validation", "connector": "codebase" },
-            { "id": "t5", "type": "decision", "label": "Tests pass?" },
-            { "id": "t6", "type": "connector", "label": "commit_changes to PR branch", "connector": "codebase" },
-            { "id": "t7", "type": "action", "label": "Discard changes, flag in review" },
-            { "id": "t8", "type": "event", "label": "Emit qa.review.tests_added" },
-            { "id": "t9", "type": "end", "label": "Remediation complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "qa.review.coverage_gap received"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "Analyze project test patterns",
+              "connector": "codebase"
+            },
+            {
+              "id": "t3",
+              "type": "connector",
+              "label": "apply_diff to write test files",
+              "connector": "codebase"
+            },
+            {
+              "id": "t4",
+              "type": "connector",
+              "label": "run_tests validation",
+              "connector": "codebase"
+            },
+            {
+              "id": "t5",
+              "type": "decision",
+              "label": "Tests pass?"
+            },
+            {
+              "id": "t6",
+              "type": "connector",
+              "label": "commit_changes to PR branch",
+              "connector": "codebase"
+            },
+            {
+              "id": "t7",
+              "type": "action",
+              "label": "Discard changes, flag in review"
+            },
+            {
+              "id": "t8",
+              "type": "event",
+              "label": "Emit qa.review.tests_added"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Remediation complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6", "variant": "yes", "label": "Pass" },
-            { "source": "t5", "target": "t7", "variant": "no", "label": "Fail" },
-            { "source": "t6", "target": "t8" },
-            { "source": "t7", "target": "t9" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6",
+              "variant": "yes",
+              "label": "Pass"
+            },
+            {
+              "source": "t5",
+              "target": "t7",
+              "variant": "no",
+              "label": "Fail"
+            },
+            {
+              "source": "t6",
+              "target": "t8"
+            },
+            {
+              "source": "t7",
+              "target": "t9"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       }
@@ -313,7 +504,10 @@
       {
         "id": "aq_source_control",
         "scope": "connector",
-        "connector_names": ["github", "gitlab"],
+        "connector_names": [
+          "source_control",
+          "gitlab"
+        ],
         "category": "configuration",
         "question": "Which source-control credential should QA Guardian review PRs on?",
         "type": "select",
@@ -330,7 +524,9 @@
       {
         "id": "aq_target_codebase",
         "scope": "connector",
-        "connector_names": ["codebase"],
+        "connector_names": [
+          "codebase"
+        ],
         "category": "configuration",
         "question": "Which registered codebase should QA Guardian analyze and run tests against?",
         "type": "select",
@@ -342,7 +538,9 @@
         "dimension": "connectors",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
-        "option_service_types": ["codebase"],
+        "option_service_types": [
+          "codebase"
+        ],
         "dynamic_source": {
           "service_type": "codebase",
           "operation": "list_codebases"
@@ -351,11 +549,18 @@
       {
         "id": "aq_approve_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_review"],
+        "use_case_ids": [
+          "uc_pr_review"
+        ],
         "category": "configuration",
         "question": "What composite score should trigger an APPROVE review?",
         "type": "select",
-        "options": ["6", "7", "8", "9"],
+        "options": [
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_pr_review].sample_input.approve_threshold",
         "variable_name": "approve_threshold",
@@ -365,7 +570,9 @@
       {
         "id": "aq_dimension_weighting",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_review"],
+        "use_case_ids": [
+          "uc_pr_review"
+        ],
         "category": "configuration",
         "question": "Which review dimensions matter most for this codebase?",
         "type": "select",
@@ -384,7 +591,10 @@
       {
         "id": "aq_write_tests",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_review", "uc_test_remediation"],
+        "use_case_ids": [
+          "uc_pr_review",
+          "uc_test_remediation"
+        ],
         "category": "boundaries",
         "question": "Should QA Guardian write missing tests and commit them to the PR branch when coverage gaps are found?",
         "type": "boolean",

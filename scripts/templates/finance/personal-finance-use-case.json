@@ -5,11 +5,23 @@
   "description": "Syncs bank transactions from Plaid, categorizes spending, maintains a Google Sheets ledger, flags anomalous charges, and ships weekly spending summaries. Every flagged transaction carries evidence; budgets and recurring whitelists sharpen from review.",
   "icon": "Wallet",
   "color": "#22C55E",
-  "category": ["finance"],
-  "service_flow": ["Plaid", "Google Sheets", "Slack", "Gmail"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Plaid",
+    "Google Sheets",
+    "Slack",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Plaid", "Google Sheets", "Slack", "Gmail"],
+    "service_flow": [
+      "Plaid",
+      "Google Sheets",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Keep personal finances under control — a daily ledger, budget-aware alerts, and a weekly summary that respects the user's attention and learns from the charges they actually care about.",
       "identity": {
@@ -46,7 +58,12 @@
       "tool_guidance": "**Plaid API** (base `https://production.plaid.com`):\n- `POST /transactions/sync` — body `{client_id, secret, access_token, cursor}`; use `added[]` and `next_cursor`.\n- `POST /accounts/get` — account names + balances for context.\n- `GET /categories/get` — full category taxonomy (cache locally).\n\n**Google Sheets API** (base `https://sheets.googleapis.com/v4`):\n- `POST /spreadsheets/{id}/values/Transactions!A:H:append?valueInputOption=USER_ENTERED` — append rows: Date, Merchant, Amount, Category, Account, Plaid Category, Flagged, Notes.\n- `GET /spreadsheets/{id}/values/Budgets!A:C` — read category limits.\n- `PUT /spreadsheets/{id}/values/Summary!A2:D20?valueInputOption=USER_ENTERED` — update running totals.\n\n**Slack API** (base `https://slack.com/api`):\n- `POST /chat.postMessage` with `{channel, text, blocks}` — Block Kit for rich formatting.\n\n**Gmail** — `gmail_send` with HTML body for budget breach alerts, fraud-pattern escalations, and weekly reports.\n\n**Local state**:\n- `plaid_sync_state.json` — last cursor, last sync timestamp, account IDs, monthly totals cache.\n- `merchant_history.json` — known merchants + avg amounts + frequency (anomaly baseline).\n- `budget_config.json` — local fallback budget limits when Sheets is unreachable.\n- `anomaly_log.json` — scored charge history for pattern tracking.\n- `pending_transactions.json` — queue for Sheets-append retries.",
       "error_handling": "Plaid ITEM_LOGIN_REQUIRED → re-auth required; pause sync and alert via Slack+Gmail; continue weekly reports using cached data. Plaid 429 → back off 60s, then retry. Plaid cursor invalid → reset cursor and full-resync the last 30 days; dedupe against existing Sheets rows by transaction ID. Sheets 403 → alert user; fall back to local queue in `pending_transactions.json`. Sheets 429 → batch + exponential backoff (max 3 retries). Sheets spreadsheet not found → alert user; stop writes. Slack channel_not_found → fall back to Gmail-only; alert about misconfig. Slack invalid_auth → Gmail-only; alert user. Gmail auth failure → log locally; critical alerts fall back to Slack. Never drop transactions — if Sheets fails, queue locally and retry next cycle. Log every error to `finance_agent_errors.json` for debugging.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "plaid",
@@ -85,23 +102,38 @@
           "setup_instructions": "1. Sign up at https://dashboard.plaid.com and create a new application.\n2. Team Settings → Keys for Client ID + Secret (Sandbox for tests, Production for live).\n3. Integrate Plaid Link in a page to let the user connect their bank → generates an access_token.\n4. Enable the Transactions product in your Plaid app settings.\n5. Paste Client ID, Secret, and access_token above."
         },
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Google Sheets API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with scopes: spreadsheets, drive.file. 4. Paste client_id, client_secret, refresh_token above."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -129,24 +161,45 @@
           "setup_instructions": "1. api.slack.com/apps — create or select a Slack App.\n2. OAuth & Permissions → add bot scopes: chat:write, chat:write.public.\n3. Install to workspace → copy Bot User OAuth Token.\n4. Create a channel (e.g. #finance-alerts) and invite the bot (/invite @YourBotName)."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send scope. 4. Paste client_id, client_secret, refresh_token above."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "Real-time budget warnings, anomaly alerts, and condensed weekly summaries." },
-        { "type": "email", "description": "Detailed HTML budget alerts, fraud escalations, and weekly spending reports." }
+        {
+          "type": "slack",
+          "description": "Real-time budget warnings, anomaly alerts, and condensed weekly summaries."
+        },
+        {
+          "type": "email",
+          "description": "Detailed HTML budget alerts, fraud escalations, and weekly spending reports."
+        }
       ],
       "core_memories": []
     },
@@ -162,12 +215,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 07:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["plaid", "google_sheets"],
+        "connectors": [
+          "plaid",
+          "spreadsheet"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`plaid_sync_state.json` (cursor + monthly totals cache) and `merchant_history.json` (known merchants + average amounts). Drives anomaly baselines and dedupe."
@@ -199,14 +261,24 @@
           {
             "name": "anomaly_threshold",
             "type": "enum",
-            "options": ["200", "500", "1000", "2000"],
+            "options": [
+              "200",
+              "500",
+              "1000",
+              "2000"
+            ],
             "default": "500",
             "description": "Dollar amount above which a transaction is auto-flagged regardless of other signals."
           },
           {
             "name": "exclusions",
             "type": "enum",
-            "options": ["none", "investments", "internal_transfers", "both"],
+            "options": [
+              "none",
+              "investments",
+              "internal_transfers",
+              "both"
+            ],
             "default": "both",
             "description": "Which transaction types to exclude from alerts and reports."
           }
@@ -215,30 +287,103 @@
           "anomaly_threshold": "{{param.aq_anomaly_threshold}}",
           "exclusions": "{{param.aq_exclusions}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Daily tick" },
-            { "id": "s2", "type": "action", "label": "Load cursor + merchant history" },
-            { "id": "s3", "type": "connector", "label": "Plaid /transactions/sync", "connector": "plaid" },
-            { "id": "s4", "type": "action", "label": "Categorize + flag anomalies" },
-            { "id": "s5", "type": "connector", "label": "Append rows + update budget totals", "connector": "google_sheets" },
-            { "id": "s6", "type": "decision", "label": "Any budget threshold crossed?" },
-            { "id": "s7", "type": "event", "label": "Emit finance.budget.warning / exceeded / transaction.anomalous" },
-            { "id": "s8", "type": "action", "label": "Persist sync state" },
-            { "id": "s9", "type": "end", "label": "Sync complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load cursor + merchant history"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Plaid /transactions/sync",
+              "connector": "plaid"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Categorize + flag anomalies"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Append rows + update budget totals",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s6",
+              "type": "decision",
+              "label": "Any budget threshold crossed?"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit finance.budget.warning / exceeded / transaction.anomalous"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Persist sync state"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Sync complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7", "variant": "yes", "label": "Yes" },
-            { "source": "s6", "target": "s8", "variant": "no", "label": "No" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "s6",
+              "target": "s8",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -253,10 +398,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "finance.transaction.anomalous" },
+          "config": {
+            "event_type": "finance.transaction.anomalous"
+          },
           "description": "Fires on every flagged transaction from uc_transaction_sync. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["slack", "gmail"],
+        "connectors": [
+          "messaging",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -293,7 +443,12 @@
           {
             "name": "escalation_mode",
             "type": "enum",
-            "options": ["alert_only", "pause_sync_on_high", "auto_draft_dispute", "repeat_pattern_only"],
+            "options": [
+              "alert_only",
+              "pause_sync_on_high",
+              "auto_draft_dispute",
+              "repeat_pattern_only"
+            ],
             "default": "alert_only",
             "description": "What the agent does on a high-severity flag. 'alert_only' sends notifications; others add extra guardrails."
           }
@@ -302,29 +457,103 @@
           "whitelist_merchants": "{{param.aq_whitelist_merchants}}",
           "escalation_mode": "{{param.aq_escalation_mode}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "finance.transaction.anomalous received" },
-            { "id": "e2", "type": "action", "label": "Check whitelist + compute severity score" },
-            { "id": "e3", "type": "decision", "label": "Whitelisted?" },
-            { "id": "e4", "type": "decision", "label": "Score ≥ 5?" },
-            { "id": "e5", "type": "connector", "label": "Slack alert", "connector": "slack" },
-            { "id": "e6", "type": "connector", "label": "Gmail escalation with recommended actions", "connector": "gmail" },
-            { "id": "e7", "type": "event", "label": "Emit finance.anomaly.escalated / suppressed" },
-            { "id": "e8", "type": "end", "label": "Escalation complete" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "finance.transaction.anomalous received"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Check whitelist + compute severity score"
+            },
+            {
+              "id": "e3",
+              "type": "decision",
+              "label": "Whitelisted?"
+            },
+            {
+              "id": "e4",
+              "type": "decision",
+              "label": "Score ≥ 5?"
+            },
+            {
+              "id": "e5",
+              "type": "connector",
+              "label": "Slack alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "e6",
+              "type": "connector",
+              "label": "Gmail escalation with recommended actions",
+              "connector": "email"
+            },
+            {
+              "id": "e7",
+              "type": "event",
+              "label": "Emit finance.anomaly.escalated / suppressed"
+            },
+            {
+              "id": "e8",
+              "type": "end",
+              "label": "Escalation complete"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e7", "variant": "yes", "label": "Whitelisted — suppress" },
-            { "source": "e3", "target": "e4", "variant": "no", "label": "Not whitelisted" },
-            { "source": "e4", "target": "e5", "variant": "no", "label": "Score 3–4 — Slack only" },
-            { "source": "e4", "target": "e6", "variant": "yes", "label": "Score ≥ 5" },
-            { "source": "e5", "target": "e7" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e7",
+              "variant": "yes",
+              "label": "Whitelisted — suppress"
+            },
+            {
+              "source": "e3",
+              "target": "e4",
+              "variant": "no",
+              "label": "Not whitelisted"
+            },
+            {
+              "source": "e4",
+              "target": "e5",
+              "variant": "no",
+              "label": "Score 3–4 — Slack only"
+            },
+            {
+              "source": "e4",
+              "target": "e6",
+              "variant": "yes",
+              "label": "Score ≥ 5"
+            },
+            {
+              "source": "e5",
+              "target": "e7"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            }
           ]
         }
       },
@@ -339,15 +568,31 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 08:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_sheets", "slack", "gmail"],
-        "notification_channels": [
-          { "type": "slack", "description": "Condensed weekly Block Kit summary." },
-          { "type": "email", "description": "Detailed HTML weekly report." }
+        "connectors": [
+          "spreadsheet",
+          "messaging",
+          "email"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "slack",
+            "description": "Condensed weekly Block Kit summary."
+          },
+          {
+            "type": "email",
+            "description": "Detailed HTML weekly report."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Stores this week's snapshot for next week's WoW comparison."
@@ -364,7 +609,12 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["brief", "standard", "detailed", "executive"],
+            "options": [
+              "brief",
+              "standard",
+              "detailed",
+              "executive"
+            ],
             "default": "standard",
             "description": "Brief = top 3 categories only. Standard = all categories vs budget. Detailed = full transaction list + trends + recommendations. Executive = one-liner + Sheets link."
           }
@@ -372,27 +622,88 @@
         "sample_input": {
           "report_depth": "{{param.aq_report_depth}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick (Monday)" },
-            { "id": "w2", "type": "connector", "label": "Read week's transactions + budget limits", "connector": "google_sheets" },
-            { "id": "w3", "type": "action", "label": "Compute totals, top merchants, WoW delta" },
-            { "id": "w4", "type": "action", "label": "Format Slack Block Kit + HTML email bodies" },
-            { "id": "w5", "type": "connector", "label": "Post Slack summary", "connector": "slack" },
-            { "id": "w6", "type": "connector", "label": "Send Gmail detailed report", "connector": "gmail" },
-            { "id": "w7", "type": "event", "label": "Emit finance.report.weekly_delivered" },
-            { "id": "w8", "type": "end", "label": "Weekly report shipped" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick (Monday)"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Read week's transactions + budget limits",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute totals, top merchants, WoW delta"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Format Slack Block Kit + HTML email bodies"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "Post Slack summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "Send Gmail detailed report",
+              "connector": "email"
+            },
+            {
+              "id": "w7",
+              "type": "event",
+              "label": "Emit finance.report.weekly_delivered"
+            },
+            {
+              "id": "w8",
+              "type": "end",
+              "label": "Weekly report shipped"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            }
           ]
         }
       }
@@ -401,7 +712,9 @@
       {
         "id": "aq_anomaly_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_transaction_sync"],
+        "use_case_ids": [
+          "uc_transaction_sync"
+        ],
         "category": "configuration",
         "question": "At what transaction amount should an immediate anomaly alert be triggered?",
         "type": "select",
@@ -420,7 +733,9 @@
       {
         "id": "aq_exclusions",
         "scope": "capability",
-        "use_case_ids": ["uc_transaction_sync"],
+        "use_case_ids": [
+          "uc_transaction_sync"
+        ],
         "category": "boundaries",
         "question": "Which account types or categories should the sync exclude from reports and alerts?",
         "type": "select",
@@ -439,7 +754,9 @@
       {
         "id": "aq_whitelist_merchants",
         "scope": "capability",
-        "use_case_ids": ["uc_anomaly_escalation"],
+        "use_case_ids": [
+          "uc_anomaly_escalation"
+        ],
         "category": "memory",
         "question": "List recurring merchants or subscriptions that should never be flagged as anomalies.",
         "type": "text",
@@ -453,7 +770,9 @@
       {
         "id": "aq_escalation_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_anomaly_escalation"],
+        "use_case_ids": [
+          "uc_anomaly_escalation"
+        ],
         "category": "human_in_the_loop",
         "question": "For high-severity anomalies (foreign currency + $1,000+, multi-signal flags), what action should the agent take?",
         "type": "select",
@@ -472,7 +791,9 @@
       {
         "id": "aq_report_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_summary"],
+        "use_case_ids": [
+          "uc_weekly_summary"
+        ],
         "category": "quality",
         "question": "How detailed should the Monday weekly spending summary be?",
         "type": "select",
@@ -487,6 +808,63 @@
         "variable_name": "report_depth",
         "context": "Controls the verbosity of the Monday report across both the Slack summary and the Gmail detailed report.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

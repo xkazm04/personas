@@ -5,11 +5,23 @@
   "description": "Handles Clerk auth events (signup, email change, deletion), provisions user records in Supabase, sends onboarding email sequences via Gmail, and posts new user celebrations to Slack. Handles the full user lifecycle from sign-up to churn.",
   "icon": "UserCog",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Clerk", "Supabase", "Slack", "Gmail"],
+  "service_flow": [
+    "Clerk",
+    "Supabase",
+    "Slack",
+    "Gmail"
+  ],
   "payload": {
-    "service_flow": ["Clerk", "Supabase", "Slack", "Gmail"],
+    "service_flow": [
+      "Clerk",
+      "Supabase",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Own the user journey — provision on signup, drip onboarding emails, propagate email changes, soft-delete on churn — across Clerk, Supabase, Slack, and Gmail with idempotency and audit.",
       "identity": {
@@ -46,7 +58,12 @@
       "tool_guidance": "### Clerk (http_request)\nBase: `https://api.clerk.com/v1`\nAuth: `Authorization: Bearer {secret_key}`\n- `GET /users/{user_id}` — full user profile when webhook data is insufficient\n- `GET /users?email_address={email}` — lookup by email for dedup\n\n### Supabase (http_request)\nBase: `https://{project}.supabase.co/rest/v1`\nAuth: `apikey: {service_role_key}`, `Authorization: Bearer {service_role_key}`\n- `POST /users` — insert; Body: JSON with clerk_id, email, first_name, last_name, avatar_url, status='active', onboarding_step=0, created_at\n- `PATCH /users?clerk_id=eq.{id}` — update (email change, status='churned', onboarding_step advance)\n- `GET /users?clerk_id=eq.{id}` — read\n- Always include `Prefer: return=representation` on writes\n\n### Supabase schema (users table)\n`id uuid pk, clerk_id text unique, email text, first_name text, last_name text, avatar_url text, status text default 'active', onboarding_step int default 0, created_at timestamptz, deleted_at timestamptz null`\n\n### Slack (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — Block Kit for celebrations, plain text for churn alerts (with masked email)\n\n### Gmail (gmail_send)\n- Welcome: `to, subject: 'Welcome to [Product]!', html_body: <personalized>`\n- Onboarding drip (Day-1 / Day-3 / Day-7): `subject` per stage, `html_body` with plan-aware content\n- Email change confirmation: `to: NEW_email, subject: 'Email address updated', html_body: confirmation text`\n- Farewell: `to: former_email, subject: 'Sorry to see you go', html_body: feedback request link`\n\n### Svix signature verification\nEvery Clerk webhook must pass Svix signature check on headers `svix-id`, `svix-timestamp`, `svix-signature` before any side effect. On failure, reject the payload — no Supabase / Slack / Gmail action.\n\n### PII masking algorithm\n`j***@example.com` = first char + `***` + `@` + domain. Used in #team-alerts churn posts and any log entry visible in broad channels.\n\n### Onboarding drip email subjects (default)\n- Day-0 welcome: `Welcome to {product}, {first_name}!`\n- Day-1 tips: `{first_name}, your 3 quickest wins`\n- Day-3 spotlight: `Have you tried {feature} yet?`\n- Day-7 check-in: `How's your first week going?`\n\n### Local state\n- `state/onboarding/{clerk_id}.json` — `{clerk_id, email, current_step, step_timestamps, completed}`\n- `state/failed/{clerk_id}.json` — queued events after Supabase / Gmail failure\n- `state/processed_webhook_ids.json` — idempotency keys\n- `logs/lifecycle.jsonl` — append-only, one JSON per line",
       "error_handling": "Svix signature fail → reject payload, log, no side effect. Supabase 409 (duplicate) → idempotent replay, log + continue. Supabase 404 on PATCH → create user first, then retry update. Supabase 500 / network → retry once at 5s, then queue to `state/failed/`. Slack channel_not_found → log warning, skip Slack, do NOT block data steps. Slack rate_limited → respect Retry-After, retry once. Gmail auth error → critical log, do NOT retry (credential refresh required), queue for next schedule. Gmail transient fail → retry once, then queue. Duplicate webhook → check `state/processed_webhook_ids.json`; skip if present. Partial failure after Supabase insert → daily drip detects `onboarding_step=0` with no welcome-email log and re-executes missing steps. Never leave a user inconsistent — deletion half-done → mark status='deletion_pending' and retry on next run.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "clerk",
@@ -105,8 +122,8 @@
           "setup_instructions": "1. Supabase Dashboard (app.supabase.com) -> Settings -> API.\n2. Copy Project URL and service_role key.\n3. Ensure a `users` table exists with columns: id uuid pk, clerk_id text unique, email text, first_name text, last_name text, avatar_url text, status text default 'active', onboarding_step int default 0, created_at timestamptz, deleted_at timestamptz null.\n4. PostgREST API is enabled by default."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -126,8 +143,8 @@
           "setup_instructions": "1. api.slack.com/apps -> create or select app.\n2. OAuth & Permissions -> Bot Token Scopes: chat:write, chat:write.public.\n3. Install to workspace, copy the Bot User OAuth Token (xoxb-).\n4. Invite the bot to your celebration and alert channels (e.g., #new-users, #team-alerts)."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -188,12 +205,19 @@
           "trigger_type": "webhook",
           "config": {
             "source": "clerk",
-            "events": ["user.created"],
+            "events": [
+              "user.created"
+            ],
             "verify_signature": true
           },
           "description": "Clerk webhook on user.created. Event-driven — not configurable at the trigger-composition step."
         },
-        "connectors": ["clerk", "supabase", "slack", "gmail"],
+        "connectors": [
+          "clerk",
+          "supabase",
+          "messaging",
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -245,27 +269,88 @@
           "internal_signup_celebrate": "{{param.aq_internal_signup_celebrate}}",
           "internal_email_domain": "{{param.aq_internal_email_domain}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Clerk user.created webhook" },
-            { "id": "s2", "type": "action", "label": "Verify Svix signature + dedupe" },
-            { "id": "s3", "type": "connector", "label": "Check + insert Supabase user", "connector": "supabase" },
-            { "id": "s4", "type": "connector", "label": "Post Slack celebration", "connector": "slack" },
-            { "id": "s5", "type": "connector", "label": "Send welcome email", "connector": "gmail" },
-            { "id": "s6", "type": "action", "label": "Write onboarding state file + audit log" },
-            { "id": "s7", "type": "event", "label": "Emit user.lifecycle.created" },
-            { "id": "s8", "type": "end", "label": "Signup complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Clerk user.created webhook"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Verify Svix signature + dedupe"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Check + insert Supabase user",
+              "connector": "supabase"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Post Slack celebration",
+              "connector": "messaging"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Send welcome email",
+              "connector": "email"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Write onboarding state file + audit log"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit user.lifecycle.created"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Signup complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -282,12 +367,18 @@
           "trigger_type": "webhook",
           "config": {
             "source": "clerk",
-            "events": ["user.updated"],
+            "events": [
+              "user.updated"
+            ],
             "verify_signature": true
           },
           "description": "Clerk user.updated webhook — filtered server-side to events with a primary-email change. Event-driven."
         },
-        "connectors": ["clerk", "supabase", "gmail"],
+        "connectors": [
+          "clerk",
+          "supabase",
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "email",
@@ -312,25 +403,78 @@
         "error_handling": "Supabase 404 → user not yet provisioned; run uc_signup's provisioning logic first, then retry PATCH. Gmail fail → log + continue (Supabase update is the authoritative side effect).",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Clerk user.updated webhook" },
-            { "id": "c2", "type": "action", "label": "Verify signature + detect email change" },
-            { "id": "c3", "type": "connector", "label": "PATCH Supabase with new email", "connector": "supabase" },
-            { "id": "c4", "type": "connector", "label": "Send confirmation email to NEW address", "connector": "gmail" },
-            { "id": "c5", "type": "action", "label": "Append to audit log" },
-            { "id": "c6", "type": "event", "label": "Emit user.lifecycle.email_changed" },
-            { "id": "c7", "type": "end", "label": "Change propagated" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Clerk user.updated webhook"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Verify signature + detect email change"
+            },
+            {
+              "id": "c3",
+              "type": "connector",
+              "label": "PATCH Supabase with new email",
+              "connector": "supabase"
+            },
+            {
+              "id": "c4",
+              "type": "connector",
+              "label": "Send confirmation email to NEW address",
+              "connector": "email"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Append to audit log"
+            },
+            {
+              "id": "c6",
+              "type": "event",
+              "label": "Emit user.lifecycle.email_changed"
+            },
+            {
+              "id": "c7",
+              "type": "end",
+              "label": "Change propagated"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            }
           ]
         }
       },
@@ -347,12 +491,19 @@
           "trigger_type": "webhook",
           "config": {
             "source": "clerk",
-            "events": ["user.deleted"],
+            "events": [
+              "user.deleted"
+            ],
             "verify_signature": true
           },
           "description": "Clerk user.deleted webhook. Event-driven — not configurable at the trigger-composition step."
         },
-        "connectors": ["clerk", "supabase", "slack", "gmail"],
+        "connectors": [
+          "clerk",
+          "supabase",
+          "messaging",
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -397,29 +548,98 @@
           "churn_channel": "{{param.aq_churn_channel}}",
           "deletion_requires_approval": "{{param.aq_deletion_requires_approval}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Clerk user.deleted webhook" },
-            { "id": "d2", "type": "action", "label": "Verify signature + optional manual_review" },
-            { "id": "d3", "type": "connector", "label": "Fetch user from Supabase", "connector": "supabase" },
-            { "id": "d4", "type": "connector", "label": "PATCH status='churned' + deleted_at", "connector": "supabase" },
-            { "id": "d5", "type": "connector", "label": "Send farewell email", "connector": "gmail" },
-            { "id": "d6", "type": "connector", "label": "Post masked churn alert", "connector": "slack" },
-            { "id": "d7", "type": "action", "label": "Remove onboarding state file" },
-            { "id": "d8", "type": "event", "label": "Emit user.lifecycle.churned" },
-            { "id": "d9", "type": "end", "label": "Offboarding complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Clerk user.deleted webhook"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Verify signature + optional manual_review"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Fetch user from Supabase",
+              "connector": "supabase"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "PATCH status='churned' + deleted_at",
+              "connector": "supabase"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Send farewell email",
+              "connector": "email"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Post masked churn alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Remove onboarding state file"
+            },
+            {
+              "id": "d8",
+              "type": "event",
+              "label": "Emit user.lifecycle.churned"
+            },
+            {
+              "id": "d9",
+              "type": "end",
+              "label": "Offboarding complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            }
           ]
         }
       },
@@ -434,10 +654,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *" },
+          "config": {
+            "cron": "0 9 * * *"
+          },
           "description": "Default daily 09:00 local — final cadence set at the trigger-composition step."
         },
-        "connectors": ["supabase", "gmail"],
+        "connectors": [
+          "supabase",
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "email",
@@ -464,14 +689,23 @@
           {
             "name": "drip_structure",
             "type": "enum",
-            "options": ["three_emails_1_3_7", "five_emails_1_3_7_14_30", "welcome_only"],
+            "options": [
+              "three_emails_1_3_7",
+              "five_emails_1_3_7_14_30",
+              "welcome_only"
+            ],
             "default": "three_emails_1_3_7",
             "description": "Drip sequence shape. three_emails_1_3_7 is the default; welcome_only sends just the Day-0 welcome."
           },
           {
             "name": "email_tone",
             "type": "enum",
-            "options": ["friendly", "professional", "technical", "warm_supportive"],
+            "options": [
+              "friendly",
+              "professional",
+              "technical",
+              "warm_supportive"
+            ],
             "default": "friendly",
             "description": "Tone applied across all lifecycle emails. Influences subject lines and body copy."
           }
@@ -480,30 +714,104 @@
           "drip_structure": "{{param.aq_drip_structure}}",
           "email_tone": "{{param.aq_email_tone}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "Daily scheduled tick" },
-            { "id": "o2", "type": "action", "label": "Read state/onboarding/*.json" },
-            { "id": "o3", "type": "decision", "label": "Any users pending?" },
-            { "id": "o4", "type": "action", "label": "Compute next step by time-since-signup" },
-            { "id": "o5", "type": "connector", "label": "Send drip email (Day-1 / 3 / 7)", "connector": "gmail" },
-            { "id": "o6", "type": "connector", "label": "PATCH Supabase onboarding_step", "connector": "supabase" },
-            { "id": "o7", "type": "action", "label": "Update state file + audit log" },
-            { "id": "o8", "type": "event", "label": "Emit user.lifecycle.onboarding_step" },
-            { "id": "o9", "type": "end", "label": "Drip batch complete" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "Daily scheduled tick"
+            },
+            {
+              "id": "o2",
+              "type": "action",
+              "label": "Read state/onboarding/*.json"
+            },
+            {
+              "id": "o3",
+              "type": "decision",
+              "label": "Any users pending?"
+            },
+            {
+              "id": "o4",
+              "type": "action",
+              "label": "Compute next step by time-since-signup"
+            },
+            {
+              "id": "o5",
+              "type": "connector",
+              "label": "Send drip email (Day-1 / 3 / 7)",
+              "connector": "email"
+            },
+            {
+              "id": "o6",
+              "type": "connector",
+              "label": "PATCH Supabase onboarding_step",
+              "connector": "supabase"
+            },
+            {
+              "id": "o7",
+              "type": "action",
+              "label": "Update state file + audit log"
+            },
+            {
+              "id": "o8",
+              "type": "event",
+              "label": "Emit user.lifecycle.onboarding_step"
+            },
+            {
+              "id": "o9",
+              "type": "end",
+              "label": "Drip batch complete"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o9", "variant": "no", "label": "None" },
-            { "source": "o3", "target": "o4", "variant": "yes", "label": "Pending users" },
-            { "source": "o4", "target": "o5" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o7" },
-            { "source": "o7", "target": "o8" },
-            { "source": "o8", "target": "o9" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o9",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "o3",
+              "target": "o4",
+              "variant": "yes",
+              "label": "Pending users"
+            },
+            {
+              "source": "o4",
+              "target": "o5"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o7"
+            },
+            {
+              "source": "o7",
+              "target": "o8"
+            },
+            {
+              "source": "o8",
+              "target": "o9"
+            }
           ]
         }
       }
@@ -512,7 +820,9 @@
       {
         "id": "aq_celebration_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_signup"],
+        "use_case_ids": [
+          "uc_signup"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive new-user celebrations?",
         "type": "select",
@@ -522,7 +832,9 @@
         "context": "New user signup Block Kit cards (name, avatar, plan, source) post here.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -531,7 +843,9 @@
       {
         "id": "aq_churn_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_deletion"],
+        "use_case_ids": [
+          "uc_deletion"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive churn alerts?",
         "type": "select",
@@ -541,7 +855,9 @@
         "context": "Churn alerts post here with masked email (j***@example.com). Typically a smaller ops channel.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -550,7 +866,9 @@
       {
         "id": "aq_internal_signup_celebrate",
         "scope": "capability",
-        "use_case_ids": ["uc_signup"],
+        "use_case_ids": [
+          "uc_signup"
+        ],
         "category": "boundaries",
         "question": "Should internal (company-domain) signups also trigger Slack celebrations?",
         "type": "boolean",
@@ -563,7 +881,9 @@
       {
         "id": "aq_internal_email_domain",
         "scope": "capability",
-        "use_case_ids": ["uc_signup"],
+        "use_case_ids": [
+          "uc_signup"
+        ],
         "category": "configuration",
         "question": "What is your company email domain? (used to identify internal signups)",
         "type": "text",
@@ -576,7 +896,9 @@
       {
         "id": "aq_drip_structure",
         "scope": "capability",
-        "use_case_ids": ["uc_onboarding_drip"],
+        "use_case_ids": [
+          "uc_onboarding_drip"
+        ],
         "category": "configuration",
         "question": "What onboarding drip structure should the agent use?",
         "type": "select",
@@ -594,7 +916,11 @@
       {
         "id": "aq_email_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_onboarding_drip", "uc_signup", "uc_deletion"],
+        "use_case_ids": [
+          "uc_onboarding_drip",
+          "uc_signup",
+          "uc_deletion"
+        ],
         "category": "quality",
         "question": "What tone should lifecycle emails use?",
         "type": "select",
@@ -613,7 +939,9 @@
       {
         "id": "aq_deletion_requires_approval",
         "scope": "capability",
-        "use_case_ids": ["uc_deletion"],
+        "use_case_ids": [
+          "uc_deletion"
+        ],
         "category": "human_in_the_loop",
         "question": "Should user deletions require human approval before the agent acts?",
         "type": "boolean",
@@ -622,6 +950,44 @@
         "variable_name": "deletion_requires_approval",
         "context": "When true, deletion events route through manual_review before any side effect (soft-delete, farewell email, churn alert). Useful for teams with high-value accounts.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,23 @@
   "description": "Builds behavioral profiles of external meeting attendees from LinkedIn activity and email history, then delivers a structured Notion prep brief plus a pre-meeting Slack reminder tailored to each attendee's communication style and decision-making pattern.",
   "icon": "Brain",
   "color": "#DB2777",
-  "category": ["sales"],
-  "service_flow": ["Calendar", "Gmail", "Notion", "Messaging"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Calendar",
+    "Gmail",
+    "Notion",
+    "Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Calendar", "Gmail", "Notion", "Messaging"],
+    "service_flow": [
+      "Calendar",
+      "Gmail",
+      "Notion",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Walk into every external meeting knowing who you're meeting, how they decide, and what to avoid — a psychological edge built from public signals and your own email history.",
       "identity": {
@@ -47,7 +59,13 @@
       "tool_guidance": "**Calendar connector** (required; service_type: scheduling):\n- Google Calendar: `GET /calendar/v3/calendars/primary/events?timeMin={now}&timeMax={+48h}&singleEvents=true&orderBy=startTime`.\n- Per-event detail: `GET /calendar/v3/calendars/primary/events/{eventId}` for full attendee list.\n- Calendly webhooks (when configured) deliver new-booking payloads directly.\n\n**Gmail connector** (required; service_type: email):\n- `gmail_search`: `from:{email} OR to:{email} newer_than:90d` — scope to recent history.\n- `gmail_get_message`: for tone + formality analysis on key threads.\n\n**LinkedIn / enrichment** (optional, via http_request):\n- Direct LinkedIn endpoints or an enrichment provider (Proxycurl, Apollo, Clearbit) depending on what the user has subscribed to. Respect rate limits; fall back to Gmail-only profiling if enrichment fails.\n\n**Notion connector** (required; service_type: knowledge_base):\n- `POST /v1/pages` with parent database id + properties. Body: heading_2 per section, per-attendee callout blocks, bulleted lists for starters/avoidances.\n- `PATCH /v1/pages/{id}` to add post-meeting feedback later.\n\n**Messaging connector** (required; service_type: messaging):\n- `chat.postMessage` for immediate DMs, `chat.scheduleMessage` with `post_at` for T-30 reminders (Slack-style APIs). For other messaging providers, adapt to equivalent schedule endpoints or fall back to minute-polling delivery.\n\n**Local state**:\n- `processed_meetings.json`, `attendee_profiles.json`, `prep_feedback.json`, `classification_calibration.json` — all atomically rewritten per cycle.",
       "error_handling": "Calendar 401 → emit persona.error, pause until refresh. Enrichment 429 → back off per Retry-After, produce partial brief labeled 'enrichment pending', retry next cycle. LinkedIn unavailable → Gmail-only profile, confidence downgraded. Gmail unavailable → LinkedIn-only profile, same treatment. Notion 5xx → queue prep in `pending_notion.json`, ship the T-30 reminder with an inline 3-line brief so nothing is lost. Messaging failure → queue in `pending_messages.json`, retry; reminder failures log as 'missed' if the meeting has already started. State file corrupted → reinitialize from current calendar, skip prep for in-flight meetings already prepped, log recovery.",
       "examples": [],
-      "tools": ["http_request", "gmail_search", "gmail_get_message", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_search",
+        "gmail_get_message",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "calendar",
@@ -86,8 +104,8 @@
           "setup_instructions": "1. Enable the Google Calendar API in Google Cloud Console.\n2. Create an OAuth 2.0 Client ID (Desktop app).\n3. Complete the OAuth consent flow to obtain a refresh token with calendar read scope.\n4. Paste client id, client secret, and refresh token above."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -122,11 +140,11 @@
           "setup_instructions": "1. Enable the Gmail API in Google Cloud Console.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete the OAuth consent flow with gmail.readonly + gmail.modify scopes.\n4. Paste all three values above."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
@@ -198,12 +216,22 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/10 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 10 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["calendar", "gmail", "notion"],
+        "connectors": [
+          "calendar",
+          "email",
+          "knowledge_base"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`attendee_profiles.json` — 14-day-TTL cache keyed by email. `classification_calibration.json` — feedback-tuned thresholds for each classifier dimension."
@@ -220,7 +248,11 @@
           {
             "name": "prep_scope",
             "type": "enum",
-            "options": ["external_only", "all_attendees", "small_meetings_only"],
+            "options": [
+              "external_only",
+              "all_attendees",
+              "small_meetings_only"
+            ],
             "default": "external_only",
             "description": "Which meeting types to prep. External-only skips internal standups; all-attendees is noisy; small-meetings-only caps at 5 attendees."
           }
@@ -228,30 +260,105 @@
         "sample_input": {
           "prep_scope": "{{param.aq_prep_scope}}"
         },
-        "tool_hints": ["http_request", "gmail_search", "gmail_get_message", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_search",
+          "gmail_get_message",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Poll tick" },
-            { "id": "p2", "type": "connector", "label": "List upcoming meetings (48h)", "connector": "calendar" },
-            { "id": "p3", "type": "action", "label": "Filter by prep_scope; skip processed" },
-            { "id": "p4", "type": "decision", "label": "Profile cached & fresh?" },
-            { "id": "p5", "type": "action", "label": "Enrich via LinkedIn + gmail_search" },
-            { "id": "p6", "type": "action", "label": "Classify style / decision / motivations; compose starters + avoidances" },
-            { "id": "p7", "type": "connector", "label": "Create Notion prep page", "connector": "notion" },
-            { "id": "p8", "type": "event", "label": "Emit sales.prep.ready" },
-            { "id": "p9", "type": "end", "label": "Prep persisted" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "List upcoming meetings (48h)",
+              "connector": "calendar"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Filter by prep_scope; skip processed"
+            },
+            {
+              "id": "p4",
+              "type": "decision",
+              "label": "Profile cached & fresh?"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Enrich via LinkedIn + gmail_search"
+            },
+            {
+              "id": "p6",
+              "type": "action",
+              "label": "Classify style / decision / motivations; compose starters + avoidances"
+            },
+            {
+              "id": "p7",
+              "type": "connector",
+              "label": "Create Notion prep page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p8",
+              "type": "event",
+              "label": "Emit sales.prep.ready"
+            },
+            {
+              "id": "p9",
+              "type": "end",
+              "label": "Prep persisted"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5", "variant": "no", "label": "Stale/missing" },
-            { "source": "p4", "target": "p6", "variant": "yes", "label": "Fresh" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" },
-            { "source": "p8", "target": "p9" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5",
+              "variant": "no",
+              "label": "Stale/missing"
+            },
+            {
+              "source": "p4",
+              "target": "p6",
+              "variant": "yes",
+              "label": "Fresh"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            }
           ]
         }
       },
@@ -266,13 +373,25 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "* * * * *", "timezone": "local" },
+          "config": {
+            "cron": "* * * * *",
+            "timezone": "local"
+          },
           "description": "Default every minute — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "messaging"],
+        "connectors": [
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "sales.prep.ready",
@@ -290,7 +409,11 @@
           {
             "name": "reminder_offset_minutes",
             "type": "enum",
-            "options": ["15", "30", "60"],
+            "options": [
+              "15",
+              "30",
+              "60"
+            ],
             "default": "30",
             "description": "Minutes before meeting start to deliver the reminder."
           }
@@ -298,23 +421,67 @@
         "sample_input": {
           "reminder_offset_minutes": "{{param.aq_reminder_offset}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Minute tick / sales.prep.ready" },
-            { "id": "r2", "type": "action", "label": "Find meetings at T-offset" },
-            { "id": "r3", "type": "action", "label": "Compose one-liner (style + lead + avoid)" },
-            { "id": "r4", "type": "connector", "label": "Send messaging DM", "connector": "messaging" },
-            { "id": "r5", "type": "event", "label": "Emit sales.prep.reminded" },
-            { "id": "r6", "type": "end", "label": "Reminder delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Minute tick / sales.prep.ready"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Find meetings at T-offset"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Compose one-liner (style + lead + avoid)"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Send messaging DM",
+              "connector": "messaging"
+            },
+            {
+              "id": "r5",
+              "type": "event",
+              "label": "Emit sales.prep.reminded"
+            },
+            {
+              "id": "r6",
+              "type": "end",
+              "label": "Reminder delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            }
           ]
         }
       },
@@ -329,10 +496,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/15 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/15 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -352,28 +524,93 @@
         "error_handling": "Messaging failure on the rating prompt → queue in pending_messages.json; retry once. No reply in 24h → one follow-up nudge; after 48h mark 'no feedback' and move on. Ledger corruption → archive and reinit; existing profiles keep their cache.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "15-min tick" },
-            { "id": "f2", "type": "action", "label": "Find meetings past end_time" },
-            { "id": "f3", "type": "connector", "label": "Send 1-4 rating prompt", "connector": "messaging" },
-            { "id": "f4", "type": "decision", "label": "Reply within 24h?" },
-            { "id": "f5", "type": "action", "label": "Store rating + update calibration" },
-            { "id": "f6", "type": "event", "label": "Emit sales.prep.feedback" },
-            { "id": "f7", "type": "action", "label": "Send 1 nudge; mark no-feedback after 48h" },
-            { "id": "f8", "type": "end", "label": "Feedback cycle complete" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "15-min tick"
+            },
+            {
+              "id": "f2",
+              "type": "action",
+              "label": "Find meetings past end_time"
+            },
+            {
+              "id": "f3",
+              "type": "connector",
+              "label": "Send 1-4 rating prompt",
+              "connector": "messaging"
+            },
+            {
+              "id": "f4",
+              "type": "decision",
+              "label": "Reply within 24h?"
+            },
+            {
+              "id": "f5",
+              "type": "action",
+              "label": "Store rating + update calibration"
+            },
+            {
+              "id": "f6",
+              "type": "event",
+              "label": "Emit sales.prep.feedback"
+            },
+            {
+              "id": "f7",
+              "type": "action",
+              "label": "Send 1 nudge; mark no-feedback after 48h"
+            },
+            {
+              "id": "f8",
+              "type": "end",
+              "label": "Feedback cycle complete"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5", "variant": "yes", "label": "Yes" },
-            { "source": "f4", "target": "f7", "variant": "no", "label": "No" },
-            { "source": "f5", "target": "f6" },
-            { "source": "f6", "target": "f8" },
-            { "source": "f7", "target": "f8" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "f4",
+              "target": "f7",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "f5",
+              "target": "f6"
+            },
+            {
+              "source": "f6",
+              "target": "f8"
+            },
+            {
+              "source": "f7",
+              "target": "f8"
+            }
           ]
         }
       }
@@ -382,7 +619,9 @@
       {
         "id": "aq_prep_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_meeting_prep"],
+        "use_case_ids": [
+          "uc_meeting_prep"
+        ],
         "category": "configuration",
         "question": "Which meetings should be prepped?",
         "type": "select",
@@ -400,11 +639,17 @@
       {
         "id": "aq_reminder_offset",
         "scope": "capability",
-        "use_case_ids": ["uc_prebrief_reminder"],
+        "use_case_ids": [
+          "uc_prebrief_reminder"
+        ],
         "category": "configuration",
         "question": "How many minutes before the meeting should the reminder land?",
         "type": "select",
-        "options": ["15 minutes", "30 minutes", "60 minutes"],
+        "options": [
+          "15 minutes",
+          "30 minutes",
+          "60 minutes"
+        ],
         "default": "30 minutes",
         "maps_to": "use_cases[uc_prebrief_reminder].sample_input.reminder_offset_minutes",
         "variable_name": "reminder_offset_minutes",
@@ -414,7 +659,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should deliver reminders and feedback prompts?",
         "type": "select",
@@ -431,7 +678,9 @@
       {
         "id": "aq_calendar_source",
         "scope": "connector",
-        "connector_names": ["calendar"],
+        "connector_names": [
+          "calendar"
+        ],
         "category": "configuration",
         "question": "Which calendar credential should the prep poll?",
         "type": "select",
@@ -443,6 +692,44 @@
         "maps_to": "persona.connectors[calendar].credential_fields[refresh_token].value",
         "variable_name": "calendar_provider",
         "context": "Options come from your Vault's scheduling-category credentials. Google Calendar is the most common; Calendly webhooks augment polling when configured.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

@@ -1,20 +1,30 @@
 {
   "id": "reddit-trend-digest",
   "schema_version": 3,
-  "name": "Reddit Trend Digest",
-  "description": "Polls one or more subreddits on a schedule, fetches top posts over a chosen time window, clusters them into themes with sentiment labels, and posts a Slack-flavored markdown digest. Tracks already-seen posts so each digest only surfaces what's new.",
+  "name": "Social Trend Digest",
+  "description": "Polls one or more social feeds (subreddits, X/Twitter lists, LinkedIn groups, YouTube channels) on a schedule, fetches top posts over a chosen time window, clusters them into themes with sentiment labels, and posts a markdown digest to your messaging channel. Tracks already-seen posts so each digest only surfaces what's new.",
   "icon": "TrendingUp",
   "color": "#FF4500",
-  "category": ["marketing"],
+  "category": [
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["Reddit", "Trend Synthesis", "Slack"],
+  "service_flow": [
+    "Social Feed",
+    "Trend Synthesis",
+    "Team Messaging"
+  ],
   "payload": {
-    "service_flow": ["Reddit", "Trend Synthesis", "Slack"],
+    "service_flow": [
+      "Social Feed",
+      "Trend Synthesis",
+      "Team Messaging"
+    ],
     "persona": {
-      "goal": "Replace the habit of scrolling Reddit every morning with a focused, themed briefing that surfaces signal, not volume.",
+      "goal": "Replace the habit of scrolling social feeds every morning with a focused, themed briefing that surfaces signal, not volume.",
       "identity": {
-        "role": "Autonomous Reddit research agent that clusters posts into themes and ships a single tight digest.",
-        "description": "Watches configured subreddits, scores posts by engagement (weighting comments above upvotes), clusters into thematic groups, picks a representative post per cluster, attaches a sentiment label, and delivers a compact Slack digest. Tracks seen posts for 30 days so repeats never resurface."
+        "role": "Autonomous social-research agent that clusters posts into themes and ships a single tight digest.",
+        "description": "Watches configured social feeds (subreddits, X/Twitter lists, LinkedIn groups, YouTube channels), scores posts by engagement (weighting comments above upvotes/likes), clusters into thematic groups, picks a representative post per cluster, attaches a sentiment label, and delivers a compact digest. Tracks seen posts for 30 days so repeats never resurface."
       },
       "voice": {
         "style": "Signal over volume, themes over individual posts, freshness over recap. No padding on slow days.",
@@ -48,39 +58,25 @@
       "tool_guidance": "**Reddit OAuth API (connector: reddit)** — base `https://oauth.reddit.com`. `Authorization: Bearer {access_token}` and a unique `User-Agent` are injected by the connector (Reddit blocks default UAs with 429/403).\n\n- `GET /api/v1/me` — identity check / credential validation\n- `GET /r/{sub}/top?t={window}&limit={n}` — top posts; windows: hour, day, week, month, year, all; max `limit=100`\n- `GET /r/{sub}/hot?limit={n}` — fallback when top returns thin results\n- `GET /r/{sub}/new?limit={n}` — for high-velocity subreddits where top lags\n- `GET /r/{sub}/rising` — emerging trends\n- `GET /comments/{article_id}?depth=2&limit=50` — deeper sentiment on cluster's representative post\n- `GET /r/{sub}/about` — subscriber/active-user metadata for the digest header\n- `GET /search?q={query}&restrict_sr=true&sort=top&t={window}` — keyword-filtered digests\n\nRate limit: 60 req/min per OAuth client; standard 5-sub config stays well under. Pagination uses `before`/`after` cursors (not needed for the top-N digest flow).\n\n**Slack Web API (connector: slack)** — base `https://slack.com/api`. `Authorization: Bearer {bot_token}` injected.\n\n- `POST /chat.postMessage` body `{channel, text, unfurl_links: false, unfurl_media: false}`; returns `{ok: true, ts}` or `{ok: false, error}`\n- `POST /chat.update` with `ts` for corrections\n- `GET /conversations.list?types=public_channel,private_channel` — validate target channel\n- `GET /auth.test` — healthcheck\n\n**Local state**:\n- `state/seen_posts.json` — `{<post_id>: {first_seen: ISO8601, subreddit: 'r/...'}}`; 30-day rolling; read-merge-write to avoid concurrent-run data loss\n- `state/drafts/digest_{ts}.md` — fallback archive when Slack delivery fails\n- `state/source_health.json` — per-subreddit failure tracking",
       "error_handling": "Reddit 429 → back off 60s, retry once; otherwise abort run with user_message. Reddit 401/403 → token expired/revoked, prompt re-authorization, do not update state. Reddit 404 on a subreddit → deleted/banned; drop from this run, increment failure counter, other subs continue. Reddit 5xx → skip just that subreddit, other subs continue. Reddit empty response → treat as zero posts. Slack `channel_not_found` → config error, do NOT retry; write draft to `state/drafts/`, user_message warning, do NOT update state. Slack `not_in_channel` → try `conversations.join` for public channels, else draft + notify. Slack `rate_limited` → honor Retry-After header. Slack 5xx/network → retry once after 10s, then draft fallback. Corrupted state/seen_posts.json → reinitialize empty; some posts may resurface once — self-corrects. max_clusters=0 → treat as 1. Slack channel missing leading `#` → auto-prefix. Empty subreddits param → abort with user_message asking for at least one.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "reddit",
-          "label": "Reddit",
+          "name": "social_feed",
+          "label": "Social Feed",
           "auth_type": "oauth2",
           "role": "data_source",
-          "category": "social",
+          "category": "social_feed",
           "required": true,
-          "api_base_url": "https://oauth.reddit.com",
-          "credential_fields": [
-            {
-              "key": "client_id",
-              "label": "Client ID",
-              "type": "text",
-              "placeholder": "abc123-_xyz",
-              "helpText": "From reddit.com/prefs/apps — the string under your app name beneath 'web app'.",
-              "required": true
-            },
-            {
-              "key": "client_secret",
-              "label": "Client Secret",
-              "type": "password",
-              "placeholder": "",
-              "helpText": "From reddit.com/prefs/apps — the field labelled 'secret'.",
-              "required": true
-            }
-          ],
-          "setup_instructions": "1. Go to reddit.com/prefs/apps and click 'create app'.\n2. Choose 'web app' type; set redirect URI to http://127.0.0.1.\n3. Copy the Client ID (under the app name) and Client Secret (labelled 'secret').\n4. Paste both, then Authorize with Reddit (scopes: identity, read).\n5. Personas sets a unique User-Agent automatically — Reddit blocks default UAs."
+          "credential_fields": [],
+          "setup_instructions": "Connect a social_feed credential in Vault → Catalog (Reddit, X/Twitter, LinkedIn, or YouTube Data). The adoption questionnaire auto-detects your configured provider and the persona adapts its fetch/cluster logic to that platform's conventions."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -102,7 +98,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "The assembled Reddit digest lands in the configured Slack channel as one chat.postMessage call. Markdown is Slack-flavored; link unfurling is disabled so the message stays compact."
+          "description": "The assembled digest lands in the configured messaging channel as one post. Markdown is rendered for the selected messaging provider (Slack mrkdwn, Discord md, or plain Markdown)."
         }
       ],
       "core_memories": []
@@ -119,10 +115,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "UTC" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "UTC"
+          },
           "description": "Default daily 09:00 UTC — final cadence set at the trigger-composition step. Align with the team's morning standup for maximum utility."
         },
-        "connectors": ["reddit", "slack"],
+        "connectors": [
+          "social_feed",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -155,7 +157,14 @@
           {
             "name": "time_window",
             "type": "enum",
-            "options": ["hour", "day", "week", "month", "year", "all"],
+            "options": [
+              "hour",
+              "day",
+              "week",
+              "month",
+              "year",
+              "all"
+            ],
             "default": "day",
             "description": "Maps directly to Reddit's `t=` query parameter. Match to the digest cadence (daily cron + day window, weekly cron + week window)."
           },
@@ -202,29 +211,95 @@
           "include_nsfw": "{{param.aq_include_nsfw}}",
           "human_review_enabled": "{{param.aq_human_review_enabled}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Scheduled tick" },
-            { "id": "d2", "type": "action", "label": "Load seen_posts.json (30-day dedup)" },
-            { "id": "d3", "type": "connector", "label": "Fetch top posts per subreddit", "connector": "reddit" },
-            { "id": "d4", "type": "action", "label": "Dedup + filter NSFW/stickied + score + cluster" },
-            { "id": "d5", "type": "action", "label": "Synthesize themes + sentiment + assemble Slack markdown" },
-            { "id": "d6", "type": "connector", "label": "POST to Slack (unfurl disabled)", "connector": "slack" },
-            { "id": "d7", "type": "action", "label": "Update seen_posts + prune >30d + save memory entry" },
-            { "id": "d8", "type": "event", "label": "Emit reddit.digest.delivered" },
-            { "id": "d9", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load seen_posts.json (30-day dedup)"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Fetch top posts per subreddit",
+              "connector": "social_feed"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Dedup + filter NSFW/stickied + score + cluster"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Synthesize themes + sentiment + assemble Slack markdown"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "POST to Slack (unfurl disabled)",
+              "connector": "messaging"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Update seen_posts + prune >30d + save memory entry"
+            },
+            {
+              "id": "d8",
+              "type": "event",
+              "label": "Emit reddit.digest.delivered"
+            },
+            {
+              "id": "d9",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            }
           ]
         }
       },
@@ -239,12 +314,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event",
-          "config": { "event": "reddit.fetch.failed" },
+          "config": {
+            "event": "reddit.fetch.failed"
+          },
           "description": "Event-triggered: fires whenever uc_digest records a subreddit fetch failure. Not independently schedulable."
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`state/source_health.json` — per-subreddit `consecutive_failures`, `last_success`, `total_posts_seen`, `last_error_code`."
@@ -259,26 +339,82 @@
         "error_handling": "Corrupted source_health.json → reinitialize empty; source quality history is lost but not critical.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "h1", "type": "start", "label": "Fetch failure event" },
-            { "id": "h2", "type": "action", "label": "Load source_health.json" },
-            { "id": "h3", "type": "action", "label": "Increment consecutive_failures for the subreddit" },
-            { "id": "h4", "type": "decision", "label": "Failures >= 3?" },
-            { "id": "h5", "type": "event", "label": "Emit reddit.source.unhealthy" },
-            { "id": "h6", "type": "action", "label": "Flag for next-digest header warning" },
-            { "id": "h7", "type": "end", "label": "Health state updated" }
+            {
+              "id": "h1",
+              "type": "start",
+              "label": "Fetch failure event"
+            },
+            {
+              "id": "h2",
+              "type": "action",
+              "label": "Load source_health.json"
+            },
+            {
+              "id": "h3",
+              "type": "action",
+              "label": "Increment consecutive_failures for the subreddit"
+            },
+            {
+              "id": "h4",
+              "type": "decision",
+              "label": "Failures >= 3?"
+            },
+            {
+              "id": "h5",
+              "type": "event",
+              "label": "Emit reddit.source.unhealthy"
+            },
+            {
+              "id": "h6",
+              "type": "action",
+              "label": "Flag for next-digest header warning"
+            },
+            {
+              "id": "h7",
+              "type": "end",
+              "label": "Health state updated"
+            }
           ],
           "edges": [
-            { "source": "h1", "target": "h2" },
-            { "source": "h2", "target": "h3" },
-            { "source": "h3", "target": "h4" },
-            { "source": "h4", "target": "h5", "variant": "yes", "label": "Yes" },
-            { "source": "h4", "target": "h7", "variant": "no", "label": "No" },
-            { "source": "h5", "target": "h6" },
-            { "source": "h6", "target": "h7" }
+            {
+              "source": "h1",
+              "target": "h2"
+            },
+            {
+              "source": "h2",
+              "target": "h3"
+            },
+            {
+              "source": "h3",
+              "target": "h4"
+            },
+            {
+              "source": "h4",
+              "target": "h5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "h4",
+              "target": "h7",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "h5",
+              "target": "h6"
+            },
+            {
+              "source": "h6",
+              "target": "h7"
+            }
           ]
         }
       }
@@ -287,7 +423,9 @@
       {
         "id": "aq_subreddits",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "domain",
         "question": "Which subreddits should this persona watch?",
         "type": "text",
@@ -300,11 +438,20 @@
       {
         "id": "aq_time_window",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "configuration",
         "question": "How far back should each digest look?",
         "type": "select",
-        "options": ["hour", "day", "week", "month", "year", "all"],
+        "options": [
+          "hour",
+          "day",
+          "week",
+          "month",
+          "year",
+          "all"
+        ],
         "default": "day",
         "maps_to": "use_cases[uc_digest].sample_input.time_window",
         "variable_name": "time_window",
@@ -314,11 +461,18 @@
       {
         "id": "aq_posts_per_subreddit",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "configuration",
         "question": "How many top posts to pull from each subreddit?",
         "type": "select",
-        "options": ["10", "25", "50", "100"],
+        "options": [
+          "10",
+          "25",
+          "50",
+          "100"
+        ],
         "default": "25",
         "maps_to": "use_cases[uc_digest].sample_input.posts_per_subreddit",
         "variable_name": "posts_per_subreddit",
@@ -328,11 +482,19 @@
       {
         "id": "aq_max_clusters",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "quality",
         "question": "Maximum themes per digest?",
         "type": "select",
-        "options": ["3", "5", "6", "8", "12"],
+        "options": [
+          "3",
+          "5",
+          "6",
+          "8",
+          "12"
+        ],
         "default": "6",
         "maps_to": "use_cases[uc_digest].sample_input.max_clusters",
         "variable_name": "max_clusters",
@@ -342,7 +504,9 @@
       {
         "id": "aq_slack_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should the digest land in?",
         "type": "text",
@@ -355,7 +519,9 @@
       {
         "id": "aq_include_nsfw",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "configuration",
         "question": "Include NSFW posts?",
         "type": "boolean",
@@ -368,7 +534,9 @@
       {
         "id": "aq_human_review_enabled",
         "scope": "capability",
-        "use_case_ids": ["uc_digest"],
+        "use_case_ids": [
+          "uc_digest"
+        ],
         "category": "quality",
         "question": "Require human review before sending each digest?",
         "type": "boolean",
@@ -377,6 +545,25 @@
         "variable_name": "human_review_enabled",
         "context": "When enabled, the assembled digest goes through manual_review before delivery. Rejection reasons persist to memory under `digest_learning` for tone calibration. Disabled by default for low-friction daily delivery.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

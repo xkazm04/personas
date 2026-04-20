@@ -5,11 +5,21 @@
   "description": "Automates new-hire onboarding end-to-end via Notion checklists: detects new employees hourly, runs weekday deadline checks with tiered escalation, and produces weekly progress reports with at-risk flagging.",
   "icon": "UserCheck",
   "color": "#10b981",
-  "category": ["hr"],
-  "service_flow": ["Notion", "Local Database", "In-App Messaging"],
+  "category": [
+    "hr"
+  ],
+  "service_flow": [
+    "Notion",
+    "Local Database",
+    "In-App Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Notion", "Local Database", "In-App Messaging"],
+    "service_flow": [
+      "Notion",
+      "Local Database",
+      "In-App Messaging"
+    ],
     "persona": {
       "goal": "No new hire falls through the cracks — role-aware Notion checklists, tiered reminders, and at-risk flagging that give every stakeholder visibility without asking.",
       "identity": {
@@ -20,9 +30,18 @@
         "style": "Warm but rigorous. Professional HR voice — celebrates milestones, flags risks without blame, escalates with precision. Reads like a great program manager.",
         "output_format": "Reminders are short and specific (who, what, when, why it matters). Reports lead with at-risk hires + bottlenecks, then the full table.",
         "tone_adjustments": [
-          { "channel": "reminder.assignee", "tone": "direct, action-oriented" },
-          { "channel": "reminder.manager_cc", "tone": "informational, non-alarmist" },
-          { "channel": "escalation.hr", "tone": "detailed, decision-ready" }
+          {
+            "channel": "reminder.assignee",
+            "tone": "direct, action-oriented"
+          },
+          {
+            "channel": "reminder.manager_cc",
+            "tone": "informational, non-alarmist"
+          },
+          {
+            "channel": "escalation.hr",
+            "tone": "detailed, decision-ready"
+          }
         ]
       },
       "principles": [
@@ -49,25 +68,44 @@
       "tool_guidance": "### Notion API\n- `POST /v1/pages` for checklist creation (parent: database_id, body: task groups as to_do blocks)\n- `POST /v1/databases/{id}/query` with `Status != Completed` filter to list active checklists\n- `PATCH /v1/pages/{id}` to update Status / Milestone / Completion %\n- `GET /v1/blocks/{id}/children` to read task checkboxes\n- Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n- Rate limit: 3 req/sec — use 350ms spacing; back off 1s on 429\n\n### Local Database (personas_database)\n- Query HR employee table for new records\n- Update `onboarding_status` from `new` → `in_progress` after checklist creation\n\n### In-App Messaging (personas_messages)\n- Batch multiple reminders per assignee into single digest messages\n- Priority: `high` for overdue + due-today, `normal` for upcoming, `low` for celebrations\n\n### State files\n- `data/onboarding_state.json` — master: active checklists, overdue alert counts, completed archive\n- `data/onboarding_state.backup.json` — written before every overwrite\n- `data/pending_reminders.json` — cached when messaging unavailable",
       "error_handling": "**Notion 401**: Pause all Notion ops, alert for credential refresh. Do not retry.\n**Notion 404**: Database moved or integration lost access — alert with database_id that failed.\n**Notion 429**: Queue with 350ms spacing, back off 1s, max 3 retries.\n**Notion 400 (validation)**: Skip op, manual_review describing the schema mismatch.\n**Notion 5xx**: Retry exponential (1s/2s/4s) up to 3; cache pending ops in data/pending_notion_ops.json.\n**State file corruption**: Fall back to backup; if none, rebuild from Notion (duplicate reminders are acceptable, missing them is not).\n**Reminder delivery failure**: Retry after 5 min. If failures > 5/day for a single employee, pause reminders and flag manual_review.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write", "personas_database", "personas_messages"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write",
+        "personas_database",
+        "personas_messages"
+      ],
       "connectors": [
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "checklist_management",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
-            { "key": "api_key", "label": "Notion Integration Token", "type": "password", "required": true },
-            { "key": "database_id", "label": "Onboarding Database ID", "type": "text", "required": true }
+            {
+              "key": "api_key",
+              "label": "Notion Integration Token",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "database_id",
+              "label": "Onboarding Database ID",
+              "type": "text",
+              "required": true
+            }
           ],
           "setup_instructions": "1. notion.so/my-integrations → New integration → name 'Onboarding Tracker'. 2. Enable Read/Update/Insert content. 3. Copy the integration token (`ntn_…`). 4. Open your onboarding database, ensure properties: Title (title), Department (select), Start Date (date), Manager (rich_text), Status (select with In Progress/Completed), Milestone (select: Pre-boarding/Day 1/Week 1/30-Day/60-Day/90-Day), Completion % (number). 5. Database ⋯ menu → Add connections → choose the integration. 6. Copy the 32-char database ID from the URL."
         }
       ],
       "notification_channels_default": [
-        { "type": "built-in", "description": "In-app notifications with role-targeted delivery" }
+        {
+          "type": "built-in",
+          "description": "In-app notifications with role-targeted delivery"
+        }
       ],
       "core_memories": []
     },
@@ -83,12 +121,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "interval_seconds": 3600 },
+          "config": {
+            "interval_seconds": 3600
+          },
           "description": "Default hourly — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [
-          { "type": "built-in", "description": "Checklist creation confirmation sent to HR + the hire's manager" }
+          {
+            "type": "built-in",
+            "description": "Checklist creation confirmation sent to HR + the hire's manager"
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -99,39 +144,120 @@
           "context": "Stores: per-employee processing record (page_id, template used, task count), template gap tracking (department/role combinations without a template), first-run scan baseline."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding.checklist.created", "direction": "emit", "description": "Fired after successful Notion page creation with employee_id, department, page_id, task count. Consumed by welcome-email and IT-provisioning workflows." }
+          {
+            "event_type": "onboarding.checklist.created",
+            "direction": "emit",
+            "description": "Fired after successful Notion page creation with employee_id, department, page_id, task count. Consumed by welcome-email and IT-provisioning workflows."
+          }
         ],
         "error_handling": "On Notion 401: pause and alert. On 429: 350ms-spaced queue. On dedupe hit: skip if active, retry if failed. On template miss: fall back to General + flag for HR review.",
         "input_schema": [
-          { "name": "departments", "type": "list[string]", "description": "Department labels used for template routing" }
+          {
+            "name": "departments",
+            "type": "list[string]",
+            "description": "Department labels used for template routing"
+          }
         ],
         "sample_input": {
           "departments": "Engineering, Sales, Marketing, Operations"
         },
-        "tool_hints": ["http_request", "file_read", "file_write", "personas_database"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write",
+          "personas_database"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Polling tick" },
-            { "id": "n2", "type": "action", "label": "Query HR database for new hires" },
-            { "id": "n3", "type": "action", "label": "Dedupe against state" },
-            { "id": "n4", "type": "decision", "label": "Role template match?" },
-            { "id": "n5", "type": "action", "label": "Select role template" },
-            { "id": "n6", "type": "action", "label": "Fall back to General + flag for HR" },
-            { "id": "n7", "type": "connector", "label": "Create Notion page with task blocks", "connector": "notion" },
-            { "id": "n8", "type": "event", "label": "Send confirmation + emit onboarding.checklist.created" },
-            { "id": "n9", "type": "end", "label": "Setup complete" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "n2",
+              "type": "action",
+              "label": "Query HR database for new hires"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Dedupe against state"
+            },
+            {
+              "id": "n4",
+              "type": "decision",
+              "label": "Role template match?"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Select role template"
+            },
+            {
+              "id": "n6",
+              "type": "action",
+              "label": "Fall back to General + flag for HR"
+            },
+            {
+              "id": "n7",
+              "type": "connector",
+              "label": "Create Notion page with task blocks",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n8",
+              "type": "event",
+              "label": "Send confirmation + emit onboarding.checklist.created"
+            },
+            {
+              "id": "n9",
+              "type": "end",
+              "label": "Setup complete"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5", "label": "Match", "variant": "yes" },
-            { "source": "n4", "target": "n6", "label": "No match", "variant": "no" },
-            { "source": "n5", "target": "n7" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5",
+              "label": "Match",
+              "variant": "yes"
+            },
+            {
+              "source": "n4",
+              "target": "n6",
+              "label": "No match",
+              "variant": "no"
+            },
+            {
+              "source": "n5",
+              "target": "n7"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            }
           ]
         }
       },
@@ -146,13 +272,24 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default weekday 8:00 AM local — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [
-          { "type": "built-in", "description": "Deadline reminders targeted by role (HR/IT/manager/new hire)" },
-          { "type": "built-in", "description": "Milestone celebrations and 90-day completion announcements" }
+          {
+            "type": "built-in",
+            "description": "Deadline reminders targeted by role (HR/IT/manager/new hire)"
+          },
+          {
+            "type": "built-in",
+            "description": "Milestone celebrations and 90-day completion announcements"
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -163,43 +300,140 @@
           "context": "Tracks per-task overdue_alert_count, milestone transition timestamps, completion analytics per employee, delivery failure counts."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding.reminder.sent", "direction": "emit", "description": "Fired on each reminder with type (upcoming/due_today/overdue), alert_number, assignee." },
-          { "event_type": "onboarding.milestone.reached", "direction": "emit", "description": "Fired when all tasks in a milestone group complete." },
-          { "event_type": "onboarding.journey.completed", "direction": "emit", "description": "Fired when all 6 milestones complete. Includes total_days, on-time rate, department." }
+          {
+            "event_type": "onboarding.reminder.sent",
+            "direction": "emit",
+            "description": "Fired on each reminder with type (upcoming/due_today/overdue), alert_number, assignee."
+          },
+          {
+            "event_type": "onboarding.milestone.reached",
+            "direction": "emit",
+            "description": "Fired when all tasks in a milestone group complete."
+          },
+          {
+            "event_type": "onboarding.journey.completed",
+            "direction": "emit",
+            "description": "Fired when all 6 milestones complete. Includes total_days, on-time rate, department."
+          }
         ],
         "error_handling": "On reminder delivery failure: retry once after 5 min, cache to pending_reminders.json. If >5 failures/day per employee: pause reminders + manual_review. On state file corruption: fall back to backup; rebuild from Notion as last resort.",
         "input_schema": [
-          { "name": "reminder_days_before_deadline", "type": "number", "default": 3, "min": 1, "max": 7 },
-          { "name": "max_overdue_alerts_per_task", "type": "number", "default": 3, "min": 1, "max": 10 }
+          {
+            "name": "reminder_days_before_deadline",
+            "type": "number",
+            "default": 3,
+            "min": 1,
+            "max": 7
+          },
+          {
+            "name": "max_overdue_alerts_per_task",
+            "type": "number",
+            "default": 3,
+            "min": 1,
+            "max": 10
+          }
         ],
         "sample_input": {
           "reminder_days_before_deadline": "{{param.aq_reminder_days}}",
           "max_overdue_alerts_per_task": "{{param.aq_max_overdue}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write", "personas_messages"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write",
+          "personas_messages"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Scheduled tick" },
-            { "id": "n2", "type": "connector", "label": "Query Notion task statuses", "connector": "notion" },
-            { "id": "n3", "type": "action", "label": "Categorize (upcoming/due/overdue)" },
-            { "id": "n4", "type": "action", "label": "Dispatch tiered reminders" },
-            { "id": "n5", "type": "event", "label": "Emit onboarding.reminder.sent" },
-            { "id": "n6", "type": "decision", "label": "Milestone or 90-day complete?" },
-            { "id": "n7", "type": "event", "label": "Emit milestone.reached / journey.completed" },
-            { "id": "n8", "type": "action", "label": "Persist overdue counts" },
-            { "id": "n9", "type": "end", "label": "Scan complete" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "Query Notion task statuses",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Categorize (upcoming/due/overdue)"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Dispatch tiered reminders"
+            },
+            {
+              "id": "n5",
+              "type": "event",
+              "label": "Emit onboarding.reminder.sent"
+            },
+            {
+              "id": "n6",
+              "type": "decision",
+              "label": "Milestone or 90-day complete?"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit milestone.reached / journey.completed"
+            },
+            {
+              "id": "n8",
+              "type": "action",
+              "label": "Persist overdue counts"
+            },
+            {
+              "id": "n9",
+              "type": "end",
+              "label": "Scan complete"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7", "label": "Yes", "variant": "yes" },
-            { "source": "n6", "target": "n8", "label": "No", "variant": "no" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "n6",
+              "target": "n8",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            }
           ]
         }
       },
@@ -214,12 +448,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM local — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [
-          { "type": "built-in", "description": "Weekly progress report + at-risk alerts for HR and hiring managers" }
+          {
+            "type": "built-in",
+            "description": "Weekly progress report + at-risk alerts for HR and hiring managers"
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -230,38 +472,112 @@
           "context": "Snapshots weekly aggregate metrics per employee so trend comparisons across weeks are possible."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding.hire.at_risk", "direction": "emit", "description": "Fired for each hire matching at-risk criteria. Includes employee_id, overdue_count, expected_progress_delta." }
+          {
+            "event_type": "onboarding.hire.at_risk",
+            "direction": "emit",
+            "description": "Fired for each hire matching at-risk criteria. Includes employee_id, overdue_count, expected_progress_delta."
+          }
         ],
         "error_handling": "If Notion is partially unavailable: generate the report from last-known-good state snapshots and flag the coverage gap in the report header.",
         "input_schema": [
-          { "name": "at_risk_threshold_overdue", "type": "number", "default": 3, "min": 1, "max": 10 },
-          { "name": "at_risk_threshold_progress_pct", "type": "number", "default": 50, "min": 10, "max": 90 }
+          {
+            "name": "at_risk_threshold_overdue",
+            "type": "number",
+            "default": 3,
+            "min": 1,
+            "max": 10
+          },
+          {
+            "name": "at_risk_threshold_progress_pct",
+            "type": "number",
+            "default": 50,
+            "min": 10,
+            "max": 90
+          }
         ],
         "sample_input": {
           "at_risk_threshold_overdue": 3,
           "at_risk_threshold_progress_pct": 50
         },
-        "tool_hints": ["http_request", "file_read", "personas_messages"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "personas_messages"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Scheduled tick" },
-            { "id": "n2", "type": "connector", "label": "Query active checklists", "connector": "notion" },
-            { "id": "n3", "type": "action", "label": "Compute per-employee metrics" },
-            { "id": "n4", "type": "action", "label": "Identify at-risk hires" },
-            { "id": "n5", "type": "action", "label": "Analyze bottlenecks by task type" },
-            { "id": "n6", "type": "action", "label": "Compose + deliver report" },
-            { "id": "n7", "type": "event", "label": "Emit onboarding.hire.at_risk per hire" },
-            { "id": "n8", "type": "end", "label": "Report delivered" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "Query active checklists",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Compute per-employee metrics"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Identify at-risk hires"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Analyze bottlenecks by task type"
+            },
+            {
+              "id": "n6",
+              "type": "action",
+              "label": "Compose + deliver report"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit onboarding.hire.at_risk per hire"
+            },
+            {
+              "id": "n8",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            }
           ]
         }
       }
@@ -270,11 +586,19 @@
       {
         "id": "aq_reminder_days",
         "scope": "capability",
-        "use_case_ids": ["uc_deadline_check"],
+        "use_case_ids": [
+          "uc_deadline_check"
+        ],
         "category": "configuration",
         "question": "How many days before a deadline should the first reminder fire?",
         "type": "select",
-        "options": ["1 day", "2 days", "3 days", "5 days", "7 days"],
+        "options": [
+          "1 day",
+          "2 days",
+          "3 days",
+          "5 days",
+          "7 days"
+        ],
         "default": "3 days",
         "maps_to": "use_cases[uc_deadline_check].sample_input.reminder_days_before_deadline",
         "variable_name": "reminder_days",
@@ -284,11 +608,17 @@
       {
         "id": "aq_max_overdue",
         "scope": "capability",
-        "use_case_ids": ["uc_deadline_check"],
+        "use_case_ids": [
+          "uc_deadline_check"
+        ],
         "category": "boundaries",
         "question": "How many overdue reminders per task before HR escalation?",
         "type": "select",
-        "options": ["2 (escalate quickly)", "3 (balanced)", "5 (give more time)"],
+        "options": [
+          "2 (escalate quickly)",
+          "3 (balanced)",
+          "5 (give more time)"
+        ],
         "default": "3 (balanced)",
         "maps_to": "use_cases[uc_deadline_check].sample_input.max_overdue_alerts_per_task",
         "variable_name": "max_overdue",
@@ -301,12 +631,35 @@
         "category": "domain",
         "question": "How formal should reminders and reports read?",
         "type": "select",
-        "options": ["Casual (friendly, emoji-friendly)", "Neutral (professional, no emoji)", "Formal (corporate, third person)"],
+        "options": [
+          "Casual (friendly, emoji-friendly)",
+          "Neutral (professional, no emoji)",
+          "Formal (corporate, third person)"
+        ],
         "default": "Neutral (professional, no emoji)",
         "maps_to": "persona.voice.style",
         "variable_name": "voice_tone",
         "context": "Affects how every user-facing message reads across all capabilities.",
         "dimension": "voice"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

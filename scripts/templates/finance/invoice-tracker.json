@@ -5,11 +5,21 @@
   "description": "Detects incoming invoices in Gmail, extracts structured fields (vendor, amount, due date, invoice number), maintains a SQLite-backed payment ledger, and proactively alerts you to upcoming and overdue payments. Learns vendor-specific email patterns so extraction sharpens over time.",
   "icon": "Receipt",
   "color": "#10b981",
-  "category": ["finance"],
-  "service_flow": ["Gmail", "Local Database", "Messages"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Local Database", "Messages"],
+    "service_flow": [
+      "Gmail",
+      "Local Database",
+      "Messages"
+    ],
     "persona": {
       "goal": "Never miss a bill you owe — watch the inbox, extract the number, track the deadline, nudge before it's late.",
       "identity": {
@@ -48,15 +58,21 @@
       "tool_guidance": "**Gmail** — multi-strategy search with rotation:\n- Primary (every scan): `subject:(invoice OR \"payment due\" OR statement OR \"amount due\") newer_than:{scan_interval}h`, `from:({known_vendors}) newer_than:{scan_interval}h`, `has:attachment filename:(invoice OR receipt OR bill) newer_than:{scan_interval}h`.\n- Secondary (weekly sweep): `subject:(\"balance due\" OR remittance OR \"pay by\" OR billing) newer_than:7d`, `(\"total due\" OR \"amount owing\") has:attachment newer_than:7d`.\n- Parse order: email body HTML/text → PDF attachments → image attachments (flag for manual review if OCR not available).\n\n**Database** (`personas_database` / SQLite):\n```\nCREATE TABLE invoices (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  vendor TEXT NOT NULL,\n  invoice_number TEXT,\n  amount REAL NOT NULL,\n  currency TEXT DEFAULT 'USD',\n  invoice_date TEXT,\n  due_date TEXT,\n  status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','overdue','disputed','cancelled')),\n  gmail_message_id TEXT UNIQUE,\n  extraction_confidence REAL,\n  created_at TEXT DEFAULT (datetime('now')),\n  updated_at TEXT DEFAULT (datetime('now')),\n  notes TEXT\n);\n```\nCommon queries: insert new, dedupe by vendor+invoice_number, overdue sweep (`UPDATE ... WHERE status='pending' AND due_date < date('now')`), upcoming due within window, overdue listing, monthly aggregates.\n\n**Parameters** (all adjustable without rebuild):\n- `{{param.scan_interval_hours}}` — Gmail poll cadence (default 4).\n- `{{param.overdue_alert_frequency_hours}}` — re-alert interval for overdue items (default 24).\n- `{{param.reminder_days_before_due}}` — lead-time for upcoming reminders (default 3).\n- `{{param.extraction_confidence_threshold}}` — auto-accept floor (default 0.7).\n\n**Memory**: vendor patterns (sender addresses, subject formats, invoice number formats, payment terms); last-scan timestamp; last-alert timestamps per invoice.",
       "error_handling": "Gmail 401/403 → Messages notify for credential refresh; halt ingest but continue monitoring (DB + alerts don't need Gmail). Gmail 429 → exponential backoff (1/2/4s, max 3 tries); skip cycle on persistent failure. Ambiguous amount (candidates differ > 10%) → flag review with all candidates; never guess. Unparseable date → apply default payment terms as provisional; flag. Missing invoice number → synthetic ID (vendor-initials + date + seq); flag. Unparseable PDF → record with confidence=0.2 and review flag. DB write failure → queue to `pending_writes.json`, alert user. Messages delivery failure → save to `latest_overdue_alert.json`.",
       "examples": [],
-      "tools": ["gmail", "personas_database", "personas_messages"],
+      "tools": [
+        "gmail",
+        "personas_database",
+        "personas_messages"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email_source",
           "category": "email",
-          "categories": ["email"],
+          "categories": [
+            "email"
+          ],
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
@@ -108,10 +124,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "0 */4 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 */4 * * *",
+            "timezone": "local"
+          },
           "description": "Default every 4 hours — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -138,28 +159,54 @@
           {
             "name": "arrival_pattern",
             "type": "enum",
-            "options": ["attachment_first", "body_first", "mixed", "forwarded"],
+            "options": [
+              "attachment_first",
+              "body_first",
+              "mixed",
+              "forwarded"
+            ],
             "default": "mixed",
             "description": "Parsing priority. Agent always checks both attachments and body; this orders the lookup."
           },
           {
             "name": "primary_currency",
             "type": "enum",
-            "options": ["USD", "EUR", "GBP", "CAD", "AUD", "CHF", "Other"],
+            "options": [
+              "USD",
+              "EUR",
+              "GBP",
+              "CAD",
+              "AUD",
+              "CHF",
+              "Other"
+            ],
             "default": "USD",
             "description": "Default currency when the invoice doesn't specify one. Also used for summary formatting."
           },
           {
             "name": "default_payment_terms",
             "type": "enum",
-            "options": ["Due on receipt", "Net 15", "Net 30", "Net 45", "Net 60"],
+            "options": [
+              "Due on receipt",
+              "Net 15",
+              "Net 30",
+              "Net 45",
+              "Net 60"
+            ],
             "default": "Net 30",
             "description": "Applied when the invoice has no explicit due date so every record enters the monitoring pipeline with a deadline."
           },
           {
             "name": "high_value_threshold",
             "type": "enum",
-            "options": ["100", "500", "1000", "5000", "10000", "None"],
+            "options": [
+              "100",
+              "500",
+              "1000",
+              "5000",
+              "10000",
+              "None"
+            ],
             "default": "1000",
             "description": "Above this amount, invoices are always flagged for manual review regardless of extraction confidence."
           }
@@ -170,32 +217,112 @@
           "default_payment_terms": "{{param.aq_default_payment_terms}}",
           "high_value_threshold": "{{param.aq_high_value_threshold}}"
         },
-        "tool_hints": ["gmail", "personas_database", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail",
+          "personas_database",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick" },
-            { "id": "i2", "type": "action", "label": "Load last_scan + vendor patterns" },
-            { "id": "i3", "type": "connector", "label": "Multi-strategy Gmail search", "connector": "gmail" },
-            { "id": "i4", "type": "action", "label": "Dedupe by message ID" },
-            { "id": "i5", "type": "action", "label": "Extract structured data + assign confidence" },
-            { "id": "i6", "type": "decision", "label": "Confidence ≥ threshold AND amount < high-value?" },
-            { "id": "i7", "type": "action", "label": "Insert pending row" },
-            { "id": "i8", "type": "action", "label": "Insert + flag for manual review" },
-            { "id": "i9", "type": "action", "label": "Save vendor pattern + update last_scan" },
-            { "id": "i10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "i2",
+              "type": "action",
+              "label": "Load last_scan + vendor patterns"
+            },
+            {
+              "id": "i3",
+              "type": "connector",
+              "label": "Multi-strategy Gmail search",
+              "connector": "email"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Dedupe by message ID"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "Extract structured data + assign confidence"
+            },
+            {
+              "id": "i6",
+              "type": "decision",
+              "label": "Confidence ≥ threshold AND amount < high-value?"
+            },
+            {
+              "id": "i7",
+              "type": "action",
+              "label": "Insert pending row"
+            },
+            {
+              "id": "i8",
+              "type": "action",
+              "label": "Insert + flag for manual review"
+            },
+            {
+              "id": "i9",
+              "type": "action",
+              "label": "Save vendor pattern + update last_scan"
+            },
+            {
+              "id": "i10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7", "variant": "yes", "label": "Yes" },
-            { "source": "i6", "target": "i8", "variant": "no", "label": "No → review" },
-            { "source": "i7", "target": "i9" },
-            { "source": "i8", "target": "i9" },
-            { "source": "i9", "target": "i10" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "i6",
+              "target": "i8",
+              "variant": "no",
+              "label": "No → review"
+            },
+            {
+              "source": "i7",
+              "target": "i9"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            },
+            {
+              "source": "i9",
+              "target": "i10"
+            }
           ]
         }
       },
@@ -210,7 +337,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 9:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -250,14 +380,24 @@
           {
             "name": "reminder_days_before_due",
             "type": "enum",
-            "options": ["1", "3", "7", "14"],
+            "options": [
+              "1",
+              "3",
+              "7",
+              "14"
+            ],
             "default": "3",
             "description": "How many days before due date the upcoming reminder fires. Longer lead times help when payments need internal approval."
           },
           {
             "name": "overdue_alert_frequency_hours",
             "type": "enum",
-            "options": ["6", "24", "48", "168"],
+            "options": [
+              "6",
+              "24",
+              "48",
+              "168"
+            ],
             "default": "24",
             "description": "Re-alert interval for overdue invoices. Higher values reduce noise; lower values increase urgency."
           }
@@ -266,32 +406,111 @@
           "reminder_days_before_due": "{{param.aq_reminder_days_before_due}}",
           "overdue_alert_frequency_hours": "{{param.aq_overdue_alert_frequency}}"
         },
-        "tool_hints": ["personas_database", "personas_messages", "file_read", "file_write"],
+        "tool_hints": [
+          "personas_database",
+          "personas_messages",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Daily tick" },
-            { "id": "p2", "type": "action", "label": "Sweep pending → overdue (due_date < today)" },
-            { "id": "p3", "type": "event", "label": "Emit invoice.status.changed per transition" },
-            { "id": "p4", "type": "action", "label": "Query upcoming payments in reminder window" },
-            { "id": "p5", "type": "action", "label": "Send upcoming reminder (grouped by urgency)" },
-            { "id": "p6", "type": "action", "label": "Query overdue + bucket by aging" },
-            { "id": "p7", "type": "decision", "label": "Frequency elapsed?" },
-            { "id": "p8", "type": "action", "label": "Send overdue alert + emit payment.overdue.alert" },
-            { "id": "p9", "type": "action", "label": "(1st of month) Monthly summary + emit invoice.summary.monthly" },
-            { "id": "p10", "type": "end", "label": "Monitoring complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Sweep pending → overdue (due_date < today)"
+            },
+            {
+              "id": "p3",
+              "type": "event",
+              "label": "Emit invoice.status.changed per transition"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Query upcoming payments in reminder window"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Send upcoming reminder (grouped by urgency)"
+            },
+            {
+              "id": "p6",
+              "type": "action",
+              "label": "Query overdue + bucket by aging"
+            },
+            {
+              "id": "p7",
+              "type": "decision",
+              "label": "Frequency elapsed?"
+            },
+            {
+              "id": "p8",
+              "type": "action",
+              "label": "Send overdue alert + emit payment.overdue.alert"
+            },
+            {
+              "id": "p9",
+              "type": "action",
+              "label": "(1st of month) Monthly summary + emit invoice.summary.monthly"
+            },
+            {
+              "id": "p10",
+              "type": "end",
+              "label": "Monitoring complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8", "variant": "yes", "label": "Yes" },
-            { "source": "p7", "target": "p9", "variant": "no", "label": "Too soon" },
-            { "source": "p8", "target": "p9" },
-            { "source": "p9", "target": "p10" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "p7",
+              "target": "p9",
+              "variant": "no",
+              "label": "Too soon"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            },
+            {
+              "source": "p9",
+              "target": "p10"
+            }
           ]
         }
       }
@@ -300,7 +519,9 @@
       {
         "id": "aq_arrival_pattern",
         "scope": "capability",
-        "use_case_ids": ["uc_invoice_ingest"],
+        "use_case_ids": [
+          "uc_invoice_ingest"
+        ],
         "category": "configuration",
         "question": "How do invoices typically arrive in your inbox?",
         "type": "select",
@@ -319,11 +540,20 @@
       {
         "id": "aq_high_value_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_invoice_ingest"],
+        "use_case_ids": [
+          "uc_invoice_ingest"
+        ],
         "category": "human_in_the_loop",
         "question": "Above what amount should invoices require manual approval?",
         "type": "select",
-        "options": ["100", "500", "1000", "5000", "10000", "None"],
+        "options": [
+          "100",
+          "500",
+          "1000",
+          "5000",
+          "10000",
+          "None"
+        ],
         "default": "1000",
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.high_value_threshold",
         "variable_name": "high_value_threshold",
@@ -333,11 +563,21 @@
       {
         "id": "aq_primary_currency",
         "scope": "capability",
-        "use_case_ids": ["uc_invoice_ingest"],
+        "use_case_ids": [
+          "uc_invoice_ingest"
+        ],
         "category": "configuration",
         "question": "What is the primary currency for your invoices?",
         "type": "select",
-        "options": ["USD ($)", "EUR (€)", "GBP (£)", "CAD (C$)", "AUD (A$)", "CHF (CHF)", "Other"],
+        "options": [
+          "USD ($)",
+          "EUR (€)",
+          "GBP (£)",
+          "CAD (C$)",
+          "AUD (A$)",
+          "CHF (CHF)",
+          "Other"
+        ],
         "default": "USD ($)",
         "allow_custom": true,
         "maps_to": "use_cases[uc_invoice_ingest].sample_input.primary_currency",
@@ -348,11 +588,18 @@
       {
         "id": "aq_reminder_days_before_due",
         "scope": "capability",
-        "use_case_ids": ["uc_payment_monitor"],
+        "use_case_ids": [
+          "uc_payment_monitor"
+        ],
         "category": "quality",
         "question": "How many days before the due date should reminders be sent?",
         "type": "select",
-        "options": ["1", "3", "7", "14"],
+        "options": [
+          "1",
+          "3",
+          "7",
+          "14"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_payment_monitor].sample_input.reminder_days_before_due",
         "variable_name": "reminder_days_before_due",
@@ -362,11 +609,18 @@
       {
         "id": "aq_overdue_alert_frequency",
         "scope": "capability",
-        "use_case_ids": ["uc_payment_monitor"],
+        "use_case_ids": [
+          "uc_payment_monitor"
+        ],
         "category": "quality",
         "question": "How often should overdue alerts repeat for unpaid invoices?",
         "type": "select",
-        "options": ["6", "24", "48", "168"],
+        "options": [
+          "6",
+          "24",
+          "48",
+          "168"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_payment_monitor].sample_input.overdue_alert_frequency_hours",
         "variable_name": "overdue_alert_frequency",
@@ -376,7 +630,9 @@
       {
         "id": "aq_default_payment_terms",
         "scope": "capability",
-        "use_case_ids": ["uc_invoice_ingest"],
+        "use_case_ids": [
+          "uc_invoice_ingest"
+        ],
         "category": "configuration",
         "question": "What default payment terms should be assumed when no due date is found?",
         "type": "select",
@@ -392,6 +648,25 @@
         "variable_name": "default_payment_terms",
         "context": "Applied to invoices with no explicit due date so every record enters monitoring with a deadline. Calculated from invoice_date.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "suggested_parameters": [
@@ -437,7 +712,7 @@
         "description": "Minimum confidence (0.0-1.0) for automatic acceptance. Below this, the extraction is flagged for manual review.",
         "unit": "",
         "min": 0.3,
-        "max": 1.0
+        "max": 1
       }
     ],
     "persona_meta": {

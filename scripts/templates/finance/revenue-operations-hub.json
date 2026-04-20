@@ -5,11 +5,21 @@
   "description": "Processes Stripe subscription events in real time, maintains an Airtable revenue tracker, runs an escalating failed-payment recovery sequence, and ships daily revenue summaries. State persists atomically so nothing is lost.",
   "icon": "TrendingUp",
   "color": "#22C55E",
-  "category": ["finance"],
-  "service_flow": ["Stripe", "Airtable", "Gmail"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Stripe",
+    "Airtable",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Stripe", "Airtable", "Gmail"],
+    "service_flow": [
+      "Stripe",
+      "Airtable",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Run subscription revenue as a live pipeline — every event processed, every at-risk customer recovered via a principled dunning sequence, every morning summarized with trend context.",
       "identity": {
@@ -47,7 +57,12 @@
       "tool_guidance": "**Stripe** (base `https://api.stripe.com`, Bearer auth):\n- `GET /v1/events?type={types}&created[gte]={ts}` — poll subscription + payment events.\n- `GET /v1/customers/{id}` — customer profile.\n- `GET /v1/subscriptions?customer={id}` — subscription status.\n- `GET /v1/invoices?customer={id}&status=open` — open invoices.\n- `GET /v1/balance_transactions?created[gte]={start}&created[lte]={end}` — daily revenue totals.\n- `POST /v1/billing_portal/sessions` — generate payment-update links for dunning emails.\n\n**Airtable** (base `https://api.airtable.com/v0`, Bearer PAT):\n- `GET /{baseId}/{table}?filterByFormula=SEARCH(\"{customer_id}\", {StripeCustomerId})` — find existing record.\n- `POST /{baseId}/{table}` with `{fields: {...}}` — create record.\n- `PATCH /{baseId}/{table}/{recordId}` with `{fields: {...}}` — update record.\n- Batch limit: 10 records per request. Rate limit: 5 req/sec per base.\n\n**Gmail** — `gmail_send` for dunning emails (HTML with plan/amount/portal CTA) and daily summaries (HTML tables with trend arrows).\n\n**Local state**:\n- `processed_events.json` — Stripe event dedupe map.\n- `audit_log.jsonl` — before/after each API call for audit trail.\n- `dunning_state.json` — active dunning sequences with tier + timestamps.\n- `daily_metrics.json` — historical snapshots for trend calculations.\n- `pending_airtable_ops.jsonl` — queued writes when Airtable is unreachable.\n\n**Airtable schema** (expected fields): CustomerName, Email, StripeCustomerId, Plan, MRR, Status (Active|At Risk|Churned|Churn Imminent), StartDate, EndDate, FailedPaymentCount, LifetimeValue, LastEventDate, DunningTier, LastDunningEmailDate, DunningStartedAt, FailureReason, Notes.",
       "error_handling": "Stripe 429 → exponential backoff (1s→2s→4s); 100 req/sec limit live. Stripe 401 → critical alert; pause polling until credentials refreshed. Stripe 404 → customer/subscription deleted; update Airtable status accordingly. Stripe 5xx → retry 3× with backoff. Airtable 429 → wait 30s + retry once; queue to `pending_airtable_ops.jsonl` on continued failure. Airtable 422 (field mismatch) → log the payload; skip the write; alert user for schema mismatch. Airtable duplicate → update instead of create. Gmail bounce → flag customer record with bad_email; no retry. Gmail 5xx → queue email; retry next cycle. Duplicate events → dedupe by event ID in `processed_events.json`. Malformed payload → log raw to `data/logs/malformed_events.jsonl`; alert. Out-of-order events → use timestamp to resequence; create Airtable record before update if missing. Refund above approval threshold → create with 'Pending Review' status rather than auto-logging.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "stripe",
@@ -70,11 +85,11 @@
           "setup_instructions": "1. Log in to Stripe Dashboard at dashboard.stripe.com.\n2. Developers → API keys → copy your Secret key.\n3. (Optional) Developers → Webhooks → add endpoint, subscribe to: customer.subscription.*, invoice.payment_failed, charge.refunded, charge.dispute.*.\n4. Paste the secret key above."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "pat",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
@@ -106,23 +121,41 @@
           "setup_instructions": "1. airtable.com/create/tokens → create a new Personal Access Token with data.records:read + data.records:write.\n2. Grant access to the base containing your revenue tracker.\n3. In that base, create a table with fields listed in tool_guidance (CustomerName, Email, StripeCustomerId, Plan, MRR, Status, ...).\n4. Copy the Base ID from the base URL and the exact table name.\n5. Paste all three fields above."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send. 4. Paste client_id, client_secret, refresh_token above."
         }
       ],
       "notification_channels_default": [
-        { "type": "email", "description": "Customer-facing dunning emails + internal daily revenue summary." }
+        {
+          "type": "email",
+          "description": "Customer-facing dunning emails + internal daily revenue summary."
+        }
       ],
       "core_memories": []
     },
@@ -138,12 +171,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step. Can be replaced by a webhook trigger once webhook infrastructure is configured."
         },
-        "connectors": ["stripe", "airtable"],
+        "connectors": [
+          "stripe",
+          "spreadsheet"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`processed_events.json` — Stripe event dedupe. `audit_log.jsonl` — before/after each API call for audit trail."
@@ -180,14 +222,24 @@
           {
             "name": "business_type",
             "type": "enum",
-            "options": ["b2b_saas", "b2c_saas", "ecommerce_subscription", "marketplace"],
+            "options": [
+              "b2b_saas",
+              "b2c_saas",
+              "ecommerce_subscription",
+              "marketplace"
+            ],
             "default": "b2b_saas",
             "description": "Shapes MRR calculation conventions and email framing."
           },
           {
             "name": "refund_review_threshold",
             "type": "enum",
-            "options": ["100", "500", "1000", "no_threshold"],
+            "options": [
+              "100",
+              "500",
+              "1000",
+              "no_threshold"
+            ],
             "default": "500",
             "description": "USD amount above which refunds require human approval before logging as resolved."
           }
@@ -196,27 +248,87 @@
           "business_type": "{{param.aq_business_type}}",
           "refund_review_threshold": "{{param.aq_refund_review_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Polling tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch + dedupe Stripe events", "connector": "stripe" },
-            { "id": "s3", "type": "action", "label": "Classify event type" },
-            { "id": "s4", "type": "connector", "label": "Search or create Airtable record", "connector": "airtable" },
-            { "id": "s5", "type": "connector", "label": "Update Airtable with event changes", "connector": "airtable" },
-            { "id": "s6", "type": "event", "label": "Emit revenue.subscription.* / payment.failed / refund.issued / dispute.opened" },
-            { "id": "s7", "type": "action", "label": "Audit log write" },
-            { "id": "s8", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch + dedupe Stripe events",
+              "connector": "stripe"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Classify event type"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Search or create Airtable record",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Update Airtable with event changes",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit revenue.subscription.* / payment.failed / refund.issued / dispute.opened"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Audit log write"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -231,12 +343,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "revenue.payment.failed" },
+          "config": {
+            "event_type": "revenue.payment.failed"
+          },
           "description": "Fires on every payment failure from uc_subscription_sync. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["stripe", "airtable", "gmail"],
+        "connectors": [
+          "stripe",
+          "spreadsheet",
+          "email"
+        ],
         "notification_channels": [
-          { "type": "email", "description": "Tier-appropriate dunning emails to the customer with Stripe billing-portal link." }
+          {
+            "type": "email",
+            "description": "Tier-appropriate dunning emails to the customer with Stripe billing-portal link."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -268,14 +389,23 @@
           {
             "name": "escalation_mode",
             "type": "enum",
-            "options": ["auto_send_all_tiers", "human_approval_for_tier_3", "alert_team_at_tier_2", "never_escalate"],
+            "options": [
+              "auto_send_all_tiers",
+              "human_approval_for_tier_3",
+              "alert_team_at_tier_2",
+              "never_escalate"
+            ],
             "default": "human_approval_for_tier_3",
             "description": "Controls how aggressive the automated recovery is. Tier 3 is the final warning email; human_approval_for_tier_3 means the team reviews the draft before sending."
           },
           {
             "name": "tone",
             "type": "enum",
-            "options": ["warm_empathetic", "direct_urgent", "neutral_transactional"],
+            "options": [
+              "warm_empathetic",
+              "direct_urgent",
+              "neutral_transactional"
+            ],
             "default": "warm_empathetic",
             "description": "Tone of the dunning email copy generated at each tier."
           }
@@ -284,27 +414,90 @@
           "escalation_mode": "{{param.aq_escalation_mode}}",
           "tone": "{{param.aq_tone}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "revenue.payment.failed received" },
-            { "id": "r2", "type": "connector", "label": "Read failure history from Airtable", "connector": "airtable" },
-            { "id": "r3", "type": "decision", "label": "Which tier?" },
-            { "id": "r4", "type": "connector", "label": "Generate Stripe billing portal link", "connector": "stripe" },
-            { "id": "r5", "type": "connector", "label": "Send tier-appropriate email", "connector": "gmail" },
-            { "id": "r6", "type": "connector", "label": "Update Airtable dunning state", "connector": "airtable" },
-            { "id": "r7", "type": "event", "label": "Emit revenue.payment.escalated (tier 3 only)" },
-            { "id": "r8", "type": "end", "label": "Recovery step complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "revenue.payment.failed received"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Read failure history from Airtable",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Which tier?"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Generate Stripe billing portal link",
+              "connector": "stripe"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Send tier-appropriate email",
+              "connector": "email"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Update Airtable dunning state",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit revenue.payment.escalated (tier 3 only)"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Recovery step complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "label": "1st / 2nd / 3rd" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "label": "1st / 2nd / 3rd"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -319,14 +512,27 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 08:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["stripe", "airtable", "gmail"],
-        "notification_channels": [
-          { "type": "email", "description": "Daily HTML revenue summary to configured stakeholder recipients." }
+        "connectors": [
+          "stripe",
+          "spreadsheet",
+          "email"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "email",
+            "description": "Daily HTML revenue summary to configured stakeholder recipients."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`daily_metrics.json` — rolling historical snapshots for 7/30-day trend comparisons. Written after every daily run."
@@ -353,7 +559,12 @@
           {
             "name": "kpi_focus",
             "type": "enum",
-            "options": ["mrr_movement", "cash_collected", "churn_signals", "all_with_narrative"],
+            "options": [
+              "mrr_movement",
+              "cash_collected",
+              "churn_signals",
+              "all_with_narrative"
+            ],
             "default": "all_with_narrative",
             "description": "Which KPIs to lead the summary with."
           }
@@ -362,30 +573,105 @@
           "recipients": "{{param.aq_recipients}}",
           "kpi_focus": "{{param.aq_kpi_focus}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Daily tick" },
-            { "id": "d2", "type": "connector", "label": "Fetch yesterday's Stripe balance_transactions", "connector": "stripe" },
-            { "id": "d3", "type": "connector", "label": "Query Airtable for new subs / cancels / at-risk", "connector": "airtable" },
-            { "id": "d4", "type": "action", "label": "Compute daily metrics + trend deltas" },
-            { "id": "d5", "type": "decision", "label": "Churn spike detected?" },
-            { "id": "d6", "type": "event", "label": "Emit revenue.churn.spike" },
-            { "id": "d7", "type": "connector", "label": "Deliver summary via Gmail", "connector": "gmail" },
-            { "id": "d8", "type": "event", "label": "Emit revenue.summary.delivered" },
-            { "id": "d9", "type": "end", "label": "Daily cycle complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Fetch yesterday's Stripe balance_transactions",
+              "connector": "stripe"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Query Airtable for new subs / cancels / at-risk",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Compute daily metrics + trend deltas"
+            },
+            {
+              "id": "d5",
+              "type": "decision",
+              "label": "Churn spike detected?"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit revenue.churn.spike"
+            },
+            {
+              "id": "d7",
+              "type": "connector",
+              "label": "Deliver summary via Gmail",
+              "connector": "email"
+            },
+            {
+              "id": "d8",
+              "type": "event",
+              "label": "Emit revenue.summary.delivered"
+            },
+            {
+              "id": "d9",
+              "type": "end",
+              "label": "Daily cycle complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6", "variant": "yes", "label": "Yes" },
-            { "source": "d5", "target": "d7", "variant": "no", "label": "No" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "d5",
+              "target": "d7",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            }
           ]
         }
       }
@@ -394,7 +680,9 @@
       {
         "id": "aq_business_type",
         "scope": "capability",
-        "use_case_ids": ["uc_subscription_sync"],
+        "use_case_ids": [
+          "uc_subscription_sync"
+        ],
         "category": "domain",
         "question": "What type of subscription business does this hub operate?",
         "type": "select",
@@ -413,7 +701,9 @@
       {
         "id": "aq_refund_review_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_subscription_sync"],
+        "use_case_ids": [
+          "uc_subscription_sync"
+        ],
         "category": "boundaries",
         "question": "Above what refund amount (USD) should the agent require human approval before logging as resolved?",
         "type": "select",
@@ -432,7 +722,9 @@
       {
         "id": "aq_escalation_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_payment_recovery"],
+        "use_case_ids": [
+          "uc_payment_recovery"
+        ],
         "category": "human_in_the_loop",
         "question": "How should the payment recovery sequence escalate when automated emails aren't working?",
         "type": "select",
@@ -451,7 +743,9 @@
       {
         "id": "aq_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_payment_recovery"],
+        "use_case_ids": [
+          "uc_payment_recovery"
+        ],
         "category": "configuration",
         "question": "What tone should the failed-payment recovery emails use?",
         "type": "select",
@@ -469,7 +763,9 @@
       {
         "id": "aq_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_summary"],
+        "use_case_ids": [
+          "uc_daily_summary"
+        ],
         "category": "configuration",
         "question": "Who should receive the daily revenue summary?",
         "type": "text",
@@ -483,7 +779,9 @@
       {
         "id": "aq_kpi_focus",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_summary"],
+        "use_case_ids": [
+          "uc_daily_summary"
+        ],
         "category": "quality",
         "question": "Which KPIs should the daily summary lead with?",
         "type": "select",
@@ -498,6 +796,44 @@
         "variable_name": "kpi_focus",
         "context": "Shapes the report's lead section and table ordering.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

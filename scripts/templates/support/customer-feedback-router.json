@@ -5,11 +5,21 @@
   "description": "Captures new Intercom conversations, classifies feedback, deduplicates against Linear issues, creates properly labeled tickets, and keeps the product team informed via Slack summaries and weekly digests.",
   "icon": "MessageSquare",
   "color": "#14B8A6",
-  "category": ["support"],
-  "service_flow": ["Intercom", "Slack", "Linear"],
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Intercom",
+    "Slack",
+    "Linear"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Intercom", "Slack", "Linear"],
+    "service_flow": [
+      "Intercom",
+      "Slack",
+      "Linear"
+    ],
     "persona": {
       "goal": "Keep the product team close to customer voice — triage every Intercom conversation into the right Linear issue with full context, deduplicate ruthlessly, and surface weekly themes.",
       "identity": {
@@ -48,7 +58,11 @@
       "tool_guidance": "### Intercom (http_request + intercom connector)\n- `POST /conversations/search` with created_at filter since last checkpoint.\n- `GET /conversations/{id}` for full thread.\n- `POST /tags` to mark conversations processed.\nHeaders: `Authorization: Bearer {access_token}`, `Accept: application/json`.\n\n### Linear (http_request + linear connector)\n- `POST /graphql` — all operations:\n  - `issueCreate` mutation (title, description, teamId, labelIds, priority).\n  - `issueSearch` query for deduplication.\n  - `commentCreate` for duplicate-report linking.\n  - `issueLabels` / `teams` to resolve names → IDs.\nHeaders: `Authorization: {api_key}`, `Content-Type: application/json`.\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` — Block Kit summaries and digests.\n- `POST /api/chat.update` — update existing summaries.\n- Thread replies via `thread_ts`.\n\n### Local state (file_read / file_write)\n- state/last_poll.json — polling checkpoint.\n- state/known_issues.json — dedup memory (keyword → Linear id, report_count, last_seen).\n- state/processing_log.json — audit trail.\n- state/pending_slack.json — Slack retry queue.\n- state/failed_creates.json — Linear retry queue.",
       "error_handling": "Intercom 429 → back off 60s, retry next cycle. Intercom 401/403 → emit feedback.triage.error, halt until credential refresh. Linear issueCreate fail → retry once same cycle, then queue in failed_creates.json. Slack post fail → queue in pending_slack.json; retry next cycle (never drop a summary). Empty conversation body → tag 'unclassifiable' in Intercom, skip. Corrupted known_issues.json → rebuild by querying Linear for open issues with 'Customer Feedback' label; log warning. Missing last_poll.json → default to last 24h to avoid gaps. Dedup confidence < 70% → create new with 'possibly related to X' note. High-volume batch (>10 conversations in one cycle) → emit feedback.volume.spike and defer non-urgent items to next cycle.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "intercom",
@@ -71,11 +85,11 @@
           "setup_instructions": "1. Go to https://developers.intercom.com and sign in.\n2. Navigate to 'Your Apps' and select your app (or create a new one).\n3. Under 'Authentication', copy the Access Token.\n4. Grant permissions: Read conversations, Write conversations, Read and Write tags.\n5. Paste the token here."
         },
         {
-          "name": "linear",
-          "label": "Linear",
+          "name": "ticketing",
+          "label": "Ticketing System",
           "auth_type": "api_key",
           "role": "project_tracking",
-          "category": "development",
+          "category": "ticketing",
           "required": true,
           "api_base_url": "https://api.linear.app/graphql",
           "credential_fields": [
@@ -99,8 +113,8 @@
           "setup_instructions": "1. Open Linear and go to Settings (gear icon).\n2. Navigate to API → Personal API keys.\n3. Click 'Create key', name it 'Feedback Router'.\n4. Copy the generated API key (starts with lin_api_).\n5. Ensure these labels exist: Bug, Feature Request, Improvement, Customer Feedback, Urgent, High, Medium, Low.\n6. Paste the API key here."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -139,10 +153,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "interval_seconds": 120 },
+          "config": {
+            "interval_seconds": 120
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["intercom", "linear", "slack"],
+        "connectors": [
+          "intercom",
+          "ticketing",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -221,32 +241,114 @@
           "dedup_open_only": "{{param.aq_dedup_open_only}}",
           "excluded_topics": "{{param.aq_excluded_topics}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Polling tick" },
-            { "id": "t2", "type": "connector", "label": "Fetch new conversations since checkpoint", "connector": "intercom" },
-            { "id": "t3", "type": "action", "label": "Classify each (+ confidence)" },
-            { "id": "t4", "type": "action", "label": "Dedup check (memory + Linear search)" },
-            { "id": "t5", "type": "decision", "label": "New or duplicate?" },
-            { "id": "t6", "type": "connector", "label": "Create Linear issue", "connector": "linear" },
-            { "id": "t7", "type": "connector", "label": "Comment on existing issue", "connector": "linear" },
-            { "id": "t8", "type": "connector", "label": "Post Slack batch summary", "connector": "slack" },
-            { "id": "t9", "type": "event", "label": "Emit feedback.triage.* + update state" },
-            { "id": "t10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "Fetch new conversations since checkpoint",
+              "connector": "intercom"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Classify each (+ confidence)"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Dedup check (memory + Linear search)"
+            },
+            {
+              "id": "t5",
+              "type": "decision",
+              "label": "New or duplicate?"
+            },
+            {
+              "id": "t6",
+              "type": "connector",
+              "label": "Create Linear issue",
+              "connector": "ticketing"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Comment on existing issue",
+              "connector": "ticketing"
+            },
+            {
+              "id": "t8",
+              "type": "connector",
+              "label": "Post Slack batch summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "t9",
+              "type": "event",
+              "label": "Emit feedback.triage.* + update state"
+            },
+            {
+              "id": "t10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6", "label": "New", "variant": "yes" },
-            { "source": "t5", "target": "t7", "label": "Duplicate", "variant": "no" },
-            { "source": "t6", "target": "t8" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" },
-            { "source": "t9", "target": "t10" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6",
+              "label": "New",
+              "variant": "yes"
+            },
+            {
+              "source": "t5",
+              "target": "t7",
+              "label": "Duplicate",
+              "variant": "no"
+            },
+            {
+              "source": "t6",
+              "target": "t8"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            },
+            {
+              "source": "t9",
+              "target": "t10"
+            }
           ]
         }
       },
@@ -261,10 +363,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5" },
+          "config": {
+            "cron": "0 17 * * 5"
+          },
           "description": "Default Friday 5 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -300,25 +406,76 @@
         "sample_input": {
           "top_themes_count": 5
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Friday tick" },
-            { "id": "d2", "type": "action", "label": "Read logs + known_issues" },
-            { "id": "d3", "type": "action", "label": "Compute counts, themes, pending reviews" },
-            { "id": "d4", "type": "action", "label": "Prune stale memory entries" },
-            { "id": "d5", "type": "connector", "label": "Post Block Kit digest", "connector": "slack" },
-            { "id": "d6", "type": "event", "label": "Emit feedback.digest.delivered" },
-            { "id": "d7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Friday tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Read logs + known_issues"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compute counts, themes, pending reviews"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Prune stale memory entries"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Post Block Kit digest",
+              "connector": "messaging"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit feedback.digest.delivered"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       },
@@ -333,10 +490,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "feedback.triage.ambiguous" },
+          "config": {
+            "event_type": "feedback.triage.ambiguous"
+          },
           "description": "Fires whenever uc_triage_feedback emits an ambiguous conversation. Not user-configurable."
         },
-        "connectors": ["slack", "linear", "intercom"],
+        "connectors": [
+          "messaging",
+          "ticketing",
+          "intercom"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -382,28 +545,94 @@
         "sample_input": {
           "review_timeout_hours": 48
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "feedback.triage.ambiguous received" },
-            { "id": "r2", "type": "connector", "label": "Post Slack review prompt (:beetle:/:bulb:/:sparkles:)", "connector": "slack" },
-            { "id": "r3", "type": "decision", "label": "Human response?" },
-            { "id": "r4", "type": "action", "label": "Apply human classification" },
-            { "id": "r5", "type": "connector", "label": "Create Linear issue if actionable", "connector": "linear" },
-            { "id": "r6", "type": "event", "label": "Emit feedback.review.resolved" },
-            { "id": "r7", "type": "event", "label": "Emit feedback.review.timeout + repost" },
-            { "id": "r8", "type": "end", "label": "Review resolved" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "feedback.triage.ambiguous received"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Post Slack review prompt (:beetle:/:bulb:/:sparkles:)",
+              "connector": "messaging"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Human response?"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Apply human classification"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Create Linear issue if actionable",
+              "connector": "ticketing"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit feedback.review.resolved"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit feedback.review.timeout + repost"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Review resolved"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "label": "Yes", "variant": "yes" },
-            { "source": "r3", "target": "r7", "label": "Timeout", "variant": "no" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r8" },
-            { "source": "r7", "target": "r2" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "r3",
+              "target": "r7",
+              "label": "Timeout",
+              "variant": "no"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r8"
+            },
+            {
+              "source": "r7",
+              "target": "r2"
+            }
           ]
         }
       }
@@ -424,7 +653,9 @@
       {
         "id": "aq_linear_team",
         "scope": "connector",
-        "connector_names": ["linear"],
+        "connector_names": [
+          "ticketing"
+        ],
         "category": "configuration",
         "question": "Which Linear team should feedback issues be created under?",
         "type": "select",
@@ -435,7 +666,9 @@
         "context": "Issues land in this team with Customer Feedback + type + priority labels applied.",
         "dimension": "connectors",
         "vault_category": "project-mgmt",
-        "option_service_types": ["linear"],
+        "option_service_types": [
+          "linear"
+        ],
         "dynamic_source": {
           "service_type": "linear",
           "operation": "list_teams",
@@ -445,7 +678,9 @@
       {
         "id": "aq_triage_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_triage_feedback"],
+        "use_case_ids": [
+          "uc_triage_feedback"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives per-batch triage summaries?",
         "type": "select",
@@ -456,7 +691,9 @@
         "context": "Per-batch Slack summaries post here with new issues, duplicates, and review flags.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
@@ -466,7 +703,9 @@
       {
         "id": "aq_digest_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_digest"],
+        "use_case_ids": [
+          "uc_weekly_digest"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives the weekly digest?",
         "type": "select",
@@ -477,7 +716,9 @@
         "context": "Can be the same as the triage channel or a separate audience (e.g., #product-leads).",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
@@ -487,11 +728,19 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_triage_feedback"],
+        "use_case_ids": [
+          "uc_triage_feedback"
+        ],
         "category": "quality",
         "question": "Minimum classification confidence (0-100) for auto-creating a Linear issue?",
         "type": "select",
-        "options": ["70", "75", "80", "85", "90"],
+        "options": [
+          "70",
+          "75",
+          "80",
+          "85",
+          "90"
+        ],
         "default": "80",
         "maps_to": "use_cases[uc_triage_feedback].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -501,11 +750,20 @@
       {
         "id": "aq_dedup_window",
         "scope": "capability",
-        "use_case_ids": ["uc_triage_feedback", "uc_weekly_digest"],
+        "use_case_ids": [
+          "uc_triage_feedback",
+          "uc_weekly_digest"
+        ],
         "category": "memory",
         "question": "How long should an issue stay in deduplication memory?",
         "type": "select",
-        "options": ["30", "60", "90", "180", "365"],
+        "options": [
+          "30",
+          "60",
+          "90",
+          "180",
+          "365"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_triage_feedback].sample_input.dedup_window_days",
         "variable_name": "dedup_window",
@@ -515,7 +773,9 @@
       {
         "id": "aq_dedup_open_only",
         "scope": "capability",
-        "use_case_ids": ["uc_triage_feedback"],
+        "use_case_ids": [
+          "uc_triage_feedback"
+        ],
         "category": "memory",
         "question": "Should deduplication only match against open Linear issues?",
         "type": "boolean",
@@ -528,7 +788,9 @@
       {
         "id": "aq_excluded_topics",
         "scope": "capability",
-        "use_case_ids": ["uc_triage_feedback"],
+        "use_case_ids": [
+          "uc_triage_feedback"
+        ],
         "category": "boundaries",
         "question": "Which conversation topics should never auto-create a Linear issue?",
         "type": "text",
@@ -537,6 +799,44 @@
         "variable_name": "excluded_topics",
         "context": "Comma-separated topics routed to a non-actionable bucket (no Linear issue, optional Slack note). Typical: billing, churn, internal test accounts.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_ticketing_credential",
+        "scope": "connector",
+        "connector_names": [
+          "ticketing"
+        ],
+        "category": "configuration",
+        "question": "Which ticketing system should this persona write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "ticketing",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[ticketing].credential_fields[provider].value",
+        "variable_name": "ticketing_credential",
+        "context": "Options are auto-detected from your ticketing credentials in the Vault (Jira, Linear, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

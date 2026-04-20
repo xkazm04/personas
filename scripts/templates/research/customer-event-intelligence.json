@@ -5,11 +5,21 @@
   "description": "Receives product analytics events via webhook, classifies intent against a calibrated signal catalog, enriches with analytics-provider profile data, alerts sales in messaging, and logs signal patterns to the knowledge base. Pattern escalation surfaces users whose accumulated medium-intent behavior crosses a threshold.",
   "icon": "Radar",
   "color": "#06B6D4",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Analytics", "Messaging", "Knowledge Base"],
+  "service_flow": [
+    "Analytics",
+    "Messaging",
+    "Knowledge Base"
+  ],
   "payload": {
-    "service_flow": ["Analytics", "Messaging", "Knowledge Base"],
+    "service_flow": [
+      "Analytics",
+      "Messaging",
+      "Knowledge Base"
+    ],
     "persona": {
       "goal": "Turn raw product events into sales intelligence that reaches the right rep at the right moment — with enough context to act without a dashboard detour.",
       "identity": {
@@ -46,7 +56,11 @@
       "tool_guidance": "**Analytics provider**:\n- Profile enrichment: `GET {provider_base}/profiles/{userId}/traits` with provider-appropriate auth. Returns computed traits (name, email, company, plan, mrr, days_since_signup, seat_count).\n- Rate limit: respect provider's documented per-second cap. Queue excess events.\n\n**Messaging (alerts)**:\n- High-intent alert: rich block layout with header (emoji + company), fields (signal, score, plan, days), behavioral context, recommended action, CRM deep-link button.\n- Pattern escalation: lower-urgency formatting, subject prefix 'Sustained Interest Pattern'.\n- Rate limit: 1 alert/second per channel.\n\n**Knowledge base (signal log)**:\n- Properties: User ID (title), Event Name, Intent Level (High|Medium|Standard), Signal Score, Company, Plan, Days Since Signup, Behavioral Context (JSON), Slack Alert Sent, Enrichment Failed, Follow Up Required, Timestamp.\n- Dedup by (userId, event, hour bucket) via local cache file.\n\n**Memory ledger**:\n- Per-user rolling history: last N events with timestamps, impact scores, feature activations, last-alert timestamp.\n- Pattern escalation suppression window: configurable via `aq_pattern_suppression_hours`.\n\n**Retry queues**:\n- `failed_alert_queue.json` and `kb_queue.json` — appended on failure, flushed at the start of the next invocation before the new event is processed.",
       "error_handling": "Malformed webhook → write to `/tmp/analytics_errors.json` with timestamp, exit gracefully. Analytics profile 401/403 → continue with webhook data only, set `enrichment_failed: true`. Analytics profile 404/500 → same. Messaging failure → retry once after 1s, else append to `failed_alert_queue.json`. KB failure → append to `kb_queue.json`. Rate limit 429 → respect Retry-After; messaging 1s delay between, KB 350ms delay. Unknown event → default STANDARD, log only, never crash. User in blocklist (`aq_blocklist_segments`) → skip entirely, log the skip reason.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "analytics",
@@ -135,10 +149,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "analytics.webhook.received" },
+          "config": {
+            "event_type": "analytics.webhook.received"
+          },
           "description": "Event-listen on incoming analytics webhooks. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["analytics", "messaging", "knowledge_base"],
+        "connectors": [
+          "analytics",
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -188,7 +208,11 @@
           {
             "name": "alert_context_depth",
             "type": "enum",
-            "options": ["minimal", "standard", "full"],
+            "options": [
+              "minimal",
+              "standard",
+              "full"
+            ],
             "default": "full",
             "description": "How much behavioral context to include in each alert. Minimal = userId + signal + time. Standard = + plan/days/company. Full = + recent session history and prior high-intent events."
           }
@@ -199,34 +223,122 @@
           "blocklist_segments": "{{param.aq_blocklist_segments}}",
           "alert_context_depth": "{{param.aq_alert_context_depth}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Webhook received" },
-            { "id": "c2", "type": "action", "label": "Parse + validate payload; skip blocklisted users" },
-            { "id": "c3", "type": "action", "label": "Classify intent (HIGH / MEDIUM / STANDARD)" },
-            { "id": "c4", "type": "decision", "label": "Intent >= HIGH threshold?" },
-            { "id": "c5", "type": "connector", "label": "Enrich via analytics profile API", "connector": "analytics" },
-            { "id": "c6", "type": "action", "label": "Assemble behavioral snapshot" },
-            { "id": "c7", "type": "connector", "label": "Post alert to messaging", "connector": "messaging" },
-            { "id": "c8", "type": "connector", "label": "Create/update KB signal record", "connector": "knowledge_base" },
-            { "id": "c9", "type": "action", "label": "Update memory + dedup cache" },
-            { "id": "c10", "type": "event", "label": "Emit high_signal or medium_signal_recorded" },
-            { "id": "c11", "type": "end", "label": "Event processed" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Webhook received"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Parse + validate payload; skip blocklisted users"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Classify intent (HIGH / MEDIUM / STANDARD)"
+            },
+            {
+              "id": "c4",
+              "type": "decision",
+              "label": "Intent >= HIGH threshold?"
+            },
+            {
+              "id": "c5",
+              "type": "connector",
+              "label": "Enrich via analytics profile API",
+              "connector": "analytics"
+            },
+            {
+              "id": "c6",
+              "type": "action",
+              "label": "Assemble behavioral snapshot"
+            },
+            {
+              "id": "c7",
+              "type": "connector",
+              "label": "Post alert to messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "c8",
+              "type": "connector",
+              "label": "Create/update KB signal record",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "c9",
+              "type": "action",
+              "label": "Update memory + dedup cache"
+            },
+            {
+              "id": "c10",
+              "type": "event",
+              "label": "Emit high_signal or medium_signal_recorded"
+            },
+            {
+              "id": "c11",
+              "type": "end",
+              "label": "Event processed"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5", "variant": "yes", "label": "HIGH" },
-            { "source": "c4", "target": "c8", "variant": "no", "label": "MEDIUM / STANDARD" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c8" },
-            { "source": "c8", "target": "c9" },
-            { "source": "c9", "target": "c10" },
-            { "source": "c10", "target": "c11" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5",
+              "variant": "yes",
+              "label": "HIGH"
+            },
+            {
+              "source": "c4",
+              "target": "c8",
+              "variant": "no",
+              "label": "MEDIUM / STANDARD"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c8"
+            },
+            {
+              "source": "c8",
+              "target": "c9"
+            },
+            {
+              "source": "c9",
+              "target": "c10"
+            },
+            {
+              "source": "c10",
+              "target": "c11"
+            }
           ]
         }
       },
@@ -241,10 +353,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "customer.intent.medium_signal_recorded" },
+          "config": {
+            "event_type": "customer.intent.medium_signal_recorded"
+          },
           "description": "Event-chained off uc_event_classification. Evaluates cumulative pattern score per user."
         },
-        "connectors": ["analytics", "messaging", "knowledge_base"],
+        "connectors": [
+          "analytics",
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -287,7 +405,12 @@
           {
             "name": "escalation_review",
             "type": "enum",
-            "options": ["auto_alert", "needs_review", "notion_only", "oncall_dm"],
+            "options": [
+              "auto_alert",
+              "needs_review",
+              "notion_only",
+              "oncall_dm"
+            ],
             "default": "needs_review",
             "description": "How pattern escalations are routed — auto-alert, needs-review gate, knowledge-base only, or on-call DM."
           }
@@ -297,28 +420,95 @@
           "suppression_hours": "{{param.aq_pattern_suppression_hours}}",
           "escalation_review": "{{param.aq_escalation_review}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "medium_signal_recorded received" },
-            { "id": "p2", "type": "action", "label": "Load behavioral history + cumulative score" },
-            { "id": "p3", "type": "decision", "label": "Threshold met + outside suppression window?" },
-            { "id": "p4", "type": "connector", "label": "Enrich profile for escalation", "connector": "analytics" },
-            { "id": "p5", "type": "connector", "label": "Post escalation alert", "connector": "messaging" },
-            { "id": "p6", "type": "connector", "label": "Log escalation to KB", "connector": "knowledge_base" },
-            { "id": "p7", "type": "event", "label": "Emit customer.intent.pattern_escalated" },
-            { "id": "p8", "type": "end", "label": "Escalation handled" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "medium_signal_recorded received"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Load behavioral history + cumulative score"
+            },
+            {
+              "id": "p3",
+              "type": "decision",
+              "label": "Threshold met + outside suppression window?"
+            },
+            {
+              "id": "p4",
+              "type": "connector",
+              "label": "Enrich profile for escalation",
+              "connector": "analytics"
+            },
+            {
+              "id": "p5",
+              "type": "connector",
+              "label": "Post escalation alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Log escalation to KB",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p7",
+              "type": "event",
+              "label": "Emit customer.intent.pattern_escalated"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "Escalation handled"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4", "variant": "yes", "label": "Escalate" },
-            { "source": "p3", "target": "p8", "variant": "no", "label": "Skip" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4",
+              "variant": "yes",
+              "label": "Escalate"
+            },
+            {
+              "source": "p3",
+              "target": "p8",
+              "variant": "no",
+              "label": "Skip"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            }
           ]
         }
       }
@@ -327,7 +517,9 @@
       {
         "id": "aq_analytics_provider",
         "scope": "connector",
-        "connector_names": ["analytics"],
+        "connector_names": [
+          "analytics"
+        ],
         "category": "configuration",
         "question": "Which product analytics provider sends events to this persona?",
         "type": "select",
@@ -344,7 +536,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should receive the alerts?",
         "type": "select",
@@ -361,11 +555,17 @@
       {
         "id": "aq_high_intent_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_event_classification"],
+        "use_case_ids": [
+          "uc_event_classification"
+        ],
         "category": "quality",
         "question": "Minimum intent score that triggers an immediate sales alert?",
         "type": "select",
-        "options": ["70", "80", "90"],
+        "options": [
+          "70",
+          "80",
+          "90"
+        ],
         "default": "80",
         "maps_to": "use_cases[uc_event_classification].sample_input.high_intent_threshold",
         "variable_name": "high_intent_threshold",
@@ -375,7 +575,9 @@
       {
         "id": "aq_power_features",
         "scope": "capability",
-        "use_case_ids": ["uc_event_classification"],
+        "use_case_ids": [
+          "uc_event_classification"
+        ],
         "category": "domain",
         "question": "Which features count as 'power feature activation'?",
         "type": "text",
@@ -389,7 +591,9 @@
       {
         "id": "aq_blocklist_segments",
         "scope": "capability",
-        "use_case_ids": ["uc_event_classification"],
+        "use_case_ids": [
+          "uc_event_classification"
+        ],
         "category": "boundaries",
         "question": "Which users or segments should NEVER trigger alerts?",
         "type": "text",
@@ -403,7 +607,9 @@
       {
         "id": "aq_alert_context_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_event_classification"],
+        "use_case_ids": [
+          "uc_event_classification"
+        ],
         "category": "quality",
         "question": "How much behavioral context should each alert include?",
         "type": "select",
@@ -421,11 +627,17 @@
       {
         "id": "aq_pattern_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_pattern_escalation"],
+        "use_case_ids": [
+          "uc_pattern_escalation"
+        ],
         "category": "quality",
         "question": "Cumulative pattern score that triggers a sustained-interest escalation?",
         "type": "select",
-        "options": ["150", "200", "300"],
+        "options": [
+          "150",
+          "200",
+          "300"
+        ],
         "default": "200",
         "maps_to": "use_cases[uc_pattern_escalation].sample_input.pattern_threshold",
         "variable_name": "pattern_threshold",
@@ -435,11 +647,18 @@
       {
         "id": "aq_pattern_suppression_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_pattern_escalation"],
+        "use_case_ids": [
+          "uc_pattern_escalation"
+        ],
         "category": "quality",
         "question": "Suppression window after a pattern escalation fires (hours)?",
         "type": "select",
-        "options": ["12", "24", "48", "72"],
+        "options": [
+          "12",
+          "24",
+          "48",
+          "72"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_pattern_escalation].sample_input.suppression_hours",
         "variable_name": "pattern_suppression_hours",
@@ -449,7 +668,9 @@
       {
         "id": "aq_escalation_review",
         "scope": "capability",
-        "use_case_ids": ["uc_pattern_escalation"],
+        "use_case_ids": [
+          "uc_pattern_escalation"
+        ],
         "category": "human_in_the_loop",
         "question": "How should pattern escalations be routed?",
         "type": "select",
@@ -464,6 +685,25 @@
         "variable_name": "escalation_review",
         "context": "Pattern escalations are less certain than single high-intent events. Choose how much human gate you want before the escalation enters the CRM/KB pipeline.",
         "dimension": "human-review"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

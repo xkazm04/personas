@@ -5,11 +5,21 @@
   "description": "Keeps Trello board deadlines in lockstep with Google Calendar, fires tiered Slack reminders at 48h / 4h / 15min before due, and moves overdue cards to a 'Blocked' list with an explanatory comment so nothing rots silently.",
   "icon": "Timer",
   "color": "#8B5CF6",
-  "category": ["project-management"],
-  "service_flow": ["Trello", "Google Calendar", "Slack"],
+  "category": [
+    "project-management"
+  ],
+  "service_flow": [
+    "Trello",
+    "Google Calendar",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Trello", "Google Calendar", "Slack"],
+    "service_flow": [
+      "Trello",
+      "Google Calendar",
+      "Slack"
+    ],
     "persona": {
       "goal": "No deadline dies in silence — mirror Trello due dates into Calendar, warn the team via Slack as they approach, and put overdue cards where people will actually see them.",
       "identity": {
@@ -46,7 +56,11 @@
       "tool_guidance": "**Trello** (required) — base `https://api.trello.com/1/`, connector injects `key` + `token` as query params.\n- `GET /members/me/boards?filter=open` — list accessible boards.\n- `GET /boards/{id}/cards?filter=open&fields=name,desc,due,dueComplete,idList,idMembers,shortUrl,labels` — enumerate due-date cards.\n- `GET /boards/{id}/lists?filter=open` / `POST /boards/{id}/lists` — find or create the 'Blocked' list.\n- `PUT /cards/{id}` with `{ idList }` — move card.\n- `POST /cards/{id}/actions/comments` with `{ text }` — add the overdue comment.\n- `GET /members/{id}?fields=fullName,username` — resolve member IDs for Slack mentions.\n\n**Google Calendar** (required) — base `https://www.googleapis.com/calendar/v3/`, connector injects OAuth2 Bearer.\n- `POST /calendars/{calendarId}/events` with `{ summary, description, start.dateTime, end.dateTime }`.\n- `PATCH /calendars/{calendarId}/events/{eventId}` for mutations.\n- `DELETE /calendars/{calendarId}/events/{eventId}` for completed / removed cards.\n\n**Slack** (required) — base `https://slack.com/api/`, connector injects Bot Token.\n- `POST /chat.postMessage` with `{ channel, text, blocks }`.\n- `POST /users.lookupByEmail` to resolve @mentions from Trello member email (if available).\n\n**Local state** (file_read / file_write) — `trello_calendar_sync.json`:\n```\n{\n  \"cards\": {\n    \"cardId\": { \"eventId\": \"...\", \"lastDue\": \"ISO\", \"lastTitle\": \"...\", \"reminders_sent\": [\"48h\",\"4h\"], \"overdue_processed\": false }\n  },\n  \"last_poll\": \"ISO\"\n}\n```\nWrite atomically (temp file + rename) to survive mid-write crashes.",
       "error_handling": "**Trello** 429 (100 req / 10s) → back off 10s, resume. 401/403 → emit persona.error, stop cycle; user must re-auth.\n**Calendar** 403 rateLimitExceeded → exponential backoff from 1s. 401 → emit persona.error.\n**Slack** tier-2 limits (~20 req/min) → respect Retry-After.\n**Missing data** — card without assigned members: sync + remind without @mentions. Blocked list can't be created (permissions): comment in place, flag in Slack.\n**State corruption** — unreadable JSON: rebuild by matching Calendar events to Trello cards by name+description. Never reset to empty.\n**Network** — 5xx or timeout: retry 3× with 1s/2s/4s backoff. Persistent failure → emit user_message and continue with remaining tasks this cycle.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "trello",
@@ -77,11 +91,11 @@
           "setup_instructions": "1. https://trello.com/power-ups/admin → New (or reuse an existing Power-Up).\n2. Copy the API Key.\n3. Click the Token link, authorize with read + write scope.\n4. Paste API Key and Token above."
         },
         {
-          "name": "google_calendar",
-          "label": "Google Calendar",
+          "name": "calendar",
+          "label": "Calendar",
           "auth_type": "oauth2",
           "role": "scheduling",
-          "category": "scheduling",
+          "category": "calendar",
           "required": true,
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
@@ -113,8 +127,8 @@
           "setup_instructions": "1. Google Cloud Console → enable Google Calendar API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete consent flow with calendar scopes.\n4. Paste all three values above."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -161,10 +175,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — shared with the other deadline capabilities; final cadence set at the trigger-composition step."
         },
-        "connectors": ["trello", "google_calendar"],
+        "connectors": [
+          "trello",
+          "calendar"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -193,25 +213,77 @@
         "sample_input": {
           "calendar_id": "{{param.aq_calendar_id}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Poll tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch Trello cards w/ due dates", "connector": "trello" },
-            { "id": "s3", "type": "action", "label": "Diff against state" },
-            { "id": "s4", "type": "connector", "label": "Create / update / delete Calendar events", "connector": "google_calendar" },
-            { "id": "s5", "type": "action", "label": "Persist cardId→eventId" },
-            { "id": "s6", "type": "event", "label": "Emit deadline.sync.updated" },
-            { "id": "s7", "type": "end", "label": "Sync complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch Trello cards w/ due dates",
+              "connector": "trello"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Diff against state"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Create / update / delete Calendar events",
+              "connector": "calendar"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Persist cardId→eventId"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit deadline.sync.updated"
+            },
+            {
+              "id": "s7",
+              "type": "end",
+              "label": "Sync complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            }
           ]
         }
       },
@@ -226,10 +298,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — shared with the other deadline capabilities; final cadence set at the trigger-composition step."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -251,14 +328,24 @@
           {
             "name": "reminder_thresholds",
             "type": "enum",
-            "options": ["default_48h_4h_15min", "digest_24h_only", "48h_2h_only", "custom_1wk_48h_1h"],
+            "options": [
+              "default_48h_4h_15min",
+              "digest_24h_only",
+              "48h_2h_only",
+              "custom_1wk_48h_1h"
+            ],
             "default": "default_48h_4h_15min",
             "description": "Which reminder thresholds trigger notifications."
           },
           {
             "name": "message_verbosity",
             "type": "enum",
-            "options": ["brief", "standard", "verbose", "escalating"],
+            "options": [
+              "brief",
+              "standard",
+              "verbose",
+              "escalating"
+            ],
             "default": "escalating",
             "description": "Brief = card + time + link. Standard = + assignees + board. Verbose = + description + checklist. Escalating = brief at 48h → verbose with @mentions at 4h/15min."
           }
@@ -267,28 +354,91 @@
           "reminder_thresholds": "{{param.aq_reminder_thresholds}}",
           "message_verbosity": "{{param.aq_message_verbosity}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "After sync" },
-            { "id": "r2", "type": "action", "label": "Compute time-to-due per card" },
-            { "id": "r3", "type": "decision", "label": "Threshold newly crossed?" },
-            { "id": "r4", "type": "action", "label": "Compose tier message" },
-            { "id": "r5", "type": "connector", "label": "Post to Slack", "connector": "slack" },
-            { "id": "r6", "type": "action", "label": "Mark threshold sent" },
-            { "id": "r7", "type": "event", "label": "Emit deadline.reminder.sent" },
-            { "id": "r8", "type": "end", "label": "Reminders done" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "After sync"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Compute time-to-due per card"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Threshold newly crossed?"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Compose tier message"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Post to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Mark threshold sent"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit deadline.reminder.sent"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Reminders done"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "variant": "yes" },
-            { "source": "r3", "target": "r8", "variant": "no" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "variant": "yes"
+            },
+            {
+              "source": "r3",
+              "target": "r8",
+              "variant": "no"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -303,10 +453,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — shared with the other deadline capabilities; final cadence set at the trigger-composition step."
         },
-        "connectors": ["trello", "slack"],
+        "connectors": [
+          "trello",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "conditional",
@@ -335,25 +491,78 @@
         "sample_input": {
           "confirm_before_blocked": "{{param.aq_confirm_blocked}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "After reminders" },
-            { "id": "o2", "type": "action", "label": "Identify overdue cards" },
-            { "id": "o3", "type": "connector", "label": "Find or create Blocked list", "connector": "trello" },
-            { "id": "o4", "type": "connector", "label": "Move card + add comment", "connector": "trello" },
-            { "id": "o5", "type": "connector", "label": "Post Slack alert (with recurring flag)", "connector": "slack" },
-            { "id": "o6", "type": "event", "label": "Emit deadline.overdue.processed" },
-            { "id": "o7", "type": "end", "label": "Overdue handled" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "After reminders"
+            },
+            {
+              "id": "o2",
+              "type": "action",
+              "label": "Identify overdue cards"
+            },
+            {
+              "id": "o3",
+              "type": "connector",
+              "label": "Find or create Blocked list",
+              "connector": "trello"
+            },
+            {
+              "id": "o4",
+              "type": "connector",
+              "label": "Move card + add comment",
+              "connector": "trello"
+            },
+            {
+              "id": "o5",
+              "type": "connector",
+              "label": "Post Slack alert (with recurring flag)",
+              "connector": "messaging"
+            },
+            {
+              "id": "o6",
+              "type": "event",
+              "label": "Emit deadline.overdue.processed"
+            },
+            {
+              "id": "o7",
+              "type": "end",
+              "label": "Overdue handled"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o4" },
-            { "source": "o4", "target": "o5" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o7" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o4"
+            },
+            {
+              "source": "o4",
+              "target": "o5"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o7"
+            }
           ]
         }
       }
@@ -362,7 +571,9 @@
       {
         "id": "aq_calendar_id",
         "scope": "capability",
-        "use_case_ids": ["uc_calendar_sync"],
+        "use_case_ids": [
+          "uc_calendar_sync"
+        ],
         "category": "configuration",
         "question": "Which Google Calendar should deadlines be mirrored into?",
         "type": "text",
@@ -375,7 +586,9 @@
       {
         "id": "aq_reminder_thresholds",
         "scope": "capability",
-        "use_case_ids": ["uc_deadline_reminders"],
+        "use_case_ids": [
+          "uc_deadline_reminders"
+        ],
         "category": "configuration",
         "question": "Which Slack reminder thresholds should trigger notifications?",
         "type": "select",
@@ -394,7 +607,9 @@
       {
         "id": "aq_message_verbosity",
         "scope": "capability",
-        "use_case_ids": ["uc_deadline_reminders"],
+        "use_case_ids": [
+          "uc_deadline_reminders"
+        ],
         "category": "quality",
         "question": "How detailed should Slack reminder messages be?",
         "type": "select",
@@ -413,7 +628,9 @@
       {
         "id": "aq_confirm_blocked",
         "scope": "capability",
-        "use_case_ids": ["uc_overdue_enforcement"],
+        "use_case_ids": [
+          "uc_overdue_enforcement"
+        ],
         "category": "human_in_the_loop",
         "question": "Require a Slack confirmation before moving overdue cards to the Blocked list?",
         "type": "boolean",
@@ -422,6 +639,44 @@
         "variable_name": "confirm_before_blocked",
         "context": "Off = fully autonomous (recommended for seasoned teams). On = the PM gets a Slack prompt and must approve each move.",
         "dimension": "human-review"
+      },
+      {
+        "id": "aq_calendar_credential",
+        "scope": "connector",
+        "connector_names": [
+          "calendar"
+        ],
+        "category": "configuration",
+        "question": "Which calendar should this persona read and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "calendar",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
+        "variable_name": "calendar_credential",
+        "context": "Options are auto-detected from your calendar credentials in the Vault (Google Calendar, Outlook Calendar, Cal.com, Calendly).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

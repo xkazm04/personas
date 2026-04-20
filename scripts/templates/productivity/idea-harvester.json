@@ -5,11 +5,24 @@
   "description": "Mines ideas from wherever the user works — Slack, Notion, pasted URLs, raw text — runs them through human triage, and promotes accepted items into a structured backlog with codebase-grounded feasibility analysis.",
   "icon": "Lightbulb",
   "color": "#F59E0B",
-  "category": ["productivity", "development"],
-  "service_flow": ["Slack", "Notion", "Codebase", "Messages"],
+  "category": [
+    "productivity",
+    "development"
+  ],
+  "service_flow": [
+    "Slack",
+    "Notion",
+    "Codebase",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Slack", "Notion", "Codebase", "Messages"],
+    "service_flow": [
+      "Slack",
+      "Notion",
+      "Codebase",
+      "Messages"
+    ],
     "persona": {
       "goal": "Never lose a good idea — pull candidates from wherever the team talks, hold each for human triage, and ground accepted ones in codebase reality before they hit the backlog.",
       "identity": {
@@ -46,7 +59,12 @@
       "tool_guidance": "**Codebase connector** (required; see connector config):\n- `search_code(query)` — keyword search across the registered codebase.\n- `read_file(path)` — read source files to verify patterns.\n- `list_files(dir)` — browse directory structure to size affected surface.\n- `get_contexts()` / `get_context_detail(id)` — pre-computed architectural summaries.\n\nFeasibility analysis pattern per idea: search_code for the feature name → if >3 matches → High feasibility (existing patterns); 1-3 → Medium; 0 → Unknown (never 'Low' without explicit 'no existing patterns found').\n\n**Slack / Notion / URL fetch** (for uc_harvest):\n- `GET {url}` — fetch arbitrary web URL.\n- Slack: `conversations.history` on configured channels from the last 7 days; filter to messages with ≥ one link OR ≥ 80 words of signal.\n- Notion: `POST /v1/databases/{db}/query` for configured knowledge bases; extract pages created/modified in the last week.\n- YouTube transcripts when a Slack/Notion link is a YouTube URL.\n\n**Local state**:\n- `harvester_state.json` — per-source yield stats, triage acceptance rate by category, last-scan timestamps.\n- `harvest_log/{YYYY-WW}.json` — every harvested idea this week with its outcome (pending / accepted / rejected).\n- `backlog_items/{id}.json` — accepted items with full feasibility analysis.",
       "error_handling": "Slack / Notion auth failure → emit persona.error, mark that source as 'offline' for this run; other sources continue. URL fetch 403/404 → flag in harvest log, skip. YouTube transcript unavailable → fallback to video description only; flag reduced context. Codebase offline during uc_codebase_analysis → queue the accepted item in `pending_analysis.json` and retry next cycle; never drop an accepted item. Fewer than 3 ideas extracted from a long source → report as 'low-yield source' (memory learns this). More than 10 ideas → present top 10 by initial confidence; flag overflow. Messages delivery failure for triage presentation → write candidates to `pending_triage.json` so nothing is lost.",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -68,8 +86,8 @@
           "setup_instructions": "1. Install the Personas CLI or desktop app locally.\n2. Register a codebase at Settings → Connectors → Codebase → Add.\n3. Point it at the repository root. Initial indexing takes 30-90s for most projects.\n4. The idea-harvester picks the registered codebase automatically — if you have several, it asks you to choose during adoption."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -89,11 +107,11 @@
           "setup_instructions": "1. Create or select an app at api.slack.com/apps.\n2. Add scopes: channels:history, groups:history, links:read.\n3. Install to workspace, copy the Bot User OAuth Token.\n4. Invite the bot to each channel you want harvested."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Skip Notion to harvest only from Slack + pasted URLs. The persona still runs — users who aren't on Notion don't need it.",
           "api_base_url": "https://api.notion.com",
@@ -130,10 +148,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 9:00 AM — user-configurable via adoption composition step."
         },
-        "connectors": ["slack", "notion"],
+        "connectors": [
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -160,7 +184,11 @@
           {
             "name": "content_types",
             "type": "enum",
-            "options": ["articles_only", "articles_and_videos", "articles_videos_and_discussions"],
+            "options": [
+              "articles_only",
+              "articles_and_videos",
+              "articles_videos_and_discussions"
+            ],
             "default": "articles_and_videos",
             "description": "What kinds of content to consider when scanning sources."
           },
@@ -178,25 +206,77 @@
           "content_types": "{{param.aq_content_types}}",
           "ideas_per_source": "{{param.aq_ideas_per_source}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "h1", "type": "start", "label": "Weekly tick" },
-            { "id": "h2", "type": "action", "label": "Load memory (category weights)" },
-            { "id": "h3", "type": "connector", "label": "Scan Slack / Notion / URL queue", "connector": "slack" },
-            { "id": "h4", "type": "action", "label": "Extract 3-10 ideas per source" },
-            { "id": "h5", "type": "action", "label": "Filter by category weights; skip vague" },
-            { "id": "h6", "type": "event", "label": "Emit harvester.idea.new per candidate" },
-            { "id": "h7", "type": "end", "label": "Queue awaiting triage" }
+            {
+              "id": "h1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "h2",
+              "type": "action",
+              "label": "Load memory (category weights)"
+            },
+            {
+              "id": "h3",
+              "type": "connector",
+              "label": "Scan Slack / Notion / URL queue",
+              "connector": "messaging"
+            },
+            {
+              "id": "h4",
+              "type": "action",
+              "label": "Extract 3-10 ideas per source"
+            },
+            {
+              "id": "h5",
+              "type": "action",
+              "label": "Filter by category weights; skip vague"
+            },
+            {
+              "id": "h6",
+              "type": "event",
+              "label": "Emit harvester.idea.new per candidate"
+            },
+            {
+              "id": "h7",
+              "type": "end",
+              "label": "Queue awaiting triage"
+            }
           ],
           "edges": [
-            { "source": "h1", "target": "h2" },
-            { "source": "h2", "target": "h3" },
-            { "source": "h3", "target": "h4" },
-            { "source": "h4", "target": "h5" },
-            { "source": "h5", "target": "h6" },
-            { "source": "h6", "target": "h7" }
+            {
+              "source": "h1",
+              "target": "h2"
+            },
+            {
+              "source": "h2",
+              "target": "h3"
+            },
+            {
+              "source": "h3",
+              "target": "h4"
+            },
+            {
+              "source": "h4",
+              "target": "h5"
+            },
+            {
+              "source": "h5",
+              "target": "h6"
+            },
+            {
+              "source": "h6",
+              "target": "h7"
+            }
           ]
         }
       },
@@ -211,7 +291,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "harvester.idea.new" },
+          "config": {
+            "event_type": "harvester.idea.new"
+          },
           "description": "Fires whenever uc_harvest emits a candidate. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [],
@@ -246,7 +328,13 @@
           {
             "name": "backlog_format",
             "type": "enum",
-            "options": ["github_issue", "linear_ticket", "jira_story", "notion_database_row", "markdown_bullet"],
+            "options": [
+              "github_issue",
+              "linear_ticket",
+              "jira_story",
+              "notion_database_row",
+              "markdown_bullet"
+            ],
             "default": "markdown_bullet",
             "description": "How the accepted backlog item is structured when uc_codebase_analysis produces the final record."
           }
@@ -254,26 +342,82 @@
         "sample_input": {
           "backlog_format": "{{param.aq_backlog_format}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "harvester.idea.new received" },
-            { "id": "t2", "type": "action", "label": "Render triage card via Messages" },
-            { "id": "t3", "type": "decision", "label": "Human accepts?" },
-            { "id": "t4", "type": "event", "label": "Emit harvester.triage.accepted" },
-            { "id": "t5", "type": "event", "label": "Emit harvester.triage.rejected" },
-            { "id": "t6", "type": "action", "label": "Persist decision to memory" },
-            { "id": "t7", "type": "end", "label": "Awaiting next idea" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "harvester.idea.new received"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Render triage card via Messages"
+            },
+            {
+              "id": "t3",
+              "type": "decision",
+              "label": "Human accepts?"
+            },
+            {
+              "id": "t4",
+              "type": "event",
+              "label": "Emit harvester.triage.accepted"
+            },
+            {
+              "id": "t5",
+              "type": "event",
+              "label": "Emit harvester.triage.rejected"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Persist decision to memory"
+            },
+            {
+              "id": "t7",
+              "type": "end",
+              "label": "Awaiting next idea"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4", "variant": "yes", "label": "Accept" },
-            { "source": "t3", "target": "t5", "variant": "no", "label": "Reject" },
-            { "source": "t4", "target": "t6" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4",
+              "variant": "yes",
+              "label": "Accept"
+            },
+            {
+              "source": "t3",
+              "target": "t5",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "t4",
+              "target": "t6"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            }
           ]
         }
       },
@@ -288,10 +432,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "harvester.triage.accepted" },
+          "config": {
+            "event_type": "harvester.triage.accepted"
+          },
           "description": "Fires whenever uc_triage accepts an idea. Not user-configurable."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -326,7 +474,11 @@
           {
             "name": "analysis_depth",
             "type": "enum",
-            "options": ["quick", "standard", "deep"],
+            "options": [
+              "quick",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Quick = keyword-only search; Standard = keyword + file browse; Deep = + read matched files + context maps."
           }
@@ -335,23 +487,66 @@
           "target_codebase": "{{param.aq_target_codebase}}",
           "analysis_depth": "{{param.aq_analysis_depth}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "harvester.triage.accepted received" },
-            { "id": "a2", "type": "connector", "label": "search_code + related_files", "connector": "codebase" },
-            { "id": "a3", "type": "action", "label": "Rate feasibility / effort / benefit" },
-            { "id": "a4", "type": "action", "label": "Compose structured backlog item" },
-            { "id": "a5", "type": "event", "label": "Emit harvester.backlog.new" },
-            { "id": "a6", "type": "end", "label": "Item ready for backlog system" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "harvester.triage.accepted received"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "search_code + related_files",
+              "connector": "codebase"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Rate feasibility / effort / benefit"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Compose structured backlog item"
+            },
+            {
+              "id": "a5",
+              "type": "event",
+              "label": "Emit harvester.backlog.new"
+            },
+            {
+              "id": "a6",
+              "type": "end",
+              "label": "Item ready for backlog system"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            }
           ]
         }
       }
@@ -360,7 +555,9 @@
       {
         "id": "aq_sources",
         "scope": "capability",
-        "use_case_ids": ["uc_harvest"],
+        "use_case_ids": [
+          "uc_harvest"
+        ],
         "category": "configuration",
         "question": "Which sources should the harvester scan?",
         "type": "select",
@@ -379,7 +576,9 @@
       {
         "id": "aq_content_types",
         "scope": "capability",
-        "use_case_ids": ["uc_harvest"],
+        "use_case_ids": [
+          "uc_harvest"
+        ],
         "category": "configuration",
         "question": "What kinds of content should the harvester consider?",
         "type": "select",
@@ -397,11 +596,19 @@
       {
         "id": "aq_ideas_per_source",
         "scope": "capability",
-        "use_case_ids": ["uc_harvest"],
+        "use_case_ids": [
+          "uc_harvest"
+        ],
         "category": "quality",
         "question": "How many ideas should be extracted per source per scan?",
         "type": "select",
-        "options": ["3", "5", "10", "15", "20"],
+        "options": [
+          "3",
+          "5",
+          "10",
+          "15",
+          "20"
+        ],
         "default": "5",
         "maps_to": "use_cases[uc_harvest].sample_input.ideas_per_source",
         "variable_name": "ideas_per_source",
@@ -411,7 +618,9 @@
       {
         "id": "aq_backlog_format",
         "scope": "capability",
-        "use_case_ids": ["uc_triage"],
+        "use_case_ids": [
+          "uc_triage"
+        ],
         "category": "configuration",
         "question": "What format should accepted backlog items use?",
         "type": "select",
@@ -431,7 +640,9 @@
       {
         "id": "aq_target_codebase",
         "scope": "capability",
-        "use_case_ids": ["uc_codebase_analysis"],
+        "use_case_ids": [
+          "uc_codebase_analysis"
+        ],
         "category": "configuration",
         "question": "Which codebase should feasibility analysis run against?",
         "type": "select",
@@ -443,7 +654,9 @@
         "dimension": "connectors",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
-        "option_service_types": ["codebase"],
+        "option_service_types": [
+          "codebase"
+        ],
         "dynamic_source": {
           "service_type": "codebase",
           "operation": "list_codebases"
@@ -452,7 +665,9 @@
       {
         "id": "aq_analysis_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_codebase_analysis"],
+        "use_case_ids": [
+          "uc_codebase_analysis"
+        ],
         "category": "quality",
         "question": "How detailed should the feasibility analysis be?",
         "type": "select",
@@ -466,6 +681,44 @@
         "variable_name": "analysis_depth",
         "context": "Deep analysis adds ~30-60s per accepted idea but produces a materially better feasibility call. Start at Standard; go Deep for backlog decisions that will trigger real implementation work.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

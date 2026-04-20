@@ -5,11 +5,28 @@
   "description": "Autonomous YouTube production assistant: niche-gated research → hook-first outline → voice-matched script → 3-pass AI edit (retake removal + phrase repeat + silence polish) → publish prep. Creator films once; persona handles the other 90%.",
   "icon": "Video",
   "color": "#FF0000",
-  "category": ["content", "marketing"],
+  "category": [
+    "content",
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["YouTube Data API", "Apify", "X (Twitter)", "Deepgram", "Desktop Terminal", "Messages"],
+  "service_flow": [
+    "YouTube Data API",
+    "Apify",
+    "X (Twitter)",
+    "Deepgram",
+    "Desktop Terminal",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["YouTube Data API", "Apify", "X (Twitter)", "Deepgram", "Desktop Terminal", "Messages"],
+    "service_flow": [
+      "YouTube Data API",
+      "Apify",
+      "X (Twitter)",
+      "Deepgram",
+      "Desktop Terminal",
+      "Messages"
+    ],
     "persona": {
       "goal": "Film once, ship a publish-ready episode — research gate, voice-matched script, local 3-pass edit, and copy-paste publish checklist without touching the upload button.",
       "identity": {
@@ -46,7 +63,11 @@
       "tool_guidance": "### YouTube Data API v3 (youtube_data)\n- `GET /search?part=snippet&q={q}&type=video&order=viewCount&maxResults=20` — top niche videos (100 units)\n- `GET /videos?part=snippet,statistics&id={ids}` — batch stats (1 unit per video)\n- Free quota: 10k units/day, resets midnight Pacific\n\n### Apify (fallback + deep transcripts)\n- `POST /v2/acts/{actor}/runs` — fire actor, poll run status, fetch dataset items\n- Use `apify~youtube-scraper` for full transcripts, `apify~twitter-scraper` for X on free tier\n\n### X (x_twitter) — Basic tier required for search\n- `GET /2/tweets/search/recent?query={q}&max_results=50` — trending phrasings (7-day window)\n- Free tier → fall back to Apify Twitter scraper\n\n### Deepgram (optional, strongly recommended)\n- `POST /v1/listen?model=nova-3&smart_format=true&punctuate=true&paragraphs=true` — word-level timestamps\n- Response: `results.channels[0].alternatives[0].words[]` with per-word `start` / `end`\n- Absent → script-only matching in Pass 1, Pass 2 skipped\n\n### Desktop Terminal (FFmpeg, local only)\n- VFR detect: `ffmpeg -i {in} -vf vfrdet -f null -`\n- VFR normalize: `ffmpeg -i {in} -vsync cfr -r 30 {out}`\n- Audio extract: `ffmpeg -i {in} -vn -acodec pcm_s16le -ar 16000 -ac 1 {out}`\n- Silence detect: `ffmpeg -af silencedetect=d=0.5:n=-30dB -f null -`\n- Concat cuts: `ffmpeg -i {in} -filter_complex '{concat_expr}' -c:v libx264 -c:a aac {out}`",
       "error_handling": "Niche gate <2K views → STOP + alternative suggestions (broader niche / newsletter / cold outreach) + override path. YouTube API 403 quota → silent fallback to Apify. YouTube 401 → hard stop, setup instructions. X 403 free-tier → silent Apify fallback. Deepgram 401 → pipeline degrades (Pass 2 skipped, Pass 1 script-only). FFmpeg missing → hard stop Step 4 with OS-specific install instructions. Concat empty output → conservative mode (keep all matches). File not found → Messages with exact path. 5 script rejections → ask for raw voice sample. Messages unavailable → write to fallback/{step}-{date}.md.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "youtube_data",
@@ -56,7 +77,12 @@
           "category": "social",
           "required": true,
           "credential_fields": [
-            { "key": "api_key", "label": "API Key", "type": "password", "required": true }
+            {
+              "key": "api_key",
+              "label": "API Key",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "Google Cloud Console → Enable YouTube Data API v3 → Credentials → Create API key. Free quota: 10k units/day."
         },
@@ -69,20 +95,30 @@
           "required": false,
           "fallback_note": "Optional but highly recommended — covers YouTube Data quota exhaustion + X free-tier search limits via actor-based scrapers. Without it, research runs YouTube-only + X Basic-tier only.",
           "credential_fields": [
-            { "key": "api_token", "label": "API Token", "type": "password", "required": true }
+            {
+              "key": "api_token",
+              "label": "API Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "apify.com → Settings → Integrations → API tokens → create. Actors used: apify~youtube-scraper, apify~twitter-scraper."
         },
         {
-          "name": "x_twitter",
-          "label": "X (Twitter)",
+          "name": "social_feed",
+          "label": "Social Feed",
           "auth_type": "api_key",
           "role": "social_media",
-          "category": "social",
+          "category": "social_feed",
           "required": false,
           "fallback_note": "Optional. When absent (or on the free tier), research falls back to Apify Twitter scraper for trending phrasings. Without either, the research step skips X-signal and relies on YouTube + Apify transcripts.",
           "credential_fields": [
-            { "key": "bearer_token", "label": "Bearer Token", "type": "password", "required": true }
+            {
+              "key": "bearer_token",
+              "label": "Bearer Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "developer.x.com → Project → Keys and tokens → Bearer Token. Basic tier ($200/mo) required for recent search; Free tier falls back to Apify."
         },
@@ -95,7 +131,12 @@
           "required": false,
           "fallback_note": "Optional but strongly recommended. Without Deepgram, Pass 1 degrades to script-only matching and Pass 2 (phrase-repeat detection) is skipped — edits still ship, just with less precision.",
           "credential_fields": [
-            { "key": "api_key", "label": "API Key", "type": "password", "required": false }
+            {
+              "key": "api_key",
+              "label": "API Key",
+              "type": "password",
+              "required": false
+            }
           ],
           "setup_instructions": "deepgram.com → Console → API Keys → Create new. Optional but strongly recommended — enables word-level retake detection + verbal-tic removal."
         },
@@ -111,7 +152,10 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Research reports, outlines, scripts, edit stats, publish checklists, niche-gate warnings" }
+        {
+          "type": "messaging",
+          "description": "Research reports, outlines, scripts, edit stats, publish checklists, niche-gate warnings"
+        }
       ],
       "core_memories": []
     },
@@ -130,9 +174,16 @@
           "config": {},
           "description": "Creator provides a topic idea to research."
         },
-        "connectors": ["youtube_data", "apify", "x_twitter"],
+        "connectors": [
+          "youtube_data",
+          "apify",
+          "social_feed"
+        ],
         "notification_channels": [
-          { "type": "messaging", "description": "Delivers ranked topic candidates and niche-gate decision" }
+          {
+            "type": "messaging",
+            "description": "Delivers ranked topic candidates and niche-gate decision"
+          }
         ],
         "review_policy": {
           "mode": "always",
@@ -143,36 +194,105 @@
           "context": "Stores: niche performance history (median view counts by topic area), rejection patterns (too niche / already covered / off-brand), hook patterns that landed on prior episodes."
         },
         "event_subscriptions": [
-          { "event_type": "youtube.research.completed", "direction": "emit", "description": "Payload: median view count, gate decision (GO/CAUTION/STOP), ranked candidates with URLs and view counts." }
+          {
+            "event_type": "youtube.research.completed",
+            "direction": "emit",
+            "description": "Payload: median view count, gate decision (GO/CAUTION/STOP), ranked candidates with URLs and view counts."
+          }
         ],
         "error_handling": "YouTube 403 quota → Apify fallback silently. X free tier → Apify Twitter. If both fail for the same source → partial data with warning. Niche <2K → hard stop with alternatives.",
         "input_schema": [
-          { "name": "topic_idea", "type": "text", "description": "Creator's proposed topic" },
-          { "name": "niche_gate_threshold", "type": "number", "default": 10000, "min": 2000, "max": 1000000 }
+          {
+            "name": "topic_idea",
+            "type": "text",
+            "description": "Creator's proposed topic"
+          },
+          {
+            "name": "niche_gate_threshold",
+            "type": "number",
+            "default": 10000,
+            "min": 2000,
+            "max": 1000000
+          }
         ],
         "sample_input": {
           "topic_idea": "How I delegate YouTube production to Claude Code",
           "niche_gate_threshold": "{{param.aq_niche_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Creator provides topic" },
-            { "id": "n2", "type": "connector", "label": "YouTube top 20 + Apify transcripts + X trends (parallel)", "connector": "youtube_data" },
-            { "id": "n3", "type": "decision", "label": "Niche gate: median views?" },
-            { "id": "n4", "type": "event", "label": "STOP — niche gate fail" },
-            { "id": "n5", "type": "action", "label": "Rank 5-10 candidates" },
-            { "id": "n6", "type": "event", "label": "Emit youtube.research.completed" },
-            { "id": "n7", "type": "end", "label": "Awaiting creator pick" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Creator provides topic"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "YouTube top 20 + Apify transcripts + X trends (parallel)",
+              "connector": "youtube_data"
+            },
+            {
+              "id": "n3",
+              "type": "decision",
+              "label": "Niche gate: median views?"
+            },
+            {
+              "id": "n4",
+              "type": "event",
+              "label": "STOP — niche gate fail"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Rank 5-10 candidates"
+            },
+            {
+              "id": "n6",
+              "type": "event",
+              "label": "Emit youtube.research.completed"
+            },
+            {
+              "id": "n7",
+              "type": "end",
+              "label": "Awaiting creator pick"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4", "label": "< threshold", "variant": "yes" },
-            { "source": "n3", "target": "n5", "label": ">= threshold", "variant": "no" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4",
+              "label": "< threshold",
+              "variant": "yes"
+            },
+            {
+              "source": "n3",
+              "target": "n5",
+              "label": ">= threshold",
+              "variant": "no"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            }
           ]
         }
       },
@@ -192,7 +312,10 @@
         },
         "connectors": [],
         "notification_channels": [
-          { "type": "messaging", "description": "Delivers outline + title options + thumbnail direction" }
+          {
+            "type": "messaging",
+            "description": "Delivers outline + title options + thumbnail direction"
+          }
         ],
         "review_policy": {
           "mode": "always",
@@ -203,36 +326,115 @@
           "context": "Learns which hook patterns (curiosity/benefit/identity) the creator picks and which land on the channel."
         },
         "event_subscriptions": [
-          { "event_type": "youtube.outline.approved", "direction": "emit", "description": "Payload: picked title, thumbnail direction, estimated runtime." }
+          {
+            "event_type": "youtube.outline.approved",
+            "direction": "emit",
+            "description": "Payload: picked title, thumbnail direction, estimated runtime."
+          }
         ],
         "error_handling": "Revision requests loop until creator approves or abandons the topic. Max 3 revision iterations before suggesting a different topic.",
         "input_schema": [
-          { "name": "topic", "type": "text" },
-          { "name": "target_runtime_minutes", "type": "number", "default": 14, "min": 5, "max": 30 }
+          {
+            "name": "topic",
+            "type": "text"
+          },
+          {
+            "name": "target_runtime_minutes",
+            "type": "number",
+            "default": 14,
+            "min": 5,
+            "max": 30
+          }
         ],
-        "sample_input": { "topic": "", "target_runtime_minutes": 14 },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "topic": "",
+          "target_runtime_minutes": 14
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Creator picks topic" },
-            { "id": "n2", "type": "action", "label": "Draft 5-section outline + 3 titles + thumbnail" },
-            { "id": "n3", "type": "event", "label": "Deliver for creator pick" },
-            { "id": "n4", "type": "decision", "label": "Approved?" },
-            { "id": "n5", "type": "action", "label": "Incorporate revision feedback" },
-            { "id": "n6", "type": "action", "label": "Save + update hook_patterns memory" },
-            { "id": "n7", "type": "event", "label": "Emit youtube.outline.approved" },
-            { "id": "n8", "type": "end", "label": "Awaiting script step" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Creator picks topic"
+            },
+            {
+              "id": "n2",
+              "type": "action",
+              "label": "Draft 5-section outline + 3 titles + thumbnail"
+            },
+            {
+              "id": "n3",
+              "type": "event",
+              "label": "Deliver for creator pick"
+            },
+            {
+              "id": "n4",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Incorporate revision feedback"
+            },
+            {
+              "id": "n6",
+              "type": "action",
+              "label": "Save + update hook_patterns memory"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit youtube.outline.approved"
+            },
+            {
+              "id": "n8",
+              "type": "end",
+              "label": "Awaiting script step"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n6", "label": "Approve", "variant": "yes" },
-            { "source": "n4", "target": "n5", "label": "Revise", "variant": "no" },
-            { "source": "n5", "target": "n2" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n6",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "n4",
+              "target": "n5",
+              "label": "Revise",
+              "variant": "no"
+            },
+            {
+              "source": "n5",
+              "target": "n2"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            }
           ]
         }
       },
@@ -252,7 +454,10 @@
         },
         "connectors": [],
         "notification_channels": [
-          { "type": "messaging", "description": "Delivers teleprompter script with markers" }
+          {
+            "type": "messaging",
+            "description": "Delivers teleprompter script with markers"
+          }
         ],
         "review_policy": {
           "mode": "always",
@@ -263,39 +468,118 @@
           "context": "voice_profile.json: flagged phrases, vocabulary rules, sentence-length preferences, catchphrases, formality level. Keeps scripts sounding like the creator."
         },
         "event_subscriptions": [
-          { "event_type": "youtube.script.approved", "direction": "emit", "description": "Payload: word count, voice rules learned this session." }
+          {
+            "event_type": "youtube.script.approved",
+            "direction": "emit",
+            "description": "Payload: word count, voice rules learned this session."
+          }
         ],
         "error_handling": "After 5 rejections in one script: suggest creator record 2-3 minutes of raw voice-sample audio and transcribe it as a ground-truth voice reference before retrying.",
         "input_schema": [
-          { "name": "target_words", "type": "number", "default": 2100, "min": 500, "max": 6000 },
-          { "name": "max_iterations", "type": "number", "default": 5, "min": 1, "max": 15 }
+          {
+            "name": "target_words",
+            "type": "number",
+            "default": 2100,
+            "min": 500,
+            "max": 6000
+          },
+          {
+            "name": "max_iterations",
+            "type": "number",
+            "default": 5,
+            "min": 1,
+            "max": 15
+          }
         ],
         "sample_input": {
           "target_words": "{{param.aq_target_words}}",
           "max_iterations": 5
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Approved outline" },
-            { "id": "n2", "type": "action", "label": "Draft script with hook techniques + markers" },
-            { "id": "n3", "type": "event", "label": "Deliver for creator read-aloud" },
-            { "id": "n4", "type": "decision", "label": "Voice-match rejection?" },
-            { "id": "n5", "type": "action", "label": "Save flagged phrase; rewrite" },
-            { "id": "n6", "type": "action", "label": "Save final to scripts/" },
-            { "id": "n7", "type": "event", "label": "Emit youtube.script.approved" },
-            { "id": "n8", "type": "end", "label": "Ready for filming" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Approved outline"
+            },
+            {
+              "id": "n2",
+              "type": "action",
+              "label": "Draft script with hook techniques + markers"
+            },
+            {
+              "id": "n3",
+              "type": "event",
+              "label": "Deliver for creator read-aloud"
+            },
+            {
+              "id": "n4",
+              "type": "decision",
+              "label": "Voice-match rejection?"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Save flagged phrase; rewrite"
+            },
+            {
+              "id": "n6",
+              "type": "action",
+              "label": "Save final to scripts/"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit youtube.script.approved"
+            },
+            {
+              "id": "n8",
+              "type": "end",
+              "label": "Ready for filming"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5", "label": "Reject", "variant": "yes" },
-            { "source": "n4", "target": "n6", "label": "Approve", "variant": "no" },
-            { "source": "n5", "target": "n3" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5",
+              "label": "Reject",
+              "variant": "yes"
+            },
+            {
+              "source": "n4",
+              "target": "n6",
+              "label": "Approve",
+              "variant": "no"
+            },
+            {
+              "source": "n5",
+              "target": "n3"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            }
           ]
         }
       },
@@ -313,52 +597,150 @@
           "config": {},
           "description": "Creator provides raw footage path after filming."
         },
-        "connectors": ["deepgram", "desktop_terminal"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Edit progress + final stats (original → final duration)" }
+        "connectors": [
+          "deepgram",
+          "desktop_terminal"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "messaging",
+            "description": "Edit progress + final stats (original → final duration)"
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "cut_tolerance.json: how aggressive the creator wants retake removal (aggressive/conservative/off), per-pass cut volumes over time."
         },
         "event_subscriptions": [
-          { "event_type": "youtube.edit.complete", "direction": "emit", "description": "Payload: original duration, final duration, seconds cut per pass, file path." }
+          {
+            "event_type": "youtube.edit.complete",
+            "direction": "emit",
+            "description": "Payload: original duration, final duration, seconds cut per pass, file path."
+          }
         ],
         "error_handling": "FFmpeg missing → HARD STOP with install instructions. VFR detect hangs → skip normalization + warn. Concat empty → conservative fallback (keep all). Audio extraction fails → skip Deepgram, Pass 1 script-only. Deepgram 401 → Pass 2 skipped, Pass 1 degraded. Zero-byte file → ask for re-record.",
         "input_schema": [
-          { "name": "raw_path", "type": "text", "description": "Path to filmed footage" },
-          { "name": "retake_mode", "type": "enum", "options": ["aggressive", "conservative", "off"], "default": "aggressive" },
-          { "name": "silence_trim_floor_ms", "type": "number", "default": 200, "min": 100, "max": 800 }
+          {
+            "name": "raw_path",
+            "type": "text",
+            "description": "Path to filmed footage"
+          },
+          {
+            "name": "retake_mode",
+            "type": "enum",
+            "options": [
+              "aggressive",
+              "conservative",
+              "off"
+            ],
+            "default": "aggressive"
+          },
+          {
+            "name": "silence_trim_floor_ms",
+            "type": "number",
+            "default": 200,
+            "min": 100,
+            "max": 800
+          }
         ],
         "sample_input": {
           "raw_path": "raw/episode-12.mp4",
           "retake_mode": "{{param.aq_retake_mode}}",
           "silence_trim_floor_ms": 200
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Creator provides footage" },
-            { "id": "n2", "type": "connector", "label": "VFR normalize + extract audio", "connector": "desktop_terminal" },
-            { "id": "n3", "type": "connector", "label": "Deepgram transcribe (optional)", "connector": "deepgram" },
-            { "id": "n4", "type": "action", "label": "Pass 1: retake removal (keep final)" },
-            { "id": "n5", "type": "action", "label": "Pass 2: n-gram phrase-repeat" },
-            { "id": "n6", "type": "action", "label": "Pass 3: silence polish" },
-            { "id": "n7", "type": "connector", "label": "Compose final via FFmpeg", "connector": "desktop_terminal" },
-            { "id": "n8", "type": "event", "label": "Emit youtube.edit.complete" },
-            { "id": "n9", "type": "end", "label": "Ready for publish prep" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Creator provides footage"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "VFR normalize + extract audio",
+              "connector": "desktop_terminal"
+            },
+            {
+              "id": "n3",
+              "type": "connector",
+              "label": "Deepgram transcribe (optional)",
+              "connector": "deepgram"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Pass 1: retake removal (keep final)"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Pass 2: n-gram phrase-repeat"
+            },
+            {
+              "id": "n6",
+              "type": "action",
+              "label": "Pass 3: silence polish"
+            },
+            {
+              "id": "n7",
+              "type": "connector",
+              "label": "Compose final via FFmpeg",
+              "connector": "desktop_terminal"
+            },
+            {
+              "id": "n8",
+              "type": "event",
+              "label": "Emit youtube.edit.complete"
+            },
+            {
+              "id": "n9",
+              "type": "end",
+              "label": "Ready for publish prep"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            }
           ]
         }
       },
@@ -376,41 +758,104 @@
           "config": {},
           "description": "Creator triggers after edit complete."
         },
-        "connectors": ["desktop_terminal"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Deliver checklist the creator copy-pastes into YouTube Studio" }
+        "connectors": [
+          "desktop_terminal"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "messaging",
+            "description": "Deliver checklist the creator copy-pastes into YouTube Studio"
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Archives per-episode publish artifacts in publish/{topic-slug}.md. Remembers prior uploads for end-screen card recommendations."
         },
         "event_subscriptions": [
-          { "event_type": "youtube.publish.ready", "direction": "emit", "description": "Payload: final video path, full asset list. Cross-posting agents can subscribe." }
+          {
+            "event_type": "youtube.publish.ready",
+            "direction": "emit",
+            "description": "Payload: final video path, full asset list. Cross-posting agents can subscribe."
+          }
         ],
         "error_handling": "Messages unavailable → write to fallback/publish-{date}.md. Never lose the asset bundle — it's the creator's work product.",
         "input_schema": [
-          { "name": "final_video_path", "type": "text" },
-          { "name": "picked_title", "type": "text" }
+          {
+            "name": "final_video_path",
+            "type": "text"
+          },
+          {
+            "name": "picked_title",
+            "type": "text"
+          }
         ],
-        "sample_input": { "final_video_path": "", "picked_title": "" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "final_video_path": "",
+          "picked_title": ""
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Edit complete" },
-            { "id": "n2", "type": "action", "label": "Map chapters + draft description + tags" },
-            { "id": "n3", "type": "action", "label": "Pick end-screen cards + draft community post" },
-            { "id": "n4", "type": "action", "label": "Save publish/{topic-slug}.md" },
-            { "id": "n5", "type": "event", "label": "Emit youtube.publish.ready" },
-            { "id": "n6", "type": "end", "label": "Creator uploads manually" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Edit complete"
+            },
+            {
+              "id": "n2",
+              "type": "action",
+              "label": "Map chapters + draft description + tags"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Pick end-screen cards + draft community post"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Save publish/{topic-slug}.md"
+            },
+            {
+              "id": "n5",
+              "type": "event",
+              "label": "Emit youtube.publish.ready"
+            },
+            {
+              "id": "n6",
+              "type": "end",
+              "label": "Creator uploads manually"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            }
           ]
         }
       }
@@ -419,11 +864,17 @@
       {
         "id": "aq_niche_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_research"],
+        "use_case_ids": [
+          "uc_research"
+        ],
         "category": "configuration",
         "question": "How strict should the niche gate be?",
         "type": "select",
-        "options": ["Strict (10K median views minimum)", "Balanced (5K median)", "Lenient (2K median)"],
+        "options": [
+          "Strict (10K median views minimum)",
+          "Balanced (5K median)",
+          "Lenient (2K median)"
+        ],
         "default": "Strict (10K median views minimum)",
         "maps_to": "use_cases[uc_research].sample_input.niche_gate_threshold",
         "variable_name": "niche_threshold",
@@ -433,11 +884,17 @@
       {
         "id": "aq_target_words",
         "scope": "capability",
-        "use_case_ids": ["uc_script"],
+        "use_case_ids": [
+          "uc_script"
+        ],
         "category": "domain",
         "question": "Target script word count?",
         "type": "select",
-        "options": ["~1,500 (short, 10 min video)", "~2,100 (standard, 14 min)", "~3,000 (deep dive, 20 min)"],
+        "options": [
+          "~1,500 (short, 10 min video)",
+          "~2,100 (standard, 14 min)",
+          "~3,000 (deep dive, 20 min)"
+        ],
         "default": "~2,100 (standard, 14 min)",
         "maps_to": "use_cases[uc_script].sample_input.target_words",
         "variable_name": "target_words",
@@ -447,7 +904,9 @@
       {
         "id": "aq_retake_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_cut_edit"],
+        "use_case_ids": [
+          "uc_cut_edit"
+        ],
         "category": "boundaries",
         "question": "How aggressive should Pass 1 retake removal be?",
         "type": "select",
@@ -473,6 +932,25 @@
         "variable_name": "has_business_context",
         "context": "If yes, upload business_context.md after adoption. Script quality improves significantly when the persona knows your positioning.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_social_feed_credential",
+        "scope": "connector",
+        "connector_names": [
+          "social_feed"
+        ],
+        "category": "configuration",
+        "question": "Which social feed should this persona monitor?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "social_feed",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[social_feed].credential_fields[provider].value",
+        "variable_name": "social_feed_credential",
+        "context": "Options are auto-detected from your social_feed credentials in the Vault (Reddit, X/Twitter, LinkedIn, YouTube, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

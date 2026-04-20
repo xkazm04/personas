@@ -103,11 +103,11 @@
           "setup_instructions": "1. Log in to DocuSign Admin (admin.docusign.com).\n2. Go to Settings -> Integrations -> API and Keys.\n3. Click 'Add App / Integration Key' to create a new integration.\n4. Copy the Integration Key (Client ID) and generate a Client Secret.\n5. Add the OAuth redirect URI provided by Personas to the integration's settings.\n6. Copy your Account ID from Settings -> Account Information.\n7. Enable DocuSign Connect: Go to Settings -> Connect and create a new configuration.\n8. Set the webhook URL to the Personas webhook endpoint.\n9. Select envelope events: Sent, Delivered, Completed, Declined, Voided.\n10. Enable 'Include Documents' and 'Include Recipients' in the payload settings."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "pat",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": true,
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
@@ -139,8 +139,8 @@
           "setup_instructions": "1. Go to airtable.com/create/tokens to create a Personal Access Token.\n2. Grant the following scopes: data.records:read, data.records:write, schema.bases:read.\n3. Add the specific base that contains your contract tracker to the token's access list.\n4. Create a base (or use existing) with a 'Contracts' table containing these fields:\n   - EnvelopeId (Single line text) -- Primary key from DocuSign\n   - ContractTitle (Single line text)\n   - Status (Single select: Sent, Delivered, Viewed, Signed, Completed, Declined, Voided)\n   - SenderName (Single line text)\n   - SenderEmail (Email)\n   - Recipients (Long text -- JSON array of recipient details)\n   - ContractValue (Currency)\n   - Department (Single select)\n   - SentDate (Date)\n   - CompletedDate (Date)\n   - RenewalDate (Date)\n   - StatusHistory (Long text -- timestamped log)\n   - ReminderCount (Number)\n   - DeclineReason (Single line text)\n   - OwnerEmail (Email)\n5. Copy the Base ID from the API documentation page or the base URL.\n6. Copy the Table ID or use the table name 'Contracts'."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -159,8 +159,8 @@
           "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use existing).\n2. Navigate to OAuth & Permissions.\n3. Add the following Bot Token Scopes:\n   - chat:write (send messages)\n   - chat:write.public (post to channels the bot hasn't joined)\n   - users:read (look up user IDs for DMs)\n   - users:read.email (match users by email for contract owner tagging)\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Create the following channels and invite the bot:\n   - #contracts-completed -- Signed/completed contract celebrations\n   - #contracts-alerts -- Declined contracts and urgent issues\n   - #contracts-pending -- Stale unsigned contract nudges\n   - #contracts-activity -- New envelope activity feed\n   - #contracts-renewals -- Upcoming renewal notifications"
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -234,7 +234,11 @@
           },
           "description": "DocuSign Connect fires webhooks on envelope status changes. Not user-configurable — webhook triggers bypass the composition picker."
         },
-        "connectors": ["docusign", "airtable", "slack"],
+        "connectors": [
+          "docusign",
+          "spreadsheet",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -285,27 +289,87 @@
           "pending_channel": "{{param.aq_pending_channel}}",
           "activity_channel": "{{param.aq_activity_channel}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "DocuSign webhook fires" },
-            { "id": "e2", "type": "connector", "label": "Fetch envelope + recipients", "connector": "docusign" },
-            { "id": "e3", "type": "connector", "label": "Upsert Airtable record (envelope_id)", "connector": "airtable" },
-            { "id": "e4", "type": "decision", "label": "Event category?" },
-            { "id": "e5", "type": "connector", "label": "Route Slack post (completed / alerts / pending / activity)", "connector": "slack" },
-            { "id": "e6", "type": "action", "label": "Store signer velocity in memory" },
-            { "id": "e7", "type": "event", "label": "Emit envelope.status_changed (+ declined if applicable)" },
-            { "id": "e8", "type": "end", "label": "Event processed" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "DocuSign webhook fires"
+            },
+            {
+              "id": "e2",
+              "type": "connector",
+              "label": "Fetch envelope + recipients",
+              "connector": "docusign"
+            },
+            {
+              "id": "e3",
+              "type": "connector",
+              "label": "Upsert Airtable record (envelope_id)",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "e4",
+              "type": "decision",
+              "label": "Event category?"
+            },
+            {
+              "id": "e5",
+              "type": "connector",
+              "label": "Route Slack post (completed / alerts / pending / activity)",
+              "connector": "messaging"
+            },
+            {
+              "id": "e6",
+              "type": "action",
+              "label": "Store signer velocity in memory"
+            },
+            {
+              "id": "e7",
+              "type": "event",
+              "label": "Emit envelope.status_changed (+ declined if applicable)"
+            },
+            {
+              "id": "e8",
+              "type": "end",
+              "label": "Event processed"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            }
           ]
         }
       },
@@ -320,10 +384,18 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default weekday 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["airtable", "docusign", "gmail", "slack"],
+        "connectors": [
+          "spreadsheet",
+          "docusign",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -364,30 +436,108 @@
           "remind_threshold_days": "{{param.aq_reminder_thresholds_remind}}",
           "escalate_threshold_days": "{{param.aq_reminder_thresholds_escalate}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily sweep tick" },
-            { "id": "r2", "type": "connector", "label": "Query overdue contracts (Airtable)", "connector": "airtable" },
-            { "id": "r3", "type": "connector", "label": "Check latest signer activity (DocuSign)", "connector": "docusign" },
-            { "id": "r4", "type": "decision", "label": "reminder_count < 3?" },
-            { "id": "r5", "type": "connector", "label": "Send polite signer reminder (Gmail)", "connector": "gmail" },
-            { "id": "r6", "type": "connector", "label": "Escalate to owner (Slack DM + Gmail)", "connector": "slack" },
-            { "id": "r7", "type": "connector", "label": "Update reminder_count (Airtable)", "connector": "airtable" },
-            { "id": "r8", "type": "event", "label": "Emit reminder.sent / reminder.escalated" },
-            { "id": "r9", "type": "end", "label": "Sweep complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily sweep tick"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Query overdue contracts (Airtable)",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "Check latest signer activity (DocuSign)",
+              "connector": "docusign"
+            },
+            {
+              "id": "r4",
+              "type": "decision",
+              "label": "reminder_count < 3?"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Send polite signer reminder (Gmail)",
+              "connector": "email"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Escalate to owner (Slack DM + Gmail)",
+              "connector": "messaging"
+            },
+            {
+              "id": "r7",
+              "type": "connector",
+              "label": "Update reminder_count (Airtable)",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "r8",
+              "type": "event",
+              "label": "Emit reminder.sent / reminder.escalated"
+            },
+            {
+              "id": "r9",
+              "type": "end",
+              "label": "Sweep complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5", "variant": "yes", "label": "Under cap" },
-            { "source": "r4", "target": "r6", "variant": "no", "label": "At cap - escalate" },
-            { "source": "r5", "target": "r7" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5",
+              "variant": "yes",
+              "label": "Under cap"
+            },
+            {
+              "source": "r4",
+              "target": "r6",
+              "variant": "no",
+              "label": "At cap - escalate"
+            },
+            {
+              "source": "r5",
+              "target": "r7"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            }
           ]
         }
       },
@@ -402,10 +552,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["airtable", "slack", "gmail"],
+        "connectors": [
+          "spreadsheet",
+          "messaging",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -444,28 +601,96 @@
           "renewal_tiers_days": "{{param.aq_renewal_tiers}}",
           "renewals_channel": "{{param.aq_renewals_channel}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Weekly tick" },
-            { "id": "n2", "type": "connector", "label": "Query renewals within lookahead", "connector": "airtable" },
-            { "id": "n3", "type": "action", "label": "Compute days-to-renewal + tier per contract" },
-            { "id": "n4", "type": "decision", "label": "Tier already notified?" },
-            { "id": "n5", "type": "connector", "label": "Dispatch Slack + Gmail (tiered intensity)", "connector": "slack" },
-            { "id": "n6", "type": "connector", "label": "Update notification state (Airtable)", "connector": "airtable" },
-            { "id": "n7", "type": "event", "label": "Emit renewal.approaching / renewal.lapsed" },
-            { "id": "n8", "type": "end", "label": "Renewal check complete" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "n2",
+              "type": "connector",
+              "label": "Query renewals within lookahead",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Compute days-to-renewal + tier per contract"
+            },
+            {
+              "id": "n4",
+              "type": "decision",
+              "label": "Tier already notified?"
+            },
+            {
+              "id": "n5",
+              "type": "connector",
+              "label": "Dispatch Slack + Gmail (tiered intensity)",
+              "connector": "messaging"
+            },
+            {
+              "id": "n6",
+              "type": "connector",
+              "label": "Update notification state (Airtable)",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "n7",
+              "type": "event",
+              "label": "Emit renewal.approaching / renewal.lapsed"
+            },
+            {
+              "id": "n8",
+              "type": "end",
+              "label": "Renewal check complete"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5", "variant": "no", "label": "New tier" },
-            { "source": "n4", "target": "n8", "variant": "yes", "label": "Already notified" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5",
+              "variant": "no",
+              "label": "New tier"
+            },
+            {
+              "source": "n4",
+              "target": "n8",
+              "variant": "yes",
+              "label": "Already notified"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n7"
+            },
+            {
+              "source": "n7",
+              "target": "n8"
+            }
           ]
         }
       }
@@ -529,11 +754,18 @@
       {
         "id": "aq_reminder_thresholds_remind",
         "scope": "capability",
-        "use_case_ids": ["uc_reminder_sweep"],
+        "use_case_ids": [
+          "uc_reminder_sweep"
+        ],
         "category": "configuration",
         "question": "After how many days unsigned should the agent start reminding the signer?",
         "type": "select",
-        "options": ["1", "2", "3", "5"],
+        "options": [
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_reminder_sweep].sample_input.remind_threshold_days",
         "variable_name": "reminder_thresholds_remind",
@@ -543,11 +775,18 @@
       {
         "id": "aq_reminder_thresholds_escalate",
         "scope": "capability",
-        "use_case_ids": ["uc_reminder_sweep"],
+        "use_case_ids": [
+          "uc_reminder_sweep"
+        ],
         "category": "configuration",
         "question": "After how many days unsigned should reminders escalate to the contract owner?",
         "type": "select",
-        "options": ["3", "5", "7", "10"],
+        "options": [
+          "3",
+          "5",
+          "7",
+          "10"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_reminder_sweep].sample_input.escalate_threshold_days",
         "variable_name": "reminder_thresholds_escalate",
@@ -557,7 +796,9 @@
       {
         "id": "aq_renewal_tiers",
         "scope": "capability",
-        "use_case_ids": ["uc_renewal_monitor"],
+        "use_case_ids": [
+          "uc_renewal_monitor"
+        ],
         "category": "configuration",
         "question": "At what renewal lead times should the agent send tiered notifications?",
         "type": "select",
@@ -575,7 +816,9 @@
       {
         "id": "aq_completed_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_process_events"],
+        "use_case_ids": [
+          "uc_process_events"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive completed / signed contract celebrations?",
         "type": "select",
@@ -585,7 +828,9 @@
         "variable_name": "completed_channel",
         "context": "Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -595,7 +840,9 @@
       {
         "id": "aq_alerts_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_process_events"],
+        "use_case_ids": [
+          "uc_process_events"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive declined-contract and urgent alerts?",
         "type": "select",
@@ -605,7 +852,9 @@
         "variable_name": "alerts_channel",
         "context": "Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -615,7 +864,9 @@
       {
         "id": "aq_pending_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_process_events"],
+        "use_case_ids": [
+          "uc_process_events"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive stale unsigned-contract nudges?",
         "type": "select",
@@ -625,7 +876,9 @@
         "variable_name": "pending_channel",
         "context": "Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -635,7 +888,9 @@
       {
         "id": "aq_activity_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_process_events"],
+        "use_case_ids": [
+          "uc_process_events"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive the new-envelope activity feed?",
         "type": "select",
@@ -645,7 +900,9 @@
         "variable_name": "activity_channel",
         "context": "Low-priority awareness feed. Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -655,7 +912,9 @@
       {
         "id": "aq_renewals_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_renewal_monitor"],
+        "use_case_ids": [
+          "uc_renewal_monitor"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive upcoming renewal notifications?",
         "type": "select",
@@ -665,7 +924,9 @@
         "variable_name": "renewals_channel",
         "context": "Picker lists channels on your configured Slack workspace.",
         "dimension": "connectors",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_channels",
@@ -693,7 +954,10 @@
       {
         "id": "aq_human_approval",
         "scope": "capability",
-        "use_case_ids": ["uc_reminder_sweep", "uc_renewal_monitor"],
+        "use_case_ids": [
+          "uc_reminder_sweep",
+          "uc_renewal_monitor"
+        ],
         "category": "human_in_the_loop",
         "question": "Which outbound communications require human approval before the agent sends them?",
         "type": "select",
@@ -712,7 +976,9 @@
       {
         "id": "aq_slack_verbosity",
         "scope": "capability",
-        "use_case_ids": ["uc_process_events"],
+        "use_case_ids": [
+          "uc_process_events"
+        ],
         "category": "quality",
         "question": "How verbose should Slack notifications be when contract status changes?",
         "type": "select",
@@ -727,6 +993,63 @@
         "variable_name": "slack_verbosity",
         "context": "Shapes Slack message verbosity to keep stakeholders informed without causing channel noise.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

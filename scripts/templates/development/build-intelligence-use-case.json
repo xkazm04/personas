@@ -5,11 +5,21 @@
   "description": "Monitors CircleCI pipeline events, analyzes failed build logs to identify root causes, posts enriched Slack messages (not just \"build failed\" but \"failed because X in file Y\"), and comments on the GitHub PR with fix suggestions. Tracks flaky test patterns.",
   "icon": "Cpu",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["CircleCI", "Slack", "GitHub"],
+  "service_flow": [
+    "CircleCI",
+    "Slack",
+    "GitHub"
+  ],
   "payload": {
-    "service_flow": ["CircleCI", "Slack", "GitHub"],
+    "service_flow": [
+      "CircleCI",
+      "Slack",
+      "GitHub"
+    ],
     "persona": {
       "goal": "Turn every red build into an actionable message — pinpoint the broken file/line, surface the PR comment developers actually need, and keep flaky tests from hiding in the noise.",
       "identity": {
@@ -45,7 +55,11 @@
       "tool_guidance": "### CircleCI (http_request + circleci connector)\n- `GET https://circleci.com/api/v2/pipeline/{pipeline-id}` — pipeline metadata\n- `GET https://circleci.com/api/v2/workflow/{workflow-id}/job` — jobs for a workflow\n- `GET https://circleci.com/api/v2/project/{project-slug}/job/{job-number}` — job step details\n- `GET https://circleci.com/api/v2/project/{project-slug}/{job-number}/artifacts` — test-result artifacts\n- `GET https://circleci.com/api/v2/project/{project-slug}/pipeline` — recent pipelines for trend context\n- Header: `Circle-Token: {api_token}`\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — send enriched failure notification (Block Kit)\n- `POST https://slack.com/api/chat.update` — update a previously-posted notification\n- `POST https://slack.com/api/chat.postMessage` with `thread_ts` — threaded follow-ups\n- Header: `Authorization: Bearer {bot_token}`\n\n### GitHub (http_request + github connector)\n- `GET https://api.github.com/repos/{owner}/{repo}/commits/{sha}/pulls` — find PR by commit SHA\n- `GET https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments` — list existing comments to dedupe\n- `POST https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments` — create analysis comment\n- `PATCH https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}` — update existing analysis\n- `POST https://api.github.com/repos/{owner}/{repo}/statuses/{sha}` — set enriched commit status context\n- Headers: `Authorization: Bearer {pat}`, `Accept: application/vnd.github.v3+json`\n\n### Local state (file_read / file_write)\n- `data/flaky_tests.json` — per-test history { name, pass_count, fail_count, last_5_results, branches[], flakiness_score }\n- `data/build_history.json` — last build status per { project, branch } for recovery detection\n- `data/pr_comment_map.json` — { repo#pr_number → bot_comment_id } for update-in-place\n- `data/error_log.json` — deliveries that failed; retried next cycle",
       "error_handling": "CircleCI 401 → emit build.failure.analyzed with status=auth_error, post Slack token-expiry notice, halt. CircleCI 429 → respect Retry-After, queue this event for next cycle. CircleCI 5xx → retry 3× exponential (5s/15s/45s) then degrade to 'build failed, analysis unavailable'. Slack channel_not_found → fall back to configured default channel; log to error_log.json. Slack rate_limited → respect Retry-After; queue and resend next cycle. GitHub 404 on PR lookup → skip PR step, still post Slack. GitHub 403 → log scope missing, still post Slack. GitHub 422 (body too large) → truncate analysis to 60k chars + 'see CircleCI log' link. Log-parse failure → post generic failure notice with direct CircleCI log link; mark failure_type=unknown. flaky_tests.json corrupt → reinitialize empty and log; history rebuilds over subsequent runs. Webhook payload not a pipeline event → ignore.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "circleci",
@@ -68,8 +82,8 @@
           "setup_instructions": "1. Log into CircleCI at https://app.circleci.com.\n2. Open User Settings → Personal API Tokens.\n3. Click 'Create New Token' and name it (e.g., 'Build Intelligence Agent').\n4. Copy the token immediately — it's shown only once.\n5. Paste it into the credential above.\n6. In your Project Settings → Webhooks → Add Webhook, point it at your Personas webhook endpoint; subscribe to 'Workflow Completed' and 'Job Completed' events."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -96,11 +110,11 @@
           "setup_instructions": "1. Go to https://api.slack.com/apps and create or select an app.\n2. Under OAuth & Permissions → Bot Token Scopes, add: chat:write, chat:write.public.\n3. Install the app to your workspace and copy the Bot User OAuth Token (xoxb-…).\n4. Invite the bot to your CI alerts channel: /invite @BuildIntelligence.\n5. Enter the token and default channel above."
         },
         {
-          "name": "github",
-          "label": "GitHub",
+          "name": "source_control",
+          "label": "Source Control",
           "auth_type": "pat",
           "role": "source_control",
-          "category": "development",
+          "category": "source_control",
           "required": true,
           "api_base_url": "https://api.github.com",
           "credential_fields": [
@@ -136,10 +150,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "webhook",
-          "config": { "source": "circleci", "events": ["workflow-completed", "job-completed"] },
+          "config": {
+            "source": "circleci",
+            "events": [
+              "workflow-completed",
+              "job-completed"
+            ]
+          },
           "description": "Default CircleCI webhook on workflow/job completion — not user-configurable at the trigger-composition step."
         },
-        "connectors": ["circleci", "slack"],
+        "connectors": [
+          "circleci",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -166,14 +189,26 @@
           {
             "name": "primary_language",
             "type": "enum",
-            "options": ["javascript_typescript", "python", "jvm", "go", "ruby", "mixed"],
+            "options": [
+              "javascript_typescript",
+              "python",
+              "jvm",
+              "go",
+              "ruby",
+              "mixed"
+            ],
             "default": "mixed",
             "description": "Primary language in the pipeline — selects the log-parsing heuristics (stack trace shape, test output, dependency error signatures)."
           },
           {
             "name": "branch_scope",
             "type": "enum",
-            "options": ["all_branches", "main_and_prs", "main_only", "open_pr_branches"],
+            "options": [
+              "all_branches",
+              "main_and_prs",
+              "main_only",
+              "open_pr_branches"
+            ],
             "default": "main_and_prs",
             "description": "Which branches trigger full analysis and PR comments."
           }
@@ -182,30 +217,103 @@
           "primary_language": "{{param.aq_primary_language}}",
           "branch_scope": "{{param.aq_branch_scope}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "CircleCI webhook received" },
-            { "id": "n2", "type": "decision", "label": "Job succeeded?" },
-            { "id": "n3", "type": "connector", "label": "Fetch job + artifacts", "connector": "circleci" },
-            { "id": "n4", "type": "action", "label": "Parse logs; extract file + line; classify" },
-            { "id": "n5", "type": "action", "label": "Apply flaky-test memory" },
-            { "id": "n6", "type": "connector", "label": "Post enriched Slack message", "connector": "slack" },
-            { "id": "n7", "type": "action", "label": "Check recovery (prev red?)" },
-            { "id": "n8", "type": "event", "label": "Emit build.failure.analyzed + persist state" },
-            { "id": "n9", "type": "end", "label": "Analysis complete" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "CircleCI webhook received"
+            },
+            {
+              "id": "n2",
+              "type": "decision",
+              "label": "Job succeeded?"
+            },
+            {
+              "id": "n3",
+              "type": "connector",
+              "label": "Fetch job + artifacts",
+              "connector": "circleci"
+            },
+            {
+              "id": "n4",
+              "type": "action",
+              "label": "Parse logs; extract file + line; classify"
+            },
+            {
+              "id": "n5",
+              "type": "action",
+              "label": "Apply flaky-test memory"
+            },
+            {
+              "id": "n6",
+              "type": "connector",
+              "label": "Post enriched Slack message",
+              "connector": "messaging"
+            },
+            {
+              "id": "n7",
+              "type": "action",
+              "label": "Check recovery (prev red?)"
+            },
+            {
+              "id": "n8",
+              "type": "event",
+              "label": "Emit build.failure.analyzed + persist state"
+            },
+            {
+              "id": "n9",
+              "type": "end",
+              "label": "Analysis complete"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n7", "label": "Yes", "variant": "yes" },
-            { "source": "n2", "target": "n3", "label": "No (failed)", "variant": "no" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n7", "target": "n6" },
-            { "source": "n6", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n7",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "n2",
+              "target": "n3",
+              "label": "No (failed)",
+              "variant": "no"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            },
+            {
+              "source": "n5",
+              "target": "n6"
+            },
+            {
+              "source": "n7",
+              "target": "n6"
+            },
+            {
+              "source": "n6",
+              "target": "n8"
+            },
+            {
+              "source": "n8",
+              "target": "n9"
+            }
           ]
         }
       },
@@ -220,10 +328,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "build.failure.analyzed" },
+          "config": {
+            "event_type": "build.failure.analyzed"
+          },
           "description": "Fires on every build.failure.analyzed event. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["github"],
+        "connectors": [
+          "source_control"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -243,29 +355,103 @@
         "error_handling": "GitHub 404 on commit→PR lookup → skip (not all commits have PRs). GitHub 403 scope missing → log once, mark PR lifecycle disabled until credential refresh. GitHub 422 (body too large) → truncate to 60k + 'full log' link. Existing comment was deleted by human → fall through to create new.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "build.failure.analyzed received" },
-            { "id": "p2", "type": "connector", "label": "Find PR by commit SHA", "connector": "github" },
-            { "id": "p3", "type": "decision", "label": "PR exists?" },
-            { "id": "p4", "type": "action", "label": "Look up bot comment id in pr_comment_map.json" },
-            { "id": "p5", "type": "decision", "label": "Existing comment?" },
-            { "id": "p6", "type": "connector", "label": "PATCH existing comment", "connector": "github" },
-            { "id": "p7", "type": "connector", "label": "POST new comment; store id", "connector": "github" },
-            { "id": "p8", "type": "end", "label": "PR in sync" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "build.failure.analyzed received"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Find PR by commit SHA",
+              "connector": "source_control"
+            },
+            {
+              "id": "p3",
+              "type": "decision",
+              "label": "PR exists?"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Look up bot comment id in pr_comment_map.json"
+            },
+            {
+              "id": "p5",
+              "type": "decision",
+              "label": "Existing comment?"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "PATCH existing comment",
+              "connector": "source_control"
+            },
+            {
+              "id": "p7",
+              "type": "connector",
+              "label": "POST new comment; store id",
+              "connector": "source_control"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "PR in sync"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4", "label": "Yes", "variant": "yes" },
-            { "source": "p3", "target": "p8", "label": "No", "variant": "no" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6", "label": "Yes", "variant": "yes" },
-            { "source": "p5", "target": "p7", "label": "No", "variant": "no" },
-            { "source": "p6", "target": "p8" },
-            { "source": "p7", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "p3",
+              "target": "p8",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "p5",
+              "target": "p7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "p6",
+              "target": "p8"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            }
           ]
         }
       },
@@ -280,10 +466,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1" },
+          "config": {
+            "cron": "0 9 * * 1"
+          },
           "description": "Default Monday 9am — final cadence set at the trigger-composition step."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -310,7 +500,12 @@
           {
             "name": "flakiness_definition",
             "type": "enum",
-            "options": ["two_fails_then_pass_same_branch", "retry_recovered_once", "ten_to_eighty_over_last_30", "three_fails_in_14_days"],
+            "options": [
+              "two_fails_then_pass_same_branch",
+              "retry_recovered_once",
+              "ten_to_eighty_over_last_30",
+              "three_fails_in_14_days"
+            ],
             "default": "ten_to_eighty_over_last_30",
             "description": "How strictly 'flaky' is defined for inclusion in the digest."
           }
@@ -318,25 +513,76 @@
         "sample_input": {
           "flakiness_definition": "{{param.aq_flakiness_definition}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Scheduled tick" },
-            { "id": "w2", "type": "action", "label": "Load flaky_tests.json" },
-            { "id": "w3", "type": "action", "label": "Rank + group by project" },
-            { "id": "w4", "type": "connector", "label": "Post digest to Slack", "connector": "slack" },
-            { "id": "w5", "type": "action", "label": "Prune 30+ day entries; persist" },
-            { "id": "w6", "type": "event", "label": "Emit build.flaky.digest_posted" },
-            { "id": "w7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Load flaky_tests.json"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Rank + group by project"
+            },
+            {
+              "id": "w4",
+              "type": "connector",
+              "label": "Post digest to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Prune 30+ day entries; persist"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit build.flaky.digest_posted"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -355,7 +601,9 @@
         "context": "Failure alerts, recovery notices, and the weekly flaky-test digest all post here. Options are auto-detected from your Slack credentials in the Vault.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -364,7 +612,9 @@
       {
         "id": "aq_primary_language",
         "scope": "capability",
-        "use_case_ids": ["uc_failure_analysis"],
+        "use_case_ids": [
+          "uc_failure_analysis"
+        ],
         "category": "domain",
         "question": "What is the primary language or runtime in your CircleCI pipelines?",
         "type": "select",
@@ -385,7 +635,10 @@
       {
         "id": "aq_branch_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_failure_analysis", "uc_pr_comment_lifecycle"],
+        "use_case_ids": [
+          "uc_failure_analysis",
+          "uc_pr_comment_lifecycle"
+        ],
         "category": "configuration",
         "question": "Which branches trigger full failure analysis and PR comments?",
         "type": "select",
@@ -404,7 +657,9 @@
       {
         "id": "aq_pr_comment_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_pr_comment_lifecycle"],
+        "use_case_ids": [
+          "uc_pr_comment_lifecycle"
+        ],
         "category": "quality",
         "question": "How detailed should PR comments be?",
         "type": "select",
@@ -423,7 +678,9 @@
       {
         "id": "aq_flakiness_definition",
         "scope": "capability",
-        "use_case_ids": ["uc_flaky_digest"],
+        "use_case_ids": [
+          "uc_flaky_digest"
+        ],
         "category": "memory",
         "question": "How should a 'flaky' test be defined for tracking and the weekly digest?",
         "type": "select",
@@ -456,6 +713,44 @@
         "variable_name": "boundary_rule",
         "context": "Hard guardrails that prevent noise and automated actions requiring human judgment.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_source_control_credential",
+        "scope": "connector",
+        "connector_names": [
+          "source_control"
+        ],
+        "category": "configuration",
+        "question": "Which source-control credential should this persona operate with?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "source_control",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
+        "variable_name": "source_control_credential",
+        "context": "Options are auto-detected from your source_control credentials in the Vault (GitHub, GitLab, Azure DevOps, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

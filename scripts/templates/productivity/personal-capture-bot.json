@@ -5,11 +5,21 @@
   "description": "Monitors a Telegram bot for captured messages (tasks, ideas, bookmarks, notes), classifies each using context, routes tasks to Airtable and everything else to Notion, confirms receipt, and delivers a nightly digest of the day's captures.",
   "icon": "MessageSquarePlus",
   "color": "#7C3AED",
-  "category": ["productivity"],
-  "service_flow": ["Telegram", "Notion", "Airtable"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Telegram",
+    "Notion",
+    "Airtable"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Telegram", "Notion", "Airtable"],
+    "service_flow": [
+      "Telegram",
+      "Notion",
+      "Airtable"
+    ],
     "persona": {
       "goal": "Never lose a thought — accept every message you send to the bot, classify it correctly, and route it to the right destination so your inbox becomes a structured capture system.",
       "identity": {
@@ -44,11 +54,15 @@
       "tool_guidance": "**Telegram (http_request via telegram connector)**:\n- Poll: `GET https://api.telegram.org/bot{token}/getUpdates?offset={offset}&timeout=10`\n- Reply: `POST https://api.telegram.org/bot{token}/sendMessage` with `{\"chat_id\", \"text\", \"parse_mode\": \"Markdown\"}`\n- Store `highest_update_id + 1` as next offset to avoid reprocessing.\n\n**Notion (http_request via notion connector)**:\n- Create page: `POST https://api.notion.com/v1/pages` with `parent.database_id` and properties matching the schema.\n- Header: `Notion-Version: 2022-06-28`.\n- Property types: Title (title), Tags (multi_select), URL (url), Status (select: Captured), Captured At (date).\n\n**Airtable (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"records\": [{\"fields\": {...}}]}`.\n- Header: `Authorization: Bearer {pat}`.\n- Expected fields: Title (text), Status (single select), Priority (single select), Due Date (date), Source (text), Original Text (long text), Captured At (date+time).\n\n**Local state**:\n- `captures_today.json` — appended during capture, cleared after digest.\n- `telegram_offset.txt` — offset persistence for idempotency.\n- `failed_captures.json` — fallback for failed routes.",
       "error_handling": "Telegram 401 → invalid token, notify user, stop polling. Telegram 409 → another instance polling; back off 60s. Telegram 429 → respect `retry_after` header. Telegram timeout → retry 3x with 5s/15s/45s backoff. Notion 400 → schema mismatch, save to `failed_captures.json`, notify user. Notion 404 → database not shared with integration, notify with setup steps. Notion 429 → queue with 350ms spacing. Airtable 422 → field mismatch, save to failed, notify. Airtable 403 → PAT access issue, notify to check permissions. Classification uncertainty → default to 'note' with `needs-review` tag. Duplicate detection → track processed `update_id`, never process twice.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "telegram",
-          "label": "Telegram Bot",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -75,11 +89,11 @@
           "setup_instructions": "1. @BotFather → /newbot → follow prompts → copy token.\n2. Send any message to your new bot.\n3. Visit https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates and copy your chat_id.\n4. Paste both values here."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -103,11 +117,11 @@
           "setup_instructions": "1. notion.so/my-integrations → create integration → copy token.\n2. Open each target database → ... menu → Connections → select your integration.\n3. Copy the database ID from the URL (32-char hex before ?v=).\n4. If using separate databases per type, configure additional DB IDs in memory after setup."
         },
         {
-          "name": "airtable",
-          "label": "Airtable",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "api_key",
           "role": "task_destination",
-          "category": "productivity",
+          "category": "spreadsheet",
           "required": false,
           "fallback_note": "Skip Airtable to route tasks into the same Notion database as notes. Structured task fields (priority, due date) are still extracted but stored as Notion properties.",
           "api_base_url": "https://api.airtable.com/v0",
@@ -139,7 +153,10 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Telegram confirmations and daily digests." }
+        {
+          "type": "messaging",
+          "description": "Telegram confirmations and daily digests."
+        }
       ],
       "core_memories": []
     },
@@ -155,12 +172,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/30 * * * * *" },
+          "config": {
+            "cron": "*/30 * * * * *"
+          },
           "description": "Default every 30 seconds — final cadence set at the trigger-composition step."
         },
-        "connectors": ["telegram", "notion", "airtable"],
+        "connectors": [
+          "messaging",
+          "knowledge_base",
+          "spreadsheet"
+        ],
         "notification_channels": [
-          { "type": "messaging", "description": "Per-capture Telegram reply confirmation." }
+          {
+            "type": "messaging",
+            "description": "Per-capture Telegram reply confirmation."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -182,21 +208,36 @@
           {
             "name": "task_fields",
             "type": "enum",
-            "options": ["title_due_only", "title_due_priority_project", "title_due_tags", "title_only"],
+            "options": [
+              "title_due_only",
+              "title_due_priority_project",
+              "title_due_tags",
+              "title_only"
+            ],
             "default": "title_due_priority_project",
             "description": "How much structured data to extract for task captures."
           },
           {
             "name": "notion_structure",
             "type": "enum",
-            "options": ["unified_single_db", "notes_ideas_separate", "notes_ideas_bookmarks_separate", "configure_during_setup"],
+            "options": [
+              "unified_single_db",
+              "notes_ideas_separate",
+              "notes_ideas_bookmarks_separate",
+              "configure_during_setup"
+            ],
             "default": "unified_single_db",
             "description": "Whether to route all non-task captures to one Notion DB or separate DBs per type."
           },
           {
             "name": "confirmation_behavior",
             "type": "enum",
-            "options": ["never_ask", "ask_on_low_confidence", "always_ask", "silent_auto"],
+            "options": [
+              "never_ask",
+              "ask_on_low_confidence",
+              "always_ask",
+              "silent_auto"
+            ],
             "default": "ask_on_low_confidence",
             "description": "When to confirm classification with the user before routing."
           }
@@ -206,32 +247,114 @@
           "notion_structure": "{{param.aq_notion_structure}}",
           "confirmation_behavior": "{{param.aq_confirmation_behavior}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Polling tick" },
-            { "id": "c2", "type": "connector", "label": "Telegram getUpdates", "connector": "telegram" },
-            { "id": "c3", "type": "action", "label": "Classify message (URL → task → idea → note)" },
-            { "id": "c4", "type": "decision", "label": "Task?" },
-            { "id": "c5", "type": "connector", "label": "Create Airtable record", "connector": "airtable" },
-            { "id": "c6", "type": "connector", "label": "Create Notion page", "connector": "notion" },
-            { "id": "c7", "type": "connector", "label": "Reply typed confirmation", "connector": "telegram" },
-            { "id": "c8", "type": "action", "label": "Append to captures_today + update offset" },
-            { "id": "c9", "type": "event", "label": "Emit capture.item.routed" },
-            { "id": "c10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "c2",
+              "type": "connector",
+              "label": "Telegram getUpdates",
+              "connector": "messaging"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Classify message (URL → task → idea → note)"
+            },
+            {
+              "id": "c4",
+              "type": "decision",
+              "label": "Task?"
+            },
+            {
+              "id": "c5",
+              "type": "connector",
+              "label": "Create Airtable record",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "c6",
+              "type": "connector",
+              "label": "Create Notion page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "c7",
+              "type": "connector",
+              "label": "Reply typed confirmation",
+              "connector": "messaging"
+            },
+            {
+              "id": "c8",
+              "type": "action",
+              "label": "Append to captures_today + update offset"
+            },
+            {
+              "id": "c9",
+              "type": "event",
+              "label": "Emit capture.item.routed"
+            },
+            {
+              "id": "c10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5", "label": "Yes", "variant": "yes" },
-            { "source": "c4", "target": "c6", "label": "No", "variant": "no" },
-            { "source": "c5", "target": "c7" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c8" },
-            { "source": "c8", "target": "c9" },
-            { "source": "c9", "target": "c10" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "c4",
+              "target": "c6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "c5",
+              "target": "c7"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c8"
+            },
+            {
+              "source": "c8",
+              "target": "c9"
+            },
+            {
+              "source": "c9",
+              "target": "c10"
+            }
           ]
         }
       },
@@ -246,14 +369,24 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 21 * * *" },
+          "config": {
+            "cron": "0 21 * * *"
+          },
           "description": "Default 21:00 daily — final cadence set at the trigger-composition step."
         },
-        "connectors": ["telegram"],
-        "notification_channels": [
-          { "type": "messaging", "description": "Telegram digest delivery." }
+        "connectors": [
+          "messaging"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "messaging",
+            "description": "Telegram digest delivery."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Historical digest archive keyed `digest_{YYYY-MM-DD}` for trend tracking (e.g., 'you've been capturing more tasks this week')."
@@ -283,25 +416,76 @@
         "sample_input": {
           "digest_detail": "{{param.aq_digest_detail}}"
         },
-        "tool_hints": ["file_read", "file_write", "http_request"],
+        "tool_hints": [
+          "file_read",
+          "file_write",
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Nightly tick" },
-            { "id": "d2", "type": "action", "label": "Load captures_today.json" },
-            { "id": "d3", "type": "action", "label": "Group + format digest" },
-            { "id": "d4", "type": "connector", "label": "Send digest via Telegram", "connector": "telegram" },
-            { "id": "d5", "type": "action", "label": "Archive as agent_memory + clear buffer" },
-            { "id": "d6", "type": "event", "label": "Emit capture.digest.delivered" },
-            { "id": "d7", "type": "end", "label": "Digest complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Nightly tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load captures_today.json"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Group + format digest"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Send digest via Telegram",
+              "connector": "messaging"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Archive as agent_memory + clear buffer"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit capture.digest.delivered"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Digest complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       }
@@ -310,7 +494,9 @@
       {
         "id": "aq_task_fields",
         "scope": "capability",
-        "use_case_ids": ["uc_capture_and_route"],
+        "use_case_ids": [
+          "uc_capture_and_route"
+        ],
         "category": "configuration",
         "question": "What fields do you track for tasks?",
         "type": "select",
@@ -329,7 +515,9 @@
       {
         "id": "aq_notion_structure",
         "scope": "capability",
-        "use_case_ids": ["uc_capture_and_route"],
+        "use_case_ids": [
+          "uc_capture_and_route"
+        ],
         "category": "configuration",
         "question": "How are your Notion databases organized for captures?",
         "type": "select",
@@ -348,7 +536,9 @@
       {
         "id": "aq_confirmation_behavior",
         "scope": "capability",
-        "use_case_ids": ["uc_capture_and_route"],
+        "use_case_ids": [
+          "uc_capture_and_route"
+        ],
         "category": "human_in_the_loop",
         "question": "When should the bot confirm a classification before routing?",
         "type": "select",
@@ -367,7 +557,9 @@
       {
         "id": "aq_digest_detail",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_digest"],
+        "use_case_ids": [
+          "uc_daily_digest"
+        ],
         "category": "quality",
         "question": "How detailed should the nightly digest be?",
         "type": "select",
@@ -395,6 +587,63 @@
         "variable_name": "personal_shorthand",
         "context": "One rule per line. Teaching these personal patterns improves classification accuracy for your specific capture style.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

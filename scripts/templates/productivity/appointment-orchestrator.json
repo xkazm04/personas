@@ -5,11 +5,23 @@
   "description": "Processes new Calendly bookings end-to-end: enriches HubSpot contacts and deals, sends personalized confirmation emails with prep materials, notifies the team in Slack, dispatches 24h reminders and post-meeting follow-ups, and handles cancellations gracefully.",
   "icon": "CalendarCheck",
   "color": "#7C3AED",
-  "category": ["productivity"],
-  "service_flow": ["Calendly", "HubSpot", "Gmail", "Slack"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Calendly",
+    "HubSpot",
+    "Gmail",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Calendly", "HubSpot", "Gmail", "Slack"],
+    "service_flow": [
+      "Calendly",
+      "HubSpot",
+      "Gmail",
+      "Slack"
+    ],
     "persona": {
       "goal": "Replace five separate meeting automations with one agent that handles the full booking lifecycle — CRM enrichment, confirmation, reminder, follow-up, cancellation — without losing context between steps.",
       "identity": {
@@ -45,14 +57,21 @@
       "tool_guidance": "**Calendly (http_request via calendly connector)**:\n- Webhook payload is the primary source. Only call `GET /scheduled_events/{uuid}` when webhook data is incomplete.\n- Extract: invitee name/email/timezone, event type, start/end UTC, location/join URL, custom Q&A, UTM.\n\n**HubSpot (http_request via hubspot connector)**:\n- Search: `POST /crm/v3/objects/contacts/search` with email filter.\n- Create: `POST /crm/v3/objects/contacts`; update: `PATCH /crm/v3/objects/contacts/{id}`.\n- Deals: `POST /crm/v3/objects/deals`, `PATCH /crm/v3/objects/deals/{id}`, associate via `PUT /crm/v3/objects/deals/{dealId}/associations/contacts/{contactId}/deal_to_contact`.\n- Map event type → pipeline stage: Discovery call → 'Discovery'; Demo → 'Demo Scheduled'; Follow-up → update existing deal with note.\n\n**Gmail (gmail_send, gmail_search)**:\n- Store the confirmation `threadId` in the meeting record so reminder and follow-up emails thread naturally.\n- HTML body with plain-text fallback. Invitee-timezone rendering for all times.\n\n**Slack (http_request via slack connector)**:\n- `POST /chat.postMessage` with Block Kit. Tag assigned rep via user ID (resolve with `/users.lookupByEmail` if only email is known).\n- Show both invitee-local and UTC times for distributed teams.\n\n**Local state** (`meetings/upcoming.json`):\n- JSON array of `{ id, calendly_event_uri, invitee_email, invitee_name, invitee_tz, event_type, start_utc, end_utc, hubspot_contact_id, hubspot_deal_id, status, confirmation_thread_id, created_at }`.\n- Idempotency key: `calendly_event_uri`. Never process the same URI twice.",
       "error_handling": "Calendly webhook missing data → fetch via API once, log if still incomplete, skip with operator alert. HubSpot search failure → create new contact (duplicate-safe because email is unique), flag via user_message. HubSpot create failure → still send Gmail and Slack with a [CRM sync pending] flag; operator manually resolves. Gmail 401 → alert operator to reauthorize, skip send, keep meeting state so next cycle retries. Gmail 5xx → retry once after 10s, fall back to Slack with confirmation details. Slack failure → non-critical, log and continue (email is primary). Stale webhook (meeting time in the past) → log and skip. Meeting not found during cancellation → log as orphan, notify team in Slack but skip CRM update. State file corruption → reinitialize empty state, accept possible dupe cycle, flag to operator.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "gmail_read", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "gmail_read",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "calendly",
-          "label": "Calendly",
+          "name": "calendar",
+          "label": "Calendar",
           "auth_type": "api_key",
           "role": "scheduling",
-          "category": "scheduling",
+          "category": "calendar",
           "required": true,
           "api_base_url": "https://api.calendly.com",
           "credential_fields": [
@@ -68,8 +87,8 @@
           "setup_instructions": "1. Log in to Calendly and go to Integrations → API & Webhooks.\n2. Under Personal Access Tokens, click 'Generate New Token' and name it (e.g., 'Personas Orchestrator').\n3. Copy the token — it won't be shown again.\n4. Create a webhook subscription (Integrations → Webhooks → Create) pointing at your Personas webhook endpoint with events `invitee.created` and `invitee.canceled`."
         },
         {
-          "name": "hubspot",
-          "label": "HubSpot",
+          "name": "crm",
+          "label": "CRM",
           "auth_type": "api_key",
           "role": "crm",
           "category": "crm",
@@ -88,23 +107,38 @@
           "setup_instructions": "1. HubSpot → Settings → Integrations → Private Apps → Create a private app.\n2. Name it (e.g., 'Personas Appointment Bot').\n3. Enable scopes: crm.objects.contacts.read/write, crm.objects.deals.read/write.\n4. Copy the access token."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
           "required": true,
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → APIs & Services → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app) and complete consent with scopes: gmail.send, gmail.readonly, gmail.modify.\n3. Paste client ID, secret, and refresh token."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -125,8 +159,14 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "email", "description": "Invitee-facing confirmations, reminders, and follow-ups." },
-        { "type": "messaging", "description": "Team-facing booking alerts and reminder pings via Slack." }
+        {
+          "type": "email",
+          "description": "Invitee-facing confirmations, reminders, and follow-ups."
+        },
+        {
+          "type": "messaging",
+          "description": "Team-facing booking alerts and reminder pings via Slack."
+        }
       ],
       "core_memories": []
     },
@@ -142,15 +182,35 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "webhook",
-          "config": { "source": "calendly", "events": ["invitee.created", "invitee.canceled"] },
+          "config": {
+            "source": "calendly",
+            "events": [
+              "invitee.created",
+              "invitee.canceled"
+            ]
+          },
           "description": "Fires on Calendly `invitee.created` / `invitee.canceled`. Not schedule-based — the trigger step hides cadence controls for webhooks."
         },
-        "connectors": ["calendly", "hubspot", "gmail", "slack"],
-        "notification_channels": [
-          { "type": "email", "description": "Invitee confirmation or cancellation acknowledgment." },
-          { "type": "messaging", "description": "Team Slack alert." }
+        "connectors": [
+          "calendar",
+          "crm",
+          "email",
+          "messaging"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "email",
+            "description": "Invitee confirmation or cancellation acknowledgment."
+          },
+          {
+            "type": "messaging",
+            "description": "Team Slack alert."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Per-contact meeting history: last meeting type, open deal ID, prior custom-question answers. Reduces boilerplate in follow-ups."
@@ -182,7 +242,12 @@
           {
             "name": "meeting_focus",
             "type": "enum",
-            "options": ["b2b_sales", "customer_success", "support", "mixed"],
+            "options": [
+              "b2b_sales",
+              "customer_success",
+              "support",
+              "mixed"
+            ],
             "default": "b2b_sales",
             "description": "Primary meeting mix — drives default prep template and deal stage mapping."
           }
@@ -192,34 +257,125 @@
           "slack_channel": "{{param.aq_slack_channel}}",
           "meeting_focus": "{{param.aq_meeting_focus}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Calendly webhook received" },
-            { "id": "b2", "type": "decision", "label": "Created or canceled?" },
-            { "id": "b3", "type": "connector", "label": "HubSpot contact + deal upsert", "connector": "hubspot" },
-            { "id": "b4", "type": "connector", "label": "Send Gmail confirmation", "connector": "gmail" },
-            { "id": "b5", "type": "connector", "label": "Post Slack booking alert", "connector": "slack" },
-            { "id": "b6", "type": "action", "label": "Persist meeting record (status=confirmed)" },
-            { "id": "b7", "type": "event", "label": "Emit appointment.booking.confirmed" },
-            { "id": "b8", "type": "connector", "label": "HubSpot deal cancellation note", "connector": "hubspot" },
-            { "id": "b9", "type": "connector", "label": "Send acknowledgment + reschedule link", "connector": "gmail" },
-            { "id": "b10", "type": "event", "label": "Emit appointment.booking.canceled" },
-            { "id": "b11", "type": "end", "label": "Intake complete" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Calendly webhook received"
+            },
+            {
+              "id": "b2",
+              "type": "decision",
+              "label": "Created or canceled?"
+            },
+            {
+              "id": "b3",
+              "type": "connector",
+              "label": "HubSpot contact + deal upsert",
+              "connector": "crm"
+            },
+            {
+              "id": "b4",
+              "type": "connector",
+              "label": "Send Gmail confirmation",
+              "connector": "email"
+            },
+            {
+              "id": "b5",
+              "type": "connector",
+              "label": "Post Slack booking alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "b6",
+              "type": "action",
+              "label": "Persist meeting record (status=confirmed)"
+            },
+            {
+              "id": "b7",
+              "type": "event",
+              "label": "Emit appointment.booking.confirmed"
+            },
+            {
+              "id": "b8",
+              "type": "connector",
+              "label": "HubSpot deal cancellation note",
+              "connector": "crm"
+            },
+            {
+              "id": "b9",
+              "type": "connector",
+              "label": "Send acknowledgment + reschedule link",
+              "connector": "email"
+            },
+            {
+              "id": "b10",
+              "type": "event",
+              "label": "Emit appointment.booking.canceled"
+            },
+            {
+              "id": "b11",
+              "type": "end",
+              "label": "Intake complete"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3", "label": "Created", "variant": "yes" },
-            { "source": "b2", "target": "b8", "label": "Canceled", "variant": "no" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" },
-            { "source": "b6", "target": "b7" },
-            { "source": "b7", "target": "b11" },
-            { "source": "b8", "target": "b9" },
-            { "source": "b9", "target": "b10" },
-            { "source": "b10", "target": "b11" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3",
+              "label": "Created",
+              "variant": "yes"
+            },
+            {
+              "source": "b2",
+              "target": "b8",
+              "label": "Canceled",
+              "variant": "no"
+            },
+            {
+              "source": "b3",
+              "target": "b4"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            },
+            {
+              "source": "b6",
+              "target": "b7"
+            },
+            {
+              "source": "b7",
+              "target": "b11"
+            },
+            {
+              "source": "b8",
+              "target": "b9"
+            },
+            {
+              "source": "b9",
+              "target": "b10"
+            },
+            {
+              "source": "b10",
+              "target": "b11"
+            }
           ]
         }
       },
@@ -234,16 +390,34 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "UTC" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "UTC"
+          },
           "description": "Default daily 08:00 UTC — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "slack"],
-        "notification_channels": [
-          { "type": "email", "description": "Threaded reminder on the confirmation thread." },
-          { "type": "messaging", "description": "Slack reminder to the assigned rep." }
+        "connectors": [
+          "email",
+          "messaging"
         ],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "notification_channels": [
+          {
+            "type": "email",
+            "description": "Threaded reminder on the confirmation thread."
+          },
+          {
+            "type": "messaging",
+            "description": "Slack reminder to the assigned rep."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "appointment.reminder.sent",
@@ -256,7 +430,11 @@
           {
             "name": "reminder_lead_hours",
             "type": "enum",
-            "options": ["1", "24", "48"],
+            "options": [
+              "1",
+              "24",
+              "48"
+            ],
             "default": "24",
             "description": "How far before the meeting to send the reminder."
           }
@@ -264,27 +442,86 @@
         "sample_input": {
           "reminder_lead_hours": "{{param.aq_reminder_lead_hours}}"
         },
-        "tool_hints": ["gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily scan tick" },
-            { "id": "r2", "type": "action", "label": "Load meeting state" },
-            { "id": "r3", "type": "action", "label": "Filter: starting within lead window, status=confirmed" },
-            { "id": "r4", "type": "connector", "label": "Send threaded reminder email", "connector": "gmail" },
-            { "id": "r5", "type": "connector", "label": "Post Slack rep ping", "connector": "slack" },
-            { "id": "r6", "type": "action", "label": "Update status=reminded" },
-            { "id": "r7", "type": "event", "label": "Emit appointment.reminder.sent" },
-            { "id": "r8", "type": "end", "label": "Reminder cycle complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily scan tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Load meeting state"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Filter: starting within lead window, status=confirmed"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Send threaded reminder email",
+              "connector": "email"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Post Slack rep ping",
+              "connector": "messaging"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Update status=reminded"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit appointment.reminder.sent"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Reminder cycle complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -299,12 +536,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "UTC" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "UTC"
+          },
           "description": "Default daily 08:00 UTC — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail", "hubspot"],
+        "connectors": [
+          "email",
+          "crm"
+        ],
         "notification_channels": [
-          { "type": "email", "description": "Follow-up email to all attendees, threaded on confirmation." }
+          {
+            "type": "email",
+            "description": "Follow-up email to all attendees, threaded on confirmation."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -326,7 +572,12 @@
           {
             "name": "followup_tone",
             "type": "enum",
-            "options": ["concise_professional", "warm_conversational", "detailed_agenda", "stage_adaptive"],
+            "options": [
+              "concise_professional",
+              "warm_conversational",
+              "detailed_agenda",
+              "stage_adaptive"
+            ],
             "default": "concise_professional",
             "description": "Tone for the follow-up email. Adaptive mode varies by HubSpot deal stage."
           }
@@ -334,34 +585,122 @@
         "sample_input": {
           "followup_tone": "{{param.aq_followup_tone}}"
         },
-        "tool_hints": ["gmail_send", "http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "Daily scan tick" },
-            { "id": "f2", "type": "action", "label": "Load meeting state" },
-            { "id": "f3", "type": "action", "label": "Filter: ended 24h+ ago, status=reminded" },
-            { "id": "f4", "type": "action", "label": "Compose follow-up email" },
-            { "id": "f5", "type": "decision", "label": "Multi-attendee?" },
-            { "id": "f6", "type": "action", "label": "Route to manual_review" },
-            { "id": "f7", "type": "connector", "label": "Send follow-up email", "connector": "gmail" },
-            { "id": "f8", "type": "connector", "label": "Add HubSpot deal note", "connector": "hubspot" },
-            { "id": "f9", "type": "action", "label": "Update status=followed_up" },
-            { "id": "f10", "type": "event", "label": "Emit appointment.followup.sent" },
-            { "id": "f11", "type": "end", "label": "Follow-up cycle complete" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "Daily scan tick"
+            },
+            {
+              "id": "f2",
+              "type": "action",
+              "label": "Load meeting state"
+            },
+            {
+              "id": "f3",
+              "type": "action",
+              "label": "Filter: ended 24h+ ago, status=reminded"
+            },
+            {
+              "id": "f4",
+              "type": "action",
+              "label": "Compose follow-up email"
+            },
+            {
+              "id": "f5",
+              "type": "decision",
+              "label": "Multi-attendee?"
+            },
+            {
+              "id": "f6",
+              "type": "action",
+              "label": "Route to manual_review"
+            },
+            {
+              "id": "f7",
+              "type": "connector",
+              "label": "Send follow-up email",
+              "connector": "email"
+            },
+            {
+              "id": "f8",
+              "type": "connector",
+              "label": "Add HubSpot deal note",
+              "connector": "crm"
+            },
+            {
+              "id": "f9",
+              "type": "action",
+              "label": "Update status=followed_up"
+            },
+            {
+              "id": "f10",
+              "type": "event",
+              "label": "Emit appointment.followup.sent"
+            },
+            {
+              "id": "f11",
+              "type": "end",
+              "label": "Follow-up cycle complete"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5" },
-            { "source": "f5", "target": "f6", "label": "Yes", "variant": "yes" },
-            { "source": "f5", "target": "f7", "label": "No", "variant": "no" },
-            { "source": "f6", "target": "f7" },
-            { "source": "f7", "target": "f8" },
-            { "source": "f8", "target": "f9" },
-            { "source": "f9", "target": "f10" },
-            { "source": "f10", "target": "f11" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5"
+            },
+            {
+              "source": "f5",
+              "target": "f6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "f5",
+              "target": "f7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "f6",
+              "target": "f7"
+            },
+            {
+              "source": "f7",
+              "target": "f8"
+            },
+            {
+              "source": "f8",
+              "target": "f9"
+            },
+            {
+              "source": "f9",
+              "target": "f10"
+            },
+            {
+              "source": "f10",
+              "target": "f11"
+            }
           ]
         }
       }
@@ -370,7 +709,9 @@
       {
         "id": "aq_meeting_focus",
         "scope": "capability",
-        "use_case_ids": ["uc_booking_intake"],
+        "use_case_ids": [
+          "uc_booking_intake"
+        ],
         "category": "domain",
         "question": "What types of meetings does this orchestrator primarily manage?",
         "type": "select",
@@ -389,7 +730,9 @@
       {
         "id": "aq_slack_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_booking_intake"],
+        "use_case_ids": [
+          "uc_booking_intake"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive booking notifications?",
         "type": "select",
@@ -407,7 +750,9 @@
       {
         "id": "aq_hubspot_pipeline",
         "scope": "capability",
-        "use_case_ids": ["uc_booking_intake"],
+        "use_case_ids": [
+          "uc_booking_intake"
+        ],
         "category": "configuration",
         "question": "Which HubSpot pipeline should new deals land in?",
         "type": "select",
@@ -425,7 +770,9 @@
       {
         "id": "aq_reminder_lead_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_pre_meeting_reminder"],
+        "use_case_ids": [
+          "uc_pre_meeting_reminder"
+        ],
         "category": "configuration",
         "question": "How far in advance should the reminder email go out?",
         "type": "select",
@@ -443,7 +790,9 @@
       {
         "id": "aq_followup_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_post_meeting_followup"],
+        "use_case_ids": [
+          "uc_post_meeting_followup"
+        ],
         "category": "quality",
         "question": "What tone should post-meeting follow-up emails use?",
         "type": "select",
@@ -458,6 +807,82 @@
         "variable_name": "followup_tone",
         "context": "Shapes the follow-up email copy. Adaptive mode reads the HubSpot deal stage to vary tone.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_calendar_credential",
+        "scope": "connector",
+        "connector_names": [
+          "calendar"
+        ],
+        "category": "configuration",
+        "question": "Which calendar should this persona read and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "calendar",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
+        "variable_name": "calendar_credential",
+        "context": "Options are auto-detected from your calendar credentials in the Vault (Google Calendar, Outlook Calendar, Cal.com, Calendly).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_crm_credential",
+        "scope": "connector",
+        "connector_names": [
+          "crm"
+        ],
+        "category": "configuration",
+        "question": "Which CRM should this persona sync with?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "crm",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[crm].credential_fields[provider].value",
+        "variable_name": "crm_credential",
+        "context": "Options are auto-detected from your crm credentials in the Vault (HubSpot, Attio, Pipedrive, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

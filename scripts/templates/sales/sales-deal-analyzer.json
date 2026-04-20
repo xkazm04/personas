@@ -5,11 +5,20 @@
   "description": "Monthly win/loss analysis across all closed deals. Segments by deal size, industry, rep, lead source, stakeholder count, cycle length, and stage progression; compares against 3- and 6-month trailing averages; publishes a structured Notion report with executive summary, patterns, trends, and prioritized recommendations.",
   "icon": "TrendingUp",
   "color": "#10B981",
-  "category": ["sales", "analytics"],
-  "service_flow": ["CRM", "Notion"],
+  "category": [
+    "sales",
+    "analytics"
+  ],
+  "service_flow": [
+    "CRM",
+    "Notion"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["CRM", "Notion"],
+    "service_flow": [
+      "CRM",
+      "Notion"
+    ],
     "persona": {
       "goal": "Turn every month's closed deals into institutional sales intelligence — multi-dimensional segmentation, trend detection, and ranked recommendations delivered as a Notion report the leadership team actually reads.",
       "identity": {
@@ -47,7 +56,11 @@
       "tool_guidance": "**CRM connector** (required; service_type: crm):\n- Primary query: all deals with close_date in analysis window and status IN ('Closed Won', 'Closed Lost'). Required fields: deal_name, amount, status, industry, company_size, lead_source, rep_name, stakeholder_count, champion_identified, competitor_present, stage_history, days_per_stage, total_cycle_days, discount_pct, loss_reason.\n- Validation query: COUNT by status to verify dataset completeness.\n- Historical query: retrieve monthly summary records from the analysis_history table for 3- and 6-month trailing averages.\n- CRM providers vary; adapt the query pattern (Salesforce SOQL, HubSpot REST, Pipedrive search, local database SQL) based on the user's chosen credential.\n\n**Notion connector** (required; service_type: knowledge_base):\n- Create monthly report page: POST /v1/pages with parent database + properties (Report Title, Analysis Period, Total Deals, Win Rate, Top Finding, Insights Count, Confidence Level, Status, Trend Direction).\n- Page body: heading_2 for sections, paragraph for narrative, table for matrices, callout for headline stats, bulleted_list_item for recommendations, divider between sections.\n- Query prior reports: POST /v1/databases/{id}/query filtered on Month for cross-referencing.\n- Rate limit: ~3 req/s. Batch block creation into single page creates.\n\n**Local state**:\n- `deal_analysis_cache.json` — raw dataset cached between analysis phases to avoid re-query.\n- `deal_analysis_memory_index.json` — maps analysis periods to memory keys for efficient retrieval.\n- `deal_analysis_notion_pages.json` — maps period identifiers to Notion page ids for updates vs. creates.",
       "error_handling": "CRM connection failure → retry 3× with exponential backoff (1s, 3s, 9s). On total failure, emit error notification and log failure timestamp + error to memory for the ops team. Incomplete records → include in totals, exclude from specific dimension analyses where fields are missing, report completeness rate; if completeness <70%, flag as data-quality alert. Notion 429 → batch block creation, retry once on failure; if still failing, write full report to `pending_report.json` and emit user_message. Memory retrieval failure → proceed with current-period analysis only, omit Trend Analysis. Low sample size → prefix findings with 'Preliminary signal'; never present as definitive. Personnel-sensitive findings → always route through manual_review regardless of confidence.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "crm",
@@ -77,11 +90,11 @@
           "setup_instructions": "1. Pick your CRM provider and generate a read-only API credential.\n2. Ensure deals have these fields populated: amount, status, industry, rep_name, lead_source, stakeholder_count, champion_identified, competitor_present, stage_history, discount_pct, loss_reason.\n3. Paste the access token and account/instance id above."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -125,10 +138,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 1 * *",
+            "timezone": "local"
+          },
           "description": "Default monthly on the 1st at 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm"],
+        "connectors": [
+          "crm"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -192,30 +210,102 @@
           "min_sample_size": "{{param.aq_min_sample}}",
           "confidence_threshold": "{{param.aq_confidence_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Monthly tick (shared)" },
-            { "id": "a2", "type": "connector", "label": "Query closed deals in window", "connector": "crm" },
-            { "id": "a3", "type": "action", "label": "Validate sample + completeness" },
-            { "id": "a4", "type": "action", "label": "7-dim segmentation + cross-dim interactions" },
-            { "id": "a5", "type": "action", "label": "Load trailing averages; classify trends" },
-            { "id": "a6", "type": "decision", "label": "Low-confidence findings?" },
-            { "id": "a7", "type": "action", "label": "Route to manual review" },
-            { "id": "a8", "type": "event", "label": "Emit analysis events" },
-            { "id": "a9", "type": "end", "label": "Analysis ready for report" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Monthly tick (shared)"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "Query closed deals in window",
+              "connector": "crm"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Validate sample + completeness"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "7-dim segmentation + cross-dim interactions"
+            },
+            {
+              "id": "a5",
+              "type": "action",
+              "label": "Load trailing averages; classify trends"
+            },
+            {
+              "id": "a6",
+              "type": "decision",
+              "label": "Low-confidence findings?"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "Route to manual review"
+            },
+            {
+              "id": "a8",
+              "type": "event",
+              "label": "Emit analysis events"
+            },
+            {
+              "id": "a9",
+              "type": "end",
+              "label": "Analysis ready for report"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7", "variant": "yes", "label": "Yes" },
-            { "source": "a6", "target": "a8", "variant": "no", "label": "All high-confidence" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "a6",
+              "target": "a8",
+              "variant": "no",
+              "label": "All high-confidence"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            }
           ]
         }
       },
@@ -230,12 +320,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 1 * *",
+            "timezone": "local"
+          },
           "description": "Default monthly on the 1st at 09:00 (shared tick with multidim_analysis) — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Per-finding memory entries with month + dimension + numbers. Period summary for next month's trend comparison."
@@ -266,27 +364,86 @@
         "sample_input": {
           "max_recommendations": "{{param.aq_max_recommendations}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "analysis.completed received" },
-            { "id": "d2", "type": "action", "label": "Rank findings by revenue impact" },
-            { "id": "d3", "type": "action", "label": "Compose executive summary + sections" },
-            { "id": "d4", "type": "connector", "label": "Query Notion for prior reports", "connector": "notion" },
-            { "id": "d5", "type": "connector", "label": "Create Notion report page", "connector": "notion" },
-            { "id": "d6", "type": "action", "label": "Persist per-finding + period summary to memory" },
-            { "id": "d7", "type": "event", "label": "Emit sales.report.published" },
-            { "id": "d8", "type": "end", "label": "Knowledge base updated" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "analysis.completed received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Rank findings by revenue impact"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compose executive summary + sections"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Query Notion for prior reports",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Create Notion report page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Persist per-finding + period summary to memory"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit sales.report.published"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Knowledge base updated"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       }
@@ -295,7 +452,9 @@
       {
         "id": "aq_crm_source",
         "scope": "connector",
-        "connector_names": ["crm"],
+        "connector_names": [
+          "crm"
+        ],
         "category": "configuration",
         "question": "Which CRM credential holds your closed deal data?",
         "type": "select",
@@ -312,11 +471,17 @@
       {
         "id": "aq_analysis_period",
         "scope": "capability",
-        "use_case_ids": ["uc_multidim_analysis"],
+        "use_case_ids": [
+          "uc_multidim_analysis"
+        ],
         "category": "configuration",
         "question": "How long should the analysis window be?",
         "type": "select",
-        "options": ["14 (biweekly)", "30 (monthly)", "90 (quarterly)"],
+        "options": [
+          "14 (biweekly)",
+          "30 (monthly)",
+          "90 (quarterly)"
+        ],
         "default": "30 (monthly)",
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.analysis_period_days",
         "variable_name": "analysis_period_days",
@@ -326,11 +491,18 @@
       {
         "id": "aq_min_sample",
         "scope": "capability",
-        "use_case_ids": ["uc_multidim_analysis"],
+        "use_case_ids": [
+          "uc_multidim_analysis"
+        ],
         "category": "quality",
         "question": "Minimum deals per segment before a finding is considered reliable?",
         "type": "select",
-        "options": ["3", "5", "10", "20"],
+        "options": [
+          "3",
+          "5",
+          "10",
+          "20"
+        ],
         "default": "5",
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.min_sample_size",
         "variable_name": "min_sample_size",
@@ -340,11 +512,19 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_multidim_analysis"],
+        "use_case_ids": [
+          "uc_multidim_analysis"
+        ],
         "category": "quality",
         "question": "Deviation from baseline (percentage points) to flag a finding as significant?",
         "type": "select",
-        "options": ["5", "10", "15", "20", "30"],
+        "options": [
+          "5",
+          "10",
+          "15",
+          "20",
+          "30"
+        ],
         "default": "15",
         "maps_to": "use_cases[uc_multidim_analysis].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -354,16 +534,43 @@
       {
         "id": "aq_max_recommendations",
         "scope": "capability",
-        "use_case_ids": ["uc_insight_documentation"],
+        "use_case_ids": [
+          "uc_insight_documentation"
+        ],
         "category": "quality",
         "question": "Maximum recommendations per report?",
         "type": "select",
-        "options": ["3", "5", "7", "10", "15"],
+        "options": [
+          "3",
+          "5",
+          "7",
+          "10",
+          "15"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_insight_documentation].sample_input.max_recommendations",
         "variable_name": "max_recommendations",
         "context": "Recommendation fatigue is real — cap at a number your leadership team will actually read.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,24 @@
   "description": "Monitors Google Drive folders for new and updated documents, uses AI to extract summaries, tags, and metadata, then builds a searchable Notion knowledge base and local index. Responds to natural-language search queries via Telegram and posts weekly knowledge growth reports to Slack.",
   "icon": "Library",
   "color": "#7C3AED",
-  "category": ["content", "productivity"],
+  "category": [
+    "content",
+    "productivity"
+  ],
   "is_published": true,
-  "service_flow": ["Google Drive", "Notion", "Telegram", "Slack"],
+  "service_flow": [
+    "Google Drive",
+    "Notion",
+    "Telegram",
+    "Slack"
+  ],
   "payload": {
-    "service_flow": ["Google Drive", "Notion", "Telegram", "Slack"],
+    "service_flow": [
+      "Google Drive",
+      "Notion",
+      "Telegram",
+      "Slack"
+    ],
     "persona": {
       "goal": "Turn every document your team creates into structured, discoverable institutional knowledge — ingested, tagged, searchable, and reported on without manual filing.",
       "identity": {
@@ -46,14 +59,18 @@
       "tool_guidance": "**Google Drive API** (`http_request` + `google_drive` connector, base `https://www.googleapis.com`):\n- List modified: `GET /drive/v3/files?q=modifiedTime>'{ts}'+and+trashed=false&fields=files(id,name,mimeType,modifiedTime,owners,webViewLink,size)&orderBy=modifiedTime+desc&pageSize=100`\n- Export Doc/Slides as text: `GET /drive/v3/files/{fileId}/export?mimeType=text/plain`\n- Export Sheets as CSV: `GET /drive/v3/files/{fileId}/export?mimeType=text/csv`\n- Download PDF: `GET /drive/v3/files/{fileId}?alt=media`\n- Truncate extracted text to 15,000 chars before analysis.\n\n**Notion API** (`http_request` + `notion` connector, base `https://api.notion.com`, header `Notion-Version: 2022-06-28`):\n- Dedup query: `POST /v1/databases/{database_id}/query` filtered by Drive File ID property.\n- Create page: `POST /v1/pages` with properties (Title, Source URL, Category, Tags, Author, Last Modified, Summary, Confidence, Status, Drive File ID, Word Count) and body blocks (callout summary, headings, bulleted lists, toggles).\n- Update page: `PATCH /v1/pages/{page_id}`.\n- Append relationship links: `PATCH /v1/blocks/{block_id}/children`.\n\n**Telegram Bot API** (`http_request` + `telegram` connector):\n- Poll: `GET /bot{token}/getUpdates?offset={last_update_id+1}&timeout=30`\n- Reply: `POST /bot{token}/sendMessage` with Markdown + optional inline keyboard for Drive links.\n\n**Slack API** (`http_request` + `slack` connector):\n- Report: `POST /api/chat.postMessage` with Block Kit `blocks` array.\n- Resolve channel: `GET /api/conversations.list?types=public_channel` filter by name.",
       "error_handling": "Drive 401 → attempt refresh-token; on failure halt uc_ingest_documents and emit persona.error. Drive 403 on a folder → log + skip, continue other folders. Drive 429 → 60s backoff, halve batch size. Drive export 5xx → one retry at 10s; on second failure log for manual review. Notion 400 validation → try simplified page (title + summary + URL only); on second failure save body to `data/pending_notion/` for retry. Notion 429 → queue with 500ms inter-request spacing. Notion 502/503 → exponential backoff (30/60/120s), after 3 failures save locally and retry next cycle. Telegram 400 message-too-long → split into ≤2 messages per response. Telegram 429 → respect retry_after. Slack channel_not_found → resolve by name via conversations.list; if still missing emit persona.error. Corrupted index → rebuild from Notion database query. Non-text PDFs → create minimal page with 'Requires OCR' status. Rapid successive edits → 2-minute debounce.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "google_drive",
-          "label": "Google Drive",
+          "name": "storage",
+          "label": "Storage Target",
           "auth_type": "oauth2",
           "role": "file_storage",
-          "category": "productivity",
+          "category": "storage",
           "required": true,
           "credential_fields": [
             {
@@ -84,11 +101,11 @@
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Google Drive API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop or Web app).\n3. Complete consent screen.\n4. Run the OAuth flow requesting `https://www.googleapis.com/auth/drive.readonly` and capture the refresh token.\n5. Note the folder IDs you want monitored (from each folder's URL)."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": true,
           "credential_fields": [
             {
@@ -111,8 +128,8 @@
           "setup_instructions": "1. notion.so/my-integrations → create internal integration 'Document Intelligence Hub' with Read/Update/Insert capabilities.\n2. Copy the token.\n3. Create a Notion database with the properties listed above.\n4. Share the database with the integration (Connections → add).\n5. Copy the database ID from the URL."
         },
         {
-          "name": "telegram",
-          "label": "Telegram Bot",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "api_key",
           "role": "chat_interface",
           "category": "messaging",
@@ -137,26 +154,6 @@
             }
           ],
           "setup_instructions": "1. Message @BotFather → /newbot.\n2. Copy the bot token.\n3. Add the bot to your group.\n4. Get the group chat ID via @userinfobot.\n5. Disable privacy mode in BotFather → /setprivacy → Disable so the bot can read commands."
-        },
-        {
-          "name": "slack",
-          "label": "Slack",
-          "auth_type": "bot_token",
-          "role": "chat_messaging",
-          "category": "messaging",
-          "required": false,
-          "fallback_note": "Required only when uc_weekly_report is enabled. Without Slack, ingest and search still run — the weekly growth digest is instead written to `data/weekly_reports/` without a chat push.",
-          "credential_fields": [
-            {
-              "key": "bot_token",
-              "label": "Bot User OAuth Token",
-              "type": "password",
-              "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-              "helpText": "Scopes required: chat:write, channels:read.",
-              "required": true
-            }
-          ],
-          "setup_instructions": "1. api.slack.com/apps → create app.\n2. OAuth & Permissions → add bot scopes chat:write, channels:read.\n3. Install to workspace, copy Bot User OAuth Token.\n4. /invite the bot to the knowledge-base channel."
         }
       ],
       "notification_channels_default": [
@@ -179,10 +176,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/10 * * * *" },
+          "config": {
+            "cron": "*/10 * * * *"
+          },
           "description": "Default every 10 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_drive", "notion"],
+        "connectors": [
+          "storage",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "conditional",
@@ -214,7 +216,11 @@
           {
             "name": "analysis_depth",
             "type": "enum",
-            "options": ["fast", "balanced", "deep"],
+            "options": [
+              "fast",
+              "balanced",
+              "deep"
+            ],
             "default": "balanced",
             "description": "Fast: title + 2-sentence summary + top 3 tags. Balanced: + key entities + action items. Deep: + relationships + open questions + cross-document links."
           },
@@ -226,7 +232,11 @@
           {
             "name": "tag_policy",
             "type": "enum",
-            "options": ["fixed_taxonomy", "ai_freeform", "hybrid"],
+            "options": [
+              "fixed_taxonomy",
+              "ai_freeform",
+              "hybrid"
+            ],
             "default": "hybrid",
             "description": "Fixed: AI picks only from user taxonomy. Freeform: AI invents as needed. Hybrid: AI picks from taxonomy but may add new tags flagged for review."
           }
@@ -237,29 +247,96 @@
           "excluded_patterns": "{{param.aq_excluded_patterns}}",
           "tag_policy": "{{param.aq_tag_policy}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Polling tick" },
-            { "id": "d2", "type": "connector", "label": "List modified Drive files", "connector": "google_drive" },
-            { "id": "d3", "type": "action", "label": "Filter excluded + supported types" },
-            { "id": "d4", "type": "connector", "label": "Export text / download PDF", "connector": "google_drive" },
-            { "id": "d5", "type": "action", "label": "AI analyze (summary/tags/entities/relationships/confidence)" },
-            { "id": "d6", "type": "connector", "label": "Dedup query + create or update Notion page", "connector": "notion" },
-            { "id": "d7", "type": "action", "label": "Update local index + sync state" },
-            { "id": "d8", "type": "event", "label": "Emit knowledge.document.ingested" },
-            { "id": "d9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "List modified Drive files",
+              "connector": "storage"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Filter excluded + supported types"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Export text / download PDF",
+              "connector": "storage"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "AI analyze (summary/tags/entities/relationships/confidence)"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Dedup query + create or update Notion page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Update local index + sync state"
+            },
+            {
+              "id": "d8",
+              "type": "event",
+              "label": "Emit knowledge.document.ingested"
+            },
+            {
+              "id": "d9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            }
           ]
         }
       },
@@ -274,12 +351,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/2 * * * *" },
+          "config": {
+            "cron": "*/2 * * * *"
+          },
           "description": "Default every 2 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["telegram"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Query log with clicked-result tracking — enables query reformulation hints and 'you searched this before' callouts over time."
@@ -312,28 +396,92 @@
           "search_top_n": 5,
           "min_score": 0.3
         },
-        "tool_hints": ["http_request", "file_read"],
+        "tool_hints": [
+          "http_request",
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Telegram poll" },
-            { "id": "s2", "type": "connector", "label": "getUpdates", "connector": "telegram" },
-            { "id": "s3", "type": "decision", "label": "Command detected?" },
-            { "id": "s4", "type": "action", "label": "Score against local index" },
-            { "id": "s5", "type": "action", "label": "Format top N with Drive links" },
-            { "id": "s6", "type": "connector", "label": "sendMessage reply", "connector": "telegram" },
-            { "id": "s7", "type": "event", "label": "Emit knowledge.search.answered" },
-            { "id": "s8", "type": "end", "label": "Query handled" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Telegram poll"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "getUpdates",
+              "connector": "messaging"
+            },
+            {
+              "id": "s3",
+              "type": "decision",
+              "label": "Command detected?"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Score against local index"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Format top N with Drive links"
+            },
+            {
+              "id": "s6",
+              "type": "connector",
+              "label": "sendMessage reply",
+              "connector": "messaging"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit knowledge.search.answered"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Query handled"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4", "variant": "yes" },
-            { "source": "s3", "target": "s8", "variant": "no", "label": "No command" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4",
+              "variant": "yes"
+            },
+            {
+              "source": "s3",
+              "target": "s8",
+              "variant": "no",
+              "label": "No command"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -348,12 +496,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5" },
+          "config": {
+            "cron": "0 17 * * 5"
+          },
           "description": "Default Friday 17:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["slack"],
+        "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Rolling 4-week corpus stats; new-tag emergence over time; low-confidence backlog that carries week-to-week until humans triage it."
@@ -385,25 +538,76 @@
           "report_channel": "{{param.aq_report_channel}}",
           "highlight_count": 3
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly schedule fires" },
-            { "id": "w2", "type": "action", "label": "Compute weekly metrics + WoW deltas" },
-            { "id": "w3", "type": "action", "label": "Select highlights + review flags" },
-            { "id": "w4", "type": "connector", "label": "Slack Block Kit post", "connector": "slack" },
-            { "id": "w5", "type": "action", "label": "Archive report JSON" },
-            { "id": "w6", "type": "event", "label": "Emit knowledge.report.generated" },
-            { "id": "w7", "type": "end", "label": "Report delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly schedule fires"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Compute weekly metrics + WoW deltas"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Select highlights + review flags"
+            },
+            {
+              "id": "w4",
+              "type": "connector",
+              "label": "Slack Block Kit post",
+              "connector": "messaging"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Archive report JSON"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit knowledge.report.generated"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -412,7 +616,9 @@
       {
         "id": "aq_monitored_folders",
         "scope": "capability",
-        "use_case_ids": ["uc_ingest_documents"],
+        "use_case_ids": [
+          "uc_ingest_documents"
+        ],
         "category": "configuration",
         "question": "Which Google Drive folders should be monitored?",
         "type": "text",
@@ -425,7 +631,9 @@
       {
         "id": "aq_analysis_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_ingest_documents"],
+        "use_case_ids": [
+          "uc_ingest_documents"
+        ],
         "category": "quality",
         "question": "How thorough should document analysis be?",
         "type": "select",
@@ -443,7 +651,9 @@
       {
         "id": "aq_excluded_patterns",
         "scope": "capability",
-        "use_case_ids": ["uc_ingest_documents"],
+        "use_case_ids": [
+          "uc_ingest_documents"
+        ],
         "category": "boundaries",
         "question": "Which folders or filename patterns should NEVER be indexed?",
         "type": "text",
@@ -456,7 +666,9 @@
       {
         "id": "aq_tag_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_ingest_documents"],
+        "use_case_ids": [
+          "uc_ingest_documents"
+        ],
         "category": "memory",
         "question": "How should document tags be generated?",
         "type": "select",
@@ -474,7 +686,9 @@
       {
         "id": "aq_report_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives the weekly growth digest?",
         "type": "text",
@@ -483,6 +697,63 @@
         "variable_name": "report_channel",
         "context": "Channel ID or name. The bot must be invited to the channel first. Leave blank only if uc_weekly_report is disabled.",
         "dimension": "messages"
+      },
+      {
+        "id": "aq_storage_credential",
+        "scope": "connector",
+        "connector_names": [
+          "storage"
+        ],
+        "category": "configuration",
+        "question": "Where should this persona read and write files?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "storage",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[storage].credential_fields[provider].value",
+        "variable_name": "storage_credential",
+        "context": "Options are auto-detected from your storage credentials in the Vault (Google Drive, Dropbox, OneDrive, S3, R2, Local Drive, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

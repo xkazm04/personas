@@ -5,11 +5,19 @@
   "description": "Processes new survey responses from a local database on a cadence, applies sentiment classification and theme clustering, tracks trends across periods, flags anomalies, and delivers structured insight reports with actionable recommendations.",
   "icon": "Sparkles",
   "color": "#8b5cf6",
-  "category": ["productivity"],
-  "service_flow": ["Local Database", "In-App Messaging"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Local Database",
+    "In-App Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Local Database", "In-App Messaging"],
+    "service_flow": [
+      "Local Database",
+      "In-App Messaging"
+    ],
     "persona": {
       "goal": "Turn every new batch of survey responses into an actionable briefing — sentiment, themes, trends, anomalies, and a prioritized list of what to investigate or change.",
       "identity": {
@@ -44,7 +52,12 @@
       "tool_guidance": "**Database (via db_query with personas_database connector or external DB connector)**:\n- Fetch new: `SELECT * FROM survey_responses WHERE submitted_at > {last_processed_timestamp} ORDER BY submitted_at ASC`. Adapt to user schema.\n- Trend counts: `SELECT DATE(submitted_at) AS d, COUNT(*) FROM survey_responses GROUP BY d ORDER BY d DESC LIMIT {trend_comparison_periods}`.\n- NPS: `SELECT rating, comment, respondent_segment FROM survey_responses WHERE question_type='nps' AND submitted_at > {cutoff}`.\n- Always parameterize. Read-only.\n\n**NLP**:\n- Three-tier sentiment classification (positive / neutral / negative) with confidence. Confidence < 0.6 → 'ambiguous', excluded from sentiment stats, included in theme clustering.\n- Theme extraction via keyword frequency + semantic similarity. Label descriptively (e.g., 'Onboarding Confusion', 'Pricing Clarity', 'Feature Request: Mobile App'). Representative quotes: 2-3 per theme, preferring strong sentiment signal.\n- Rolling averages over `trend_comparison_periods` for sentiment distribution, theme prevalence, NPS. Z-score or percentage-point delta triggers anomaly flags.\n\n**Notion (optional)**:\n- `POST https://api.notion.com/v1/pages` with parent database_id and properties mapping to report sections.\n- Header `Notion-Version: 2022-06-28`. Tag with date, batch size, sentiment label, NPS score for longitudinal filtering.\n\n**Memory**:\n- `last_processed_timestamp`, response buffer, theme cluster baselines, sentiment rolling averages, NPS history.",
       "error_handling": "Zero new responses → skip analysis, store current timestamp, notify. Below threshold → buffer + wait. After 3 consecutive low cycles → warn survey distribution may be broken. Ambiguity > 30% → flag manual_review, exclude from sentiment stats. DB connection failure → retry once after 15s, then notify and skip cycle. Schema mismatch → log expected vs actual columns, request manual review. Small samples (<30) → append confidence disclaimer. NPS with <20 responses → report as range, not point estimate. Theme cluster <3 responses → label 'Emerging (low confidence)'.",
       "examples": [],
-      "tools": ["db_query", "http_request", "file_read", "file_write"],
+      "tools": [
+        "db_query",
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "personas_database",
@@ -57,11 +70,11 @@
           "setup_instructions": "No credentials needed. Expected schema: `survey_responses` table with at minimum `submitted_at` (timestamp), `respondent_id`, question columns. The analyzer adapts to additional columns at runtime."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "archive",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Skip Notion to deliver reports via in-app messaging only. Longitudinal archival and cross-report querying disappear.",
           "api_base_url": "https://api.notion.com/v1",
@@ -87,7 +100,10 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "built-in", "description": "In-app insight report delivery with anomaly escalation." }
+        {
+          "type": "built-in",
+          "description": "In-app insight report delivery with anomaly escalation."
+        }
       ],
       "core_memories": []
     },
@@ -103,10 +119,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *" },
+          "config": {
+            "cron": "0 9 * * *"
+          },
           "description": "Default daily 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["personas_database"],
+        "connectors": [
+          "personas_database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -151,31 +171,103 @@
           "min_responses_for_analysis": "{{param.aq_min_responses_for_analysis}}",
           "trend_comparison_periods": "{{param.aq_trend_comparison_periods}}"
         },
-        "tool_hints": ["db_query", "file_read", "file_write"],
+        "tool_hints": [
+          "db_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Scheduled tick" },
-            { "id": "a2", "type": "action", "label": "Load baselines + last timestamp" },
-            { "id": "a3", "type": "connector", "label": "Query new responses", "connector": "personas_database" },
-            { "id": "a4", "type": "action", "label": "Validate + normalize + threshold check" },
-            { "id": "a5", "type": "action", "label": "Sentiment classification" },
-            { "id": "a6", "type": "action", "label": "Theme extraction + clustering" },
-            { "id": "a7", "type": "action", "label": "NPS + trend comparison + anomaly detection" },
-            { "id": "a8", "type": "action", "label": "Synthesize recommendations" },
-            { "id": "a9", "type": "event", "label": "Emit survey.analysis.complete (+ anomaly if any)" },
-            { "id": "a10", "type": "end", "label": "Analysis ready for report" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Load baselines + last timestamp"
+            },
+            {
+              "id": "a3",
+              "type": "connector",
+              "label": "Query new responses",
+              "connector": "personas_database"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Validate + normalize + threshold check"
+            },
+            {
+              "id": "a5",
+              "type": "action",
+              "label": "Sentiment classification"
+            },
+            {
+              "id": "a6",
+              "type": "action",
+              "label": "Theme extraction + clustering"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "NPS + trend comparison + anomaly detection"
+            },
+            {
+              "id": "a8",
+              "type": "action",
+              "label": "Synthesize recommendations"
+            },
+            {
+              "id": "a9",
+              "type": "event",
+              "label": "Emit survey.analysis.complete (+ anomaly if any)"
+            },
+            {
+              "id": "a10",
+              "type": "end",
+              "label": "Analysis ready for report"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" },
-            { "source": "a9", "target": "a10" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            },
+            {
+              "source": "a9",
+              "target": "a10"
+            }
           ]
         }
       },
@@ -190,14 +282,24 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "survey.analysis.complete" },
+          "config": {
+            "event_type": "survey.analysis.complete"
+          },
           "description": "Fires when uc_process_and_analyze emits analysis results. Not user-configurable — event triggers hide the cadence picker."
         },
-        "connectors": ["notion"],
-        "notification_channels": [
-          { "type": "built-in", "description": "Primary report delivery in-app." }
+        "connectors": [
+          "knowledge_base"
         ],
-        "review_policy": { "mode": "never", "context": null },
+        "notification_channels": [
+          {
+            "type": "built-in",
+            "description": "Primary report delivery in-app."
+          }
+        ],
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Updates baselines (theme clusters, sentiment rolling averages, NPS history) after each report."
@@ -219,7 +321,12 @@
           {
             "name": "report_delivery",
             "type": "enum",
-            "options": ["in_app_only", "in_app_plus_notion", "email_digest", "slack_summary"],
+            "options": [
+              "in_app_only",
+              "in_app_plus_notion",
+              "email_digest",
+              "slack_summary"
+            ],
             "default": "in_app_only",
             "description": "Primary delivery channel(s) for the report."
           },
@@ -234,27 +341,85 @@
           "report_delivery": "{{param.aq_report_delivery}}",
           "flag_low_confidence": "{{param.aq_flag_low_confidence}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "survey.analysis.complete received" },
-            { "id": "d2", "type": "action", "label": "Compose exec summary + full report" },
-            { "id": "d3", "type": "decision", "label": "High-severity anomaly?" },
-            { "id": "d4", "type": "action", "label": "Deliver report (escalated priority if anomaly)" },
-            { "id": "d5", "type": "connector", "label": "Archive to Notion (if configured)", "connector": "notion" },
-            { "id": "d6", "type": "action", "label": "Update baselines in memory" },
-            { "id": "d7", "type": "event", "label": "Emit survey.report.delivered" },
-            { "id": "d8", "type": "end", "label": "Report delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "survey.analysis.complete received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Compose exec summary + full report"
+            },
+            {
+              "id": "d3",
+              "type": "decision",
+              "label": "High-severity anomaly?"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Deliver report (escalated priority if anomaly)"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Archive to Notion (if configured)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Update baselines in memory"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit survey.report.delivered"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       }
@@ -263,7 +428,9 @@
       {
         "id": "aq_min_responses_for_analysis",
         "scope": "capability",
-        "use_case_ids": ["uc_process_and_analyze"],
+        "use_case_ids": [
+          "uc_process_and_analyze"
+        ],
         "category": "boundaries",
         "question": "What minimum sample size should trigger a full report?",
         "type": "select",
@@ -282,7 +449,9 @@
       {
         "id": "aq_trend_comparison_periods",
         "scope": "capability",
-        "use_case_ids": ["uc_process_and_analyze"],
+        "use_case_ids": [
+          "uc_process_and_analyze"
+        ],
         "category": "memory",
         "question": "How many prior periods should feed trend comparison?",
         "type": "select",
@@ -301,7 +470,9 @@
       {
         "id": "aq_report_delivery",
         "scope": "capability",
-        "use_case_ids": ["uc_deliver_report"],
+        "use_case_ids": [
+          "uc_deliver_report"
+        ],
         "category": "configuration",
         "question": "Where should insight reports be delivered?",
         "type": "select",
@@ -320,7 +491,9 @@
       {
         "id": "aq_flag_low_confidence",
         "scope": "capability",
-        "use_case_ids": ["uc_deliver_report"],
+        "use_case_ids": [
+          "uc_deliver_report"
+        ],
         "category": "quality",
         "question": "Should low-confidence theme extractions be flagged for review before inclusion?",
         "type": "boolean",
@@ -329,6 +502,25 @@
         "variable_name": "flag_low_confidence",
         "context": "Uncertain pattern detections and ambiguous classifications go through manual review before reaching stakeholders. Recommended for high-stakes surveys.",
         "dimension": "human-review"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

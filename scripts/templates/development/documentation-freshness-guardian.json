@@ -5,11 +5,21 @@
   "description": "Scans Confluence pages for staleness (no edits in N days), checks if referenced APIs or tools still exist, notifies page owners via email, and posts a Slack digest of stale docs. Tracks update promises in memory.",
   "icon": "BookOpen",
   "color": "#10B981",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Confluence", "Slack", "Gmail"],
+  "service_flow": [
+    "Confluence",
+    "Slack",
+    "Gmail"
+  ],
   "payload": {
-    "service_flow": ["Confluence", "Slack", "Gmail"],
+    "service_flow": [
+      "Confluence",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Keep the wiki honest — find pages rotting in Confluence, surface broken references, nudge owners, and follow up on the promises they make.",
       "identity": {
@@ -45,14 +55,20 @@
       "tool_guidance": "### Confluence (http_request + confluence connector)\n- Base: `https://{domain}.atlassian.net/wiki/rest/api`\n- `GET /space?limit=100` — list spaces.\n- `GET /content?spaceKey={key}&type=page&limit=50&expand=version,history.lastUpdated&start={offset}` — paginate pages.\n- `GET /content/{id}?expand=body.storage,version` — fetch body for link extraction.\n- `GET /content/{id}/label` — page labels.\n- Auth: `Authorization: Basic {base64(email:api_token)}`.\n\n### Link validation\n- Plain `http_request` `HEAD {url}` with 5s timeout. 2xx/3xx = OK, 4xx/5xx = broken, timeout = unreachable, SSL error = cert-issue.\n\n### Gmail (gmail_send / gmail_search)\n- `gmail_send` — per-owner HTML email. Subject: `[Doc Freshness] {count} pages need your attention in {space}`.\n- `gmail_search` — `subject:[Doc Freshness] from:{owner_email} newer_than:7d` to pull replies.\n- Bounced detection: check for messages from mailer-daemon or delivery-status notifications referencing the owner address.\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` with Block Kit — weekly digest.\n- `POST /chat.update` — if editing the digest in place.\n- Auth: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/freshness_scan_results.json` — last full scan snapshot.\n- `data/owner_commitments.json` — promise ledger { owner, page_id, promised_by, created_at }.\n- `data/notification_history.json` — per (owner, page_id) send history for non-response detection.\n- `data/escalation_queue.json` — items awaiting manual_review.",
       "error_handling": "Confluence 401 → skip space, include warning in digest. Confluence 429 → exp backoff; process spaces sequentially. Confluence 5xx → retry 2× (10s/20s), skip on failure with digest note. Gmail send failure → log, surface in digest under 'Notification Failures'. Bounced email → flag page for manual_review via escalation_queue. Slack channel_not_found → try fallback; save digest locally. HEAD timeout → record 'unreachable' not 'broken'. SSL error → 'cert-issue', lower severity. owner_commitments.json corrupt → start fresh, note reset in digest.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "confluence",
-          "label": "Confluence",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_token",
           "role": "knowledge_base",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://{domain}.atlassian.net/wiki/rest/api",
           "credential_fields": [
@@ -84,8 +100,8 @@
           "setup_instructions": "1. id.atlassian.com/manage-profile/security/api-tokens → Create API token.\n2. Label it (e.g., 'Doc Freshness Guardian') and copy immediately.\n3. Enter your Atlassian domain + account email + token above.\n4. The agent uses Basic Auth with email:token for all Confluence REST API calls."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -120,8 +136,8 @@
           "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop app).\n3. Copy Client ID + Secret.\n4. Complete OAuth consent flow to get a refresh token with gmail.send, gmail.readonly, gmail.modify scopes.\n5. Paste all three values above."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -164,10 +180,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 3" },
+          "config": {
+            "cron": "0 9 * * 3"
+          },
           "description": "Default Wednesday 9am — final cadence set at the trigger-composition step."
         },
-        "connectors": ["confluence"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -189,7 +209,12 @@
           {
             "name": "spaces_filter",
             "type": "enum",
-            "options": ["all", "engineering_only", "high_trust_list", "exclude_personal_and_archived"],
+            "options": [
+              "all",
+              "engineering_only",
+              "high_trust_list",
+              "exclude_personal_and_archived"
+            ],
             "default": "exclude_personal_and_archived",
             "description": "Scope of spaces to scan. Personal / archived spaces generate noise; high_trust_list targets runbooks + ADRs only."
           },
@@ -206,27 +231,86 @@
           "spaces_filter": "{{param.aq_spaces_filter}}",
           "warning_threshold_days": "{{param.aq_warning_threshold_days}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Scheduled tick" },
-            { "id": "s2", "type": "connector", "label": "List spaces + paginate pages", "connector": "confluence" },
-            { "id": "s3", "type": "action", "label": "Classify tier by days-stale" },
-            { "id": "s4", "type": "connector", "label": "Fetch body.storage for flagged pages", "connector": "confluence" },
-            { "id": "s5", "type": "action", "label": "Extract URLs + HEAD validate" },
-            { "id": "s6", "type": "action", "label": "Group by owner; persist snapshot" },
-            { "id": "s7", "type": "event", "label": "Emit docs.freshness.scanned" },
-            { "id": "s8", "type": "end", "label": "Scan done" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "List spaces + paginate pages",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Classify tier by days-stale"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Fetch body.storage for flagged pages",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Extract URLs + HEAD validate"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Group by owner; persist snapshot"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit docs.freshness.scanned"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Scan done"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -241,10 +325,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "docs.freshness.scanned" },
+          "config": {
+            "event_type": "docs.freshness.scanned"
+          },
           "description": "Fires after uc_staleness_scan completes. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["gmail", "confluence"],
+        "connectors": [
+          "email",
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "email",
@@ -289,7 +378,12 @@
           {
             "name": "tone",
             "type": "enum",
-            "options": ["friendly", "neutral", "adaptive_by_tier", "formal"],
+            "options": [
+              "friendly",
+              "neutral",
+              "adaptive_by_tier",
+              "formal"
+            ],
             "default": "adaptive_by_tier",
             "description": "Voice used in owner emails. 'adaptive_by_tier' = friendly for Warning/Stale, urgent for Critical."
           }
@@ -298,32 +392,114 @@
           "follow_up_buffer_days": "{{param.aq_follow_up_buffer_days}}",
           "tone": "{{param.aq_tone}}"
         },
-        "tool_hints": ["gmail_send", "gmail_search", "http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "gmail_search",
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "docs.freshness.scanned received" },
-            { "id": "o2", "type": "action", "label": "Load commitments + notification history" },
-            { "id": "o3", "type": "action", "label": "Group pages by owner; compose per-owner body" },
-            { "id": "o4", "type": "connector", "label": "gmail_send per owner", "connector": "gmail" },
-            { "id": "o5", "type": "connector", "label": "gmail_search for replies", "connector": "gmail" },
-            { "id": "o6", "type": "action", "label": "Parse dates; update commitments" },
-            { "id": "o7", "type": "decision", "label": "Bounces or 2+ ignored Critical?" },
-            { "id": "o8", "type": "event", "label": "Emit docs.freshness.escalation_needed" },
-            { "id": "o9", "type": "event", "label": "Emit docs.freshness.owners_notified" },
-            { "id": "o10", "type": "end", "label": "Notify cycle done" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "docs.freshness.scanned received"
+            },
+            {
+              "id": "o2",
+              "type": "action",
+              "label": "Load commitments + notification history"
+            },
+            {
+              "id": "o3",
+              "type": "action",
+              "label": "Group pages by owner; compose per-owner body"
+            },
+            {
+              "id": "o4",
+              "type": "connector",
+              "label": "gmail_send per owner",
+              "connector": "email"
+            },
+            {
+              "id": "o5",
+              "type": "connector",
+              "label": "gmail_search for replies",
+              "connector": "email"
+            },
+            {
+              "id": "o6",
+              "type": "action",
+              "label": "Parse dates; update commitments"
+            },
+            {
+              "id": "o7",
+              "type": "decision",
+              "label": "Bounces or 2+ ignored Critical?"
+            },
+            {
+              "id": "o8",
+              "type": "event",
+              "label": "Emit docs.freshness.escalation_needed"
+            },
+            {
+              "id": "o9",
+              "type": "event",
+              "label": "Emit docs.freshness.owners_notified"
+            },
+            {
+              "id": "o10",
+              "type": "end",
+              "label": "Notify cycle done"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o4" },
-            { "source": "o4", "target": "o5" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o7" },
-            { "source": "o7", "target": "o8", "label": "Yes", "variant": "yes" },
-            { "source": "o7", "target": "o9", "label": "No", "variant": "no" },
-            { "source": "o8", "target": "o9" },
-            { "source": "o9", "target": "o10" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o4"
+            },
+            {
+              "source": "o4",
+              "target": "o5"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o7"
+            },
+            {
+              "source": "o7",
+              "target": "o8",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "o7",
+              "target": "o9",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "o8",
+              "target": "o9"
+            },
+            {
+              "source": "o9",
+              "target": "o10"
+            }
           ]
         }
       },
@@ -338,10 +514,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "docs.freshness.owners_notified" },
+          "config": {
+            "event_type": "docs.freshness.owners_notified"
+          },
           "description": "Fires after owner notifications complete. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -371,21 +551,57 @@
         "error_handling": "Slack channel_not_found → fall back to configured default. Slack invalid_auth → persist digest JSON locally for manual posting.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read"],
+        "tool_hints": [
+          "http_request",
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "docs.freshness.owners_notified received" },
-            { "id": "d2", "type": "action", "label": "Compose Block Kit digest" },
-            { "id": "d3", "type": "connector", "label": "Post digest to Slack", "connector": "slack" },
-            { "id": "d4", "type": "event", "label": "Emit docs.freshness.digest_posted" },
-            { "id": "d5", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "docs.freshness.owners_notified received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Compose Block Kit digest"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Post digest to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "d4",
+              "type": "event",
+              "label": "Emit docs.freshness.digest_posted"
+            },
+            {
+              "id": "d5",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            }
           ]
         }
       }
@@ -394,7 +610,9 @@
       {
         "id": "aq_spaces_filter",
         "scope": "capability",
-        "use_case_ids": ["uc_staleness_scan"],
+        "use_case_ids": [
+          "uc_staleness_scan"
+        ],
         "category": "domain",
         "question": "Which Confluence spaces should the guardian monitor?",
         "type": "select",
@@ -413,11 +631,18 @@
       {
         "id": "aq_warning_threshold_days",
         "scope": "capability",
-        "use_case_ids": ["uc_staleness_scan"],
+        "use_case_ids": [
+          "uc_staleness_scan"
+        ],
         "category": "configuration",
         "question": "How many days without edits should trigger the first Warning notification?",
         "type": "select",
-        "options": ["60", "90", "180", "365"],
+        "options": [
+          "60",
+          "90",
+          "180",
+          "365"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_staleness_scan].sample_input.warning_threshold_days",
         "variable_name": "warning_threshold_days",
@@ -427,11 +652,18 @@
       {
         "id": "aq_follow_up_buffer_days",
         "scope": "capability",
-        "use_case_ids": ["uc_owner_notify"],
+        "use_case_ids": [
+          "uc_owner_notify"
+        ],
         "category": "memory",
         "question": "After an owner promises to update a page by a date, how long should the guardian wait past that date before following up?",
         "type": "select",
-        "options": ["0", "3", "7", "14"],
+        "options": [
+          "0",
+          "3",
+          "7",
+          "14"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_owner_notify].sample_input.follow_up_buffer_days",
         "variable_name": "follow_up_buffer_days",
@@ -441,7 +673,9 @@
       {
         "id": "aq_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_owner_notify"],
+        "use_case_ids": [
+          "uc_owner_notify"
+        ],
         "category": "quality",
         "question": "What tone should owner notification emails use?",
         "type": "select",
@@ -460,7 +694,9 @@
       {
         "id": "aq_digest_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_slack_digest"],
+        "use_case_ids": [
+          "uc_slack_digest"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives the weekly digest?",
         "type": "select",
@@ -471,7 +707,9 @@
         "context": "A dedicated docs-health channel avoids alert fatigue. Options come from your Slack credential.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels"
@@ -498,7 +736,9 @@
       {
         "id": "aq_escalation_gate",
         "scope": "capability",
-        "use_case_ids": ["uc_owner_notify"],
+        "use_case_ids": [
+          "uc_owner_notify"
+        ],
         "category": "human_in_the_loop",
         "question": "Which escalations require human approval before the guardian proceeds?",
         "type": "select",
@@ -513,6 +753,63 @@
         "variable_name": "escalation_gate",
         "context": "Escalating beyond the page owner is high-stakes and gated on human approval.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

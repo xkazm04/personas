@@ -5,11 +5,21 @@
   "description": "Processes incoming customer support emails against a structured knowledge base, sends confidence-gated auto-replies for well-matched questions, routes uncertain cases through human review with full context, and progressively learns from approved and rejected drafts.",
   "icon": "Mail",
   "color": "#3b82f6",
-  "category": ["support"],
-  "service_flow": ["Gmail", "Knowledge Base", "Messages"],
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Knowledge Base",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Knowledge Base", "Messages"],
+    "service_flow": [
+      "Gmail",
+      "Knowledge Base",
+      "Messages"
+    ],
     "persona": {
       "goal": "Answer every support email within SLA without ever fabricating — auto-reply when the KB is strong, route to review when it isn't, and surface the gaps that keep costing you time.",
       "identity": {
@@ -48,11 +58,16 @@
       "tool_guidance": "### Gmail (native tools)\n- `gmail_search` — query `is:unread in:inbox after:{date}` to find new support emails; limited by `max_emails_per_run`.\n- `gmail_send` — reply in original thread using thread ID; set In-Reply-To and References headers to preserve threading. Plain text unless original was HTML.\n\n### Knowledge Base (file_read)\n- `data/knowledge_base.json` — array of articles `{id, title, content, keywords, category, last_updated, related_articles}`.\n- Multi-strategy search:\n  1. Exact phrase match on title/content (highest contributor).\n  2. Keyword intersection with `keywords[]`.\n  3. Category filter.\n  4. Traverse `related_articles` for partial matches.\n\n### Confidence formula\n```\nconfidence = keyword_overlap * 0.30 + semantic_relevance * 0.40 + recency * 0.15 + historical_approval * 0.15\n```\n- `recency`: 1.0 <30d, 0.8 <90d, 0.5 <180d, 0.3 older.\n- `historical_approval`: approval rate for this pattern (default 0.5 with no history).\n\n### Reply template\n```\nHi [First Name],\n\nThank you for reaching out.\n\n[Answer paragraph(s) from KB article]\n\n[Follow-up question or next step]\n\nBest regards,\n[Team Name] Support\n```\n\nNever include KB IDs or confidence scores in customer replies — internal only.\n\n### State files (file_read / file_write)\n- data/processed_emails.json — dedup by message_id.\n- data/approval_history.json — per-pattern approval/rejection ledger.\n- data/knowledge_gaps.json — topic → {first_detected, occurrences, severity}.\n- data/pending_replies.json — retry queue for Gmail send failures.\n- data/daily_metrics.json — rolling daily stats for trend analysis.",
       "error_handling": "Gmail 401/403 → emit support.email.error, halt until credential refresh. Gmail 429 → back off per Retry-After, defer to next cycle. gmail_send 5xx → retry 3× with exponential backoff (2s/4s/8s); still failing → append to data/pending_replies.json and retry next cycle. KB file missing/corrupted → route ALL emails to Mode B (review); emit support.email.error. Empty KB → operate exclusively in knowledge-gap mode. Malformed email body (HTML-only) → HTML-to-text fallback; completely unparseable → flag for manual review with raw content. Review queue overflow (>10 pending) → batch similar questions into one review; emit support.email.review_backlog. Repeated rejections (3+ same pattern) → add to blocklist; always route to Mode B until manual unblock. Confidence exactly at threshold → route to review (conservative). Customer name unavailable → use 'Hello'. KB article >180 days old → downgrade confidence by 0.2 and flag staleness in review.",
       "examples": [],
-      "tools": ["gmail_search", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "gmail_search",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -107,10 +122,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/3 * * * *" },
+          "config": {
+            "cron": "*/3 * * * *"
+          },
           "description": "Default every 3 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "messaging",
@@ -173,7 +192,11 @@
           {
             "name": "reply_tone",
             "type": "enum",
-            "options": ["professional", "friendly", "formal"],
+            "options": [
+              "professional",
+              "friendly",
+              "formal"
+            ],
             "default": "professional",
             "description": "Voice for auto-replies and drafts."
           }
@@ -183,33 +206,119 @@
           "max_emails_per_run": 25,
           "reply_tone": "{{param.aq_reply_tone}}"
         },
-        "tool_hints": ["gmail_search", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_search",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Polling tick" },
-            { "id": "t2", "type": "connector", "label": "Fetch unread support emails", "connector": "gmail" },
-            { "id": "t3", "type": "action", "label": "Dedup + extract question" },
-            { "id": "t4", "type": "action", "label": "Query KB (multi-strategy)" },
-            { "id": "t5", "type": "action", "label": "Compute confidence score" },
-            { "id": "t6", "type": "decision", "label": "Confidence tier?" },
-            { "id": "t7", "type": "connector", "label": "Send auto-reply in-thread", "connector": "gmail" },
-            { "id": "t8", "type": "action", "label": "Submit draft for manual review" },
-            { "id": "t9", "type": "event", "label": "Emit support.email.knowledge_gap" },
-            { "id": "t10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "Fetch unread support emails",
+              "connector": "email"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Dedup + extract question"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Query KB (multi-strategy)"
+            },
+            {
+              "id": "t5",
+              "type": "action",
+              "label": "Compute confidence score"
+            },
+            {
+              "id": "t6",
+              "type": "decision",
+              "label": "Confidence tier?"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Send auto-reply in-thread",
+              "connector": "email"
+            },
+            {
+              "id": "t8",
+              "type": "action",
+              "label": "Submit draft for manual review"
+            },
+            {
+              "id": "t9",
+              "type": "event",
+              "label": "Emit support.email.knowledge_gap"
+            },
+            {
+              "id": "t10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7", "label": "High (>= threshold)", "variant": "yes" },
-            { "source": "t6", "target": "t8", "label": "Low (>= 0.3)", "variant": "no" },
-            { "source": "t6", "target": "t9", "label": "No match (< 0.3)", "variant": "error" },
-            { "source": "t7", "target": "t10" },
-            { "source": "t8", "target": "t10" },
-            { "source": "t9", "target": "t10" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7",
+              "label": "High (>= threshold)",
+              "variant": "yes"
+            },
+            {
+              "source": "t6",
+              "target": "t8",
+              "label": "Low (>= 0.3)",
+              "variant": "no"
+            },
+            {
+              "source": "t6",
+              "target": "t9",
+              "label": "No match (< 0.3)",
+              "variant": "error"
+            },
+            {
+              "source": "t7",
+              "target": "t10"
+            },
+            {
+              "source": "t8",
+              "target": "t10"
+            },
+            {
+              "source": "t9",
+              "target": "t10"
+            }
           ]
         }
       },
@@ -224,10 +333,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "support.email.knowledge_gap" },
+          "config": {
+            "event_type": "support.email.knowledge_gap"
+          },
           "description": "Fires whenever uc_email_triage emits a knowledge gap. Not user-configurable."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [
           {
             "type": "messaging",
@@ -268,25 +381,76 @@
         "sample_input": {
           "escalation_timeout_hours": "{{param.aq_escalation_timeout}}"
         },
-        "tool_hints": ["gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "g1", "type": "start", "label": "support.email.knowledge_gap received" },
-            { "id": "g2", "type": "action", "label": "Classify topic + lookup frequency" },
-            { "id": "g3", "type": "connector", "label": "Send customer acknowledgment", "connector": "gmail" },
-            { "id": "g4", "type": "action", "label": "Submit gap report (severity by frequency)" },
-            { "id": "g5", "type": "action", "label": "Persist gap in memory" },
-            { "id": "g6", "type": "event", "label": "Emit support.gap.reported" },
-            { "id": "g7", "type": "end", "label": "Gap handled" }
+            {
+              "id": "g1",
+              "type": "start",
+              "label": "support.email.knowledge_gap received"
+            },
+            {
+              "id": "g2",
+              "type": "action",
+              "label": "Classify topic + lookup frequency"
+            },
+            {
+              "id": "g3",
+              "type": "connector",
+              "label": "Send customer acknowledgment",
+              "connector": "email"
+            },
+            {
+              "id": "g4",
+              "type": "action",
+              "label": "Submit gap report (severity by frequency)"
+            },
+            {
+              "id": "g5",
+              "type": "action",
+              "label": "Persist gap in memory"
+            },
+            {
+              "id": "g6",
+              "type": "event",
+              "label": "Emit support.gap.reported"
+            },
+            {
+              "id": "g7",
+              "type": "end",
+              "label": "Gap handled"
+            }
           ],
           "edges": [
-            { "source": "g1", "target": "g2" },
-            { "source": "g2", "target": "g3" },
-            { "source": "g3", "target": "g4" },
-            { "source": "g4", "target": "g5" },
-            { "source": "g5", "target": "g6" },
-            { "source": "g6", "target": "g7" }
+            {
+              "source": "g1",
+              "target": "g2"
+            },
+            {
+              "source": "g2",
+              "target": "g3"
+            },
+            {
+              "source": "g3",
+              "target": "g4"
+            },
+            {
+              "source": "g4",
+              "target": "g5"
+            },
+            {
+              "source": "g5",
+              "target": "g6"
+            },
+            {
+              "source": "g6",
+              "target": "g7"
+            }
           ]
         }
       },
@@ -301,7 +465,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *" },
+          "config": {
+            "cron": "0 9 * * *"
+          },
           "description": "Default 9 AM daily — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -340,23 +506,65 @@
         "sample_input": {
           "top_categories_count": 5
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Daily tick" },
-            { "id": "d2", "type": "action", "label": "Read approval + gap + metrics state" },
-            { "id": "d3", "type": "action", "label": "Compute rates, top categories, confidence trend" },
-            { "id": "d4", "type": "action", "label": "Deliver formatted report" },
-            { "id": "d5", "type": "event", "label": "Emit support.email.daily_report" },
-            { "id": "d6", "type": "end", "label": "Report delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Read approval + gap + metrics state"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Compute rates, top categories, confidence trend"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Deliver formatted report"
+            },
+            {
+              "id": "d5",
+              "type": "event",
+              "label": "Emit support.email.daily_report"
+            },
+            {
+              "id": "d6",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            }
           ]
         }
       }
@@ -365,11 +573,18 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage"],
+        "use_case_ids": [
+          "uc_email_triage"
+        ],
         "category": "quality",
         "question": "What confidence threshold should gate auto-replies?",
         "type": "select",
-        "options": ["0.6", "0.7", "0.8", "0.9"],
+        "options": [
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
         "default": "0.8",
         "maps_to": "use_cases[uc_email_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -379,11 +594,17 @@
       {
         "id": "aq_reply_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_email_triage"],
+        "use_case_ids": [
+          "uc_email_triage"
+        ],
         "category": "configuration",
         "question": "What tone should auto-generated replies use?",
         "type": "select",
-        "options": ["professional", "friendly", "formal"],
+        "options": [
+          "professional",
+          "friendly",
+          "formal"
+        ],
         "default": "professional",
         "maps_to": "use_cases[uc_email_triage].sample_input.reply_tone",
         "variable_name": "reply_tone",
@@ -393,11 +614,19 @@
       {
         "id": "aq_escalation_timeout",
         "scope": "capability",
-        "use_case_ids": ["uc_knowledge_gap"],
+        "use_case_ids": [
+          "uc_knowledge_gap"
+        ],
         "category": "configuration",
         "question": "How many hours should the customer-facing acknowledgment promise for a human follow-up?",
         "type": "select",
-        "options": ["1", "4", "8", "24", "48"],
+        "options": [
+          "1",
+          "4",
+          "8",
+          "24",
+          "48"
+        ],
         "default": "4",
         "maps_to": "use_cases[uc_knowledge_gap].sample_input.escalation_timeout_hours",
         "variable_name": "escalation_timeout",
@@ -407,7 +636,9 @@
       {
         "id": "aq_report_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_report"],
+        "use_case_ids": [
+          "uc_daily_report"
+        ],
         "category": "configuration",
         "question": "Which messaging target receives the daily report?",
         "type": "select",
@@ -418,12 +649,35 @@
         "context": "Daily metrics (auto-reply rate, approval rate, top categories, gaps, confidence trend) post here each morning.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack", "discord", "email"],
+        "option_service_types": [
+          "slack",
+          "discord",
+          "email"
+        ],
         "dynamic_source": {
           "service_type": "messaging",
           "operation": "list_credentials",
           "source": "vault"
         }
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

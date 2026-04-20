@@ -5,11 +5,21 @@
   "description": "Scans Gmail on a cadence for actionable content, applies NLP to detect explicit and implicit action items, extracts metadata (due dates, assignees, priority), and creates structured Notion tasks. Routes low-confidence items through human review and learns your team's patterns over time.",
   "icon": "Sparkles",
   "color": "#8b5cf6",
-  "category": ["productivity"],
-  "service_flow": ["Gmail", "Notion", "Messages"],
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Notion",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Notion", "Messages"],
+    "service_flow": [
+      "Gmail",
+      "Notion",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn email into structured tasks without manual copy-paste — capture both explicit and implicit action items, ground dates in the email's send-time, and improve accuracy with every human correction.",
       "identity": {
@@ -44,29 +54,50 @@
       "tool_guidance": "**Gmail API**:\n- List unprocessed: `GET /gmail/v1/users/me/messages?q=-label:Personas/Processed newer_than:{interval}m`\n- Full message: `GET /gmail/v1/users/me/messages/{id}?format=full` — prefer text/plain, fall back to HTML with tag stripping.\n- Apply label: `POST /gmail/v1/users/me/messages/{id}/modify` with `{\"addLabelIds\": [...]}`.\n- Create label (first run): `POST /gmail/v1/users/me/labels` with `{\"name\": \"Personas/Processed\"}`.\n\n**NLP patterns** (confidence anchors):\n- High (0.85+): imperative verb, named assignee, explicit deadline.\n- Medium (0.55-0.84): soft request ('would be great if'), follow-up reference, question-as-request.\n- Low (0.30-0.54): conditional, future-tense mention, FYI with implied action.\n- Date parsing: absolute regex `\\b\\d{1,2}[/\\-]\\d{1,2}([/\\-]\\d{2,4})?\\b`; weekdays → calc_next_weekday from send date; relative map (today: +0, tomorrow: +1, next week: +7, EOD: +0, ASAP: +1).\n\n**Notion API**:\n- Create: `POST https://api.notion.com/v1/pages` with parent database_id.\n- Duplicate check: `POST /v1/databases/{id}/query` with title filter — fuzzy-match >60% word overlap + same assignee + due date within 3 days.\n- Headers: `Authorization: Bearer {NOTION_API_KEY}`, `Notion-Version: 2022-06-28`.\n- Property mapping: Title (title), Description (rich_text), Due Date (date), Priority (select), Assignee (rich_text or people), Status (select), Source Email (url), Confidence (number).",
       "error_handling": "Gmail 401 → notify user, skip cycle, next run catches up via newer_than query. Gmail 429 → exponential backoff (1s/2s/4s) up to 3 retries; partial batch is okay. Notion 401 → cache pending tasks in memory, notify user. Notion 400 (field mismatch) → log specific property, skip task, continue others, include in summary. Notion 429 → queue with 350ms spacing. Notion 409 conflict → retry once. Unresolvable date → leave empty with description note. Missing assignee → 'Unassigned' + Needs Review status. Thread reply → strip quoted content; if nothing actionable remains, skip. Overflow > max_tasks_per_email → take top N by confidence, log rest.",
       "examples": [],
-      "tools": ["gmail_search", "gmail_read", "http_request", "file_read", "file_write"],
+      "tools": [
+        "gmail_search",
+        "gmail_read",
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email_source",
           "category": "email",
           "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "credential_fields": [
-            { "key": "client_id", "label": "OAuth Client ID", "type": "text", "required": true },
-            { "key": "client_secret", "label": "OAuth Client Secret", "type": "password", "required": true },
-            { "key": "refresh_token", "label": "Refresh Token", "type": "password", "required": true }
+            {
+              "key": "client_id",
+              "label": "OAuth Client ID",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "client_secret",
+              "label": "OAuth Client Secret",
+              "type": "password",
+              "required": true
+            },
+            {
+              "key": "refresh_token",
+              "label": "Refresh Token",
+              "type": "password",
+              "required": true
+            }
           ],
           "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app). Required scopes: gmail.readonly, gmail.modify (for labeling).\n3. Complete OAuth consent for a refresh token.\n4. Paste client ID, secret, refresh token."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "task_destination",
-          "category": "productivity",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
@@ -91,7 +122,10 @@
         }
       ],
       "notification_channels_default": [
-        { "type": "messaging", "description": "Extraction summary after each scan cycle with counts, created tasks, and flagged items." }
+        {
+          "type": "messaging",
+          "description": "Extraction summary after each scan cycle with counts, created tasks, and flagged items."
+        }
       ],
       "core_memories": []
     },
@@ -107,12 +141,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/15 * * * *" },
+          "config": {
+            "cron": "*/15 * * * *"
+          },
           "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Processed message IDs, team roster (email → name → role), confirmed/rejected extraction patterns, per-sender authority weights."
@@ -136,7 +177,7 @@
             "type": "number",
             "default": 0.6,
             "min": 0.1,
-            "max": 1.0,
+            "max": 1,
             "description": "Minimum confidence for auto-creation. Below → human review."
           },
           {
@@ -150,7 +191,11 @@
           {
             "name": "default_priority",
             "type": "enum",
-            "options": ["High", "Medium", "Low"],
+            "options": [
+              "High",
+              "Medium",
+              "Low"
+            ],
             "default": "Medium",
             "description": "Priority when no urgency signals are detected."
           }
@@ -160,30 +205,104 @@
           "max_tasks_per_email": 5,
           "default_priority": "{{param.aq_default_priority}}"
         },
-        "tool_hints": ["gmail_search", "gmail_read", "file_read", "file_write"],
+        "tool_hints": [
+          "gmail_search",
+          "gmail_read",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Scan tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch unprocessed Gmail messages", "connector": "gmail" },
-            { "id": "s3", "type": "action", "label": "Three-pass NLP extraction" },
-            { "id": "s4", "type": "action", "label": "Extract metadata (dates, assignees, priority)" },
-            { "id": "s5", "type": "decision", "label": "Above threshold?" },
-            { "id": "s6", "type": "event", "label": "Emit emailtask.candidate.extracted" },
-            { "id": "s7", "type": "event", "label": "Emit emailtask.candidate.flagged" },
-            { "id": "s8", "type": "connector", "label": "Apply Gmail label (Processed / Needs-Review)", "connector": "gmail" },
-            { "id": "s9", "type": "end", "label": "Scan complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Scan tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch unprocessed Gmail messages",
+              "connector": "email"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Three-pass NLP extraction"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Extract metadata (dates, assignees, priority)"
+            },
+            {
+              "id": "s5",
+              "type": "decision",
+              "label": "Above threshold?"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit emailtask.candidate.extracted"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit emailtask.candidate.flagged"
+            },
+            {
+              "id": "s8",
+              "type": "connector",
+              "label": "Apply Gmail label (Processed / Needs-Review)",
+              "connector": "email"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Scan complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6", "label": "Yes", "variant": "yes" },
-            { "source": "s5", "target": "s7", "label": "No", "variant": "no" },
-            { "source": "s6", "target": "s8" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "s5",
+              "target": "s7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "s6",
+              "target": "s8"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -198,12 +317,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "emailtask.candidate.extracted" },
+          "config": {
+            "event_type": "emailtask.candidate.extracted"
+          },
           "description": "Fires on extraction emissions. Not user-configurable — event triggers hide the cadence picker."
         },
-        "connectors": ["notion"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [
-          { "type": "messaging", "description": "Per-scan summary with created/flagged/duplicate counts." }
+          {
+            "type": "messaging",
+            "description": "Per-scan summary with created/flagged/duplicate counts."
+          }
         ],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -252,36 +378,137 @@
         "sample_input": {
           "flag_ambiguous_for_review": "{{param.aq_flag_ambiguous_for_review}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Candidate event" },
-            { "id": "c2", "type": "decision", "label": "Above threshold?" },
-            { "id": "c3", "type": "connector", "label": "Query Notion for fuzzy duplicate", "connector": "notion" },
-            { "id": "c4", "type": "decision", "label": "Duplicate?" },
-            { "id": "c5", "type": "event", "label": "Emit emailtask.duplicate.skipped" },
-            { "id": "c6", "type": "connector", "label": "Create Notion task", "connector": "notion" },
-            { "id": "c7", "type": "event", "label": "Emit emailtask.task.created" },
-            { "id": "c8", "type": "action", "label": "Route to manual_review" },
-            { "id": "c9", "type": "decision", "label": "Approved?" },
-            { "id": "c10", "type": "event", "label": "Emit emailtask.candidate.dismissed" },
-            { "id": "c11", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Candidate event"
+            },
+            {
+              "id": "c2",
+              "type": "decision",
+              "label": "Above threshold?"
+            },
+            {
+              "id": "c3",
+              "type": "connector",
+              "label": "Query Notion for fuzzy duplicate",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "c4",
+              "type": "decision",
+              "label": "Duplicate?"
+            },
+            {
+              "id": "c5",
+              "type": "event",
+              "label": "Emit emailtask.duplicate.skipped"
+            },
+            {
+              "id": "c6",
+              "type": "connector",
+              "label": "Create Notion task",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "c7",
+              "type": "event",
+              "label": "Emit emailtask.task.created"
+            },
+            {
+              "id": "c8",
+              "type": "action",
+              "label": "Route to manual_review"
+            },
+            {
+              "id": "c9",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "c10",
+              "type": "event",
+              "label": "Emit emailtask.candidate.dismissed"
+            },
+            {
+              "id": "c11",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3", "label": "Yes", "variant": "yes" },
-            { "source": "c2", "target": "c8", "label": "No", "variant": "no" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5", "label": "Yes", "variant": "yes" },
-            { "source": "c4", "target": "c6", "label": "No", "variant": "no" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c11" },
-            { "source": "c5", "target": "c11" },
-            { "source": "c8", "target": "c9" },
-            { "source": "c9", "target": "c6", "label": "Approve", "variant": "yes" },
-            { "source": "c9", "target": "c10", "label": "Dismiss", "variant": "no" },
-            { "source": "c10", "target": "c11" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "c2",
+              "target": "c8",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "c4",
+              "target": "c6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c11"
+            },
+            {
+              "source": "c5",
+              "target": "c11"
+            },
+            {
+              "source": "c8",
+              "target": "c9"
+            },
+            {
+              "source": "c9",
+              "target": "c6",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "c9",
+              "target": "c10",
+              "label": "Dismiss",
+              "variant": "no"
+            },
+            {
+              "source": "c10",
+              "target": "c11"
+            }
           ]
         }
       }
@@ -290,7 +517,9 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_scan_and_extract"],
+        "use_case_ids": [
+          "uc_scan_and_extract"
+        ],
         "category": "quality",
         "question": "What confidence threshold should gate automatic task creation?",
         "type": "select",
@@ -308,11 +537,17 @@
       {
         "id": "aq_default_priority",
         "scope": "capability",
-        "use_case_ids": ["uc_scan_and_extract"],
+        "use_case_ids": [
+          "uc_scan_and_extract"
+        ],
         "category": "configuration",
         "question": "What priority should tasks get when no urgency signal is detected?",
         "type": "select",
-        "options": ["High", "Medium", "Low"],
+        "options": [
+          "High",
+          "Medium",
+          "Low"
+        ],
         "default": "Medium",
         "maps_to": "use_cases[uc_scan_and_extract].sample_input.default_priority",
         "variable_name": "default_priority",
@@ -322,7 +557,9 @@
       {
         "id": "aq_flag_ambiguous_for_review",
         "scope": "capability",
-        "use_case_ids": ["uc_create_or_review"],
+        "use_case_ids": [
+          "uc_create_or_review"
+        ],
         "category": "quality",
         "question": "Should ambiguous action items route through human review before creating tasks?",
         "type": "boolean",
@@ -331,6 +568,44 @@
         "variable_name": "flag_ambiguous_for_review",
         "context": "When true, low-confidence extractions queue for approval. When false, they're dropped silently (the confidence threshold is the only gate).",
         "dimension": "human-review"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

@@ -5,11 +5,21 @@
   "description": "Generates lookalike domain variants, scans DNS + WHOIS for new registrations, analyzes hosted content for brand impersonation, scores threats, alerts on high-risk phishing via Slack, and produces weekly brand protection summaries tracked in Notion.",
   "icon": "ShieldAlert",
   "color": "#991B1B",
-  "category": ["security"],
-  "service_flow": ["WhoisXML", "Notion", "Slack"],
+  "category": [
+    "security"
+  ],
+  "service_flow": [
+    "WhoisXML",
+    "Notion",
+    "Slack"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["WhoisXML", "Notion", "Slack"],
+    "service_flow": [
+      "WhoisXML",
+      "Notion",
+      "Slack"
+    ],
     "persona": {
       "goal": "Defend the brand from typosquatting and phishing before customers do — catch lookalike domains the day they register, score the threat, and route real danger to Slack with abuse reports already drafted.",
       "identity": {
@@ -47,7 +57,11 @@
       "tool_guidance": "**DNS (via http_request; no auth):**\n- `GET https://dns.google/resolve?name={domain}&type=A` — IP resolution.\n- `type=MX` — mail exchange (drives email-capability scoring).\n- `type=TXT` — SPF/DKIM presence.\n- `type=NS` — name server / hosting attribution.\n\n**WHOIS (WhoisXML connector):**\n- `GET https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName={domain}&apiKey={key}&outputFormat=JSON` — registrar, creation date, registrant org, name servers.\n- Rate limit 10/s; 100ms delays between requests.\n\n**HTTP content fetch (via http_request):**\n- `GET https://{domain}/` with `User-Agent: Mozilla/5.0`, follow redirects, 10s timeout.\n- Fall back to `http://` if HTTPS fails.\n- Capture status, headers (Server, X-Powered-By), title, meta, first 5KB body.\n\n**Certificate Transparency (crt.sh):**\n- `GET https://crt.sh/?q={domain}&output=json` — all SSL certs ever issued.\n- `GET https://crt.sh/?q=%.{domain}&output=json` — subdomain certificates.\n\n**Notion (via Notion connector):**\n- `POST /v1/databases/{database_id}/query` — find existing domain entries.\n- `POST /v1/pages` — create new finding.\n- `PATCH /v1/pages/{page_id}` — update threat score, status, notes.\n- Headers: `Authorization: Bearer {notion_token}`, `Notion-Version: 2022-06-28`.\n\n**Slack (via Slack connector):**\n- `POST https://slack.com/api/chat.postMessage` — alerts, digests, weekly reports.\n- Block Kit formatting with threat-score badges, WHOIS snippet, CTA buttons to Notion entry.\n\n**Local state (file_read / file_write):**\n- `data/domain_variants.json` — generated lookalike list.\n- `data/known_domains.json` — previously seen domains + last state.\n- `data/scan_progress.json` — resume checkpoint.\n- `data/allow_list.json` — owned domains + partners (skip analysis).\n- `data/abuse_reports/{domain}_report.json` — drafted abuse reports.\n- `data/weekly_reports/brand_protection_{date}.json` — archive.",
       "error_handling": "DNS timeout → retry once after 5s; mark DNS_UNRESOLVED, retry next scan. WHOIS 429 → exponential backoff (2s start); save scan_progress.json for resumption. WHOIS 401/403 → emit persona.error, continue with DNS-only analysis. WHOIS privacy-protected → mark 'Privacy Protected', +0.5 infrastructure suspicion. HTTP connect refused/timeout → record 'No Content', score on domain/DNS factors only. HTTP 403/503 (Cloudflare) → note 'Bot-protected'; retry with varied UA. Notion 401 → queue findings in pending_notion.json, retry next cycle. Notion 429 → backoff per Retry-After. Notion 404 (DB not found) → post to Slack alerting invalid DB ID; cache locally. Slack channel_not_found → queue to pending_slack.json, fallback channel if configured. Domain-variant list corrupted → regenerate from config; log the regeneration. known_domains.json missing → treat all as new (burst of entries acceptable, nothing missed). Interrupted scan → resume from scan_progress.json checkpoint. Massive variant list (10K+) → process in daily batches of 2K, prioritize highest similarity. Common-word brand names → raise alert threshold to 8+, weight content mimicry heavier.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "whoisxml",
@@ -70,11 +84,11 @@
           "setup_instructions": "1. Create an account at whoisxmlapi.com.\n2. Activate the WHOIS API product (free tier available).\n3. Copy the API key from My Products → WHOIS.\n4. Paste above. Upgrade to 5K+/month for larger variant lists."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "database",
-          "category": "database",
+          "category": "knowledge_base",
           "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
@@ -98,8 +112,8 @@
           "setup_instructions": "1. notion.so/my-integrations → create integration 'Brand Protection Sentinel'.\n2. Copy the Internal Integration Token.\n3. Create a Notion database with these properties: Domain (title), Threat Score (number), Category (select: Phishing/Typosquatting/Competitor/Parked/Benign), Status (select: New/Investigating/Reported/Takedown Requested/Resolved/Monitoring), Registration Date (date), First Detected (date), Registrar (text), Hosting Provider (text), Has MX (checkbox), Has SSL (checkbox), IP Address (text), Content Summary (text), Abuse Report Filed (checkbox), Notes (text).\n4. Share the database with your integration.\n5. Copy the database ID from the URL."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -138,7 +152,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 6 * * *", "timezone": "UTC" },
+          "config": {
+            "cron": "0 6 * * *",
+            "timezone": "UTC"
+          },
           "description": "Default daily 06:00 UTC — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -181,28 +198,92 @@
           "primary_domain": "{{param.aq_primary_domain}}",
           "monitored_tlds": "{{param.aq_monitored_tlds}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Daily scan tick" },
-            { "id": "s2", "type": "action", "label": "Load brand config + allow-list + known-domains" },
-            { "id": "s3", "type": "action", "label": "Generate variant list (typosquat / homoglyph / TLD / combosquat)" },
-            { "id": "s4", "type": "action", "label": "Batch DNS resolution (50/batch)" },
-            { "id": "s5", "type": "decision", "label": "Resolved AND not in known-domains?" },
-            { "id": "s6", "type": "event", "label": "Emit brand.domain.new per new detection" },
-            { "id": "s7", "type": "action", "label": "Update known-domains ledger" },
-            { "id": "s8", "type": "end", "label": "Scan cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Daily scan tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load brand config + allow-list + known-domains"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Generate variant list (typosquat / homoglyph / TLD / combosquat)"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Batch DNS resolution (50/batch)"
+            },
+            {
+              "id": "s5",
+              "type": "decision",
+              "label": "Resolved AND not in known-domains?"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit brand.domain.new per new detection"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Update known-domains ledger"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Scan cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6", "variant": "yes", "label": "New" },
-            { "source": "s5", "target": "s7", "variant": "no", "label": "Known" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6",
+              "variant": "yes",
+              "label": "New"
+            },
+            {
+              "source": "s5",
+              "target": "s7",
+              "variant": "no",
+              "label": "Known"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -217,10 +298,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "brand.domain.new" },
+          "config": {
+            "event_type": "brand.domain.new"
+          },
           "description": "Fires per new detection from uc_domain_scan. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["whoisxml", "notion", "slack"],
+        "connectors": [
+          "whoisxml",
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -266,30 +353,104 @@
         "sample_input": {
           "alert_threshold": "{{param.aq_alert_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "brand.domain.new received" },
-            { "id": "t2", "type": "connector", "label": "WHOIS + full DNS + HTTP content + crt.sh", "connector": "whoisxml" },
-            { "id": "t3", "type": "action", "label": "Compute 1-10 threat score + category" },
-            { "id": "t4", "type": "connector", "label": "Upsert Notion entry", "connector": "notion" },
-            { "id": "t5", "type": "decision", "label": "Score >= alert threshold?" },
-            { "id": "t6", "type": "action", "label": "Draft registrar + hosting abuse reports" },
-            { "id": "t7", "type": "connector", "label": "Post Slack alert to #brand-protection", "connector": "slack" },
-            { "id": "t8", "type": "event", "label": "Emit brand.threat.detected / brand.abuse.drafted" },
-            { "id": "t9", "type": "end", "label": "Analysis complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "brand.domain.new received"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "WHOIS + full DNS + HTTP content + crt.sh",
+              "connector": "whoisxml"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Compute 1-10 threat score + category"
+            },
+            {
+              "id": "t4",
+              "type": "connector",
+              "label": "Upsert Notion entry",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "t5",
+              "type": "decision",
+              "label": "Score >= alert threshold?"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Draft registrar + hosting abuse reports"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Post Slack alert to #brand-protection",
+              "connector": "messaging"
+            },
+            {
+              "id": "t8",
+              "type": "event",
+              "label": "Emit brand.threat.detected / brand.abuse.drafted"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Analysis complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6", "variant": "yes", "label": "High threat" },
-            { "source": "t5", "target": "t9", "variant": "no", "label": "Below threshold" },
-            { "source": "t6", "target": "t7" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6",
+              "variant": "yes",
+              "label": "High threat"
+            },
+            {
+              "source": "t5",
+              "target": "t9",
+              "variant": "no",
+              "label": "Below threshold"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       },
@@ -304,10 +465,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "UTC" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "UTC"
+          },
           "description": "Default Monday 08:00 UTC — final cadence set at the trigger-composition step."
         },
-        "connectors": ["notion", "slack"],
+        "connectors": [
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -340,25 +507,76 @@
         "sample_input": {
           "slack_channel": "{{param.aq_slack_channel}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "connector", "label": "Query Notion for this week's entries", "connector": "notion" },
-            { "id": "w3", "type": "action", "label": "Aggregate + compare to last week + build trends" },
-            { "id": "w4", "type": "action", "label": "Compose report + recommendations" },
-            { "id": "w5", "type": "connector", "label": "Post to Slack", "connector": "slack" },
-            { "id": "w6", "type": "event", "label": "Emit brand.report.weekly_delivered" },
-            { "id": "w7", "type": "end", "label": "Report archived" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Query Notion for this week's entries",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Aggregate + compare to last week + build trends"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Compose report + recommendations"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "Post to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit brand.report.weekly_delivered"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Report archived"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -367,7 +585,9 @@
       {
         "id": "aq_brand_name",
         "scope": "capability",
-        "use_case_ids": ["uc_domain_scan"],
+        "use_case_ids": [
+          "uc_domain_scan"
+        ],
         "category": "domain",
         "question": "What is your brand name to monitor?",
         "type": "text",
@@ -381,7 +601,9 @@
       {
         "id": "aq_primary_domain",
         "scope": "capability",
-        "use_case_ids": ["uc_domain_scan"],
+        "use_case_ids": [
+          "uc_domain_scan"
+        ],
         "category": "domain",
         "question": "What is your primary domain?",
         "type": "text",
@@ -395,7 +617,9 @@
       {
         "id": "aq_monitored_tlds",
         "scope": "capability",
-        "use_case_ids": ["uc_domain_scan"],
+        "use_case_ids": [
+          "uc_domain_scan"
+        ],
         "category": "configuration",
         "question": "Which TLDs should be monitored beyond the defaults?",
         "type": "text",
@@ -409,11 +633,18 @@
       {
         "id": "aq_alert_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_threat_analysis"],
+        "use_case_ids": [
+          "uc_threat_analysis"
+        ],
         "category": "quality",
         "question": "At what threat score should immediate Slack alerts fire?",
         "type": "select",
-        "options": ["6 (noisier, broader coverage)", "7 (default — active impersonation)", "8 (recommended for common-word brands)", "9 (only the most obvious phishing)"],
+        "options": [
+          "6 (noisier, broader coverage)",
+          "7 (default — active impersonation)",
+          "8 (recommended for common-word brands)",
+          "9 (only the most obvious phishing)"
+        ],
         "default": "7 (default — active impersonation)",
         "maps_to": "use_cases[uc_threat_analysis].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
@@ -423,7 +654,10 @@
       {
         "id": "aq_slack_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_threat_analysis", "uc_weekly_report"],
+        "use_case_ids": [
+          "uc_threat_analysis",
+          "uc_weekly_report"
+        ],
         "category": "configuration",
         "question": "Which Slack channel should receive alerts and weekly reports?",
         "type": "select",
@@ -433,12 +667,52 @@
         "variable_name": "slack_channel",
         "context": "Dedicated #brand-protection channel recommended. High-threat alerts post immediately; medium findings go in a daily digest; weekly reports post on Monday.",
         "dimension": "messages",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
           "source": "vault"
         }
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

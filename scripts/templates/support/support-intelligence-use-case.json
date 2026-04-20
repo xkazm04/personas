@@ -5,11 +5,21 @@
   "description": "Triages Zendesk tickets with sentiment + urgency analysis, searches a Notion knowledge base for known resolutions, routes appropriately across Slack channels, monitors SLA compliance, and enriches the KB as tickets resolve.",
   "icon": "BrainCircuit",
   "color": "#14B8A6",
-  "category": ["support"],
-  "service_flow": ["Zendesk", "Slack", "Notion"],
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Zendesk",
+    "Slack",
+    "Notion"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Zendesk", "Slack", "Notion"],
+    "service_flow": [
+      "Zendesk",
+      "Slack",
+      "Notion"
+    ],
     "persona": {
       "goal": "Turn Zendesk triage from a bottleneck into a reflex — classify fast, match to KB, route precisely, and make the KB smarter every time a ticket closes.",
       "identity": {
@@ -47,7 +57,11 @@
       "tool_guidance": "### Zendesk (http_request + zendesk connector)\n- Search: `GET /api/v2/search.json?query=type:ticket status:new status:open updated>{iso}` — Basic Auth `email/token:api_token`.\n- Ticket detail: `GET /api/v2/tickets/{id}.json` (and `/comments.json` for KB enrichment).\n- Requester: `GET /api/v2/users/{requester_id}.json`.\n- Internal note: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: false } } }`.\n- Draft reply: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: true }, status: 'pending' } }`.\n- Tags: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { tags: [ 'triaged', 'category-billing' ] } }`.\nBase URL: `https://{subdomain}.zendesk.com/api/v2`.\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` with Block Kit + sentiment/urgency badges.\n- DM: `channel` = user_id for Critical lead alerts.\n- Update: `POST /api/chat.update` for status-change amendments.\nHeaders: `Authorization: Bearer {bot_token}`.\n\n### Notion (http_request + notion connector)\n- Query: `POST /v1/databases/{database_id}/query` with keyword/category filter.\n- Create: `POST /v1/pages`.\n- Update: `PATCH /v1/pages/{page_id}` to increment Frequency, update Last Used.\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`.\n\n### Sentiment rubric\n- Angry: ALL CAPS, !, 'unacceptable', 'terrible', 'lawsuit', profanity.\n- Frustrated: 'again', 'still', 'keeps happening', 'multiple times'.\n- Neutral: factual, questions.\n- Positive: thanks, praise.\n\n### Urgency rubric\n- Critical: outage, security, data loss.\n- High: payment failure, account lockout, SLA-sensitive account.\n- Medium: feature question, how-to.\n- Low: feedback, feature requests.\n\n### SLA defaults\n- Critical: 1h / warn 30min remaining.\n- High: 4h / warn 1h remaining.\n- Medium: 8h / warn 2h remaining.\n- Low: 24h / no warning.\nStart from Zendesk created_at. Wall-clock (not business hours). One warning per crossed threshold.\n\n### State files\n- ./data/triage_state.json — last_poll, processed_ticket_ids, sla_warnings_sent, pending_slack_queue, pending_kb_writes.",
       "error_handling": "Zendesk 429 → back off per Retry-After, resume next cycle. Zendesk 401/403 → pause polling, emit support.intel.degraded + user_message. Slack 5xx → queue in pending_slack_queue, retry next cycle. Notion 5xx → proceed without KB for triage (mark KB-skipped), queue write in pending_kb_writes for retry. Empty ticket body → classify from subject, tag needs-context, urgency Medium. Duplicate ticket (in processed set) → skip silently. Malformed API response → log raw, skip ticket, continue. First run (empty state) → backfill only last 24h. Write poll cursor to both memory and triage_state.json.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "zendesk",
@@ -86,8 +100,8 @@
           "setup_instructions": "1. Zendesk Admin Center → Apps and integrations → Zendesk API.\n2. Enable Token Access.\n3. Add API Token, name it 'Support Intelligence Agent', copy immediately.\n4. Enter subdomain, agent email, and token. Auth: {email}/token:{api_token} via Basic Auth."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
@@ -106,11 +120,11 @@
           "setup_instructions": "1. api.slack.com/apps → Create New App (or use existing).\n2. Bot Token Scopes: chat:write, chat:write.public, channels:read.\n3. Install to workspace.\n4. Copy Bot User OAuth Token.\n5. Invite the bot to escalation + triage channels."
         },
         {
-          "name": "notion",
-          "label": "Notion",
+          "name": "knowledge_base",
+          "label": "Knowledge Base",
           "auth_type": "api_key",
           "role": "knowledge_base",
-          "category": "documentation",
+          "category": "knowledge_base",
           "required": false,
           "fallback_note": "Without Notion, triage proceeds but no KB lookup or KB enrichment — all tickets route to the triage/escalation channels without auto-suggestion.",
           "api_base_url": "https://api.notion.com/v1",
@@ -159,10 +173,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/1 * * * *" },
+          "config": {
+            "cron": "*/1 * * * *"
+          },
           "description": "Default every 60 seconds — final cadence set at the trigger-composition step."
         },
-        "connectors": ["zendesk", "slack", "notion"],
+        "connectors": [
+          "zendesk",
+          "messaging",
+          "knowledge_base"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -206,7 +226,11 @@
           {
             "name": "auto_reply_mode",
             "type": "enum",
-            "options": ["suggest_only", "auto_reply_low_medium", "auto_reply_all_high_conf"],
+            "options": [
+              "suggest_only",
+              "auto_reply_low_medium",
+              "auto_reply_all_high_conf"
+            ],
             "default": "suggest_only",
             "description": "Whether the agent ever posts customer-visible replies. Default: internal suggestions only."
           },
@@ -236,30 +260,105 @@
           "triage_channel": "{{param.aq_triage_channel}}",
           "lead_user_id": "{{param.aq_lead_user_id}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Polling tick" },
-            { "id": "t2", "type": "connector", "label": "Fetch new/updated Zendesk tickets", "connector": "zendesk" },
-            { "id": "t3", "type": "action", "label": "Score sentiment + urgency" },
-            { "id": "t4", "type": "connector", "label": "Search Notion KB", "connector": "notion" },
-            { "id": "t5", "type": "decision", "label": "Urgency × KB match?" },
-            { "id": "t6", "type": "connector", "label": "Escalate to Slack + internal note (Critical/High, no match)", "connector": "slack" },
-            { "id": "t7", "type": "connector", "label": "Internal suggestion + triage notify (match)", "connector": "zendesk" },
-            { "id": "t8", "type": "event", "label": "Emit support.intel.triaged + persist state" },
-            { "id": "t9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "t2",
+              "type": "connector",
+              "label": "Fetch new/updated Zendesk tickets",
+              "connector": "zendesk"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Score sentiment + urgency"
+            },
+            {
+              "id": "t4",
+              "type": "connector",
+              "label": "Search Notion KB",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "t5",
+              "type": "decision",
+              "label": "Urgency × KB match?"
+            },
+            {
+              "id": "t6",
+              "type": "connector",
+              "label": "Escalate to Slack + internal note (Critical/High, no match)",
+              "connector": "messaging"
+            },
+            {
+              "id": "t7",
+              "type": "connector",
+              "label": "Internal suggestion + triage notify (match)",
+              "connector": "zendesk"
+            },
+            {
+              "id": "t8",
+              "type": "event",
+              "label": "Emit support.intel.triaged + persist state"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6", "label": "Critical/High + no match", "variant": "yes" },
-            { "source": "t5", "target": "t7", "label": "Match above threshold", "variant": "no" },
-            { "source": "t6", "target": "t8" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6",
+              "label": "Critical/High + no match",
+              "variant": "yes"
+            },
+            {
+              "source": "t5",
+              "target": "t7",
+              "label": "Match above threshold",
+              "variant": "no"
+            },
+            {
+              "source": "t6",
+              "target": "t8"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       },
@@ -274,10 +373,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/1 * * * *" },
+          "config": {
+            "cron": "*/1 * * * *"
+          },
           "description": "Default every 60 seconds — final cadence set at the trigger-composition step."
         },
-        "connectors": ["zendesk", "slack"],
+        "connectors": [
+          "zendesk",
+          "messaging"
+        ],
         "notification_channels": [
           {
             "type": "slack",
@@ -322,26 +426,83 @@
           "sla_critical_minutes": "{{param.aq_sla_critical_minutes}}",
           "sla_high_minutes": 240
         },
-        "tool_hints": ["http_request"],
+        "tool_hints": [
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "SLA check (same tick)" },
-            { "id": "s2", "type": "action", "label": "Compute time_remaining per tracked ticket" },
-            { "id": "s3", "type": "decision", "label": "Threshold crossed & unwarned?" },
-            { "id": "s4", "type": "connector", "label": "Fetch current assignee", "connector": "zendesk" },
-            { "id": "s5", "type": "connector", "label": "Post SLA warning to Slack", "connector": "slack" },
-            { "id": "s6", "type": "event", "label": "Emit support.intel.sla_warning + mark warned" },
-            { "id": "s7", "type": "end", "label": "SLA check complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "SLA check (same tick)"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Compute time_remaining per tracked ticket"
+            },
+            {
+              "id": "s3",
+              "type": "decision",
+              "label": "Threshold crossed & unwarned?"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Fetch current assignee",
+              "connector": "zendesk"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Post SLA warning to Slack",
+              "connector": "messaging"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit support.intel.sla_warning + mark warned"
+            },
+            {
+              "id": "s7",
+              "type": "end",
+              "label": "SLA check complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4", "label": "Yes", "variant": "yes" },
-            { "source": "s3", "target": "s7", "label": "No", "variant": "no" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "s3",
+              "target": "s7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            }
           ]
         }
       },
@@ -356,10 +517,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "zendesk.ticket.resolved" },
+          "config": {
+            "event_type": "zendesk.ticket.resolved"
+          },
           "description": "Fires when a Zendesk ticket transitions to solved/closed. Not user-configurable."
         },
-        "connectors": ["zendesk", "notion"],
+        "connectors": [
+          "zendesk",
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -388,37 +554,112 @@
             "type": "number",
             "default": 0.8,
             "min": 0.5,
-            "max": 1.0,
+            "max": 1,
             "description": "Confidence score assigned to new KB entries. Adjusts as resolutions are reused."
           }
         ],
         "sample_input": {
           "initial_confidence": 0.8
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "k1", "type": "start", "label": "zendesk.ticket.resolved received" },
-            { "id": "k2", "type": "connector", "label": "Fetch ticket + comments", "connector": "zendesk" },
-            { "id": "k3", "type": "action", "label": "Extract problem / root_cause / steps" },
-            { "id": "k4", "type": "connector", "label": "Search Notion for match", "connector": "notion" },
-            { "id": "k5", "type": "decision", "label": "Existing entry?" },
-            { "id": "k6", "type": "connector", "label": "PATCH entry (freq++, Last Used)", "connector": "notion" },
-            { "id": "k7", "type": "connector", "label": "Create new KB entry", "connector": "notion" },
-            { "id": "k8", "type": "event", "label": "Emit support.intel.kb_updated" },
-            { "id": "k9", "type": "end", "label": "KB enrichment complete" }
+            {
+              "id": "k1",
+              "type": "start",
+              "label": "zendesk.ticket.resolved received"
+            },
+            {
+              "id": "k2",
+              "type": "connector",
+              "label": "Fetch ticket + comments",
+              "connector": "zendesk"
+            },
+            {
+              "id": "k3",
+              "type": "action",
+              "label": "Extract problem / root_cause / steps"
+            },
+            {
+              "id": "k4",
+              "type": "connector",
+              "label": "Search Notion for match",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "k5",
+              "type": "decision",
+              "label": "Existing entry?"
+            },
+            {
+              "id": "k6",
+              "type": "connector",
+              "label": "PATCH entry (freq++, Last Used)",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "k7",
+              "type": "connector",
+              "label": "Create new KB entry",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "k8",
+              "type": "event",
+              "label": "Emit support.intel.kb_updated"
+            },
+            {
+              "id": "k9",
+              "type": "end",
+              "label": "KB enrichment complete"
+            }
           ],
           "edges": [
-            { "source": "k1", "target": "k2" },
-            { "source": "k2", "target": "k3" },
-            { "source": "k3", "target": "k4" },
-            { "source": "k4", "target": "k5" },
-            { "source": "k5", "target": "k6", "label": "Yes", "variant": "yes" },
-            { "source": "k5", "target": "k7", "label": "No", "variant": "no" },
-            { "source": "k6", "target": "k8" },
-            { "source": "k7", "target": "k8" },
-            { "source": "k8", "target": "k9" }
+            {
+              "source": "k1",
+              "target": "k2"
+            },
+            {
+              "source": "k2",
+              "target": "k3"
+            },
+            {
+              "source": "k3",
+              "target": "k4"
+            },
+            {
+              "source": "k4",
+              "target": "k5"
+            },
+            {
+              "source": "k5",
+              "target": "k6",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "k5",
+              "target": "k7",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "k6",
+              "target": "k8"
+            },
+            {
+              "source": "k7",
+              "target": "k8"
+            },
+            {
+              "source": "k8",
+              "target": "k9"
+            }
           ]
         }
       }
@@ -439,11 +680,18 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_triage"],
+        "use_case_ids": [
+          "uc_ticket_triage"
+        ],
         "category": "quality",
         "question": "Minimum KB match confidence to surface an auto-suggestion?",
         "type": "select",
-        "options": ["0.5", "0.7", "0.8", "0.9"],
+        "options": [
+          "0.5",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
         "default": "0.7",
         "maps_to": "use_cases[uc_ticket_triage].sample_input.confidence_threshold",
         "variable_name": "confidence_threshold",
@@ -453,11 +701,17 @@
       {
         "id": "aq_auto_reply_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_triage"],
+        "use_case_ids": [
+          "uc_ticket_triage"
+        ],
         "category": "boundaries",
         "question": "Should the agent ever post a reply directly to the customer?",
         "type": "select",
-        "options": ["suggest_only", "auto_reply_low_medium", "auto_reply_all_high_conf"],
+        "options": [
+          "suggest_only",
+          "auto_reply_low_medium",
+          "auto_reply_all_high_conf"
+        ],
         "default": "suggest_only",
         "maps_to": "use_cases[uc_ticket_triage].sample_input.auto_reply_mode",
         "variable_name": "auto_reply_mode",
@@ -467,7 +721,10 @@
       {
         "id": "aq_escalation_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_triage", "uc_sla_watch"],
+        "use_case_ids": [
+          "uc_ticket_triage",
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives Critical/High escalations and SLA warnings?",
         "type": "select",
@@ -478,7 +735,9 @@
         "context": "High-urgency routing lands here. Use a dedicated channel — this gets loud during incidents.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
@@ -488,7 +747,9 @@
       {
         "id": "aq_triage_channel",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_triage"],
+        "use_case_ids": [
+          "uc_ticket_triage"
+        ],
         "category": "configuration",
         "question": "Which Slack channel receives routine triage summaries and auto-suggestions?",
         "type": "select",
@@ -499,7 +760,9 @@
         "context": "Medium/Low tickets and auto-suggestions post here. Keep this separate from the escalation channel.",
         "dimension": "messages",
         "vault_category": "messaging",
-        "option_service_types": ["slack"],
+        "option_service_types": [
+          "slack"
+        ],
         "dynamic_source": {
           "service_type": "slack",
           "operation": "list_channels",
@@ -509,7 +772,9 @@
       {
         "id": "aq_lead_user_id",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_triage"],
+        "use_case_ids": [
+          "uc_ticket_triage"
+        ],
         "category": "messages",
         "question": "Slack user ID for Critical-escalation DMs?",
         "type": "text",
@@ -522,16 +787,61 @@
       {
         "id": "aq_sla_critical_minutes",
         "scope": "capability",
-        "use_case_ids": ["uc_sla_watch"],
+        "use_case_ids": [
+          "uc_sla_watch"
+        ],
         "category": "configuration",
         "question": "SLA minutes for Critical tickets (first-response)?",
         "type": "select",
-        "options": ["15", "30", "60", "120"],
+        "options": [
+          "15",
+          "30",
+          "60",
+          "120"
+        ],
         "default": "60",
         "maps_to": "use_cases[uc_sla_watch].sample_input.sla_critical_minutes",
         "variable_name": "sla_critical_minutes",
         "context": "Warning fires at half the remaining SLA. Tighten for enterprise commitments.",
         "dimension": "use-cases"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_knowledge_base_credential",
+        "scope": "connector",
+        "connector_names": [
+          "knowledge_base"
+        ],
+        "category": "configuration",
+        "question": "Which knowledge base should this persona read from and write to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "knowledge_base",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
+        "variable_name": "knowledge_base_credential",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

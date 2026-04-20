@@ -5,11 +5,23 @@
   "description": "Pulls Xero transactions, reconciles them against bank feeds, logs discrepancies to Google Sheets, alerts the finance team in Slack, and ships a weekly reconciliation summary by email. Learns recurring transaction patterns so predictable entries stop triggering false alerts.",
   "icon": "Calculator",
   "color": "#22C55E",
-  "category": ["finance"],
-  "service_flow": ["Xero", "Google Sheets", "Slack", "Gmail"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Xero",
+    "Google Sheets",
+    "Slack",
+    "Gmail"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Xero", "Google Sheets", "Slack", "Gmail"],
+    "service_flow": [
+      "Xero",
+      "Google Sheets",
+      "Slack",
+      "Gmail"
+    ],
     "persona": {
       "goal": "Close the books every day by matching bank reality against Xero — silent when things line up, loud the moment they don't.",
       "identity": {
@@ -47,7 +59,12 @@
       "tool_guidance": "**Xero** (`https://api.xero.com/api.xro/2.0`):\n- `GET /BankTransactions?where=Date>=DateTime(YYYY,MM,DD)&order=Date` — daily transactions for the matching window.\n- `GET /BankStatements` — bank feed lines to match against.\n- `GET /Invoices?where=UpdatedDateUTC>=DateTime(...)` — recently modified invoices.\n- `GET /Payments` — payment cross-references.\n- Always set header `Xero-Tenant-Id`. The connector injects the OAuth2 bearer token.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append discrepancy rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — update daily totals on the Summary tab.\n- `GET /{id}/values/{range}` — dedupe check before appending.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` — Block Kit alerts (individual + grouped summaries) to the configured finance channel.\n- `POST chat.update` — mutate a prior summary if same-day discrepancies resolve.\n\n**Gmail** — send the weekly HTML summary via the configured Gmail credential.\n\n**Local state**: `reconciliation_state.json` — last-sync timestamp, unmatched-item history keyed by (vendor, amount, date), recurring-pattern ledger, alert dedupe log.",
       "error_handling": "Xero 401/403 → skip cycle, do NOT update last_sync timestamp (so next run retries the same window), emit persona-error Slack alert. Xero 429 → respect Retry-After, resume. Xero 5xx → up to 3 retries with 5/15/45s backoff; on failure, alert and skip. Sheets 404 (sheet deleted) → alert via Slack; fall back to local CSV at `data/discrepancies_fallback.csv`. Sheets 403 → surface the service account email in the alert so the user can grant access. Slack unreachable → queue alert payloads in `pending_slack.json`, retry next cycle (never silently drop). Gmail delivery failure → save the rendered HTML to `data/weekly_reports/report_{date}.html` and alert via Slack that email failed. Currency mismatch between Xero and bank entry → flag UNMATCHED with explicit note; never convert.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "xero",
@@ -55,7 +72,9 @@
           "auth_type": "oauth2",
           "role": "accounting",
           "category": "finance",
-          "categories": ["accounting"],
+          "categories": [
+            "accounting"
+          ],
           "required": true,
           "api_base_url": "https://api.xero.com/api.xro/2.0",
           "credential_fields": [
@@ -87,12 +106,14 @@
           "setup_instructions": "1. Go to developer.xero.com and sign in with your Xero account.\n2. Click 'My Apps' -> 'New App'. Choose 'Web app' type.\n3. Set the redirect URI to your Personas callback URL.\n4. Copy the Client ID and generate a Client Secret.\n5. Under API scopes, enable: accounting.transactions.read, accounting.reports.read, accounting.settings.read.\n6. Complete the OAuth2 authorization flow to obtain your Tenant ID.\n7. Enter all three values in the connector fields above."
         },
         {
-          "name": "google_sheets",
-          "label": "Google Sheets",
+          "name": "spreadsheet",
+          "label": "Spreadsheet",
           "auth_type": "oauth2",
           "role": "spreadsheet",
-          "category": "productivity",
-          "categories": ["spreadsheet"],
+          "category": "spreadsheet",
+          "categories": [
+            "spreadsheet"
+          ],
           "required": true,
           "api_base_url": "https://sheets.googleapis.com",
           "credential_fields": [
@@ -124,12 +145,14 @@
           "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
-          "name": "slack",
-          "label": "Slack",
+          "name": "messaging",
+          "label": "Team Messaging",
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
-          "categories": ["messaging"],
+          "categories": [
+            "messaging"
+          ],
           "required": true,
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
@@ -153,12 +176,14 @@
           "setup_instructions": "1. Go to api.slack.com/apps and create a new app (or use an existing one).\n2. Under 'OAuth & Permissions', add bot token scopes: chat:write, chat:write.public.\n3. Install the app to your workspace and copy the Bot User OAuth Token.\n4. Create a #finance-alerts channel (or choose an existing one) and invite the bot: /invite @YourBotName.\n5. Enter the bot token and channel name above."
         },
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
-          "categories": ["email"],
+          "categories": [
+            "email"
+          ],
           "required": false,
           "fallback_note": "Without Gmail, the weekly summary is written to local HTML only (and announced in Slack). Re-enable to resume email delivery.",
           "api_base_url": "https://www.googleapis.com",
@@ -215,10 +240,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 6 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "0 6 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default Mon-Fri 6:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["xero", "google_sheets"],
+        "connectors": [
+          "xero",
+          "spreadsheet"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -250,7 +281,12 @@
           {
             "name": "date_tolerance_days",
             "type": "enum",
-            "options": ["1", "2", "3", "5"],
+            "options": [
+              "1",
+              "2",
+              "3",
+              "5"
+            ],
             "default": "2",
             "description": "Business-day tolerance for matching a bank entry to a Xero entry by date. Amount always exact; date is fuzzy."
           }
@@ -259,31 +295,104 @@
           "tracker_spreadsheet_id": "{{param.aq_tracker_sheet}}",
           "date_tolerance_days": "{{param.aq_date_tolerance}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Daily tick" },
-            { "id": "d2", "type": "action", "label": "Load state + recurring patterns" },
-            { "id": "d3", "type": "connector", "label": "Fetch Xero txns + bank statements", "connector": "xero" },
-            { "id": "d4", "type": "action", "label": "Match (amount exact, date ±tol, ref fuzzy)" },
-            { "id": "d5", "type": "action", "label": "Apply recurring-pattern auto-match" },
-            { "id": "d6", "type": "connector", "label": "Append discrepancies + update Summary", "connector": "google_sheets" },
-            { "id": "d7", "type": "event", "label": "Emit reconciliation.discrepancy.found per row" },
-            { "id": "d8", "type": "action", "label": "Persist updated state" },
-            { "id": "d9", "type": "event", "label": "Emit reconciliation.cycle.complete" },
-            { "id": "d10", "type": "end", "label": "Ledger up to date" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load state + recurring patterns"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Fetch Xero txns + bank statements",
+              "connector": "xero"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Match (amount exact, date ±tol, ref fuzzy)"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Apply recurring-pattern auto-match"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Append discrepancies + update Summary",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit reconciliation.discrepancy.found per row"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "Persist updated state"
+            },
+            {
+              "id": "d9",
+              "type": "event",
+              "label": "Emit reconciliation.cycle.complete"
+            },
+            {
+              "id": "d10",
+              "type": "end",
+              "label": "Ledger up to date"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" },
-            { "source": "d9", "target": "d10" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            },
+            {
+              "source": "d9",
+              "target": "d10"
+            }
           ]
         }
       },
@@ -298,10 +407,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "reconciliation.cycle.complete" },
+          "config": {
+            "event_type": "reconciliation.cycle.complete"
+          },
           "description": "Fires after every uc_daily_reconciliation cycle. Event-triggered — cadence is driven by the sync's trigger."
         },
-        "connectors": ["slack"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -328,21 +441,37 @@
           {
             "name": "alert_threshold",
             "type": "enum",
-            "options": ["100", "250", "500", "1000", "5000"],
+            "options": [
+              "100",
+              "250",
+              "500",
+              "1000",
+              "5000"
+            ],
             "default": "500",
             "description": "Individual alerts fire for any single discrepancy at or above this amount."
           },
           {
             "name": "escalation_threshold",
             "type": "enum",
-            "options": ["2500", "5000", "10000", "25000"],
+            "options": [
+              "2500",
+              "5000",
+              "10000",
+              "25000"
+            ],
             "default": "5000",
             "description": "When the daily total of unmatched amounts crosses this, the Slack post includes an @-mention to the finance lead."
           },
           {
             "name": "confidence_review_cutoff",
             "type": "enum",
-            "options": ["Never auto-accept", "85", "90", "95"],
+            "options": [
+              "Never auto-accept",
+              "85",
+              "90",
+              "95"
+            ],
             "default": "90",
             "description": "Partial matches below this confidence score trigger a Slack review request."
           }
@@ -352,28 +481,95 @@
           "escalation_threshold": "{{param.aq_escalation_threshold}}",
           "confidence_review_cutoff": "{{param.aq_confidence_cutoff}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Cycle complete event" },
-            { "id": "a2", "type": "action", "label": "Partition: high-value / low-confidence / low-value / auto-matched" },
-            { "id": "a3", "type": "decision", "label": "Daily total > escalation threshold?" },
-            { "id": "a4", "type": "connector", "label": "Post individual alerts (Block Kit)", "connector": "slack" },
-            { "id": "a5", "type": "connector", "label": "Post grouped low-value summary", "connector": "slack" },
-            { "id": "a6", "type": "connector", "label": "Post escalation with @-mention", "connector": "slack" },
-            { "id": "a7", "type": "event", "label": "Emit reconciliation.alert.sent per post" },
-            { "id": "a8", "type": "end", "label": "Alerts delivered" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Cycle complete event"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Partition: high-value / low-confidence / low-value / auto-matched"
+            },
+            {
+              "id": "a3",
+              "type": "decision",
+              "label": "Daily total > escalation threshold?"
+            },
+            {
+              "id": "a4",
+              "type": "connector",
+              "label": "Post individual alerts (Block Kit)",
+              "connector": "messaging"
+            },
+            {
+              "id": "a5",
+              "type": "connector",
+              "label": "Post grouped low-value summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "a6",
+              "type": "connector",
+              "label": "Post escalation with @-mention",
+              "connector": "messaging"
+            },
+            {
+              "id": "a7",
+              "type": "event",
+              "label": "Emit reconciliation.alert.sent per post"
+            },
+            {
+              "id": "a8",
+              "type": "end",
+              "label": "Alerts delivered"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a6", "variant": "yes", "label": "Yes" },
-            { "source": "a3", "target": "a4", "variant": "no", "label": "No" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a7" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "a3",
+              "target": "a4",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a7"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            }
           ]
         }
       },
@@ -388,10 +584,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5", "timezone": "local" },
+          "config": {
+            "cron": "0 17 * * 5",
+            "timezone": "local"
+          },
           "description": "Default Fridays 5:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_sheets", "gmail"],
+        "connectors": [
+          "spreadsheet",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -418,7 +620,11 @@
           {
             "name": "summary_depth",
             "type": "enum",
-            "options": ["executive", "standard", "detailed"],
+            "options": [
+              "executive",
+              "standard",
+              "detailed"
+            ],
             "default": "standard",
             "description": "Executive: top-line only. Standard: tables + top 10 unmatched. Detailed: full weekly discrepancy listing."
           }
@@ -427,27 +633,87 @@
           "email_recipients": "{{param.aq_email_recipients}}",
           "summary_depth": "{{param.aq_summary_depth}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Friday tick" },
-            { "id": "w2", "type": "connector", "label": "Read week's Sheets data", "connector": "google_sheets" },
-            { "id": "w3", "type": "action", "label": "Compute match rate, aging, trend" },
-            { "id": "w4", "type": "action", "label": "Render HTML email" },
-            { "id": "w5", "type": "connector", "label": "Send via Gmail", "connector": "gmail" },
-            { "id": "w6", "type": "action", "label": "Archive report locally" },
-            { "id": "w7", "type": "event", "label": "Emit reconciliation.summary.delivered" },
-            { "id": "w8", "type": "end", "label": "Weekly summary sent" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Friday tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Read week's Sheets data",
+              "connector": "spreadsheet"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute match rate, aging, trend"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Render HTML email"
+            },
+            {
+              "id": "w5",
+              "type": "connector",
+              "label": "Send via Gmail",
+              "connector": "email"
+            },
+            {
+              "id": "w6",
+              "type": "action",
+              "label": "Archive report locally"
+            },
+            {
+              "id": "w7",
+              "type": "event",
+              "label": "Emit reconciliation.summary.delivered"
+            },
+            {
+              "id": "w8",
+              "type": "end",
+              "label": "Weekly summary sent"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            }
           ]
         }
       }
@@ -456,7 +722,10 @@
       {
         "id": "aq_tracker_sheet",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_reconciliation", "uc_weekly_email_summary"],
+        "use_case_ids": [
+          "uc_daily_reconciliation",
+          "uc_weekly_email_summary"
+        ],
         "category": "configuration",
         "question": "Which Google Sheet should hold the reconciliation ledger?",
         "type": "select",
@@ -473,11 +742,18 @@
       {
         "id": "aq_date_tolerance",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_reconciliation"],
+        "use_case_ids": [
+          "uc_daily_reconciliation"
+        ],
         "category": "configuration",
         "question": "How many business days of date tolerance when matching a bank entry to a Xero entry?",
         "type": "select",
-        "options": ["1", "2", "3", "5"],
+        "options": [
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
         "default": "2",
         "maps_to": "use_cases[uc_daily_reconciliation].sample_input.date_tolerance_days",
         "variable_name": "date_tolerance",
@@ -487,11 +763,19 @@
       {
         "id": "aq_alert_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_discrepancy_alerts"],
+        "use_case_ids": [
+          "uc_discrepancy_alerts"
+        ],
         "category": "configuration",
         "question": "Above what amount should a single unmatched transaction trigger an individual Slack alert?",
         "type": "select",
-        "options": ["100", "250", "500", "1000", "5000"],
+        "options": [
+          "100",
+          "250",
+          "500",
+          "1000",
+          "5000"
+        ],
         "default": "500",
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.alert_threshold",
         "variable_name": "alert_threshold",
@@ -501,11 +785,18 @@
       {
         "id": "aq_escalation_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_discrepancy_alerts"],
+        "use_case_ids": [
+          "uc_discrepancy_alerts"
+        ],
         "category": "configuration",
         "question": "Above what daily discrepancy total should the alert escalate with an @-mention?",
         "type": "select",
-        "options": ["2500", "5000", "10000", "25000"],
+        "options": [
+          "2500",
+          "5000",
+          "10000",
+          "25000"
+        ],
         "default": "5000",
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.escalation_threshold",
         "variable_name": "escalation_threshold",
@@ -515,11 +806,18 @@
       {
         "id": "aq_confidence_cutoff",
         "scope": "capability",
-        "use_case_ids": ["uc_discrepancy_alerts"],
+        "use_case_ids": [
+          "uc_discrepancy_alerts"
+        ],
         "category": "configuration",
         "question": "At what confidence should a partial match be flagged for review instead of auto-accepted?",
         "type": "select",
-        "options": ["Never auto-accept", "85", "90", "95"],
+        "options": [
+          "Never auto-accept",
+          "85",
+          "90",
+          "95"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_discrepancy_alerts].sample_input.confidence_review_cutoff",
         "variable_name": "confidence_cutoff",
@@ -529,7 +827,9 @@
       {
         "id": "aq_email_recipients",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_email_summary"],
+        "use_case_ids": [
+          "uc_weekly_email_summary"
+        ],
         "category": "configuration",
         "question": "Who should receive the weekly reconciliation summary email?",
         "type": "text",
@@ -543,7 +843,9 @@
       {
         "id": "aq_summary_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_email_summary"],
+        "use_case_ids": [
+          "uc_weekly_email_summary"
+        ],
         "category": "quality",
         "question": "How detailed should the weekly email be?",
         "type": "select",
@@ -561,7 +863,9 @@
       {
         "id": "aq_recurring_seed",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_reconciliation"],
+        "use_case_ids": [
+          "uc_daily_reconciliation"
+        ],
         "category": "memory",
         "question": "Any known recurring transactions to seed the pattern memory with (payroll, rent, SaaS, etc.)?",
         "type": "textarea",
@@ -571,6 +875,63 @@
         "variable_name": "recurring_seed",
         "context": "Seeding known patterns avoids false-positive alerts from day one. The agent will learn additional patterns automatically after 3+ consistent observations.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_spreadsheet_credential",
+        "scope": "connector",
+        "connector_names": [
+          "spreadsheet"
+        ],
+        "category": "configuration",
+        "question": "Which spreadsheet backend should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "spreadsheet",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
+        "variable_name": "spreadsheet_credential",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

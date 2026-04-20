@@ -5,11 +5,19 @@
   "description": "Always-on Gmail lead intake. Scans inbound Primary-category email, extracts structured contacts via header + body + signature NLP, scores every candidate on a 4-signal qualification model, and routes On Fire leads through manual review while logging every step to an auditable database.",
   "icon": "Mail",
   "color": "#3b82f6",
-  "category": ["sales"],
-  "service_flow": ["Gmail", "Local Database"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Local Database"],
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
     "persona": {
       "goal": "Turn a noisy inbox into a qualified pipeline — never miss a real lead, never contaminate the database, and fast-track On Fire candidates for human review.",
       "identity": {
@@ -48,11 +56,15 @@
       "tool_guidance": "**Gmail API**:\n- `GET /gmail/v1/users/me/messages?q=newer_than:1d+category:primary&maxResults={max_results_per_scan}` — list recent.\n- `GET /gmail/v1/users/me/messages/{id}?format=full` — headers + body parts.\n- Parse `payload.headers`: `From`, `Reply-To`, `Subject`, `Date`, `Message-ID`, `In-Reply-To`.\n- Parse `payload.parts` for `text/plain` and `text/html` MIME.\n- Quota: 10,000 units/day (1 per read). At 5-min interval with 10 max_results, ~21 units/cycle → ~475 cycles/day.\n- Skip messages tagged `SPAM` or `TRASH` even if they match the query.\n\n**Extraction**:\n- Name from `From` header display; handle `Last, First` format, strip titles/suffixes.\n- Domain analysis: strip TLD and common prefixes; corporate vs business provider vs free email.\n- Phone: international `+1-555-123-4567`, parenthetical `(555) 123-4567`, dotted `555.123.4567` — normalize to E.164.\n- Titles: seniority keywords (Director, Manager, VP, Chief, Head of, Lead, Founder, Owner, Partner) + domain terms.\n- Signature detection: delimiters `--` / `___` / `Sent from` / lines of dashes; parse below delimiter for structured lines.\n- Intent keywords: High (pricing, demo, trial, RFP, budget, timeline, decision), Medium (features, comparison, integration, evaluation), Low (general inquiry), Non-lead (unsubscribe, OOO, newsletter confirmation, support ticket).\n\n**Scoring (0.0-1.0)**:\n- Domain: corporate 0.8-1.0, business provider 0.5, free (gmail/yahoo) 0.2, disposable 0.0.\n- Seniority: C-suite/Founder 1.0, VP/Director 0.8, Manager/Head 0.6, IC 0.4, Unknown 0.3.\n- Intent: High 0.9-1.0, Medium 0.5-0.7, Low 0.2-0.4, None 0.1. Subject matches weighted 1.5x.\n- Completeness: all fields 1.0, name+email+company+title 0.8, name+email+company 0.6, name+email 0.3.\n- Weighted sum + contextual adjustments (capped at 1.0).\n\n**Local DB (file_read / file_write)**:\n- Read-modify-write atomic pattern on every update.\n- Daily backup to `data/backups/leads_{YYYY-MM-DD}.json`.\n- Initialize missing files with empty array `[]` or object `{}` on first run.",
       "error_handling": "Gmail 401/403 → emit `persona.error`, pause polling, wait for credential rotation (never retry). Gmail 429 → skip cycle entirely, resume next interval; do not reduce scan window. Gmail 5xx → retry once after 30s; if still failing, skip the cycle. Empty results → log as successful empty cycle, do not treat as error. Malformed From header → extract what's available, set `extraction_confidence: 0.3`, flag for review, never skip the email. Empty body → header-only extraction with `status: partial_extraction`. Encoding issues → try latin-1 / windows-1252 fallback; flag for review if still unreadable. Exact Message-ID duplicate → silently skip. Fuzzy duplicate → create with `status: pending_dedup_review`, route to manual_review. `leads.json` parse failure → write to `leads_recovery.json`, emit critical error event. Never lose an email — all downstream failures tag the email as processed with `status: extraction_failed` and the reason.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
@@ -135,12 +147,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Processed-email ledger (`data/processed_emails.json`) keyed by Message-ID. Skip-sender patterns learned from repeated non-lead signals. Extraction pattern effectiveness per sender domain."
@@ -173,7 +193,12 @@
           {
             "name": "focus_filter",
             "type": "enum",
-            "options": ["all_external", "business_domains_only", "specific_mentions", "explicit_pricing_or_demo"],
+            "options": [
+              "all_external",
+              "business_domains_only",
+              "specific_mentions",
+              "explicit_pricing_or_demo"
+            ],
             "default": "business_domains_only",
             "description": "Initial filter scope for inbound mail."
           }
@@ -183,30 +208,103 @@
           "lookback_hours": "{{param.aq_lookback_hours}}",
           "focus_filter": "{{param.aq_focus_filter}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Polling tick" },
-            { "id": "s2", "type": "connector", "label": "List Gmail Primary-category new mail", "connector": "gmail" },
-            { "id": "s3", "type": "action", "label": "Dedup vs processed_emails.json" },
-            { "id": "s4", "type": "connector", "label": "Fetch full message payload per new email", "connector": "gmail" },
-            { "id": "s5", "type": "decision", "label": "Non-lead signals present?" },
-            { "id": "s6", "type": "action", "label": "Multi-layer extraction; assemble lead candidate" },
-            { "id": "s7", "type": "action", "label": "Log skip with reason" },
-            { "id": "s8", "type": "event", "label": "Emit sales.lead.extracted" },
-            { "id": "s9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "List Gmail Primary-category new mail",
+              "connector": "email"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Dedup vs processed_emails.json"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Fetch full message payload per new email",
+              "connector": "email"
+            },
+            {
+              "id": "s5",
+              "type": "decision",
+              "label": "Non-lead signals present?"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Multi-layer extraction; assemble lead candidate"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Log skip with reason"
+            },
+            {
+              "id": "s8",
+              "type": "event",
+              "label": "Emit sales.lead.extracted"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s7", "variant": "yes", "label": "Non-lead" },
-            { "source": "s5", "target": "s6", "variant": "no", "label": "Potential lead" },
-            { "source": "s6", "target": "s8" },
-            { "source": "s7", "target": "s9" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s7",
+              "variant": "yes",
+              "label": "Non-lead"
+            },
+            {
+              "source": "s5",
+              "target": "s6",
+              "variant": "no",
+              "label": "Potential lead"
+            },
+            {
+              "source": "s6",
+              "target": "s8"
+            },
+            {
+              "source": "s7",
+              "target": "s9"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -221,12 +319,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "sales.lead.extracted" },
+          "config": {
+            "event_type": "sales.lead.extracted"
+          },
           "description": "Fires per extraction from uc_inbox_scan. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Master lead database (`data/leads.json`). Per-domain lead count for account clustering detection. Scoring calibration baselines (average score distribution) per email-origin type."
@@ -266,7 +369,12 @@
           {
             "name": "alert_tier_threshold",
             "type": "enum",
-            "options": ["on_fire_only", "hot_and_on_fire", "warm_hot_on_fire", "all"],
+            "options": [
+              "on_fire_only",
+              "hot_and_on_fire",
+              "warm_hot_on_fire",
+              "all"
+            ],
             "default": "hot_and_on_fire",
             "description": "Which tiers trigger immediate user_message alerts."
           }
@@ -275,34 +383,120 @@
           "min_qualification_score": "{{param.aq_min_qualification_score}}",
           "alert_tier_threshold": "{{param.aq_alert_tier_threshold}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "q1", "type": "start", "label": "sales.lead.extracted received" },
-            { "id": "q2", "type": "action", "label": "Score 4 signals + contextual adjustments" },
-            { "id": "q3", "type": "action", "label": "Classify tier (On Fire / Hot / Warm / Cold)" },
-            { "id": "q4", "type": "decision", "label": "Dedup: exact / fuzzy / new?" },
-            { "id": "q5", "type": "action", "label": "Update existing + score_changed" },
-            { "id": "q6", "type": "action", "label": "Create new + lead_created" },
-            { "id": "q7", "type": "action", "label": "Flag fuzzy dup → uc_human_review" },
-            { "id": "q8", "type": "decision", "label": "Account cluster threshold reached?" },
-            { "id": "q9", "type": "event", "label": "Emit account_cluster_detected" },
-            { "id": "q10", "type": "end", "label": "Scored and persisted" }
+            {
+              "id": "q1",
+              "type": "start",
+              "label": "sales.lead.extracted received"
+            },
+            {
+              "id": "q2",
+              "type": "action",
+              "label": "Score 4 signals + contextual adjustments"
+            },
+            {
+              "id": "q3",
+              "type": "action",
+              "label": "Classify tier (On Fire / Hot / Warm / Cold)"
+            },
+            {
+              "id": "q4",
+              "type": "decision",
+              "label": "Dedup: exact / fuzzy / new?"
+            },
+            {
+              "id": "q5",
+              "type": "action",
+              "label": "Update existing + score_changed"
+            },
+            {
+              "id": "q6",
+              "type": "action",
+              "label": "Create new + lead_created"
+            },
+            {
+              "id": "q7",
+              "type": "action",
+              "label": "Flag fuzzy dup → uc_human_review"
+            },
+            {
+              "id": "q8",
+              "type": "decision",
+              "label": "Account cluster threshold reached?"
+            },
+            {
+              "id": "q9",
+              "type": "event",
+              "label": "Emit account_cluster_detected"
+            },
+            {
+              "id": "q10",
+              "type": "end",
+              "label": "Scored and persisted"
+            }
           ],
           "edges": [
-            { "source": "q1", "target": "q2" },
-            { "source": "q2", "target": "q3" },
-            { "source": "q3", "target": "q4" },
-            { "source": "q4", "target": "q5", "label": "Exact" },
-            { "source": "q4", "target": "q6", "label": "New" },
-            { "source": "q4", "target": "q7", "label": "Fuzzy" },
-            { "source": "q5", "target": "q8" },
-            { "source": "q6", "target": "q8" },
-            { "source": "q7", "target": "q10" },
-            { "source": "q8", "target": "q9", "variant": "yes", "label": "Yes" },
-            { "source": "q8", "target": "q10", "variant": "no", "label": "No" },
-            { "source": "q9", "target": "q10" }
+            {
+              "source": "q1",
+              "target": "q2"
+            },
+            {
+              "source": "q2",
+              "target": "q3"
+            },
+            {
+              "source": "q3",
+              "target": "q4"
+            },
+            {
+              "source": "q4",
+              "target": "q5",
+              "label": "Exact"
+            },
+            {
+              "source": "q4",
+              "target": "q6",
+              "label": "New"
+            },
+            {
+              "source": "q4",
+              "target": "q7",
+              "label": "Fuzzy"
+            },
+            {
+              "source": "q5",
+              "target": "q8"
+            },
+            {
+              "source": "q6",
+              "target": "q8"
+            },
+            {
+              "source": "q7",
+              "target": "q10"
+            },
+            {
+              "source": "q8",
+              "target": "q9",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "q8",
+              "target": "q10",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "q9",
+              "target": "q10"
+            }
           ]
         }
       },
@@ -317,7 +511,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "sales.lead.created" },
+          "config": {
+            "event_type": "sales.lead.created"
+          },
           "description": "Fires on On Fire `sales.lead.created`, on fuzzy duplicate flags, and on low-confidence extractions. Not user-configurable."
         },
         "connectors": [],
@@ -363,23 +559,65 @@
           "review_confidence_threshold": "{{param.aq_review_confidence_threshold}}",
           "never_auto_merge": "{{param.aq_never_auto_merge}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Review trigger (On Fire / fuzzy dup / low conf)" },
-            { "id": "r2", "type": "action", "label": "Build review request with full context" },
-            { "id": "r3", "type": "decision", "label": "Human decision" },
-            { "id": "r4", "type": "action", "label": "Apply decision to leads.json" },
-            { "id": "r5", "type": "event", "label": "Emit review_resolved" },
-            { "id": "r6", "type": "end", "label": "Review complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Review trigger (On Fire / fuzzy dup / low conf)"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Build review request with full context"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Human decision"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Apply decision to leads.json"
+            },
+            {
+              "id": "r5",
+              "type": "event",
+              "label": "Emit review_resolved"
+            },
+            {
+              "id": "r6",
+              "type": "end",
+              "label": "Review complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            }
           ]
         }
       }
@@ -388,7 +626,9 @@
       {
         "id": "aq_focus_filter",
         "scope": "capability",
-        "use_case_ids": ["uc_inbox_scan"],
+        "use_case_ids": [
+          "uc_inbox_scan"
+        ],
         "category": "domain",
         "question": "Which kinds of inbound email should the scan focus on?",
         "type": "select",
@@ -407,11 +647,18 @@
       {
         "id": "aq_max_results_per_scan",
         "scope": "capability",
-        "use_case_ids": ["uc_inbox_scan"],
+        "use_case_ids": [
+          "uc_inbox_scan"
+        ],
         "category": "quality",
         "question": "Max emails to pull per polling cycle?",
         "type": "select",
-        "options": ["5", "10 (recommended)", "15", "25"],
+        "options": [
+          "5",
+          "10 (recommended)",
+          "15",
+          "25"
+        ],
         "default": "10 (recommended)",
         "maps_to": "use_cases[uc_inbox_scan].sample_input.max_results_per_scan",
         "variable_name": "max_results_per_scan",
@@ -421,11 +668,18 @@
       {
         "id": "aq_lookback_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_inbox_scan"],
+        "use_case_ids": [
+          "uc_inbox_scan"
+        ],
         "category": "quality",
         "question": "How far back should each scan look?",
         "type": "select",
-        "options": ["6 hours", "24 hours (recommended)", "48 hours", "72 hours"],
+        "options": [
+          "6 hours",
+          "24 hours (recommended)",
+          "48 hours",
+          "72 hours"
+        ],
         "default": "24 hours (recommended)",
         "maps_to": "use_cases[uc_inbox_scan].sample_input.lookback_hours",
         "variable_name": "lookback_hours",
@@ -435,11 +689,18 @@
       {
         "id": "aq_min_qualification_score",
         "scope": "capability",
-        "use_case_ids": ["uc_qualification"],
+        "use_case_ids": [
+          "uc_qualification"
+        ],
         "category": "quality",
         "question": "Minimum score to include a lead in cycle summary notifications?",
         "type": "select",
-        "options": ["0.0 (all leads)", "0.4 (Warm+)", "0.5 (recommended)", "0.65 (Hot+)"],
+        "options": [
+          "0.0 (all leads)",
+          "0.4 (Warm+)",
+          "0.5 (recommended)",
+          "0.65 (Hot+)"
+        ],
         "default": "0.5 (recommended)",
         "maps_to": "use_cases[uc_qualification].sample_input.min_qualification_score",
         "variable_name": "min_qualification_score",
@@ -449,7 +710,9 @@
       {
         "id": "aq_alert_tier_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_qualification"],
+        "use_case_ids": [
+          "uc_qualification"
+        ],
         "category": "quality",
         "question": "Which tiers trigger immediate user_message alerts?",
         "type": "select",
@@ -468,11 +731,18 @@
       {
         "id": "aq_review_confidence_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_human_review"],
+        "use_case_ids": [
+          "uc_human_review"
+        ],
         "category": "quality",
         "question": "What extraction-confidence threshold triggers human review?",
         "type": "select",
-        "options": ["0.3 (only very uncertain)", "0.5 (moderate — recommended)", "0.7 (conservative)", "1.0 (review all extractions)"],
+        "options": [
+          "0.3 (only very uncertain)",
+          "0.5 (moderate — recommended)",
+          "0.7 (conservative)",
+          "1.0 (review all extractions)"
+        ],
         "default": "0.5 (moderate — recommended)",
         "maps_to": "use_cases[uc_human_review].sample_input.review_confidence_threshold",
         "variable_name": "review_confidence_threshold",
@@ -482,7 +752,9 @@
       {
         "id": "aq_never_auto_merge",
         "scope": "capability",
-        "use_case_ids": ["uc_human_review"],
+        "use_case_ids": [
+          "uc_human_review"
+        ],
         "category": "boundaries",
         "question": "Should the agent NEVER auto-merge duplicate lead records?",
         "type": "boolean",
@@ -492,6 +764,44 @@
         "variable_name": "never_auto_merge",
         "context": "Recommended ON. Auto-merging is the highest-risk automated action in lead management; defaults protect against silent record destruction.",
         "dimension": "error-handling"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_messaging_credential",
+        "scope": "connector",
+        "connector_names": [
+          "messaging"
+        ],
+        "category": "configuration",
+        "question": "Which team messaging platform should this persona post to?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "messaging",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
+        "variable_name": "messaging_credential",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {

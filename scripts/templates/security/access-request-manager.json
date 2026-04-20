@@ -5,11 +5,21 @@
   "description": "Security access governance agent that monitors a shared inbox for access requests, routes them through manager then admin approval, maintains an immutable audit trail, enforces timeout escalation, and notifies all parties via in-app messaging.",
   "icon": "UserCheck",
   "color": "#059669",
-  "category": ["security"],
-  "service_flow": ["Gmail", "Local Database", "Messages"],
+  "category": [
+    "security"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Gmail", "Local Database", "Messages"],
+    "service_flow": [
+      "Gmail",
+      "Local Database",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn chaotic access-request email threads into a governed, auditable workflow — every request tracked, every approval timestamped, nothing silently dropped.",
       "identity": {
@@ -47,11 +57,14 @@
       "tool_guidance": "**Gmail (via Gmail connector):**\n- Search: `subject:(\"Access Request\" OR \"Permission Request\" OR \"Account Access\" OR \"System Access\" OR \"Role Assignment\") newer_than:1h` for recent requests.\n- Alt: `label:access-requests is:unread` if the user has configured a label filter.\n- Parse structured fields using labels like 'Requested Resource:', 'Access Level:', 'Business Justification:', 'Urgency:', 'Manager:'.\n- Parse CC line for manager email if not explicit in body.\n- Always mark processed emails read and apply a 'processed-by-agent' label.\n\n**Local state / audit DB** (JSON files via file_read/file_write):\n- `audit_trail.json` — array of records { request_id (UUID), requestor_email, requestor_name, requested_resource, access_level (read|write|admin|custom), justification, urgency (standard|urgent|emergency), status (pending_manager|pending_admin|approved|denied|escalated_from_manager|escalated_from_admin|info_requested|expired|incomplete), manager_email, admin_email, manager_decision, manager_decided_at, manager_comments, admin_decision, admin_decided_at, admin_comments, created_at, updated_at, escalated_at, reminder_sent_at, source_email_id, requires_manual_review }.\n- `processed_emails.json` — set of Gmail message IDs already handled.\n- `in_flight.json` — index of open requests for fast timeout scanning.\n- Always update `updated_at` on every state transition.\n\n**Messages (in-app notifications)**:\n- Approval request to approver: include request summary, requestor, resource, justification, urgency badge, approve/deny guidance.\n- Status update to requestor: current status, next expected action, estimated timeline.\n- Escalation alert: original context, time pending, new approver.\n- Digest: summary tables with counts and cycle times.\n- Priority mapping: emergency → urgent, standard → normal, digest → low.",
       "error_handling": "Gmail 401/403 auth failure → emit persona.error, notify user via Messages that the connector needs reauthorization, skip this poll but continue processing in-flight timeouts. Gmail 429 rate limit → exponential backoff (30s/60s/120s, 3 attempts); unprocessed emails remain in Gmail so nothing is lost. Gmail timeout → retry once after 15s, then skip to process in-flight requests (approval/timeout logic doesn't depend on Gmail). Audit DB write failure → hold the record in memory buffer; retry next cycle. Never advance a workflow step without confirming the audit record exists. Audit DB corrupted → reconstruct from memory buffer if possible; flag for manual review with severity='critical'. Escalation target unknown (manager's manager missing) → route directly to admin with an explanatory note. Duplicate approval response after escalation → accept first valid chronologically; log the duplicate. Malformed email (keywords match, fields absent) → best-effort extraction; reply with template if critical fields missing. External sender → log status='rejected_external', do not initiate workflow; notify security admin.",
       "examples": [],
-      "tools": ["file_read", "file_write"],
+      "tools": [
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "gmail",
-          "label": "Gmail (Access Request Inbox)",
+          "name": "email",
+          "label": "Email Provider",
           "auth_type": "oauth2",
           "role": "email_monitoring",
           "category": "email",
@@ -114,10 +127,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/10 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/10 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 10 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["gmail"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -139,7 +157,12 @@
           {
             "name": "approval_levels",
             "type": "enum",
-            "options": ["manager_only", "manager_then_admin", "manager_admin_security", "single_approver"],
+            "options": [
+              "manager_only",
+              "manager_then_admin",
+              "manager_admin_security",
+              "single_approver"
+            ],
             "default": "manager_then_admin",
             "description": "Shape of the approval chain the intake primes; drives how many levels the audit record anticipates."
           },
@@ -153,26 +176,83 @@
           "approval_levels": "{{param.aq_approval_levels}}",
           "access_level_scheme": "{{param.aq_access_level_scheme}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Polling tick" },
-            { "id": "i2", "type": "connector", "label": "Search Gmail for access-request emails", "connector": "gmail" },
-            { "id": "i3", "type": "decision", "label": "New unprocessed emails?" },
-            { "id": "i4", "type": "action", "label": "Parse fields + dedupe + classify privilege" },
-            { "id": "i5", "type": "action", "label": "Write audit record (status=pending_manager)" },
-            { "id": "i6", "type": "event", "label": "Emit access.request.received" },
-            { "id": "i7", "type": "end", "label": "Queued for approval workflow" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Search Gmail for access-request emails",
+              "connector": "email"
+            },
+            {
+              "id": "i3",
+              "type": "decision",
+              "label": "New unprocessed emails?"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Parse fields + dedupe + classify privilege"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "Write audit record (status=pending_manager)"
+            },
+            {
+              "id": "i6",
+              "type": "event",
+              "label": "Emit access.request.received"
+            },
+            {
+              "id": "i7",
+              "type": "end",
+              "label": "Queued for approval workflow"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4", "variant": "yes", "label": "Yes" },
-            { "source": "i3", "target": "i7", "variant": "no", "label": "None" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "i3",
+              "target": "i7",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            }
           ]
         }
       },
@@ -187,7 +267,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "access.request.received" },
+          "config": {
+            "event_type": "access.request.received"
+          },
           "description": "Fires when uc_intake_triage emits a new request. Also wakes on a polling cadence to scan in-flight requests for timeouts."
         },
         "connectors": [],
@@ -243,31 +325,106 @@
           "timeout_hours": "{{param.aq_timeout_hours}}",
           "require_human_review_for_high_privilege": "{{param.aq_require_human_review_for_high_privilege}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "access.request.received" },
-            { "id": "a2", "type": "action", "label": "Notify manager; wait for decision or timeout" },
-            { "id": "a3", "type": "decision", "label": "Manager decision?" },
-            { "id": "a4", "type": "action", "label": "Halfway → reminder; full → escalate" },
-            { "id": "a5", "type": "action", "label": "Notify admin (with manager decision)" },
-            { "id": "a6", "type": "decision", "label": "Admin decision?" },
-            { "id": "a7", "type": "event", "label": "Emit approved / denied / escalated" },
-            { "id": "a8", "type": "action", "label": "Notify requestor of final status" },
-            { "id": "a9", "type": "end", "label": "Workflow closed" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "access.request.received"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Notify manager; wait for decision or timeout"
+            },
+            {
+              "id": "a3",
+              "type": "decision",
+              "label": "Manager decision?"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Halfway → reminder; full → escalate"
+            },
+            {
+              "id": "a5",
+              "type": "action",
+              "label": "Notify admin (with manager decision)"
+            },
+            {
+              "id": "a6",
+              "type": "decision",
+              "label": "Admin decision?"
+            },
+            {
+              "id": "a7",
+              "type": "event",
+              "label": "Emit approved / denied / escalated"
+            },
+            {
+              "id": "a8",
+              "type": "action",
+              "label": "Notify requestor of final status"
+            },
+            {
+              "id": "a9",
+              "type": "end",
+              "label": "Workflow closed"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4", "variant": "no", "label": "Timed out" },
-            { "source": "a3", "target": "a5", "variant": "yes", "label": "Approved" },
-            { "source": "a3", "target": "a7", "variant": "no", "label": "Denied" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" },
-            { "source": "a8", "target": "a9" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4",
+              "variant": "no",
+              "label": "Timed out"
+            },
+            {
+              "source": "a3",
+              "target": "a5",
+              "variant": "yes",
+              "label": "Approved"
+            },
+            {
+              "source": "a3",
+              "target": "a7",
+              "variant": "no",
+              "label": "Denied"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            }
           ]
         }
       },
@@ -282,7 +439,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 18 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 18 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 6:00 PM (plus a weekly Monday summary) — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -314,25 +474,74 @@
         "sample_input": {
           "audit_enabled": "{{param.aq_audit_enabled}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Reporting tick" },
-            { "id": "r2", "type": "action", "label": "Read audit DB for the reporting window" },
-            { "id": "r3", "type": "action", "label": "Aggregate counts + cycle times; detect bottlenecks" },
-            { "id": "r4", "type": "action", "label": "Compose digest" },
-            { "id": "r5", "type": "event", "label": "Emit access.audit.digest_delivered" },
-            { "id": "r6", "type": "action", "label": "Deliver digest via Messages" },
-            { "id": "r7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Reporting tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Read audit DB for the reporting window"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Aggregate counts + cycle times; detect bottlenecks"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Compose digest"
+            },
+            {
+              "id": "r5",
+              "type": "event",
+              "label": "Emit access.audit.digest_delivered"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Deliver digest via Messages"
+            },
+            {
+              "id": "r7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            }
           ]
         }
       }
@@ -341,7 +550,10 @@
       {
         "id": "aq_approval_levels",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage", "uc_approval_workflow"],
+        "use_case_ids": [
+          "uc_intake_triage",
+          "uc_approval_workflow"
+        ],
         "category": "configuration",
         "question": "How many approval levels are required for access requests?",
         "type": "select",
@@ -360,7 +572,9 @@
       {
         "id": "aq_access_level_scheme",
         "scope": "capability",
-        "use_case_ids": ["uc_intake_triage"],
+        "use_case_ids": [
+          "uc_intake_triage"
+        ],
         "category": "domain",
         "question": "What access levels does your organization define?",
         "type": "select",
@@ -379,11 +593,18 @@
       {
         "id": "aq_timeout_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_approval_workflow"],
+        "use_case_ids": [
+          "uc_approval_workflow"
+        ],
         "category": "configuration",
         "question": "How long before an unanswered approval escalates?",
         "type": "select",
-        "options": ["12 hours", "24 hours", "48 hours", "72 hours"],
+        "options": [
+          "12 hours",
+          "24 hours",
+          "48 hours",
+          "72 hours"
+        ],
         "default": "48 hours",
         "maps_to": "use_cases[uc_approval_workflow].sample_input.timeout_hours",
         "variable_name": "timeout_hours",
@@ -393,7 +614,9 @@
       {
         "id": "aq_require_human_review_for_high_privilege",
         "scope": "capability",
-        "use_case_ids": ["uc_approval_workflow"],
+        "use_case_ids": [
+          "uc_approval_workflow"
+        ],
         "category": "quality",
         "question": "Should high-privilege access requests always require human review?",
         "type": "boolean",
@@ -407,7 +630,9 @@
       {
         "id": "aq_audit_enabled",
         "scope": "capability",
-        "use_case_ids": ["uc_audit_reporting"],
+        "use_case_ids": [
+          "uc_audit_reporting"
+        ],
         "category": "quality",
         "question": "Should all access requests generate an audit trail record?",
         "type": "boolean",
@@ -417,6 +642,25 @@
         "variable_name": "audit_enabled",
         "context": "Ensures every request is logged for compliance. Disabling is not recommended for regulated industries.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_email_credential",
+        "scope": "connector",
+        "connector_names": [
+          "email"
+        ],
+        "category": "configuration",
+        "question": "Which email provider should this persona use?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "email",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[email].credential_fields[provider].value",
+        "variable_name": "email_credential",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "dimension": "connectors"
       }
     ],
     "persona_meta": {
