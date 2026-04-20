@@ -160,6 +160,11 @@ name = "personas-daemon"
 path = "src/daemon_bin.rs"
 required-features = ["daemon"]
 
+[dev-dependencies]
+# Property-based testing for render_plan invariants. Not pulled into
+# production builds. See tests/render_plan_proptest.rs for usage.
+proptest = "1"
+
 # Daily release profile: thin LTO is ~2-4x faster link with <2% perf difference.
 # Use `cargo tauri build` (default) for daily releases.
 [profile.release]

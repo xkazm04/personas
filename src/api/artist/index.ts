@@ -1,4 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import type { RenderPlan } from "@/lib/bindings/RenderPlan";
+import type { CompositionLoad } from "@/lib/bindings/CompositionLoad";
 
 // -- Types ------------------------------------------------------------------
 
@@ -128,6 +130,50 @@ export const artistExportComposition = (
 
 export const artistCancelExport = (jobId: string) =>
   invoke<boolean>("artist_cancel_export", { jobId });
+
+/**
+ * Compile a Composition JSON into the RenderPlan IR via the Rust canonical
+ * compiler. The browser preview uses this instead of a parallel TS port —
+ * one implementation, one source of truth for transition/fade/normalize
+ * math. Pure function; cheap enough to call on every composition edit.
+ */
+export const artistCompileRenderPlan = (compositionJson: string) =>
+  invoke<RenderPlan>(
+    "artist_compile_render_plan",
+    { compositionJson },
+    undefined,
+    10_000,
+  );
+
+// -- Persistence ------------------------------------------------------------
+
+/** Write a composition to a user-picked path (Save As). */
+export const artistSaveComposition = (compositionJson: string, filePath: string) =>
+  invoke<void>("artist_save_composition", { compositionJson, filePath });
+
+/** Read a user composition file from disk. */
+export const artistLoadComposition = (filePath: string) =>
+  invoke<CompositionLoad>("artist_load_composition", { filePath });
+
+/** Autosave the current composition to app_data_dir. Debounced by the caller. */
+export const artistAutosaveComposition = (compositionJson: string) =>
+  invoke<void>("artist_autosave_composition", { compositionJson });
+
+/** Read autosave on startup; null = nothing to restore. */
+export const artistLoadAutosave = () =>
+  invoke<CompositionLoad | null>("artist_load_autosave");
+
+/** Clear the autosave file. Called after Save/Open so we don't restore stale state. */
+export const artistClearAutosave = () =>
+  invoke<void>("artist_clear_autosave");
+
+/** User-facing default save directory (Documents/Personas Media Studio). */
+export const artistDefaultSaveDir = () =>
+  invoke<string>("artist_default_save_dir");
+
+/** Composition file extension the save/open dialog filters by. */
+export const artistCompositionFileExtension = () =>
+  invoke<string>("artist_composition_file_extension");
 
 // -- Quick-win one-shot operations -----------------------------------------
 

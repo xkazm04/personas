@@ -121,44 +121,48 @@ lane types. It supports:
 
 ---
 
-## Effect model & parity matrix
+## Effect model
 
-The `TimelineItem` types carry all the knobs the two renderers need. Each
-effect has a Preview mechanism and an Export mechanism, and they must agree.
+Both renderers consume the **RenderPlan IR** produced by a single compile
+step. The IR resolves every composition-level knob — trim, speed, fade,
+transition fold, embedded vs dedicated audio routing, normalize directive,
+overlay font — into flat stages that preview and export translate
+mechanically. The prose parity matrix that used to live here has been
+**replaced by the IR spec and its cross-language fixtures**. See:
 
-| Effect | Timeline field | Preview mechanism | Export mechanism (`build_ffmpeg_args`) | Status |
-|---|---|---|---|---|
-| Trim | `trimStart`, `trimEnd` | `videoElement.currentTime` mapped into source | `trim=start:end` / `atrim=start:end` | ✅ in sync |
-| Speed | `speed` | `HTMLMediaElement.playbackRate` + re-seek | `setpts=(PTS-STARTPTS)/speed` / `atempo` chain | ✅ in sync |
-| Fade in/out | `fadeIn`, `fadeOut` | opacity per tick (video, image, text), gain (audio) | `fade=t=in,fade=t=out` / `afade=` | ✅ in sync |
-| Transition | `transition`, `transitionDuration` | effective fade-in on next clip, effective fade-out on this clip | same rule in Rust | ⚠️ fades yes, temporal overlap no |
-| Strip audio | `stripAudio` | `video.muted = true` | audio branch skipped | ✅ in sync |
-| Normalize | `normalize`, `measuredLufs` | Web Audio GainNode with measured gain | `loudnorm=I=-16` (two-pass when available) | ✅ in sync |
-| Clip volume | `volume` | `GainNode.gain` | `volume=` filter | ✅ in sync |
-| Image overlay | `ImageItem` | DOM `<img>` with position/scale/opacity | overlay filter chain with fade | ✅ Phase 2 |
-| Text overlay | `TextItem` | DOM `<span>` with position/color/size | `drawtext` filter with fade | ✅ Phase 2 |
+- `docs/concepts/media-studio-renderplan.md` — shape of the IR, compile
+  algorithm, invariants I1–I11, migration history.
+- `src-tauri/src/engine/render_plan/` — canonical Rust compiler + tests.
+- `src/features/plugins/artist/sub_media_studio/compile.ts` — TypeScript
+  port the preview consumes.
+- `src-tauri/src/commands/artist/ffmpeg.rs::build_ffmpeg_args` — export
+  renderer; reads `RenderPlan` only.
+- `src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx` —
+  preview renderer; reads `RenderPlan` only.
 
-### The rule for transitions
+If you need to add or change an effect, the rule is: change the compiler,
+both renderers follow. Do NOT add composition-walking code to either
+renderer — that path has been deleted.
 
-Both layers MUST apply this identically:
+### Transition semantics (still relevant)
+
+Fold mode (today's default) applies this rule in the compiler:
 
 > A non-`cut` transition on clip[i] adds `transitionDuration` to its effective
 > fade-out. A non-`cut` transition on clip[i−1] adds `transitionDuration` to
 > clip[i]'s effective fade-in.
 
-This is how the preview and export agree on the visual shape of a crossfade
-/ fade-to-black without requiring true temporal overlap. The helper that
-implements it lives in `CompositionPreview.tsx::effectiveVideoFades` and the
-mirror in `ffmpeg.rs::transition_fade_in_from_prev`.
+Overlap mode is compiled but not yet enabled at the call sites. Flipping it
+on flips the call site options — no renderer changes required. See "Known
+divergences & future work" below for the roadmap.
 
-**What this rule does NOT do:** it does not actually overlap clip A and clip B
-in time (the way `xfade` does in ffmpeg's native output). A true crossfade
-blends the final frame of A with the first frame of B at 50% opacity; our
-approximation shows A fading to black, then B fading in from black, with a
-brief dark gap in the middle. For most user material the difference is
-acceptable; for hard-cut-to-hard-cut transitions it's indistinguishable.
-
-A fully accurate xfade is documented as **future work** below.
+**What fold mode does NOT do:** it does not actually overlap clip A and
+clip B in time (the way `xfade` does in ffmpeg's native output). A true
+crossfade blends the final frame of A with the first frame of B at 50%
+opacity; fold's approximation shows A fading to black, then B fading in
+from black, with a brief dark gap in the middle. For most user material
+the difference is acceptable; for hard-cut-to-hard-cut transitions it's
+indistinguishable.
 
 ### Speed interpretation
 

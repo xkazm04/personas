@@ -5,6 +5,8 @@ mod commands;
 pub mod daemon;
 mod db;
 mod engine;
+pub use engine::render_plan;
+pub use commands::artist::persistence as artist_persistence;
 mod error;
 pub mod freeze_monitor;
 mod gitlab;
@@ -1683,12 +1685,20 @@ pub fn run() {
             // Artist -- FFmpeg / Media Studio
             commands::artist::ffmpeg::artist_check_ffmpeg,
             commands::artist::ffmpeg::artist_probe_media,
+            commands::artist::ffmpeg::artist_compile_render_plan,
             commands::artist::ffmpeg::artist_export_composition,
             commands::artist::ffmpeg::artist_cancel_export,
             commands::artist::ffmpeg::artist_extract_audio,
             commands::artist::ffmpeg::artist_save_thumbnail,
             commands::artist::ffmpeg::artist_trim_file,
             commands::artist::ffmpeg::artist_measure_loudness,
+            commands::artist::persistence::artist_save_composition,
+            commands::artist::persistence::artist_load_composition,
+            commands::artist::persistence::artist_autosave_composition,
+            commands::artist::persistence::artist_load_autosave,
+            commands::artist::persistence::artist_clear_autosave,
+            commands::artist::persistence::artist_default_save_dir,
+            commands::artist::persistence::artist_composition_file_extension,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_read,
