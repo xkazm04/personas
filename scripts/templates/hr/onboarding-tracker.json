@@ -11,6 +11,7 @@
   "payload": {
     "service_flow": ["Notion", "Local Database", "In-App Messaging"],
     "persona": {
+      "goal": "No new hire falls through the cracks — role-aware Notion checklists, tiered reminders, and at-risk flagging that give every stakeholder visibility without asking.",
       "identity": {
         "role": "Onboarding lifecycle specialist",
         "description": "Replaces manual onboarding spreadsheets with role-adaptive Notion checklists, tiered deadline reminders, and weekly progress visibility across HR, managers, IT, and the new hire."
@@ -42,7 +43,9 @@
         "When at-risk criteria (3+ overdue OR <50% expected progress) are met, the weekly report's at-risk section outranks normal alphabetical ordering."
       ],
       "verbosity_default": "normal",
-      "operating_instructions": "This persona runs as three coordinated capabilities:\n\n**Hourly new-hire setup**: Poll the HR database for employees with `onboarding_status IN ('new','pending_checklist')`. For each, dedupe against state, select a role template (Engineering/Sales/Marketing/Operations/General), create a Notion page with 30-35 tasks across 6 milestones (Pre-boarding / Day 1 / Week 1 / 30-Day / 60-Day / 90-Day), send confirmation, update state.\n\n**Weekday deadline check (8 AM)**: Load active checklists, query Notion for current task statuses, categorize into upcoming / due_today / overdue / future, dispatch targeted reminders with tiered escalation (assignee → manager CC → HR manual_review), detect milestone transitions and 90-day completions.\n\n**Weekly progress report (Monday 9 AM)**: Aggregate metrics across all active checklists, identify at-risk hires, analyze bottlenecks by task type, produce stakeholder-facing summary.\n\nAll three share the Notion connector, the HR database, and the onboarding_state.json master file.",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "This persona runs as three coordinated capabilities:\n\n**New-hire setup** (default hourly): Poll the HR database for employees with `onboarding_status IN ('new','pending_checklist')`. For each, dedupe against state, select a role template (Engineering/Sales/Marketing/Operations/General), create a Notion page with 30-35 tasks across 6 milestones (Pre-boarding / Day 1 / Week 1 / 30-Day / 60-Day / 90-Day), send confirmation, update state.\n\n**Deadline check** (default weekday 8 AM): Load active checklists, query Notion for current task statuses, categorize into upcoming / due_today / overdue / future, dispatch targeted reminders with tiered escalation (assignee → manager CC → HR manual_review), detect milestone transitions and 90-day completions.\n\n**Weekly progress report** (default Monday 9 AM): Aggregate metrics across all active checklists, identify at-risk hires, analyze bottlenecks by task type, produce stakeholder-facing summary.\n\nAll three share the Notion connector, the HR database, and the onboarding_state.json master file. Cadences are configured at the trigger-composition step — these defaults are starting points.",
       "tool_guidance": "### Notion API\n- `POST /v1/pages` for checklist creation (parent: database_id, body: task groups as to_do blocks)\n- `POST /v1/databases/{id}/query` with `Status != Completed` filter to list active checklists\n- `PATCH /v1/pages/{id}` to update Status / Milestone / Completion %\n- `GET /v1/blocks/{id}/children` to read task checkboxes\n- Headers: `Authorization: Bearer {token}`, `Notion-Version: 2022-06-28`\n- Rate limit: 3 req/sec — use 350ms spacing; back off 1s on 429\n\n### Local Database (personas_database)\n- Query HR employee table for new records\n- Update `onboarding_status` from `new` → `in_progress` after checklist creation\n\n### In-App Messaging (personas_messages)\n- Batch multiple reminders per assignee into single digest messages\n- Priority: `high` for overdue + due-today, `normal` for upcoming, `low` for celebrations\n\n### State files\n- `data/onboarding_state.json` — master: active checklists, overdue alert counts, completed archive\n- `data/onboarding_state.backup.json` — written before every overwrite\n- `data/pending_reminders.json` — cached when messaging unavailable",
       "error_handling": "**Notion 401**: Pause all Notion ops, alert for credential refresh. Do not retry.\n**Notion 404**: Database moved or integration lost access — alert with database_id that failed.\n**Notion 429**: Queue with 350ms spacing, back off 1s, max 3 retries.\n**Notion 400 (validation)**: Skip op, manual_review describing the schema mismatch.\n**Notion 5xx**: Retry exponential (1s/2s/4s) up to 3; cache pending ops in data/pending_notion_ops.json.\n**State file corruption**: Fall back to backup; if none, rebuild from Notion (duplicate reminders are acceptable, missing them is not).\n**Reminder delivery failure**: Retry after 5 min. If failures > 5/day for a single employee, pause reminders and flag manual_review.",
       "examples": [],
@@ -54,6 +57,7 @@
           "auth_type": "api_key",
           "role": "checklist_management",
           "category": "productivity",
+          "required": true,
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
             { "key": "api_key", "label": "Notion Integration Token", "type": "password", "required": true },
@@ -71,8 +75,8 @@
       {
         "id": "uc_new_hire_setup",
         "title": "New Hire Checklist Setup",
-        "description": "Detects new employees in the HR database each hour, selects the right role template, and creates a structured Notion checklist with role-appropriate tasks across 6 milestones. Handles duplicate detection, fallback to General template with HR flag, and confirmation dispatch.",
-        "capability_summary": "Hourly HR-database poll that spins up a role-adaptive Notion onboarding checklist for each new hire.",
+        "description": "Detects new employees in the HR database, selects the right role template, and creates a structured Notion checklist with role-appropriate tasks across 6 milestones. Handles duplicate detection, fallback to General template with HR flag, and confirmation dispatch. Default hourly polling — final cadence set at the trigger-composition step.",
+        "capability_summary": "HR-database poll that spins up a role-adaptive Notion onboarding checklist for each new hire.",
         "category": "hr",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -80,7 +84,7 @@
         "suggested_trigger": {
           "trigger_type": "polling",
           "config": { "interval_seconds": 3600 },
-          "description": "Every hour: scan the HR database for new employees and create Notion checklists."
+          "description": "Default hourly — final cadence set at the trigger-composition step."
         },
         "connectors": ["notion"],
         "notification_channels": [
@@ -95,33 +99,28 @@
           "context": "Stores: per-employee processing record (page_id, template used, task count), template gap tracking (department/role combinations without a template), first-run scan baseline."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding_checklist_created", "direction": "emit", "description": "Fired after successful Notion page creation with employee_id, department, page_id, task count. Consumed by welcome-email and IT-provisioning workflows." }
+          { "event_type": "onboarding.checklist.created", "direction": "emit", "description": "Fired after successful Notion page creation with employee_id, department, page_id, task count. Consumed by welcome-email and IT-provisioning workflows." }
         ],
         "error_handling": "On Notion 401: pause and alert. On 429: 350ms-spaced queue. On dedupe hit: skip if active, retry if failed. On template miss: fall back to General + flag for HR review.",
         "input_schema": [
-          { "name": "check_interval_hours", "type": "number", "default": 1, "min": 1, "max": 24 },
           { "name": "departments", "type": "list[string]", "description": "Department labels used for template routing" }
         ],
         "sample_input": {
-          "check_interval_hours": "{{param.aq_check_interval}}",
           "departments": "Engineering, Sales, Marketing, Operations"
         },
         "tool_hints": ["http_request", "file_read", "file_write", "personas_database"],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Hourly poll fires" },
+            { "id": "n1", "type": "start", "label": "Polling tick" },
             { "id": "n2", "type": "action", "label": "Query HR database for new hires" },
-            { "id": "n3", "type": "action", "label": "Dedupe against onboarding_state.json" },
-            { "id": "n4", "type": "decision", "label": "Role template exists?" },
+            { "id": "n3", "type": "action", "label": "Dedupe against state" },
+            { "id": "n4", "type": "decision", "label": "Role template match?" },
             { "id": "n5", "type": "action", "label": "Select role template" },
-            { "id": "n6", "type": "action", "label": "Fall back to General + manual_review" },
-            { "id": "n7", "type": "action", "label": "Compute task deadlines from start_date" },
-            { "id": "n8", "type": "connector", "label": "Create Notion page with task blocks", "connector": "notion" },
-            { "id": "n9", "type": "event", "label": "Send confirmation message" },
-            { "id": "n10", "type": "action", "label": "Persist to memory + state" },
-            { "id": "n11", "type": "event", "label": "Emit onboarding_checklist_created" },
-            { "id": "n12", "type": "end", "label": "Setup complete" }
+            { "id": "n6", "type": "action", "label": "Fall back to General + flag for HR" },
+            { "id": "n7", "type": "connector", "label": "Create Notion page with task blocks", "connector": "notion" },
+            { "id": "n8", "type": "event", "label": "Send confirmation + emit onboarding.checklist.created" },
+            { "id": "n9", "type": "end", "label": "Setup complete" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
@@ -132,18 +131,15 @@
             { "source": "n5", "target": "n7" },
             { "source": "n6", "target": "n7" },
             { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" },
-            { "source": "n11", "target": "n12" }
+            { "source": "n8", "target": "n9" }
           ]
         }
       },
       {
         "id": "uc_deadline_check",
-        "title": "Daily Deadline Check",
-        "description": "Every weekday morning: scans all active onboarding checklists for upcoming / due-today / overdue tasks, dispatches targeted reminders with three-tier escalation (assignee → manager CC → HR manual review), detects milestone transitions and 90-day completions.",
-        "capability_summary": "Weekday 8am scan with tiered reminders and milestone/completion detection.",
+        "title": "Deadline Check",
+        "description": "Scans all active onboarding checklists for upcoming / due-today / overdue tasks, dispatches targeted reminders with three-tier escalation (assignee → manager CC → HR manual review), detects milestone transitions and 90-day completions. Default weekday 8 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Tiered reminders with milestone/completion detection across active checklists.",
         "category": "hr",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -151,7 +147,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 8 * * 1-5", "timezone": "local" },
-          "description": "Weekday mornings at 8:00 AM local."
+          "description": "Default weekday 8:00 AM local — final cadence set at the trigger-composition step."
         },
         "connectors": ["notion"],
         "notification_channels": [
@@ -167,9 +163,9 @@
           "context": "Tracks per-task overdue_alert_count, milestone transition timestamps, completion analytics per employee, delivery failure counts."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding_reminder_sent", "direction": "emit", "description": "Fired on each reminder with type (upcoming/due_today/overdue), alert_number, assignee." },
-          { "event_type": "onboarding_milestone_reached", "direction": "emit", "description": "Fired when all tasks in a milestone group complete." },
-          { "event_type": "onboarding_completed", "direction": "emit", "description": "Fired when all 6 milestones complete. Includes total_days, on-time rate, department." }
+          { "event_type": "onboarding.reminder.sent", "direction": "emit", "description": "Fired on each reminder with type (upcoming/due_today/overdue), alert_number, assignee." },
+          { "event_type": "onboarding.milestone.reached", "direction": "emit", "description": "Fired when all tasks in a milestone group complete." },
+          { "event_type": "onboarding.journey.completed", "direction": "emit", "description": "Fired when all 6 milestones complete. Includes total_days, on-time rate, department." }
         ],
         "error_handling": "On reminder delivery failure: retry once after 5 min, cache to pending_reminders.json. If >5 failures/day per employee: pause reminders + manual_review. On state file corruption: fall back to backup; rebuild from Notion as last resort.",
         "input_schema": [
@@ -184,17 +180,15 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Weekday 8am schedule" },
-            { "id": "n2", "type": "action", "label": "Load active checklists" },
-            { "id": "n3", "type": "connector", "label": "Query Notion task statuses", "connector": "notion" },
-            { "id": "n4", "type": "action", "label": "Categorize tasks (upcoming/due/overdue)" },
-            { "id": "n5", "type": "action", "label": "Dispatch tiered reminders" },
-            { "id": "n6", "type": "decision", "label": "Milestone completed?" },
-            { "id": "n7", "type": "event", "label": "Emit milestone_reached + celebrate" },
-            { "id": "n8", "type": "decision", "label": "All milestones complete (90-day)?" },
-            { "id": "n9", "type": "event", "label": "Emit onboarding_completed + celebrate" },
-            { "id": "n10", "type": "action", "label": "Persist overdue counts + delivery state" },
-            { "id": "n11", "type": "end", "label": "Scan complete" }
+            { "id": "n1", "type": "start", "label": "Scheduled tick" },
+            { "id": "n2", "type": "connector", "label": "Query Notion task statuses", "connector": "notion" },
+            { "id": "n3", "type": "action", "label": "Categorize (upcoming/due/overdue)" },
+            { "id": "n4", "type": "action", "label": "Dispatch tiered reminders" },
+            { "id": "n5", "type": "event", "label": "Emit onboarding.reminder.sent" },
+            { "id": "n6", "type": "decision", "label": "Milestone or 90-day complete?" },
+            { "id": "n7", "type": "event", "label": "Emit milestone.reached / journey.completed" },
+            { "id": "n8", "type": "action", "label": "Persist overdue counts" },
+            { "id": "n9", "type": "end", "label": "Scan complete" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
@@ -205,18 +199,15 @@
             { "source": "n6", "target": "n7", "label": "Yes", "variant": "yes" },
             { "source": "n6", "target": "n8", "label": "No", "variant": "no" },
             { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9", "label": "Yes", "variant": "yes" },
-            { "source": "n8", "target": "n10", "label": "No", "variant": "no" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" }
+            { "source": "n8", "target": "n9" }
           ]
         }
       },
       {
         "id": "uc_weekly_progress_report",
         "title": "Weekly Progress Report",
-        "description": "Every Monday morning: aggregates per-employee metrics across all active onboarding checklists, identifies at-risk hires (3+ overdue OR <50% expected progress), analyzes bottlenecks by task type, and delivers a stakeholder-facing summary to HR and managers.",
-        "capability_summary": "Monday 9am summary with at-risk flagging and bottleneck analysis.",
+        "description": "Aggregates per-employee metrics across all active onboarding checklists, identifies at-risk hires (3+ overdue OR <50% expected progress), analyzes bottlenecks by task type, and delivers a stakeholder-facing summary to HR and managers. Default Monday 9 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Weekly summary with at-risk flagging and bottleneck analysis.",
         "category": "hr",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -224,7 +215,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 9 * * 1", "timezone": "local" },
-          "description": "Monday mornings at 9:00 AM local."
+          "description": "Default Monday 9:00 AM local — final cadence set at the trigger-composition step."
         },
         "connectors": ["notion"],
         "notification_channels": [
@@ -239,7 +230,7 @@
           "context": "Snapshots weekly aggregate metrics per employee so trend comparisons across weeks are possible."
         },
         "event_subscriptions": [
-          { "event_type": "onboarding_at_risk", "direction": "emit", "description": "Fired for each hire matching at-risk criteria. Includes employee_id, overdue_count, expected_progress_delta." }
+          { "event_type": "onboarding.hire.at_risk", "direction": "emit", "description": "Fired for each hire matching at-risk criteria. Includes employee_id, overdue_count, expected_progress_delta." }
         ],
         "error_handling": "If Notion is partially unavailable: generate the report from last-known-good state snapshots and flag the coverage gap in the report header.",
         "input_schema": [
@@ -254,15 +245,14 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Monday 9am schedule" },
+            { "id": "n1", "type": "start", "label": "Scheduled tick" },
             { "id": "n2", "type": "connector", "label": "Query active checklists", "connector": "notion" },
-            { "id": "n3", "type": "action", "label": "Calculate per-employee metrics" },
+            { "id": "n3", "type": "action", "label": "Compute per-employee metrics" },
             { "id": "n4", "type": "action", "label": "Identify at-risk hires" },
             { "id": "n5", "type": "action", "label": "Analyze bottlenecks by task type" },
-            { "id": "n6", "type": "action", "label": "Compose structured report" },
-            { "id": "n7", "type": "event", "label": "Deliver report via Messages" },
-            { "id": "n8", "type": "event", "label": "Emit onboarding_at_risk per hire" },
-            { "id": "n9", "type": "end", "label": "Report delivered" }
+            { "id": "n6", "type": "action", "label": "Compose + deliver report" },
+            { "id": "n7", "type": "event", "label": "Emit onboarding.hire.at_risk per hire" },
+            { "id": "n8", "type": "end", "label": "Report delivered" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
@@ -271,31 +261,16 @@
             { "source": "n4", "target": "n5" },
             { "source": "n5", "target": "n6" },
             { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            { "source": "n7", "target": "n8" }
           ]
         }
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_check_interval",
-        "scope": "capability",
-        "use_case_id": "uc_new_hire_setup",
-        "category": "configuration",
-        "question": "How often should the HR database be polled for new hires?",
-        "type": "select",
-        "options": ["Every hour", "Every 2 hours", "Every 4 hours", "Every 8 hours"],
-        "default": "Every hour",
-        "maps_to": "use_cases[uc_new_hire_setup].sample_input.check_interval_hours",
-        "variable_name": "check_interval",
-        "context": "Faster polling catches new hires quickly but uses more database resources.",
-        "dimension": "triggers"
-      },
-      {
         "id": "aq_reminder_days",
         "scope": "capability",
-        "use_case_id": "uc_deadline_check",
+        "use_case_ids": ["uc_deadline_check"],
         "category": "configuration",
         "question": "How many days before a deadline should the first reminder fire?",
         "type": "select",
@@ -309,7 +284,7 @@
       {
         "id": "aq_max_overdue",
         "scope": "capability",
-        "use_case_id": "uc_deadline_check",
+        "use_case_ids": ["uc_deadline_check"],
         "category": "boundaries",
         "question": "How many overdue reminders per task before HR escalation?",
         "type": "select",

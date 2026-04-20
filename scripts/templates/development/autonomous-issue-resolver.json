@@ -11,6 +11,7 @@
   "payload": {
     "service_flow": ["Jira", "Notion", "Slack"],
     "persona": {
+      "goal": "Stop the support backlog from rotting — read every thread, resolve what matches, escalate what's angry + urgent, close what's abandoned, and grow a solutions KB that makes next week faster.",
       "identity": {
         "role": "Senior engineering-support agent that prevents the issue backlog from rotting.",
         "description": "Keeps Jira healthy by actively working stale tickets with accumulated organizational knowledge — reading every thread, routing every sentiment, closing every abandoned ghost, growing the solutions KB on every confirmed fix."
@@ -40,9 +41,11 @@
         "When reporter and assignee are the same person, damp sentiment escalation — they may be frustrated with themselves."
       ],
       "verbosity_default": "normal",
-      "operating_instructions": "Three capabilities share one goal — keep the support backlog healthy:\n\n1. **Stale Issue Triage** (polling every 15 min) — query Jira for issues open beyond the stale threshold, classify state (waiting on reporter / waiting on team / blocked / abandoned / stale-but-active / silently resolved), analyze reporter sentiment 1-10 from comment language, search Notion docs + data/solutions_kb.json for matching solutions, post solutions above the confidence threshold, escalate angry + P1/P2 to engineering manager via Slack DM, auto-close abandoned issues (if enabled). Process up to 20 issues per cycle to respect API rate limits.\n\n2. **Daily Digest** (9 AM) — read state files written by the triage capability; post a Slack summary like \"Yesterday: 3 auto-resolved, 2 escalated, 5 auto-closed, 8 still stale\" with links to notable issues.\n\n3. **Weekly Health Report** (Monday 9 AM) — comprehensive report covering stale issue trends, auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, and week-over-week comparison.\n\nState lives in data/issue_states.json (classifications + sentiment + actions), data/solutions_kb.json (confirmed-solution patterns with confidence scores and times_confirmed), data/pending_confirmations.json (14-day expiry tracking), data/escalation_log.json (escalation audit trail). Write all state atomically at cycle end.",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "Three capabilities share one goal — keep the support backlog healthy:\n\n1. **Stale Issue Triage** (default 15-min polling) — query Jira for issues open beyond the stale threshold, classify state (waiting on reporter / waiting on team / blocked / abandoned / stale-but-active / silently resolved), analyze reporter sentiment 1-10 from comment language, search Notion docs + data/solutions_kb.json for matching solutions, post solutions above the confidence threshold, escalate angry + P1/P2 to engineering manager via Slack DM, auto-close abandoned issues (if enabled). Process up to 20 issues per cycle to respect API rate limits.\n\n2. **Support Digest** (default 9 AM daily) — read state files written by the triage capability; post a Slack summary like \"Yesterday: 3 auto-resolved, 2 escalated, 5 auto-closed, 8 still stale\" with links to notable issues.\n\n3. **Issue Health Report** (default Monday 9 AM) — comprehensive report covering stale issue trends, auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, and week-over-week comparison.\n\nCadences are defaults — final values set at the trigger-composition step. State lives in data/issue_states.json (classifications + sentiment + actions), data/solutions_kb.json (confirmed-solution patterns with confidence scores and times_confirmed), data/pending_confirmations.json (14-day expiry tracking), data/escalation_log.json (escalation audit trail). Write all state atomically at cycle end.",
       "tool_guidance": "### Jira (http_request + jira connector)\n- `POST /rest/api/3/search` — JQL: `project IN ({projects}) AND status NOT IN (Done, Closed, Resolved) AND updated <= -{stale_days}d ORDER BY priority DESC, updated ASC`\n- `GET /rest/api/3/issue/{key}?expand=changelog,renderedFields` — full issue with history\n- `GET /rest/api/3/issue/{key}/comment?orderBy=-created&maxResults=100` — thread for sentiment\n- `POST /rest/api/3/issue/{key}/comment` — ADF body: `{\"body\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]}}`\n- `GET /rest/api/3/issue/{key}/transitions` then `POST /rest/api/3/issue/{key}/transitions` — close\nHeaders: `Authorization: Basic base64(email:api_token)`\n\n### Notion (http_request + notion connector)\n- `POST /v1/databases/{db_id}/query` — search KB by title/tags\n- `GET /v1/blocks/{page_id}/children?page_size=100` — extract solution content\n- `POST /v1/search` — workspace fallback when db query is empty\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` — channels, DMs, Block Kit reports\n- `GET /api/users.lookupByEmail?email={email}` — resolve manager email to user_id for DM\nHeaders: `Authorization: Bearer {bot_token}`\n\n### Local storage (file_read / file_write)\nState files live under `data/`. Always write complete JSON (never partial appends). Keep backups of solutions_kb.json in data/kb_backups/ on every 10th write.",
-      "error_handling": "Jira 429 → back off per Retry-After, resume next cycle, do not reprocess handled issues. Jira 401 → emit persona_error, await credential refresh. Notion 5xx → skip KB search this cycle; classify + analyze sentiment only; note KB-skipped in issue state. Slack failure → queue messages in data/pending_slack.json and retry next cycle; never drop escalations. Comment post failure → log to data/error_log.json; do not retry same cycle (avoids duplicates). Corrupted state file → reinitialize from Jira query, classify only (no actions). Issue closed externally during processing → skip remaining actions, record external closure. Reporter = assignee → damp sentiment weighting. Issues with 100+ comments → sentiment on last 30, classification on full thread. First-run → classify all stale issues but take no action until the second cycle.",
+      "error_handling": "Jira 429 → back off per Retry-After, resume next cycle, do not reprocess handled issues. Jira 401 → emit persona.error, await credential refresh. Notion 5xx → skip KB search this cycle; classify + analyze sentiment only; note KB-skipped in issue state. Slack failure → queue messages in data/pending_slack.json and retry next cycle; never drop escalations. Comment post failure → log to data/error_log.json; do not retry same cycle (avoids duplicates). Corrupted state file → reinitialize from Jira query, classify only (no actions). Issue closed externally during processing → skip remaining actions, record external closure. Reporter = assignee → damp sentiment weighting. Issues with 100+ comments → sentiment on last 30, classification on full thread. First-run → classify all stale issues but take no action until the second cycle.",
       "examples": [],
       "tools": ["http_request", "file_read", "file_write"],
       "connectors": [
@@ -52,6 +55,7 @@
           "auth_type": "api_key",
           "role": "issue_tracker",
           "category": "project_management",
+          "required": true,
           "api_base_url": "https://{domain}.atlassian.net",
           "credential_fields": [
             {
@@ -87,6 +91,8 @@
           "auth_type": "api_key",
           "role": "knowledge_base",
           "category": "documentation",
+          "required": false,
+          "fallback_note": "Optional. Without Notion, the persona relies on the local solutions KB only. Auto-resolution still works once the KB has accumulated enough confirmed solutions.",
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
             {
@@ -114,6 +120,7 @@
           "auth_type": "bot_token",
           "role": "chat_messaging",
           "category": "messaging",
+          "required": true,
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
             {
@@ -140,7 +147,7 @@
       {
         "id": "uc_stale_triage",
         "title": "Stale Issue Triage & Resolution",
-        "description": "Polls Jira every 15 minutes for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches Notion + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering management, and auto-closes abandoned issues.",
+        "description": "Polls Jira for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches Notion + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering management, and auto-closes abandoned issues. Default 15-min polling — final cadence set at the trigger-composition step.",
         "capability_summary": "Stale-issue classification + sentiment-routed auto-resolution, escalation, and abandoned-issue cleanup.",
         "category": "development",
         "enabled_by_default": true,
@@ -149,7 +156,7 @@
         "suggested_trigger": {
           "trigger_type": "polling",
           "config": { "cron": "*/15 * * * *" },
-          "description": "Poll Jira every 15 minutes for stale, unresolved issues."
+          "description": "Default every 15 minutes — final cadence set at the trigger-composition step."
         },
         "connectors": ["jira", "notion", "slack"],
         "notification_channels": [
@@ -172,27 +179,27 @@
         },
         "event_subscriptions": [
           {
-            "event_type": "issue.auto_resolved",
+            "event_type": "issue.triage.auto_resolved",
             "direction": "emit",
             "description": "Payload: issue key, solution source (notion page URL or local KB entry id), confidence score, reporter sentiment at time of posting."
           },
           {
-            "event_type": "issue.escalated",
+            "event_type": "issue.triage.escalated",
             "direction": "emit",
             "description": "Payload: issue key, priority, sentiment score, escalation recipient, full context summary."
           },
           {
-            "event_type": "issue.auto_closed",
+            "event_type": "issue.triage.auto_closed",
             "direction": "emit",
             "description": "Payload: issue key, reason (abandoned / silently_resolved / confirmation_timeout), days inactive."
           },
           {
-            "event_type": "persona.error",
+            "event_type": "issue.triage.error",
             "direction": "emit",
             "description": "Emitted on Jira 401, repeated Slack failures, or corrupted state files. Triggers credential refresh or admin alerts downstream."
           }
         ],
-        "error_handling": "Jira 429 → respect Retry-After, resume next cycle. Jira 401 → emit persona.error and halt this capability until credential refresh. Notion unavailable → skip KB search but continue classification + sentiment + escalation. Slack queue → data/pending_slack.json retries next cycle. Comment post failure → log-only, no same-cycle retry. First cycle → observation only.",
+        "error_handling": "Jira 429 → respect Retry-After, resume next cycle. Jira 401 → emit issue.triage.error and halt this capability until credential refresh. Notion unavailable → skip KB search but continue classification + sentiment + escalation. Slack queue → data/pending_slack.json retries next cycle. Comment post failure → log-only, no same-cycle retry. First cycle → observation only.",
         "input_schema": [
           {
             "name": "stale_days",
@@ -249,59 +256,42 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Polling tick", "detail": "15-minute cron fires" },
-            { "id": "n2", "type": "connector", "label": "Query stale issues", "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)", "connector": "jira" },
-            { "id": "n3", "type": "action", "label": "Load state files", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "type": "decision", "label": "New or updated?", "detail": "Skip issues already processed at their current updated timestamp" },
-            { "id": "n5", "type": "connector", "label": "Fetch comments", "detail": "Full thread for classification + sentiment", "connector": "jira" },
-            { "id": "n6", "type": "action", "label": "Classify state", "detail": "Waiting on reporter / team / blocked / abandoned / stale-active / silently resolved" },
-            { "id": "n7", "type": "action", "label": "Sentiment score 1-10", "detail": "Weight recent comments more; detect anger + frustration signals" },
-            { "id": "n8", "type": "connector", "label": "Search Notion KB", "detail": "Query KB database by title + component tags", "connector": "notion" },
-            { "id": "n9", "type": "action", "label": "Search local KB", "detail": "Match symptom patterns from data/solutions_kb.json" },
-            { "id": "n10", "type": "decision", "label": "Confidence >= threshold?", "detail": "Composite score: keyword + component + error match + historical success" },
-            { "id": "n11", "type": "connector", "label": "Post solution comment", "detail": "Empathetic ADF comment with numbered steps + source link", "connector": "jira" },
-            { "id": "n12", "type": "action", "label": "Track 14-day confirmation", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "type": "decision", "label": "Angry + P1/P2?", "detail": "Sentiment >= 8 AND priority in (P1, P2)" },
-            { "id": "n14", "type": "connector", "label": "DM engineering manager", "detail": "Slack DM with issue context + reporter complaints", "connector": "slack" },
-            { "id": "n15", "type": "connector", "label": "Escalation channel post", "detail": "Public visibility of the P1/angry issue", "connector": "slack" },
-            { "id": "n16", "type": "decision", "label": "Abandoned 30+ days?", "detail": "auto_close_enabled AND no reporter activity in 30 days" },
-            { "id": "n17", "type": "connector", "label": "Close abandoned issue", "detail": "Polite closing comment + transition to Closed", "connector": "jira" },
-            { "id": "n18", "type": "event", "label": "Emit lifecycle events", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "type": "action", "label": "Write state atomically", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "type": "end", "label": "Cycle complete" }
+            { "id": "n1", "type": "start", "label": "Polling tick" },
+            { "id": "n2", "type": "connector", "label": "Query stale issues + fetch comments", "connector": "jira" },
+            { "id": "n3", "type": "action", "label": "Classify state + score sentiment 1-10" },
+            { "id": "n4", "type": "connector", "label": "Search Notion KB + local KB", "connector": "notion" },
+            { "id": "n5", "type": "decision", "label": "Confidence >= threshold?" },
+            { "id": "n6", "type": "connector", "label": "Post solution comment", "connector": "jira" },
+            { "id": "n7", "type": "decision", "label": "Angry + P1/P2?" },
+            { "id": "n8", "type": "connector", "label": "DM manager + post to escalation channel", "connector": "slack" },
+            { "id": "n9", "type": "decision", "label": "Abandoned 30+ days?" },
+            { "id": "n10", "type": "connector", "label": "Close abandoned issue", "connector": "jira" },
+            { "id": "n11", "type": "event", "label": "Emit issue.triage.* events + persist state" },
+            { "id": "n12", "type": "end", "label": "Cycle complete" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
             { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5", "variant": "yes" },
-            { "source": "n4", "target": "n20", "label": "Already processed", "variant": "no" },
-            { "source": "n5", "target": "n6" },
+            { "source": "n4", "target": "n5" },
+            { "source": "n5", "target": "n6", "label": "Yes", "variant": "yes" },
+            { "source": "n5", "target": "n7", "label": "No match", "variant": "no" },
             { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
+            { "source": "n7", "target": "n8", "label": "Escalate", "variant": "yes" },
+            { "source": "n7", "target": "n9", "label": "Standard", "variant": "no" },
             { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11", "label": "Yes", "variant": "yes" },
-            { "source": "n10", "target": "n13", "label": "No match", "variant": "no" },
-            { "source": "n11", "target": "n12" },
-            { "source": "n12", "target": "n18" },
-            { "source": "n13", "target": "n14", "label": "Escalate", "variant": "yes" },
-            { "source": "n13", "target": "n16", "label": "Standard", "variant": "no" },
-            { "source": "n14", "target": "n15" },
-            { "source": "n15", "target": "n18" },
-            { "source": "n16", "target": "n17", "label": "Yes", "variant": "yes" },
-            { "source": "n16", "target": "n19", "label": "No", "variant": "no" },
-            { "source": "n17", "target": "n18" },
-            { "source": "n18", "target": "n19" },
-            { "source": "n19", "target": "n20" }
+            { "source": "n9", "target": "n10", "label": "Yes", "variant": "yes" },
+            { "source": "n9", "target": "n11", "label": "No", "variant": "no" },
+            { "source": "n10", "target": "n11" },
+            { "source": "n11", "target": "n12" }
           ]
         }
       },
       {
         "id": "uc_daily_digest",
-        "title": "Daily Support Digest",
-        "description": "Every morning at 9 AM, posts a Slack summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket.",
-        "capability_summary": "9 AM Slack summary of auto-resolved / escalated / auto-closed / still-stale counts with issue links.",
+        "title": "Support Digest",
+        "description": "Posts a Slack summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket. Default daily 9 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Slack summary of auto-resolved / escalated / auto-closed / still-stale counts with issue links.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -309,7 +299,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 9 * * *" },
-          "description": "Daily at 9 AM, compile the previous-day digest."
+          "description": "Default daily 9 AM — final cadence set at the trigger-composition step."
         },
         "connectors": ["slack"],
         "notification_channels": [
@@ -328,7 +318,7 @@
         },
         "event_subscriptions": [
           {
-            "event_type": "support.digest.posted",
+            "event_type": "issue.digest.posted",
             "direction": "emit",
             "description": "Payload: counts per bucket, links to top-3 notable issues by bucket."
           }
@@ -358,14 +348,13 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "9 AM schedule", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "type": "action", "label": "Read state files", "detail": "data/issue_states.json, escalation_log.json — last 24h slice" },
-            { "id": "d3", "type": "action", "label": "Bucket counts", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "type": "action", "label": "Pick top 3 per bucket", "detail": "Priority and sentiment weighted" },
-            { "id": "d5", "type": "action", "label": "Format digest", "detail": "Slack Block Kit layout with issue links" },
-            { "id": "d6", "type": "connector", "label": "Post digest", "detail": "POST chat.postMessage to alert channel", "connector": "slack" },
-            { "id": "d7", "type": "event", "label": "Emit support.digest.posted", "detail": "Downstream observability" },
-            { "id": "d8", "type": "end", "label": "Digest delivered" }
+            { "id": "d1", "type": "start", "label": "Scheduled tick" },
+            { "id": "d2", "type": "action", "label": "Read state files (last 24h slice)" },
+            { "id": "d3", "type": "action", "label": "Bucket counts + pick top issues" },
+            { "id": "d4", "type": "action", "label": "Format Block Kit digest" },
+            { "id": "d5", "type": "connector", "label": "Post digest to Slack", "connector": "slack" },
+            { "id": "d6", "type": "event", "label": "Emit issue.digest.posted" },
+            { "id": "d7", "type": "end", "label": "Digest delivered" }
           ],
           "edges": [
             { "source": "d1", "target": "d2" },
@@ -373,16 +362,15 @@
             { "source": "d3", "target": "d4" },
             { "source": "d4", "target": "d5" },
             { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            { "source": "d6", "target": "d7" }
           ]
         }
       },
       {
         "id": "uc_weekly_health",
-        "title": "Weekly Issue Health Report",
-        "description": "Every Monday at 9 AM, generates a comprehensive report: auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, stale-issue trends, and week-over-week comparison against the prior report.",
-        "capability_summary": "Monday 9 AM comprehensive report with resolution metrics, KB growth, and WoW trend analysis.",
+        "title": "Issue Health Report",
+        "description": "Comprehensive report covering auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, stale-issue trends, and week-over-week comparison against the prior report. Default Monday 9 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Comprehensive report with resolution metrics, KB growth, and WoW trend analysis.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -390,7 +378,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 9 * * 1" },
-          "description": "Every Monday at 9 AM, publish the weekly health report."
+          "description": "Default Monday 9 AM — final cadence set at the trigger-composition step."
         },
         "connectors": ["jira", "slack"],
         "notification_channels": [
@@ -409,7 +397,7 @@
         },
         "event_subscriptions": [
           {
-            "event_type": "support.weekly_report.published",
+            "event_type": "issue.weekly_report.published",
             "direction": "emit",
             "description": "Payload: metric summary, WoW deltas, report file path."
           }
@@ -437,16 +425,15 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Monday 9 AM schedule", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "type": "action", "label": "Load state + prior report", "detail": "issue_states + solutions_kb + escalation_log + prior weekly report" },
-            { "id": "w3", "type": "connector", "label": "Current stale count", "detail": "JQL query for live stale count at report time", "connector": "jira" },
-            { "id": "w4", "type": "action", "label": "Compute metrics", "detail": "Auto-resolution rate, avg TTR, KB new entries, escalation outcomes, sentiment distribution" },
-            { "id": "w5", "type": "action", "label": "WoW comparison", "detail": "Deltas against prior week's metrics" },
-            { "id": "w6", "type": "action", "label": "Format Block Kit report", "detail": "Sections: resolution, KB health, escalations, trends" },
-            { "id": "w7", "type": "connector", "label": "Post report", "detail": "chat.postMessage to alerts channel", "connector": "slack" },
-            { "id": "w8", "type": "action", "label": "Archive report JSON", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "type": "event", "label": "Emit weekly_report.published" },
-            { "id": "w10", "type": "end", "label": "Report delivered" }
+            { "id": "w1", "type": "start", "label": "Scheduled tick" },
+            { "id": "w2", "type": "action", "label": "Load state + prior report" },
+            { "id": "w3", "type": "connector", "label": "Live stale count", "connector": "jira" },
+            { "id": "w4", "type": "action", "label": "Compute metrics + WoW deltas" },
+            { "id": "w5", "type": "action", "label": "Format Block Kit report" },
+            { "id": "w6", "type": "connector", "label": "Post report to Slack", "connector": "slack" },
+            { "id": "w7", "type": "action", "label": "Archive report JSON" },
+            { "id": "w8", "type": "event", "label": "Emit issue.weekly_report.published" },
+            { "id": "w9", "type": "end", "label": "Report delivered" }
           ],
           "edges": [
             { "source": "w1", "target": "w2" },
@@ -456,8 +443,7 @@
             { "source": "w5", "target": "w6" },
             { "source": "w6", "target": "w7" },
             { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" },
-            { "source": "w9", "target": "w10" }
+            { "source": "w8", "target": "w9" }
           ]
         }
       }
@@ -487,7 +473,7 @@
       {
         "id": "aq_stale_days",
         "scope": "capability",
-        "use_case_id": "uc_stale_triage",
+        "use_case_ids": ["uc_stale_triage"],
         "category": "configuration",
         "question": "After how many days should an issue be considered stale?",
         "type": "select",
@@ -496,7 +482,7 @@
         "maps_to": "use_cases[uc_stale_triage].sample_input.stale_days",
         "variable_name": "stale_days",
         "context": "Issues open without updates beyond this threshold become candidates for auto-resolution or escalation.",
-        "dimension": "triggers"
+        "dimension": "use-cases"
       },
       {
         "id": "aq_alert_channel",
@@ -520,7 +506,7 @@
       {
         "id": "aq_escalation_channel",
         "scope": "capability",
-        "use_case_id": "uc_stale_triage",
+        "use_case_ids": ["uc_stale_triage"],
         "category": "configuration",
         "question": "Which Slack channel for high-priority escalations?",
         "type": "select",
@@ -540,7 +526,7 @@
       {
         "id": "aq_eng_manager_email",
         "scope": "capability",
-        "use_case_id": "uc_stale_triage",
+        "use_case_ids": ["uc_stale_triage"],
         "category": "configuration",
         "question": "Engineering manager email for DM escalations?",
         "type": "text",
@@ -574,7 +560,7 @@
       {
         "id": "aq_auto_close_enabled",
         "scope": "capability",
-        "use_case_id": "uc_stale_triage",
+        "use_case_ids": ["uc_stale_triage"],
         "category": "boundaries",
         "question": "Should abandoned issues be auto-closed after 30 days of inactivity?",
         "type": "boolean",
@@ -588,7 +574,7 @@
       {
         "id": "aq_confidence_threshold",
         "scope": "capability",
-        "use_case_id": "uc_stale_triage",
+        "use_case_ids": ["uc_stale_triage"],
         "category": "quality",
         "question": "Minimum confidence score (0-100) for auto-posting resolution suggestions?",
         "type": "select",

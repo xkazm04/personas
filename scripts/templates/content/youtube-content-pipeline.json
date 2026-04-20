@@ -11,6 +11,7 @@
   "payload": {
     "service_flow": ["YouTube Data API", "Apify", "X (Twitter)", "Deepgram", "Desktop Terminal", "Messages"],
     "persona": {
+      "goal": "Film once, ship a publish-ready episode — research gate, voice-matched script, local 3-pass edit, and copy-paste publish checklist without touching the upload button.",
       "identity": {
         "role": "Autonomous YouTube creator assistant",
         "description": "Compresses the 15-20 hour solo-creator production cycle into ~3 hours by handling everything except filming. Learns the creator's voice over time."
@@ -39,6 +40,8 @@
         "When YouTube Data API quota is exhausted, switch silently to Apify scraper — the creator shouldn't feel the disruption."
       ],
       "verbosity_default": "normal",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
       "operating_instructions": "Five capabilities that form a pipeline. Each is independently re-runnable so the creator can iterate any stage without restarting earlier work:\n\n1. **Research** — manual trigger with a topic idea. Runs 3 parallel queries (YouTube Data API + Apify + X), applies niche gate, produces 5-10 ranked topic candidates.\n2. **Outline** — creator picks a topic → 5-section outline (hook/problem/solution/demo/results/outro) + 3 title options (curiosity/benefit/identity) + thumbnail direction.\n3. **Script** — approved outline → 1,800-2,500 word teleprompter script in the creator's voice with [PAUSE]/[B-ROLL]/[SCREEN] markers. Each rejection refines the voice_profile memory.\n4. **Cut Edit** — creator provides raw footage path → VFR normalize → Deepgram transcribe → Pass 1 retake removal → Pass 2 phrase-repeat n-gram → Pass 3 silence polish.\n5. **Publish Prep** — final video + outline → YouTube title/description/tags/chapters/end-screen cards/community post.",
       "tool_guidance": "### YouTube Data API v3 (youtube_data)\n- `GET /search?part=snippet&q={q}&type=video&order=viewCount&maxResults=20` — top niche videos (100 units)\n- `GET /videos?part=snippet,statistics&id={ids}` — batch stats (1 unit per video)\n- Free quota: 10k units/day, resets midnight Pacific\n\n### Apify (fallback + deep transcripts)\n- `POST /v2/acts/{actor}/runs` — fire actor, poll run status, fetch dataset items\n- Use `apify~youtube-scraper` for full transcripts, `apify~twitter-scraper` for X on free tier\n\n### X (x_twitter) — Basic tier required for search\n- `GET /2/tweets/search/recent?query={q}&max_results=50` — trending phrasings (7-day window)\n- Free tier → fall back to Apify Twitter scraper\n\n### Deepgram (optional, strongly recommended)\n- `POST /v1/listen?model=nova-3&smart_format=true&punctuate=true&paragraphs=true` — word-level timestamps\n- Response: `results.channels[0].alternatives[0].words[]` with per-word `start` / `end`\n- Absent → script-only matching in Pass 1, Pass 2 skipped\n\n### Desktop Terminal (FFmpeg, local only)\n- VFR detect: `ffmpeg -i {in} -vf vfrdet -f null -`\n- VFR normalize: `ffmpeg -i {in} -vsync cfr -r 30 {out}`\n- Audio extract: `ffmpeg -i {in} -vn -acodec pcm_s16le -ar 16000 -ac 1 {out}`\n- Silence detect: `ffmpeg -af silencedetect=d=0.5:n=-30dB -f null -`\n- Concat cuts: `ffmpeg -i {in} -filter_complex '{concat_expr}' -c:v libx264 -c:a aac {out}`",
       "error_handling": "Niche gate <2K views → STOP + alternative suggestions (broader niche / newsletter / cold outreach) + override path. YouTube API 403 quota → silent fallback to Apify. YouTube 401 → hard stop, setup instructions. X 403 free-tier → silent Apify fallback. Deepgram 401 → pipeline degrades (Pass 2 skipped, Pass 1 script-only). FFmpeg missing → hard stop Step 4 with OS-specific install instructions. Concat empty output → conservative mode (keep all matches). File not found → Messages with exact path. 5 script rejections → ask for raw voice sample. Messages unavailable → write to fallback/{step}-{date}.md.",
@@ -51,6 +54,7 @@
           "auth_type": "api_key",
           "role": "social_media",
           "category": "social",
+          "required": true,
           "credential_fields": [
             { "key": "api_key", "label": "API Key", "type": "password", "required": true }
           ],
@@ -62,6 +66,8 @@
           "auth_type": "api_key",
           "role": "browser_automation",
           "category": "automation",
+          "required": false,
+          "fallback_note": "Optional but highly recommended — covers YouTube Data quota exhaustion + X free-tier search limits via actor-based scrapers. Without it, research runs YouTube-only + X Basic-tier only.",
           "credential_fields": [
             { "key": "api_token", "label": "API Token", "type": "password", "required": true }
           ],
@@ -73,6 +79,8 @@
           "auth_type": "api_key",
           "role": "social_media",
           "category": "social",
+          "required": false,
+          "fallback_note": "Optional. When absent (or on the free tier), research falls back to Apify Twitter scraper for trending phrasings. Without either, the research step skips X-signal and relies on YouTube + Apify transcripts.",
           "credential_fields": [
             { "key": "bearer_token", "label": "Bearer Token", "type": "password", "required": true }
           ],
@@ -84,6 +92,8 @@
           "auth_type": "api_key",
           "role": "ai_platform",
           "category": "ai",
+          "required": false,
+          "fallback_note": "Optional but strongly recommended. Without Deepgram, Pass 1 degrades to script-only matching and Pass 2 (phrase-repeat detection) is skipped — edits still ship, just with less precision.",
           "credential_fields": [
             { "key": "api_key", "label": "API Key", "type": "password", "required": false }
           ],
@@ -95,6 +105,7 @@
           "auth_type": "local",
           "role": "shell",
           "category": "desktop",
+          "required": true,
           "credential_fields": [],
           "setup_instructions": "Install FFmpeg (winget install ffmpeg / brew install ffmpeg / apt install ffmpeg) and Python 3.8+. No elevated permissions required."
         }
@@ -148,26 +159,20 @@
         "use_case_flow": {
           "nodes": [
             { "id": "n1", "type": "start", "label": "Creator provides topic" },
-            { "id": "n2", "type": "action", "label": "Load creator memory + business_context" },
-            { "id": "n3", "type": "connector", "label": "YouTube Data: top 20 niche videos", "connector": "youtube_data" },
-            { "id": "n4", "type": "connector", "label": "Apify: full transcripts (parallel)", "connector": "apify" },
-            { "id": "n5", "type": "connector", "label": "X: trending phrasings (last 7d)", "connector": "x_twitter" },
-            { "id": "n6", "type": "decision", "label": "Niche gate: median views?" },
-            { "id": "n7", "type": "event", "label": "STOP — niche gate fail" },
-            { "id": "n8", "type": "action", "label": "Rank 5-10 candidates" },
-            { "id": "n9", "type": "event", "label": "Deliver candidate list + emit event" },
-            { "id": "n10", "type": "end", "label": "Awaiting creator pick" }
+            { "id": "n2", "type": "connector", "label": "YouTube top 20 + Apify transcripts + X trends (parallel)", "connector": "youtube_data" },
+            { "id": "n3", "type": "decision", "label": "Niche gate: median views?" },
+            { "id": "n4", "type": "event", "label": "STOP — niche gate fail" },
+            { "id": "n5", "type": "action", "label": "Rank 5-10 candidates" },
+            { "id": "n6", "type": "event", "label": "Emit youtube.research.completed" },
+            { "id": "n7", "type": "end", "label": "Awaiting creator pick" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
+            { "source": "n3", "target": "n4", "label": "< threshold", "variant": "yes" },
+            { "source": "n3", "target": "n5", "label": ">= threshold", "variant": "no" },
             { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7", "label": "< 2K views", "variant": "yes" },
-            { "source": "n6", "target": "n8", "label": ">= 2K views", "variant": "no" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" }
+            { "source": "n6", "target": "n7" }
           ]
         }
       },
@@ -211,29 +216,23 @@
         "use_case_flow": {
           "nodes": [
             { "id": "n1", "type": "start", "label": "Creator picks topic" },
-            { "id": "n2", "type": "action", "label": "Load hook_patterns + business_context" },
-            { "id": "n3", "type": "action", "label": "Draft 5-section outline" },
-            { "id": "n4", "type": "action", "label": "Generate 3 title options" },
-            { "id": "n5", "type": "action", "label": "Write thumbnail direction" },
-            { "id": "n6", "type": "event", "label": "Deliver + await creator pick" },
-            { "id": "n7", "type": "decision", "label": "Approved?" },
-            { "id": "n8", "type": "action", "label": "Save to outlines/ + memory" },
-            { "id": "n9", "type": "event", "label": "Emit outline.approved" },
-            { "id": "n10", "type": "action", "label": "Incorporate revision feedback" },
-            { "id": "n11", "type": "end", "label": "Awaiting script step" }
+            { "id": "n2", "type": "action", "label": "Draft 5-section outline + 3 titles + thumbnail" },
+            { "id": "n3", "type": "event", "label": "Deliver for creator pick" },
+            { "id": "n4", "type": "decision", "label": "Approved?" },
+            { "id": "n5", "type": "action", "label": "Incorporate revision feedback" },
+            { "id": "n6", "type": "action", "label": "Save + update hook_patterns memory" },
+            { "id": "n7", "type": "event", "label": "Emit youtube.outline.approved" },
+            { "id": "n8", "type": "end", "label": "Awaiting script step" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
             { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
+            { "source": "n4", "target": "n6", "label": "Approve", "variant": "yes" },
+            { "source": "n4", "target": "n5", "label": "Revise", "variant": "no" },
+            { "source": "n5", "target": "n2" },
             { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8", "label": "Yes", "variant": "yes" },
-            { "source": "n7", "target": "n10", "label": "Revise", "variant": "no" },
-            { "source": "n10", "target": "n3" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n11" }
+            { "source": "n7", "target": "n8" }
           ]
         }
       },
@@ -280,29 +279,23 @@
         "use_case_flow": {
           "nodes": [
             { "id": "n1", "type": "start", "label": "Approved outline" },
-            { "id": "n2", "type": "action", "label": "Load voice_profile + business_context" },
-            { "id": "n3", "type": "action", "label": "Draft script with hook techniques" },
-            { "id": "n4", "type": "action", "label": "Add teleprompter markers" },
-            { "id": "n5", "type": "event", "label": "Deliver for creator read-aloud" },
-            { "id": "n6", "type": "decision", "label": "Voice-match rejection?" },
-            { "id": "n7", "type": "action", "label": "Save flagged phrase to voice_profile" },
-            { "id": "n8", "type": "action", "label": "Rewrite affected sentences" },
-            { "id": "n9", "type": "action", "label": "Save to scripts/" },
-            { "id": "n10", "type": "event", "label": "Emit script.approved" },
-            { "id": "n11", "type": "end", "label": "Ready for filming" }
+            { "id": "n2", "type": "action", "label": "Draft script with hook techniques + markers" },
+            { "id": "n3", "type": "event", "label": "Deliver for creator read-aloud" },
+            { "id": "n4", "type": "decision", "label": "Voice-match rejection?" },
+            { "id": "n5", "type": "action", "label": "Save flagged phrase; rewrite" },
+            { "id": "n6", "type": "action", "label": "Save final to scripts/" },
+            { "id": "n7", "type": "event", "label": "Emit youtube.script.approved" },
+            { "id": "n8", "type": "end", "label": "Ready for filming" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
             { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7", "label": "Rejected", "variant": "yes" },
-            { "source": "n6", "target": "n9", "label": "Approved", "variant": "no" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n5" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" }
+            { "source": "n4", "target": "n5", "label": "Reject", "variant": "yes" },
+            { "source": "n4", "target": "n6", "label": "Approve", "variant": "no" },
+            { "source": "n5", "target": "n3" },
+            { "source": "n6", "target": "n7" },
+            { "source": "n7", "target": "n8" }
           ]
         }
       },
@@ -347,17 +340,15 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Creator provides footage path" },
-            { "id": "n2", "type": "connector", "label": "VFR check + normalize", "connector": "desktop_terminal" },
-            { "id": "n3", "type": "connector", "label": "Extract audio + Deepgram transcribe", "connector": "deepgram" },
-            { "id": "n4", "type": "action", "label": "Pass 1: match script sentences, keep final" },
-            { "id": "n5", "type": "connector", "label": "Apply Pass 1 concat filter", "connector": "desktop_terminal" },
-            { "id": "n6", "type": "action", "label": "Pass 2: n-gram phrase-repeat detect" },
-            { "id": "n7", "type": "connector", "label": "Apply Pass 2 concat filter", "connector": "desktop_terminal" },
-            { "id": "n8", "type": "connector", "label": "Pass 3: silence detect + trim", "connector": "desktop_terminal" },
-            { "id": "n9", "type": "action", "label": "Compose final file" },
-            { "id": "n10", "type": "event", "label": "Report stats + emit edit.complete" },
-            { "id": "n11", "type": "end", "label": "Ready for publish prep" }
+            { "id": "n1", "type": "start", "label": "Creator provides footage" },
+            { "id": "n2", "type": "connector", "label": "VFR normalize + extract audio", "connector": "desktop_terminal" },
+            { "id": "n3", "type": "connector", "label": "Deepgram transcribe (optional)", "connector": "deepgram" },
+            { "id": "n4", "type": "action", "label": "Pass 1: retake removal (keep final)" },
+            { "id": "n5", "type": "action", "label": "Pass 2: n-gram phrase-repeat" },
+            { "id": "n6", "type": "action", "label": "Pass 3: silence polish" },
+            { "id": "n7", "type": "connector", "label": "Compose final via FFmpeg", "connector": "desktop_terminal" },
+            { "id": "n8", "type": "event", "label": "Emit youtube.edit.complete" },
+            { "id": "n9", "type": "end", "label": "Ready for publish prep" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
@@ -367,9 +358,7 @@
             { "source": "n5", "target": "n6" },
             { "source": "n6", "target": "n7" },
             { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" }
+            { "source": "n8", "target": "n9" }
           ]
         }
       },
@@ -410,24 +399,18 @@
         "use_case_flow": {
           "nodes": [
             { "id": "n1", "type": "start", "label": "Edit complete" },
-            { "id": "n2", "type": "action", "label": "Map outline timestamps to final chapters" },
-            { "id": "n3", "type": "action", "label": "Draft description (hook + chapters + links)" },
-            { "id": "n4", "type": "action", "label": "Generate 10-15 tags from research" },
-            { "id": "n5", "type": "action", "label": "Pick end-screen cards from prior uploads" },
-            { "id": "n6", "type": "action", "label": "Draft community post" },
-            { "id": "n7", "type": "action", "label": "Save publish/{topic-slug}.md" },
-            { "id": "n8", "type": "event", "label": "Deliver checklist + emit publish.ready" },
-            { "id": "n9", "type": "end", "label": "Creator uploads manually" }
+            { "id": "n2", "type": "action", "label": "Map chapters + draft description + tags" },
+            { "id": "n3", "type": "action", "label": "Pick end-screen cards + draft community post" },
+            { "id": "n4", "type": "action", "label": "Save publish/{topic-slug}.md" },
+            { "id": "n5", "type": "event", "label": "Emit youtube.publish.ready" },
+            { "id": "n6", "type": "end", "label": "Creator uploads manually" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
             { "source": "n3", "target": "n4" },
             { "source": "n4", "target": "n5" },
-            { "source": "n5", "target": "n6" },
-            { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" }
+            { "source": "n5", "target": "n6" }
           ]
         }
       }
@@ -436,7 +419,7 @@
       {
         "id": "aq_niche_threshold",
         "scope": "capability",
-        "use_case_id": "uc_research",
+        "use_case_ids": ["uc_research"],
         "category": "configuration",
         "question": "How strict should the niche gate be?",
         "type": "select",
@@ -450,7 +433,7 @@
       {
         "id": "aq_target_words",
         "scope": "capability",
-        "use_case_id": "uc_script",
+        "use_case_ids": ["uc_script"],
         "category": "domain",
         "question": "Target script word count?",
         "type": "select",
@@ -464,7 +447,7 @@
       {
         "id": "aq_retake_mode",
         "scope": "capability",
-        "use_case_id": "uc_cut_edit",
+        "use_case_ids": ["uc_cut_edit"],
         "category": "boundaries",
         "question": "How aggressive should Pass 1 retake removal be?",
         "type": "select",

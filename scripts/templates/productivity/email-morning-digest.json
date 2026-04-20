@@ -10,6 +10,7 @@
   "payload": {
     "service_flow": ["Gmail"],
     "persona": {
+      "goal": "Start the day with the emails that matter — a priority-tiered briefing that respects attention and sharpens with every review.",
       "identity": {
         "role": "Email triage assistant",
         "description": "Sits between Gmail and the user's attention. Learns which senders matter and surfaces only what's worth reading."
@@ -35,7 +36,9 @@
         "Below a composite score of 4.0, the email does not make the digest."
       ],
       "verbosity_default": "normal",
-      "operating_instructions": "You run once per cycle. Fetch unread email in the lookback window, score each message, rank, summarise the top N, and deliver a priority-tiered digest. Update the sender importance model before exiting.\n\n## Step 1: Fetch Unread Emails\nQuery Gmail for all unread messages received within the configured lookback window. Use the Gmail API `messages.list` endpoint with the query `is:unread newer_than:{lookback_hours}h`. Retrieve message headers (From, Subject, Date, To, Cc, In-Reply-To, List-Unsubscribe) and a truncated body snippet. Cap at 200 messages with pagination.\n\n## Step 2: Load Sender Models & VIP List\nRead the persisted sender importance model from agent memory. Load the explicit VIP list. If no model exists (first run), initialize empty and use heuristic scoring.\n\n## Step 3: Score Each Email\nCompute composite importance scores:\n- Base: 3.0 (direct To), 1.5 (CC), 0.5 (BCC/list)\n- Sender boost: 0.0-10.0 from learned model\n- VIP multiplier: multiply total by vip_boost_multiplier for VIP senders\n- Recency: up to 1.0 for emails in the last 2 hours\n- Thread signal: +1.5 for replies in active threads\n- Content urgency: +0.5-2.0 for action keywords in subject\n- Penalties: -2.0 for newsletters, -1.0 for noreply senders\n\n## Step 4: Summarize Top N Emails\nSelect top N by score. For each, generate: sender name + tier, subject, 1-2 sentence summary. Group into priority tiers: Needs Action (>=12.0), Worth Reading (>=7.0), FYI (>=4.0).\n\n## Step 5: Compose & Deliver Digest\nAssemble structured digest with header (date, counts), tiered summaries, and footer (unsurfaced count + top senders). Deliver via user_message. Send 'Inbox Zero' message if no unread emails.\n\n## Step 6: Update Sender Models\nAdjust sender scores using exponential moving average: new = 0.9 * old + 0.1 * session. Persist updated model. Emit digest_delivered event.",
+      "trigger_composition": "per_use_case",
+      "message_composition": "per_use_case",
+      "operating_instructions": "You run once per cycle. Fetch unread email in the lookback window, score each message, rank, summarise the top N, and deliver a priority-tiered digest. Update the sender importance model before exiting.\n\n## Step 1: Fetch Unread Emails\nQuery Gmail for all unread messages received within the configured lookback window. Use the Gmail API `messages.list` endpoint with the query `is:unread newer_than:{lookback_hours}h`. Retrieve message headers (From, Subject, Date, To, Cc, In-Reply-To, List-Unsubscribe) and a truncated body snippet. Cap at 200 messages with pagination.\n\n## Step 2: Load Sender Models & VIP List\nRead the persisted sender importance model from agent memory. Load the explicit VIP list. If no model exists (first run), initialize empty and use heuristic scoring.\n\n## Step 3: Score Each Email\nCompute composite importance scores:\n- Base: 3.0 (direct To), 1.5 (CC), 0.5 (BCC/list)\n- Sender boost: 0.0-10.0 from learned model\n- VIP multiplier: multiply total by vip_boost_multiplier for VIP senders\n- Recency: up to 1.0 for emails in the last 2 hours\n- Thread signal: +1.5 for replies in active threads\n- Content urgency: +0.5-2.0 for action keywords in subject\n- Penalties: -2.0 for newsletters, -1.0 for noreply senders\n\n## Step 4: Summarize Top N Emails\nSelect top N by score. For each, generate: sender name + tier, subject, 1-2 sentence summary. Group into priority tiers: Needs Action (>=12.0), Worth Reading (>=7.0), FYI (>=4.0).\n\n## Step 5: Compose & Deliver Digest\nAssemble structured digest with header (date, counts), tiered summaries, and footer (unsurfaced count + top senders). Deliver via user_message. Send 'Inbox Zero' message if no unread emails.\n\n## Step 6: Update Sender Models\nAdjust sender scores using exponential moving average: new = 0.9 * old + 0.1 * session. Persist updated model. Emit email.digest.delivered event.",
       "tool_guidance": "### Gmail API\n- `messages.list` with query filters for unread + time window\n- `messages.get` with `format=metadata` for headers only when top-scoring\n- Use `snippet` field from list response for summarisation\n- Scope with `category:primary` for inbox-only scanning\n\n### Sender Scoring\n- Composable signals: each contributes independently\n- VIP boost is multiplicative (post-summation)\n- Newsletter detection via List-Unsubscribe header\n- Exponential moving average for model updates",
       "error_handling": "On Gmail auth failure (401/403), emit user_message (error) asking for reauthorisation and stop — do not retry. On rate limits (429), exponential backoff up to 3 retries (2s, 4s, 8s). On 5xx errors, retry 3 times with 5s intervals then skip cycle. On partial pagination failures, proceed with partial set and flag the shortfall in digest header. On sender model corruption, fall back to heuristic scoring and emit a warning. On individual message parse errors, skip and include in unsurfaced count.",
       "examples": [],
@@ -47,6 +50,7 @@
           "auth_type": "oauth2",
           "role": "email",
           "category": "email",
+          "required": true,
           "api_base_url": "https://gmail.googleapis.com",
           "scopes": ["https://www.googleapis.com/auth/gmail.readonly"],
           "credential_fields": [
@@ -65,9 +69,9 @@
     "use_cases": [
       {
         "id": "uc_morning_digest",
-        "title": "Morning Email Digest",
-        "description": "Fetches unread email from the configured lookback window, ranks messages using a composite sender + content signal score, summarises the top N, and delivers a priority-tiered digest notification.",
-        "capability_summary": "Daily ranked digest of overnight email with adaptive sender scoring.",
+        "title": "Email Digest",
+        "description": "Fetches unread email from the configured lookback window, ranks messages using a composite sender + content signal score, summarises the top N, and delivers a priority-tiered digest notification. Default daily 7am — final cadence set at the trigger-composition step.",
+        "capability_summary": "Priority-tiered digest of unread email with adaptive sender scoring.",
         "category": "productivity",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -75,7 +79,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 7 * * *", "timezone": "local" },
-          "description": "Every morning at 7:00 local time."
+          "description": "Default daily 7:00 AM local — final cadence set at the trigger-composition step."
         },
         "connectors": ["gmail"],
         "notification_channels": [
@@ -87,10 +91,10 @@
           "context": "Persistent sender importance model + VIP list. Updated every cycle via exponential moving average."
         },
         "event_subscriptions": [
-          { "event_type": "digest_delivered", "direction": "emit", "description": "Fires after each successful digest with email_count, surfaced_count, tier_breakdown." },
-          { "event_type": "inbox_zero", "direction": "emit", "description": "Fires when the scan returns zero unread messages in the lookback window." },
-          { "event_type": "sender_model_updated", "direction": "emit", "description": "Fires after the sender-importance model is persisted." },
-          { "event_type": "digest_error", "direction": "emit", "description": "Fires on non-recoverable pipeline errors." }
+          { "event_type": "email.digest.delivered", "direction": "emit", "description": "Payload: { email_count, surfaced_count, tier_breakdown }. Fires after each successful digest." },
+          { "event_type": "email.digest.inbox_zero", "direction": "emit", "description": "Fires when the scan returns zero unread messages in the lookback window." },
+          { "event_type": "email.digest.sender_model_updated", "direction": "emit", "description": "Fires after the sender-importance model is persisted." },
+          { "event_type": "email.digest.error", "direction": "emit", "description": "Fires on non-recoverable pipeline errors." }
         ],
         "error_handling": "On Gmail auth failure, send a user_message(error) asking for reauthorisation and skip the cycle.",
         "input_schema": [
@@ -110,62 +114,37 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Morning schedule fires" },
+            { "id": "n1", "type": "start", "label": "Scheduled tick" },
             { "id": "n2", "type": "action", "label": "Load sender model + VIP list" },
-            { "id": "n3", "type": "connector", "label": "Fetch unread email (Gmail)", "connector": "gmail" },
+            { "id": "n3", "type": "connector", "label": "Fetch unread email", "connector": "gmail" },
             { "id": "n4", "type": "decision", "label": "Inbox empty?" },
-            { "id": "n5", "type": "action", "label": "Score every email" },
-            { "id": "n6", "type": "action", "label": "Rank + select top N" },
-            { "id": "n7", "type": "action", "label": "Generate summaries" },
-            { "id": "n8", "type": "action", "label": "Compose tiered digest" },
-            { "id": "n9", "type": "event", "label": "Deliver digest notification" },
-            { "id": "n10", "type": "action", "label": "Update sender models" },
-            { "id": "n11", "type": "event", "label": "Emit digest_delivered" },
-            { "id": "n12", "type": "end", "label": "Cycle complete" },
-            { "id": "n13", "type": "event", "label": "Send inbox_zero notification" },
-            { "id": "n14", "type": "error", "label": "Gmail API error" },
-            { "id": "n15", "type": "event", "label": "Emit digest_error + alert user" }
+            { "id": "n5", "type": "action", "label": "Score, rank, summarise top N" },
+            { "id": "n6", "type": "action", "label": "Compose tiered digest" },
+            { "id": "n7", "type": "event", "label": "Emit email.digest.delivered" },
+            { "id": "n8", "type": "event", "label": "Emit email.digest.inbox_zero" },
+            { "id": "n9", "type": "action", "label": "Update sender model (EMA)" },
+            { "id": "n10", "type": "end", "label": "Cycle complete" }
           ],
           "edges": [
             { "source": "n1", "target": "n2" },
             { "source": "n2", "target": "n3" },
             { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5", "label": "Has emails" },
-            { "source": "n4", "target": "n13", "label": "Empty", "variant": "yes" },
+            { "source": "n4", "target": "n5", "label": "Has emails", "variant": "no" },
+            { "source": "n4", "target": "n8", "label": "Empty", "variant": "yes" },
             { "source": "n5", "target": "n6" },
             { "source": "n6", "target": "n7" },
-            { "source": "n7", "target": "n8" },
-            { "source": "n8", "target": "n9" },
-            { "source": "n9", "target": "n10" },
-            { "source": "n10", "target": "n11" },
-            { "source": "n11", "target": "n12" },
-            { "source": "n13", "target": "n12" },
-            { "source": "n3", "target": "n14", "variant": "error" },
-            { "source": "n14", "target": "n15" },
-            { "source": "n15", "target": "n12" }
+            { "source": "n7", "target": "n9" },
+            { "source": "n8", "target": "n10" },
+            { "source": "n9", "target": "n10" }
           ]
         }
       }
     ],
     "adoption_questions": [
       {
-        "id": "aq_delivery_time",
-        "scope": "capability",
-        "use_case_id": "uc_morning_digest",
-        "category": "configuration",
-        "question": "What time should the morning digest be delivered?",
-        "type": "select",
-        "options": ["06:00", "07:00", "08:00", "09:00"],
-        "default": "07:00",
-        "maps_to": "use_cases[uc_morning_digest].suggested_trigger.config.cron",
-        "variable_name": "delivery_time",
-        "context": "Earlier times suit early risers; later times suit those who start with focused work.",
-        "dimension": "triggers"
-      },
-      {
         "id": "aq_categories",
         "scope": "capability",
-        "use_case_id": "uc_morning_digest",
+        "use_case_ids": ["uc_morning_digest"],
         "category": "configuration",
         "question": "Which Gmail categories should the scan include?",
         "type": "select",
@@ -184,7 +163,7 @@
       {
         "id": "aq_max_emails",
         "scope": "capability",
-        "use_case_id": "uc_morning_digest",
+        "use_case_ids": ["uc_morning_digest"],
         "category": "domain",
         "question": "How many emails should the digest include at most?",
         "type": "select",
@@ -198,7 +177,7 @@
       {
         "id": "aq_summary_depth",
         "scope": "capability",
-        "use_case_id": "uc_morning_digest",
+        "use_case_ids": ["uc_morning_digest"],
         "category": "domain",
         "question": "How detailed should email summaries be?",
         "type": "select",
@@ -217,7 +196,7 @@
       {
         "id": "aq_include_automated",
         "scope": "capability",
-        "use_case_id": "uc_morning_digest",
+        "use_case_ids": ["uc_morning_digest"],
         "category": "boundaries",
         "question": "Should the digest include emails from automated senders (GitHub, Jira, CI/CD bots)?",
         "type": "select",
@@ -236,7 +215,7 @@
       {
         "id": "aq_memory_learning",
         "scope": "capability",
-        "use_case_id": "uc_morning_digest",
+        "use_case_ids": ["uc_morning_digest"],
         "category": "quality",
         "question": "Should the agent learn and improve sender importance rankings over time?",
         "type": "boolean",
