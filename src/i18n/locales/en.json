@@ -8023,7 +8023,8 @@
       "action_resolve": "Resolve",
       "action_dismiss": "Dismiss",
       "action_mark_read": "Mark as read",
-      "action_running": "Working…"
+      "action_running": "Working…",
+      "try_this_label": "Try this"
     }
   },
   "status_tokens": {

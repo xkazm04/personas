@@ -8014,6 +8014,7 @@ export type Translations = {
       action_dismiss: string;
       action_mark_read: string;
       action_running: string;
+      try_this_label: string;
     };
   };
   status_tokens: {
