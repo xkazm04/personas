@@ -30,8 +30,7 @@ import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
-import TriggerCompositionDemo from "./TriggerCompositionDemo";
-import type { UseCase as TriggerUseCase, TriggerSelection } from "./TriggerCompositionStepChips";
+import type { TriggerSelection } from "./TriggerCompositionStepChips";
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -204,6 +203,136 @@ function extractDimensionData(
   return data;
 }
 
+/**
+ * Parse a cron string into a TriggerSelection the UC picker can use as
+ * its initial state. Only recognizes the three common v3.1 authoring
+ * shapes (hourly, daily, weekly); anything else collapses to "custom"
+ * so the user can keep the exact expression.
+ */
+function inferSelectionFromCron(cron: string): TriggerSelection {
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length !== 5) return { preset: "custom", customCron: cron };
+  const [minute, hour, dom, , dow] = parts;
+  if (minute === "0" && hour === "*" && dom === "*" && dow === "*") {
+    return { preset: "hourly" };
+  }
+  const hourNum = parseInt(hour ?? "", 10);
+  if (!Number.isNaN(hourNum) && dom === "*") {
+    if (dow === "*") return { preset: "daily", hourOfDay: hourNum };
+    const dowNum = parseInt(dow ?? "", 10);
+    if (!Number.isNaN(dowNum)) {
+      return { preset: "weekly", hourOfDay: hourNum, weekday: dowNum };
+    }
+  }
+  return { preset: "custom", customCron: cron };
+}
+
+/**
+ * Convert a user's TriggerSelection (preset + values) into a concrete
+ * trigger shape the persona builder understands: {trigger_type, config,
+ * description}. The returned object can be dropped straight into
+ * use_cases[i].suggested_trigger or pushed onto suggested_triggers.
+ *
+ * Preset semantics:
+ *   daily   → schedule / cron "0 H * * *"
+ *   weekly  → schedule / cron "0 H * * D" (D = 0-6, Sun..Sat)
+ *   hourly  → schedule / cron "0 * * * *"
+ *   event   → event_listener / config.event_type = eventType
+ *   custom  → schedule / cron = customCron verbatim (or manual if empty)
+ *
+ * Timezone defaults to "local" — matches what the templates author.
+ */
+function triggerSelectionToTrigger(
+  sel: TriggerSelection,
+): { trigger_type: string; config: Record<string, string>; description: string } {
+  switch (sel.preset) {
+    case "daily": {
+      const h = Math.max(0, Math.min(23, sel.hourOfDay ?? 9));
+      return {
+        trigger_type: "schedule",
+        config: { cron: `0 ${h} * * *`, timezone: "local" },
+        description: `Daily at ${String(h).padStart(2, "0")}:00 local.`,
+      };
+    }
+    case "weekly": {
+      const h = Math.max(0, Math.min(23, sel.hourOfDay ?? 9));
+      const d = Math.max(0, Math.min(6, sel.weekday ?? 1));
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      return {
+        trigger_type: "schedule",
+        config: { cron: `0 ${h} * * ${d}`, timezone: "local" },
+        description: `Weekly on ${dayNames[d]} at ${String(h).padStart(2, "0")}:00 local.`,
+      };
+    }
+    case "hourly":
+      return {
+        trigger_type: "schedule",
+        config: { cron: "0 * * * *", timezone: "local" },
+        description: "Hourly.",
+      };
+    case "event":
+      return {
+        trigger_type: "event_listener",
+        config: { event_type: sel.eventType ?? "" },
+        description: sel.eventType ? `Listens for ${sel.eventType}.` : "Event-driven.",
+      };
+    case "custom":
+      if (sel.customCron?.trim()) {
+        return {
+          trigger_type: "schedule",
+          config: { cron: sel.customCron.trim(), timezone: "local" },
+          description: `Custom cron: ${sel.customCron.trim()}.`,
+        };
+      }
+      return {
+        trigger_type: "manual",
+        config: {},
+        description: "Manual — user invokes on demand.",
+      };
+  }
+}
+
+/**
+ * Return a shallow clone of designResult with each use_cases[i].suggested_trigger
+ * overwritten by the user's selection. Also regenerates the top-level
+ * suggested_triggers array so consumers that read from either surface
+ * (extractDimensionData, the persona builder, matrix cell rendering) see
+ * the same user-chosen triggers.
+ *
+ * Leaves use cases without a selection untouched — manual-only UCs the
+ * user never configured stay on their template default.
+ */
+function applyTriggerSelections(
+  designResult: Record<string, unknown>,
+  perUseCase: Record<string, TriggerSelection>,
+): Record<string, unknown> {
+  if (Object.keys(perUseCase).length === 0) return designResult;
+  const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+  const nextUseCases = ucRaw.map((uc) => {
+    const id = String(uc.id ?? "");
+    const sel = perUseCase[id];
+    if (!sel) return uc;
+    return { ...uc, suggested_trigger: triggerSelectionToTrigger(sel) };
+  });
+  // Rebuild suggested_triggers from the materialized per-UC triggers so the
+  // flat list consumers see reflects what the user picked.
+  const nextSuggestedTriggers = nextUseCases
+    .map((uc) => {
+      const trig = uc.suggested_trigger as Record<string, unknown> | undefined;
+      if (!trig) return null;
+      return {
+        ...trig,
+        use_case_id: uc.id,
+      };
+    })
+    .filter((t): t is Record<string, unknown> => t !== null);
+  return {
+    ...designResult,
+    use_cases: nextUseCases,
+    suggested_triggers: nextSuggestedTriggers,
+  };
+}
+
 // -- Matrix variant --
 // The "chrono-*" variants are experimental prototypes that unify ALL 8
 // dimensions into a per-use-case view. Exposed via the in-view tab
@@ -328,75 +457,64 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [useCasesPicked, setUseCasesPicked] = useState(false);
   const useCaseStepDone = !showUseCasePicker || useCasesPicked;
 
-  // Trigger composition step — renders between UC picker and questionnaire
-  // when the persona has at least one scheduled/polling/event UC in the
-  // enabled set. Manual-only personas skip it (nothing to compose).
-  const [triggersPicked, setTriggersPicked] = useState(false);
-  const [triggerSelections, setTriggerSelections] = useState<{
-    perUseCase: Record<string, TriggerSelection>;
-    master?: TriggerSelection;
-    overrides?: Record<string, TriggerSelection>;
-    variant: "chips" | "master";
-  } | null>(null);
-
-  // Shape the enabled UCs for the TriggerComposition component. Pulls
-  // suggested_trigger + emits from the raw designResult so the step
-  // renders real cadence defaults and real cross-UC event options.
-  const triggerStepUseCases = useMemo<TriggerUseCase[]>(() => {
-    if (!designResult) return [];
-    const raw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
-    const enabled = showUseCasePicker
-      ? raw.filter((uc) => {
-          const id = String(uc.id ?? "");
-          return selectedUseCaseIds.has(id);
-        })
-      : raw;
-    return enabled.map((uc) => {
-      const id = String(uc.id ?? "");
-      const title = String(uc.title ?? uc.name ?? id);
-      const cap = typeof uc.capability_summary === "string" ? uc.capability_summary : "";
-      const suggested = (uc.suggested_trigger ?? {}) as Record<string, unknown>;
-      const cfg = (suggested.config ?? {}) as Record<string, unknown>;
-      const emits = Array.isArray(uc.event_subscriptions)
-        ? (uc.event_subscriptions as Array<Record<string, unknown>>)
-            .filter((e) => e.direction === "emit")
-            .map((e) => ({
-              event_type: String(e.event_type ?? ""),
-              description: String(e.description ?? ""),
-            }))
-        : [];
-      const triggerType = (suggested.trigger_type as string) ?? "manual";
-      return {
-        id,
-        title,
-        capability_summary: cap,
-        suggested_trigger: {
-          trigger_type: (
-            ["schedule", "polling", "manual", "event_listener", "webhook"].includes(triggerType)
-              ? triggerType
-              : "manual"
-          ) as TriggerUseCase["suggested_trigger"]["trigger_type"],
-          config: {
-            cron: typeof cfg.cron === "string" ? cfg.cron : undefined,
-            event_type: typeof cfg.event_type === "string" ? cfg.event_type : undefined,
-            timezone: typeof cfg.timezone === "string" ? cfg.timezone : undefined,
-          },
-          description: typeof suggested.description === "string" ? suggested.description : "",
-        },
-        emits,
-      };
-    });
-  }, [designResult, selectedUseCaseIds, showUseCasePicker]);
-
-  const showTriggerStep = triggerStepUseCases.some(
-    (uc) => uc.suggested_trigger.trigger_type !== "manual",
+  // Trigger composition — merged onto the UC picker page. The user's
+  // per-UC selections are materialized onto designResult before the
+  // persona is seeded (via applyTriggerSelections). No separate step.
+  const [perUseCaseTriggerSelections, setPerUseCaseTriggerSelections] = useState<Record<string, TriggerSelection>>({});
+  const triggerSelections = useMemo(
+    () => ({ perUseCase: perUseCaseTriggerSelections }),
+    [perUseCaseTriggerSelections],
   );
-  const triggerStepDone = !showTriggerStep || triggersPicked;
 
   const triggerComposition = useMemo<"shared" | "per_use_case">(() => {
     const persona = (designResult?.persona ?? {}) as Record<string, unknown>;
     return persona.trigger_composition === "shared" ? "shared" : "per_use_case";
   }, [designResult]);
+
+  // Cross-UC event options — every emit from any enabled UC becomes a
+  // candidate for event-driven triggers on any other UC. Lets the user
+  // chain capabilities (e.g. "trigger optimization proposals on
+  // marketing.cannibalization.detected").
+  const availableEventTypes = useMemo<string[]>(() => {
+    if (!designResult) return [];
+    const ucs = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+    const out = new Set<string>();
+    for (const uc of ucs) {
+      const id = String(uc.id ?? "");
+      if (showUseCasePicker && !selectedUseCaseIds.has(id)) continue;
+      const subs = (uc.event_subscriptions ?? []) as Array<Record<string, unknown>>;
+      for (const s of subs) {
+        if (s.direction === "emit" && typeof s.event_type === "string") {
+          out.add(s.event_type);
+        }
+      }
+    }
+    return Array.from(out);
+  }, [designResult, selectedUseCaseIds, showUseCasePicker]);
+
+  // Enrich availableUseCases with a defaultSelection inferred from the
+  // template's suggested_trigger cron so the combined step shows the
+  // author's recommended cadence as the starting state.
+  const availableUseCasesWithDefaults = useMemo(() => {
+    if (!designResult) return availableUseCases.map((u) => ({ ...u }));
+    const raw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+    const rawById = new Map(raw.map((uc) => [String(uc.id ?? ""), uc]));
+    return availableUseCases.map((u) => {
+      const rawUc = rawById.get(u.id);
+      const suggested = (rawUc?.suggested_trigger ?? {}) as Record<string, unknown>;
+      const cfg = (suggested.config ?? {}) as Record<string, unknown>;
+      const triggerType = String(suggested.trigger_type ?? "manual");
+      let defaultSelection: TriggerSelection | undefined;
+      if (triggerType === "event_listener" && typeof cfg.event_type === "string") {
+        defaultSelection = { preset: "event", eventType: cfg.event_type };
+      } else if (triggerType === "manual") {
+        defaultSelection = { preset: "custom", customCron: "" };
+      } else if (typeof cfg.cron === "string") {
+        defaultSelection = inferSelectionFromCron(cfg.cron);
+      }
+      return { ...u, defaultSelection };
+    });
+  }, [availableUseCases, designResult]);
 
   const toggleUseCase = useCallback((id: string) => {
     setSelectedUseCaseIds((prev) => {
@@ -565,8 +683,15 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       }
     }
 
+    // Materialize the user's trigger selections onto the design result
+    // before extracting cell data — otherwise the persona gets built with
+    // the template's default cadences and the user's choices in the
+    // trigger-composition step evaporate.
+    const effectiveDesignResult = triggerSelections?.perUseCase
+      ? applyTriggerSelections(designResult, triggerSelections.perUseCase)
+      : designResult;
     const dimensionData = extractDimensionData(
-      designResult,
+      effectiveDesignResult,
       credentialBindings,
       showUseCasePicker ? selectedUseCaseIds : undefined,
     );
@@ -588,7 +713,9 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
         // Create an adoption build session so test_build_draft can work.
         // Pass resolvedCellsJson so hydrateBuildSession restores populated cells.
-        const agentIrJson = JSON.stringify(designResult);
+        // Use effectiveDesignResult so the session carries the user's trigger
+        // selections, not the template's defaults.
+        const agentIrJson = JSON.stringify(effectiveDesignResult);
         const resolvedCellsJson = JSON.stringify(dimensionData);
         const sessionId = await invokeWithTimeout<string>("create_adoption_session", {
           personaId: persona.id,
@@ -612,7 +739,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           phase: initialPhase,
           resolvedCells: resolvedCellsForHydration,
           pendingQuestion: null,
-          agentIr: designResult,
+          agentIr: effectiveDesignResult,
           intent: review.instruction || templateName,
           errorMessage: null,
           createdAt: new Date().toISOString(),
@@ -645,7 +772,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         logger.error("Failed to create draft persona for adoption", { err });
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections]);
 
   const build = useMatrixBuild({ personaId });
   const lifecycle = useMatrixLifecycle({ personaId });
@@ -812,57 +939,48 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const handleDiscardEdits = useCallback(() => {
     const store = useAgentStore.getState();
     store.clearEditDirty();
-    // Re-seed from template — preserves the user's capability picks so the
-    // discard reverts manual edits without reintroducing disabled use cases.
+    // Re-seed from template — preserves the user's capability picks AND
+    // trigger selections so the discard reverts manual matrix edits without
+    // reintroducing disabled use cases or template-default cadence.
     if (designResult) {
+      const effective = triggerSelections?.perUseCase
+        ? applyTriggerSelections(designResult, triggerSelections.perUseCase)
+        : designResult;
       const dimensionData = extractDimensionData(
-        designResult,
+        effective,
         undefined,
         showUseCasePicker ? selectedUseCaseIds : undefined,
       );
-      store.patchActiveSession({ cellData: dimensionData, draft: designResult });
+      store.patchActiveSession({ cellData: dimensionData, draft: effective });
     }
-  }, [designResult, showUseCasePicker, selectedUseCaseIds]);
+  }, [designResult, showUseCasePicker, selectedUseCaseIds, triggerSelections]);
 
   if (!seeded) {
-    // Step 1 — capability picker (templates with ≥2 use cases only).
+    // Step 1 — capability + trigger composition (merged). Shown for
+    // templates with ≥2 use cases; single-UC templates skip straight to
+    // the questionnaire since there's no composition decision to make.
     if (showUseCasePicker && !useCasesPicked) {
       return (
         <UseCasePickerStep
           templateName={templateName}
           templateGoal={templateGoal}
-          useCases={availableUseCases}
+          useCases={availableUseCasesWithDefaults}
           selectedIds={selectedUseCaseIds}
+          availableEvents={availableEventTypes}
+          triggerComposition={triggerComposition}
+          triggerSelections={perUseCaseTriggerSelections}
           onToggle={toggleUseCase}
+          onTriggerChange={setPerUseCaseTriggerSelections}
           onContinue={() => setUseCasesPicked(true)}
         />
       );
     }
-    // Step 2 — trigger composition. Renders when the enabled UCs include at
-    // least one non-manual trigger, so the user can set/override cadence and
-    // event chaining before the questionnaire. Skipped for manual-only
-    // personas.
-    if (useCaseStepDone && showTriggerStep && !triggersPicked) {
-      return (
-        <TriggerCompositionDemo
-          personaName={templateName}
-          personaGoal={templateGoal}
-          triggerComposition={triggerComposition}
-          useCases={triggerStepUseCases}
-          onContinue={(selections) => {
-            setTriggerSelections(selections);
-            setTriggersPicked(true);
-          }}
-          onBack={showUseCasePicker ? () => setUseCasesPicked(false) : undefined}
-        />
-      );
-    }
-    // Step 3 — questionnaire. Rendered inline while the user fills it in so
+    // Step 2 — questionnaire. Rendered inline while the user fills it in so
     // static/dynamic questions are interactive immediately. We only fall back
     // to the "Loading template…" placeholder AFTER the user submits, while
     // seed creates the draft persona — so the user is never blocked behind
     // a generic loading screen with the questionnaire trapped underneath it.
-    if (triggerStepDone && hasFilteredQuestions && !questionsComplete) {
+    if (hasFilteredQuestions && !questionsComplete) {
       return (
         <QuestionnaireFormFocus
           questions={filteredAdoptionQuestions}
