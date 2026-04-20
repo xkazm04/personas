@@ -457,6 +457,8 @@ fn build_structured_use_cases(
             })
             .collect();
 
+        let error_handling = uc.error_handling().to_string();
+
         structured.push(serde_json::json!({
             "id": uc_id,
             "title": title,
@@ -465,6 +467,7 @@ fn build_structured_use_cases(
             "execution_mode": execution_mode,
             "suggested_trigger": suggested_trigger,
             "event_subscriptions": event_subs,
+            "error_handling": error_handling,
         }));
         ids.push(uc_id);
     }

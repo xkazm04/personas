@@ -267,6 +267,15 @@ impl AgentIrUseCase {
             AgentIrUseCase::Structured(d) => &d.event_subscriptions,
         }
     }
+
+    /// Per-use-case error-handling recipe. Empty string for simple variants
+    /// and structured UCs without the field — callers can skip rendering.
+    pub fn error_handling(&self) -> &str {
+        match self {
+            AgentIrUseCase::Simple(_) => "",
+            AgentIrUseCase::Structured(d) => d.error_handling.as_deref().unwrap_or(""),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -337,6 +346,14 @@ pub struct AgentIrUseCaseData {
     /// edges). Documentation-only; runtime does not read it.
     #[serde(default)]
     pub use_case_flow: Option<serde_json::Value>,
+
+    /// v3.1 — Per-capability error-handling recipe. When present, gets a
+    /// subsection inside each UC's bullet in the Active Capabilities prompt
+    /// block so the LLM sees failure-mode guidance next to the capability it
+    /// applies to. Persona-wide `error_handling` stays as the baseline;
+    /// per-UC strings extend it, never replace it.
+    #[serde(default)]
+    pub error_handling: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

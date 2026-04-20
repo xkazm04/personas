@@ -83,6 +83,22 @@ pub fn render_active_capabilities(design_context: Option<&str>) -> String {
         }
 
         out.push('\n');
+
+        // v3.1 — per-UC error-handling subsection. Authors frequently write
+        // capability-specific failure recipes ("GitHub 422 branch-exists →
+        // suffix counter; max 3 test-fix iters then abort") that the
+        // persona-wide errorHandling section can't capture. Render indented
+        // under the bullet so the LLM sees them attached to the capability
+        // they apply to.
+        if let Some(eh) = uc.get("error_handling").and_then(|v| v.as_str()) {
+            let trimmed = eh.trim();
+            if !trimmed.is_empty() {
+                out.push_str("  _Error handling:_ ");
+                out.push_str(trimmed);
+                out.push('\n');
+            }
+        }
+
         rendered += 1;
     }
 
