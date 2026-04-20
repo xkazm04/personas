@@ -42,7 +42,7 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing:\n\n1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining.\n\n2. **uc_optimization_proposals** — from the scan data, generate `proposal_count` specific proposals (if `proposal_count == \"Leave up to LLM\"`, dynamically size 5-8 based on signal density — richer data = more proposals, thin data = fewer; otherwise cast the string to int and honor it exactly) (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week).\n\n3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity.\n\nAll three sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
+      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing:\n\n1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining.\n\n2. **uc_optimization_proposals** — from the scan data, generate `proposal_count` specific proposals (if `proposal_count == \"Leave up to LLM\"`, dynamically size 5-8 based on signal density — richer data = more proposals, thin data = fewer; otherwise cast the string to int and honor it exactly) (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week).\n\n3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity.\n\n4. **uc_free_research** (opt-in) — read the codebase connector's README + package metadata to derive what to market (problem, audience, tone). Web-search candidate free-promotion surfaces (forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists). Apply `free_source_patterns.json` memory — suppress categories the user has bad-tagged 3+ times. Emit `marketing.free_source.discovered` per candidate; route to human review; emit `accepted`/`rejected` per decision; update memory. If the codebase connector is not attached, skip this section for the week and note it in the combined briefing.\n\nAll enabled sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
       "tool_guidance": "**Ad platform endpoints** (shape depends on which connector the user chose at adoption):\n- Google Ads: `POST /v17/customers/{cid}/googleAds:searchStream` with GAQL for campaign + keyword + search-term performance.\n- Meta Ads: `GET /v19.0/act_{aid}/insights?date_preset=last_7d&level=campaign&fields=impressions,clicks,spend,actions,cpc,ctr`.\n- LinkedIn Ads: `GET /rest/adAnalytics?q=analytics&pivot=CAMPAIGN`.\n- Mailchimp: `GET /3.0/reports?count=10&sort_field=send_time`.\n\n**Analytics endpoints**:\n- GA4 Data API: `POST /v1beta/properties/{pid}:runReport` with dateRanges + metrics + dimensions.\n- Search Console: `POST /webmasters/v3/sites/{site}/searchAnalytics/query` with dimensions=[query, page] for ranking data.\n- PostHog: `POST /api/projects/{id}/query` (HogQL).\n- Mixpanel: `POST /api/2.0/insights` or raw export `/api/2.0/export`.\n\n**Rate-limit strategy**: Google Ads 15K ops/day — batch campaigns in one GAQL query. Meta Ads — one call per account with breakdowns. Search Console — 1200 QPM limit; chunk by date if >3 months. GA4 — property-level quota; reduce date range before dimensions.\n\n**Local state**: `marketing_config.json` (connected tools, account/property IDs, site URLs from adoption). `performance_history.json` (rolling 4-week metrics per campaign + per page). `proposal_patterns.json` (accepted/rejected count by category, last 52 weeks). `latest_report.json` (fallback on Messages failure).",
       "error_handling": "Ad platform 401/403 → skip paid section; include re-auth CTA in report. 429 → exponential backoff; if still blocked, use `performance_history.json` with staleness label. Analytics quota exceeded → reduce date range or dimension count; cached baselines otherwise. Single-channel-only (paid fails, organic OK, or vice-versa) → deliver partial report with clear 'paid unavailable' / 'organic unavailable' labels. Total data blindness → Messages alert only, no report. Zero conversions in a campaign → skip CPA proposals for it, focus on traffic/engagement metrics. First run (no memory) → use industry benchmarks; note in report that recommendations sharpen with feedback. `marketing_config.json` missing → post setup message, skip run. Messages delivery failure → write full report to `latest_report.json`; retry once.",
       "examples": [],
@@ -363,6 +363,89 @@
             { "source": "c5", "target": "c8", "variant": "no", "label": "None" },
             { "source": "c6", "target": "c7" },
             { "source": "c7", "target": "c8" }
+          ]
+        }
+      },
+      {
+        "id": "uc_free_research",
+        "title": "Free Promotion Source Discovery",
+        "description": "Discovers free promotion surfaces — forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists — grounded in the app's own codebase README + package metadata so suggestions actually match what the product does. User tags each source good/bad; memory tightens future discovery.",
+        "capability_summary": "Weekly discovery of free promotion surfaces grounded in the app's README + package metadata, with good/bad tagging memory.",
+        "category": "growth",
+        "enabled_by_default": false,
+        "execution_mode": "e2e",
+        "model_override": null,
+        "suggested_trigger": {
+          "trigger_type": "schedule",
+          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "description": "Weekly Monday 9:00 AM (shared)."
+        },
+        "connectors": ["codebase"],
+        "notification_channels": [],
+        "review_policy": {
+          "mode": "always",
+          "context": "Every discovered source is reviewed. User marks good (keep, explore deeper) or bad (noisy, off-topic, already tried). Decisions persist in `free_source_patterns.json` and tighten future discovery — 3+ bad-tags of a category suppress it; good-tagged sources compound into ROI-tracked anchors."
+        },
+        "memory_policy": {
+          "enabled": true,
+          "context": "`free_source_patterns.json` — what to market (derived from README title/description + package metadata), per-source quality score (accept/reject ratio), per-source ROI proxy (clicks or mentions over time when observable). Updated after each review round.",
+          "learning_threshold": 3
+        },
+        "event_subscriptions": [
+          {
+            "event_type": "marketing.free_source.discovered",
+            "direction": "emit",
+            "description": "Payload: source_id, type (forum|subreddit|newsletter|community|directory), url, relevance_score, rationale. Emitted per candidate source at generation time."
+          },
+          {
+            "event_type": "marketing.free_source.accepted",
+            "direction": "emit",
+            "description": "Payload: source_id, user_notes?. Emitted on good-tag — the source is added to the ROI-tracked accepted set."
+          },
+          {
+            "event_type": "marketing.free_source.rejected",
+            "direction": "emit",
+            "description": "Payload: source_id, reason (noisy|off_topic|already_tried|other). Emitted on bad-tag — memory tightens future discovery for this source's category."
+          }
+        ],
+        "error_handling": "Codebase connector unavailable → skip this capability for the week, surface a one-line note in the combined briefing suggesting reconnection. README missing → fall back to package metadata (package.json/Cargo.toml description + keywords). Memory unavailable → run with generic indie-dev benchmarks, note in report that discovery will sharpen after the next review round.",
+        "input_schema": [
+          {
+            "name": "discovery_count",
+            "type": "string",
+            "default": "Leave up to LLM",
+            "enum": ["Leave up to LLM", "3", "5", "8", "12"],
+            "description": "Target candidate sources per week. 'Leave up to LLM' → size to signal density (more when the codebase reveals a fresh niche, fewer when memory has already mapped the obvious surfaces)."
+          }
+        ],
+        "sample_input": { "discovery_count": "{{param.aq_proposal_count}}" },
+        "tool_hints": ["file_read", "file_write", "web_search"],
+        "test_fixtures": [],
+        "use_case_flow": {
+          "nodes": [
+            { "id": "f1", "type": "start", "label": "Monday tick (shared)" },
+            { "id": "f2", "type": "connector", "label": "Read README + package metadata", "connector": "codebase" },
+            { "id": "f3", "type": "action", "label": "Derive what to market (problem, audience, tone)" },
+            { "id": "f4", "type": "action", "label": "Load free_source_patterns memory" },
+            { "id": "f5", "type": "action", "label": "Web-search candidate surfaces (forums, subreddits, newsletters, communities)" },
+            { "id": "f6", "type": "action", "label": "Apply memory filter (suppress bad-tagged categories)" },
+            { "id": "f7", "type": "event", "label": "Emit marketing.free_source.discovered per candidate" },
+            { "id": "f8", "type": "action", "label": "Route to human review" },
+            { "id": "f9", "type": "event", "label": "Emit accepted / rejected per decision" },
+            { "id": "f10", "type": "action", "label": "Update free_source_patterns memory" },
+            { "id": "f11", "type": "end", "label": "Free-research section ready for combined briefing" }
+          ],
+          "edges": [
+            { "source": "f1", "target": "f2" },
+            { "source": "f2", "target": "f3" },
+            { "source": "f3", "target": "f4" },
+            { "source": "f4", "target": "f5" },
+            { "source": "f5", "target": "f6" },
+            { "source": "f6", "target": "f7" },
+            { "source": "f7", "target": "f8" },
+            { "source": "f8", "target": "f9" },
+            { "source": "f9", "target": "f10" },
+            { "source": "f10", "target": "f11" }
           ]
         }
       }
