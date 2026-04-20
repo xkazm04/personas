@@ -30,7 +30,7 @@ import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
-import type { TriggerSelection } from "./TriggerCompositionStepChips";
+import type { TriggerSelection } from "./useCasePickerShared";
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -316,16 +316,12 @@ function applyTriggerSelections(
   });
   // Rebuild suggested_triggers from the materialized per-UC triggers so the
   // flat list consumers see reflects what the user picked.
-  const nextSuggestedTriggers = nextUseCases
-    .map((uc) => {
-      const trig = uc.suggested_trigger as Record<string, unknown> | undefined;
-      if (!trig) return null;
-      return {
-        ...trig,
-        use_case_id: uc.id,
-      };
-    })
-    .filter((t): t is Record<string, unknown> => t !== null);
+  const nextSuggestedTriggers: Record<string, unknown>[] = [];
+  for (const uc of nextUseCases) {
+    const trig = uc.suggested_trigger as Record<string, unknown> | undefined;
+    if (!trig) continue;
+    nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
+  }
   return {
     ...designResult,
     use_cases: nextUseCases,

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, ArrowLeft, Loader2, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { connectorsInCategory, type BuiltinConnectorDef } from '@/lib/credentials/builtinConnectors';
+import { connectorsInCategory } from '@/lib/credentials/builtinConnectors';
 import { ConnectorCard } from '@/features/vault/sub_catalog/components/picker/ConnectorCard';
 import { isDesktopBridge, isUniversalOAuthConnector, isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
