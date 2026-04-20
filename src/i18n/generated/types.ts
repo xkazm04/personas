@@ -7988,6 +7988,33 @@ export type Translations = {
     console_relative_m_ago: string;
     console_relative_h_ago: string;
     console_relative_d_ago: string;
+    inbox: {
+      header_title: string;
+      header_subtitle: string;
+      filter_all: string;
+      filter_needs_me: string;
+      filter_search: string;
+      empty_title: string;
+      empty_body: string;
+      today_label: string;
+      item_count: string;
+      of_label: string;
+      nav_hint: string;
+      the_ask_label: string;
+      details_label: string;
+      suggested_label: string;
+      suggested_hint: string;
+      notes_placeholder: string;
+      notes_hint: string;
+      notes_send_hint: string;
+      action_approve: string;
+      action_reject: string;
+      action_defer: string;
+      action_resolve: string;
+      action_dismiss: string;
+      action_mark_read: string;
+      action_running: string;
+    };
   };
   status_tokens: {
     execution: {

@@ -7997,7 +7997,34 @@
     "console_relative_just_now": "just now",
     "console_relative_m_ago": "{m}m ago",
     "console_relative_h_ago": "{h}h ago",
-    "console_relative_d_ago": "{d}d ago"
+    "console_relative_d_ago": "{d}d ago",
+    "inbox": {
+      "header_title": "Your inbox",
+      "header_subtitle": "Decide what to do with the output of your assistants",
+      "filter_all": "All",
+      "filter_needs_me": "Needs me",
+      "filter_search": "Search",
+      "empty_title": "All caught up",
+      "empty_body": "Nothing needs your attention right now.",
+      "today_label": "Today",
+      "item_count": "{n} items",
+      "of_label": "of",
+      "nav_hint": "arrow keys to navigate",
+      "the_ask_label": "The ask",
+      "details_label": "Details",
+      "suggested_label": "Suggested",
+      "suggested_hint": "press 1–{n}",
+      "notes_placeholder": "Add a note — why this decision? (optional)",
+      "notes_hint": "Your notes help tune future decisions",
+      "notes_send_hint": "enter to send",
+      "action_approve": "Approve",
+      "action_reject": "Reject",
+      "action_defer": "Defer",
+      "action_resolve": "Resolve",
+      "action_dismiss": "Dismiss",
+      "action_mark_read": "Mark as read",
+      "action_running": "Working…"
+    }
   },
   "status_tokens": {
     "execution": {
