@@ -304,7 +304,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         if (!labels || labels.length === 0) return null;
         return (
           <div className="mt-1.5">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-status-success/10 text-status-success border border-status-success/25">
               {t.templates.matrix.protocol_active}
             </span>
           </div>
@@ -405,15 +405,15 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => triggers.length === 0 ? <CellBullets items={['Manual execution only']} color="text-foreground" /> : <CellBullets items={triggers.slice(0, 3).map((t) => t.label)} color="text-foreground" />,
         editRender: editProps ? () => (<TriggerEditCell designResult={designResult} editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'human-review', label: CELL_LABELS['human-review']!, watermark: HumanReviewIcon, filled: review.level !== 'none',
-        watermarkColor: review.level === 'required' ? 'text-rose-400' : review.level === 'optional' ? 'text-amber-400' : 'text-emerald-400',
-        render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="typo-body font-medium text-foreground">{review.label}</span></div><p className="typo-body text-foreground leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
+        watermarkColor: review.level === 'required' ? 'text-status-error' : review.level === 'optional' ? 'text-status-warning' : 'text-status-success',
+        render: () => { const dotColor = review.level === 'required' ? 'bg-status-error' : review.level === 'optional' ? 'bg-status-warning' : 'bg-status-success'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="typo-body font-medium text-foreground">{review.label}</span></div><p className="typo-body text-foreground leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'messages', label: CELL_LABELS['messages']!, watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
         render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-foreground" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description && ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'memory', label: CELL_LABELS['memory']!, watermark: MemoryIcon, filled: memory.active,
-        watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
-        render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-purple-400' : 'bg-zinc-500'} flex-shrink-0`} /><span className="typo-body font-medium text-foreground">{memory.label}</span></div><p className="typo-body text-foreground leading-snug pl-[16px]">{memory.context}</p></div>),
+        watermarkColor: memory.active ? 'text-brand-purple' : 'text-foreground/55',
+        render: () => (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${memory.active ? 'bg-brand-purple' : 'bg-muted-foreground/40'} flex-shrink-0`} /><span className="typo-body font-medium text-foreground">{memory.label}</span></div><p className="typo-body text-foreground leading-snug pl-[16px]">{memory.context}</p></div>),
         editRender: editProps ? () => (<MemoryEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'error-handling', label: CELL_LABELS['error-handling']!, watermark: ErrorsIcon, watermarkColor: 'text-orange-400', filled: errorStrategies[0] !== 'Default error handling',
         render: () => <CellBullets items={errorStrategies} color="text-foreground" />,
@@ -463,7 +463,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-modal border border-primary/40 p-5 2xl:p-6 3xl:p-8 ${isPreBuild ? 'min-h-[240px] 2xl:min-h-[30vh] 3xl:min-h-[32vh]' : 'min-h-[160px] 2xl:min-h-[22vh] 3xl:min-h-[24vh]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-modal border border-primary/40 p-5 2xl:p-6 3xl:p-8 ${isPreBuild ? 'min-h-[240px] 2xl:min-h-[30vh] 3xl:min-h-[32vh]' : 'min-h-[160px] 2xl:min-h-[22vh] 3xl:min-h-[24vh]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-foreground/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}

@@ -75,7 +75,7 @@ export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhas
       >
         <span className={`absolute inset-0 rounded-full border-2 transition-colors ${
           blocked
-            ? 'border-orange-500/30 dark:border-amber-500/25 shadow-[0_0_12px_rgba(234,88,12,0.2)] dark:shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+            ? 'border-status-warning/30 shadow-elevation-2'
             : 'border-primary/25 group-hover:border-primary/50 group-disabled:border-primary/10 shadow-[0_0_16px_var(--glass-bg)]'
         } ${orbGlow}`} />
         {isRunning && <span className="absolute inset-[-4px] rounded-full border border-primary/20 animate-ping" />}
@@ -87,11 +87,11 @@ export function LaunchOrb({ onClick, disabled, isRunning, label, icon, buildPhas
         {isRunning
           ? <LoadingSpinner size="xl" className="text-primary relative z-10" />
           : icon ?? <Play className={`w-6 h-6 relative z-10 transition-colors ${
-              blocked ? 'text-orange-600/60 dark:text-amber-500/50' : 'text-primary/80 group-hover:text-primary'
+              blocked ? 'text-status-warning/60' : 'text-primary/80 group-hover:text-primary'
             }`} />}
       </button>
       <span className={`text-[11px] font-medium tracking-wide uppercase ${
-        blocked ? 'text-orange-600/70 dark:text-amber-500/60' : 'text-foreground'
+        blocked ? 'text-status-warning/70' : 'text-foreground'
       }`}>
         {isRunning ? t.templates.matrix.generating : label}
       </span>
@@ -182,8 +182,8 @@ export function ActiveBuildProgress({
           <span className="text-sm font-semibold">{t.templates.matrix.continue_build}</span>
         </button>
       ) : allResolved ? (
-        <div className="w-12 h-12 rounded-modal bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
-          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+        <div className="w-12 h-12 rounded-modal bg-status-success/15 border border-status-success/30 flex items-center justify-center">
+          <CheckCircle2 className="w-6 h-6 text-status-success" />
         </div>
       ) : isAwaitingInput && hasUnansweredQuestions ? (
         <button
@@ -204,17 +204,17 @@ export function ActiveBuildProgress({
       {/* Progress dots */}
       <div className="flex items-center gap-1">
         {Array.from({ length: totalCells }).map((_, i) => (
-          <div key={i} className={`w-2 h-2 rounded-full transition-colors duration-500 ${i < resolvedCells ? 'bg-emerald-400' : 'bg-primary/15'}`} />
+          <div key={i} className={`w-2 h-2 rounded-full transition-colors duration-500 ${i < resolvedCells ? 'bg-status-success' : 'bg-primary/15'}`} />
         ))}
       </div>
 
       {/* Phase label */}
       {allResolved ? (
-        <span className="text-xs font-semibold text-emerald-400 tracking-wide uppercase">
+        <span className="text-xs font-semibold text-status-success tracking-wide uppercase">
           {t.templates.matrix.all_resolved}
         </span>
       ) : allQuestionsAnswered ? (
-        <span className="text-xs font-semibold text-emerald-400/80 tracking-wide uppercase">
+        <span className="text-xs font-semibold text-status-success/80 tracking-wide uppercase">
           {tx(t.templates.matrix.answers_ready, { count: pendingAnswerCount })}
         </span>
       ) : (
@@ -270,9 +270,9 @@ export function BuildCompletedIndicator() {
   return (
     <div className="flex flex-col items-center gap-2 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
-        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/25" />
+        <span className="absolute inset-0 rounded-full border-2 border-status-success/30" />
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/15 via-emerald-500/8 to-emerald-400/10" />
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
+        <CheckCircle2 className="w-5 h-5 text-status-success relative z-10" />
       </div>
       <span className="text-sm text-foreground font-medium">{t.templates.matrix.build_complete}</span>
     </div>
@@ -336,7 +336,7 @@ export function CreationPostGeneration({
           <button
             type="button"
             onClick={onApplyEdits}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-card text-[11px] font-medium bg-status-warning/15 text-status-warning border border-status-warning/25 hover:bg-status-warning/25 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             {t.templates.matrix.apply_changes}
@@ -517,36 +517,36 @@ export function TestResultsPanel({
       {/* Status icon — absolute top-right */}
       <div className="absolute top-1 right-1 z-10">
         <div className={`w-7 h-7 rounded-full flex items-center justify-center border ${
-          didPass ? 'border-emerald-400/30 bg-emerald-500/10' : failedCount > 0 ? 'border-red-400/30 bg-red-500/10' : 'border-amber-400/30 bg-amber-500/10'
+          didPass ? 'border-status-success/30 bg-status-success/10' : failedCount > 0 ? 'border-status-error/30 bg-status-error/10' : 'border-status-warning/30 bg-status-warning/10'
         }`}>
           {didPass
-            ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            ? <CheckCircle2 className="w-4 h-4 text-status-success" />
             : failedCount > 0
-            ? <XCircle className="w-4 h-4 text-red-400" />
-            : <AlertTriangle className="w-4 h-4 text-amber-400" />}
+            ? <XCircle className="w-4 h-4 text-status-error" />
+            : <AlertTriangle className="w-4 h-4 text-status-warning" />}
         </div>
       </div>
 
       {/* Compact status + counts */}
       <div className="flex items-center gap-2 pr-8">
-        <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : failedCount > 0 ? 'text-red-400' : 'text-amber-400'}`}>
+        <span className={`text-sm font-medium ${didPass ? 'text-status-success' : failedCount > 0 ? 'text-status-error' : 'text-status-warning'}`}>
           {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
         </span>
         {toolResults.length > 0 && (
           <span className="text-sm text-foreground">
-            {passedCount > 0 && <span className="text-emerald-400/70">{passedCount}</span>}
-            {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-red-400/70">{failedCount}</span></>}
+            {passedCount > 0 && <span className="text-status-success/70">{passedCount}</span>}
+            {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-status-error/70">{failedCount}</span></>}
             {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-foreground">{skippedCount}</span></>}
           </span>
         )}
       </div>
 
       {error && !toolResults.length && (
-        <p className="text-sm text-red-400/80 leading-snug">{error}</p>
+        <p className="text-sm text-status-error/80 leading-snug">{error}</p>
       )}
 
       {hasConnectorGaps && (
-        <p className="text-sm text-amber-400/80 leading-snug">
+        <p className="text-sm text-status-warning/80 leading-snug">
           {t.templates.matrix_variants.missing_keys} <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
         </p>
       )}
@@ -566,7 +566,7 @@ export function TestResultsPanel({
             }
           }}
           placeholder={t.templates.matrix_variants.refine_placeholder}
-          className="w-full px-3 py-1.5 typo-body rounded-lg border border-primary/15 bg-white/[0.03] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
+          className="w-full px-3 py-1.5 typo-body rounded-lg border border-primary/15 bg-foreground/[0.03] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
         />
       )}
 
@@ -631,7 +631,7 @@ export function TestResultsPanel({
             onClick={onDeleteDraft}
             data-testid="agent-delete-draft-btn"
             title={t.templates.matrix_variants.delete_draft_title}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-red-500/20 text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium border border-status-error/25 text-status-error/80 hover:bg-status-error/10 hover:text-status-error transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {t.templates.matrix_variants.delete_draft}
@@ -658,9 +658,9 @@ export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () =>
   return (
     <div data-testid="promotion-success" className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
-        <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30 shadow-[0_0_16px_rgba(52,211,153,0.2)] animate-emerald-flash" />
+        <span className="absolute inset-0 rounded-full border-2 border-status-success/35 shadow-elevation-2 animate-emerald-flash" />
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
+        <CheckCircle2 className="w-5 h-5 text-status-success relative z-10" />
       </div>
       <span className="typo-body text-foreground font-medium">{t.templates.matrix_variants.agent_promoted}</span>
       {onViewAgent && (
