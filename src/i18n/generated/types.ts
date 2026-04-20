@@ -7947,6 +7947,35 @@ export type Translations = {
     wiring_mosaic_hint: string;
     wiring_console_hint: string;
     wiring_inbox_hint: string;
+    greeting_morning: string;
+    greeting_afternoon: string;
+    greeting_evening: string;
+    greeting_friend: string;
+    summary_runs_label: string;
+    summary_runs_unit_other: string;
+    summary_runs_unit_one: string;
+    summary_active_label: string;
+    summary_active_unit_other: string;
+    summary_active_unit_one: string;
+    summary_connections_label: string;
+    summary_connections_format: string;
+    welcome_hero_title: string;
+    welcome_hero_body: string;
+    welcome_hero_cta: string;
+    empty_assistant_grid_title: string;
+    empty_assistant_grid_body: string;
+    empty_assistant_grid_cta: string;
+    create_assistant_tile_title: string;
+    create_assistant_tile_body: string;
+    hero_cta_review: string;
+    hero_cta_read: string;
+    hero_cta_fix: string;
+    tile_last_run_label: string;
+    tile_needs_setup: string;
+    tile_active: string;
+    connections_strip_label: string;
+    connections_add_more: string;
+    connections_unhealthy: string;
   };
   status_tokens: {
     execution: {
