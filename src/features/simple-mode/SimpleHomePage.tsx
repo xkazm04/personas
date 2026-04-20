@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useSystemStore } from '@/stores/systemStore';
@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBounda
 import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
 
 import { SimpleHomeShell } from './components/SimpleHomeShell';
+import { GraduateToPowerModal } from './components/GraduateToPowerModal';
 
 // Variants are lazy-loaded so switching tabs only fetches the chunk you need.
 // Each variant is an empty placeholder in this phase; Phases 07/08/09 wire
@@ -35,6 +36,10 @@ function variantFor(tab: SimpleTab) {
  * The top bar lets the user graduate back to Power (either to Home or
  * into Settings); the tab switcher persists its selection in the system
  * store so Simple↔Power toggles remember where you were.
+ *
+ * Phase 12: the "Switch to Power" action is gated behind a confirmation
+ * modal (`GraduateToPowerModal`). The Settings gear path stays direct —
+ * users can always reach settings without confirmation.
  */
 export default function SimpleHomePage() {
   const { activeSimpleTab, setActiveSimpleTab, setViewMode, setSidebarSection } = useSystemStore(
@@ -46,15 +51,27 @@ export default function SimpleHomePage() {
     })),
   );
 
-  const onSwitchToPower = () => {
+  const [graduateOpen, setGraduateOpen] = useState(false);
+
+  const handleOpenGraduate = useCallback(() => {
+    setGraduateOpen(true);
+  }, []);
+
+  const handleCancelGraduate = useCallback(() => {
+    setGraduateOpen(false);
+  }, []);
+
+  const handleConfirmGraduate = useCallback(() => {
     setViewMode(TIERS.TEAM);
     setSidebarSection('home');
-  };
+    setGraduateOpen(false);
+  }, [setViewMode, setSidebarSection]);
 
-  const onOpenSettings = () => {
+  const onOpenSettings = useCallback(() => {
+    // Direct — no modal gate per Phase 12 user decision.
     setViewMode(TIERS.TEAM);
     setSidebarSection('settings');
-  };
+  }, [setViewMode, setSidebarSection]);
 
   return (
     <ErrorBoundary name="SimpleHome">
@@ -62,11 +79,16 @@ export default function SimpleHomePage() {
         <SimpleHomeShell
           activeTab={activeSimpleTab}
           onTabChange={setActiveSimpleTab}
-          onSwitchToPower={onSwitchToPower}
+          onSwitchToPower={handleOpenGraduate}
           onOpenSettings={onOpenSettings}
         >
           <Suspense fallback={null}>{variantFor(activeSimpleTab)}</Suspense>
         </SimpleHomeShell>
+        <GraduateToPowerModal
+          isOpen={graduateOpen}
+          onConfirm={handleConfirmGraduate}
+          onCancel={handleCancelGraduate}
+        />
       </div>
     </ErrorBoundary>
   );
