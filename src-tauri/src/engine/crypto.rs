@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
 use std::{fs, path::PathBuf};
 
@@ -51,7 +52,28 @@ impl SessionKeyPair {
     ///
     /// Format: `base64(rsa_encrypted_aes_key).base64(12-byte-iv || aes-gcm-ciphertext)`
     ///
-    /// Falls back to plain RSA decryption for legacy payloads (no `.` separator).
+    /// Legacy RSA-only fallback policy
+    /// -------------------------------
+    /// Originally the IPC bridge used plain RSA-OAEP for every payload
+    /// (introduced in the "Persona builder - baseline" commit,
+    /// 2026-03-03). The hybrid RSA+AES-GCM path superseded it shortly after,
+    /// but the plain-RSA branch was retained so in-flight frontends and any
+    /// older persisted ciphertexts could still round-trip during rollout.
+    ///
+    /// The fallback is dispatched when `ciphertext_b64` contains no `.`
+    /// separator. It is intentionally narrower than the hybrid path (RSA-OAEP
+    /// caps at ~190 bytes of plaintext) and therefore measurably weaker for
+    /// anything credential-sized.
+    ///
+    /// Retirement plan:
+    /// - Every hit increments `LEGACY_IPC_DECRYPT_CALLS`, which is surfaced on
+    ///   `vault_status` as `legacy_ipc_decrypt_calls` so the team can tell
+    ///   whether any caller is still on the legacy path.
+    /// - Every hit also emits a `tracing::warn!` tagged `legacy_ipc_decrypt`.
+    /// - Once the counter has stayed at zero for a full release cycle (target:
+    ///   after the 2026-Q3 release), replace the fallback branch with an
+    ///   explicit `CryptoError::Decrypt("legacy IPC payload rejected".into())`
+    ///   and delete the plain-RSA decryption code.
     pub fn decrypt(&self, ciphertext_b64: &str) -> Result<String, CryptoError> {
         if let Some(dot_pos) = ciphertext_b64.find('.') {
             // -- Hybrid mode: RSA-wrapped AES key + AES-GCM payload --
@@ -85,6 +107,17 @@ impl SessionKeyPair {
                 .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         } else {
             // -- Legacy mode: plain RSA (small payloads only) --
+            // See the `Legacy RSA-only fallback policy` docblock on
+            // `SessionKeyPair::decrypt` for the retirement plan. The counter
+            // and warn below are the telemetry that policy relies on.
+            let hits = LEGACY_IPC_DECRYPT_CALLS.fetch_add(1, Ordering::Relaxed) + 1;
+            tracing::warn!(
+                target: "legacy_ipc_decrypt",
+                hits,
+                payload_len = ciphertext_b64.len(),
+                "legacy RSA-only IPC decrypt path used; schedule caller migration to hybrid RSA+AES-GCM"
+            );
+
             let ciphertext = B64.decode(ciphertext_b64)
                 .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {e}")))?;
             let padding = Oaep::new::<sha2::Sha256>();
@@ -96,6 +129,17 @@ impl SessionKeyPair {
                 .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         }
     }
+}
+
+/// Cumulative count of legacy RSA-only IPC decrypts observed this process.
+///
+/// Surfaced via `vault_status` as `legacy_ipc_decrypt_calls`. Used to decide
+/// when the fallback branch in `SessionKeyPair::decrypt` can be deleted.
+static LEGACY_IPC_DECRYPT_CALLS: AtomicU64 = AtomicU64::new(0);
+
+/// Read the current legacy-IPC-decrypt counter. See `LEGACY_IPC_DECRYPT_CALLS`.
+pub fn legacy_ipc_decrypt_calls() -> u64 {
+    LEGACY_IPC_DECRYPT_CALLS.load(Ordering::Relaxed)
 }
 
 // ---------------------------------------------------------------------------

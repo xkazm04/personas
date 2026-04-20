@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pause, Play, Trash2, X, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { UnifiedDeployment } from './deploymentTypes';
@@ -24,6 +24,7 @@ export function BulkActionsToolbar({
   cloudBulkRemove,
 }: BulkActionsToolbarProps) {
   const [busyOp, setBusyOp] = useState<BulkOp | null>(null);
+  const busyRef = useRef(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const addToast = useToastStore((s) => s.addToast);
   const { t, tx } = useTranslation();
@@ -45,6 +46,8 @@ export function BulkActionsToolbar({
   };
 
   const handleBulk = async (op: BulkOp) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusyOp(op);
     try {
       let results: BulkActionResult[];
@@ -65,6 +68,7 @@ export function BulkActionsToolbar({
       onClearSelection();
       setConfirmingDelete(false);
     } finally {
+      busyRef.current = false;
       setBusyOp(null);
     }
   };

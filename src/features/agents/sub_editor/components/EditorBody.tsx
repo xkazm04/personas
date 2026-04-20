@@ -1,4 +1,5 @@
-import { useEffect, useCallback, Suspense } from 'react';
+import { useEffect, useCallback, Suspense, useState } from 'react';
+import { TabSaveError } from '../libs/EditorDocument';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { Bot, RefreshCw } from 'lucide-react';
@@ -62,6 +63,27 @@ export function EditorBody() {
     saveAllTabs,
     clearAllDirty,
   });
+
+  // Surface per-tab save failures so the user can see WHICH tab failed and
+  // retry without having to make a dummy edit to re-trigger autosave.
+  const [failedTabs, setFailedTabs] = useState<string[]>([]);
+  const runSaveAll = useCallback(async () => {
+    try {
+      await saveAllTabs();
+      setFailedTabs([]);
+    } catch (err) {
+      if (err instanceof TabSaveError) {
+        setFailedTabs(err.failedTabs);
+      } else {
+        throw err;
+      }
+    }
+  }, [saveAllTabs]);
+  const retryFailedTabs = useCallback(async () => {
+    // Re-run saveAllTabs — the previously-failed tabs are still dirty and
+    // will be retried; any newly-edited tabs get saved in the same pass.
+    await runSaveAll();
+  }, [runSaveAll]);
 
   // Global unsaved-changes guard for sidebar section navigation + window close
   const guard = useUnsavedGuard(isDirty, {
@@ -134,11 +156,28 @@ export function EditorBody() {
         onDismiss={cancelPendingSwitch}
       />
 
-      <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
+      <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} failedTabs={failedTabs} />
       <CloudNudgeBanner />
       <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
-      {saveError && (
+      {failedTabs.length > 0 && (
+        <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
+          <RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+          <span className="typo-body text-red-300/90 flex-1">
+            {t.agents.editor_ui.save_failed_tabs.replace('{tabs}', failedTabs.join(', '))}
+          </span>
+          <button
+            type="button"
+            onClick={() => void retryFailedTabs()}
+            disabled={isSaving}
+            className="px-2 py-1 typo-body rounded-card border border-red-500/30 text-red-300 hover:bg-red-500/10 disabled:opacity-40"
+          >
+            {t.agents.editor_ui.save_failed_retry_button}
+          </button>
+        </div>
+      )}
+
+      {saveError && failedTabs.length === 0 && (
         <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
           <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
           <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>

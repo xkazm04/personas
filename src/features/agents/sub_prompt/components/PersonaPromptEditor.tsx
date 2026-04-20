@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from "@/stores/agentStore";
 import { useTabSection } from '@/features/agents/sub_editor';
 import type { StructuredPrompt } from '@/lib/personas/promptMigration';
+import { newSectionId } from '@/lib/personas/promptMigration';
 import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
 import { PromptSectionSidebar } from './PromptSectionSidebar';
 import { CustomSectionsPanel } from './CustomSectionsPanel';
@@ -43,6 +44,19 @@ export function PersonaPromptEditor() {
 
   const [showSaved, setShowSaved] = useState(false);
   const [selectedCustomIndex, setSelectedCustomIndex] = useState(0);
+  // After an Add, we want to select the newly-added section by id (not by
+  // length, which is racy under concurrent clicks). Resolved in an effect
+  // once the new section lands in state.
+  const pendingSelectIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const pendingId = pendingSelectIdRef.current;
+    if (!pendingId) return;
+    const idx = sp.customSections.findIndex((s) => s.id === pendingId);
+    if (idx >= 0) {
+      setSelectedCustomIndex(idx);
+      pendingSelectIdRef.current = null;
+    }
+  }, [sp.customSections]);
 
   const promptDirty = useMemo(() => promptChanged(sp, baseline), [sp, baseline]);
 
@@ -82,12 +96,24 @@ export function PersonaPromptEditor() {
   }, [setSp]);
 
   const addCustomSection = useCallback(() => {
-    setSp((prev) => {
-      setSelectedCustomIndex(prev.customSections.length);
-      return { ...prev, customSections: [...prev.customSections, { title: t.agents.prompt_editor.new_section, content: '' }] };
-    });
+    // Generate id BEFORE state update so the "select newly-added section"
+    // step can resolve by id after the functional setSp commits — avoids
+    // the setState-inside-setState anti-pattern and the rapid-click race
+    // where both handlers read a stale customSections.length.
+    const newId = newSectionId();
+    setSp((prev) => ({
+      ...prev,
+      customSections: [
+        ...prev.customSections,
+        { id: newId, title: t.agents.prompt_editor.new_section, content: '' },
+      ],
+    }));
+    // The new section is always appended, so its index equals the length
+    // that WILL be produced. We read the ref-backed latest state after the
+    // updater below via an effect keyed on customSections.length.
+    pendingSelectIdRef.current = newId;
     setActiveTab('custom');
-  }, [setSp]);
+  }, [setSp, t.agents.prompt_editor.new_section]);
 
   const updateCustomSection = useCallback((index: number, field: 'title' | 'content', value: string) => {
     setSp((prev) => ({

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
+import { GENERAL_GROUP_KEY, toGroupKey } from './connectorGroupKey';
 
 /**
  * Search, filter, and category state for the tool selector.
@@ -47,14 +48,14 @@ export function useToolSelectorSearch() {
   const connectorGroups = useMemo(() => {
     const groups = new Map<string, typeof filteredTools>();
     for (const tool of filteredTools) {
-      const key = tool.requires_credential_type || '__general__';
+      const key = toGroupKey(tool.requires_credential_type);
       const existing = groups.get(key);
       if (existing) existing.push(tool);
       else groups.set(key, [tool]);
     }
     return Array.from(groups.entries()).sort((a, b) => {
-      if (a[0] === '__general__') return 1;
-      if (b[0] === '__general__') return -1;
+      if (a[0] === GENERAL_GROUP_KEY) return 1;
+      if (b[0] === GENERAL_GROUP_KEY) return -1;
       return a[0].localeCompare(b[0]);
     });
   }, [filteredTools]);

@@ -15,8 +15,23 @@
 // -- Types ------------------------------------------------------
 
 export interface StructuredPromptSection {
+  /** Stable per-section id. Required for correct React list keying — index
+   *  keys bleed editor state (cursor, IME, undo stack) between sections on
+   *  remove. Legacy payloads without an id are auto-assigned on parse. */
+  id: string;
   title: string;
   content: string;
+}
+
+let _sectionIdCounter = 0;
+export function newSectionId(): string {
+  // Prefer crypto.randomUUID when available (browsers, modern Node). Fall
+  // back to a running counter + timestamp so tests and non-crypto
+  // environments still get stable unique values.
+  const g = globalThis as unknown as { crypto?: { randomUUID?: () => string } };
+  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
+  _sectionIdCounter += 1;
+  return `sec-${Date.now().toString(36)}-${_sectionIdCounter}`;
 }
 
 export interface StructuredPrompt {
@@ -103,7 +118,11 @@ function normalizeCustomSection(s: Record<string, unknown>): StructuredPromptSec
     : typeof s.name === 'string' ? s.name
     : typeof s.key === 'string' ? s.key
     : '';
+  // Preserve an incoming id (round-trip of previously-saved sections), else
+  // assign a fresh stable id so React can key the list correctly.
+  const id = typeof s.id === 'string' && s.id.length > 0 ? s.id : newSectionId();
   return {
+    id,
     title,
     content: typeof s.content === 'string' ? s.content : '',
   };

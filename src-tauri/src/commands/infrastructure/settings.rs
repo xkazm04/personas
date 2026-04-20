@@ -44,6 +44,12 @@ pub fn set_app_setting(
     repo::set(&state.db, &key, &value)
 }
 
+/// Delete a setting.
+///
+/// Returns `Ok(true)` when a row existed for `key` and was removed,
+/// `Ok(false)` when no row existed (idempotent no-op — NOT an error).
+/// Frontend callers should treat the boolean as diagnostic telemetry only;
+/// the observable end state is identical either way (row is gone).
 #[tauri::command]
 pub fn delete_app_setting(state: State<'_, Arc<AppState>>, key: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;

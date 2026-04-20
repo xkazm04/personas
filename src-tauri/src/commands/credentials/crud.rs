@@ -294,12 +294,14 @@ pub fn vault_status(
     let (total, plaintext) = repo::count_vault_status(&state.db)?;
     let encrypted = total - plaintext;
     let source = crypto::key_source_label();
+    let legacy_ipc_decrypt_calls = crypto::legacy_ipc_decrypt_calls();
 
     Ok(serde_json::json!({
         "key_source": source,
         "total": total,
         "encrypted": encrypted,
         "plaintext": plaintext,
+        "legacy_ipc_decrypt_calls": legacy_ipc_decrypt_calls,
     }))
 }
 

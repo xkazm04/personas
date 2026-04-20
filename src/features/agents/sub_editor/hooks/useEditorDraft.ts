@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useEditorDirtyState, useEditorHistory } from '../libs/EditorDocument';
 import { useEditorSave } from '../libs/useEditorSave';
-import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
+import { type PersonaDraft, buildDraft, checkModelProfileIntegrity } from '../libs/PersonaDraft';
 
 const emptyDraft = () => buildDraft({ name: '', enabled: false });
 
@@ -25,7 +25,21 @@ export function useEditorDraft() {
     setDraft((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const { isSaving, modelDirty, saveError } = useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId });
+  // Detect a corrupted persisted model_profile so we can (a) warn the user
+  // and (b) suppress auto-save of model fields until they explicitly
+  // re-select — otherwise the reset-to-default values would overwrite the
+  // still-recoverable raw JSON on disk.
+  const modelProfileIntegrity = checkModelProfileIntegrity(selectedPersona?.model_profile);
+  const modelProfileCorrupt = !modelProfileIntegrity.ok;
+
+  const { isSaving, modelDirty, saveError } = useEditorSave({
+    draft,
+    baseline,
+    setDraft,
+    setBaseline,
+    pendingPersonaId,
+    suppressModelSave: modelProfileCorrupt,
+  });
   const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
   const { undo, redo, clearHistory } = useEditorHistory();
 
@@ -53,8 +67,12 @@ export function useEditorDraft() {
     }
   }, [selectedPersona, cancelPendingSwitch]);
 
-  const partialLoadWarnings = (!dismissedWarnings && selectedPersona?.warnings?.length)
-    ? selectedPersona.warnings
+  const baseWarnings = selectedPersona?.warnings ?? [];
+  const modelProfileWarning = modelProfileCorrupt && !modelProfileIntegrity.ok
+    ? [`Model config couldn't be parsed (${modelProfileIntegrity.rawLength} bytes) — fields reset to defaults. Auto-save is paused for model fields. Pick a model to repair, or restore from a backup.`]
+    : [];
+  const partialLoadWarnings = !dismissedWarnings
+    ? [...baseWarnings, ...modelProfileWarning]
     : [];
 
   return {

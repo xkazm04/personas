@@ -13,11 +13,29 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
+import { BehaviorCoreEditor } from "@/features/agents/components/matrix/BehaviorCoreEditor";
+import { CapabilityRowEditor } from "@/features/agents/components/matrix/CapabilityRowEditor";
+import { CapabilityAddModal } from "@/features/agents/components/matrix/CapabilityAddModal";
+import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+
+// v3 layout preference — persists across sessions via localStorage.
+type BuildLayout = "legacy-dimensions" | "v3-capabilities";
+const LAYOUT_STORAGE_KEY = "personas:build-layout";
+function readLayoutPreference(): BuildLayout {
+  try {
+    const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    if (raw === "legacy-dimensions" || raw === "v3-capabilities") return raw;
+  } catch { /* SSR or disabled localStorage */ }
+  return "v3-capabilities";
+}
+function writeLayoutPreference(value: BuildLayout): void {
+  try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch { /* best-effort */ }
+}
 
 const logger = createLogger("unified-matrix-entry");
 
@@ -339,6 +357,17 @@ export function UnifiedMatrixEntry() {
   const launchDisabled = (!intentText.trim() && !hasWorkflowImport) || isActivelyBuilding;
   const hasDesignResult = build.buildPhase === "draft_ready" || build.buildPhase === "testing" || build.buildPhase === "test_complete" || build.buildPhase === "promoted";
 
+  // -- Layout toggle (legacy dimensions vs v3 capabilities) ---------------
+  const [layout, setLayout] = useState<BuildLayout>(readLayoutPreference);
+  const handleLayoutChange = useCallback((next: BuildLayout) => {
+    setLayout(next);
+    writeLayoutPreference(next);
+  }, []);
+
+  const hasBehaviorCore = useAgentStore((s) => s.buildBehaviorCore !== null);
+  const capabilityOrder = useAgentStore((s) => s.buildCapabilityOrder);
+  const [showAddCapability, setShowAddCapability] = useState(false);
+
   // -- Render -------------------------------------------------------------
 
   return (
@@ -346,43 +375,178 @@ export function UnifiedMatrixEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
-      <div className="flex-1 min-h-0 w-full">
-        <PersonaMatrix
-          designResult={null}
-          variant="creation"
-          hideHeader
-          intentText={intentText}
-          onIntentChange={setIntentText}
-          onLaunch={handleLaunch}
-          launchDisabled={launchDisabled}
-          isRunning={build.isBuilding}
-          completeness={build.completeness}
-          cliOutputLines={build.outputLines}
-          buildLocked={isActivelyBuilding}
-          cellBuildStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          agentName={agentName}
-          onAgentNameChange={setAgentName}
-          hasDesignResult={hasDesignResult}
-          buildPhase={build.buildPhase}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={() => { void lifecycle.handlePromote(); }}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          buildActivity={build.buildActivity}
-          onApplyEdits={handleApplyEdits}
-          onDiscardEdits={handleDiscardEdits}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-          onViewAgent={handleViewPromotedAgent}
-        />
-      </div>
+      {/* Layout toggle — shown only once a build is in progress. */}
+      {(hasBehaviorCore || hasDesignResult || isActivelyBuilding) && (
+        <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
+          <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
+            <button
+              type="button"
+              onClick={() => handleLayoutChange("legacy-dimensions")}
+              className={`rounded-full px-3 py-1 typo-caption transition ${
+                layout === "legacy-dimensions"
+                  ? "bg-primary/20 text-primary"
+                  : "text-foreground/60 hover:text-foreground"
+              }`}
+              title={t.matrix_v3.layout_toggle_tooltip}
+              data-testid="build-layout-toggle-legacy"
+            >
+              {t.matrix_v3.layout_toggle_legacy}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLayoutChange("v3-capabilities")}
+              className={`rounded-full px-3 py-1 typo-caption transition ${
+                layout === "v3-capabilities"
+                  ? "bg-primary/20 text-primary"
+                  : "text-foreground/60 hover:text-foreground"
+              }`}
+              title={t.matrix_v3.layout_toggle_tooltip}
+              data-testid="build-layout-toggle-v3"
+            >
+              {t.matrix_v3.layout_toggle_v3}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {layout === "v3-capabilities" && hasBehaviorCore ? (
+        // v3 capability-first layout
+        <div
+          className="flex-1 min-h-0 w-full overflow-y-auto pr-1"
+          data-testid="build-layout-v3"
+        >
+          <div className="flex flex-col gap-5 pb-10">
+            <BehaviorCoreEditor />
+
+            <section
+              className="flex flex-col gap-3 rounded-2xl border border-border/30 bg-secondary/10 p-5"
+              data-testid="capabilities-section"
+            >
+              <header className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="typo-heading-sm text-foreground">
+                    {t.matrix_v3.capabilities_section_title}
+                  </h3>
+                  <p className="typo-body-sm text-foreground/50">
+                    {t.matrix_v3.capabilities_section_subtitle}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCapability(true)}
+                  className="rounded-xl bg-primary/20 px-3 py-1.5 typo-body-sm font-medium text-primary hover:bg-primary/30"
+                  data-testid="capabilities-add-button"
+                >
+                  + {t.matrix_v3.capabilities_add_button}
+                </button>
+              </header>
+
+              {capabilityOrder.length === 0 ? (
+                <p
+                  className="typo-body-sm text-foreground/40 py-4"
+                  data-testid="capabilities-empty"
+                >
+                  {t.matrix_v3.capabilities_empty}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3" data-testid="capabilities-list">
+                  {capabilityOrder.map((id) => (
+                    <CapabilityRowEditor key={id} capabilityId={id} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <SharedResourcesPanel />
+
+            {/* Keep the existing PersonaMatrix command-hub controls for
+               Test / Approve / Refine / View below the capability list.
+               PersonaMatrix's dimension grid is visually redundant in this
+               mode but its footer controls aren't — render in a collapsed
+               mode so the hub stays usable. */}
+            <div className="opacity-70">
+              <PersonaMatrix
+                designResult={null}
+                variant="creation"
+                hideHeader
+                intentText={intentText}
+                onIntentChange={setIntentText}
+                onLaunch={handleLaunch}
+                launchDisabled={launchDisabled}
+                isRunning={build.isBuilding}
+                completeness={build.completeness}
+                cliOutputLines={build.outputLines}
+                buildLocked={isActivelyBuilding}
+                cellBuildStates={build.cellStates}
+                pendingQuestions={build.pendingQuestions}
+                onAnswerBuildQuestion={build.handleAnswer}
+                agentName={agentName}
+                onAgentNameChange={setAgentName}
+                hasDesignResult={hasDesignResult}
+                buildPhase={build.buildPhase}
+                onStartTest={lifecycle.handleStartTest}
+                onApproveTest={() => { void lifecycle.handlePromote(); }}
+                onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+                onRejectTest={lifecycle.handleRejectTest}
+                onRefine={lifecycle.handleRefine}
+                testOutputLines={build.buildTestOutputLines}
+                testPassed={build.buildTestPassed}
+                testError={build.buildTestError}
+                toolTestResults={lifecycle.buildToolTestResults}
+                testSummary={lifecycle.buildTestSummary}
+                buildActivity={build.buildActivity}
+                onApplyEdits={handleApplyEdits}
+                onDiscardEdits={handleDiscardEdits}
+                onSubmitAllAnswers={build.handleSubmitAnswers}
+                onViewAgent={handleViewPromotedAgent}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 w-full" data-testid="build-layout-legacy">
+          <PersonaMatrix
+            designResult={null}
+            variant="creation"
+            hideHeader
+            intentText={intentText}
+            onIntentChange={setIntentText}
+            onLaunch={handleLaunch}
+            launchDisabled={launchDisabled}
+            isRunning={build.isBuilding}
+            completeness={build.completeness}
+            cliOutputLines={build.outputLines}
+            buildLocked={isActivelyBuilding}
+            cellBuildStates={build.cellStates}
+            pendingQuestions={build.pendingQuestions}
+            onAnswerBuildQuestion={build.handleAnswer}
+            agentName={agentName}
+            onAgentNameChange={setAgentName}
+            hasDesignResult={hasDesignResult}
+            buildPhase={build.buildPhase}
+            onStartTest={lifecycle.handleStartTest}
+            onApproveTest={() => { void lifecycle.handlePromote(); }}
+            onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+            onRejectTest={lifecycle.handleRejectTest}
+            onRefine={lifecycle.handleRefine}
+            testOutputLines={build.buildTestOutputLines}
+            testPassed={build.buildTestPassed}
+            testError={build.buildTestError}
+            toolTestResults={lifecycle.buildToolTestResults}
+            testSummary={lifecycle.buildTestSummary}
+            buildActivity={build.buildActivity}
+            onApplyEdits={handleApplyEdits}
+            onDiscardEdits={handleDiscardEdits}
+            onSubmitAllAnswers={build.handleSubmitAnswers}
+            onViewAgent={handleViewPromotedAgent}
+          />
+        </div>
+      )}
+
+      <CapabilityAddModal
+        open={showAddCapability}
+        onClose={() => setShowAddCapability(false)}
+      />
 
       {/* Error banner */}
       {(launchError || build.buildError) && (

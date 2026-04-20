@@ -4,6 +4,24 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
+import { toastCatch } from '@/lib/silentCatch';
+import { GENERAL_GROUP_KEY, toGroupKey } from './libs/connectorGroupKey';
+
+/**
+ * Undo-toast contract (pinned 2026-04-20):
+ *
+ * - Duration: [`UNDO_TOAST_MS`] after a successful remove. If the user does
+ *   nothing, the removal is permanent.
+ * - Single-slot, last-write-wins: a new remove replaces any in-flight undo.
+ *   Undos do NOT stack; the older removal is finalized and no longer
+ *   recoverable via this UI.
+ * - Persona switch: switching personas clears the undo window. A cross-persona
+ *   click that lands on the wrong agent is a worse UX than losing one undo.
+ * - Background store failures: the store slice emits error state; optimistic
+ *   toggles must be invalidated there. This hook additionally surfaces a
+ *   toast via [`toastCatch`] so the user sees WHY their click failed.
+ */
+const UNDO_TOAST_MS = 5_000;
 
 export function useToolSelectorState() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
@@ -66,7 +84,10 @@ export function useToolSelectorState() {
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string } | null>(null);
+  // Undo toast captures the persona the removal came from, NOT the currently-
+  // selected persona. This is what prevents a fast "remove tool → switch persona
+  // → undo" sequence from re-assigning the tool to the wrong agent.
+  const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string; personaId: string } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'grouped'>('grid');
 
@@ -90,14 +111,14 @@ export function useToolSelectorState() {
   const connectorGroups = useMemo(() => {
     const groups = new Map<string, typeof filteredTools>();
     for (const tool of filteredTools) {
-      const key = tool.requires_credential_type || '__general__';
+      const key = toGroupKey(tool.requires_credential_type);
       const existing = groups.get(key);
       if (existing) existing.push(tool);
       else groups.set(key, [tool]);
     }
     return Array.from(groups.entries()).sort((a, b) => {
-      if (a[0] === '__general__') return 1;
-      if (b[0] === '__general__') return -1;
+      if (a[0] === GENERAL_GROUP_KEY) return 1;
+      if (b[0] === GENERAL_GROUP_KEY) return -1;
       return a[0].localeCompare(b[0]);
     });
   }, [filteredTools]);
@@ -113,35 +134,44 @@ export function useToolSelectorState() {
 
   const handleToggleTool = useCallback(async (toolId: string, toolName: string, isAssigned: boolean) => {
     clearUndoToast();
+    // Snapshot the persona at click time so a fast persona-switch mid-request
+    // cannot cause the undo toast to act on a different agent.
+    const pid = personaId;
     try {
       if (isAssigned) {
-        await removeTool(personaId, toolId);
-        setUndoToast({ toolId, toolName });
-        undoTimerRef.current = setTimeout(() => setUndoToast(null), 5000);
+        await removeTool(pid, toolId);
+        setUndoToast({ toolId, toolName, personaId: pid });
+        undoTimerRef.current = setTimeout(() => setUndoToast(null), UNDO_TOAST_MS);
       } else {
-        await assignTool(personaId, toolId);
+        await assignTool(pid, toolId);
       }
-    } catch {
-      // error state is set by the store slice
+    } catch (err) {
+      // Store slice also sets error state, but route through toastCatch so
+      // the user sees WHY their click failed instead of a silently-reverted
+      // optimistic check.
+      toastCatch(`useToolSelectorState:toggleTool:${isAssigned ? 'remove' : 'assign'}`)(err);
     }
   }, [clearUndoToast, removeTool, assignTool, personaId]);
 
   const handleUndo = useCallback(async () => {
     if (!undoToast) return;
+    // Reassign to the persona the removal came FROM, not the currently selected
+    // one. This is the whole point of capturing personaId in the toast.
+    const { personaId: originPersonaId, toolId } = undoToast;
     try {
-      await assignTool(personaId, undoToast.toolId);
-    } catch {
-      // error state is set by the store slice
+      await assignTool(originPersonaId, toolId);
+    } catch (err) {
+      toastCatch('useToolSelectorState:undoAssign')(err);
     }
     clearUndoToast();
-  }, [undoToast, assignTool, personaId, clearUndoToast]);
+  }, [undoToast, assignTool, clearUndoToast]);
 
   const handleClearAll = useCallback(async () => {
     clearUndoToast();
     try {
       await bulkRemoveTools(personaId, assignedTools.map((t) => t.id));
-    } catch {
-      // error state is set by the store slice
+    } catch (err) {
+      toastCatch('useToolSelectorState:clearAll')(err);
     }
   }, [clearUndoToast, bulkRemoveTools, personaId, assignedTools]);
 
@@ -153,8 +183,8 @@ export function useToolSelectorState() {
       } else {
         await bulkAssignTools(personaId, tools.filter((t) => !assignedToolIds.has(t.id)).map((t) => t.id));
       }
-    } catch {
-      // error state is set by the store slice
+    } catch (err) {
+      toastCatch(`useToolSelectorState:bulkToggle:${allAssigned ? 'remove' : 'assign'}`)(err);
     }
   }, [clearUndoToast, bulkRemoveTools, bulkAssignTools, personaId, assignedToolIds]);
 

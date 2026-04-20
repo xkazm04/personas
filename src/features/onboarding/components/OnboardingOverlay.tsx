@@ -24,7 +24,8 @@ export default function OnboardingOverlay() {
     onboardingCreatedPersonaId,
     dismissOnboarding,
     templates,
-    isLoadingTemplates,
+    templateLoadState,
+    retryLoadTemplates,
     showAdoptionWizard,
     selectedReview,
     createdPersona,
@@ -119,9 +120,10 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'pick-template' && (
               <TemplatePickerStep
                 templates={templates}
-                isLoading={isLoadingTemplates}
+                loadState={templateLoadState}
                 selectedId={onboardingSelectedReviewId}
                 onSelect={handleTemplateSelect}
+                onRetry={retryLoadTemplates}
               />
             )}
 

@@ -13,6 +13,20 @@ import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
 
+/** Inclusive bounds for the user-editable `timeoutSecs` field before deploy. */
+export const TIMEOUT_SECS_MIN = 1;
+export const TIMEOUT_SECS_MAX = 3600; // one hour — anything longer pins backend resources
+export const TIMEOUT_SECS_DEFAULT = 30;
+
+/** Clamp an arbitrary numeric input into [`TIMEOUT_SECS_MIN`, `TIMEOUT_SECS_MAX`]. */
+export function clampTimeoutSecs(value: number): number {
+  if (!Number.isFinite(value)) return TIMEOUT_SECS_DEFAULT;
+  const rounded = Math.floor(value);
+  if (rounded < TIMEOUT_SECS_MIN) return TIMEOUT_SECS_MIN;
+  if (rounded > TIMEOUT_SECS_MAX) return TIMEOUT_SECS_MAX;
+  return rounded;
+}
+
 export const PLATFORM_TO_SERVICE_TYPE: Record<AutomationPlatform, string | null> = {
   n8n: 'n8n',
   zapier: 'zapier',
@@ -157,13 +171,23 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     design.start(personaId, description.trim());
   }, [description, design, personaId]);
 
+  // Synchronous in-flight lock. A `useState`-based `localPhase` can't prevent
+  // a second click that fires before React has committed the 'deploying' state
+  // (classic double-click-sends-twice pattern); a ref updated inline does.
+  const deployInFlightRef = useRef(false);
+
   const handleDeploy = async () => {
     if (!name.trim() || !platformCredentialId) return;
+    if (deployInFlightRef.current) return; // guard against double-submit
+    deployInFlightRef.current = true;
+    // Clamp user-editable timeout at the trust boundary — the raw input can be
+    // anything (999999999 overflows *1000 → ms, empty string → NaN, etc.).
+    const safeTimeoutSecs = clampTimeoutSecs(timeoutSecs);
     const mergedDesign = {
       ...design.result,
       name: name.trim(),
       input_schema: inputSchema.trim() || null,
-      timeout_secs: timeoutSecs,
+      timeout_secs: safeTimeoutSecs,
       fallback_mode: fallbackMode,
     };
     setLocalPhase('deploying'); setDeployError(null);
@@ -177,7 +201,13 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       if (result) { setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId); }
       else { setLocalPhase(null); setDeployError('Deployment failed. Check your platform credentials and try again.'); }
     } catch (err) { setLocalPhase(null); setDeployError(errMsg(err, 'Automation deployment failed')); }
+    finally { deployInFlightRef.current = false; }
   };
+
+  /** True when timeoutSecs is outside the allowed range — UI should flag it. */
+  const timeoutSecsInvalid = !Number.isFinite(timeoutSecs)
+    || timeoutSecs < TIMEOUT_SECS_MIN
+    || timeoutSecs > TIMEOUT_SECS_MAX;
 
   const handleClose = useCallback(() => {
     design.reset(); setDescription(''); setShowAdvanced(false); setName('');
@@ -239,6 +269,9 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     elapsed, platformCredentials, hasPlatformCredential, needsCredential,
     platformConnector, handleDesign, handleDeploy, handleClose,
     stageIndex, tailLines, tailRef, phase, canDesign,
+    timeoutSecsInvalid,
+    /** Disable the Deploy button while a deploy is in flight or inputs are invalid. */
+    canDeploy: !!name.trim() && !!platformCredentialId && !timeoutSecsInvalid && localPhase !== 'deploying',
     dialogRef, returnFocusRef, handleFocusTrap,
   };
 }

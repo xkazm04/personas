@@ -9,12 +9,14 @@ import type { WorkflowNode, WorkflowEdge } from '@/lib/types/compositionTypes';
 
 // ── Topological sort (Kahn's algorithm) ─────────────────────────────────
 
-export interface TopologicalResult {
-  /** Nodes in execution order (empty if the graph has a cycle). */
-  sorted: string[];
-  /** True if the graph contains a cycle. */
-  hasCycle: boolean;
-}
+/**
+ * Discriminated union result. Callers must narrow on `ok` before using the
+ * payload — this makes it a compile error to ignore a cyclic graph and
+ * silently treat it as an empty execution plan.
+ */
+export type TopologicalResult =
+  | { ok: true; order: string[] }
+  | { ok: false; cycleNodes: string[] };
 
 export function topologicalSort(
   nodes: WorkflowNode[],
@@ -40,10 +42,10 @@ export function topologicalSort(
     if (deg === 0) queue.push(id);
   }
 
-  const sorted: string[] = [];
+  const order: string[] = [];
   while (queue.length > 0) {
     const current = queue.shift()!;
-    sorted.push(current);
+    order.push(current);
     for (const neighbor of adjacency.get(current) ?? []) {
       const newDeg = (inDegree.get(neighbor) ?? 1) - 1;
       inDegree.set(neighbor, newDeg);
@@ -51,10 +53,17 @@ export function topologicalSort(
     }
   }
 
-  return {
-    sorted,
-    hasCycle: sorted.length !== nodeIds.size,
-  };
+  if (order.length === nodeIds.size) {
+    return { ok: true, order };
+  }
+
+  // Cycle detected: nodes still carrying residual in-degree are part of, or
+  // downstream of, the cycle. Surface them so the editor can highlight them.
+  const cycleNodes: string[] = [];
+  for (const [id, deg] of inDegree) {
+    if (deg > 0) cycleNodes.push(id);
+  }
+  return { ok: false, cycleNodes };
 }
 
 // ── Validation ──────────────────────────────────────────────────────────
@@ -99,9 +108,12 @@ export function validateWorkflow(
   }
 
   // Cycle detection
-  const { hasCycle } = topologicalSort(nodes, edges);
-  if (hasCycle) {
+  const result = topologicalSort(nodes, edges);
+  if (!result.ok) {
     errors.push({ message: 'Workflow contains a cycle — only DAGs are allowed.' });
+    for (const nodeId of result.cycleNodes) {
+      errors.push({ nodeId, message: 'Node is part of a cycle.' });
+    }
   }
 
   return errors;

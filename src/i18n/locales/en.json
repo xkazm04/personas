@@ -1845,6 +1845,9 @@
       "ask_anything": "Ask anything about this agent...",
       "enter_to_send": "Enter to send, Shift+Enter for new line",
       "scroll_to_bottom": "Scroll to bottom",
+      "cancel_stream": "Cancel",
+      "stream_recovered": "Stream appears stuck — chat unlocked so you can try again.",
+      "copy_failed": "Couldn't copy to clipboard",
       "experiments_running_one": "{count} experiment running -- results will appear here when ready",
       "experiments_running_other": "{count} experiments running -- results will appear here when ready",
       "you": "You",
@@ -1976,7 +1979,8 @@
       "success": "Success",
       "failed": "Failed",
       "error": "Error",
-      "input_json_placeholder": "{ \"key\": \"value\" }"
+      "input_json_placeholder": "{ \"key\": \"value\" }",
+      "invalid_json": "Invalid JSON — fix before running."
     },
     "health_check": {
       "title": "Agent Health Check",
@@ -2035,7 +2039,8 @@
       "remove_section": "Remove section",
       "title_placeholder": "Section title...",
       "content_placeholder": "Section content...",
-      "custom_section": "Custom Section"
+      "custom_section": "Custom Section",
+      "duplicate_title": "Another section already uses this title. Titles must be unique."
     },
     "activity_filters": {
       "all": "All",
@@ -2190,6 +2195,9 @@
       "select_agent": "Select an agent to get started",
       "choose_from_sidebar": "Choose from the sidebar or create a new agent",
       "save_failed_retry": "Save failed -- will retry on next edit",
+      "save_failed_tabs": "Couldn't save: {tabs}",
+      "save_failed_retry_button": "Retry",
+      "tab_save_failed_indicator": "Save failed",
       "delete_failed": "Delete failed: {message}",
       "tab_activity": "Activity",
       "tab_matrix": "Matrix",
@@ -5146,6 +5154,107 @@
       "auto_fixed_this_week": "auto-fixed this week",
       "issues_in_7d": "issues in 7d"
     }
+  },
+  "matrix_v3": {
+    "layout_toggle_legacy": "8-dimension view",
+    "layout_toggle_v3": "Capability view",
+    "layout_toggle_tooltip": "Switch between the legacy 8-dimension matrix and the capability-first view.",
+
+    "behavior_core_section_title": "Behavior Core",
+    "behavior_core_section_subtitle": "The mission and identity that every capability shares.",
+
+    "mission_label": "Mission",
+    "mission_placeholder": "Be the user's... so that...",
+    "mission_coach_task_warning": "This reads like a task. A mission is the unchanging purpose every capability serves. Try starting with 'Be...', 'Make...', 'Ensure...', or 'Serve...'.",
+    "mission_coach_good": "Strong mission — captures the shared purpose.",
+    "mission_helper_text": "One sentence. What every capability ultimately serves.",
+
+    "identity_label": "Identity",
+    "identity_role_label": "Role",
+    "identity_role_placeholder": "You are a senior email triage concierge.",
+    "identity_description_label": "Description",
+    "identity_description_placeholder": "What this persona is responsible for in one line.",
+
+    "voice_label": "Voice",
+    "voice_style_label": "Style",
+    "voice_style_placeholder": "Direct, lightly wry, never alarmist.",
+    "voice_output_format_label": "Output format",
+    "voice_output_format_placeholder": "Markdown digest with a ranked list.",
+
+    "principles_label": "Principles",
+    "principles_helper_text": "Cross-cutting rules this persona always honors. 2-5 short entries.",
+    "principles_add_placeholder": "Add a principle",
+
+    "constraints_label": "Constraints",
+    "constraints_helper_text": "Hard limits. Breaking them is a bug. 2-5 entries.",
+    "constraints_add_placeholder": "Add a constraint",
+
+    "decision_principles_label": "Decision principles",
+    "decision_principles_helper_text": "Tiebreakers. 0-5 entries.",
+    "decision_principles_add_placeholder": "Add a tiebreaker",
+
+    "verbosity_label": "Default verbosity",
+    "verbosity_terse": "Terse",
+    "verbosity_normal": "Normal",
+    "verbosity_verbose": "Verbose",
+
+    "capabilities_section_title": "Capabilities",
+    "capabilities_section_subtitle": "The distinct things this persona does. Each can be turned on and off independently.",
+    "capabilities_add_button": "Add capability",
+    "capabilities_empty": "No capabilities yet. The persona is still being designed.",
+
+    "capability_row_expand": "Expand",
+    "capability_row_collapse": "Collapse",
+    "capability_row_remove": "Remove capability",
+    "capability_row_enabled": "Enabled by default",
+    "capability_row_field_trigger": "Trigger",
+    "capability_row_field_connectors": "Connectors",
+    "capability_row_field_channels": "Channels",
+    "capability_row_field_review": "Review",
+    "capability_row_field_memory": "Memory",
+    "capability_row_field_events": "Events",
+    "capability_row_field_flow": "Flow",
+    "capability_row_field_input_schema": "Input",
+    "capability_row_field_tool_hints": "Tools",
+    "capability_row_field_error_handling": "Error handling",
+    "capability_row_field_pending": "pending",
+
+    "capability_title_label": "Title",
+    "capability_summary_label": "Summary",
+    "capability_goal_label": "User-facing goal",
+
+    "add_capability_modal_title": "Add a capability",
+    "add_capability_modal_subtitle": "Describe what this capability does. The persona keeps its mission; this is just a new thing it knows how to do.",
+    "add_capability_modal_title_placeholder": "Weekly Review",
+    "add_capability_modal_summary_placeholder": "Sunday-evening pattern roll-up over the past 7 days.",
+    "add_capability_modal_goal_placeholder": "See whether my attention allocation matched what mattered.",
+    "add_capability_modal_cta": "Add capability",
+
+    "shared_resources_section_title": "Shared Resources",
+    "shared_resources_section_subtitle": "Persona-wide tools, connectors, and defaults every capability can draw from.",
+    "shared_resources_tools_label": "Tools",
+    "shared_resources_connectors_label": "Connectors",
+    "shared_resources_defaults_label": "Defaults",
+    "shared_resources_channels_default_label": "Default channels",
+    "shared_resources_operating_instructions_label": "Operating instructions",
+    "shared_resources_tool_guidance_label": "Tool guidance",
+    "shared_resources_error_handling_label": "Error handling",
+    "shared_resources_core_memories_label": "Core memories",
+    "shared_resources_empty": "Nothing resolved yet.",
+
+    "clarifying_scope_mission": "Mission",
+    "clarifying_scope_capability": "Capability",
+    "clarifying_scope_field": "Field",
+    "clarifying_question_heading": "One question",
+    "clarifying_question_answer_placeholder": "Pick an option or type your answer",
+    "clarifying_question_submit": "Send answer",
+
+    "review_mode_never": "Never",
+    "review_mode_on_low_confidence": "On low confidence",
+    "review_mode_always": "Always",
+
+    "memory_enabled_true": "Enabled",
+    "memory_enabled_false": "Disabled"
   },
   "templates": {
     "gallery": {

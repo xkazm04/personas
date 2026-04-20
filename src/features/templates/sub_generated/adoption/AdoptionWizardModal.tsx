@@ -15,7 +15,8 @@ interface AdoptionWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   review: PersonaDesignReview | null;
-  onPersonaCreated: () => void;
+  /** Called with the new persona's ID when adoption completes. */
+  onPersonaCreated: (personaId: string) => void;
 }
 
 /** Phases where the user has not yet done meaningful work. */

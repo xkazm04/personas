@@ -14,6 +14,15 @@
  *
  * Build state is persisted to SQLite (not localStorage) — hydration happens
  * via hydrateBuildSession().
+ *
+ * NEXT-ACTIVE-SESSION POLICY (removeBuildSession / resetBuildSession):
+ * When the currently-active session is removed, we promote the remaining
+ * session with the largest `createdAt` (most recently created draft) as the
+ * new active session. Ties (equal createdAt) fall back to sessionId sort for
+ * determinism. Previously this relied on `Object.keys(rest)[0]` — insertion
+ * order — which was accidental. Callers that want a specific next session
+ * should pass the id explicitly via a dedicated action (future work); today
+ * the newest-first rule is the pinned default.
  */
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
@@ -24,7 +33,12 @@ import type {
   PersistedBuildSession,
   CellBuildStatus,
   ToolTestResult,
+  PersonaBehaviorCore,
+  CapabilityState,
+  CapabilityDraft,
+  PersonaResolution,
 } from "@/lib/types/buildTypes";
+import { isBuildPhase, isCellBuildStatus } from "@/lib/types/buildTypes";
 import type { MatrixEditState } from "@/features/templates/sub_generated/gallery/matrix/matrixEditTypes";
 import { storeBus } from "@/lib/storeBus";
 
@@ -70,6 +84,24 @@ export interface BuildSessionState {
   editDirty: boolean;
   editingCellKey: string | null;
 
+  // v3 capability-framework state (additive; coexists with cellData)
+  /** Phase A output — null until the CLI emits behavior_core_update. */
+  behaviorCore: PersonaBehaviorCore | null;
+  /** Phase B + Phase C output, keyed by capability id. */
+  capabilities: Record<string, CapabilityState>;
+  /** Display order for capabilities (preserves enumeration order + user additions). */
+  capabilityOrder: string[];
+  /** Persona-wide resolution fields (tools, connectors registry, defaults, ...). */
+  personaResolution: PersonaResolution;
+  /** v3 clarifying_question — scoped to mission, capability, or field. */
+  clarifyingQuestionV3: {
+    scope: string;
+    capability_id: string | null;
+    field: string | null;
+    question: string;
+    options: string[] | null;
+  } | null;
+
   createdAt: number;
 }
 
@@ -110,6 +142,19 @@ export interface MatrixBuildSlice {
   buildEditDirty: boolean;
   editingCellKey: string | null;
 
+  // v3 scalar mirrors of the active session's v3 state
+  buildBehaviorCore: PersonaBehaviorCore | null;
+  buildCapabilities: Record<string, CapabilityState>;
+  buildCapabilityOrder: string[];
+  buildPersonaResolution: PersonaResolution;
+  buildClarifyingQuestionV3: {
+    scope: string;
+    capability_id: string | null;
+    field: string | null;
+    question: string;
+    options: string[] | null;
+  } | null;
+
   /** Read-only snapshot for MatrixTab viewing promoted agents. Isolated from
    * live build sessions so MatrixTab can't clobber an in-progress build. */
   savedBuildSnapshot: BuildSessionState | null;
@@ -133,6 +178,28 @@ export interface MatrixBuildSlice {
   handleBuildProgress: (event: Extract<BuildEvent, { type: "progress" }>) => void;
   handleBuildError: (event: Extract<BuildEvent, { type: "error" }>) => void;
   handleBuildSessionStatus: (event: Extract<BuildEvent, { type: "session_status" }>) => void;
+
+  // v3 event handlers
+  handleBehaviorCoreUpdate: (event: Extract<BuildEvent, { type: "behavior_core_update" }>) => void;
+  handleCapabilityEnumerationUpdate: (
+    event: Extract<BuildEvent, { type: "capability_enumeration_update" }>,
+  ) => void;
+  handleCapabilityResolutionUpdate: (
+    event: Extract<BuildEvent, { type: "capability_resolution_update" }>,
+  ) => void;
+  handlePersonaResolutionUpdate: (
+    event: Extract<BuildEvent, { type: "persona_resolution_update" }>,
+  ) => void;
+  handleClarifyingQuestionV3: (
+    event: Extract<BuildEvent, { type: "clarifying_question_v3" }>,
+  ) => void;
+
+  // v3 editing actions — invoked by BehaviorCoreEditor / CapabilityRowEditor
+  patchBehaviorCore: (partial: Partial<PersonaBehaviorCore>) => void;
+  patchCapability: (id: string, partial: Partial<CapabilityState>) => void;
+  addCapabilityDraft: (draft: CapabilityDraft) => void;
+  removeCapability: (id: string) => void;
+  clearClarifyingQuestionV3: () => void;
 
   // Actions -- question management
   clearBuildQuestion: (cellKey: string) => void;
@@ -228,6 +295,11 @@ function emptySessionState(personaId: string, sessionId: string): BuildSessionSt
     editState: { ...EMPTY_EDIT_STATE },
     editDirty: false,
     editingCellKey: null,
+    behaviorCore: null,
+    capabilities: {},
+    capabilityOrder: [],
+    personaResolution: {},
+    clarifyingQuestionV3: null,
     createdAt: Date.now(),
   };
 }
@@ -244,7 +316,9 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
   | 'buildParserResultJson' | 'buildWorkflowName' | 'buildWorkflowPlatform'
   | 'buildPendingAnswers' | 'buildTestId' | 'buildTestPassed' | 'buildTestOutputLines'
   | 'buildTestError' | 'buildToolTestResults' | 'buildTestSummary' | 'buildTestConnectors'
-  | 'buildEditState' | 'buildEditDirty' | 'editingCellKey'> {
+  | 'buildEditState' | 'buildEditDirty' | 'editingCellKey'
+  | 'buildBehaviorCore' | 'buildCapabilities' | 'buildCapabilityOrder'
+  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3'> {
   if (!s) {
     return {
       buildPersonaId: null,
@@ -274,6 +348,11 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
       buildEditState: { ...EMPTY_EDIT_STATE },
       buildEditDirty: false,
       editingCellKey: null,
+      buildBehaviorCore: null,
+      buildCapabilities: {},
+      buildCapabilityOrder: [],
+      buildPersonaResolution: {},
+      buildClarifyingQuestionV3: null,
     };
   }
   return {
@@ -304,6 +383,11 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
     buildEditState: s.editState,
     buildEditDirty: s.editDirty,
     editingCellKey: s.editingCellKey,
+    buildBehaviorCore: s.behaviorCore,
+    buildCapabilities: s.capabilities,
+    buildCapabilityOrder: s.capabilityOrder,
+    buildPersonaResolution: s.personaResolution,
+    buildClarifyingQuestionV3: s.clarifyingQuestionV3,
   };
 }
 
@@ -313,6 +397,27 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
  * active session's scalars. If sessionId is null/undefined, falls back to the
  * active session.
  */
+/**
+ * Pin the "next active session" policy when the current active session is
+ * removed: pick the remaining session with the newest createdAt, breaking
+ * ties by sessionId (lexicographic) for determinism. Returns null when no
+ * sessions remain.
+ */
+function pickNextActiveSessionId(
+  sessions: Record<string, BuildSessionState>,
+): string | null {
+  const ids = Object.keys(sessions);
+  if (ids.length === 0) return null;
+  ids.sort((a, b) => {
+    const ca = sessions[a]?.createdAt ?? 0;
+    const cb = sessions[b]?.createdAt ?? 0;
+    const diff = cb - ca;
+    if (diff !== 0) return diff;
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+  return ids[0] ?? null;
+}
+
 function updateSessionInState(
   state: MatrixBuildSlice,
   sessionId: string | null | undefined,
@@ -373,6 +478,12 @@ export const createMatrixBuildSlice: StateCreator<
   buildEditDirty: false,
   editingCellKey: null,
 
+  buildBehaviorCore: null,
+  buildCapabilities: {},
+  buildCapabilityOrder: [],
+  buildPersonaResolution: {},
+  buildClarifyingQuestionV3: null,
+
   savedBuildSnapshot: null,
 
   // -- Multi-draft management -----------------------------------------------
@@ -413,7 +524,7 @@ export const createMatrixBuildSlice: StateCreator<
     set((state) => {
       const { [sessionId]: _removed, ...rest } = state.buildSessions;
       const wasActive = state.activeBuildSessionId === sessionId;
-      const nextActiveId = wasActive ? (Object.keys(rest)[0] ?? null) : state.activeBuildSessionId;
+      const nextActiveId = wasActive ? pickNextActiveSessionId(rest) : state.activeBuildSessionId;
       const nextActive = nextActiveId ? rest[nextActiveId] ?? null : null;
       return {
         buildSessions: rest,
@@ -463,7 +574,19 @@ export const createMatrixBuildSlice: StateCreator<
       } catch { /* ignore parse errors */ }
 
       const prevStatus = sess.cellStates[event.cell_key];
-      const incomingStatus = event.status as CellBuildStatus;
+      // Validate against the CellBuildStatus union. Backend drift (rename or
+      // new variant) would previously slip through as-is and corrupt state;
+      // fall back to 'error' with a log so the issue is visible.
+      let incomingStatus: CellBuildStatus;
+      if (isCellBuildStatus(event.status)) {
+        incomingStatus = event.status;
+      } else {
+        console.warn('[matrixBuildSlice] Unknown cell build status, falling back to "error"', {
+          received: event.status,
+          cell: event.cell_key,
+        });
+        incomingStatus = 'error';
+      }
       let newStatus: CellBuildStatus;
       if (prevStatus === incomingStatus && prevStatus === 'resolved') {
         const oldItems = sess.cellData[event.cell_key]?.items;
@@ -527,13 +650,226 @@ export const createMatrixBuildSlice: StateCreator<
     const progress = event.total_count > 0
       ? (event.resolved_count / event.total_count) * 100
       : 0;
+    // Validate the phase string against the known union. Backend drift
+    // falls back to 'failed' with a log instead of silently corrupting
+    // session state.
+    let phase: BuildPhase;
+    if (isBuildPhase(event.phase)) {
+      phase = event.phase;
+    } else {
+      console.warn('[matrixBuildSlice] Unknown build phase, falling back to "failed"', {
+        received: event.phase,
+      });
+      phase = 'failed';
+    }
     set((state) => {
       const patch = updateSessionInState(state, event.session_id, (sess) => {
-        storeBus.emit('build:phase-changed', { phase: event.phase, personaId: sess.personaId });
-        return { ...sess, phase: event.phase as BuildPhase, progress };
+        storeBus.emit('build:phase-changed', { phase, personaId: sess.personaId });
+        return { ...sess, phase, progress };
       });
       return patch;
     });
+  },
+
+  // -- v3 event handlers ----------------------------------------------------
+
+  handleBehaviorCoreUpdate: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const data = (event.data ?? {}) as Partial<PersonaBehaviorCore>;
+      const prev = sess.behaviorCore ?? {
+        mission: '',
+        identity: { role: '', description: '' },
+        voice: { style: '', output_format: '' },
+        principles: [],
+        constraints: [],
+      };
+      return {
+        ...sess,
+        behaviorCore: {
+          ...prev,
+          ...data,
+          identity: { ...prev.identity, ...(data.identity ?? {}) },
+          voice: { ...prev.voice, ...(data.voice ?? {}) },
+          principles: data.principles ?? prev.principles,
+          constraints: data.constraints ?? prev.constraints,
+          decision_principles: data.decision_principles ?? prev.decision_principles,
+          verbosity_default: data.verbosity_default ?? prev.verbosity_default,
+        },
+      };
+    }));
+  },
+
+  handleCapabilityEnumerationUpdate: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const payload = (event.data ?? {}) as { capabilities?: CapabilityDraft[] };
+      const drafts = payload.capabilities ?? [];
+      const nextCaps: Record<string, CapabilityState> = { ...sess.capabilities };
+      const nextOrder: string[] = [...sess.capabilityOrder];
+      for (const d of drafts) {
+        if (!d?.id) continue;
+        if (!nextCaps[d.id]) {
+          nextCaps[d.id] = {
+            id: d.id,
+            title: d.title ?? d.id,
+            capability_summary: d.capability_summary ?? '',
+            user_facing_goal: d.user_facing_goal,
+            enabled_by_default: true,
+            resolvedFields: {},
+          };
+          nextOrder.push(d.id);
+        } else {
+          // Merge draft metadata (LLM may refine title/summary during a clarifying_question flow)
+          const existing = nextCaps[d.id]!;
+          nextCaps[d.id] = {
+            ...existing,
+            title: d.title ?? existing.title,
+            capability_summary: d.capability_summary ?? existing.capability_summary,
+            user_facing_goal: d.user_facing_goal ?? existing.user_facing_goal,
+          };
+        }
+      }
+      return {
+        ...sess,
+        capabilities: nextCaps,
+        capabilityOrder: nextOrder,
+      };
+    }));
+  },
+
+  handleCapabilityResolutionUpdate: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const { capability_id, field, value, status } = event;
+      if (!capability_id || !field) return sess;
+      const existing = sess.capabilities[capability_id];
+      // If the LLM resolves a field for an id we haven't seen in enumeration,
+      // create a stub capability so nothing gets lost.
+      const cap: CapabilityState = existing ?? {
+        id: capability_id,
+        title: capability_id,
+        capability_summary: '',
+        enabled_by_default: true,
+        resolvedFields: {},
+      };
+      const updated: CapabilityState = {
+        ...cap,
+        [field]: value,
+        resolvedFields: { ...cap.resolvedFields, [field]: status === 'resolved' ? 'resolved' : 'pending' },
+      };
+      const nextOrder = existing ? sess.capabilityOrder : [...sess.capabilityOrder, capability_id];
+      return {
+        ...sess,
+        capabilities: { ...sess.capabilities, [capability_id]: updated },
+        capabilityOrder: nextOrder,
+      };
+    }));
+  },
+
+  handlePersonaResolutionUpdate: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const { field, value } = event;
+      if (!field) return sess;
+      return {
+        ...sess,
+        personaResolution: { ...sess.personaResolution, [field]: value },
+      };
+    }));
+  },
+
+  handleClarifyingQuestionV3: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => ({
+      ...sess,
+      clarifyingQuestionV3: {
+        scope: event.scope,
+        capability_id: event.capability_id,
+        field: event.field,
+        question: event.question,
+        options: event.options,
+      },
+      phase: 'awaiting_input',
+    })));
+  },
+
+  // -- v3 editing actions ---------------------------------------------------
+
+  patchBehaviorCore: (partial) => {
+    set((state) => updateSessionInState(state, null, (sess) => {
+      const prev = sess.behaviorCore ?? {
+        mission: '',
+        identity: { role: '', description: '' },
+        voice: { style: '', output_format: '' },
+        principles: [],
+        constraints: [],
+      };
+      return {
+        ...sess,
+        behaviorCore: {
+          ...prev,
+          ...partial,
+          identity: { ...prev.identity, ...(partial.identity ?? {}) },
+          voice: { ...prev.voice, ...(partial.voice ?? {}) },
+        },
+        editDirty: true,
+      };
+    }));
+  },
+
+  patchCapability: (id, partial) => {
+    set((state) => updateSessionInState(state, null, (sess) => {
+      const cap = sess.capabilities[id];
+      if (!cap) return sess;
+      return {
+        ...sess,
+        capabilities: { ...sess.capabilities, [id]: { ...cap, ...partial } },
+        editDirty: true,
+      };
+    }));
+  },
+
+  addCapabilityDraft: (draft) => {
+    set((state) => updateSessionInState(state, null, (sess) => {
+      // Disambiguate colliding ids by appending _2, _3, ... rather than
+      // silently dropping the new draft (which would clobber user work).
+      let id = draft.id;
+      if (sess.capabilities[id]) {
+        let suffix = 2;
+        while (sess.capabilities[`${draft.id}_${suffix}`]) suffix += 1;
+        id = `${draft.id}_${suffix}`;
+      }
+      const cap: CapabilityState = {
+        id,
+        title: draft.title,
+        capability_summary: draft.capability_summary,
+        user_facing_goal: draft.user_facing_goal,
+        enabled_by_default: true,
+        resolvedFields: {},
+      };
+      return {
+        ...sess,
+        capabilities: { ...sess.capabilities, [id]: cap },
+        capabilityOrder: [...sess.capabilityOrder, id],
+        editDirty: true,
+      };
+    }));
+  },
+
+  removeCapability: (id) => {
+    set((state) => updateSessionInState(state, null, (sess) => {
+      if (!sess.capabilities[id]) return sess;
+      const { [id]: _removed, ...rest } = sess.capabilities;
+      return {
+        ...sess,
+        capabilities: rest,
+        capabilityOrder: sess.capabilityOrder.filter((x) => x !== id),
+        editDirty: true,
+      };
+    }));
+  },
+
+  clearClarifyingQuestionV3: () => {
+    set((state) => updateSessionInState(state, null, (sess) => ({
+      ...sess,
+      clarifyingQuestionV3: null,
+    })));
   },
 
   // -- Test lifecycle actions ------------------------------------------------
@@ -741,15 +1077,26 @@ export const createMatrixBuildSlice: StateCreator<
         category: 'general',
       }));
 
-      const reviewData = sess.cellData['human-review'];
-      const hasApproval = reviewData?.items?.some(
-        (item) => item.toLowerCase().includes('required') || item.toLowerCase().includes('approval'),
-      ) ?? false;
+      // CONTRACT: Edit state derives from structured IR fields, never from
+      // display strings. Keyword matching on cellData items is English-only,
+      // fragile (e.g. a 'not required' item containing 'required' would flip
+      // the flag), and breaks localization across the app's 14 languages.
+      const useCasesIR = Array.isArray(draft.use_cases)
+        ? (draft.use_cases as Array<Record<string, unknown>>)
+        : [];
 
-      const memoryData = sess.cellData['memory'];
-      const hasMemory = memoryData?.items?.some(
-        (item) => !item.toLowerCase().includes('stateless') && !item.toLowerCase().includes('no memory'),
-      ) ?? false;
+      const hasApproval = useCasesIR.some((uc) => {
+        const policy = uc.review_policy as { mode?: string } | undefined;
+        return policy?.mode === 'on_low_confidence' || policy?.mode === 'always';
+      }) || Object.values(sess.capabilities).some((cap) => {
+        const mode = cap.review_policy?.mode;
+        return mode === 'on_low_confidence' || mode === 'always';
+      });
+
+      const hasMemory = useCasesIR.some((uc) => {
+        const policy = uc.memory_policy as { enabled?: boolean } | undefined;
+        return policy?.enabled === true;
+      }) || Object.values(sess.capabilities).some((cap) => cap.memory_policy?.enabled === true);
 
       const connectorMap: Record<string, string> = {};
       const connectors = draft.required_connectors;
@@ -796,8 +1143,10 @@ export const createMatrixBuildSlice: StateCreator<
         return scalarsFromSession(null);
       }
       const { [activeId]: _removed, ...rest } = state.buildSessions;
-      // Promote another session to active if available, otherwise clear
-      const nextActiveId = Object.keys(rest)[0] ?? null;
+      // Promote another session to active if available, otherwise clear.
+      // Policy: newest createdAt wins (see header). No more accidental
+      // insertion-order selection.
+      const nextActiveId = pickNextActiveSessionId(rest);
       const nextActive = nextActiveId ? rest[nextActiveId] ?? null : null;
       return {
         buildSessions: rest,
@@ -851,6 +1200,65 @@ export const createMatrixBuildSlice: StateCreator<
       }
     }
 
+    // v3: if the stored agent_ir carries a persona block + use_cases, hydrate
+    // the v3 state too so the capability-first UI can resume an in-progress
+    // session after a page reload.
+    let behaviorCore: PersonaBehaviorCore | null = null;
+    const capabilities: Record<string, CapabilityState> = {};
+    const capabilityOrder: string[] = [];
+    let personaResolution: PersonaResolution = {};
+    if (session.agentIr && typeof session.agentIr === 'object') {
+      const ir = session.agentIr as Record<string, unknown>;
+      const persona = ir.persona as Record<string, unknown> | undefined;
+      if (persona) {
+        behaviorCore = {
+          mission: (persona.mission as string) ?? '',
+          identity: (persona.identity as PersonaBehaviorCore['identity']) ?? { role: '', description: '' },
+          voice: (persona.voice as PersonaBehaviorCore['voice']) ?? { style: '', output_format: '' },
+          principles: (persona.principles as string[]) ?? [],
+          constraints: (persona.constraints as string[]) ?? [],
+          decision_principles: persona.decision_principles as string[] | undefined,
+          verbosity_default: persona.verbosity_default as PersonaBehaviorCore['verbosity_default'],
+        };
+        personaResolution = {
+          tools: persona.tools as PersonaResolution['tools'],
+          connectors: persona.connectors as PersonaResolution['connectors'],
+          notification_channels_default: persona.notification_channels_default as PersonaResolution['notification_channels_default'],
+          operating_instructions: persona.operating_instructions as string | undefined,
+          tool_guidance: persona.tool_guidance as string | undefined,
+          error_handling: persona.error_handling as string | undefined,
+          core_memories: persona.core_memories as PersonaResolution['core_memories'],
+        };
+      }
+      const useCases = ir.use_cases as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(useCases)) {
+        for (const uc of useCases) {
+          const id = uc.id as string | undefined;
+          if (!id) continue;
+          capabilities[id] = {
+            id,
+            title: (uc.title as string) ?? id,
+            capability_summary: (uc.capability_summary as string) ?? (uc.description as string) ?? '',
+            user_facing_goal: uc.user_facing_goal as string | undefined,
+            enabled_by_default: (uc.enabled_by_default as boolean) ?? true,
+            suggested_trigger: uc.suggested_trigger as CapabilityState['suggested_trigger'],
+            connectors: uc.connectors as string[] | undefined,
+            notification_channels: uc.notification_channels as CapabilityState['notification_channels'],
+            review_policy: uc.review_policy as CapabilityState['review_policy'],
+            memory_policy: uc.memory_policy as CapabilityState['memory_policy'],
+            event_subscriptions: uc.event_subscriptions as CapabilityState['event_subscriptions'],
+            input_schema: uc.input_schema as CapabilityState['input_schema'],
+            sample_input: uc.sample_input as Record<string, unknown> | undefined,
+            tool_hints: uc.tool_hints as string[] | undefined,
+            use_case_flow: uc.use_case_flow as CapabilityState['use_case_flow'],
+            error_handling: uc.error_handling as string | undefined,
+            resolvedFields: {},
+          };
+          capabilityOrder.push(id);
+        }
+      }
+    }
+
     set((state) => {
       // Create (or replace) the session in the map, and make it active
       const hydrated: BuildSessionState = {
@@ -862,6 +1270,10 @@ export const createMatrixBuildSlice: StateCreator<
         draft: session.agentIr,
         error: session.errorMessage ?? null,
         connectorLinks,
+        behaviorCore,
+        capabilities,
+        capabilityOrder,
+        personaResolution,
         // Carry over any pending workflow import from top-level scalars if present
         // (user may have uploaded a workflow before hydration arrived)
         workflowJson: state.buildWorkflowJson,

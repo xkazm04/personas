@@ -33,7 +33,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
   onClose: () => void;
-  onPersonaCreated: () => void;
+  /** Called with the promoted persona's ID once adoption completes. */
+  onPersonaCreated: (personaId: string) => void;
 }
 
 type CellDataMap = Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }>;
@@ -700,8 +701,9 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       useAgentStore.getState().fetchPersonas();
       useSystemStore.getState().setEditorTab('matrix');
 
-      // Close the adoption modal
-      onPersonaCreated();
+      // Close the adoption modal and hand the caller the actual persona ID
+      // so they don't have to guess from created_at ordering.
+      onPersonaCreated(personaId);
     }, 400);
   }, [personaId, onPersonaCreated]);
 

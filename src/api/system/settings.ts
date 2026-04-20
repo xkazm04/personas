@@ -11,6 +11,14 @@ export const getAppSetting = (key: string) =>
 export const setAppSetting = (key: string, value: string) =>
   invoke<void>("set_app_setting", { key, value });
 
+/**
+ * Delete an app setting by key. Returns `true` when a row existed and was
+ * removed, `false` when the key was absent (idempotent no-op — not an error).
+ *
+ * Do NOT surface "setting cleared" toasts based on `true` vs `false`: the
+ * observable end state is identical (row is gone). Treat the boolean as
+ * diagnostic telemetry only.
+ */
 export const deleteAppSetting = (key: string) =>
   invoke<boolean>("delete_app_setting", { key });
 

@@ -9,7 +9,8 @@ import type { SystemStore } from "./storeTypes";
 import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
 import { createGitLabSlice } from "./slices/system/gitlabSlice";
-import { createOnboardingSlice } from "./slices/system/onboardingSlice";
+import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
+import * as Sentry from "@sentry/react";
 import { createTourSlice } from "./slices/system/tourSlice";
 import { createViewModeSlice } from "./slices/system/viewModeSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
@@ -77,6 +78,35 @@ export const useSystemStore = create<SystemStore>()(
         if (typeof raw === 'string' && !(raw in TIER_RANK)) {
           // Migrate legacy value
           state.viewMode = (LEGACY_MAP[raw] ?? DEFAULT_TIER) as typeof state.viewMode;
+        }
+
+        // Guard against onboarding schema drift: if a persisted step id no
+        // longer exists in the current enum (app update renamed/removed a
+        // step), discard the stale value so the overlay doesn't render blank
+        // on resume. Log the mismatch so we can tell how often it happens.
+        if (
+          state.onboardingDismissedAtStep != null &&
+          !isOnboardingStep(state.onboardingDismissedAtStep)
+        ) {
+          try {
+            Sentry.addBreadcrumb({
+              category: 'onboarding',
+              level: 'warning',
+              message: 'Discarding unknown onboardingDismissedAtStep on hydrate',
+              data: { persisted: String(state.onboardingDismissedAtStep) },
+            });
+          } catch { /* intentional: Sentry may be uninitialized */ }
+          state.onboardingDismissedAtStep = null;
+        }
+
+        // Trim unknown keys from the step-completed record so a renamed step
+        // can't keep a stale completed-bit around.
+        if (state.onboardingStepCompleted && typeof state.onboardingStepCompleted === 'object') {
+          const cleaned: Record<string, boolean> = {};
+          for (const step of ONBOARDING_STEPS) {
+            cleaned[step] = Boolean((state.onboardingStepCompleted as Record<string, boolean>)[step]);
+          }
+          state.onboardingStepCompleted = cleaned as typeof state.onboardingStepCompleted;
         }
         // Migrate legacy editor tabs that were consolidated into the Design hub.
         const legacyTab = state.editorTab as unknown as string;

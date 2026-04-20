@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { GroupedToolRow } from './GroupedToolRow';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { isGeneralGroup } from '../libs/connectorGroupKey';
 
 export function ConnectorGroup({
   connectorKey, tools, assignedToolIds, credentialTypeSet,
@@ -22,7 +23,7 @@ export function ConnectorGroup({
   onAddCredential: () => void;
 }) {
   const { t } = useTranslation();
-  const isGeneral = connectorKey === '__general__';
+  const isGeneral = isGeneralGroup(connectorKey);
   const meta = isGeneral ? null : getConnectorMeta(connectorKey);
   const label = isGeneral ? t.agents.tools.general : credentialLabel(connectorKey);
   const hasCredential = isGeneral || credentialTypeSet.has(connectorKey);

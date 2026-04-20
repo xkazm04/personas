@@ -23,13 +23,13 @@ use crate::commands::design::n8n_transform::cli_runner::extract_first_json_objec
 use crate::db::models::{
     Inconsistency, MissingPageCandidate, ProposedLink, SemanticLintReport,
 };
+use crate::db::settings_keys;
 use crate::engine::prompt;
 use crate::error::AppError;
 
-/// Default model — Haiku is cheap and fast and this is a synthesis task over
-/// short snippets, not deep reasoning. Override via the
-/// `semantic_lint_model` app setting in the caller.
-pub const DEFAULT_SEMANTIC_LINT_MODEL: &str = "claude-haiku-4-5-20251001";
+/// Default model — sourced from the central `settings_keys` registry so the
+/// fallback stays in sync with the key's documented default.
+pub const DEFAULT_SEMANTIC_LINT_MODEL: &str = settings_keys::SEMANTIC_LINT_MODEL_DEFAULT;
 
 /// Timeout for the Claude call. Vault summaries are bounded, so 90s is a
 /// generous ceiling that catches network stalls without letting runaway

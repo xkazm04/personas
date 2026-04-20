@@ -1156,15 +1156,38 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
     fired
 }
 
+/// Read a numeric retention setting from `app_settings`, falling back to
+/// `default` if the row is absent OR unparseable. Unparseable values emit a
+/// `warn!` so corrupt/legacy values are visible in observability — without
+/// this, a user setting `"90d"` or `"  45 "` silently reverts to the default.
+fn parse_retention_setting(pool: &DbPool, key: &str, default: i64) -> i64 {
+    match settings::get(pool, key).ok().flatten() {
+        None => default,
+        Some(raw) => match raw.parse::<i64>() {
+            Ok(n) => n,
+            Err(err) => {
+                tracing::warn!(
+                    key = key,
+                    value = %raw,
+                    error = %err,
+                    default = default,
+                    "settings retention value is not a valid integer — using default",
+                );
+                default
+            }
+        },
+    }
+}
+
 /// One tick of the cleanup subscription: delete old processed events.
 ///
 /// Reads `event_retention_days` from app_settings (default 30 days).
 pub(crate) fn cleanup_tick(pool: &DbPool) {
-    let retention_days = settings::get(pool, settings_keys::EVENT_RETENTION_DAYS)
-        .ok()
-        .flatten()
-        .and_then(|v| v.parse::<i64>().ok())
-        .unwrap_or(30);
+    let retention_days = parse_retention_setting(
+        pool,
+        settings_keys::EVENT_RETENTION_DAYS,
+        settings_keys::EVENT_RETENTION_DAYS_DEFAULT,
+    );
 
     match event_repo::cleanup(pool, Some(retention_days)) {
         Ok(n) if n > 0 => tracing::info!("Cleaned up {} old events (retention={}d)", n, retention_days),
@@ -1206,11 +1229,11 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
     }
 
     // Execution log: configurable retention (default 60 days / 2 months), keep at least 50 per persona
-    let exec_retention_days = settings::get(pool, settings_keys::EXECUTION_RETENTION_DAYS)
-        .ok()
-        .flatten()
-        .and_then(|v| v.parse::<i64>().ok())
-        .unwrap_or(60);
+    let exec_retention_days = parse_retention_setting(
+        pool,
+        settings_keys::EXECUTION_RETENTION_DAYS,
+        settings_keys::EXECUTION_RETENTION_DAYS_DEFAULT,
+    );
     match exec_repo::cleanup_old_executions(pool, exec_retention_days, 50) {
         Ok(n) if n > 0 => tracing::info!("Cleaned up {} old execution records (retention={}d, min_keep=50/persona)", n, exec_retention_days),
         Ok(_) => {}

@@ -70,7 +70,14 @@ fn run_health_check() {
 
 fn sentry_options() -> sentry::ClientOptions {
     sentry::ClientOptions {
-        dsn: option_env!("SENTRY_DSN").and_then(|s| s.parse().ok()),
+        // Only report from release builds (installer packages). Debug builds are
+        // treated as local dev and must not ship events even if a DSN leaked in
+        // via the shell env at compile time. See docs/devops/guide-error-reporting.md.
+        dsn: if cfg!(debug_assertions) {
+            None
+        } else {
+            option_env!("SENTRY_DSN").and_then(|s| s.parse().ok())
+        },
         release: Some(env!("CARGO_PKG_VERSION").into()),
         traces_sample_rate: 0.0,
         send_default_pii: false,

@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { SectionEditor } from '@/features/shared/components/editors/draft-editor/SectionEditor';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface CustomSection {
+  /** Stable id. Required for correct React keying on add/remove — index
+   *  keys bleed editor state (cursor, IME, undo stack) between sections. */
+  id: string;
   title: string;
   content: string;
 }
@@ -26,6 +30,18 @@ export function CustomSectionsPanel({
 }: CustomSectionsPanelProps) {
   const { t, tx } = useTranslation();
   const currentCustom = sections[selectedIndex];
+  // Validate on blur only (live validation while typing is noisy and
+  // produces false positives mid-keystroke). Tracked in local state so
+  // we don't need to round-trip validity through the parent's draft.
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const validateTitle = (value: string) => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) { setTitleError(null); return; }
+    const duplicate = sections.some(
+      (s, i) => i !== selectedIndex && s.title.trim().toLowerCase() === trimmed,
+    );
+    setTitleError(duplicate ? t.agents.custom_sections.duplicate_title : null);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-2">
@@ -50,7 +66,7 @@ export function CustomSectionsPanel({
           <div className="w-36 flex-shrink-0 space-y-0.5 overflow-y-auto">
             {sections.map((section, index) => (
               <div
-                key={index}
+                key={section.id ?? `idx-${index}`}
                 className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-card cursor-pointer transition-colors ${
                   selectedIndex === index
                     ? 'bg-violet-500/10 text-foreground border border-violet-500/20'
@@ -78,10 +94,21 @@ export function CustomSectionsPanel({
               <input
                 type="text"
                 value={currentCustom.title}
-                onChange={(e) => onUpdate(selectedIndex, 'title', e.target.value)}
-                className="px-3 py-1.5 bg-background/50 border border-primary/20 rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0"
+                onChange={(e) => {
+                  onUpdate(selectedIndex, 'title', e.target.value);
+                  // Clear any stale error as the user types — re-validated on blur.
+                  if (titleError) setTitleError(null);
+                }}
+                onBlur={(e) => validateTitle(e.target.value)}
+                aria-invalid={!!titleError}
+                className={`px-3 py-1.5 bg-background/50 border rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-ring flex-shrink-0 ${
+                  titleError ? 'border-red-500/40' : 'border-primary/20'
+                }`}
                 placeholder={t.agents.custom_sections.title_placeholder}
               />
+              {titleError && (
+                <p className="typo-body text-red-400 -mt-1">{titleError}</p>
+              )}
               <div className="flex-1 min-h-0">
                 <SectionEditor
                   value={currentCustom.content}

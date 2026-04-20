@@ -57,9 +57,41 @@ export interface ModelMetrics {
   count: number;
 }
 
+/**
+ * Outcome of aggregating results for one model.
+ *  - `{ status: 'ok', metrics }`    — model produced at least one result.
+ *  - `{ status: 'missing' }`        — model was expected (caller asked for
+ *    it) but no rows in `results` have this modelId. Typically means the
+ *    run for that model failed to complete or dispatch.
+ *  - `{ status: 'empty' }`          — the whole `results` array is empty;
+ *    caller hasn't kicked off any run yet.
+ *
+ * Callers should distinguish 'missing' from 'empty' so the UI can surface
+ * "Model X produced no results — run may have failed" instead of a generic
+ * "no data" message.
+ */
+export type AggregateResult =
+  | { status: 'ok'; metrics: ModelMetrics }
+  | { status: 'missing'; modelId: string }
+  | { status: 'empty' };
+
+export function aggregateResultsDetailed(
+  results: LabArenaResult[],
+  modelId: string,
+): AggregateResult {
+  if (results.length === 0) return { status: 'empty' };
+  const rows = results.filter((r) => r.modelId === modelId);
+  if (rows.length === 0) return { status: 'missing', modelId };
+  return { status: 'ok', metrics: computeMetrics(rows, modelId) };
+}
+
 export function aggregateResults(results: LabArenaResult[], modelId: string): ModelMetrics | null {
   const rows = results.filter((r) => r.modelId === modelId);
   if (rows.length === 0) return null;
+  return computeMetrics(rows, modelId);
+}
+
+function computeMetrics(rows: LabArenaResult[], modelId: string): ModelMetrics {
   const n = rows.length;
   const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n;
   const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n;

@@ -21,8 +21,37 @@ import * as bundleApi from "@/api/network/bundle";
 import * as enclaveApi from "@/api/network/enclave";
 import * as discoveryApi from "@/api/network/discovery";
 
-/** Number of consecutive poll failures before surfacing a staleness warning. */
-const STALE_THRESHOLD = 3;
+/**
+ * Number of consecutive poll failures — counted across ALL network pollers
+ * (`fetchDiscoveredPeers`, `fetchNetworkStatus`, `fetchNetworkSnapshot`) —
+ * before surfacing a "Network backend unreachable" warning.
+ *
+ * ## Semantics (decided 2026-04-20)
+ *
+ * This is a SHARED counter, not a per-endpoint counter. A mix of failures
+ * across different pollers trips the warning the same as repeated failures
+ * from one endpoint:
+ *
+ *   1 status-failure + 1 peers-failure + 1 snapshot-failure  →  warning ON
+ *   3 consecutive snapshot-failures                          →  warning ON
+ *
+ * ### Rationale
+ * All three pollers hit the same Rust `NetworkService`. If any one is failing,
+ * it almost always means the service is down — tracking per-endpoint counters
+ * would delay the warning (and split state) for no diagnostic benefit.
+ *
+ * ### Reset contract
+ * ANY successful call from ANY poller resets `networkConsecutiveFailures` to 0
+ * and clears `networkError`. This means a healthy snapshot every 30s will
+ * mask intermittent status-poll failures — accepted tradeoff, since the
+ * snapshot is the authoritative source of truth.
+ *
+ * ### If you add a new poller
+ * It MUST increment `networkConsecutiveFailures` on error and reset it on
+ * success, matching the existing pattern. Otherwise it will silently bypass
+ * the staleness warning.
+ */
+export const STALE_THRESHOLD = 3;
 
 export interface NetworkSlice {
   // State (Phase 1)

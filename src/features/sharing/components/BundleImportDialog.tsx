@@ -52,21 +52,14 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
 
   const isEnclave = filePath?.endsWith('.enclave') ?? false;
 
-  // Auto-start share link preview when opened with an initialShareUrl
+  // Monotonic token: bumped on every reset so in-flight preview responses
+  // from a prior open/share-link can be discarded instead of flashing stale
+  // bundle metadata into a subsequent open.
+  const requestTokenRef = useRef(0);
   const autoStartedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (isOpen && initialShareUrl && autoStartedRef.current !== initialShareUrl) {
-      autoStartedRef.current = initialShareUrl;
-      setShareLinkInput(initialShareUrl);
-      // Defer to next tick so dialog is fully mounted
-      queueMicrotask(() => handleImportShareLink(initialShareUrl));
-    }
-    if (!isOpen) {
-      autoStartedRef.current = null;
-    }
-  }, [isOpen, initialShareUrl]);
 
   const reset = () => {
+    requestTokenRef.current++;
     setPhase('pick');
     setFilePath(null);
     setClipboardData(null);
@@ -80,6 +73,26 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
     setError(null);
     setDangerConfirmed(false);
   };
+
+  // Reset on open (and whenever initialShareUrl changes while open) so the
+  // dialog never flashes a previous preview before the new fetch completes.
+  useEffect(() => {
+    if (!isOpen) {
+      autoStartedRef.current = null;
+      reset();
+      return;
+    }
+    // Fresh open or new share URL → reset state, then kick off auto-preview.
+    if (autoStartedRef.current !== (initialShareUrl ?? null)) {
+      reset();
+      autoStartedRef.current = initialShareUrl ?? null;
+      if (initialShareUrl) {
+        setShareLinkInput(initialShareUrl);
+        queueMicrotask(() => handleImportShareLink(initialShareUrl));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialShareUrl]);
 
   const handleClose = () => {
     reset();
@@ -102,12 +115,15 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setError(null);
       setEnclaveResult(null);
 
+      const token = ++requestTokenRef.current;
       if (path.endsWith('.enclave')) {
         const result = await verifyEnclave(path);
+        if (token !== requestTokenRef.current) return;
         setEnclaveResult(result);
         setPhase('preview');
       } else {
         const p = await previewBundleImport(path);
+        if (token !== requestTokenRef.current) return;
         setPreview(p);
         setPhase('preview');
       }
@@ -133,7 +149,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPhase('previewing');
       setError(null);
 
+      const token = ++requestTokenRef.current;
       const p = await previewBundleFromClipboard(trimmed);
+      if (token !== requestTokenRef.current) return;
       setPreview(p);
       setPhase('preview');
     } catch (err) {
@@ -158,7 +176,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPhase('previewing');
       setError(null);
 
+      const token = ++requestTokenRef.current;
       const p = await previewShareLink(url);
+      if (token !== requestTokenRef.current) return;
       setPreview(p);
       setPhase('preview');
     } catch (err) {

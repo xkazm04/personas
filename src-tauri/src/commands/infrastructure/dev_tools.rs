@@ -1119,7 +1119,7 @@ pub fn dev_tools_get_cross_project_map(
     require_auth_sync(&state)?;
 
     // Prefer the rich cached metadata map if it exists
-    if let Some(cached) = crate::db::repos::core::settings::get(&state.db, CROSS_PROJECT_METADATA_KEY)? {
+    if let Some(cached) = crate::db::repos::core::settings::get(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA)? {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&cached) {
             return Ok(parsed);
         }
@@ -1167,12 +1167,12 @@ pub fn dev_tools_get_cross_project_map(
 //
 // Aggregates per-project capabilities, keywords, tech layers, and entry points
 // from each project's already-generated context map. Caches the result in
-// app_settings under CROSS_PROJECT_METADATA_KEY so agents connecting via the
+// app_settings under crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA so agents connecting via the
 // Codebases connector can efficiently evaluate which projects are relevant to
 // a business task without re-scanning the filesystem.
 // ============================================================================
 
-const CROSS_PROJECT_METADATA_KEY: &str = "dev_tools_cross_project_metadata";
+// Key is defined centrally in `crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA`.
 
 fn parse_json_array(raw: &Option<String>) -> Vec<String> {
     raw.as_deref()
@@ -1457,7 +1457,7 @@ pub fn dev_tools_generate_cross_project_metadata(
     // Cache result in app_settings
     let json_str = serde_json::to_string(&result)
         .map_err(|e| AppError::Validation(format!("Failed to serialize metadata: {e}")))?;
-    crate::db::repos::core::settings::set(&state.db, CROSS_PROJECT_METADATA_KEY, &json_str)?;
+    crate::db::repos::core::settings::set(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA, &json_str)?;
 
     Ok(result)
 }
@@ -1468,7 +1468,7 @@ pub fn dev_tools_get_cross_project_metadata(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<serde_json::Value>, AppError> {
     require_auth_sync(&state)?;
-    match crate::db::repos::core::settings::get(&state.db, CROSS_PROJECT_METADATA_KEY)? {
+    match crate::db::repos::core::settings::get(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA)? {
         Some(json_str) => {
             let parsed: serde_json::Value = serde_json::from_str(&json_str)
                 .map_err(|e| AppError::Validation(format!("Corrupted metadata cache: {e}")))?;

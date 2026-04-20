@@ -230,8 +230,13 @@ const registry: EventRegistration[] = [
       const unlisten = await typedListen(
         EventName.BUILD_SESSION_EVENT,
         (payload) => {
-          // Skip if Channel handler is active (component mounted)
-          if ((window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__) return;
+          // Skip if this specific session's Channel is currently live.
+          // Per-session scoping (vs. a global boolean flag) avoids the
+          // multi-instance bug where unmounting one build surface opened a
+          // double-processing window for another still-active session.
+          const activeSet = (window as unknown as Record<string, unknown>)
+            .__BUILD_CHANNEL_ACTIVE_SESSIONS__ as Set<string> | undefined;
+          if (activeSet && activeSet.has(payload.session_id)) return;
 
           const store = useAgentStore.getState();
 
@@ -253,6 +258,21 @@ const registry: EventRegistration[] = [
               break;
             case "session_status":
               store.handleBuildSessionStatus(payload as Parameters<typeof store.handleBuildSessionStatus>[0]);
+              break;
+            case "behavior_core_update":
+              store.handleBehaviorCoreUpdate(payload as Parameters<typeof store.handleBehaviorCoreUpdate>[0]);
+              break;
+            case "capability_enumeration_update":
+              store.handleCapabilityEnumerationUpdate(payload as Parameters<typeof store.handleCapabilityEnumerationUpdate>[0]);
+              break;
+            case "capability_resolution_update":
+              store.handleCapabilityResolutionUpdate(payload as Parameters<typeof store.handleCapabilityResolutionUpdate>[0]);
+              break;
+            case "persona_resolution_update":
+              store.handlePersonaResolutionUpdate(payload as Parameters<typeof store.handlePersonaResolutionUpdate>[0]);
+              break;
+            case "clarifying_question_v3":
+              store.handleClarifyingQuestionV3(payload as Parameters<typeof store.handleClarifyingQuestionV3>[0]);
               break;
           }
         },

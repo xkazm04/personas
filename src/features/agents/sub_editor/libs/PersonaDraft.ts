@@ -1,6 +1,19 @@
 import type { ModelProfile, ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
+/**
+ * Default execution timeout for a new persona, in milliseconds.
+ * 3 minutes — chosen to catch hung model calls / runaway tool loops early
+ * without killing legitimate long-running reasoning. The previous default of
+ * 1_000_000 ms (~16.6 min) was effectively "no timeout" and was a top source
+ * of unexpected cloud bills.
+ */
+export const DEFAULT_PERSONA_TIMEOUT_MS = 180_000;
+/** Lower UI bound — anything faster is almost certainly a misconfiguration. */
+export const MIN_PERSONA_TIMEOUT_MS = 10_000;
+/** Upper UI bound matching the engine hard ceiling (30 min). */
+export const MAX_PERSONA_TIMEOUT_MS = 1_800_000;
+
 // -- Draft type for all editable persona fields --
 
 export interface PersonaDraft {
@@ -76,8 +89,17 @@ export function buildDraft(persona: { name: string; description?: string | null;
     if (mp.prompt_cache_policy === 'short' || mp.prompt_cache_policy === 'long') {
       promptCachePolicy = mp.prompt_cache_policy;
     }
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
+  } catch (err) {
+    // Silent fallback is dangerous here — it resets the dropdown to the
+    // anthropic default and, without guards, the debounced auto-save would
+    // then persist that reset over the real config. Callers should check
+    // checkModelProfileIntegrity() before accepting a model-fields save.
+    const rawLen = persona.model_profile ? persona.model_profile.length : 0;
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[PersonaDraft] model_profile JSON parse failed — fields reset; auto-save of model fields will be blocked until re-selected',
+      { rawLength: rawLen, error: err instanceof Error ? err.message : String(err) },
+    );
   }
   return {
     name: persona.name,
@@ -85,7 +107,11 @@ export function buildDraft(persona: { name: string; description?: string | null;
     icon: persona.icon || '',
     color: persona.color || '#8b5cf6',
     maxConcurrent: persona.max_concurrent ?? 1,
-    timeout: persona.timeout_ms ?? 1000000,
+    // 3 minutes. Previous default was ~16.6 min (1_000_000 ms), which was
+    // effectively "no timeout" — hung model calls or runaway tool loops held
+    // a concurrency slot for the full window and produced no visible
+    // feedback. See DEFAULT_PERSONA_TIMEOUT_MS.
+    timeout: persona.timeout_ms ?? DEFAULT_PERSONA_TIMEOUT_MS,
     enabled: persona.enabled,
     sensitive: persona.sensitive ?? false,
     selectedModel,
@@ -97,4 +123,30 @@ export function buildDraft(persona: { name: string; description?: string | null;
     maxTurns: persona.max_turns ?? '',
     promptCachePolicy,
   };
+}
+
+/**
+ * Integrity check for a persisted `model_profile` JSON blob. Used by the
+ * editor to:
+ *   1. Display a partial-load warning when the stored config cannot be
+ *      parsed (so the user knows why their dropdown "reset").
+ *   2. Suppress auto-save of MODEL_KEYS until the user explicitly re-selects
+ *      a model — preventing the reset state from silently clobbering the
+ *      real config on disk.
+ * Returns `{ ok: true }` for null / empty (treated as "no profile yet").
+ */
+export function checkModelProfileIntegrity(
+  raw: string | null | undefined,
+): { ok: true } | { ok: false; rawLength: number; message: string } {
+  if (!raw) return { ok: true };
+  try {
+    JSON.parse(raw);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      rawLength: raw.length,
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
 }

@@ -9,6 +9,17 @@ const DIGEST_ENABLED_KEY = 'health_digest_enabled';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
+ * Parse a stored last-run timestamp. Returns `null` for any value that is
+ * missing, empty, non-ISO, or produces a NaN when parsed — callers should
+ * treat `null` as "never run" and overwrite with a fresh ISO string.
+ */
+function parseLastRunMs(raw: string | null | undefined): number | null {
+  if (typeof raw !== 'string' || raw.length === 0) return null;
+  const ms = new Date(raw).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/**
  * Scheduler hook that checks on mount whether a weekly health digest
  * is overdue. If so, it runs the full digest and sends a native
  * desktop notification summarizing the results.
@@ -39,10 +50,13 @@ export function useHealthDigestScheduler() {
         // Check when we last ran
         const lastRunRaw = await getAppSetting(LAST_DIGEST_KEY).catch(silentCatchNull("useHealthDigestScheduler:checkLastRunTimestamp"));
         if (abort.signal.aborted) return;
-        const lastRunMs = lastRunRaw ? new Date(lastRunRaw).getTime() : 0;
+        // Guard against corrupt/legacy timestamp values: treat any non-ISO or unparseable
+        // string as "never run" so we run once and immediately rewrite a valid ISO stamp,
+        // instead of spamming the digest on every launch when `now - NaN` is always false.
+        const lastRunMs = parseLastRunMs(lastRunRaw);
         const now = Date.now();
 
-        if (now - lastRunMs < ONE_WEEK_MS) {
+        if (lastRunMs !== null && now - lastRunMs < ONE_WEEK_MS) {
           ran.current = true; // Not yet due — no retry needed
           return;
         }

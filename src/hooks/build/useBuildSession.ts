@@ -55,6 +55,44 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("build-session");
 
 // ---------------------------------------------------------------------------
+// Active Channel registry (per-session, survives HMR)
+// ---------------------------------------------------------------------------
+//
+// A Set of sessionIds whose Channel handler is currently live. The
+// EventBridge checks this to decide whether to skip a given event (if the
+// Channel is already processing it, EventBridge must stay out of the way to
+// avoid double-processing). A per-session Set replaces the previous global
+// boolean flag, which had a bug: unmounting one UnifiedMatrixEntry instance
+// cleared the flag even when another instance still had a live Channel,
+// causing EventBridge to double-process events for the still-active session.
+const ACTIVE_SET_KEY = "__BUILD_CHANNEL_ACTIVE_SESSIONS__";
+
+function getActiveSet(): Set<string> {
+  const w = window as unknown as Record<string, unknown>;
+  let set = w[ACTIVE_SET_KEY] as Set<string> | undefined;
+  if (!set) {
+    set = new Set<string>();
+    w[ACTIVE_SET_KEY] = set;
+  }
+  return set;
+}
+
+function markSessionActive(sessionId: string): void {
+  getActiveSet().add(sessionId);
+  // Legacy global flag kept true while ANY session is active, for any
+  // external code that still checks it.
+  (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
+}
+
+function markSessionInactive(sessionId: string | null): void {
+  if (!sessionId) return;
+  const set = getActiveSet();
+  set.delete(sessionId);
+  (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ =
+    set.size > 0;
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -98,6 +136,22 @@ export function useBuildSession(
   /** Active session ID for stale-event filtering. */
   const sessionIdRef = useRef<string | null>(null);
 
+  /**
+   * Monotonically increasing generation. Bumped on each startSession and on
+   * cancel/unmount. Every Channel subscription captures its generation and
+   * drops messages (and RAF flushes) that do not match the current one — this
+   * prevents events buffered in the Tauri Channel pipe after cancel from
+   * leaking into a freshly-started session ("session is haunted" bug).
+   */
+  const generationRef = useRef(0);
+
+  /**
+   * In-flight startSession promise. Set synchronously before any await so a
+   * rapid double-click (or concurrent caller such as hydration + user click)
+   * shares the same result instead of spawning two CLI processes.
+   */
+  const startPromiseRef = useRef<Promise<string> | null>(null);
+
   // -- Event dispatch --------------------------------------------------------
 
   /**
@@ -112,7 +166,14 @@ export function useBuildSession(
    * channel without cross-contamination, and we no longer need the
    * sessionIdRef-based stale-event filter that used to live here.
    */
-  const flushEvents = useCallback(() => {
+  const flushEvents = useCallback((generation: number) => {
+    // Drop the batch if the hook moved on (cancel/unmount/restart) while the
+    // RAF was pending. Without this, a RAF scheduled before cancel would flush
+    // events into a freshly-reset store.
+    if (generation !== generationRef.current) {
+      pendingEventsRef.current = [];
+      return;
+    }
     const events = pendingEventsRef.current;
     pendingEventsRef.current = [];
 
@@ -135,6 +196,32 @@ export function useBuildSession(
         case "session_status":
           store.handleBuildSessionStatus(event);
           break;
+        case "behavior_core_update":
+          store.handleBehaviorCoreUpdate(event);
+          break;
+        case "capability_enumeration_update":
+          store.handleCapabilityEnumerationUpdate(event);
+          break;
+        case "capability_resolution_update":
+          store.handleCapabilityResolutionUpdate(event);
+          break;
+        case "persona_resolution_update":
+          store.handlePersonaResolutionUpdate(event);
+          break;
+        case "clarifying_question_v3":
+          store.handleClarifyingQuestionV3(event);
+          break;
+        default: {
+          // Unknown variant — typically means backend has added or renamed
+          // a BuildEvent after a schema drift. Surface it loudly so a user
+          // upgrade that leaves the frontend stale doesn't present as a
+          // silently stuck build surface.
+          const unknown = event as { type?: string };
+          logger.warn("Unknown BuildEvent type dropped", {
+            type: unknown?.type ?? "<missing>",
+          });
+          break;
+        }
       }
     }
   }, []);
@@ -145,14 +232,17 @@ export function useBuildSession(
    * the CLI resolves multiple dimensions in rapid succession.
    */
   const handleChannelMessage = useCallback(
-    (event: BuildEvent) => {
+    (event: BuildEvent, generation: number) => {
+      // Drop events arriving after cancel/unmount or from a prior session.
+      if (generation !== generationRef.current) return;
+
       pendingEventsRef.current.push(event);
 
       // Only schedule one RAF per frame
       if (rafRef.current === null) {
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
-          flushEvents();
+          flushEvents(generation);
         });
       }
     },
@@ -162,56 +252,84 @@ export function useBuildSession(
   // -- Session control functions --------------------------------------------
 
   const startSession = useCallback(
-    async (
+    (
       intent: string,
       overridePersonaId?: string,
       workflowJson?: string,
       parserResultJson?: string,
     ): Promise<string> => {
+      // De-duplicate concurrent starts BEFORE any await. Without this, a
+      // rapid double-click or a hydration/user-click race can both pass the
+      // channelRef guard below (refs are only populated after the awaited
+      // startBuildSession resolves) and spawn two CLI processes.
+      if (startPromiseRef.current) {
+        logger.warn("startSession already in-flight, returning existing promise");
+        return startPromiseRef.current;
+      }
+
       // If store was reset (e.g., Create new agent), clear stale refs
       if (!useAgentStore.getState().buildSessionId) {
         channelRef.current = null;
         sessionIdRef.current = null;
       }
 
-      // Prevent double-start
+      // Already-active fast path — resolve synchronously with existing id.
       if (channelRef.current && sessionIdRef.current) {
         logger.warn("Session already active", { sessionId: sessionIdRef.current });
-        return sessionIdRef.current;
+        return Promise.resolve(sessionIdRef.current);
       }
 
       const effectivePersonaId = overridePersonaId ?? personaId;
       if (!effectivePersonaId) {
-        throw new Error("[useBuildSession] Cannot start session without personaId");
+        return Promise.reject(
+          new Error("[useBuildSession] Cannot start session without personaId"),
+        );
       }
 
-      // Create typed Channel for streaming events
-      // Flag prevents the global EventBridge from double-processing the same events
-      (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
-      const channel = new Channel<BuildEvent>();
-      channel.onmessage = handleChannelMessage;
+      const runStart = async (): Promise<string> => {
+        // Create typed Channel for streaming events.
+        // Bump generation for this subscription so late events from a prior
+        // session (still buffered in the Tauri Channel pipe) are filtered out.
+        const generation = ++generationRef.current;
+        const channel = new Channel<BuildEvent>();
+        channel.onmessage = (event) => handleChannelMessage(event, generation);
 
-      // Invoke the Tauri command -- backend starts the CLI process
-      const language = useI18nStore.getState().language;
-      const sessionId = await startBuildSession(
-        channel,
-        effectivePersonaId,
-        intent,
-        workflowJson,
-        parserResultJson,
-        language,
-      );
+        // Invoke the Tauri command -- backend starts the CLI process
+        const language = useI18nStore.getState().language;
+        const sessionId = await startBuildSession(
+          channel,
+          effectivePersonaId,
+          intent,
+          workflowJson,
+          parserResultJson,
+          language,
+        );
 
-      // Store refs
-      channelRef.current = channel;
-      sessionIdRef.current = sessionId;
+        // Register this session as having a live Channel so EventBridge skips
+        // its events. Per-session registration avoids the multi-instance bug
+        // where unmounting one surface unregistered another's live Channel.
+        markSessionActive(sessionId);
 
-      // Create a session slot in the buildSessions map and activate it.
-      // Scalar fields (buildSessionId, buildPersonaId, etc.) are mirrored
-      // automatically from the active session.
-      useAgentStore.getState().createBuildSession(effectivePersonaId, sessionId);
+        // Store refs
+        channelRef.current = channel;
+        sessionIdRef.current = sessionId;
 
-      return sessionId;
+        // Create a session slot in the buildSessions map and activate it.
+        // Scalar fields (buildSessionId, buildPersonaId, etc.) are mirrored
+        // automatically from the active session.
+        useAgentStore.getState().createBuildSession(effectivePersonaId, sessionId);
+
+        return sessionId;
+      };
+
+      const promise = runStart();
+      startPromiseRef.current = promise;
+      promise.finally(() => {
+        if (startPromiseRef.current === promise) {
+          startPromiseRef.current = null;
+        }
+      });
+      return promise;
     },
     [personaId, handleChannelMessage],
   );
@@ -246,9 +364,19 @@ export function useBuildSession(
       const entries = Object.entries(answers);
       if (entries.length === 0) return;
 
-      // Build a combined answer that clearly lists each dimension's answer
+      // Escape newlines and bracket-colon sequences in user answers so a
+      // pasted log snippet (or malicious input) cannot forge an extra
+      // `[dimension]:` line and overwrite an answer the user did not consent
+      // to. The backend parses this payload line-by-line — keeping each
+      // answer on a single line guarantees one line maps to one dimension.
+      const escapeAnswer = (raw: string): string =>
+        raw
+          .replace(/\\/g, '\\\\')
+          .replace(/\r\n|\r|\n/g, '\\n')
+          .replace(/\[/g, '\\[');
+
       const combined = entries
-        .map(([cellKey, answer]) => `[${cellKey}]: ${answer}`)
+        .map(([cellKey, answer]) => `[${cellKey}]: ${escapeAnswer(answer)}`)
         .join('\n');
 
       // Use "_batch" as cellKey so the backend knows this is multi-dimension
@@ -264,6 +392,13 @@ export function useBuildSession(
       await cancelBuildSession(sessionIdRef.current);
     }
 
+    // Deregister this session so EventBridge can take over for any late
+    // background events.
+    markSessionInactive(sessionIdRef.current);
+
+    // Invalidate any in-flight Channel messages and queued RAF flushes.
+    generationRef.current += 1;
+
     // Cancel any pending RAF
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -273,6 +408,7 @@ export function useBuildSession(
     // Clear refs
     channelRef.current = null;
     sessionIdRef.current = null;
+    startPromiseRef.current = null;
     pendingEventsRef.current = [];
 
     // Reset the store slice
@@ -311,13 +447,18 @@ export function useBuildSession(
 
     return () => {
       cancelled = true;
-      // Clear channel-active flag so EventBridge takes over for background events
-      (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = false;
+      // Deregister ONLY this instance's session so EventBridge can take over
+      // for its late background events. Other live build surfaces remain
+      // registered and unaffected.
+      markSessionInactive(sessionIdRef.current);
+      // Invalidate any in-flight Channel messages and queued RAF flushes.
+      generationRef.current += 1;
       // Cleanup: cancel any pending RAF on unmount
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      pendingEventsRef.current = [];
     };
   }, [personaId]);
 

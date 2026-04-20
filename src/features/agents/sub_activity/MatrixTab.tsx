@@ -100,6 +100,11 @@ export function MatrixTab() {
             },
             editDirty: false,
             editingCellKey: null,
+            behaviorCore: null,
+            capabilities: {},
+            capabilityOrder: [],
+            personaResolution: {},
+            clarifyingQuestionV3: null,
             createdAt: Date.now(),
           };
           useAgentStore.getState().setSavedBuildSnapshot(snapshot);

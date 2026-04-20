@@ -10,6 +10,28 @@ import {
   approveDesktopCapabilities,
   type DiscoveredApp,
 } from '@/api/system/desktop';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import * as Sentry from '@sentry/react';
+
+/** Observable load state for the onboarding template list. */
+export type TemplateLoadPhase = 'loading' | 'loaded' | 'empty' | 'error';
+
+export interface TemplateLoadState {
+  phase: TemplateLoadPhase;
+  /** Which backend path produced the current template list (for diagnostics). */
+  source: 'trending' | 'fallback' | null;
+  error: string | null;
+}
+
+function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallback' | null) {
+  try {
+    Sentry.metrics.count('onboarding.templates.load', 1, {
+      attributes: { phase, source: source ?? 'none' },
+    });
+  } catch {
+    // intentional: Sentry may not be initialized
+  }
+}
 
 export function useOnboardingState() {
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
@@ -30,7 +52,12 @@ export function useOnboardingState() {
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
   const [templates, setTemplates] = useState<PersonaDesignReview[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  const [templateLoadState, setTemplateLoadState] = useState<TemplateLoadState>({
+    phase: 'loading',
+    source: null,
+    error: null,
+  });
+  const [templateReloadNonce, setTemplateReloadNonce] = useState(0);
   const [showAdoptionWizard, setShowAdoptionWizard] = useState(false);
   const [selectedReview, setSelectedReview] = useState<PersonaDesignReview | null>(null);
 
@@ -68,8 +95,13 @@ export function useOnboardingState() {
         await approveDesktopCapabilities(connectorName, manifest.capabilities);
       }
       setApprovedApps((prev) => new Set([...prev, connectorName]));
-    } catch {
-      // intentional: non-critical — user can approve later from Connectors tab
+    } catch (err) {
+      // Surface the failure: the user explicitly clicked Approve, so silent
+      // re-enabling the button with no feedback violates least-surprise.
+      toastCatch(
+        `useOnboardingState:approveApp:${connectorName}`,
+        `Could not approve ${connectorName}. You can approve it later from Connectors.`,
+      )(err);
     } finally {
       setApprovingApp(null);
     }
@@ -85,34 +117,65 @@ export function useOnboardingState() {
     setOnboardingStep('pick-template');
   }, [completeOnboardingStep, setOnboardingStep]);
 
-  // Load top 3 starter templates
+  // Load top 3 starter templates. Tracks an explicit (loading | loaded | empty
+  // | error) phase plus which path (trending vs fallback) actually served the
+  // list, so first-run users on a flaky network see a recoverable error state
+  // instead of a disabled button with no explanation.
   useEffect(() => {
     if (!onboardingActive) return;
     let cancelled = false;
-    setIsLoadingTemplates(true);
+    setTemplateLoadState({ phase: 'loading', source: null, error: null });
 
     (async () => {
+      let reviews: PersonaDesignReview[] = [];
+      let source: 'trending' | 'fallback' | null = null;
+      let trendingErr: unknown = null;
+      let fallbackErr: unknown = null;
+
       try {
-        let reviews: PersonaDesignReview[] = [];
+        reviews = await getTrendingTemplates(3);
+        source = 'trending';
+      } catch (err) {
+        trendingErr = err;
+        silentCatch('useOnboardingState:getTrendingTemplates')(err);
+      }
+
+      if (reviews.length === 0) {
         try {
-          reviews = await getTrendingTemplates(3);
-        } catch {
-          // intentional: non-critical
-        }
-        if (reviews.length === 0) {
           reviews = await listDesignReviews(undefined, 3);
+          source = 'fallback';
+        } catch (err) {
+          fallbackErr = err;
+          silentCatch('useOnboardingState:listDesignReviews')(err);
         }
-        if (!cancelled) setTemplates(reviews);
-      } catch {
-        // intentional: non-critical
-        if (!cancelled) setTemplates([]);
-      } finally {
-        if (!cancelled) setIsLoadingTemplates(false);
+      }
+
+      if (cancelled) return;
+
+      if (reviews.length > 0) {
+        setTemplates(reviews);
+        setTemplateLoadState({ phase: 'loaded', source, error: null });
+        countTemplateLoad('loaded', source);
+        return;
+      }
+
+      setTemplates([]);
+      if (trendingErr && fallbackErr) {
+        const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+        setTemplateLoadState({ phase: 'error', source: null, error: msg });
+        countTemplateLoad('error', null);
+      } else {
+        setTemplateLoadState({ phase: 'empty', source, error: null });
+        countTemplateLoad('empty', source);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [onboardingActive]);
+  }, [onboardingActive, templateReloadNonce]);
+
+  const retryLoadTemplates = useCallback(() => {
+    setTemplateReloadNonce((n) => n + 1);
+  }, []);
 
   // When a template is selected, find the review object
   useEffect(() => {
@@ -140,19 +203,22 @@ export function useOnboardingState() {
     setShowAdoptionWizard(true);
   };
 
-  const handleAdoptionComplete = () => {
+  const handleAdoptionComplete = async (personaId: string) => {
     setShowAdoptionWizard(false);
     completeOnboardingStep('adopt');
-    fetchPersonas().then(() => {
-      const sorted = [...useAgentStore.getState().personas].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
-      const newest = sorted[0];
-      if (newest) {
-        setOnboardingCreatedPersona(newest.id);
-      }
-      setOnboardingStep('execute');
-    });
+    // Explicit ID from the adoption wizard — no more guessing the newest
+    // persona by created_at (which was racy against concurrent creates and
+    // server-clock drift).
+    setOnboardingCreatedPersona(personaId);
+    // Await the persona list refresh before advancing so the Execute step
+    // has an authoritative persona record to render. Failures here are
+    // non-fatal — we still have the ID and can render a minimal fallback.
+    try {
+      await fetchPersonas();
+    } catch (err) {
+      silentCatch('useOnboardingState:fetchPersonasAfterAdopt')(err);
+    }
+    setOnboardingStep('execute');
   };
 
   const handleAdoptionClose = () => {
@@ -180,7 +246,9 @@ export function useOnboardingState() {
     credentials,
     connectorDefinitions,
     templates,
-    isLoadingTemplates,
+    templateLoadState,
+    isLoadingTemplates: templateLoadState.phase === 'loading',
+    retryLoadTemplates,
     showAdoptionWizard,
     selectedReview,
     createdPersona,

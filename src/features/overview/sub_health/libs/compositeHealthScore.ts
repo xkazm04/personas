@@ -46,14 +46,34 @@ export interface CompositeHealthEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Weights (must sum to 1.0)
+// Weights (must sum to 1.0 — asserted at module load in dev)
 // ---------------------------------------------------------------------------
 
-const W_SUCCESS_RATE = 0.30;
-const W_LATENCY = 0.15;
-const W_COST_ANOMALY = 0.15;
-const W_HEALING = 0.15;
-const W_SLA_COMPLIANCE = 0.25;
+export const WEIGHTS = {
+  successRate: 0.30,
+  latency: 0.15,
+  costAnomaly: 0.15,
+  healing: 0.15,
+  slaCompliance: 0.25,
+} as const;
+
+const WEIGHT_SUM_EPSILON = 1e-9;
+
+export function sumWeights(w: typeof WEIGHTS = WEIGHTS): number {
+  return w.successRate + w.latency + w.costAnomaly + w.healing + w.slaCompliance;
+}
+
+// Dev-only assertion: fail fast if weights drift. Stripped in production builds
+// because import.meta.env.DEV is statically false and the block is dead code.
+if (import.meta.env?.DEV) {
+  const total = sumWeights();
+  if (Math.abs(total - 1.0) > WEIGHT_SUM_EPSILON) {
+    throw new Error(
+      `compositeHealthScore WEIGHTS must sum to 1.0 but sum to ${total}. ` +
+      `Adjust weights or update the invariant.`,
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Thresholds
@@ -63,6 +83,14 @@ const W_SLA_COMPLIANCE = 0.25;
 const LATENCY_EXCELLENT_MS = 2_000;
 /** p95 latency above this (ms) scores 0 */
 const LATENCY_TERRIBLE_MS = 30_000;
+
+/**
+ * Band around zero delta (in 0-1 success-rate units) treated as "stable" trend.
+ * 2% matches the observed daily success-rate noise floor for healthy personas —
+ * deltas inside this band are indistinguishable from sampling noise and should
+ * not trigger an improving/degrading label.
+ */
+export const TREND_NEUTRAL_BAND = 0.02;
 
 // ---------------------------------------------------------------------------
 // Score helpers
@@ -184,11 +212,11 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
 
     // Weighted composite
     const score = Math.round(
-      successRateScore * W_SUCCESS_RATE +
-      latencyScore * W_LATENCY +
-      costAnomalyScore * W_COST_ANOMALY +
-      healingScore * W_HEALING +
-      slaComplianceScore * W_SLA_COMPLIANCE,
+      successRateScore * WEIGHTS.successRate +
+      latencyScore * WEIGHTS.latency +
+      costAnomalyScore * WEIGHTS.costAnomaly +
+      healingScore * WEIGHTS.healing +
+      slaComplianceScore * WEIGHTS.slaCompliance,
     );
 
     // 30-day daily statuses
@@ -219,7 +247,9 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       : avgRecent;
     const delta = avgRecent - avgPrior;
     const trend: 'improving' | 'stable' | 'degrading' =
-      delta > 0.02 ? 'improving' : delta < -0.02 ? 'degrading' : 'stable';
+      delta > TREND_NEUTRAL_BAND ? 'improving'
+        : delta < -TREND_NEUTRAL_BAND ? 'degrading'
+        : 'stable';
 
     entries.push({
       personaId: persona.id,

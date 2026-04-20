@@ -5,30 +5,143 @@
  * now so frontend development can proceed in parallel with backend work.
  */
 
+/** Runtime-validated list of build phases — single source of truth for both
+ *  the BuildPhase type and the isBuildPhase guard. */
+export const BUILD_PHASES = [
+  "initializing",
+  "analyzing",
+  "awaiting_input",
+  "resolving",
+  "draft_ready",
+  "completed",
+  "failed",
+  "cancelled",
+  "testing",
+  "test_complete",
+  "promoted",
+] as const;
+
 /** Build session lifecycle phase, matching the Rust BuildPhase enum. */
-export type BuildPhase =
-  | "initializing"
-  | "analyzing"
-  | "awaiting_input"
-  | "resolving"
-  | "draft_ready"
-  | "completed"
-  | "failed"
-  | "cancelled"
-  | "testing"
-  | "test_complete"
-  | "promoted";
+export type BuildPhase = typeof BUILD_PHASES[number];
+
+export function isBuildPhase(value: unknown): value is BuildPhase {
+  return typeof value === "string" && (BUILD_PHASES as readonly string[]).includes(value);
+}
+
+/** Runtime-validated list of cell build statuses. */
+export const CELL_BUILD_STATUSES = [
+  "hidden",
+  "revealed",
+  "pending",
+  "filling",
+  "resolved",
+  "highlighted",
+  "updated",
+  "error",
+] as const;
 
 /** Visual status of a single matrix cell during the build flow. */
-export type CellBuildStatus =
-  | "hidden"
-  | "revealed"
-  | "pending"
-  | "filling"
-  | "resolved"
-  | "highlighted"
-  | "updated"
-  | "error";
+export type CellBuildStatus = typeof CELL_BUILD_STATUSES[number];
+
+export function isCellBuildStatus(value: unknown): value is CellBuildStatus {
+  return typeof value === "string" && (CELL_BUILD_STATUSES as readonly string[]).includes(value);
+}
+
+// ---------------------------------------------------------------------------
+// v3 capability-framework domain types
+// ---------------------------------------------------------------------------
+
+/** Persona behavior core — the shared mission + identity. */
+export interface PersonaBehaviorCore {
+  mission: string;
+  identity: { role: string; description: string };
+  voice: { style: string; output_format: string };
+  principles: string[];
+  constraints: string[];
+  decision_principles?: string[];
+  verbosity_default?: "terse" | "normal" | "verbose";
+}
+
+/** One entry in the Phase-B capability enumeration. */
+export interface CapabilityDraft {
+  id: string;
+  title: string;
+  capability_summary: string;
+  user_facing_goal?: string;
+}
+
+/** A review policy for one capability. */
+export interface ReviewPolicy {
+  mode: "never" | "on_low_confidence" | "always";
+  context: string;
+}
+
+/** A memory policy for one capability. */
+export interface MemoryPolicy {
+  enabled: boolean;
+  context: string;
+}
+
+/** An event subscription entry. */
+export interface EventSubscriptionEntry {
+  event_type: string;
+  direction: "emit" | "listen" | "subscribe";
+  description?: string;
+}
+
+/** A notification channel entry. */
+export interface NotificationChannelEntry {
+  channel: string;
+  target: string;
+  format?: string;
+}
+
+/** A capability with its envelope (fields filled in progressively by Phase C). */
+export interface CapabilityState {
+  id: string;
+  title: string;
+  capability_summary: string;
+  user_facing_goal?: string;
+  enabled_by_default?: boolean;
+
+  suggested_trigger?: {
+    trigger_type: "schedule" | "polling" | "webhook" | "manual" | "event";
+    config?: Record<string, unknown>;
+    description?: string;
+  } | null;
+  connectors?: string[];
+  notification_channels?: NotificationChannelEntry[];
+  review_policy?: ReviewPolicy;
+  memory_policy?: MemoryPolicy;
+  event_subscriptions?: EventSubscriptionEntry[];
+  input_schema?: Array<{ name: string; type: string; required: boolean; description?: string }>;
+  sample_input?: Record<string, unknown>;
+  tool_hints?: string[];
+  use_case_flow?: {
+    nodes: Array<{ id: string; label: string; kind?: string }>;
+    edges: Array<{ from: string; to: string; label?: string }>;
+  };
+  error_handling?: string;
+
+  /** Which fields have landed so far — used by the UI to show resolution progress. */
+  resolvedFields: Record<string, "pending" | "resolved">;
+}
+
+/** Persona-wide resolution values. */
+export interface PersonaResolution {
+  tools?: Array<{ name: string; description?: string; category?: string }>;
+  connectors?: Array<{
+    name: string;
+    service_type: string;
+    purpose?: string;
+    has_credential?: boolean;
+  }>;
+  notification_channels_default?: NotificationChannelEntry[];
+  operating_instructions?: string;
+  tool_guidance?: string;
+  error_handling?: string;
+  core_memories?: Array<{ title: string; content: string }>;
+}
 
 /**
  * Discriminated union matching the Rust BuildEvent enum.

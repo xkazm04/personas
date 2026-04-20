@@ -28,9 +28,19 @@ export interface ChatSlice {
   chatStreaming: boolean;
   chatMode: ChatMode;
   chatSessionContext: ChatSessionContext | null;
+  /**
+   * True when a session was preloaded by an upstream caller (e.g.
+   * ProcessActivityDrawer, NotificationCenter) via restoreChatSession with
+   * an explicit session id. ChatTab checks and consumes this flag on mount
+   * to decide whether to skip its own default restore. Replaces a fragile
+   * heuristic that keyed on activeChatSessionId && chatMessages.length > 0.
+   */
+  chatPreloaded: boolean;
 
   // Actions
   setChatMode: (mode: ChatMode) => void;
+  /** Consume and return the preloaded flag in one atomic step. */
+  consumeChatPreloaded: () => boolean;
   fetchChatSessions: (personaId: string) => Promise<void>;
   fetchChatMessages: (personaId: string, sessionId: string) => Promise<void>;
   startNewChatSession: (personaId: string) => Promise<string>;
@@ -71,6 +81,13 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   chatStreaming: false,
   chatMode: 'advisory' as ChatMode,
   chatSessionContext: null,
+  chatPreloaded: false,
+
+  consumeChatPreloaded: () => {
+    const was = get().chatPreloaded;
+    if (was) set({ chatPreloaded: false });
+    return was;
+  },
 
   setChatMode: (mode) => {
     set({ chatMode: mode });
@@ -320,6 +337,10 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           chatMessages: messages.slice(-MAX_CHAT_MESSAGES),
           chatSessionContext: ctx,
           chatMode: (ctx?.chatMode === 'agent' ? 'agent' : 'advisory') as ChatMode,
+          // Explicit preload flag — upstream callers (drawer / notifications)
+          // hit this path with a specific session id. ChatTab will consume it
+          // on mount and skip its default restore.
+          chatPreloaded: true,
         });
         return;
       }

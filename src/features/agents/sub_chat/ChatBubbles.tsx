@@ -3,18 +3,55 @@ import { Bot, User, Copy, Check } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useToastStore } from '@/stores/toastStore';
+
+// Fallback copy via a hidden textarea + document.execCommand('copy'). Used
+// when navigator.clipboard is unavailable (non-secure context, file://, some
+// Tauri webview configs) or rejects (permission / document-not-focused).
+function legacyCopy(text: string): boolean {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 // ── Copy Button ──────────────────────────────────────────────────────────
 
 function CopyBtn({ text }: { text: string }) {
   const { t } = useTranslation();
+  const addToast = useToastStore((s) => s.addToast);
   const [copied, setCopied] = useState(false);
+  const markCopied = useCallback(() => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [text]);
+    const fail = () => {
+      // Last resort: try the legacy path, then surface a toast if that
+      // also fails so the user doesn't stare at an inert button.
+      if (legacyCopy(text)) {
+        markCopied();
+        return;
+      }
+      addToast(t.agents.chat.copy_failed, 'error');
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(markCopied).catch(fail);
+    } else {
+      fail();
+    }
+  }, [text, markCopied, addToast, t.agents.chat.copy_failed]);
   return (
     <button
       onClick={handleCopy}

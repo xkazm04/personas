@@ -14,9 +14,14 @@ interface UseEditorSaveOptions {
   setDraft: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   setBaseline: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   pendingPersonaId: string | null;
+  /** When true, the model-fields debounced auto-save is paused. Used when
+   *  the persisted model_profile JSON is corrupt — saving the reset state
+   *  would overwrite the still-recoverable original. The user must
+   *  explicitly re-select a model to unblock. */
+  suppressModelSave?: boolean;
 }
 
-export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId }: UseEditorSaveOptions) {
+export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId, suppressModelSave = false }: UseEditorSaveOptions) {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const { pushUndo } = useEditorHistory();
@@ -142,7 +147,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     mode: 'debounced',
     delay: 800,
     deps: [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns, draft.promptCachePolicy],
-    enabled: !!selectedPersona && !pendingPersonaId,
+    enabled: !!selectedPersona && !pendingPersonaId && !suppressModelSave,
   });
 
   const isSaving = isSavingSettings || isSavingModel;

@@ -107,7 +107,12 @@ export function trackInteraction(
 // ---------------------------------------------------------------------------
 
 export function initSentry(appVersion: string): void {
-  const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+  // Only report from production builds (installer packages). In dev, VITE_SENTRY_DSN
+  // may leak in from a local .env file — ignore it so local errors never ship.
+  // See docs/devops/guide-error-reporting.md.
+  const dsn = import.meta.env.PROD
+    ? (import.meta.env.VITE_SENTRY_DSN as string | undefined)
+    : undefined;
 
   Sentry.init({
     dsn: dsn || undefined,

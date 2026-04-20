@@ -11,21 +11,32 @@ interface SpotlightRect {
 const PADDING = 8;
 const BORDER_RADIUS = 12;
 
+/**
+ * Spotlight contract (pinned 2026-04-20):
+ * - Follows exactly one DOM node: the element matching
+ *   `[data-testid="${tourHighlightTestId}"]`.
+ * - Re-measures on: scroll, resize, and DOM mutations inside an ancestor of
+ *   the target (NOT document.body — onboarding-era CPU wins matter).
+ * - When the target unmounts, the spotlight auto-dismisses the tour instead of
+ *   trapping the UI behind a stale cut-out that overlays nothing clickable.
+ */
 export default function TourSpotlight() {
   const tourActive = useSystemStore((s) => s.tourActive);
   const highlightTestId = useSystemStore((s) => s.tourHighlightTestId);
+  // Tour store exposes an dismissTour action; we call it if the target disappears.
+  const dismissTour = useSystemStore((s) => s.dismissTour);
   const [rect, setRect] = useState<SpotlightRect | null>(null);
   const rafRef = useRef<number>(0);
 
-  const measure = useCallback(() => {
+  const measure = useCallback((): Element | null => {
     if (!highlightTestId) {
       setRect(null);
-      return;
+      return null;
     }
     const el = document.querySelector(`[data-testid="${highlightTestId}"]`);
-    if (!el) {
+    if (!el || !el.isConnected) {
       setRect(null);
-      return;
+      return null;
     }
     const r = el.getBoundingClientRect();
     setRect({
@@ -34,6 +45,7 @@ export default function TourSpotlight() {
       width: r.width + PADDING * 2,
       height: r.height + PADDING * 2,
     });
+    return el;
   }, [highlightTestId]);
 
   useEffect(() => {
@@ -42,29 +54,67 @@ export default function TourSpotlight() {
       return;
     }
 
-    // Initial measure with delay for layout
-    const timer = setTimeout(measure, 100);
+    let currentTarget: Element | null = null;
+    let observer: MutationObserver | null = null;
 
-    // Re-measure on scroll/resize
+    const dismissForMissingTarget = () => {
+      setRect(null);
+      // Auto-end the tour so the user isn't stuck behind a stale mask.
+      // `dismissTour` is idempotent, so racing mutations can't stack dismissals.
+      try { dismissTour?.(); } catch { /* intentional: dismissTour may be a no-op */ }
+    };
+
     const handleReposition = () => {
       cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(measure);
+      rafRef.current = requestAnimationFrame(() => {
+        // If the target vanished (sidebar collapse, route change, modal close),
+        // bail out of the tour rather than rendering a mask over nothing.
+        if (currentTarget && !currentTarget.isConnected) {
+          dismissForMissingTarget();
+          return;
+        }
+        const found = measure();
+        if (!found) {
+          dismissForMissingTarget();
+        } else if (found !== currentTarget) {
+          // Target re-mounted at a new node — re-scope observer.
+          currentTarget = found;
+          reattachObserver();
+        }
+      });
     };
+
+    const reattachObserver = () => {
+      observer?.disconnect();
+      if (!currentTarget) return;
+      // Scope to an ancestor of the target so background rendering (toasts,
+      // chat streaming, build events) can't force repeated rAF re-measures.
+      const scope = currentTarget.parentElement ?? currentTarget;
+      observer = new MutationObserver(handleReposition);
+      observer.observe(scope, { childList: true, subtree: true });
+    };
+
+    // Initial measure with delay for layout
+    const timer = setTimeout(() => {
+      currentTarget = measure();
+      if (!currentTarget) {
+        dismissForMissingTarget();
+        return;
+      }
+      reattachObserver();
+    }, 100);
+
     window.addEventListener('scroll', handleReposition, true);
     window.addEventListener('resize', handleReposition);
-
-    // Observe DOM changes
-    const observer = new MutationObserver(handleReposition);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
     return () => {
       clearTimeout(timer);
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('scroll', handleReposition, true);
       window.removeEventListener('resize', handleReposition);
-      observer.disconnect();
+      observer?.disconnect();
     };
-  }, [tourActive, highlightTestId, measure]);
+  }, [tourActive, highlightTestId, measure, dismissTour]);
 
   if (!tourActive || !rect) return null;
 

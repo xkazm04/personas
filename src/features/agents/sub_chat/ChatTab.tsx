@@ -9,6 +9,13 @@ import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
 import { useTranslation } from '@/i18n/useTranslation';
 
+// Hysteresis: autoscroll is sticky (triggers when already close to bottom),
+// but the scroll-to-bottom button only appears after the user has clearly
+// scrolled away. The asymmetry prevents the button from flickering at the
+// autoscroll boundary — do NOT unify these into one constant.
+const NEAR_BOTTOM_AUTOSCROLL_PX = 120;
+const SHOW_SCROLL_BTN_PX = 200;
+
 // ── Main Chat Tab ───────────────────────────────────────────────────────
 
 export function ChatTab() {
@@ -18,6 +25,7 @@ export function ChatTab() {
   const activeChatSessionId = useAgentStore((s) => s.activeChatSessionId);
   const chatStreaming = useAgentStore((s) => s.chatStreaming);
   const isExecuting = useAgentStore((s) => s.isExecuting);
+  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
   const fetchSessions = useAgentStore((s) => s.fetchChatSessions);
   const restoreSession = useAgentStore((s) => s.restoreChatSession);
   const startNewSession = useAgentStore((s) => s.startNewChatSession);
@@ -51,9 +59,12 @@ export function ChatTab() {
   useEffect(() => {
     if (!personaId) return;
     fetchSessions(personaId);
-    const current = useAgentStore.getState();
-    const hasPreloadedSession = !!current.activeChatSessionId && current.chatMessages.length > 0;
-    if (!hasPreloadedSession) {
+    // Use the explicit preloaded flag set by upstream callers (drawer /
+    // notifications) that hydrated a specific session. Consuming it here
+    // atomically marks it handled so a subsequent remount falls back to
+    // the default restore behavior.
+    const wasPreloaded = useAgentStore.getState().consumeChatPreloaded();
+    if (!wasPreloaded) {
       restoreSession(personaId);
     }
   }, [personaId, fetchSessions, restoreSession]);
@@ -62,7 +73,7 @@ export function ChatTab() {
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < NEAR_BOTTOM_AUTOSCROLL_PX;
     if (isNearBottom) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamTextLines]);
 
@@ -71,7 +82,7 @@ export function ChatTab() {
     const container = scrollContainerRef.current;
     if (!container) return;
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    setShowScrollBtn(distanceFromBottom > 200);
+    setShowScrollBtn(distanceFromBottom > SHOW_SCROLL_BTN_PX);
   }, []);
 
   const scrollToBottom = useCallback(() => {
@@ -83,16 +94,60 @@ export function ChatTab() {
     if (messages.length > 0 && !chatStreaming) inputRef.current?.focus();
   }, [messages.length, chatStreaming]);
 
+  // Recovery for stuck chatStreaming. Terminal events can be dropped (Tauri
+  // event bridge hiccup, engine panic, sleep/resume) and leave chatStreaming
+  // stuck true forever — locking the input. Two guards:
+  //   1. Explicit clear when activeExecutionId transitions to null.
+  //   2. 60s idle watchdog on streamTextLines growth while chatStreaming.
+  useEffect(() => {
+    if (chatStreaming && !activeExecutionId) {
+      useAgentStore.setState({ chatStreaming: false, isExecuting: false });
+    }
+  }, [chatStreaming, activeExecutionId]);
+
+  useEffect(() => {
+    if (!chatStreaming) return;
+    const STREAM_IDLE_TIMEOUT_MS = 60_000;
+    const timer = window.setTimeout(() => {
+      useAgentStore.setState({
+        chatStreaming: false,
+        isExecuting: false,
+        activeExecutionId: null,
+        executionPersonaId: null,
+      });
+    }, STREAM_IDLE_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [chatStreaming, streamTextLines.length]);
+
+  const handleCancelStream = useCallback(() => {
+    useAgentStore.setState({
+      chatStreaming: false,
+      isExecuting: false,
+      activeExecutionId: null,
+      executionPersonaId: null,
+    });
+  }, []);
+
   const handleSend = useCallback(async (directPrompt?: string) => {
     const text = (directPrompt ?? inputValue).trim();
     if (!text || chatStreaming || isExecuting) return;
+    // Snapshot the personaId at entry. If the user switches personas during
+    // the async startNewSession await, we must NOT attach messages to the
+    // newly-selected persona — that would leak content across histories.
+    const sendPersonaId = personaId;
     let sessionId = activeChatSessionId;
     if (!sessionId) {
-      sessionId = await startNewSession(personaId);
+      sessionId = await startNewSession(sendPersonaId);
       if (!sessionId) return;
+      // Guard: bail if the user navigated away to a different persona while
+      // the session was being created. The session still exists for the
+      // original persona — just don't post this user message into it
+      // against a stale selection.
+      const currentPersonaId = useAgentStore.getState().selectedPersona?.id ?? '';
+      if (currentPersonaId !== sendPersonaId) return;
     }
     setInputValue('');
-    sendMessage(personaId, sessionId, text);
+    sendMessage(sendPersonaId, sessionId, text);
   }, [inputValue, chatStreaming, isExecuting, activeChatSessionId, personaId, startNewSession, sendMessage]);
 
   const handleNewSession = useCallback(async () => {
@@ -186,6 +241,16 @@ export function ChatTab() {
                   el.style.height = Math.min(el.scrollHeight, 160) + 'px';
                 }}
               />
+              {chatStreaming ? (
+                <button
+                  data-testid="chat-cancel-btn"
+                  onClick={handleCancelStream}
+                  className="flex-shrink-0 h-10 px-3 rounded-modal border border-primary/15 text-foreground typo-body-sm hover:bg-secondary/40 transition-colors"
+                  title={t.agents.chat.cancel_stream}
+                >
+                  {t.agents.chat.cancel_stream}
+                </button>
+              ) : null}
               <button
                 data-testid="chat-send-btn"
                 onClick={() => void handleSend()}

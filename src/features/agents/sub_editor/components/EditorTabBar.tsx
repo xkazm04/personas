@@ -23,6 +23,9 @@ const tabDefs: TabDefBase[] = [
 interface EditorTabBarProps {
   dirtyTabs: string[];
   connectorsMissing: number;
+  /** Tabs whose last save attempt failed — shown with an error badge so the
+   *  user can see exactly which tab to recover. */
+  failedTabs?: string[];
 }
 
 type TabBadgeVariant = 'dirty' | 'attention' | 'error' | 'success';
@@ -53,7 +56,7 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
   return <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />;
 }
 
-export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
+export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: EditorTabBarProps) {
   const { t } = useTranslation();
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
@@ -79,13 +82,15 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
               {!IS_MOBILE && label}
-              {tab.id === 'design' && connectorsMissing > 0
-                ? <TabBadge variant="error" count={connectorsMissing} />
-                : tabDirty
-                  ? <TabBadge variant="dirty" />
-                  : isActive && !tabDirty
-                    ? <TabBadge variant="success" />
-                    : null}
+              {failedTabs.includes(tab.id)
+                ? <TabBadge variant="error" />
+                : tab.id === 'design' && connectorsMissing > 0
+                  ? <TabBadge variant="error" count={connectorsMissing} />
+                  : tabDirty
+                    ? <TabBadge variant="dirty" />
+                    : isActive && !tabDirty
+                      ? <TabBadge variant="success" />
+                      : null}
               {isActive && (
                 <motion.div
                   layoutId="personaEditorTab"

@@ -320,7 +320,28 @@ export type BuildSessionEventPayload =
   | { type: 'question'; session_id: string; cell_key: string; question: string; options: string[] | null }
   | { type: 'progress'; session_id: string; dimension: string | null; message: string; percent: number | null; activity?: string }
   | { type: 'error'; session_id: string; cell_key: string | null; message: string; retryable: boolean }
-  | { type: 'session_status'; session_id: string; phase: string; resolved_count: number; total_count: number };
+  | { type: 'session_status'; session_id: string; phase: string; resolved_count: number; total_count: number }
+  // v3 capability-framework events — additive, coexist with legacy events.
+  | { type: 'behavior_core_update'; session_id: string; data: unknown; status: string }
+  | { type: 'capability_enumeration_update'; session_id: string; data: unknown; status: string }
+  | {
+      type: 'capability_resolution_update';
+      session_id: string;
+      capability_id: string;
+      field: string;
+      value: unknown;
+      status: string;
+    }
+  | { type: 'persona_resolution_update'; session_id: string; field: string; value: unknown; status: string }
+  | {
+      type: 'clarifying_question_v3';
+      session_id: string;
+      scope: string;
+      capability_id: string | null;
+      field: string | null;
+      question: string;
+      options: string[] | null;
+    };
 
 /** Build test tool result (engine/build_session.rs). */
 export interface BuildTestToolResultPayload {

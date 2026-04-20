@@ -8,6 +8,19 @@ import * as Sentry from "@sentry/react";
 
 export type OnboardingStep = "appearance" | "discover" | "pick-template" | "adopt" | "execute";
 
+/** Canonical list of known onboarding steps — used to validate persisted state on hydrate. */
+export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
+  "appearance",
+  "discover",
+  "pick-template",
+  "adopt",
+  "execute",
+] as const;
+
+export function isOnboardingStep(value: unknown): value is OnboardingStep {
+  return typeof value === "string" && (ONBOARDING_STEPS as readonly string[]).includes(value);
+}
+
 export interface OnboardingSlice {
   // State
   onboardingActive: boolean;
@@ -26,8 +39,26 @@ export interface OnboardingSlice {
   completeOnboardingStep: (step: OnboardingStep) => void;
   setOnboardingSelectedReview: (reviewId: string | null) => void;
   setOnboardingCreatedPersona: (personaId: string | null) => void;
+  /**
+   * Mark onboarding as permanently completed (Done button at the end).
+   * Sets `onboardingCompleted=true`; the flow does NOT auto-start again on
+   * future launches. Use `reopenOnboarding()` to restart it manually.
+   */
   finishOnboarding: () => void;
+  /**
+   * Dismiss the overlay for THIS session and remember where the user left
+   * off (`onboardingDismissedAtStep`). Does NOT set `onboardingCompleted`,
+   * so a returning user can call `resumeOnboarding()` to pick up where
+   * they were. Dismiss is a deferral, not a permanent opt-out.
+   */
   dismissOnboarding: () => void;
+  /**
+   * Manually re-open onboarding from a Help menu or similar affordance.
+   * Works whether the user previously finished OR dismissed it — resets
+   * the completion flag and step progress so the flow runs from scratch.
+   * This is the escape hatch that makes Skip a reversible decision.
+   */
+  reopenOnboarding: () => void;
 }
 
 // -- Sentry metrics helper ----------------------------------------------
@@ -123,6 +154,19 @@ export const createOnboardingSlice: StateCreator<
     set({
       onboardingActive: false,
       onboardingDismissedAtStep: currentStep,
+    });
+  },
+
+  reopenOnboarding: () => {
+    trackMetric("onboarding.reopened");
+    set({
+      onboardingActive: true,
+      onboardingCompleted: false,
+      onboardingStep: "appearance",
+      onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
+      onboardingSelectedReviewId: null,
+      onboardingCreatedPersonaId: null,
+      onboardingDismissedAtStep: null,
     });
   },
 });

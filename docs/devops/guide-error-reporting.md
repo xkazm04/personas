@@ -93,7 +93,12 @@ The Sentry DSN is a compile-time constant:
 - **Rust**: `option_env!("SENTRY_DSN")` — only present when set as env var at `cargo build` time
 - **Frontend**: `import.meta.env.VITE_SENTRY_DSN` — only present when set at Vite build time
 
-In local development, neither variable is set. Both SDKs initialize without a DSN and become complete no-ops — no network requests, no event queuing, no overhead.
+In local development, neither variable should be set — keep them out of `.env`. As defense in depth, both entry points also hard-gate on build mode:
+
+- **Rust** (`src-tauri/src/main.rs` → `sentry_options()`): `cfg!(debug_assertions)` forces `dsn = None` in debug builds, so even if `SENTRY_DSN` leaked into the shell env at compile time, a `cargo tauri dev` build will never ship events.
+- **Frontend** (`src/lib/sentry.ts` → `initSentry()`): `import.meta.env.PROD` gates DSN use, so `vite dev` / non-production modes never initialize with a real DSN.
+
+Only release/installer builds (`cargo tauri build` + `vite build` with `MODE=production`) report.
 
 In CI, the `SENTRY_DSN` GitHub secret is injected as both `SENTRY_DSN` (Rust) and `VITE_SENTRY_DSN` (Vite) in the `release.yml` build step.
 

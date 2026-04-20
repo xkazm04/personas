@@ -22,6 +22,11 @@ export function useCloudHealthMonitor() {
   const wasConnectedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
+  // Generation counter: incremented on every effect teardown (including unmount).
+  // Async callbacks capture the generation at dispatch time and bail if it no
+  // longer matches — prevents stale polls from stamping state after the
+  // component unmounts or the connection state flips out from under them.
+  const generationRef = useRef(0);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current != null) {
@@ -30,30 +35,36 @@ export function useCloudHealthMonitor() {
     }
   }, []);
 
+  const isStale = useCallback((gen: number) => {
+    return unmountedRef.current || gen !== generationRef.current;
+  }, []);
+
   // Health check: try cloudGetConfig. If connected, fine. If not, trigger reconnect loop.
-  const runHealthCheck = useCallback(async () => {
-    if (unmountedRef.current) return;
+  const runHealthCheck = useCallback(async (gen: number) => {
+    if (isStale(gen)) return;
     const store = useSystemStore.getState();
     // Don't health-check if already reconnecting or user disconnected
     if (store.cloudReconnectState.isReconnecting) return;
 
     try {
       const config = await cloudGetConfig();
+      if (isStale(gen)) return;
       if (config?.is_connected) {
         // Still connected — schedule next check
-        timerRef.current = setTimeout(runHealthCheck, HEALTH_POLL_INTERVAL);
+        timerRef.current = setTimeout(() => runHealthCheck(gen), HEALTH_POLL_INTERVAL);
       } else {
         // Connection dropped — start reconnect loop
-        startReconnectLoop();
+        startReconnectLoop(gen);
       }
     } catch {
+      if (isStale(gen)) return;
       // Error reaching backend — start reconnect loop
-      startReconnectLoop();
+      startReconnectLoop(gen);
     }
-  }, []);
+  }, [isStale]);
 
-  const startReconnectLoop = useCallback(() => {
-    if (unmountedRef.current) return;
+  const startReconnectLoop = useCallback((gen: number) => {
+    if (isStale(gen)) return;
     const store = useSystemStore.getState();
     if (store.cloudReconnectState.isReconnecting) return;
 
@@ -62,17 +73,17 @@ export function useCloudHealthMonitor() {
     useSystemStore.setState({
       cloudReconnectState: { isReconnecting: true, attempt, nextRetryAt: Date.now() + delay },
     });
-    timerRef.current = setTimeout(() => attemptReconnect(0), delay);
-  }, []);
+    timerRef.current = setTimeout(() => attemptReconnect(0, gen), delay);
+  }, [isStale]);
 
-  const attemptReconnect = useCallback(async (attempt: number) => {
-    if (unmountedRef.current) return;
+  const attemptReconnect = useCallback(async (attempt: number, gen: number) => {
+    if (isStale(gen)) return;
 
     try {
       const latencyMs = await cloudReconnectFromKeyring();
       const config = await cloudGetConfig();
 
-      if (unmountedRef.current) return;
+      if (isStale(gen)) return;
 
       if (config?.is_connected) {
         // Success — restore normal state
@@ -83,10 +94,11 @@ export function useCloudHealthMonitor() {
           cloudError: null,
         });
         // Resume health polling
-        timerRef.current = setTimeout(runHealthCheck, HEALTH_POLL_INTERVAL);
+        timerRef.current = setTimeout(() => runHealthCheck(gen), HEALTH_POLL_INTERVAL);
         return;
       }
     } catch (err) {
+      if (isStale(gen)) return;
       if (isAuthError(err)) {
         // Auth error — stop trying, notify user
         useSystemStore.setState({
@@ -97,7 +109,7 @@ export function useCloudHealthMonitor() {
       }
     }
 
-    if (unmountedRef.current) return;
+    if (isStale(gen)) return;
 
     // Schedule next attempt with backoff
     const nextAttempt = attempt + 1;
@@ -110,23 +122,26 @@ export function useCloudHealthMonitor() {
       nextRetryAt: Date.now() + delay,
     };
     useSystemStore.setState({ cloudReconnectState: nextState });
-    timerRef.current = setTimeout(() => attemptReconnect(nextAttempt), delay);
-  }, []);
+    timerRef.current = setTimeout(() => attemptReconnect(nextAttempt, gen), delay);
+  }, [isStale]);
 
   useEffect(() => {
     unmountedRef.current = false;
+    const gen = ++generationRef.current;
 
     if (isConnected && !reconnectState.isReconnecting) {
       // Connection is live — start health polling
       wasConnectedRef.current = true;
       clearTimer();
-      timerRef.current = setTimeout(runHealthCheck, HEALTH_POLL_INTERVAL);
+      timerRef.current = setTimeout(() => runHealthCheck(gen), HEALTH_POLL_INTERVAL);
     } else if (!isConnected && wasConnectedRef.current && !reconnectState.isReconnecting) {
       // Was connected but now dropped (external state change) — start reconnect
-      startReconnectLoop();
+      startReconnectLoop(gen);
     }
 
     return () => {
+      // Bump the generation so any in-flight async work stamps nothing.
+      generationRef.current++;
       unmountedRef.current = true;
       clearTimer();
     };

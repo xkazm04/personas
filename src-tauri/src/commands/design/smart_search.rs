@@ -14,9 +14,9 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
-/// Default model for smart search -- cheap and fast, this is a ranking task.
-/// Can be overridden via the `smart_search_model` app setting.
-const DEFAULT_SMART_SEARCH_MODEL: &str = "claude-haiku-4-5-20251001";
+/// Default model for smart search — sourced from the central `settings_keys`
+/// registry so the fallback stays in sync with the key's documented default.
+const DEFAULT_SMART_SEARCH_MODEL: &str = settings_keys::SMART_SEARCH_MODEL_DEFAULT;
 const SMART_SEARCH_TIMEOUT_SECS: u64 = 60;
 
 /// Maximum templates sent to the LLM in a single prompt.

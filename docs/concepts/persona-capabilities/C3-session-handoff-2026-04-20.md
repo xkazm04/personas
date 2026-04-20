@@ -16,6 +16,7 @@
   connector appended. Checksums regenerated. Commit during handoff.
 
 Six templates now on v3.1 shape:
+
 - finance/financial-stocks-signaller
 - productivity/idea-harvester
 - marketing/web-marketing
@@ -101,6 +102,7 @@ main `QuestionnaireFormGrid`):
 **Two UI variants prototyped** (2026-04-20, per
 `C:/Users/kazda/kiro/personas-web/.claude/skills/ui-variant-prototype.md`).
 Files live at `src/features/templates/sub_generated/adoption/`:
+
 - `TriggerCompositionStepChips.tsx`
 - `TriggerCompositionStepMaster.tsx`
 - `TriggerCompositionDemo.tsx` (tab switcher parent, Dev Clone fixture data)
@@ -184,44 +186,44 @@ Ordered by dependency. Commit at each bullet group.
 
 ### Phase B — connector catalog additions
 
-5. Run `add-credential` skill for Meta Ads. Write `scripts/connectors/builtin/meta-ads.json`.
-6. Run `add-credential` skill for LinkedIn Ads. Write `scripts/connectors/builtin/linkedin-ads.json`.
-7. Add local_drive, gdrive, dropbox, s3 as `storage`-category connectors (aws-s3 likely already exists — verify and back-annotate its category).
-8. Audit Leonardo connector entry, set `categories: ["image_generation", "video_generation"]`.
-9. Commit.
+1. Run `add-credential` skill for Meta Ads. Write `scripts/connectors/builtin/meta-ads.json`.
+2. Run `add-credential` skill for LinkedIn Ads. Write `scripts/connectors/builtin/linkedin-ads.json`.
+3. Add local_drive, gdrive, dropbox, s3 as `storage`-category connectors (aws-s3 likely already exists — verify and back-annotate its category).
+4. Audit Leonardo connector entry, set `categories: ["image_generation", "video_generation"]`.
+5. Commit.
 
 ### Phase C — template category refactor
 
-10. Change `categories: string` → `categories: string[]` in the backend connector schema (Rust-side struct for vault catalog).
-11. Update `useDynamicQuestionOptions.ts` matching logic to check `categories.includes(service_type)` instead of `category === service_type`.
-12. Rewrite `aq_ad_platform`, `aq_analytics_tool`, `aq_image_model` to use `dynamic_source` with the relevant service_type and NO hardcoded options list.
-13. Verify empty-state UI shows vault redirect; implement if missing.
-14. Commit.
+1. Change `categories: string` → `categories: string[]` in the backend connector schema (Rust-side struct for vault catalog).
+2. Update `useDynamicQuestionOptions.ts` matching logic to check `categories.includes(service_type)` instead of `category === service_type`.
+3. Rewrite `aq_ad_platform`, `aq_analytics_tool`, `aq_image_model` to use `dynamic_source` with the relevant service_type and NO hardcoded options list.
+4. Verify empty-state UI shows vault redirect; implement if missing.
+5. Commit.
 
 ### Phase D — new UCs on Web Marketing + Game Animator
 
-15. Web Marketing: add `uc_free_research` UC + 3 new events + revised connectors list (codebase now required-when-UC-enabled semantics).
-16. Game Animator: add `uc_image_to_video` UC + 2 new events + `aq_storage_target` question + storage connector entry (auto-detected).
-17. Regen checksums. Commit.
+1. Web Marketing: add `uc_free_research` UC + 3 new events + revised connectors list (codebase now required-when-UC-enabled semantics).
+2. Game Animator: add `uc_image_to_video` UC + 2 new events + `aq_storage_target` question + storage connector entry (auto-detected).
+3. Regen checksums. Commit.
 
 ### Phase E — Trigger composition UI prototypes
 
-18. Check if `ui-variant-prototype` skill exists in user's personal skills directory (`~/.claude/skills/`). If yes, use it. If not, proceed without.
-19. Prototype `TriggerCompositionStep.tsx` Variant A (per-UC chips grid).
-20. Prototype `TriggerCompositionStep.tsx` Variant B (shared default + override drawer).
-21. Wire tab switcher at the adoption flow entry so both variants are available for A/B.
-22. Commit.
+1. Check if `ui-variant-prototype` skill exists in user's personal skills directory (`~/.claude/skills/`). If yes, use it. If not, proceed without.
+2. Prototype `TriggerCompositionStep.tsx` Variant A (per-UC chips grid).
+3. Prototype `TriggerCompositionStep.tsx` Variant B (shared default + override drawer).
+4. Wire tab switcher at the adoption flow entry so both variants are available for A/B.
+5. Commit.
 
 ### Phase F — Runtime testing
 
-23. User retests:
+1. User retests:
     - The Web Marketing free-research UC (with/without codebase)
     - The Animator image-to-video UC
     - persona.goal subtitle rendering
     - Connector auto-detection empty states
     - Both trigger UI variants
     - **Pending from this round**: Daily Personal Briefer + Dev Clone full walkthrough (not tested yet)
-24. Feedback captured in a new round of adjustments → another handoff.
+2. Feedback captured in a new round of adjustments → another handoff.
 
 ---
 
@@ -235,6 +237,7 @@ Ordered by dependency. Commit at each bullet group.
 - **This doc**: `C3-session-handoff-2026-04-20.md`
 
 Quick file paths:
+
 - Templates: `scripts/templates/**/*.json`
 - Overlay loader: `src/lib/personas/templates/templateOverlays.ts` + `templateCatalog.ts`
 - v3 normalizer (Rust): `src-tauri/src/engine/template_v3.rs`

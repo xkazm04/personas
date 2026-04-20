@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { listCredentialRecipes } from '@/api/vault/credentialRecipes';
 import type { CredentialRecipe } from '@/lib/bindings/CredentialRecipe';
+import { silentCatch } from '@/lib/silentCatch';
 
 export interface RecipeIndicator {
   usageCount: number;
@@ -28,9 +29,7 @@ export function useRecipeIndicators(): Map<string, RecipeIndicator> {
         }
         setIndicators(map);
       })
-      .catch(() => {
-        // Non-critical — silently degrade to no indicators
-      });
+      .catch(silentCatch('useRecipeIndicators:listCredentialRecipes'));
     return () => { cancelled = true; };
   }, []);
 

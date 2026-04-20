@@ -32,8 +32,26 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   const toolType = tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
   const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' ? Terminal : Globe;
 
+  // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
+  // unquoted key, smart quotes from paste) was forwarded to the Rust tool
+  // invoker which surfaced a cryptic serde error from deep inside the
+  // engine. Parse here so the user sees a clear inline message and the
+  // Run button stays disabled until the payload is structurally valid.
+  const trimmed = inputJson.trim();
+  const jsonError = (() => {
+    if (!trimmed) return null; // empty is treated as '{}' on run
+    try {
+      JSON.parse(trimmed);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  })();
+  const canRun = !isRunning && !jsonError;
+
   const handleRun = () => {
-    onRun(inputJson.trim() || '{}');
+    if (jsonError) return;
+    onRun(trimmed || '{}');
   };
 
   return (
@@ -81,15 +99,26 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className="w-full rounded-modal border border-primary/20 bg-background/60 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/30 resize-y"
+                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 resize-y ${
+                    jsonError
+                      ? 'border-red-500/40 focus-visible:ring-red-500/30'
+                      : 'border-primary/20 focus-visible:ring-violet-500/30'
+                  }`}
                   placeholder='{ "key": "value" }'
+                  aria-invalid={!!jsonError}
                 />
+                {jsonError && (
+                  <p className="mt-1 typo-body text-red-400">
+                    {t.agents.tool_runner.invalid_json}
+                    <span className="ml-1 typo-code opacity-70">{jsonError}</span>
+                  </p>
+                )}
               </div>
 
               {/* Run button */}
               <button
                 onClick={handleRun}
-                disabled={isRunning}
+                disabled={!canRun}
                 className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors disabled:opacity-40"
               >
                 {isRunning ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}

@@ -13,6 +13,25 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
  * the globally-active twin). Persists into `design_context.twinId` via
  * the existing `UpdateDesignContext` op — no new IPC, no schema change.
  *
+ * ### TwinBinding — state contract
+ *
+ * `design_context.twinId` has exactly three observable states:
+ *
+ *  1. **inherit** — `twinId` is missing or empty string. At runtime the
+ *     persona adopts whichever twin is globally active (or none, if the
+ *     user has no active twin set).
+ *  2. **pinned** — `twinId` is a non-empty string that resolves to an
+ *     existing twin profile. The persona always adopts that specific twin
+ *     regardless of the active selection.
+ *  3. **orphaned** — `twinId` is a non-empty string that does NOT resolve
+ *     to any known twin profile (twin was deleted after pinning). We
+ *     surface this to the user with a reset affordance; at runtime the
+ *     binding behaves like `inherit` but the stored state is still wrong
+ *     and should be repaired.
+ *
+ * The empty string and a missing field are treated identically as
+ * "inherit"; the UI normalises to missing-field on save for smaller diffs.
+ *
  * Connector resolution (the runtime side that actually reads twinId
  * before falling back to the active twin) is a follow-up — see
  * `src-tauri/src/commands/infrastructure/twin.rs::twin_get_active_profile`.
@@ -39,6 +58,13 @@ export function TwinBindingCard() {
   const currentTwinId = designContext.twinId ?? '';
   const inheritsActive = !currentTwinId;
   const activeTwin = activeTwinId ? twinProfiles.find((tw) => tw.id === activeTwinId) : null;
+  // Orphan detection — pinned to a twin id that no longer exists. We only
+  // flag once twin profiles have loaded (twinProfiles.length > 0) to avoid
+  // a flash of "orphaned" during the initial fetch.
+  const isOrphan =
+    !inheritsActive &&
+    twinProfiles.length > 0 &&
+    !twinProfiles.some((tw) => tw.id === currentTwinId);
 
   const handleChange = async (value: string) => {
     // Merge twinId into the existing design_context envelope. Empty string
@@ -95,6 +121,20 @@ export function TwinBindingCard() {
                   ? 'When this persona invokes a twin tool, it adopts whichever twin is currently active in the Twin plugin.'
                   : 'This persona always adopts the selected twin, regardless of which twin is globally active.'}
               </p>
+              {isOrphan && (
+                <div className="mt-2 rounded-modal border border-amber-500/25 bg-amber-500/5 px-3 py-2 flex items-center gap-2">
+                  <span className="typo-caption text-amber-300 flex-1">
+                    This persona is pinned to a deleted twin. It will fall back to the active twin at runtime until you reset.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void handleChange('')}
+                    className="px-2 py-1 typo-caption rounded-card border border-amber-500/30 text-amber-200 hover:bg-amber-500/10"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
