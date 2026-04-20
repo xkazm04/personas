@@ -1,36 +1,38 @@
 /**
- * Combined capability + trigger composition step. Hosts three variants
- * behind a tab switcher so the user can A/B/C the layouts on real
- * template data before we commit to one and delete the others.
+ * Combined capability + trigger composition step. All three variants
+ * share the same layout (2-column tile grid with inline trigger config
+ * per card) and the same props contract. They differ purely in visual
+ * language so the user can pick the styling that fits best.
  *
- * Variants (per ui-variant-prototype skill):
- *   - grid  → Command Grid (dense 2-col tiles, inline trigger config)
- *   - split → Split Pane (master list + detail config pane)
- *   - stack → Stack Accordion (progressive disclosure, one-open-at-a-time)
+ * Styling variants (per ui-variant-prototype skill):
+ *   - outline   → neutral borders, minimal hue, current-app aesthetic
+ *   - filled    → pill chips with accent-per-preset colors, soft glow
+ *                 on enabled cards, gradient CTA
+ *   - segmented → joined segmented-control chips, monochrome palette,
+ *                 underline-only inputs, Apple-settings-like
  *
- * All three share the same props contract (UseCasePickerVariantProps)
- * so swapping is pure UI — behavior, data flow, and materialization are
- * unaffected.
+ * Swapping is pure UI — behavior, data flow, and trigger materialization
+ * are unaffected.
  */
 import { useState } from 'react';
-import { Grid3x3, Columns2, LayoutList, type LucideIcon } from 'lucide-react';
-import { UseCasePickerStepGrid } from './UseCasePickerStepGrid';
-import { UseCasePickerStepSplit } from './UseCasePickerStepSplit';
-import { UseCasePickerStepStack } from './UseCasePickerStepStack';
+import { SquareDashed, Zap, Minus, type LucideIcon } from 'lucide-react';
+import { UseCasePickerStepGridOutline } from './UseCasePickerStepGridOutline';
+import { UseCasePickerStepGridFilled } from './UseCasePickerStepGridFilled';
+import { UseCasePickerStepGridSegmented } from './UseCasePickerStepGridSegmented';
 import type { UseCaseOption, UseCasePickerVariantProps } from './useCasePickerShared';
 
 export type { UseCaseOption };
 
-type Variant = 'grid' | 'split' | 'stack';
+type Variant = 'outline' | 'filled' | 'segmented';
 
 const VARIANTS: { key: Variant; label: string; icon: LucideIcon }[] = [
-  { key: 'grid', label: 'Grid', icon: Grid3x3 },
-  { key: 'split', label: 'Split pane', icon: Columns2 },
-  { key: 'stack', label: 'Stack', icon: LayoutList },
+  { key: 'outline', label: 'Outline', icon: SquareDashed },
+  { key: 'filled', label: 'Filled', icon: Zap },
+  { key: 'segmented', label: 'Segmented', icon: Minus },
 ];
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
-  const [variant, setVariant] = useState<Variant>('grid');
+  const [variant, setVariant] = useState<Variant>('outline');
 
   return (
     <div className="relative flex flex-col h-full min-h-0">
@@ -59,9 +61,9 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
       </div>
 
       <div className="flex-1 min-h-0">
-        {variant === 'grid' && <UseCasePickerStepGrid {...props} />}
-        {variant === 'split' && <UseCasePickerStepSplit {...props} />}
-        {variant === 'stack' && <UseCasePickerStepStack {...props} />}
+        {variant === 'outline' && <UseCasePickerStepGridOutline {...props} />}
+        {variant === 'filled' && <UseCasePickerStepGridFilled {...props} />}
+        {variant === 'segmented' && <UseCasePickerStepGridSegmented {...props} />}
       </div>
     </div>
   );

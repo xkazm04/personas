@@ -1,13 +1,15 @@
 /**
- * Variant A — Command Grid.
+ * Grid — Style B: Filled Accent.
  *
- * Dense 2-column tile grid. Every capability visible at once; every
- * trigger field reachable without clicking into a card. Closest to the
- * original chip-grid proposal but with cleaner spacing, app-native
- * typography tokens, and a shared ThemedSelect for the event picker.
- *
- * Best when the template has 2-6 capabilities — more than that and the
- * tiles start compressing.
+ * Same 2-column tile grid, same chip set, same props contract. Visual
+ * language is bolder:
+ *   - Pill chips (rounded-full) with accent colors per preset family
+ *     (scheduled = sky, event = violet, manual = slate).
+ *   - Enabled cards carry a soft accent glow + gradient surface so
+ *     they clearly pop against disabled ones.
+ *   - Toggle chevron becomes a filled accent dot; checkmark remains.
+ *   - Contextual inputs sit in a lightly-tinted callout block so they
+ *     feel like a sub-section, not inline text.
  */
 import { useMemo, useState } from 'react';
 import { Sparkles, Check, ChevronRight, ChevronDown } from 'lucide-react';
@@ -16,17 +18,56 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import {
   PRESETS,
-  type TriggerSelection,
   WEEKDAYS,
   isManual,
   presetKeyForSelection,
   selectionForPreset,
   clampHour,
   makeTriggerUpdater,
+  type PresetKey,
+  type TriggerSelection,
   type UseCasePickerVariantProps,
 } from './useCasePickerShared';
 
-export function UseCasePickerStepGrid({
+/**
+ * Preset-family colors. Scheduled family (hourly/daily/weekly/custom)
+ * shares one hue so the eye reads them as one category; event stands
+ * apart in violet; manual deliberately low-key in slate.
+ */
+const ACCENT_FOR_PRESET: Record<PresetKey, { active: string; hover: string; icon: string }> = {
+  manual: {
+    active: 'bg-slate-500/20 border-slate-400/50 text-slate-100',
+    hover: 'hover:bg-slate-500/10',
+    icon: 'text-slate-300',
+  },
+  hourly: {
+    active: 'bg-sky-500/20 border-sky-400/50 text-sky-100',
+    hover: 'hover:bg-sky-500/10',
+    icon: 'text-sky-300',
+  },
+  daily: {
+    active: 'bg-sky-500/20 border-sky-400/50 text-sky-100',
+    hover: 'hover:bg-sky-500/10',
+    icon: 'text-sky-300',
+  },
+  weekly: {
+    active: 'bg-sky-500/20 border-sky-400/50 text-sky-100',
+    hover: 'hover:bg-sky-500/10',
+    icon: 'text-sky-300',
+  },
+  event: {
+    active: 'bg-violet-500/20 border-violet-400/50 text-violet-100',
+    hover: 'hover:bg-violet-500/10',
+    icon: 'text-violet-300',
+  },
+  custom: {
+    active: 'bg-sky-500/20 border-sky-400/50 text-sky-100',
+    hover: 'hover:bg-sky-500/10',
+    icon: 'text-sky-300',
+  },
+};
+
+export function UseCasePickerStepGridFilled({
   templateName,
   templateGoal,
   useCases,
@@ -65,9 +106,9 @@ export function UseCasePickerStepGrid({
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
       <div className="flex-shrink-0 border-b border-white/[0.06]">
-        <div className="max-w-6xl mx-auto px-6 pt-6 pb-5 text-center">
+        <div className="max-w-6xl mx-auto px-6 pt-5 pb-4 text-center">
           <div className="flex items-center justify-center gap-2.5 mb-2">
-            <Sparkles className="w-5 h-5 text-primary/80" />
+            <Sparkles className="w-5 h-5 text-violet-300" />
             <h2 className="text-xl font-semibold text-foreground">
               {t.templates.adopt_modal.use_cases_title}
             </h2>
@@ -81,14 +122,14 @@ export function UseCasePickerStepGrid({
               {templateGoal}
             </p>
           ) : null}
-          <div className="mt-3 typo-body-lg text-foreground/70 tabular-nums">
+          <div className="mt-2 typo-body-lg text-foreground/70 tabular-nums">
             {tx(t.templates.adopt_modal.use_cases_enabled_count, {
               count: selectedCount,
               total: useCases.length,
             })}
           </div>
           {triggerComposition === 'shared' && (
-            <p className="mt-2 typo-body-lg text-primary/70">
+            <p className="mt-1 typo-body-lg text-violet-300/80">
               Shared trigger — changes apply to every card.
             </p>
           )}
@@ -96,7 +137,7 @@ export function UseCasePickerStepGrid({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="max-w-6xl mx-auto px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           {useCases.map((uc) => {
             const enabled = selectedIds.has(uc.id);
             const sel = triggerSelections[uc.id] ?? uc.defaultSelection ?? { preset: 'custom', customCron: '' };
@@ -106,20 +147,20 @@ export function UseCasePickerStepGrid({
               <motion.div
                 key={uc.id}
                 layout
-                className={`group relative rounded-2xl border transition-all p-4 ${
+                className={`relative rounded-2xl border p-4 transition-all overflow-hidden ${
                   enabled
-                    ? 'bg-primary/[0.07] border-primary/25'
-                    : 'bg-white/[0.02] border-white/[0.06]'
+                    ? 'border-violet-400/30 bg-gradient-to-br from-violet-500/[0.08] via-white/[0.02] to-sky-500/[0.06] shadow-[0_0_32px_-16px_rgba(139,92,246,0.35)]'
+                    : 'border-white/[0.06] bg-white/[0.015]'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <button
                     type="button"
                     onClick={() => onToggle(uc.id)}
-                    className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                    className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                       enabled
-                        ? 'bg-primary border-primary'
-                        : 'bg-transparent border-white/[0.2] hover:border-white/[0.3]'
+                        ? 'bg-violet-400 border-violet-400'
+                        : 'bg-transparent border-white/20 hover:border-white/35'
                     }`}
                     aria-label={enabled ? 'Disable capability' : 'Enable capability'}
                   >
@@ -129,7 +170,7 @@ export function UseCasePickerStepGrid({
                     <button type="button" onClick={() => onToggle(uc.id)} className="text-left w-full">
                       <div
                         className={`text-base font-semibold leading-snug ${
-                          enabled ? 'text-foreground' : 'text-foreground/80'
+                          enabled ? 'text-foreground' : 'text-foreground/75'
                         }`}
                       >
                         {uc.name}
@@ -148,7 +189,7 @@ export function UseCasePickerStepGrid({
                       <button
                         type="button"
                         onClick={() => toggleDesc(uc.id)}
-                        className="mt-1 inline-flex items-center gap-1 typo-body-lg text-primary/80 hover:text-primary transition-colors"
+                        className="mt-1 inline-flex items-center gap-1 typo-body-lg text-violet-300/80 hover:text-violet-200"
                       >
                         <ChevronDown
                           className={`w-3.5 h-3.5 transition-transform ${descExpanded ? 'rotate-180' : ''}`}
@@ -167,7 +208,7 @@ export function UseCasePickerStepGrid({
                     )}
 
                     {enabled && (
-                      <GridTriggerPanel
+                      <FilledTriggerBlock
                         selection={sel}
                         availableEvents={eventOptions}
                         onChange={(next) => updateTrigger(uc.id, next)}
@@ -190,7 +231,7 @@ export function UseCasePickerStepGrid({
             type="button"
             onClick={onContinue}
             disabled={!canContinue}
-            className="flex items-center gap-2 px-6 py-2 typo-body-lg font-medium rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed shadow-elevation-3 shadow-primary/20 transition-all"
+            className="flex items-center gap-2 px-6 py-2 typo-body-lg font-medium rounded-modal bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-400 hover:to-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_24px_-12px_rgba(139,92,246,0.6)] transition-all"
           >
             {t.templates.adopt_modal.use_cases_continue}
             <ChevronRight className="w-4 h-4" />
@@ -201,32 +242,33 @@ export function UseCasePickerStepGrid({
   );
 }
 
-interface TriggerPanelProps {
+interface FilledTriggerBlockProps {
   selection: TriggerSelection;
   availableEvents: ThemedSelectOption[];
   onChange: (next: TriggerSelection) => void;
 }
 
-function GridTriggerPanel({ selection, availableEvents, onChange }: TriggerPanelProps) {
+function FilledTriggerBlock({ selection, availableEvents, onChange }: FilledTriggerBlockProps) {
   const active = presetKeyForSelection(selection);
   return (
-    <div className="mt-3 pt-3 border-t border-white/[0.06] space-y-3">
-      <div className="flex flex-wrap gap-2">
+    <div className="mt-4 rounded-xl bg-white/[0.025] border border-white/[0.06] p-3 space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {PRESETS.map((p) => {
           const Icon = p.icon;
           const isActive = active === p.key;
+          const style = ACCENT_FOR_PRESET[p.key];
           return (
             <button
               key={p.key}
               type="button"
               onClick={() => onChange(selectionForPreset(p.key, selection))}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border typo-body-lg font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border typo-body-lg font-medium transition-colors ${
                 isActive
-                  ? 'bg-primary/20 border-primary/40 text-foreground'
-                  : 'bg-white/[0.03] border-white/[0.08] text-foreground/70 hover:bg-white/[0.06] hover:text-foreground'
+                  ? style.active
+                  : `bg-white/[0.03] border-white/[0.08] text-foreground/70 ${style.hover} hover:text-foreground`
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? '' : style.icon}`} />
               {p.label}
             </button>
           );
@@ -244,15 +286,15 @@ function GridTriggerPanel({ selection, availableEvents, onChange }: TriggerPanel
             onChange={(e) =>
               onChange({ ...selection, preset: 'daily', hourOfDay: clampHour(e.target.value) })
             }
-            className="w-16 px-2 py-1.5 rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground typo-body-lg focus:outline-none focus:border-primary/30 transition-colors"
+            className="w-16 px-2 py-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 text-foreground typo-body-lg focus:outline-none focus:border-sky-300/60 text-center"
           />
           <span className="text-foreground/60">:00 local</span>
         </div>
       )}
 
       {active === 'weekly' && (
-        <div className="flex flex-wrap items-center gap-2 typo-body-lg text-foreground/80">
-          <span>on</span>
+        <div className="flex flex-wrap items-center gap-1.5 typo-body-lg text-foreground/80">
+          <span className="mr-1">on</span>
           {WEEKDAYS.map((d, i) => {
             const isActive = selection.weekday === i;
             return (
@@ -267,17 +309,17 @@ function GridTriggerPanel({ selection, availableEvents, onChange }: TriggerPanel
                     hourOfDay: selection.hourOfDay ?? 9,
                   })
                 }
-                className={`px-2.5 py-1 rounded-card border typo-body-lg transition-colors ${
+                className={`w-10 py-1 rounded-full border typo-body-lg transition-colors ${
                   isActive
-                    ? 'bg-primary/20 border-primary/40 text-foreground'
-                    : 'bg-white/[0.03] border-white/[0.08] text-foreground/70 hover:bg-white/[0.06]'
+                    ? 'bg-sky-500/20 border-sky-400/50 text-sky-100'
+                    : 'bg-white/[0.03] border-white/[0.08] text-foreground/70 hover:bg-sky-500/10'
                 }`}
               >
                 {d}
               </button>
             );
           })}
-          <span className="ml-1">at</span>
+          <span className="ml-2">at</span>
           <input
             type="number"
             min={0}
@@ -291,7 +333,7 @@ function GridTriggerPanel({ selection, availableEvents, onChange }: TriggerPanel
                 weekday: selection.weekday ?? 1,
               })
             }
-            className="w-16 px-2 py-1.5 rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground typo-body-lg focus:outline-none focus:border-primary/30 transition-colors"
+            className="w-16 px-2 py-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 text-foreground typo-body-lg focus:outline-none focus:border-sky-300/60 text-center"
           />
           <span className="text-foreground/60">:00 local</span>
         </div>
@@ -323,20 +365,18 @@ function GridTriggerPanel({ selection, availableEvents, onChange }: TriggerPanel
             placeholder="0 9 * * 1"
             value={selection.customCron ?? ''}
             onChange={(e) => onChange({ preset: 'custom', customCron: e.target.value })}
-            className="flex-1 max-w-md px-2 py-1.5 rounded-card border border-white/[0.08] bg-white/[0.03] text-foreground typo-body-lg font-mono focus:outline-none focus:border-primary/30 transition-colors"
+            className="flex-1 max-w-md px-2 py-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 text-foreground typo-body-lg font-mono focus:outline-none focus:border-sky-300/60"
           />
         </div>
       )}
 
       {active === 'manual' && (
-        <p className="typo-body-lg text-foreground/60">
-          Runs only when you invoke it from the agent. No scheduled or event-based firing.
-        </p>
+        <p className="typo-body-lg text-slate-300/80">Runs only when you invoke it.</p>
       )}
 
       {active === 'hourly' && (
-        <p className="typo-body-lg text-foreground/60">
-          Fires on the hour, every hour (cron <code className="font-mono">0 * * * *</code>).
+        <p className="typo-body-lg text-sky-300/80">
+          Fires every hour (cron <code className="font-mono">0 * * * *</code>).
         </p>
       )}
     </div>
