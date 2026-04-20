@@ -1042,6 +1042,7 @@ pub fn run() {
             // Execution -- Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::list_all_executions,
+            commands::execution::executions::count_executions,
             commands::execution::executions::get_execution,
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
@@ -1082,6 +1083,7 @@ pub fn run() {
             commands::execution::assertions::delete_output_assertion,
             commands::execution::assertions::get_assertion_results_for_execution,
             commands::execution::assertions::get_assertion_result_history,
+            commands::execution::policy_events::get_policy_events_for_execution,
             // Execution -- Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,

@@ -46,6 +46,7 @@ mod smee_relay;
 mod frontend_crash;
 mod oauth_token_metric;
 mod output_assertion;
+mod policy_event;
 mod genome;
 mod evolution;
 #[cfg(feature = "p2p")]
@@ -107,6 +108,7 @@ pub use smee_relay::*;
 pub use frontend_crash::*;
 pub use oauth_token_metric::*;
 pub use output_assertion::*;
+pub use policy_event::*;
 pub use genome::*;
 pub use evolution::*;
 #[cfg(feature = "p2p")]

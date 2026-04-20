@@ -4,6 +4,7 @@ pub mod executions;
 pub mod healing;
 pub mod knowledge;
 pub mod metrics;
+pub mod policy_events;
 pub mod provider_audit;
 pub mod test_runs;
 pub mod test_suites;

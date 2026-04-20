@@ -1298,6 +1298,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_ar_created    ON assertion_results(created_at DESC);"
     )?;
 
+    // -- Policy Events (audit trail for generation-policy enforcement) --------
+    // Each silent drop / auto-resolve in engine/dispatch.rs writes a row here
+    // so users can verify review/memory/event policies fired as declared.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS policy_events (
+            id              TEXT PRIMARY KEY,
+            execution_id    TEXT NOT NULL REFERENCES persona_executions(id) ON DELETE CASCADE,
+            persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            use_case_id     TEXT,
+            policy_kind     TEXT NOT NULL,
+            action          TEXT NOT NULL,
+            payload_title   TEXT,
+            reason          TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_pe_execution ON policy_events(execution_id);
+        CREATE INDEX IF NOT EXISTS idx_pe_persona   ON policy_events(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_pe_created   ON policy_events(created_at DESC);"
+    )?;
+
     // -- saved_views: view_type + view_config columns ------
     let has_view_type: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('saved_views') WHERE name = 'view_type'")?

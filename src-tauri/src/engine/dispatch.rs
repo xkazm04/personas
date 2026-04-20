@@ -21,7 +21,44 @@ use crate::db::repos::communication::{
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
+use crate::db::repos::execution::policy_events as policy_events_repo;
 use crate::db::DbPool;
+
+// ---------------------------------------------------------------------------
+// Policy audit helper
+// ---------------------------------------------------------------------------
+
+/// Best-effort persist of a policy-enforcement event to the audit log. Never
+/// fails the dispatch — a failed audit write gets a warn log line and the
+/// enforcement itself already succeeded. Used at every `[POLICY]` drop /
+/// auto-resolve site so the per-execution Policy Events tab can show what
+/// the policy silently removed.
+fn audit_policy_event(
+    ctx: &DispatchContext<'_>,
+    policy_kind: &str,
+    action: &str,
+    payload_title: Option<&str>,
+    reason: Option<&str>,
+) {
+    if let Err(e) = policy_events_repo::insert(
+        ctx.pool,
+        ctx.execution_id,
+        ctx.persona_id,
+        ctx.use_case_id,
+        policy_kind,
+        action,
+        payload_title,
+        reason,
+    ) {
+        tracing::warn!(
+            execution_id = %ctx.execution_id,
+            policy_kind,
+            action,
+            error = %e,
+            "Failed to persist policy event (enforcement still applied)",
+        );
+    }
+}
 
 use super::logger::ExecutionLogger;
 use super::types::ProtocolMessage;
@@ -237,9 +274,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             // never aliased (alias map applies to `EmitEvent` user-named events).
             let policy = ctx.generation_policy();
             if !policy.events.is_on() {
-                ctx.logger.log(&format!(
-                    "[POLICY] PersonaAction dropped — capability events policy = off (target={target})"
-                ));
+                let reason = format!("capability events policy = off (target={target})");
+                ctx.logger.log(&format!("[POLICY] PersonaAction dropped — {reason}"));
+                audit_policy_event(ctx, "event.off", "dropped", Some(target), Some(&reason));
                 return;
             }
             match event_repo::publish(
@@ -272,16 +309,16 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             // alias map when on. The published name is what subscribers see.
             let policy = ctx.generation_policy();
             if !policy.events.is_on() {
-                ctx.logger.log(&format!(
-                    "[POLICY] Custom event dropped — capability events policy = off ({event_type})"
-                ));
+                let reason = format!("capability events policy = off ({event_type})");
+                ctx.logger.log(&format!("[POLICY] Custom event dropped — {reason}"));
+                audit_policy_event(ctx, "event.off", "dropped", Some(event_type), Some(&reason));
                 return;
             }
             let published_name = policy.published_event_name(event_type).to_string();
             if published_name != *event_type {
-                ctx.logger.log(&format!(
-                    "[POLICY] Event aliased: '{event_type}' -> '{published_name}'"
-                ));
+                let reason = format!("'{event_type}' -> '{published_name}'");
+                ctx.logger.log(&format!("[POLICY] Event aliased: {reason}"));
+                audit_policy_event(ctx, "event.aliased", "aliased", Some(event_type), Some(&reason));
             }
             // Sanitize persona name for source_type: replace spaces with underscores,
             // keep only alphanumeric, underscore, hyphen, dot, colon, forward-slash.
@@ -318,9 +355,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             // but this is the safety net for ignored instructions).
             let policy = ctx.generation_policy();
             if !policy.memories.is_on() {
-                ctx.logger.log(&format!(
-                    "[POLICY] Memory dropped — capability memories policy = off ({title})"
-                ));
+                let reason = format!("capability memories policy = off ({title})");
+                ctx.logger.log(&format!("[POLICY] Memory dropped — {reason}"));
+                audit_policy_event(ctx, "memory.off", "dropped", Some(title), Some(&reason));
                 return;
             }
             // Quality gate: use cached config (loaded lazily on first use).
@@ -423,9 +460,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let policy = ctx.generation_policy();
             let review_policy = policy.reviews;
             if matches!(review_policy, testable::ReviewPolicy::Off) {
-                ctx.logger.log(&format!(
-                    "[POLICY] Manual review dropped — capability reviews policy = off ({title})"
-                ));
+                let reason = format!("capability reviews policy = off ({title})");
+                ctx.logger.log(&format!("[POLICY] Manual review dropped — {reason}"));
+                audit_policy_event(ctx, "review.off", "dropped", Some(title), Some(&reason));
                 return;
             }
             // Quality gate: use cached config (loaded lazily on first use).
@@ -520,10 +557,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 r.id
                             ));
                         } else {
-                            ctx.logger.log(&format!(
-                                "[POLICY] Review {} auto-resolved (trust_llm)",
-                                r.id
-                            ));
+                            let reason = format!("trust_llm policy — review {} auto-resolved", r.id);
+                            ctx.logger.log(&format!("[POLICY] {reason}"));
+                            audit_policy_event(ctx, "review.trust_llm", "auto_resolved", Some(title), Some(&reason));
                         }
                     }
                     if ctx.is_simulation {
