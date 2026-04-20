@@ -9,7 +9,6 @@ import { useSettingsSaveToast } from '@/hooks/utility/interaction/useSettingsSav
 import { useTranslation } from '@/i18n/useTranslation';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
-import { ModePreviewsPanel } from './previews/ModePreviewsPanel';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS } from '@/lib/constants/uiModes';
 import { ModeComparisonCard } from '@/features/simple-mode';
@@ -205,9 +204,6 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          {/* Simple-mode redesign previews (temporary prototype surface) */}
-          <ModePreviewsPanel />
-
           {/* Interface mode */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
