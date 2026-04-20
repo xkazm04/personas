@@ -5,6 +5,7 @@
   "color": "#4285F4",
   "icon_url": "/icons/connectors/google-ads.svg",
   "category": "analytics",
+  "categories": ["advertising"],
   "fields": [
     {
       "key": "developer_token",

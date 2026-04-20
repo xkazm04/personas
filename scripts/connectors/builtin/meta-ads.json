@@ -5,6 +5,7 @@
   "color": "#1877F2",
   "icon_url": "/icons/connectors/meta-ads.svg",
   "category": "advertising",
+  "categories": ["advertising"],
   "fields": [
     {
       "key": "ad_account_id",

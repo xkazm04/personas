@@ -21,7 +21,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/content-performance-reporter.json", "000c69199b4a9fd2");
     m.insert("content/demo-recorder.json", "00178b31c6034d8c");
     m.insert("content/feature-video-creator.json", "0012fdc449dcca74");
-    m.insert("content/game-character-animator.json", "001194f2148e8462");
+    m.insert("content/game-character-animator.json", "0013bf9f852937fc");
     m.insert("content/newsletter-curator.json", "0010f81605b96895");
     m.insert("content/scientific-writing-editor.json", "00192b22e8f48322");
     m.insert("content/social-media-designer.json", "001f20781e342d8b");
@@ -65,7 +65,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("marketing/autonomous-cro-experiment-runner.json", "00165417e7af810c");
     m.insert("marketing/reddit-trend-digest.json", "0000699e2f9cc6c5");
     m.insert("marketing/visual-brand-asset-factory.json", "001f29a5dc2301bb");
-    m.insert("marketing/web-marketing.json", "0016ef9f29339223");
+    m.insert("marketing/web-marketing.json", "000253c0768dafca");
     m.insert("marketing/website-conversion-audit.json", "00140c42c71ea922");
     m.insert("productivity/appointment-orchestrator.json", "000c5d30218916e8");
     m.insert("productivity/daily-standup-compiler.json", "0014fce8b25e1a0f");

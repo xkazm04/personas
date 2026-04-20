@@ -3,6 +3,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { discoverConnectorResources, type DiscoveredItem } from '@/api/templates/discovery';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { createLogger } from '@/lib/log';
+import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 
 const logger = createLogger('dynamic-question-options');
 
@@ -90,6 +91,42 @@ export function useDynamicQuestionOptions(
           if (prev[q.id]?.waitingOnParent) return prev;
           return { ...prev, [q.id]: { ...EMPTY_STATE, waitingOnParent: true } };
         });
+        continue;
+      }
+
+      // source: "vault" → synthesize options from installed credentials that
+      // match the requested category tag. No IPC, no per-connector discovery.
+      // Each eligible credential becomes one option: value = connector name
+      // (service_type the persona will attach), label = credential name.
+      if (src.source === 'vault') {
+        const category = src.service_type;
+        const items: DiscoveredItem[] = [];
+        for (const c of credentials) {
+          if (c.healthcheck_last_success === false) continue;
+          if (!connectorCategoryTags(c.service_type).includes(category)) continue;
+          items.push({
+            value: c.service_type,
+            label: c.name,
+            sublabel: c.service_type,
+          });
+        }
+        // Re-dispatch only when the item set actually changed — otherwise the
+        // effect loops on every credentials reference change.
+        const fingerprint = `vault|${category}|${items.map((i) => i.value).join(',')}`;
+        if (lastFingerprintRef.current[q.id] === fingerprint) continue;
+        lastFingerprintRef.current[q.id] = fingerprint;
+        setStateByQuestion((prev) => ({
+          ...prev,
+          [q.id]: {
+            loading: false,
+            ready: items.length > 0,
+            error: items.length === 0
+              ? `No healthy ${category} credential connected`
+              : null,
+            items,
+            waitingOnParent: false,
+          },
+        }));
         continue;
       }
 

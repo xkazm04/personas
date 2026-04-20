@@ -102,6 +102,18 @@ export interface TransformQuestionResponse {
     depends_on?: string;
     multi?: boolean;
     include_all_option?: boolean;
+    /**
+     * When `"vault"`, the option list is sourced directly from the user's
+     * installed credentials — no IPC call, no per-connector discovery. The
+     * `service_type` is interpreted as a connector category tag (see
+     * `connectorCategoryTags` in lib/credentials/builtinConnectors), and each
+     * installed+healthy credential whose connector claims that tag becomes
+     * one option (value = credential.service_type, label = credential.name).
+     * Use for "which provider in category X?" picker questions where static
+     * options would otherwise hardcode a provider list that drifts from the
+     * vault catalog over time.
+     */
+    source?: 'vault';
   };
 }
 

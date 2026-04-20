@@ -204,3 +204,33 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   linkedinAds,
   googleDrive,
 ] as BuiltinConnectorDef[];
+
+/**
+ * Return every category tag claimed by a connector — unions the legacy
+ * singular `category` string with the multi-tag `categories[]` array (if
+ * present on the JSON). Empty array if the name is unknown.
+ *
+ * A connector may participate in several template slots (e.g. Leonardo AI is
+ * both `image_generation` and `video_generation`). Templates that ask for a
+ * category-level credential match against this function.
+ */
+export function connectorCategoryTags(connectorName: string): string[] {
+  const c = BUILTIN_CONNECTORS.find((x) => x.name === connectorName) as
+    | (BuiltinConnectorDef & { categories?: unknown })
+    | undefined;
+  if (!c) return [];
+  const tags = new Set<string>();
+  if (c.category) tags.add(c.category);
+  const multi = (c as { categories?: unknown }).categories;
+  if (Array.isArray(multi)) {
+    for (const t of multi) if (typeof t === 'string') tags.add(t);
+  }
+  return Array.from(tags);
+}
+
+/** Connectors whose category tags include the requested tag. */
+export function connectorsInCategory(category: string): BuiltinConnectorDef[] {
+  return BUILTIN_CONNECTORS.filter((c) =>
+    connectorCategoryTags(c.name).includes(category),
+  );
+}

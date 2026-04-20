@@ -5,6 +5,7 @@
   "color": "#0A66C2",
   "icon_url": "/icons/connectors/linkedin-ads.svg",
   "category": "advertising",
+  "categories": ["advertising"],
   "fields": [
     {
       "key": "account_urn",

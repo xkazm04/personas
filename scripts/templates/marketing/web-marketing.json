@@ -375,16 +375,14 @@
         "category": "configuration",
         "question": "Which ad platform should this persona pull campaign data from?",
         "type": "select",
-        "options": [
-          "Google Ads",
-          "Meta Ads (Facebook + Instagram)",
-          "LinkedIn Ads",
-          "Mailchimp (email campaigns)"
-        ],
-        "default": "Google Ads",
+        "dynamic_source": {
+          "service_type": "advertising",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
         "maps_to": "persona.connectors[ad_platform].credential_fields[provider].value",
         "variable_name": "ad_platform_provider",
-        "context": "The persona adapts its queries to whichever platform you pick — Google Ads GAQL, Meta Graph insights, LinkedIn Ads analytics, or Mailchimp reports.",
+        "context": "Options are auto-detected from the advertising-category credentials you've already connected in the Vault. If the list is empty, add Google Ads, Meta Ads, LinkedIn Ads, or another advertising connector first.",
         "dimension": "connectors"
       },
       {
@@ -392,18 +390,16 @@
         "scope": "connector",
         "connector_names": ["analytics_tool"],
         "category": "configuration",
-        "question": "Which analytics or SEO tool should supply the organic performance data?",
+        "question": "Which analytics tool should supply the organic performance data?",
         "type": "select",
-        "options": [
-          "Google Analytics 4",
-          "Google Search Console",
-          "PostHog",
-          "Mixpanel"
-        ],
-        "default": "Google Analytics 4",
+        "dynamic_source": {
+          "service_type": "analytics",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
-        "context": "GA4 gives traffic + conversions. Search Console gives ranking + query data. PostHog / Mixpanel give product-analytics depth. Pick based on what you already instrument.",
+        "context": "Options are auto-detected from the analytics-category credentials in your Vault (PostHog, Mixpanel, and any other analytics connectors you've added). Add one first if the list is empty.",
         "dimension": "connectors"
       },
       {

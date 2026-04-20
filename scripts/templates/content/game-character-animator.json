@@ -335,14 +335,14 @@
         "category": "configuration",
         "question": "Which image-AI provider should generate the sprites?",
         "type": "select",
-        "options": [
-          "Leonardo AI (recommended — strong pixel-art consistency)",
-          "OpenAI Images (higher resolution, more stylized)"
-        ],
-        "default": "Leonardo AI (recommended — strong pixel-art consistency)",
+        "dynamic_source": {
+          "service_type": "image_generation",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
-        "context": "Leonardo has better reference-image fidelity for pixel art. OpenAI Images produces cleaner HD sprites but less tight pixel-palette adherence. Pick based on your art style choice.",
+        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (Leonardo AI, and any other image-AI connectors you've added). If the list is empty, connect an image-AI provider first — Leonardo has the strongest pixel-art reference-image fidelity.",
         "dimension": "connectors"
       }
     ],
