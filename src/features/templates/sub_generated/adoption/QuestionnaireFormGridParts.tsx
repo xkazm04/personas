@@ -171,13 +171,17 @@ function DynamicSelectBody({
         <Zap className="w-3 h-3" />
         {tx(t.templates.adopt_modal.loaded_live_from, { service: src.service_type })}
       </div>
+      {/* Vault-sourced pickers never expose a free-text "Other" — the user
+          must either select an existing credential or use the `Add credential`
+          CTA above to create one. Letting a template-author bypass that would
+          produce personas with unresolvable credential references. */}
       <SelectPills
         options={state.items.map((i) => ({ value: i.value, label: i.label, sublabel: i.sublabel }))}
         value={answer}
         onChange={onAnswer}
         multi={src.multi}
         includeAllOption={src.include_all_option}
-        allowCustom
+        allowCustom={false}
       />
     </div>
   );
@@ -234,6 +238,7 @@ export function QuestionCard({
   filteredOptions,
   dynamicState,
   onRetryDynamic,
+  useCaseTitleById,
 }: {
   question: TransformQuestionResponse;
   answer: string;
@@ -248,6 +253,8 @@ export function QuestionCard({
   dynamicState?: DynamicOptionState;
   /** Retry a failed dynamic fetch for this question. */
   onRetryDynamic?: (questionId: string) => void;
+  /** Map of use-case id → human title for "Applies to" line. */
+  useCaseTitleById?: Record<string, string>;
 }) {
   const { t } = useTranslation();
   const [pulseKey, setPulseKey] = useState(0);
@@ -437,9 +444,14 @@ export function QuestionCard({
       {!isBlocked && (() => {
         const ids = question.use_case_ids ?? (question.use_case_id ? [question.use_case_id] : []);
         if (ids.length === 0) return null;
+        // Resolve ids → titles so the user sees "Personal Briefing, Weekly
+        // Review" rather than raw identifiers like "uc_morning_digest". Fall
+        // back to the id when the map lookup is absent (defensive — the
+        // adoption orchestrator always provides the map).
+        const labels = ids.map((id) => useCaseTitleById?.[id] ?? id);
         return (
           <div className="mt-1.5 typo-body text-foreground/55 italic">
-            Applies to: {ids.join(', ')}
+            Applies to: {labels.join(', ')}
           </div>
         );
       })()}

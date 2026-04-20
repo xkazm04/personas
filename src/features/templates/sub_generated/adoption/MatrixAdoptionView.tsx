@@ -433,7 +433,11 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     return out;
   }, [designResult]);
 
-  const showUseCasePicker = availableUseCases.length >= 2;
+  // Always show the UC picker when the template has at least one use case.
+  // Single-UC templates still need the step so the user can adjust the
+  // trigger composition (daily/weekly/hourly/custom cron) and confirm the
+  // capability is enabled — an empty selection should block progression.
+  const showUseCasePicker = availableUseCases.length >= 1;
   const [selectedUseCaseIds, setSelectedUseCaseIds] = useState<Set<string>>(
     () => new Set(availableUseCases.map((u) => u.id)),
   );
@@ -518,16 +522,57 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     });
   }, []);
 
-  // Filter adoption questions by selected use cases. Questions with no
+  // Map UC id → human title so questionnaire "Applies to:" lines can render
+  // "Applies to: Personal Briefing, Weekly Review" instead of raw ids like
+  // "uc_morning_digest". Titles fall back to the id if the template author
+  // didn't set a title on a capability.
+  const useCaseTitleById = useMemo<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const uc of availableUseCases) {
+      out[uc.id] = uc.name && uc.name.trim() ? uc.name : uc.id;
+    }
+    return out;
+  }, [availableUseCases]);
+
+  // Canonical dimension order mirrors the chronology / live-preview columns:
+  // triggers → use-cases → connectors → messages → review → memory → events →
+  // error-handling → boundaries → voice (persona-level tail). Questions
+  // without a dimension fall to the end of their bucket.
+  const dimensionOrder = useMemo<Record<string, number>>(() => {
+    const order = [
+      'triggers',
+      'use-cases',
+      'connectors',
+      'messages',
+      'review',
+      'memory',
+      'events',
+      'error-handling',
+      'boundaries',
+      'voice',
+    ];
+    return Object.fromEntries(order.map((d, i) => [d, i]));
+  }, []);
+
+  // Filter adoption questions by selected use cases + sort to match the
+  // live-preview sidebar so answering top-down walks the agent's dimensions
+  // in the same order the preview renders them. Questions with no
   // use_case_id / use_case_ids (persona or connector scope) always show.
   const filteredAdoptionQuestions = useMemo(() => {
-    if (!showUseCasePicker) return adoptionQuestions;
-    return adoptionQuestions.filter((q) => {
-      const tied = [q.use_case_id, ...(q.use_case_ids ?? [])].filter(Boolean) as string[];
-      if (tied.length === 0) return true;
-      return tied.some((id) => selectedUseCaseIds.has(id));
-    });
-  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
+    const filtered = !showUseCasePicker
+      ? adoptionQuestions
+      : adoptionQuestions.filter((q) => {
+          const tied = [q.use_case_id, ...(q.use_case_ids ?? [])].filter(Boolean) as string[];
+          if (tied.length === 0) return true;
+          return tied.some((id) => selectedUseCaseIds.has(id));
+        });
+    // Stable-sort by dimension then by original index so templates that
+    // don't declare dimensions keep their authored order.
+    return filtered
+      .map((q, idx) => ({ q, idx, dim: dimensionOrder[q.dimension ?? ''] ?? 999 }))
+      .sort((a, b) => (a.dim - b.dim) || (a.idx - b.idx))
+      .map(({ q }) => q);
+  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker, dimensionOrder]);
   const hasFilteredQuestions = filteredAdoptionQuestions.length > 0;
 
   // Resolve dynamic option lists (Sentry projects, codebases, ...) from the
@@ -990,6 +1035,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           onSubmit={() => setQuestionsComplete(true)}
           onClose={onClose}
           templateName={templateName}
+          useCaseTitleById={useCaseTitleById}
         />
       );
     }

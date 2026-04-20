@@ -58,6 +58,8 @@ interface Props {
   onSubmit: () => void;
   onClose: () => void;
   templateName?: string;
+  /** Map of use-case id → human title for rendering "Applies to" lines. */
+  useCaseTitleById?: Record<string, string>;
 }
 
 function summarizeAnswer(
@@ -88,6 +90,7 @@ export function QuestionnaireFormFocus({
   onAnswerUpdated,
   onSubmit,
   templateName,
+  useCaseTitleById,
 }: Props) {
   const { t, tx } = useTranslation();
   const [activeIdx, setActiveIdx] = useState(() => {
@@ -282,6 +285,7 @@ export function QuestionnaireFormFocus({
                   filteredOptions={filteredOptions?.[currentQuestion.id]}
                   dynamicState={dynamicOptions?.[currentQuestion.id]}
                   onRetryDynamic={onRetryDynamic}
+                  useCaseTitleById={useCaseTitleById}
                 />
 
                 {/* Hint + arrow-key legend. Enter is only wired on the last

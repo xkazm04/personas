@@ -78,6 +78,14 @@ export interface TransformQuestionResponse {
   connector_names?: string[];
   /** Credential category to match against the vault (e.g. "cloud", "ai"). */
   vault_category?: string;
+  /**
+   * Chronology dimension this question configures. Drives question ordering
+   * in the adoption questionnaire so the flow mirrors the live-preview
+   * sidebar: `triggers` → `use-cases` → `connectors` → `messages` → `review`
+   * → `memory` → `events` → `error-handling` → `boundaries` → `voice`.
+   * Questions without a dimension fall to the end of the list.
+   */
+  dimension?: string;
   /** Parallel array mapping each `options` entry to a credential service_type. null = no mapping. */
   option_service_types?: (string | null)[];
   /**
