@@ -45,6 +45,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
+import { SimpleEmptyState } from '../SimpleEmptyState';
 import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
@@ -133,9 +134,10 @@ export default function MosaicVariant() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   // Zero-persona state: nothing to render; the whole surface becomes a
-  // welcome card with a CTA into the onboarding flow.
+  // welcome card with a CTA into the onboarding flow. Shared with Console
+  // via `SimpleEmptyState` (Phase 08 extraction).
   if (personas.length === 0) {
-    return <EmptyMosaic t={t.simple_mode} onCreate={startOnboarding} />;
+    return <SimpleEmptyState onCreate={startOnboarding} />;
   }
 
   const hero = pickHero(inbox);
@@ -564,35 +566,6 @@ function ConnectionChip({
       <Plug className="w-3 h-3" />
       <span>{cred.name}</span>
       {isOk ? <Check className="w-3 h-3 simple-accent-emerald-text" /> : null}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-
-interface EmptyMosaicProps {
-  t: TMap;
-  onCreate: () => void;
-}
-
-/** Rendered when the user has zero personas. Calls `startOnboarding` on CTA. */
-function EmptyMosaic({ t, onCreate }: EmptyMosaicProps) {
-  return (
-    <div className="h-full flex flex-col items-center justify-center gap-4 p-12 text-center">
-      <div className="w-16 h-16 rounded-3xl border simple-accent-violet-border simple-accent-violet-soft flex items-center justify-center">
-        <Sparkles className="w-8 h-8 simple-accent-violet-text" />
-      </div>
-      <h1 className="typo-hero simple-display text-foreground">
-        {t.empty_assistant_grid_title}
-      </h1>
-      <p className="typo-body-lg text-foreground/70 max-w-md">
-        {t.empty_assistant_grid_body}
-      </p>
-      <Button variant="primary" onClick={onCreate}>
-        {t.empty_assistant_grid_cta}
-      </Button>
     </div>
   );
 }
