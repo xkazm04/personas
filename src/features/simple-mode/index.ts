@@ -14,3 +14,6 @@ export { default as SimpleHomePage } from './SimpleHomePage';
 export { useUnifiedInbox } from './hooks/useUnifiedInbox';
 export { normalizeSeverity } from './types';
 export type { InboxKind, Severity, UnifiedInboxItem } from './types';
+
+export { useIllustration, resolveIllustration, CATEGORIES } from './hooks/useIllustration';
+export type { IllustrationCategory, ResolvedIllustration } from './hooks/useIllustration';
