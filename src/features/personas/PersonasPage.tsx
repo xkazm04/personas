@@ -13,6 +13,7 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
+import { TIERS } from '@/lib/constants/uiModes';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -36,13 +37,14 @@ const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+const SimpleHomePage = lazy(() => import('@/features/simple-mode'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
-  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
+  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error, viewMode } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
       cloudTab: s.cloudTab,
@@ -51,6 +53,7 @@ export default function PersonasPage() {
       isCreatingPersona: s.isCreatingPersona,
       isLoading: s.isLoading,
       error: s.error,
+      viewMode: s.viewMode,
     }))
   );
   const setError = useSystemStore((s) => s.setError);
@@ -151,6 +154,21 @@ export default function PersonasPage() {
       useSystemStore.getState().setIsCreatingPersona(true);
     }
   }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
+
+  // Simple mode takes over the whole viewport — no sidebar, no Power-mode chunks.
+  // Placed AFTER all hooks (React rules of hooks) but BEFORE renderContent so
+  // Power-mode lazy chunks are never requested when viewMode === STARTER.
+  // NOTE: the useEffects above still run in Simple mode (fetchPersonas, etc.)
+  // — Phase 07+ will trim fetches that are Power-mode-only.
+  if (viewMode === TIERS.STARTER) {
+    return (
+      <ErrorBoundary name="SimpleHome">
+        <Suspense fallback={null}>
+          <SimpleHomePage />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
 
   const renderContent = () => {
     // Show unified wizard when no personas exist OR when explicitly creating
