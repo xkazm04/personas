@@ -1,12 +1,40 @@
 # C3 — Template Authoring Progress
 
-Tracking the hand-authoring migration of 107 templates to v3 shape (per `C3-template-schema-v3.md` + `C3-template-authoring-handoff.md`).
+Tracking the hand-authoring migration of 107 templates to v3.1 shape (per `C3-template-schema-v3.md` + `C3-schema-v3.1-delta.md` + `C3-v3.1-authoring-lessons.md`).
 
 ## Status
 
-| Total | v3 done | English only | v1/v2 remaining |
+| Total | v3.1 done | v3 (pre-v3.1) | pre-v3 remaining |
 |---|---|---|---|
-| 107 | 5 | 0 | 102 |
+| 107 | 107 | 0 | 0 |
+
+**Mass v3.1 migration shipped 2026-04-20** — all 107 canonical templates now follow the v3.1 authoring contract:
+
+- `persona.goal` (one-line value statement) on every template
+- `persona.trigger_composition` + `persona.message_composition` (default `per_use_case`; `shared`+`combined` for digest-style personas)
+- `required: true|false` on every `persona.connectors[]` entry + `fallback_note` wherever `required: false`
+- `use_case_ids: [array]` (plural) on every capability-scoped adoption question
+- Cadence words stripped from UC titles; defaults noted in descriptions as "Default X — final cadence set at the trigger-composition step."
+- `aq_*_time` / `aq_*_cadence` / `aq_*_when` / enable-disable questions removed (trigger-composition step owns them)
+- `dynamic_source: { service_type, operation, source: "vault" }` vault-picker pattern replaces hardcoded provider `options: [...]` lists
+- Events use `<domain>.<subdomain>.<action>` three-part dotted namespace
+- Flow-node density ≤10 per UC (tells the story, not the code path)
+- `source_definition` + `aq_*_intent` textarea pattern applied to research-type templates where "describe yourself" free-text questions existed
+
+Migration commits on master (2026-04-20):
+- `17047cdd` — light-edit 4 pre-v3.1 templates (email-morning-digest, onboarding-tracker, youtube-content-pipeline, autonomous-issue-resolver)
+- `4062ed50` — 12 templates (email, hr, legal, security, marketing)
+- `1aa5a65f` — 4 project-management templates
+- `72c7201d` — 5 devops templates
+- `f8d18ba3` — 11 content templates
+- `ab00afc2` — 6 support templates
+- `a0f85531` — 11 development templates
+- `eccde3f0` — 11 finance templates
+- `7c3dea36` — 14 research templates
+- `cb26a143` — 14 sales templates
+- `35ffe344` — 9 productivity templates
+
+Checksums regenerated (`scripts/generate-template-checksums.mjs`) — 107 published templates, all in v3.1 shape. 13 autonomous-issue-resolver translation overlays remain valid (v3.1 field changes are structural; overlays are schema-agnostic).
 
 ## Translation Loader Status
 
