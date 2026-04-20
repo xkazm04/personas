@@ -59,9 +59,9 @@
     "use_cases": [
       {
         "id": "uc_morning_briefing",
-        "title": "Daily Morning Briefing",
-        "description": "7am daily consolidated briefing: niche intelligence research + goal progress check-in + pending work accountability + prioritized action plan for today. One focused message, 2-3 minute read.",
-        "capability_summary": "Daily 7am consolidated briefing (research + goals + pending + actions).",
+        "title": "Personal Briefing",
+        "description": "Consolidated briefing that fuses niche intelligence research (grounded in user-defined sources and goals) + goal progress check-in + pending work accountability + prioritized action plan. One focused, readable message. Cadence is managed at the trigger-composition step; default daily 7am.",
+        "capability_summary": "Consolidated briefing: research + goals + pending + actions. Cadence set at the trigger step.",
         "category": "personal_productivity",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -69,7 +69,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 7 * * *", "timezone": "local" },
-          "description": "Daily 7:00 AM (user-configurable via trigger quick-setup)."
+          "description": "Default daily 7:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
         "notification_channels": [],
@@ -96,21 +96,19 @@
         "error_handling": "Web search fully unavailable → deliver goals + pending + actions only. `goals.json` missing → skip goal check-in; prompt in briefing. First run → no dedup, no follow-through rate; note baseline-building in briefing footer.",
         "input_schema": [
           {
-            "name": "niche_keywords",
-            "type": "text",
-            "description": "Comma-separated keywords that define the user's industry or niche for daily research."
+            "name": "briefing_sources",
+            "type": "source_definition",
+            "description": "Where the research half of the briefing pulls from. JSON payload describing one or more sources (local folder, registered codebase, database credential, or URL list). The persona reads these at each run and grounds findings in them — the user's long-term ground truth instead of ad-hoc keyword guesses."
           },
           {
-            "name": "briefing_length",
-            "type": "enum",
-            "options": ["compact", "standard", "detailed"],
-            "default": "standard",
-            "description": "Compact = top findings + action plan only. Standard = all sections. Detailed = + deep-dive on the most significant finding."
+            "name": "briefing_intent",
+            "type": "text",
+            "description": "User's long-term goal for the briefing and how the persona should work with the attached sources. Free-form textarea — e.g. 'Keep me on top of AI-agent tooling; emphasize launch announcements, pricing changes, and open-source releases over thinkpieces. Dedupe across sources. When a source surfaces something tied to my goals, push it above industry noise.'"
           }
         ],
         "sample_input": {
-          "niche_keywords": "{{param.aq_niche_keywords}}",
-          "briefing_length": "{{param.aq_briefing_length}}"
+          "briefing_sources": "{{param.aq_briefing_sources}}",
+          "briefing_intent": "{{param.aq_briefing_intent}}"
         },
         "tool_hints": ["http_request", "file_read", "file_write"],
         "test_fixtures": [],
@@ -217,9 +215,9 @@
       },
       {
         "id": "uc_weekly_review",
-        "title": "Sunday Weekly Review",
-        "description": "Sunday 6pm retrospective. Reviews each active goal's weekly trend and surfaces next-week focus. Triages the week's captured ideas (accept to backlog / reject / defer). Surfaces decisions reaching their 14-day checkpoint.",
-        "capability_summary": "Sunday 6pm goal retrospective + idea triage + decision checkpoint surfacing.",
+        "title": "Weekly Review",
+        "description": "Weekly retrospective. Reviews each active goal's weekly trend and surfaces next-week focus. Triages the week's captured ideas (accept to backlog / reject / defer). Surfaces decisions reaching their 14-day checkpoint. Cadence is managed at the trigger-composition step; default Sunday 6pm.",
+        "capability_summary": "Goal retrospective + idea triage + decision checkpoint surfacing. Cadence set at the trigger step.",
         "category": "personal_productivity",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -227,7 +225,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 18 * * 0", "timezone": "local" },
-          "description": "Sunday 6:00 PM local time (user-configurable via trigger quick-setup)."
+          "description": "Default Sunday 6:00 PM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
         "notification_channels": [],
@@ -291,32 +289,30 @@
     ],
     "adoption_questions": [
       {
-        "id": "aq_role_business",
-        "scope": "persona",
-        "category": "domain",
-        "question": "Describe your role and business in 1-2 sentences.",
-        "type": "text",
-        "options": [],
-        "placeholder": "AI content creator growing a YouTube channel in the developer-tools space.",
-        "default": "",
-        "maps_to": null,
-        "variable_name": "role_business",
-        "context": "This is the context all three capabilities use to frame findings, ideas, and decisions. Be specific — vague profiles produce vague briefings.",
-        "dimension": "use-cases"
-      },
-      {
-        "id": "aq_niche_keywords",
+        "id": "aq_briefing_sources",
         "scope": "capability",
         "use_case_ids": ["uc_morning_briefing"],
         "category": "domain",
-        "question": "Which keywords define your niche for daily research?",
-        "type": "text",
-        "options": [],
-        "placeholder": "AI tools, Claude, GPT, AI agents, AI automation",
+        "question": "Which sources should ground the briefing's research?",
+        "type": "source_definition",
         "default": "",
-        "maps_to": "use_cases[uc_morning_briefing].sample_input.niche_keywords",
-        "variable_name": "niche_keywords",
-        "context": "Comma-separated. 3-6 is the sweet spot — too few misses signal, too many waters down relevance ranking. Adjustable later as preferences stabilize.",
+        "maps_to": "use_cases[uc_morning_briefing].sample_input.briefing_sources",
+        "variable_name": "briefing_sources",
+        "context": "Attach a local folder, a registered codebase, a database credential, or a URL list. The persona reads these at each run and grounds findings in them — your long-term ground truth instead of ad-hoc keyword guesses. Sources can be expanded later.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_briefing_intent",
+        "scope": "capability",
+        "use_case_ids": ["uc_morning_briefing"],
+        "category": "domain",
+        "question": "What's the long-term goal of this briefing, and how should the persona work with your sources?",
+        "type": "textarea",
+        "placeholder": "Keep me on top of AI-agent tooling. Emphasize launch announcements, pricing changes, and open-source releases over thinkpieces. Dedupe across sources. When a source surfaces something tied to my goals, push it above industry noise. Briefing length: tune to signal density, not a fixed word count.",
+        "default": "",
+        "maps_to": "use_cases[uc_morning_briefing].sample_input.briefing_intent",
+        "variable_name": "briefing_intent",
+        "context": "Free-form. Covers role context, how to weigh sources, what to emphasize / suppress, and length preferences. The building process may ask clarifying follow-ups after the questionnaire if the intent is thin — no need to over-specify here.",
         "dimension": "use-cases"
       },
       {
@@ -325,45 +321,13 @@
         "use_case_ids": ["uc_morning_briefing", "uc_weekly_review"],
         "category": "domain",
         "question": "What are your current top 3-5 goals with deadlines?",
-        "type": "text",
-        "options": [],
+        "type": "textarea",
         "placeholder": "Reach 10K subscribers by June. Launch AI course by May 15. Post 3 videos/week through Q2.",
         "default": "",
         "maps_to": null,
         "variable_name": "goals",
-        "context": "One goal per line. Include a concrete deadline or cadence. Morning briefing checks progress; weekly review runs the retrospective. You can edit goals anytime.",
+        "context": "One goal per line. Include a concrete deadline or cadence. Personal briefing checks progress; weekly review runs the retrospective. You can edit goals anytime.",
         "dimension": "use-cases"
-      },
-      {
-        "id": "aq_briefing_length",
-        "scope": "capability",
-        "use_case_ids": ["uc_morning_briefing"],
-        "category": "quality",
-        "question": "How long should the morning briefing be?",
-        "type": "select",
-        "options": [
-          "Compact (top findings + action plan only, ~1 min read)",
-          "Standard (all sections, ~2-3 min read)",
-          "Detailed (+ deep-dive on top finding, ~5 min read)"
-        ],
-        "default": "Standard (all sections, ~2-3 min read)",
-        "maps_to": "use_cases[uc_morning_briefing].sample_input.briefing_length",
-        "variable_name": "briefing_length",
-        "context": "Start at Standard. Compact is for mornings you need to move fast. Detailed is for strategic planning days.",
-        "dimension": "messages"
-      },
-      {
-        "id": "aq_briefing_time",
-        "scope": "persona",
-        "category": "configuration",
-        "question": "What time should the morning briefing land each day?",
-        "type": "select",
-        "options": ["05:00", "06:00", "07:00", "08:00", "09:00"],
-        "default": "07:00",
-        "maps_to": "use_cases[uc_morning_briefing].suggested_trigger.config.cron",
-        "variable_name": "briefing_time",
-        "context": "Trigger fires N minutes before you start your day so the briefing is waiting. 7am is the default; early risers pick 5-6, later starters pick 8-9.",
-        "dimension": "triggers"
       },
       {
         "id": "aq_content_type",

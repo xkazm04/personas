@@ -416,6 +416,15 @@ export function QuestionCard({
         )}
       </div>
       )}
+      {!isBlocked && (() => {
+        const ids = question.use_case_ids ?? (question.use_case_id ? [question.use_case_id] : []);
+        if (ids.length === 0) return null;
+        return (
+          <div className="mt-1.5 typo-body text-foreground/55 italic">
+            Applies to: {ids.join(', ')}
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -5,6 +5,7 @@
   "color": "#FC6D26",
   "icon_url": "/icons/connectors/gitlab.svg",
   "category": "devops",
+  "categories": ["source_control"],
   "fields": [
     {
       "key": "personal_access_token",

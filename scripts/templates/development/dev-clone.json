@@ -124,8 +124,8 @@
     "use_cases": [
       {
         "id": "uc_backlog_scan",
-        "title": "Hourly Backlog Scan",
-        "description": "Every hour, scan the registered codebase for improvement candidates: TODOs / FIXMEs / HACK comments, portfolio-health hotspots, risk-matrix flags, deprecated dependency usage, architectural gaps from cross-project analysis. Compose each finding as a structured candidate and emit for triage. Does NOT implement — implementation waits for a human accept in uc_triage.",
+        "title": "Backlog Scan",
+        "description": "Scan the registered codebase for improvement candidates: TODOs / FIXMEs / HACK comments, portfolio-health hotspots, risk-matrix flags, deprecated dependency usage, architectural gaps from cross-project analysis. Compose each finding as a structured candidate and emit for triage. Does NOT implement — implementation waits for a human accept in uc_triage. Scan cadence is managed at the trigger-composition step; default hourly.",
         "capability_summary": "Hourly codebase scan for backlog candidates; feeds uc_triage via events.",
         "category": "development",
         "enabled_by_default": true,
@@ -134,7 +134,7 @@
         "suggested_trigger": {
           "trigger_type": "polling",
           "config": { "cron": "0 * * * *", "timezone": "local" },
-          "description": "Hourly (user-configurable via trigger quick-setup)."
+          "description": "Default hourly — final cadence set at the trigger-composition step."
         },
         "connectors": ["codebase"],
         "notification_channels": [],
@@ -350,7 +350,7 @@
         "suggested_trigger": {
           "trigger_type": "schedule",
           "config": { "cron": "0 17 * * 5", "timezone": "local" },
-          "description": "Default: Friday 5pm local. Overridden by aq_release_cadence (bi-weekly or on-demand only)."
+          "description": "Default Friday 5pm local — final cadence set at the trigger-composition step (daily / weekly / bi-weekly / on-demand)."
         },
         "connectors": ["codebase", "github"],
         "notification_channels": [],
@@ -375,18 +375,8 @@
           }
         ],
         "error_handling": "No merged PRs since last release → skip this tick with a terse 'nothing to release' Messages note. Test suite fails on the full run → halt; do not propose the release; escalate via Messages with failure details. GitHub release API fails → retry once; if still failing, surface manual-tag instructions via Messages.",
-        "input_schema": [
-          {
-            "name": "release_cadence",
-            "type": "enum",
-            "options": ["weekly_friday", "biweekly_friday", "on_demand_only"],
-            "default": "weekly_friday",
-            "description": "How often release candidates are drafted. On-demand-only means this capability never fires on schedule — user invokes manually."
-          }
-        ],
-        "sample_input": {
-          "release_cadence": "{{param.aq_release_cadence}}"
-        },
+        "input_schema": [],
+        "sample_input": {},
         "tool_hints": ["http_request", "file_read", "file_write"],
         "test_fixtures": [],
         "use_case_flow": {
@@ -424,17 +414,20 @@
     ],
     "adoption_questions": [
       {
-        "id": "aq_github_repo",
+        "id": "aq_source_control",
         "scope": "connector",
-        "connector_names": ["github"],
+        "connector_names": ["github", "gitlab"],
         "category": "configuration",
-        "question": "Which GitHub repository should Dev Clone operate on?",
-        "type": "text",
-        "options": [],
-        "default": "",
-        "maps_to": "persona.connectors[github].credential_fields[repo].value",
-        "variable_name": "github_repo",
-        "context": "Format: owner/repo. The PAT you paste at the credential step must be scoped to this repo. The webhook must also be installed on this repo for uc_implementation to receive PR-comment events.",
+        "question": "Which source-control credential should Dev Clone operate with?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "source_control",
+          "operation": "list_credentials",
+          "source": "vault"
+        },
+        "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
+        "variable_name": "source_control_provider",
+        "context": "Options are auto-detected from your source_control-category credentials in the Vault (GitHub, GitLab). The concrete repository is resolved at build time via the provider's API (GitHub: /user/repos, GitLab: /projects?membership=true) — if no repo is configured yet, the building process will walk you through picking one. The persona's webhook is installed on the selected repo so PR-comment events reach uc_implementation.",
         "dimension": "connectors"
       },
       {
@@ -492,24 +485,6 @@
         "variable_name": "autonomy_level",
         "context": "Shapes every PR's review gate in uc_implementation AND the release approval gate in uc_release_management. Architectural concerns ALWAYS escalate to human regardless of this setting.",
         "dimension": "use-cases"
-      },
-      {
-        "id": "aq_release_cadence",
-        "scope": "capability",
-        "use_case_ids": ["uc_release_management"],
-        "category": "configuration",
-        "question": "How often should release candidates be drafted?",
-        "type": "select",
-        "options": [
-          "Weekly (Friday 5pm local)",
-          "Bi-weekly (every other Friday 5pm local)",
-          "On-demand only (you invoke manually)"
-        ],
-        "default": "Weekly (Friday 5pm local)",
-        "maps_to": "use_cases[uc_release_management].sample_input.release_cadence",
-        "variable_name": "release_cadence",
-        "context": "On-demand is good for low-velocity projects. Weekly/bi-weekly fits teams shipping continuously — candidates are drafted automatically; approval is still human.",
-        "dimension": "triggers"
       }
     ],
     "persona_meta": {

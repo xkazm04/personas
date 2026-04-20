@@ -5,6 +5,7 @@
   "color": "#1F2937",
   "icon_url": "/icons/connectors/github.svg",
   "category": "devops",
+  "categories": ["source_control"],
   "fields": [
     {
       "key": "personal_access_token",

@@ -30,7 +30,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/build-intelligence-use-case.json", "001beacb7c020fea");
     m.insert("development/codebase-health-scanner.json", "000459f016ec1e79");
     m.insert("development/design-handoff-coordinator.json", "001da8bdcb45616f");
-    m.insert("development/dev-clone.json", "000e32c7786b0a14");
+    m.insert("development/dev-clone.json", "000830f23717a068");
     m.insert("development/dev-lifecycle-manager.json", "001cfa782f21300a");
     m.insert("development/documentation-freshness-guardian.json", "00006cfc38ddee2f");
     m.insert("development/feature-flag-experiment-analyst.json", "001f5fb8f156537d");
@@ -68,7 +68,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("marketing/web-marketing.json", "0018adccee963d18");
     m.insert("marketing/website-conversion-audit.json", "00140c42c71ea922");
     m.insert("productivity/appointment-orchestrator.json", "000c5d30218916e8");
-    m.insert("productivity/daily-standup-compiler.json", "0014fce8b25e1a0f");
+    m.insert("productivity/daily-standup-compiler.json", "000d70d1b8f7ac06");
     m.insert("productivity/digital-clone.json", "001d6700e3406c64");
     m.insert("productivity/email-follow-up-tracker.json", "00058f5fbd924281");
     m.insert("productivity/email-morning-digest.json", "000899d6adef2b97");
