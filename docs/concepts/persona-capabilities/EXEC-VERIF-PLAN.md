@@ -82,6 +82,17 @@ detail page.
 
 **Status:** partially complete (2026-04-21) — assertions shipped; healthcheck gate deferred to Phase 6b.
 
+**Commit provenance note:** Phase 6a code was bundled into commit `553718e8`
+("feat(simple-mode): wire InboxVariant master-detail with keyboard nav")
+due to a concurrent `git add -A` by a parallel CLI session that ran
+between this session's `git add` and `git commit` calls. The Phase 6a
+changes listed below are all present in the working tree + that commit;
+the commit message just doesn't describe them. Future Phase 6b commit
+should explicitly reference Phase 6a to rebuild the audit trail. A
+later followup could rewrite `553718e8`'s message with `git commit
+--amend` after coordinating with the other CLI session; deferred as
+low-priority housekeeping.
+
 **What shipped in Phase 6a:**
 - `docs/concepts/persona-capabilities/C3-schema-v3.1-delta.md` §2.6 addendum
   documenting `output_assertions[]` + opt-out.
