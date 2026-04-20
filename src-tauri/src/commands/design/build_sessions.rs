@@ -459,6 +459,14 @@ fn build_structured_use_cases(
 
         let error_handling = uc.error_handling().to_string();
 
+        // Per-UC model override carried through so the runner's failover
+        // chain can seed the primary model from the capability-specific
+        // preference. Shape: null | string ("haiku") | full ModelProfile obj.
+        let model_override = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => d.model_override.clone(),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => None,
+        };
+
         structured.push(serde_json::json!({
             "id": uc_id,
             "title": title,
@@ -468,6 +476,7 @@ fn build_structured_use_cases(
             "suggested_trigger": suggested_trigger,
             "event_subscriptions": event_subs,
             "error_handling": error_handling,
+            "model_override": model_override,
         }));
         ids.push(uc_id);
     }

@@ -259,6 +259,63 @@ pub async fn run_execution(
         .and_then(|id| id.as_str())
         .map(|s| s.to_string());
 
+    // Phase 9 of EXEC-VERIF-PLAN — per-UC model override. When the triggering
+    // capability declares `model_override`, seed the primary model before the
+    // failover chain builds. Accepted shapes:
+    //   "haiku"                                    — bare model name string
+    //   { "model": "claude-haiku-4-5-20251001" }   — full ModelProfile-shaped object
+    // Fields other than `model` on the object merge into the persona's base
+    // profile (provider, temperature, etc.). If no override: untouched.
+    if let (Some(uc_id), Some(ref dc_json)) = (&execution_use_case_id, &persona.design_context) {
+        if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
+            let uc_override = dc
+                .get("useCases")
+                .and_then(|v| v.as_array())
+                .and_then(|arr| {
+                    arr.iter().find(|uc| uc.get("id").and_then(|i| i.as_str()) == Some(uc_id.as_str()))
+                })
+                .and_then(|uc| uc.get("model_override"))
+                .filter(|v| !v.is_null())
+                .cloned();
+
+            if let Some(override_val) = uc_override {
+                let base_profile = model_profile.clone().unwrap_or_default();
+                let merged = match override_val {
+                    serde_json::Value::String(model_name) => ModelProfile {
+                        model: Some(model_name),
+                        ..base_profile
+                    },
+                    serde_json::Value::Object(_) => {
+                        // Parse the override as a partial ModelProfile. Fields set on
+                        // the override win; missing fields fall back to the persona default.
+                        match serde_json::from_value::<ModelProfile>(override_val.clone()) {
+                            Ok(override_profile) => ModelProfile {
+                                model: override_profile.model.or(base_profile.model),
+                                provider: override_profile.provider.or(base_profile.provider),
+                                ..base_profile
+                            },
+                            Err(e) => {
+                                tracing::warn!(
+                                    use_case_id = %uc_id,
+                                    error = %e,
+                                    "Per-UC model_override unparseable as ModelProfile; using persona default",
+                                );
+                                base_profile
+                            }
+                        }
+                    }
+                    _ => base_profile,
+                };
+                tracing::info!(
+                    use_case_id = %uc_id,
+                    model = ?merged.model,
+                    "Applied per-UC model override",
+                );
+                model_profile = Some(merged);
+            }
+        }
+    }
+
     if let Some(Continuation::PromptHint(ref hint)) = continuation {
         let mut obj = input_data
             .as_ref()
