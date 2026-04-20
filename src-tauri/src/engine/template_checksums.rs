@@ -21,7 +21,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/content-performance-reporter.json", "000c69199b4a9fd2");
     m.insert("content/demo-recorder.json", "00178b31c6034d8c");
     m.insert("content/feature-video-creator.json", "0012fdc449dcca74");
-    m.insert("content/game-character-animator.json", "001aef347c3b3f5f");
+    m.insert("content/game-character-animator.json", "000b1b09be27e7b1");
     m.insert("content/newsletter-curator.json", "0010f81605b96895");
     m.insert("content/scientific-writing-editor.json", "00192b22e8f48322");
     m.insert("content/social-media-designer.json", "001f20781e342d8b");
@@ -30,7 +30,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/build-intelligence-use-case.json", "001beacb7c020fea");
     m.insert("development/codebase-health-scanner.json", "000459f016ec1e79");
     m.insert("development/design-handoff-coordinator.json", "001da8bdcb45616f");
-    m.insert("development/dev-clone.json", "001105ece81632dd");
+    m.insert("development/dev-clone.json", "0011a63a5b8158d1");
     m.insert("development/dev-lifecycle-manager.json", "001cfa782f21300a");
     m.insert("development/documentation-freshness-guardian.json", "00006cfc38ddee2f");
     m.insert("development/feature-flag-experiment-analyst.json", "001f5fb8f156537d");
@@ -65,10 +65,10 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("marketing/autonomous-cro-experiment-runner.json", "00165417e7af810c");
     m.insert("marketing/reddit-trend-digest.json", "0000699e2f9cc6c5");
     m.insert("marketing/visual-brand-asset-factory.json", "001f29a5dc2301bb");
-    m.insert("marketing/web-marketing.json", "000151296c0b131e");
+    m.insert("marketing/web-marketing.json", "000f2f0356772287");
     m.insert("marketing/website-conversion-audit.json", "00140c42c71ea922");
     m.insert("productivity/appointment-orchestrator.json", "000c5d30218916e8");
-    m.insert("productivity/daily-standup-compiler.json", "000036c308050e82");
+    m.insert("productivity/daily-standup-compiler.json", "00052bf0a353013e");
     m.insert("productivity/digital-clone.json", "001d6700e3406c64");
     m.insert("productivity/email-follow-up-tracker.json", "00058f5fbd924281");
     m.insert("productivity/email-morning-digest.json", "000899d6adef2b97");

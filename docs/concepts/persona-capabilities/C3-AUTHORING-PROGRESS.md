@@ -59,20 +59,17 @@ Shipped in this v3.1 pass (backend + templates):
   (singular→plural `use_case_id` migration, `required` default-fill
   on connectors, `trigger_composition`/`message_composition` hoist).
 - 15/15 `engine::template_v3` tests pass.
-- `finance/financial-stocks-signaller.json` rewritten — 3 UCs
-  (signals / congressional / gems), shared weekly trigger, combined
-  messages, `stocks.*` event namespace, `alpha_vantage` optional.
-- `productivity/idea-harvester.json` rewritten (was v1) — 3 UCs
-  (harvest / triage / codebase-analysis), per-UC triggers with event
-  chaining, `harvester.*` event namespace, `codebase` required
-  connector with `ui_component: CodebaseSelector` hint, `slack` and
-  `notion` optional sources.
+- 6 templates now on v3.1 shape: Financial Stocks Signaller + Idea
+  Harvester (prior pass) and Web Marketing + Game Character Animator +
+  Daily Personal Briefer + Dev Clone (vision-alignment review pass).
+  All use event namespaces in `<domain>.<subdomain>.<action>` syntax
+  per P7.
 
 Deferred (documented in impact analysis §3):
 - `TriggerCompositionStep.tsx` / `MessageCompositionStep.tsx` UI.
 - `ConnectorGateStep.tsx` empty-state + pick-or-skip UI.
 - `inputSchemaComponents.ts` component registry (hosts
-  `CodebaseSelector`).
+  `CodebaseSelector` — referenced by Idea Harvester + Dev Clone).
 - Retroactive light edits on the three remaining v3 templates.
 
 ## Templates
@@ -80,11 +77,15 @@ Deferred (documented in impact analysis §3):
 | Template | Shape | Capabilities | Questions | Translations | Notes |
 |---|---|---|---|---|---|
 | productivity/email-morning-digest | v3 (pre-v3.1) | 1 | 7 | en only | Reference; needs light edit for v3.1 |
-| finance/financial-stocks-signaller | **v3.1** | 3 | 4 | en only | Rewritten 2026-04-20; `uc_signals` + `uc_congressional_scan` + `uc_gems`; shared weekly trigger; combined messages; Alpha Vantage optional |
+| finance/financial-stocks-signaller | **v3.1** | 3 | 4 | en only | Rewritten 2026-04-20; `uc_signals` + `uc_congressional_scan` + `uc_gems`; shared weekly trigger; combined messages; Alpha Vantage optional; `stocks.*` events |
 | hr/onboarding-tracker | v3 (pre-v3.1) | 3 | — | en only | Needs light edit for v3.1 |
 | content/youtube-content-pipeline | v3 (pre-v3.1) | 5 | — | en only | Needs light edit for v3.1 |
 | development/autonomous-issue-resolver | v3 (pre-v3.1) | 3 | 8 | en + 13 | Singular `use_case_id` still — compatible via normalizer; overlays unaffected |
-| productivity/idea-harvester | **v3.1** | 3 | 6 | en only | Rewritten 2026-04-20; `uc_harvest` + `uc_triage` + `uc_codebase_analysis`; per-UC triggers with event chaining; Codebase required, Slack/Notion optional |
+| productivity/idea-harvester | **v3.1** | 3 | 6 | en only | Rewritten 2026-04-20; harvest + triage + codebase-analysis; event chaining; `harvester.*` events; Codebase required |
+| marketing/web-marketing | **v3.1** | 3 | 5 | en only | Rewritten 2026-04-20; `uc_performance_scan` + `uc_optimization_proposals` + `uc_cannibalization_watch`; shared weekly trigger; combined messages; ad_platform + analytics_tool both required; `marketing.*` events |
+| content/game-character-animator | **v3.1** | 2 | 4 | en only | Rewritten 2026-04-20; `uc_generate_sprites` (image_ai required) + `uc_procedural_idle` (no connector); per-UC triggers; `game-artist.*` events |
+| productivity/daily-standup-compiler | **v3.1** | 3 | 6 | en only | Rewritten 2026-04-20; Daily Personal Briefer — morning briefing + decision support + Sunday weekly review; no external connectors; `briefer.*` events |
+| development/dev-clone | **v3.1** | 4 | 5 | en only | Rewritten 2026-04-20; `uc_backlog_scan` → `uc_triage` → `uc_implementation` → `uc_release_management` event-chained; Codebase + GitHub required; PR webhook sub-trigger on uc_implementation; `dev-clone.*` events |
 
 ## Tier 1 Flagships (remaining)
 
