@@ -44,15 +44,33 @@ interface PersonaMatrixGlassProps {
 
 /* ─── Dimension definitions ─────────────────────────────────────────── */
 
+/*
+ * DIMENSIONS — accents + mesh-tint gradient for each of the 8 matrix
+ * cells. Every dot/icon/gradient color goes through a semantic brand
+ * or status token so the cell cosmetics color-mix correctly across
+ * dark and light themes.
+ *
+ * The rgba(...) inline gradients that used to live here were
+ * hardcoded and washed out on light themes. Swapping to Tailwind
+ * bg-gradient-to-br with token-based stops (/15 → /5 → transparent)
+ * keeps the same visual pop while respecting the theme.
+ *
+ * Hue mapping (8 dims → 6 brand tokens + primary + status-warning):
+ *   violet  → brand-purple    cyan  → brand-cyan   amber  → brand-amber
+ *   rose    → brand-rose      blue  → primary      purple → brand-purple
+ *   orange  → status-warning  teal  → brand-emerald
+ * Some duplication (violet + purple) is OK — the icons/labels keep
+ * the dimensions distinguishable.
+ */
 const DIMENSIONS = [
-  { key: 'use-cases', icon: UseCasesIcon, color: 'violet', dotCls: 'bg-violet-400', iconCls: 'text-violet-400', gradientStyle: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(139,92,246,0.02) 50%, transparent 100%)' },
-  { key: 'connectors', icon: ConnectorsIcon, color: 'cyan', dotCls: 'bg-cyan-400', iconCls: 'text-cyan-400', gradientStyle: 'linear-gradient(135deg, rgba(34,211,238,0.15) 0%, rgba(34,211,238,0.02) 50%, transparent 100%)' },
-  { key: 'triggers', icon: TriggersIcon, color: 'amber', dotCls: 'bg-amber-400', iconCls: 'text-amber-400', gradientStyle: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(251,191,36,0.02) 50%, transparent 100%)' },
-  { key: 'human-review', icon: HumanReviewIcon, color: 'rose', dotCls: 'bg-rose-400', iconCls: 'text-rose-400', gradientStyle: 'linear-gradient(135deg, rgba(251,113,133,0.15) 0%, rgba(251,113,133,0.02) 50%, transparent 100%)' },
-  { key: 'messages', icon: MessagesIcon, color: 'blue', dotCls: 'bg-blue-400', iconCls: 'text-blue-400', gradientStyle: 'linear-gradient(135deg, rgba(96,165,250,0.15) 0%, rgba(96,165,250,0.02) 50%, transparent 100%)' },
-  { key: 'memory', icon: MemoryIcon, color: 'purple', dotCls: 'bg-purple-400', iconCls: 'text-purple-400', gradientStyle: 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.02) 50%, transparent 100%)' },
-  { key: 'error-handling', icon: ErrorsIcon, color: 'orange', dotCls: 'bg-orange-400', iconCls: 'text-orange-400', gradientStyle: 'linear-gradient(135deg, rgba(251,146,60,0.15) 0%, rgba(251,146,60,0.02) 50%, transparent 100%)' },
-  { key: 'events', icon: EventsIcon, color: 'teal', dotCls: 'bg-teal-400', iconCls: 'text-teal-400', gradientStyle: 'linear-gradient(135deg, rgba(45,212,191,0.15) 0%, rgba(45,212,191,0.02) 50%, transparent 100%)' },
+  { key: 'use-cases',      icon: UseCasesIcon,     dotCls: 'bg-brand-purple',   iconCls: 'text-brand-purple',   gradientCls: 'bg-gradient-to-br from-brand-purple/15 via-brand-purple/5 to-transparent' },
+  { key: 'connectors',     icon: ConnectorsIcon,   dotCls: 'bg-brand-cyan',     iconCls: 'text-brand-cyan',     gradientCls: 'bg-gradient-to-br from-brand-cyan/15 via-brand-cyan/5 to-transparent' },
+  { key: 'triggers',       icon: TriggersIcon,     dotCls: 'bg-brand-amber',    iconCls: 'text-brand-amber',    gradientCls: 'bg-gradient-to-br from-brand-amber/15 via-brand-amber/5 to-transparent' },
+  { key: 'human-review',   icon: HumanReviewIcon,  dotCls: 'bg-brand-rose',     iconCls: 'text-brand-rose',     gradientCls: 'bg-gradient-to-br from-brand-rose/15 via-brand-rose/5 to-transparent' },
+  { key: 'messages',       icon: MessagesIcon,     dotCls: 'bg-primary',        iconCls: 'text-primary',        gradientCls: 'bg-gradient-to-br from-primary/15 via-primary/5 to-transparent' },
+  { key: 'memory',         icon: MemoryIcon,       dotCls: 'bg-brand-purple',   iconCls: 'text-brand-purple',   gradientCls: 'bg-gradient-to-br from-brand-purple/15 via-brand-purple/5 to-transparent' },
+  { key: 'error-handling', icon: ErrorsIcon,       dotCls: 'bg-status-warning', iconCls: 'text-status-warning', gradientCls: 'bg-gradient-to-br from-status-warning/15 via-status-warning/5 to-transparent' },
+  { key: 'events',         icon: EventsIcon,       dotCls: 'bg-brand-emerald',  iconCls: 'text-brand-emerald',  gradientCls: 'bg-gradient-to-br from-brand-emerald/15 via-brand-emerald/5 to-transparent' },
 ] as const;
 
 const FIRST_FOUR = DIMENSIONS.slice(0, 4);
@@ -114,11 +132,10 @@ function GlassCell({ dim, items, status }: {
   return (
     <motion.div variants={cellVariants}>
       <div
-        className="relative rounded-2xl p-4 min-h-[200px] overflow-hidden backdrop-blur-xl h-full bg-card-bg border border-card-border transition-all duration-300 hover:border-primary/20"
-        style={{ boxShadow: '0 8px 32px -4px rgba(0,0,0,0.2), inset 0 1px 0 0 rgba(255,255,255,0.05)' }}
+        className="relative rounded-2xl p-4 min-h-[200px] overflow-hidden backdrop-blur-xl h-full bg-card-bg border border-card-border transition-all duration-300 hover:border-primary/20 shadow-elevation-3"
       >
-        {/* Colored gradient mesh — inline style so it works across all themes */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: dim.gradientStyle }} />
+        {/* Token-based gradient mesh — color-mixes across themes */}
+        <div className={`absolute inset-0 pointer-events-none ${dim.gradientCls}`} />
         {/* Light reflection arc */}
         <div className="absolute top-0 left-0 w-1/2 h-1/3 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)' }} />
 

@@ -29,13 +29,22 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{
   quality:           { label: 'Quality',            Icon: Gauge },
 };
 
+/*
+ * CARD_TONES — per-question aesthetic variety sourced entirely from
+ * the theme's brand tokens so every shade color-mixes across dark and
+ * light themes via the :root / [data-theme^="light"] overrides in
+ * globals.css. The `dark:` prefix classes in the previous palette only
+ * fired on one dark theme (via Tailwind's default dark variant),
+ * leaving other dark themes + every light theme on the undarkened
+ * text-*-500 fallback. Token-based hues avoid that gap.
+ */
 const CARD_TONES = [
-  { border: 'border-violet-500/20', bg: 'bg-violet-500/10', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-blue-500/20', bg: 'bg-blue-500/10', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/10', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/10', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-amber-500/20', bg: 'bg-amber-500/10', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-rose-500/20', bg: 'bg-rose-500/10', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-brand-purple/25',  bg: 'bg-brand-purple/10',  accent: 'text-brand-purple',  dot: 'bg-brand-purple',  selectBg: 'bg-brand-purple/15 text-brand-purple border-brand-purple/30',   inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-primary/25',       bg: 'bg-primary/10',       accent: 'text-primary',       dot: 'bg-primary',       selectBg: 'bg-primary/15 text-primary border-primary/30',                   inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-brand-cyan/25',    bg: 'bg-brand-cyan/10',    accent: 'text-brand-cyan',    dot: 'bg-brand-cyan',    selectBg: 'bg-brand-cyan/15 text-brand-cyan border-brand-cyan/30',         inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-brand-emerald/25', bg: 'bg-brand-emerald/10', accent: 'text-brand-emerald', dot: 'bg-brand-emerald', selectBg: 'bg-brand-emerald/15 text-brand-emerald border-brand-emerald/30', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-brand-amber/25',   bg: 'bg-brand-amber/10',   accent: 'text-brand-amber',   dot: 'bg-brand-amber',   selectBg: 'bg-brand-amber/15 text-brand-amber border-brand-amber/30',     inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-brand-rose/25',    bg: 'bg-brand-rose/10',    accent: 'text-brand-rose',    dot: 'bg-brand-rose',    selectBg: 'bg-brand-rose/15 text-brand-rose border-brand-rose/30',         inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
 ] as const;
 
 const slideVariants = {
