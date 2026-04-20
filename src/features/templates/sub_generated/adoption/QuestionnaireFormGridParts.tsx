@@ -112,16 +112,21 @@ function DynamicSelectBody({
             <RefreshCw className="w-3 h-3" />
             {t.templates.adopt_modal.retry}
           </button>
-          {question.vault_category && onAddCredential && (
-            <button
-              type="button"
-              onClick={() => onAddCredential(question.vault_category!)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              {t.templates.adopt_modal.add_credential}
-            </button>
-          )}
+          {(() => {
+            const categoryForAdd = question.vault_category
+              ?? (src.source === 'vault' ? src.service_type : null);
+            if (!categoryForAdd || !onAddCredential) return null;
+            return (
+              <button
+                type="button"
+                onClick={() => onAddCredential(categoryForAdd)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {t.templates.adopt_modal.add_credential}
+              </button>
+            );
+          })()}
         </div>
         {/* Fallback: let the user type a value so adoption isn't fully blocked */}
         <input
@@ -136,13 +141,26 @@ function DynamicSelectBody({
   }
 
   if (state.ready && state.items.length === 0) {
+    const isVaultSourced = src.source === 'vault';
     return (
-      <div className="flex items-center gap-2 text-sm text-foreground">
-        <Info className="w-3.5 h-3.5" />
-        {tx(t.templates.adopt_modal.no_items_found, {
-          item: src.operation.replace('list_', ''),
-          service: src.service_type,
-        })}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-foreground">
+          <Info className="w-3.5 h-3.5" />
+          {tx(t.templates.adopt_modal.no_items_found, {
+            item: src.operation.replace('list_', ''),
+            service: src.service_type,
+          })}
+        </div>
+        {isVaultSourced && onAddCredential && (
+          <button
+            type="button"
+            onClick={() => onAddCredential(src.service_type)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            {t.templates.adopt_modal.add_credential}
+          </button>
+        )}
       </div>
     );
   }

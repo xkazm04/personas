@@ -29,6 +29,7 @@ import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
 import { useTranslation } from '@/i18n/useTranslation';
+import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -635,29 +636,36 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     }).catch(() => {});
   }, [currentBuildPhase, seeded, personaId]);
 
-  // Navigate to the credentials catalog pre-filtered by a category
-  // (called from the questionnaire's "Add credential" button when a blocked
-  // question needs a credential from a specific category).
-  // Saves current adoption state so the user can resume after adding credentials.
+  // Quick-add credential modal state. The questionnaire's "Connect a
+  // provider" CTA stays inside the adoption flow — the modal runs the
+  // healthcheck + save, and the questionnaire answer is auto-populated
+  // with the new credential's service_type. No navigation away, no draft
+  // serialization, no resume banner.
+  const [quickAddContext, setQuickAddContext] = useState<{
+    category: string;
+    targetQuestionId: string | null;
+  } | null>(null);
+
   const handleAddCredentialForCategory = useCallback((category: string) => {
-    const sys = useSystemStore.getState();
-    // Persist current adoption progress so the user can resume from the
-    // background banner after adding the credential
-    sys.setAdoptionDraft({
-      reviewId: review.id,
-      templateName: review.test_case_name ?? 'Template',
-      step: 'questionnaire',
-      connectorSwaps: {},
-      connectorCredentialMap: {},
-      variableValues: {},
-      userAnswers: { ...adoptionAnswers },
-      savedAt: Date.now(),
+    const targetQuestion = filteredAdoptionQuestions.find((q) => {
+      const src = q.dynamic_source;
+      return src?.source === 'vault' && src.service_type === category;
     });
-    sys.setPendingCatalogCategoryFilter(category);
-    sys.setSidebarSection('credentials');
-    // Close the adoption modal — user returns via the resume banner
-    onClose();
-  }, [onClose, review.id, review.test_case_name, adoptionAnswers]);
+    setQuickAddContext({
+      category,
+      targetQuestionId: targetQuestion?.id ?? null,
+    });
+  }, [filteredAdoptionQuestions]);
+
+  const handleCredentialAdded = useCallback((serviceType: string) => {
+    const ctx = quickAddContext;
+    setQuickAddContext(null);
+    if (!ctx?.targetQuestionId) return;
+    // Auto-pick the new credential as the answer so the user doesn't have
+    // to click twice. The matcher will re-resolve the options list on the
+    // next render (vault store credentials updated by createCredential).
+    setAdoptionAnswers((prev) => ({ ...prev, [ctx.targetQuestionId!]: serviceType }));
+  }, [quickAddContext]);
 
   // Discard the current draft persona and close the adoption modal.
   // Shown as "Delete Draft" in the Command Hub when tests are skipped/failed
@@ -909,6 +917,14 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       {/* Note: questionnaire is rendered inline in the !seeded branch above.
           Once seeded === true the user has already submitted, so no need
           to render the questionnaire again here. */}
+
+      {quickAddContext && (
+        <QuickAddCredentialModal
+          category={quickAddContext.category}
+          onCredentialAdded={handleCredentialAdded}
+          onClose={() => setQuickAddContext(null)}
+        />
+      )}
     </div>
   );
 }
