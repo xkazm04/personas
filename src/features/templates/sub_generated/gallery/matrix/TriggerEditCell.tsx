@@ -35,7 +35,7 @@ function TriggerPopup({
   const isPolling = trigger.trigger_type === 'polling';
 
   const inputClass =
-    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors';
+    'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground/90 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors';
 
   return (
     <div
@@ -45,7 +45,7 @@ function TriggerPopup({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-amber-500/70" />
+          <Icon className="w-4 h-4 text-status-warning/80" />
           <span className="typo-body font-medium text-foreground capitalize">{trigger.trigger_type}</span>
         </div>
         <button type="button" onClick={onClose} className="p-0.5 rounded hover:bg-primary/10 transition-colors">
@@ -165,22 +165,22 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
         return (
           <div key={index} className="relative">
             <div className="flex items-center gap-2">
-              <Icon className="w-3.5 h-3.5 text-amber-500/70 flex-shrink-0" />
+              <Icon className="w-3.5 h-3.5 text-status-warning/80 flex-shrink-0" />
               {hasConfig ? (
                 <button
                   type="button"
                   onClick={() => setOpenPopupIndex(isOpen ? null : index)}
                   className={[
                     'flex-1 min-w-0 text-left typo-body truncate py-0.5',
-                    'border-b border-dashed border-amber-500/30',
-                    'hover:border-amber-500/60 hover:text-foreground/90',
+                    'border-b border-dashed border-status-warning/40',
+                    'hover:border-status-warning/60 hover:text-foreground/90',
                     'transition-colors cursor-pointer',
                     'inline-flex items-center gap-1.5',
-                    isOpen ? 'text-foreground/90 border-amber-500/60' : 'text-foreground',
+                    isOpen ? 'text-foreground/90 border-status-warning/60' : 'text-foreground',
                   ].join(' ')}
                 >
                   <span className="truncate">{displayValue}</span>
-                  <Pencil className="w-3 h-3 text-amber-500/40 flex-shrink-0" />
+                  <Pencil className="w-3 h-3 text-status-warning/50 flex-shrink-0" />
                 </button>
               ) : (
                 <span className="typo-body text-foreground truncate">{displayValue}</span>

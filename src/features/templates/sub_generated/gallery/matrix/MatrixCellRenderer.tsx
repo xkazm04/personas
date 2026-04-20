@@ -238,7 +238,7 @@ export function MatrixCellRenderer({
       <div className={`${compact ? 'mb-1' : 'mb-2.5'} flex items-center gap-2`}>
         <span className={`${compact ? 'typo-label' : 'typo-heading'} font-bold uppercase tracking-[0.15em] text-foreground`}>{cell.label}</span>
         {cell.filled !== undefined && (
-          <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-status-success' : 'bg-muted-foreground/20'}`} />
         )}
       </div>
       <div className={`relative flex-1 flex flex-col justify-center transition-[max-height] duration-300 ${compact ? 'overflow-hidden max-h-[40px]' : 'max-h-[220px] 2xl:max-h-[22vh] 3xl:max-h-[24vh] 4xl:max-h-[26vh] overflow-y-auto scrollbar-thin'}`}>
@@ -246,17 +246,17 @@ export function MatrixCellRenderer({
         {cellBuildStatus && (cellBuildStatus as string) !== 'hidden' && (cellBuildStatus as string) !== 'revealed' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
             {cellBuildStatus === 'resolved' ? (
-              <CheckCircle2 className="w-20 h-20 text-emerald-400/10" />
+              <CheckCircle2 className="w-20 h-20 text-status-success/10" />
             ) : cellBuildStatus === 'updated' ? (
-              <CheckCircle2 className="w-20 h-20 text-amber-400/10" />
+              <CheckCircle2 className="w-20 h-20 text-status-warning/10" />
             ) : cellBuildStatus === 'highlighted' ? (
               <HelpCircle className="w-20 h-20 text-primary/10 animate-pulse" />
             ) : cellBuildStatus === 'pending' ? (
               <Loader2 className="w-20 h-20 text-primary/8 animate-spin" />
             ) : cellBuildStatus === 'filling' ? (
-              <CheckCircle2 className="w-20 h-20 text-cyan-400/10" />
+              <CheckCircle2 className="w-20 h-20 text-brand-cyan/10" />
             ) : cellBuildStatus === 'error' ? (
-              <AlertCircle className="w-20 h-20 text-red-400/10" />
+              <AlertCircle className="w-20 h-20 text-status-error/10" />
             ) : null}
           </div>
         )}
@@ -295,7 +295,7 @@ export function MatrixCellRenderer({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onCellClick(); }}
-          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium text-emerald-400/70 bg-emerald-500/10 border border-emerald-500/20 hover:text-emerald-400 transition-colors"
+          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium text-status-success/70 bg-status-success/10 border border-status-success/25 hover:text-status-success transition-colors"
         >
           <CheckCircle2 className="w-2.5 h-2.5" />
           Done
@@ -306,43 +306,43 @@ export function MatrixCellRenderer({
       {cellBuildStatus && (
         <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5 z-10">
           {questionCount > 0 && cellBuildStatus === 'highlighted' && (
-            <span className="typo-code font-mono text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/15">
+            <span className="typo-code font-mono text-status-warning/60 bg-status-warning/10 px-1.5 py-0.5 rounded-full border border-status-warning/25">
               {questionCount}Q
             </span>
           )}
           {cellBuildStatus === 'pending' && (
-            <span className="flex items-center gap-1 typo-caption text-cyan-400/70">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="flex items-center gap-1 typo-caption text-brand-cyan/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse" />
               {t.templates.matrix.cell_status_analyzing}
             </span>
           )}
           {cellBuildStatus === 'filling' && (
-            <span className="flex items-center gap-1 typo-caption text-emerald-400/70">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+            <span className="flex items-center gap-1 typo-caption text-status-success/70">
+              <CheckCircle2 className="w-3 h-3 text-status-success" />
               {t.templates.matrix.cell_status_answered}
             </span>
           )}
           {cellBuildStatus === 'resolved' && (
-            <span className="flex items-center gap-1 typo-caption text-emerald-400/70">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+            <span className="flex items-center gap-1 typo-caption text-status-success/70">
+              <CheckCircle2 className="w-3 h-3 text-status-success" />
               {t.templates.matrix.cell_status_resolved}
             </span>
           )}
           {cellBuildStatus === 'highlighted' && (
-            <span className="flex items-center gap-1 typo-caption text-amber-400/70">
-              <HelpCircle className="w-3 h-3 text-amber-400" />
+            <span className="flex items-center gap-1 typo-caption text-status-warning/70">
+              <HelpCircle className="w-3 h-3 text-status-warning" />
               {t.templates.matrix.cell_status_input_needed}
             </span>
           )}
           {cellBuildStatus === 'updated' && (
-            <span className="flex items-center gap-1 typo-caption text-red-400/70">
-              <AlertCircle className="w-3 h-3 text-red-400" />
+            <span className="flex items-center gap-1 typo-caption text-status-error/70">
+              <AlertCircle className="w-3 h-3 text-status-error" />
               {t.templates.matrix.cell_status_missing_credential}
             </span>
           )}
           {cellBuildStatus === 'error' && (
-            <span className="flex items-center gap-1 typo-caption text-red-400/70">
-              <AlertCircle className="w-3 h-3 text-red-400" />
+            <span className="flex items-center gap-1 typo-caption text-status-error/70">
+              <AlertCircle className="w-3 h-3 text-status-error" />
               {t.templates.matrix.cell_status_error}
             </span>
           )}

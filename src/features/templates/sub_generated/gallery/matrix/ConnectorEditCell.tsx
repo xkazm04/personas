@@ -171,7 +171,7 @@ function DatabaseRow({
             <span className="typo-body text-foreground truncate flex-1">
               {tableName || 'Configure table...'}
             </span>
-            {tableName && <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />}
+            {tableName && <CheckCircle2 className="w-3 h-3 text-status-success flex-shrink-0" />}
           </Button>
 
           {showTablePicker && (
@@ -277,7 +277,7 @@ export function ConnectorEditCell({
             <div key={rc.name} className="flex items-center gap-2 py-1">
               <MessageSquare className="w-4 h-4 text-primary/60 flex-shrink-0" />
               <span className="text-sm font-medium text-foreground truncate flex-1">{t.templates.connector_edit.in_app_messages}</span>
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-3 h-3 text-status-success flex-shrink-0" />
             </div>
           );
         }
@@ -300,11 +300,11 @@ export function ConnectorEditCell({
                 >
                   <ConnectorIcon meta={meta} size="w-3 h-3" />
                 </div>
-                <span className="text-sm font-medium text-orange-600 dark:text-amber-400 truncate flex-1 text-left">
+                <span className="text-sm font-medium text-status-warning truncate flex-1 text-left">
                   {roleLabel || meta.label}
                 </span>
-                <AlertCircle className="w-3 h-3 text-orange-500 dark:text-amber-400/60 flex-shrink-0" />
-                <span className="text-[11px] text-orange-600/80 dark:text-amber-400/70 whitespace-nowrap">{t.templates.connector_edit.not_connected}</span>
+                <AlertCircle className="w-3 h-3 text-status-warning/70 flex-shrink-0" />
+                <span className="text-[11px] text-status-warning/80 whitespace-nowrap">{t.templates.connector_edit.not_connected}</span>
               </Button>
 
               {isOpen && (
@@ -340,11 +340,11 @@ export function ConnectorEditCell({
               </div>
               <span className="text-sm font-medium text-foreground truncate flex-1 text-left">{meta.label}</span>
               {isMatched ? (
-                <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                <CheckCircle2 className="w-3 h-3 text-status-success flex-shrink-0" />
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-amber-400/60 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-status-warning/80 flex-shrink-0" />
               )}
-              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-foreground' : 'text-orange-600 dark:text-amber-400/80 font-semibold'}`}>
+              <span className={`text-sm truncate max-w-[80px] ${isMatched ? 'text-foreground' : 'text-status-warning/80 font-semibold'}`}>
                 {matchedCred?.name ?? (isMatched ? 'Linked' : 'Set up')}
               </span>
             </Button>
