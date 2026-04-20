@@ -98,9 +98,20 @@ main `QuestionnaireFormGrid`):
   blocks into one shared block with a "same trigger applies to all"
   caption.
 
-**Two UI variants to prototype** (use `.claude/skills/ui-variant-prototype`
-if present; it's missing from the repo — this might be a personal skill
-the user has in `~/.claude/skills/`):
+**Two UI variants prototyped** (2026-04-20, per
+`C:/Users/kazda/kiro/personas-web/.claude/skills/ui-variant-prototype.md`).
+Files live at `src/features/templates/sub_generated/adoption/`:
+- `TriggerCompositionStepChips.tsx`
+- `TriggerCompositionStepMaster.tsx`
+- `TriggerCompositionDemo.tsx` (tab switcher parent, Dev Clone fixture data)
+
+All three are marked `@ts-nocheck` as WIP — visual-review prototypes,
+not production-wired. When a variant is picked, drop the nocheck, fix
+the parseInt/array-index types, wire into the real adoption flow
+between `UseCasePickerStep` and `QuestionnaireFormGrid`, delete the
+rejected variant + the Demo parent.
+
+Archetypes chosen (per skill menu):
 
 - **Variant A** — *Per-UC chips grid*. Each enabled UC is a card with
   preset chips along the bottom. "Cross-trigger from another UC" is a
