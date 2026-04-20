@@ -7976,6 +7976,18 @@ export type Translations = {
     connections_strip_label: string;
     connections_add_more: string;
     connections_unhealthy: string;
+    console_status_rail_connect: string;
+    console_status_rail_active: string;
+    console_status_rail_new: string;
+    console_status_rail_live: string;
+    console_persona_grid_label: string;
+    console_inbox_feed_label: string;
+    console_empty_feed_title: string;
+    console_empty_feed_body: string;
+    console_relative_just_now: string;
+    console_relative_m_ago: string;
+    console_relative_h_ago: string;
+    console_relative_d_ago: string;
   };
   status_tokens: {
     execution: {

@@ -7985,7 +7985,19 @@
     "tile_active": "active",
     "connections_strip_label": "Connected services",
     "connections_add_more": "add",
-    "connections_unhealthy": "reconnect"
+    "connections_unhealthy": "reconnect",
+    "console_status_rail_connect": "Connected",
+    "console_status_rail_active": "Assistants",
+    "console_status_rail_new": "New today",
+    "console_status_rail_live": "live",
+    "console_persona_grid_label": "Your assistants",
+    "console_inbox_feed_label": "What's new",
+    "console_empty_feed_title": "All caught up",
+    "console_empty_feed_body": "Nothing new from your assistants right now.",
+    "console_relative_just_now": "just now",
+    "console_relative_m_ago": "{m}m ago",
+    "console_relative_h_ago": "{h}h ago",
+    "console_relative_d_ago": "{d}d ago"
   },
   "status_tokens": {
     "execution": {
