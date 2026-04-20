@@ -31,3 +31,6 @@ export type {
 
 export { ModeComparisonCard } from './components/ModeComparisonCard';
 export type { ModeComparisonCardProps } from './components/ModeComparisonCard';
+
+export { GraduateToPowerModal } from './components/GraduateToPowerModal';
+export type { GraduateToPowerModalProps } from './components/GraduateToPowerModal';
