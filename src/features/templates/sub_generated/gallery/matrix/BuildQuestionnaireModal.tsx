@@ -30,12 +30,12 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{
 };
 
 const CARD_TONES = [
-  { border: 'border-violet-500/20', bg: 'bg-violet-500/[0.06]', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-blue-500/20', bg: 'bg-blue-500/[0.06]', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/[0.06]', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.06]', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-amber-500/20', bg: 'bg-amber-500/[0.06]', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
-  { border: 'border-rose-500/20', bg: 'bg-rose-500/[0.06]', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-violet-500/20', bg: 'bg-violet-500/10', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-blue-500/20', bg: 'bg-blue-500/10', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/10', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/10', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-amber-500/20', bg: 'bg-amber-500/10', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-rose-500/20', bg: 'bg-rose-500/10', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
 ] as const;
 
 const slideVariants = {
@@ -339,7 +339,7 @@ export function BuildQuestionnaireModal({
                   : isAnswered
                     ? `w-2.5 h-2.5 ${dotTone.dot} opacity-60`
                     : showUnansweredWarning
-                      ? 'w-2.5 h-2.5 bg-rose-400 animate-pulse ring-2 ring-rose-400/30'
+                      ? 'w-2.5 h-2.5 bg-status-error animate-pulse ring-2 ring-status-error/30'
                       : 'w-2.5 h-2.5 bg-foreground/12'
               }`}
               aria-label={tx(t.templates.questionnaire.go_to_question, { number: i + 1 }) + (isAnswered ? '' : t.templates.questionnaire.question_unanswered_suffix)}
