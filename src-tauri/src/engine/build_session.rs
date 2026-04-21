@@ -766,7 +766,13 @@ pub async fn run_tool_tests(
 
     // Step 2: Build test prompt for the CLI
     let tools_json = serde_json::to_string_pretty(&tools).unwrap_or_default();
-    let test_prompt = build_test_prompt(&tools_json, &cred_context);
+    // The connector list is what actually needs credentials — generic tools
+    // like `http_request` are conduits. Pass both so the CLI can generate
+    // one test entry per connector regardless of how many tools the persona
+    // declares.
+    let connectors_json = serde_json::to_string_pretty(&agent_ir.required_connectors)
+        .unwrap_or_else(|_| "[]".to_string());
+    let test_prompt = build_test_prompt(&tools_json, &connectors_json, &cred_context);
 
     // Step 3: Spawn CLI and get test plan
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -851,89 +857,109 @@ pub async fn run_tool_tests(
             session_id = %session_id,
             "CLI returned no test_plan entries, falling back to credential check"
         );
-        // http_request is NOT builtin — it typically requires connector credentials
-        // (e.g., Alpha Vantage API key). It must go through credential resolution.
-        // web_search/web_fetch are platform capabilities (Claude built-in).
+        // Fallback strategy:
+        //   • Generic infrastructure tools (http_request, web_search, file_read,
+        //     …) never need credentials themselves — their credentials live on
+        //     the connectors they target. Iterating tools here would produce
+        //     meaningless "http_request needs credentials" messages that don't
+        //     tell the user which external service is missing.
+        //   • The right level of granularity is `agent_ir.required_connectors`
+        //     — one result entry per connector, each carrying the connector
+        //     name so the UI can surface "Alpha Vantage needs credentials"
+        //     instead of "http_request needs credentials".
         let builtin_tool_names: std::collections::HashSet<&str> = [
             "personas_database", "database", "database_query", "db_query", "db_write",
             "personas_messages", "messaging", "personas_vector_db",
             "file_read", "file_write", "web_search", "web_fetch",
-            "data_processing", "nlp_parser", "ai_generation", "date_calculation",
-            "notification_sender", "text_analysis", "data_enrichment",
+            "http_request", "data_processing", "nlp_parser", "ai_generation",
+            "date_calculation", "notification_sender", "text_analysis", "data_enrichment",
         ].iter().copied().collect();
 
         let mut fb_passed = 0usize;
         let mut fb_failed = 0usize;
-        let fb_skipped = 0usize;
         let mut fb_cred_issues: Vec<serde_json::Value> = Vec::new();
-        let fallback_results: Vec<serde_json::Value> = tools
-            .iter()
-            .filter_map(|t| {
-                let name = t.name();
-                if name.is_empty() { return None; }
-                Some(name)
-            })
-            .map(|name| {
-                let is_builtin = builtin_tool_names.contains(name);
-                if is_builtin {
-                    fb_passed += 1;
-                    serde_json::json!({
-                        "tool_name": name,
-                        "status": "passed",
-                        "http_status": null,
-                        "latency_ms": 0,
-                        "error": null,
-                        "connector": null,
-                        "output_preview": "Built-in platform tool — auto-verified",
-                    })
-                } else {
-                    // Check if this tool has credentials resolved.
-                    // Match both exact name AND prefix: "notion_database_query" matches cred "notion".
-                    let name_lower = name.to_lowercase();
-                    let has_cred = resolved_cred_names.contains(&name_lower)
-                        || resolved_cred_names.iter().any(|cred| name_lower.starts_with(cred))
-                        || hints.iter().any(|h| {
-                            let h_lower = h.to_lowercase();
-                            h_lower.contains(&name_lower) || name_lower.split('_').next().is_some_and(|prefix| h_lower.contains(prefix))
-                        });
-                    if has_cred {
-                        // Credential exists but CLI didn't generate a test — verify via healthcheck
-                        fb_passed += 1;
-                        serde_json::json!({
-                            "tool_name": name,
-                            "status": "passed",
-                            "http_status": null,
-                            "latency_ms": 0,
-                            "error": null,
-                            "connector": name,
-                            "output_preview": "Credential available — connector verified",
-                        })
-                    } else {
-                        // No credential for this external tool — mark as failed
-                        fb_failed += 1;
-                        fb_cred_issues.push(serde_json::json!({
-                            "connector": name,
-                            "issue": format!("No credential found for connector '{name}'. Add it in Keys section."),
-                        }));
-                        serde_json::json!({
-                            "tool_name": name,
-                            "status": "credential_missing",
-                            "http_status": null,
-                            "latency_ms": 0,
-                            "error": format!("No credential configured for '{name}'"),
-                            "connector": name,
-                            "output_preview": null,
-                        })
-                    }
-                }
-            })
+        let mut fallback_results: Vec<serde_json::Value> = Vec::new();
+
+        // Infrastructure tools auto-pass — they don't have their own
+        // credentials; they're conduits to whichever connector is bound.
+        for t in tools.iter() {
+            let name = t.name();
+            if name.is_empty() { continue; }
+            if builtin_tool_names.contains(name) {
+                fb_passed += 1;
+                fallback_results.push(serde_json::json!({
+                    "tool_name": name,
+                    "status": "passed",
+                    "http_status": null,
+                    "latency_ms": 0,
+                    "error": null,
+                    "connector": null,
+                    "output_preview": "Built-in platform tool — auto-verified",
+                }));
+            }
+        }
+
+        // Emit one result per connector. This is what makes the UI's
+        // credential_missing messages specific — the connector name is the
+        // credential subject, not the generic tool name.
+        let connector_names: Vec<String> = agent_ir.required_connectors.iter()
+            .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
+        for cname in &connector_names {
+            let name_lower = cname.to_lowercase();
+            if platform_connectors.contains(name_lower.as_str()) {
+                fb_passed += 1;
+                fallback_results.push(serde_json::json!({
+                    "tool_name": cname,
+                    "status": "passed",
+                    "http_status": null,
+                    "latency_ms": 0,
+                    "error": null,
+                    "connector": cname,
+                    "output_preview": "Built-in platform connector — auto-verified",
+                }));
+                continue;
+            }
+            let has_cred = resolved_cred_names.contains(&name_lower)
+                || resolved_cred_names.iter().any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
+                || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
+                || vault_types_lower.contains(&name_lower)
+                || vault_types_lower.iter().any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
+            if has_cred {
+                fb_passed += 1;
+                fallback_results.push(serde_json::json!({
+                    "tool_name": cname,
+                    "status": "passed",
+                    "http_status": null,
+                    "latency_ms": 0,
+                    "error": null,
+                    "connector": cname,
+                    "output_preview": "Credential available — connector verified",
+                }));
+            } else {
+                fb_failed += 1;
+                fb_cred_issues.push(serde_json::json!({
+                    "connector": cname,
+                    "issue": format!("No credential found for connector '{cname}'. Add it in Keys section."),
+                }));
+                fallback_results.push(serde_json::json!({
+                    "tool_name": cname,
+                    "status": "credential_missing",
+                    "http_status": null,
+                    "latency_ms": 0,
+                    "error": format!("No credential configured for '{cname}'"),
+                    "connector": cname,
+                    "output_preview": null,
+                }));
+            }
+        }
+
         return Ok(serde_json::json!({
             "results": fallback_results,
             "tools_tested": fb_passed + fb_failed,
             "tools_passed": fb_passed,
             "tools_failed": fb_failed,
-            "tools_skipped": fb_skipped,
+            "tools_skipped": 0usize,
             "credential_issues": fb_cred_issues,
             "connectors_resolved": connectors_resolved,
         }));
@@ -1186,8 +1212,13 @@ fn build_fallback_summary(
 
     for r in results {
         let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        let name = r.get("tool_name").and_then(|v| v.as_str()).unwrap_or("unknown");
-        let friendly = name.replace('_', " ");
+        // Prefer the connector name (e.g. "alpha_vantage") over the tool
+        // name (e.g. "http_request") so the user sees which external
+        // service is failing, not the generic tool that drove the call.
+        let connector = r.get("connector").and_then(|v| v.as_str()).filter(|s| !s.is_empty());
+        let tool = r.get("tool_name").and_then(|v| v.as_str()).unwrap_or("unknown");
+        let subject = connector.unwrap_or(tool);
+        let friendly = subject.replace('_', " ");
 
         if status == "credential_missing" {
             lines.push(format!("\"{}\" needs credentials — add them in the Keys section.", friendly));
@@ -1215,52 +1246,48 @@ fn build_fallback_summary(
 }
 
 /// Build the test prompt sent to the CLI to generate executable curl commands.
-fn build_test_prompt(tools_json: &str, cred_context: &str) -> String {
+fn build_test_prompt(tools_json: &str, connectors_json: &str, cred_context: &str) -> String {
     format!(
-r#"You are a tool-testing agent. Given the tool definitions below, determine the correct test strategy for each tool.
+r#"You are a tool-testing agent. Compose one `test_plan` entry PER CONNECTOR the persona relies on — plus one entry per non-connector tool that might need verification.
 
-## Tools to Test
+## Connectors the persona uses
+These are the external services the persona binds to. EVERY connector needs its own test_plan entry so the user sees per-service status.
+{connectors_json}
+
+## Tools the persona uses
+Generic tools (http_request, web_search, file_read, …) are conduits — they don't own credentials. Do NOT emit a separate "http_request needs credentials" entry; the connectors above are the credential subjects.
 {tools_json}
 
 ## Credentials
 {cred_context}
 
-## Tool Categories — choose the right test strategy per tool
+## Strategy
 
-### 1. API tools (requires external service authentication)
-Tools that call external APIs (Gmail, Slack, Notion, etc.) — compose a minimal safe curl command.
+### 1. Per-connector API test (MUST emit one per external connector)
+For each connector in the list above whose category is an external service (not a platform builtin), compose a minimal safe curl. Set `tool_name` to the connector name (same as `connector`), or to the persona tool that drives the call when that's clearer. ALWAYS set `connector` to the connector's `name` so the UI can surface "Alpha Vantage" instead of "http_request".
 
-### 2. CLI-native tools (uses built-in Claude capabilities)
-Tools for web search, web browsing, URL fetching, text summarization, content analysis, data extraction from text — these are powered by Claude CLI's built-in capabilities and do NOT need external API calls or credentials. Mark these as `"cli_native": true`.
+### 2. CLI-native tools (Claude built-ins, no external API)
+`web_search`, `web_fetch`, text summarization, reasoning, etc. are powered by Claude CLI. Mark these with `"cli_native": true` and `"curl": ""`.
 
-### 3. Built-in platform connectors (always available, auto-verified)
-These are built into the Personas platform and are ALWAYS available — no credentials needed, no API calls to test:
-- `personas_database` / `database` / `db_query` / `db_write` / `database_query` — Built-in SQLite/Supabase database, always accessible via DATABASE_URL
-- `personas_messages` / `messaging` — Built-in in-app messaging, always available
-- `personas_vector_db` — Built-in vector knowledge base, always available
-Mark ALL of these as `"cli_native": true` with description "Built-in platform connector — auto-verified".
+### 3. Built-in platform connectors (always available)
+`personas_database` / `database` / `personas_messages` / `messaging` / `personas_vector_db` / `file_read` / `file_write` — auto-verified. Mark `"cli_native": true`.
 
-### 4. Non-testable tools (write-only, destructive, or no endpoint)
-Tools that only write/delete/mutate data — mark with empty curl.
+### 4. Non-testable (write-only or no endpoint)
+Tools that only mutate state — emit an entry with empty curl and a description explaining the skip.
 
-## Rules for API tools
+## Rules for API tests
 1. Use GET endpoints or read-only operations only — NO writes, deletes, or mutations.
-2. Use minimal params (limit=1, maxResults=1, per_page=1).
-3. Use $ENV_VAR placeholders for credential values.
-4. Always include -s (silent) and -w '\n%{{http_code}}' to capture HTTP status.
-
-## Rules for CLI-native tools
-1. Set `"cli_native": true` and `"curl": ""`
-2. These tools are automatically verified — they use Claude's built-in web search, browsing, and reasoning capabilities.
+2. Minimal params (limit=1, maxResults=1, per_page=1).
+3. Use $ENV_VAR placeholders for credential values; match the env prefix of the credential from the list above.
+4. Always include `-s` (silent) and `-w '\n%{{http_code}}'` to capture HTTP status.
 
 ## Output Format
 Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary, raw JSON only:
 {{"test_plan": [
-  {{"tool_name": "fetch_unread_emails", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=is:unread' -w '\\n%{{http_code}}'", "cli_native": false, "description": "Verify Gmail API access with minimal fetch"}},
-  {{"tool_name": "search_web", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in web search — auto-verified"}},
-  {{"tool_name": "database", "connector": "personas_database", "curl": "", "cli_native": true, "description": "Built-in platform connector — auto-verified"}},
-  {{"tool_name": "messaging", "connector": "personas_messages", "curl": "", "cli_native": true, "description": "Built-in platform connector — auto-verified"}},
-  {{"tool_name": "post_to_slack", "connector": "slack", "curl": "", "cli_native": false, "description": "Skipped: write-only operation"}}
+  {{"tool_name": "alpha_vantage", "connector": "alpha_vantage", "curl": "curl -s 'https://www.alphavantage.co/query?function=MARKET_STATUS&apikey=$ALPHA_VANTAGE_API_KEY' -w '\\n%{{http_code}}'", "cli_native": false, "description": "Verify Alpha Vantage API key via MARKET_STATUS"}},
+  {{"tool_name": "gmail", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1' -w '\\n%{{http_code}}'", "cli_native": false, "description": "Verify Gmail API access"}},
+  {{"tool_name": "web_search", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in web search — auto-verified"}},
+  {{"tool_name": "messaging", "connector": "personas_messages", "curl": "", "cli_native": true, "description": "Built-in platform connector — auto-verified"}}
 ]}}
 
 Generate the test_plan now."#

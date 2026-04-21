@@ -132,7 +132,11 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
     : r.status === 'credential_missing'
     ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
     : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
-  const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  // Prefer the connector name (the credential subject) over the generic
+  // tool that drove the call so users see "Alpha Vantage" rather than
+  // "Http Request" in the sidebar.
+  const labelSource = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
+  const label = labelSource.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const latencyLabel = r.latency_ms != null && r.latency_ms > 0
     ? r.latency_ms < 500 ? 'Fast' : r.latency_ms < 2000 ? 'OK' : 'Slow'
     : null;
@@ -370,7 +374,10 @@ function SectionBlock({ icon, label, children }: { icon: React.ReactNode; label:
 
 function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: ToolTestResult[]; failed: ToolTestResult[]; credentialMissing: ToolTestResult[]; skipped: ToolTestResult[] }) {
   const { t } = useTranslation();
-  const toolLabel = (r: ToolTestResult) => r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const toolLabel = (r: ToolTestResult) => {
+    const src = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
+    return src.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  };
   return (
     <div className="space-y-3">
       {passed.length > 0 && (
@@ -452,7 +459,11 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   const { t } = useTranslation();
   const isPassed = result.status === 'passed';
   const isSkipped = result.status === 'skipped';
-  const toolLabel = result.tool_name.replace(/_/g, ' ');
+  // Prefer the connector name (the credential subject — e.g. "alpha vantage")
+  // over the generic tool that drove the call (e.g. "http request"). Falls
+  // back to tool_name for platform-native rows that have no connector.
+  const subject = (result.connector && result.connector.length > 0 ? result.connector : result.tool_name).replace(/_/g, ' ');
+  const toolLabel = subject;
 
   const toolSummaryLine = sections?.results.split('\n').find((line) => line.toLowerCase().includes(toolLabel.toLowerCase())) ?? null;
   const fallbackDescription = isPassed
@@ -460,7 +471,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
     : isSkipped
     ? result.error || 'This tool uses built-in capabilities and does not require an external API connection to test.'
     : result.status === 'credential_missing'
-    ? `This tool needs credentials for ${result.connector || 'its service'}. Go to the **Keys** section to add or refresh the required credentials.`
+    ? `**${subject}** needs credentials. Open the **Keys** section to add or refresh them.`
     : result.error ? formatErrorForUser(result.error, result.http_status) : 'Could not connect to the service.';
 
   return (
