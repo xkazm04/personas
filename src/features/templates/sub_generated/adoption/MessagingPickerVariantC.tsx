@@ -129,7 +129,11 @@ export function MessagingPickerVariantC() {
           return (
             <div
               key={uc.id}
-              className={`rounded-card border overflow-hidden ${on ? 'bg-card-bg border-card-border' : 'bg-foreground/[0.02] border-border opacity-60'}`}
+              className={`rounded-card overflow-hidden transition-colors ${
+                on
+                  ? 'border border-brand-cyan/30 bg-gradient-to-br from-brand-cyan/10 via-transparent to-brand-purple/10 shadow-elevation-2'
+                  : 'border border-border bg-foreground/[0.02] opacity-60'
+              }`}
             >
               {/* UC row header */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60">
@@ -212,9 +216,9 @@ export function MessagingPickerVariantC() {
                               aria-pressed={active}
                               className={`focus-ring w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
                                 active
-                                  ? `bg-card-bg border-brand-cyan/50 ${ch.color}`
-                                  : 'bg-foreground/[0.03] border-border text-foreground/40 hover:text-foreground'
-                              } ${ch.alwaysOn ? 'ring-1 ring-primary/30' : ''}`}
+                                  ? `bg-brand-cyan/15 border-brand-cyan/60 ${ch.color} shadow-elevation-1`
+                                  : 'bg-foreground/[0.03] border-border text-foreground/40 hover:text-foreground hover:border-foreground/30'
+                              } ${ch.alwaysOn ? 'ring-1 ring-primary/40' : ''}`}
                             >
                               <Icon className="w-3 h-3" />
                             </button>
@@ -269,7 +273,7 @@ export function MessagingPickerVariantC() {
                       type="button"
                       onClick={() => runTest(uc.id)}
                       disabled={testing === uc.id}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-card border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 typo-body text-brand-cyan hover:bg-brand-cyan/20 disabled:opacity-50 flex-shrink-0"
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-card border border-brand-cyan/50 bg-brand-cyan/15 px-3 py-2 typo-body font-medium text-brand-cyan hover:bg-brand-cyan/25 disabled:opacity-50 flex-shrink-0 shadow-elevation-1"
                     >
                       <Play className={`w-3.5 h-3.5 ${testing === uc.id ? 'animate-pulse' : ''}`} />
                       {testing === uc.id ? 'Running…' : 'Test run'}
