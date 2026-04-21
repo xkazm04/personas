@@ -86,24 +86,52 @@ export default function PersonasPage() {
     // Yield to browser — let React paint before loading secondary data
     await new Promise(r => setTimeout(r, 100));
 
-    // Wave 2: Secondary data — deferred so UI is interactive first
-    const secondaryResults = await Promise.allSettled([
-      fetchToolDefinitions(),
-      import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
-    ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
-    secondaryResults.forEach((r, i) => {
-      if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
-    });
+    // Wave 2: Secondary data — branches on viewMode so Simple-mode users
+    // don't pay for Power-only stores and Power-mode users keep existing
+    // behavior intact. Toggling Simple → Power mid-session re-runs this
+    // callback (viewMode is in the dep array) so Power fetches that were
+    // skipped will fire on mode switch. That is intentional.
+    if (viewMode === TIERS.STARTER) {
+      // Simple mode surfaces (Mosaic/Console/Inbox) need:
+      //   - credentials (connection strip)
+      //   - manual reviews (approval-kind inbox items)
+      //   - messages (message-kind inbox items)
+      //   - healing issues (health-kind inbox items)
+      //   - execution dashboard (runs-today counter in useSimpleSummary)
+      // A 1-day dashboard window is enough for the Simple summary — we
+      // only read `.daily_points[length - 1]`.
+      const { useOverviewStore } = await import("@/stores/overviewStore");
+      const { useVaultStore } = await import("@/stores/vaultStore");
+      const simpleResults = await Promise.allSettled([
+        useVaultStore.getState().fetchCredentials(),
+        useOverviewStore.getState().fetchManualReviews(),
+        useOverviewStore.getState().fetchMessages(),
+        useOverviewStore.getState().fetchHealingIssues(),
+        useOverviewStore.getState().fetchExecutionDashboard(1),
+      ]);
+      const SIMPLE_LABELS = ['credentials', 'reviews', 'messages', 'healing', 'executions'] as const;
+      simpleResults.forEach((r, i) => {
+        if (r.status === 'rejected' && SIMPLE_LABELS[i]) failed.push(SIMPLE_LABELS[i]);
+      });
+    } else {
+      const secondaryResults = await Promise.allSettled([
+        fetchToolDefinitions(),
+        import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
+        import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
+        import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+      ]);
+      const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+      secondaryResults.forEach((r, i) => {
+        if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
+      });
+    }
 
     if (failed.length > 0) {
       setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
     }
     // Auto-reconnect GitLab if a vault credential exists (non-blocking)
     void useSystemStore.getState().gitlabInitialize();
-  }, [fetchPersonas, fetchToolDefinitions, setError]);
+  }, [fetchPersonas, fetchToolDefinitions, setError, viewMode]);
 
   useEffect(() => {
     runStartup();
@@ -118,8 +146,13 @@ export default function PersonasPage() {
 
   // Prefetch likely next routes after initial load settles.
   // Speculative -- fires during browser idle time, failures silently ignored.
+  // Skipped entirely in Simple mode: those chunks are Power-only navigation
+  // targets, and Simple mode never routes to them. If the user graduates
+  // Simple → Power mid-session, viewMode changes → this effect re-runs →
+  // prefetches kick in. Intentional.
   useEffect(() => {
     if (!personasFetched) return;
+    if (viewMode === TIERS.STARTER) return;
     const id = requestIdleCallback(() => {
       // Tier 1: most frequently visited sections
       import('@/features/overview/components/dashboard/OverviewPage').catch(silentCatch("PersonasPage:prefetchOverview"));
@@ -136,7 +169,7 @@ export default function PersonasPage() {
       cancelIdleCallback(id);
       cancelIdleCallback(id2);
     };
-  }, [personasFetched]);
+  }, [personasFetched, viewMode]);
 
   // Auto-resume active build when returning to personas from another section.
   // Uses a ref to prevent the infinite loop: only resumes ONCE per navigation event.
@@ -158,8 +191,10 @@ export default function PersonasPage() {
   // Simple mode takes over the whole viewport — no sidebar, no Power-mode chunks.
   // Placed AFTER all hooks (React rules of hooks) but BEFORE renderContent so
   // Power-mode lazy chunks are never requested when viewMode === STARTER.
-  // NOTE: the useEffects above still run in Simple mode (fetchPersonas, etc.)
-  // — Phase 07+ will trim fetches that are Power-mode-only.
+  // Phase 15-01 gated the Wave 2 fetches + speculative prefetches above on
+  // viewMode, so Simple mode now fetches only what its surfaces actually
+  // render (credentials/reviews/messages/healing/executions) and skips the
+  // Power-only tools/recipes/groups set + route prefetches.
   if (viewMode === TIERS.STARTER) {
     return (
       <ErrorBoundary name="SimpleHome">
