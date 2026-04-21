@@ -366,6 +366,11 @@ impl SectionAccumulator {
                 .map(|v| v as i32),
             design_context,
             notification_channels: None,
+            // Phase 17: n8n streaming doesn't have an instruction text to infer
+            // from at this layer — leave null and let the confirmation.rs path
+            // pick it up (future improvement: thread the n8n workflow description
+            // through the merger so tier-3 applies to n8n imports too).
+            template_category: None,
             triggers: if triggers.is_empty() {
                 None
             } else {

@@ -228,6 +228,9 @@ function PersonaThumb({ item }: { item: UnifiedInboxItem }) {
       icon: item.personaIcon,
       description: null,
       design_context: null,
+      // Phase 17: synthesized personas (constructed when the real persona row
+      // is missing) have no template metadata. Null falls through to tier-4.
+      template_category: null,
     },
   );
 

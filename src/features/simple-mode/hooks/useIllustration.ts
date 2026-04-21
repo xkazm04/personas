@@ -11,9 +11,11 @@
  *      in declaration order. Phase 16 folded `design_context.summary` +
  *      `useCases[].name/description` into the haystack; see
  *      `extractDesignContextText` below.
- *   3. **Template metadata hint** — NOT available in v1 and still deferred
- *      after Phase 16 investigation (no clean category source exists; see the
- *      Tier-3 comment block inside `resolveIllustration` for full rationale).
+ *   3. **Template-category tier** (Phase 17) — `persona.template_category`
+ *      (populated by the Rust `infer_template_category` heuristic during
+ *      template adoption) mapped through `TEMPLATE_CATEGORY_MAP` from the
+ *      30+ template taxonomy to the 12 illustration bins. Manually-created
+ *      personas have `template_category = null` and fall through to tier 4.
  *   4. **Deterministic hash** — stable string hash of `persona.id` → index into
  *      the twelve-category tuple. Ensures a persona with no hints always lands
  *      on the same illustration across runs.
@@ -68,6 +70,48 @@ const EMOJI_MAP: Record<string, IllustrationCategory> = {
   '🌐': 'social',  '🔗': 'social',  '📡': 'social',
 };
 
+/**
+ * Tier 3 (Phase 17): map the lowercase template-category vocabulary emitted by
+ * the Rust `infer_template_category` helper (see
+ * `src-tauri/src/commands/design/reviews.rs`) to the 12 illustration bins.
+ *
+ * The Rust side has ~20 category strings drawn from the template catalog
+ * (`development`, `support`, `marketing`, etc.). Twelve illustration bins
+ * can't carry that much resolution one-to-one, so we collapse several
+ * business/ops categories onto the closest functional bin (e.g. `hr` and
+ * `project-management` both land on `meetings` because HR / PM work is
+ * meeting-heavy; `legal` lands on `writing` because it's document-heavy).
+ *
+ * Unmapped inputs (e.g. a future category not listed here) fall through to
+ * the tier-4 deterministic hash — always safe, never throws.
+ */
+const TEMPLATE_CATEGORY_MAP: Record<string, IllustrationCategory> = {
+  // Development + tech
+  development: 'code',
+  devops: 'code',
+  testing: 'code',
+  security: 'code',
+  monitoring: 'data',
+  data: 'data',
+  // Communication + support
+  communication: 'chat',
+  support: 'chat',
+  email: 'email',
+  // Content + research
+  content: 'writing',
+  documentation: 'writing',
+  research: 'research',
+  // Business ops
+  sales: 'finance',
+  finance: 'finance',
+  marketing: 'social',
+  hr: 'meetings',
+  legal: 'writing',
+  // Project ops
+  'project-management': 'meetings',
+  productivity: 'general',
+};
+
 // Tier 2: case-insensitive keyword scan against name + description.
 // Declaration order is significant — earlier entries win ties.
 const KEYWORD_MAP: Array<[keywords: string[], category: IllustrationCategory]> = [
@@ -104,7 +148,10 @@ function urlFor(category: IllustrationCategory): string {
   return `/illustrations/simple-mode/category-${category}.png`;
 }
 
-type PersonaLike = Pick<Persona, 'id' | 'name' | 'description' | 'icon' | 'design_context'>;
+type PersonaLike = Pick<
+  Persona,
+  'id' | 'name' | 'description' | 'icon' | 'design_context' | 'template_category'
+>;
 
 /**
  * Extract scannable text from a Persona's `design_context` TEXT column.
@@ -206,34 +253,21 @@ export function resolveIllustration(persona: PersonaLike): ResolvedIllustration 
     }
   }
 
-  // Tier 3 — template-category metadata (deferred — investigated Phase 16)
+  // Tier 3 — template_category (Phase 17).
   //
-  // Investigation summary: the data needed for a clean tier-3 mapping does NOT
-  // exist in the current frontend bindings. Options evaluated:
-  //
-  //   (a) Add `template_category` to Persona schema:
-  //       • No template link from Persona exists (source_review_id dead-ends
-  //         at persona_design_reviews, which has no template_id FK).
-  //       • Would require a new templates table + backfill logic + Rust +
-  //         ts-rs regeneration.
-  //       • Standalone phase, not polish.
-  //
-  //   (b) Parse Persona.design_context JSON for a category enum:
-  //       • The JSON exists (`useCases`, `summary`, `connectorPipeline`) but
-  //         carries no category enum — raw context data, not metadata.
-  //       • The template system uses a different 30+ category vocabulary
-  //         (automation / productivity / ops / ...) that does not map cleanly
-  //         to the resolver's 12 functional bins (email / chat / code / ...).
-  //       • Instead, Tier-2 is enriched in Phase 16 to fold design_context
-  //         free-text into the keyword scan (see `extractDesignContextText`
-  //         above). Captures most of the available signal without a schema
-  //         change.
-  //
-  // Tier-2 (enriched) + Tier-4 hash cover the common case. Revisit when a user
-  // reports systematic mis-assignment or when template-category becomes
-  // first-class in Persona metadata.
-  //
-  // See .planning/phases/16-deferred-resolution/16-01-PLAN.md ITEM A.
+  // Personas created via template adoption carry a `template_category` column
+  // populated by the Rust `infer_template_category` helper. We map its 30+
+  // category vocabulary to our 12 illustration bins via TEMPLATE_CATEGORY_MAP.
+  // Unmapped inputs (rare — a new category string added to reviews.rs without
+  // a corresponding map entry) fall through to tier 4, which is safe and
+  // deterministic. Manually-created personas have template_category = null
+  // and likewise fall through.
+  if (persona.template_category) {
+    const mapped = TEMPLATE_CATEGORY_MAP[persona.template_category];
+    if (mapped) {
+      return { category: mapped, url: urlFor(mapped) };
+    }
+  }
 
   // Tier 4: deterministic hash of id. `hashId('')` returns 0, which maps to
   // CATEGORIES[0] === 'email'. The empty-persona short-circuit above handles
@@ -252,6 +286,6 @@ export function resolveIllustration(persona: PersonaLike): ResolvedIllustration 
 export function useIllustration(persona: PersonaLike): ResolvedIllustration {
   return useMemo(
     () => resolveIllustration(persona),
-    [persona.id, persona.icon, persona.name, persona.description],
+    [persona.id, persona.icon, persona.name, persona.description, persona.template_category],
   );
 }
