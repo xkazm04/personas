@@ -15,6 +15,11 @@ export { useUnifiedInbox } from './hooks/useUnifiedInbox';
 export { normalizeSeverity } from './types';
 export type { InboxKind, Severity, UnifiedInboxItem } from './types';
 
+// Phase 16 Topic B: the output adapter + classifier are exported from the
+// feature barrel so tests and future consumers can reach them without drilling
+// into the adapters directory.
+export { adaptOutput, isMessageOutput } from './hooks/adapters/outputAdapter';
+
 export { useIllustration, resolveIllustration, CATEGORIES } from './hooks/useIllustration';
 export type { IllustrationCategory, ResolvedIllustration } from './hooks/useIllustration';
 
