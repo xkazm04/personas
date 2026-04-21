@@ -1671,4 +1671,63 @@ mod tests {
         assert_eq!(input.max_budget_usd, None, "null → None (skip)");
         assert_eq!(input.icon, None, "null → None (skip)");
     }
+
+    // v3.2 — shape-v2 notification_channels encrypt/decrypt round-trip.
+    #[test]
+    fn test_encrypt_decrypt_shape_v2_builtin_titlebar_passthrough() {
+        let shape_v2 = r#"[
+            {"type":"built-in","enabled":true,"use_case_ids":"*"},
+            {"type":"titlebar","enabled":true,"use_case_ids":["uc_a"],"event_filter":["stock.signal.buy"]}
+        ]"#;
+
+        // encrypt_notification_channels is pub(crate) — directly callable in this module.
+        let encrypted = encrypt_notification_channels(shape_v2).expect("encrypt shape v2");
+        // Since neither entry has sensitive config keys, encrypted output should
+        // parse back identically after serde normalization.
+        let decrypted = decrypt_notification_channels(&encrypted, "test_persona_id");
+
+        // Parse both sides via parse_channels_v2 to normalize field ordering +
+        // verify every shape-v2 key survives.
+        use crate::notifications::parse_channels_v2;
+        let input_parsed = parse_channels_v2(Some(shape_v2)).expect("input is v2");
+        let out_parsed = parse_channels_v2(Some(&decrypted)).expect("output is v2");
+        assert_eq!(
+            input_parsed, out_parsed,
+            "shape v2 must round-trip encrypt/decrypt with zero data loss"
+        );
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_shape_v2_with_external_credential_id() {
+        let shape_v2 = r##"[
+            {"type":"slack","enabled":true,"credential_id":"cred_abc","use_case_ids":["uc_a"],"config":{"channel":"#alerts"}}
+        ]"##;
+        let encrypted = encrypt_notification_channels(shape_v2).expect("encrypt");
+        let decrypted = decrypt_notification_channels(&encrypted, "test_persona_id");
+
+        use crate::notifications::parse_channels_v2;
+        let out = parse_channels_v2(Some(&decrypted)).expect("output is v2");
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].credential_id.as_deref(), Some("cred_abc"));
+        // Config map preserved with channel key intact.
+        let cfg = out[0].config.as_ref().expect("config present");
+        assert_eq!(cfg["channel"], "#alerts");
+    }
+
+    #[test]
+    fn test_shape_v2_parses_back_from_decrypted_json() {
+        let shape_v2 = r#"[{"type":"built-in","enabled":true,"use_case_ids":"*"}]"#;
+        let encrypted = encrypt_notification_channels(shape_v2).expect("encrypt");
+        let decrypted = decrypt_notification_channels(&encrypted, "test_persona_id");
+
+        use crate::notifications::parse_channels_v2;
+        let out = parse_channels_v2(Some(&decrypted)).expect("parses back as v2");
+        assert_eq!(out.len(), 1);
+        use crate::db::models::{ChannelScopeV2, ChannelSpecV2Type};
+        assert_eq!(out[0].channel_type, ChannelSpecV2Type::BuiltIn);
+        match &out[0].use_case_ids {
+            ChannelScopeV2::All(s) => assert_eq!(s, "*"),
+            _ => panic!("expected All(\"*\")"),
+        }
+    }
 }
