@@ -4,6 +4,7 @@ use tauri::AppHandle;
 use tauri_plugin_notification::NotificationExt;
 use ts_rs::TS;
 
+use crate::db::models::{ChannelScopeV2, ChannelSpecV2, ChannelSpecV2Type};
 use crate::engine::crypto::SecureString;
 use crate::engine::event_registry::{emit_event, event_name};
 
@@ -69,6 +70,31 @@ fn parse_channels(json: Option<&str>) -> Vec<ExternalChannel> {
         }
         _ => vec![],
     }
+}
+
+// v3.2 — Parse shape-v2 notification_channels (D-02, D-05).
+// Shape discriminant: JSON is an array AND the first element contains the key
+// `use_case_ids`. Returns `None` when the JSON is not v2-shaped (shape A object,
+// shape B legacy array, empty/None input); callers fall through to the legacy
+// `parse_prefs` / `parse_channels` paths without any behavior change.
+//
+// Accepts an empty array `[]` as a valid v2 value (means "no channels
+// configured"); the empty `use_case_ids: []` sentinel guard lives in
+// `validation::persona::validate_notification_channels` (runs at DB write).
+pub(crate) fn parse_channels_v2(json: Option<&str>) -> Option<Vec<ChannelSpecV2>> {
+    let json_str = json?.trim();
+    if !json_str.starts_with('[') {
+        return None; // shape A object — not v2
+    }
+    let raw: Vec<serde_json::Value> = serde_json::from_str(json_str).ok()?;
+    if raw.is_empty() {
+        return Some(Vec::new()); // empty array is a valid v2 value
+    }
+    // Discriminant: first element must have `use_case_ids` to be shape v2.
+    if raw[0].get("use_case_ids").is_none() {
+        return None; // shape B legacy — let parse_channels handle it
+    }
+    serde_json::from_str::<Vec<ChannelSpecV2>>(json_str).ok()
 }
 
 // ---------------------------------------------------------------------------
@@ -683,5 +709,114 @@ pub async fn deliver_to_external_channels(app: &AppHandle, channels_json: &str, 
 pub(crate) fn send(app: &AppHandle, title: &str, body: &str) {
     if let Err(e) = app.notification().builder().title(title).body(body).show() {
         tracing::warn!("Failed to send OS notification: {}", e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::{ChannelScopeV2, ChannelSpecV2Type};
+
+    fn shape_v2_channel_json() -> &'static str {
+        r#"[
+            {"type":"built-in","enabled":true,"use_case_ids":"*"},
+            {"type":"slack","enabled":true,"credential_id":"cred_123","use_case_ids":["uc_a"],"event_filter":["stock.signal.buy"]}
+        ]"#
+    }
+
+    fn shape_b_legacy_json() -> &'static str {
+        r##"[{"type":"slack","enabled":true,"credential_id":"cred_x","config":{"channel":"#alerts"}}]"##
+    }
+
+    fn shape_a_prefs_json() -> &'static str {
+        r#"{"execution_completed":true,"approvals":false}"#
+    }
+
+    #[test]
+    fn test_parse_channels_v2_shape_v2_roundtrips() {
+        let parsed = parse_channels_v2(Some(shape_v2_channel_json())).expect("is v2");
+        assert_eq!(parsed.len(), 2);
+        // Re-serialize and re-parse to confirm zero data loss.
+        let re = serde_json::to_string(&parsed).unwrap();
+        let reparsed = parse_channels_v2(Some(&re)).expect("roundtrip");
+        assert_eq!(parsed, reparsed);
+    }
+
+    #[test]
+    fn test_parse_channels_v2_with_star_sentinel() {
+        let parsed = parse_channels_v2(Some(shape_v2_channel_json())).unwrap();
+        match &parsed[0].use_case_ids {
+            ChannelScopeV2::All(s) => assert_eq!(s, "*"),
+            _ => panic!("expected All(\"*\")"),
+        }
+    }
+
+    #[test]
+    fn test_parse_channels_v2_with_specific_array() {
+        let parsed = parse_channels_v2(Some(shape_v2_channel_json())).unwrap();
+        match &parsed[1].use_case_ids {
+            ChannelScopeV2::Specific(ids) => assert_eq!(ids, &vec!["uc_a".to_string()]),
+            _ => panic!("expected Specific"),
+        }
+        assert_eq!(parsed[1].channel_type, ChannelSpecV2Type::Slack);
+    }
+
+    #[test]
+    fn test_parse_channels_v2_rejects_shape_a_object() {
+        assert!(parse_channels_v2(Some(shape_a_prefs_json())).is_none());
+    }
+
+    #[test]
+    fn test_parse_channels_v2_rejects_shape_b_legacy_array() {
+        assert!(parse_channels_v2(Some(shape_b_legacy_json())).is_none());
+    }
+
+    #[test]
+    fn test_parse_channels_v2_handles_empty_array() {
+        let parsed = parse_channels_v2(Some("[]")).unwrap();
+        assert!(parsed.is_empty());
+    }
+
+    #[test]
+    fn test_parse_channels_v2_handles_none_input() {
+        assert!(parse_channels_v2(None).is_none());
+    }
+
+    #[test]
+    fn test_parse_channels_v2_multi_instance_same_type() {
+        let json = r#"[
+            {"type":"slack","enabled":true,"credential_id":"cred_1","use_case_ids":["uc_a"]},
+            {"type":"slack","enabled":true,"credential_id":"cred_2","use_case_ids":["uc_b"]}
+        ]"#;
+        let parsed = parse_channels_v2(Some(json)).unwrap();
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].channel_type, ChannelSpecV2Type::Slack);
+        assert_eq!(parsed[1].channel_type, ChannelSpecV2Type::Slack);
+    }
+
+    #[test]
+    fn test_parse_channels_v2_built_in_without_credential_id() {
+        let json = r#"[{"type":"built-in","enabled":true,"use_case_ids":"*"}]"#;
+        let parsed = parse_channels_v2(Some(json)).unwrap();
+        assert_eq!(parsed[0].channel_type, ChannelSpecV2Type::BuiltIn);
+        assert!(parsed[0].credential_id.is_none());
+    }
+
+    #[test]
+    fn test_parse_prefs_unchanged_regression() {
+        // Shape A JSON still parses via legacy parse_prefs with correct values.
+        // The `approvals` field is not in NotificationPrefs; `execution_completed` is.
+        let prefs = parse_prefs(Some(shape_a_prefs_json()));
+        assert_eq!(prefs.execution_completed, true);
+        // Other fields default to true when not in JSON (serde ignores unknown keys).
+        assert_eq!(prefs.manual_review, true);
+    }
+
+    #[test]
+    fn test_parse_channels_legacy_shape_b_unchanged_regression() {
+        let channels = parse_channels(Some(shape_b_legacy_json()));
+        assert_eq!(channels.len(), 1);
+        assert_eq!(channels[0].channel_type, "slack");
+        assert_eq!(channels[0].credential_id.as_deref(), Some("cred_x"));
     }
 }

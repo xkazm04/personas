@@ -272,6 +272,20 @@ pub fn validate_notification_channels(channels_json: &str) -> Vec<ValidationErro
         if !enabled {
             continue;
         }
+        // v3.2 — Reject empty use_case_ids arrays on shape-v2 channels (D-05 specifics).
+        // The "*" sentinel is a string (not an array) and is accepted by simply
+        // not matching this branch. `None` use_case_ids means shape-B legacy
+        // and falls through to the existing slack/telegram/email validation.
+        if let Some(ids) = ch.get("use_case_ids").and_then(|v| v.as_array()) {
+            if ids.is_empty() {
+                errors.push(ValidationError::new(
+                    "notification_channels",
+                    "empty_use_case_ids",
+                    "use_case_ids must be \"*\" or a non-empty array of use case IDs",
+                ));
+                continue;
+            }
+        }
         let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
         let config = ch.get("config");
         let get_field = |key: &str| -> bool {
@@ -365,4 +379,51 @@ pub fn rules() -> Vec<ValidationRule> {
             .with_min(MAX_TURNS_MIN as f64),
         ValidationRule::new("persona", "notification_channels", "json", "Must be a valid JSON array"),
     ]
+}
+
+#[cfg(test)]
+mod tests_v32 {
+    use super::*;
+
+    #[test]
+    fn test_validate_channels_v2_accepts_star_sentinel() {
+        let json = r#"[{"type":"built-in","enabled":true,"use_case_ids":"*"}]"#;
+        let errors = validate_notification_channels(json);
+        assert!(errors.is_empty(), "\"*\" sentinel must be accepted, got {errors:?}");
+    }
+
+    #[test]
+    fn test_validate_channels_v2_accepts_non_empty_array() {
+        let json = r#"[{"type":"titlebar","enabled":true,"use_case_ids":["uc_a"]}]"#;
+        let errors = validate_notification_channels(json);
+        assert!(errors.is_empty(), "non-empty array must be accepted, got {errors:?}");
+    }
+
+    #[test]
+    fn test_validate_channels_v2_rejects_empty_use_case_ids() {
+        let json = r#"[{"type":"built-in","enabled":true,"use_case_ids":[]}]"#;
+        let errors = validate_notification_channels(json);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].field, "notification_channels");
+        assert_eq!(errors[0].rule, "empty_use_case_ids");
+    }
+
+    #[test]
+    fn test_validate_channels_legacy_shape_b_still_passes() {
+        // Legacy shape-B slack channel with missing `channel` field — existing rule fires.
+        let json = r#"[{"type":"slack","enabled":true,"config":{}}]"#;
+        let errors = validate_notification_channels(json);
+        assert!(
+            errors.iter().any(|e| e.rule == "channel_required"),
+            "legacy shape B validation rules unchanged, got {errors:?}"
+        );
+    }
+
+    #[test]
+    fn test_validate_channels_disabled_skips_validation() {
+        // enabled=false short-circuits before the use_case_ids guard.
+        let json = r#"[{"type":"built-in","enabled":false,"use_case_ids":[]}]"#;
+        let errors = validate_notification_channels(json);
+        assert!(errors.is_empty(), "disabled channel must skip all validation");
+    }
 }
