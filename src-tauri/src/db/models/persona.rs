@@ -393,6 +393,12 @@ pub struct Persona {
     /// Defaults to `LocalOnly` so existing personas are not exposed.
     #[serde(default)]
     pub gateway_exposure: PersonaGatewayExposure,
+    /// Lowercase template category (e.g. `"development"`, `"finance"`) derived
+    /// by `infer_template_category` when the persona was created via template
+    /// adoption. `None` for manually-created or pre-Phase-17 personas. Used by
+    /// Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
+    #[serde(default)]
+    pub template_category: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

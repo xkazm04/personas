@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS personas (
     max_turns               INTEGER,
     design_context          TEXT,
     group_id                TEXT REFERENCES persona_groups(id) ON DELETE SET NULL,
+    template_category       TEXT,
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
 );

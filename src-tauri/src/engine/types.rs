@@ -422,6 +422,7 @@ impl EphemeralPersona {
             trust_score: 1.0,
             parameters: None,
             gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
+            template_category: None,
             created_at: now.clone(),
             updated_at: now,
         };

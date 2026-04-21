@@ -1308,6 +1308,7 @@ mod tests {
             trust_score: 1.0,
             parameters: None,
             gateway_exposure: PersonaGatewayExposure::Public,
+            template_category: None,
             created_at: now.clone(),
             updated_at: now,
         };
@@ -1352,6 +1353,7 @@ mod tests {
             trust_score: 1.0,
             parameters: None,
             gateway_exposure: PersonaGatewayExposure::Public,
+            template_category: None,
             created_at: now.clone(),
             updated_at: now,
         };

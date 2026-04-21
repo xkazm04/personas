@@ -372,6 +372,9 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
             .flatten()
             .and_then(|s| s.parse().ok())
             .unwrap_or(PersonaGatewayExposure::LocalOnly),
+        template_category: row
+            .get::<_, Option<String>>("template_category")
+            .unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -931,13 +934,13 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
               model_profile, max_budget_usd, max_turns, design_context, group_id,
               notification_channels, parameters, trust_level, trust_origin,
               trust_verified_at, trust_score, source_review_id, last_design_result,
-              created_at, updated_at)
+              template_category, created_at, updated_at)
              SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
                     icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
                     model_profile, max_budget_usd, max_turns, design_context, group_id,
                     notification_channels, parameters, trust_level, trust_origin,
                     trust_verified_at, trust_score, source_review_id, last_design_result,
-                    ?2, ?2
+                    template_category, ?2, ?2
              FROM personas WHERE id = ?3",
             params![new_id, now, source_id],
         )?;

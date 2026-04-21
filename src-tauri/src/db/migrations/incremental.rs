@@ -1782,6 +1782,20 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
     tracing::info!("Ensured composite index idx_pe_trigger_created on persona_executions");
 
+    // Phase 17: template_category column on personas for tier-3 illustration resolution.
+    // Populated by template adoption flows via `infer_template_category`. Null for
+    // manually-created personas and pre-existing rows — resolver falls through to hash tier.
+    let has_template_category: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'template_category'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_template_category {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN template_category TEXT;")?;
+        tracing::info!("Added template_category column to personas");
+    }
+
     Ok(())
 }
 
