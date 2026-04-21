@@ -13,12 +13,18 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Bell,
+  Hash,
   Inbox,
   MessageCircle,
   MessageSquare,
   Send,
-  Slack,
 } from 'lucide-react';
+
+// Lucide removed the `Slack` brand glyph in newer versions; `Hash`
+// (channel-hash icon) reads as Slack in context and avoids the missing
+// export. Keep a local alias so the rest of the prototype code reads
+// naturally.
+const Slack = Hash;
 
 // ────────────────────────────────────────────────────────────────────────
 // Mock vault credentials for the messaging category
