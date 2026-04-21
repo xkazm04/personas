@@ -70,8 +70,8 @@ const EMOJI_MAP: Record<string, IllustrationCategory> = {
 // Declaration order is significant — earlier entries win ties.
 const KEYWORD_MAP: Array<[keywords: string[], category: IllustrationCategory]> = [
   [['email', 'mail', 'inbox', 'gmail', 'outlook'],                        'email'],
-  [['slack', 'discord', 'chat', 'message', 'dm'],                          'chat'],
-  [['github', 'gitlab', 'code', 'pr', 'pull request', 'bug', 'review'],   'code'],
+  [['slack', 'discord', 'chat', 'message', 'direct message', 'dms', 'dming'], 'chat'],
+  [['github', 'gitlab', 'code', 'pull request', 'pr review', 'bug', 'review'], 'code'],
   [['write', 'writer', 'draft', 'blog', 'post', 'note', 'notion', 'doc'], 'writing'],
   [['invoice', 'receipt', 'payment', 'budget', 'expense', 'finance', 'billing'], 'finance'],
   [['calendar', 'schedule', 'agenda', 'briefing', 'morning'],             'calendar'],

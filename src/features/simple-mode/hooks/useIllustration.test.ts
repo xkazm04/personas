@@ -186,6 +186,52 @@ describe('resolveIllustration', () => {
   });
 });
 
+describe('KEYWORD_MAP false-positive regression', () => {
+  // Regression: two-letter keys 'pr' and 'dm' used to substring-match inside
+  // unrelated words like 'processes' and 'admin'/'standup', producing bogus
+  // category assignments. Phase 15-01 replaced them with full-word variants
+  // ('pull request', 'pr review', 'direct message', 'dms', 'dming').
+  it("description 'Processes invoices nightly' no longer resolves to 'code'", () => {
+    const r = resolveIllustration({
+      id: 'x',
+      name: 'Invoice Bot',
+      description: 'Processes invoices nightly',
+      icon: null,
+    });
+    expect(r.category).toBe('finance');
+  });
+
+  it("description 'Standup coordinator' no longer resolves to 'writing'", () => {
+    const r = resolveIllustration({
+      id: 'y',
+      name: 'Standup Helper',
+      description: 'Coordinator for the daily standup',
+      icon: null,
+    });
+    expect(r.category).toBe('meetings');
+  });
+
+  it("'pull request' literal still resolves to 'code'", () => {
+    const r = resolveIllustration({
+      id: 'z',
+      name: 'PR Watcher',
+      description: 'Reviews every pull request',
+      icon: null,
+    });
+    expect(r.category).toBe('code');
+  });
+
+  it("'direct message' literal still resolves to 'chat'", () => {
+    const r = resolveIllustration({
+      id: 'w',
+      name: 'Chat Helper',
+      description: 'Handles direct message pings',
+      icon: null,
+    });
+    expect(r.category).toBe('chat');
+  });
+});
+
 describe('useIllustration', () => {
   it('returns the same result as the pure resolver', () => {
     const input = persona({ id: 'x', icon: '📧' });
