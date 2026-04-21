@@ -131,8 +131,8 @@ export function MessagingPickerVariantC() {
               key={uc.id}
               className={`rounded-card overflow-hidden transition-colors ${
                 on
-                  ? 'border border-brand-cyan/30 bg-gradient-to-br from-brand-cyan/10 via-transparent to-brand-purple/10 shadow-elevation-2'
-                  : 'border border-border bg-foreground/[0.02] opacity-60'
+                  ? 'ring-1 ring-primary/40 bg-primary/5 shadow-elevation-2'
+                  : 'ring-1 ring-border bg-foreground/[0.02] opacity-60'
               }`}
             >
               {/* UC row header */}
@@ -214,11 +214,11 @@ export function MessagingPickerVariantC() {
                               onClick={() => toggleChannel(uc.id, ch.id)}
                               title={`${ch.label}${ch.target ? ` · ${ch.target}` : ''}`}
                               aria-pressed={active}
-                              className={`focus-ring w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                              className={`focus-ring w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                                 active
-                                  ? `bg-brand-cyan/15 border-brand-cyan/60 ${ch.color} shadow-elevation-1`
-                                  : 'bg-foreground/[0.03] border-border text-foreground/40 hover:text-foreground hover:border-foreground/30'
-                              } ${ch.alwaysOn ? 'ring-1 ring-primary/40' : ''}`}
+                                  ? `bg-primary/15 ring-2 ring-primary/60 ${ch.color} shadow-elevation-1`
+                                  : 'bg-foreground/[0.03] ring-1 ring-border text-foreground/40 hover:text-foreground hover:ring-foreground/30'
+                              } ${ch.alwaysOn && !active ? 'ring-1 ring-primary/40' : ''}`}
                             >
                               <Icon className="w-3 h-3" />
                             </button>
@@ -273,7 +273,7 @@ export function MessagingPickerVariantC() {
                       type="button"
                       onClick={() => runTest(uc.id)}
                       disabled={testing === uc.id}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-card border border-brand-cyan/50 bg-brand-cyan/15 px-3 py-2 typo-body font-medium text-brand-cyan hover:bg-brand-cyan/25 disabled:opacity-50 flex-shrink-0 shadow-elevation-1"
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-card ring-1 ring-primary/50 bg-primary/15 px-3 py-2 typo-body font-medium text-primary hover:bg-primary/25 disabled:opacity-50 flex-shrink-0 shadow-elevation-1"
                     >
                       <Play className={`w-3.5 h-3.5 ${testing === uc.id ? 'animate-pulse' : ''}`} />
                       {testing === uc.id ? 'Running…' : 'Test run'}
