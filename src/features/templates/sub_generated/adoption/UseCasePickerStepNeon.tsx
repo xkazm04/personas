@@ -113,8 +113,8 @@ export function UseCasePickerStepNeon({
                 transition={{ delay: idx * 0.04 }}
                 className={`rounded-xl p-4 flex flex-col gap-3 transition-colors ${
                   enabled
-                    ? 'border border-brand-cyan/30 bg-gradient-to-br from-brand-cyan/10 via-transparent to-brand-purple/10 shadow-elevation-2'
-                    : 'border border-border bg-foreground/[0.02]'
+                    ? 'ring-1 ring-primary/40 bg-gradient-to-br from-primary/10 via-transparent to-brand-purple/10 shadow-elevation-2'
+                    : 'ring-1 ring-border bg-foreground/[0.02]'
                 }`}
               >
                 <div className="flex items-start gap-3">

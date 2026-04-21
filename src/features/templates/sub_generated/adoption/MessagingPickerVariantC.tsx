@@ -290,7 +290,7 @@ export function MessagingPickerVariantC() {
                         </div>
                       </div>
                       {/* Bell toast preview */}
-                      <div className="rounded-card border border-brand-purple/30 bg-brand-purple/5 p-2">
+                      <div className="rounded-card ring-1 ring-brand-purple/30 bg-brand-purple/5 p-2">
                         <div className="typo-caption uppercase tracking-wider text-brand-purple mb-1 flex items-center gap-1">
                           <Bell className="w-2.5 h-2.5" /> TitleBar toast
                         </div>
