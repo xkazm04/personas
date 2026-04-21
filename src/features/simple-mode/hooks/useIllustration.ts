@@ -9,9 +9,10 @@
  *   2. **Keyword scan** — lowercase `persona.name + persona.description` scanned
  *      against KEYWORD_MAP entries, in declaration order.
  *   3. **Template metadata hint** — NOT available in v1. The Persona type does
- *      not expose the source template category. TODO(phase-14+): plumb a
- *      `persona.template_category` field through bindings so this tier can
- *      resolve without relying on keyword heuristics.
+ *      not expose the source template category. Deferred pending a schema
+ *      extension OR a store-level resolver that parses design_context once at
+ *      fetch time; see the Tier-3 comment block inside `resolveIllustration`
+ *      and Phase 15-01 ITEM 3 for the full deferral rationale.
  *   4. **Deterministic hash** — stable string hash of `persona.id` → index into
  *      the twelve-category tuple. Ensures a persona with no hints always lands
  *      on the same illustration across runs.
@@ -152,7 +153,17 @@ export function resolveIllustration(persona: PersonaLike): ResolvedIllustration 
     }
   }
 
-  // Tier 3: template metadata — not available in v1. See file header TODO.
+  // Tier 3 — template-category metadata (deferred)
+  // Persona records lack a first-class template_category field. Options:
+  //   (a) Schema extension: add template_category column, backfill from
+  //       source_review_id.
+  //   (b) Store-level resolver: parse design_context JSON once per persona at
+  //       fetch time, cache the derived category alongside the record.
+  // Either approach is a standalone phase. Tier-2 keyword + Tier-4 hash already
+  // cover the common cases; revisit when a user reports a systematic
+  // mis-assignment.
+  // See .planning/phases/15-followup-polish/15-01-PLAN.md ITEM 3 for context.
+  // TODO(phase-16+): implement one of the above.
 
   // Tier 4: deterministic hash of id. `hashId('')` returns 0, which maps to
   // CATEGORIES[0] === 'email'. The empty-persona short-circuit above handles
