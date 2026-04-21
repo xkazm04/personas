@@ -167,10 +167,10 @@ export function MessagingPickerVariantC() {
                               key={chip.id}
                               type="button"
                               onClick={() => setTriggerByUc((prev) => ({ ...prev, [uc.id]: chip.id }))}
-                              className={`focus-ring inline-flex items-center gap-1 rounded-full border px-2 py-0.5 typo-caption transition-all ${
+                              className={`focus-ring inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption transition-all ${
                                 active
-                                  ? 'bg-brand-cyan/15 border-brand-cyan/40 text-brand-cyan'
-                                  : 'bg-foreground/[0.03] border-border text-foreground/70 hover:text-foreground'
+                                  ? 'bg-primary/15 ring-1 ring-primary/50 text-primary'
+                                  : 'bg-foreground/[0.03] ring-1 ring-border text-foreground/70 hover:text-foreground'
                               }`}
                             >
                               <Icon className="w-3 h-3" />

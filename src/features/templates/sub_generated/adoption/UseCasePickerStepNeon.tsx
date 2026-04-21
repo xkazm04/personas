@@ -321,9 +321,9 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
               key={p.key}
               type="button"
               onClick={() => onChange(selectionForTimePreset(p.key, selection))}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 typo-body-lg font-medium transition-colors ${
+              className={`focus-ring inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 typo-body-lg font-medium transition-colors ${
                 isActive
-                  ? 'bg-brand-cyan/20 text-brand-cyan ring-1 ring-brand-cyan/50 tracking-wide'
+                  ? 'bg-primary/20 text-primary ring-1 ring-primary/50 tracking-wide'
                   : 'bg-foreground/[0.04] text-foreground/60 hover:bg-foreground/[0.08] hover:text-foreground'
               }`}
             >
