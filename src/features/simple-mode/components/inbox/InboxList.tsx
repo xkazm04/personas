@@ -234,8 +234,7 @@ function PersonaThumb({ item }: { item: UnifiedInboxItem }) {
       <img
         src={illustration.url}
         alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.45 }}
+        className="simple-illustration absolute inset-0 w-full h-full object-cover pointer-events-none"
       />
     </div>
   );

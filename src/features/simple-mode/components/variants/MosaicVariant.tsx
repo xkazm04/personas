@@ -454,8 +454,7 @@ function PersonaTile({ t, persona }: PersonaTileProps) {
         src={illustration.url}
         aria-hidden
         alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.25 }}
+        className="simple-illustration absolute inset-0 w-full h-full object-cover pointer-events-none"
       />
       <div className="relative typo-data-lg" aria-hidden>
         {firstGrapheme(persona.icon ?? '') || '•'}

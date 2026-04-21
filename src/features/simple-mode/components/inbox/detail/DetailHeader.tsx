@@ -51,8 +51,7 @@ export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
         src={illustration.url}
         aria-hidden
         alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.15 }}
+        className="simple-illustration simple-illustration-header absolute inset-0 w-full h-full object-cover pointer-events-none"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background pointer-events-none" />
 

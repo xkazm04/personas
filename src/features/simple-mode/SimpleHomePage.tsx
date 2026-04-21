@@ -75,7 +75,7 @@ export default function SimpleHomePage() {
 
   return (
     <ErrorBoundary name="SimpleHome">
-      <div className="h-screen flex flex-col bg-background text-foreground">
+      <div className="h-screen flex flex-col bg-background text-foreground simple-min-width">
         <SimpleHomeShell
           activeTab={activeSimpleTab}
           onTabChange={setActiveSimpleTab}
