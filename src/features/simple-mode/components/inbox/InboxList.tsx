@@ -227,6 +227,7 @@ function PersonaThumb({ item }: { item: UnifiedInboxItem }) {
       name: item.personaName,
       icon: item.personaIcon,
       description: null,
+      design_context: null,
     },
   );
 

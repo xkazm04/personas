@@ -43,6 +43,7 @@ export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
       name: item.personaName,
       icon: item.personaIcon,
       description: null,
+      design_context: null,
     },
   );
 

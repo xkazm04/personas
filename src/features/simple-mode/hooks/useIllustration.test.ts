@@ -26,6 +26,7 @@ function persona(overrides: Partial<ResolverInput> = {}): ResolverInput {
     name: '',
     description: null,
     icon: null,
+    design_context: null,
     ...overrides,
   };
 }
@@ -197,6 +198,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       name: 'Invoice Bot',
       description: 'Processes invoices nightly',
       icon: null,
+      design_context: null,
     });
     expect(r.category).toBe('finance');
   });
@@ -207,6 +209,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       name: 'Standup Helper',
       description: 'Coordinator for the daily standup',
       icon: null,
+      design_context: null,
     });
     expect(r.category).toBe('meetings');
   });
@@ -217,6 +220,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       name: 'PR Watcher',
       description: 'Reviews every pull request',
       icon: null,
+      design_context: null,
     });
     expect(r.category).toBe('code');
   });
@@ -227,8 +231,63 @@ describe('KEYWORD_MAP false-positive regression', () => {
       name: 'Chat Helper',
       description: 'Handles direct message pings',
       icon: null,
+      design_context: null,
     });
     expect(r.category).toBe('chat');
+  });
+});
+
+describe('design_context enrichment (Phase 16)', () => {
+  // Phase 16 Topic A: Tier-2 keyword scan now concatenates
+  // persona.design_context's summary + useCases[].name/description into the
+  // haystack. Parse failures are swallowed so the resolver never crashes.
+  it('parses design_context.useCases to enrich keyword scan', () => {
+    // Name + description carry no keyword signal — this test would have hit
+    // the hash fallback before Phase 16. With enrichment, the 'report' keyword
+    // in the use-case name lands it in 'data' category.
+    const r = resolveIllustration(
+      persona({
+        id: 'x',
+        name: 'Blank',
+        description: null,
+        icon: null,
+        design_context: JSON.stringify({
+          useCases: [{ name: 'Weekly financial report', description: 'Summarize invoices' }],
+          summary: 'Money tracker',
+        }),
+      }),
+    );
+    // 'report' is in the 'data' keyword bucket and 'invoice'/'finance' is in
+    // 'finance' — but 'finance' declaration order comes BEFORE 'data'.
+    // The summary "Money tracker" + use-case "Summarize invoices" contains
+    // 'invoice' which hits 'finance' first. Lock the finance resolution.
+    expect(r.category).toBe('finance');
+  });
+
+  it('swallows invalid JSON without crashing', () => {
+    const p = persona({
+      id: 'y',
+      name: 'Slack Persona',
+      description: null,
+      icon: null,
+      design_context: '{not json',
+    });
+    expect(() => resolveIllustration(p)).not.toThrow();
+    // Tier-2 from name still works even though context parsing threw.
+    expect(resolveIllustration(p).category).toBe('chat');
+  });
+
+  it('skips design_context when undefined/null', () => {
+    const r = resolveIllustration(
+      persona({
+        id: 'z',
+        name: 'GitHub Watcher',
+        description: null,
+        icon: null,
+        design_context: null,
+      }),
+    );
+    expect(r.category).toBe('code');
   });
 });
 
