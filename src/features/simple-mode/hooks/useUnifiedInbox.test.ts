@@ -17,7 +17,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 
 import { normalizeSeverity } from '../types';
-import { adaptApproval, adaptMessage, adaptHealing } from './adapters';
+import { adaptApproval, adaptMessage, adaptHealing, adaptOutput, isMessageOutput } from './adapters';
 import { useUnifiedInbox } from './useUnifiedInbox';
 
 // ---------------------------------------------------------------------------
@@ -366,5 +366,138 @@ describe('useUnifiedInbox', () => {
     expect(result.current[0]?.personaName).toBe('Unknown assistant');
     expect(result.current[0]?.personaIcon).toBeNull();
     expect(result.current[0]?.personaColor).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isMessageOutput / adaptOutput (Phase 16 Topic B)
+// ---------------------------------------------------------------------------
+
+describe('isMessageOutput', () => {
+  it('returns true for content_type=markdown regardless of title/content', () => {
+    expect(isMessageOutput(messageRecord({ content_type: 'markdown', title: 'hi' }))).toBe(true);
+  });
+
+  it('returns true when title contains an output keyword (case-insensitive)', () => {
+    expect(isMessageOutput(messageRecord({ title: 'Weekly DRAFT is ready' }))).toBe(true);
+  });
+
+  it('returns true when first 80 chars of content contain an output keyword', () => {
+    expect(
+      isMessageOutput(
+        messageRecord({ title: null, content: 'Please review the weekly report below.' }),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false for plain conversational messages', () => {
+    expect(
+      isMessageOutput(messageRecord({ title: 'Quick question', content: 'Hey you around?' })),
+    ).toBe(false);
+  });
+
+  it('only scans the first 80 chars of content — late keyword does NOT trigger', () => {
+    const longPrefix = 'x'.repeat(80);
+    expect(
+      isMessageOutput(messageRecord({ title: null, content: `${longPrefix} draft comes later` })),
+    ).toBe(false);
+  });
+});
+
+describe('adaptOutput', () => {
+  it('produces a kind=output item with id prefix and summary slice', () => {
+    const out = adaptOutput(
+      messageRecord({ id: 'm-1', content: 'a'.repeat(500), execution_id: 'exec-1' }),
+      PERSONA_SUMMARY,
+    );
+    expect(out.kind).toBe('output');
+    expect(out.id).toBe('output:m-1');
+    expect(out.source).toBe('m-1');
+    expect(out.severity).toBe('info');
+    expect(out.data.executionId).toBe('exec-1');
+    expect(out.data.summary).toHaveLength(200);
+  });
+
+  it('falls back to personaName-based title when msg.title is null', () => {
+    const out = adaptOutput(messageRecord({ title: null }), PERSONA_SUMMARY);
+    expect(out.title).toBe('Weather Bot produced an output');
+  });
+
+  it('falls back to empty-string executionId when message has no execution', () => {
+    const out = adaptOutput(messageRecord({ execution_id: null }), PERSONA_SUMMARY);
+    expect(out.data.executionId).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useUnifiedInbox — Phase 16 Topic B output-kind emission
+// ---------------------------------------------------------------------------
+
+describe('useUnifiedInbox — output-kind emission (Phase 16)', () => {
+  beforeEach(() => {
+    useOverviewStore.setState({
+      manualReviews: [],
+      messages: [],
+      healingIssues: [],
+    });
+    useAgentStore.setState({ personas: [personaRecord()] });
+  });
+
+  it('markdown messages are emitted as output kind', () => {
+    useOverviewStore.setState({
+      messages: [messageRecord({ id: 'md-1', content_type: 'markdown' })],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]?.kind).toBe('output');
+    expect(result.current[0]?.id).toBe('output:md-1');
+  });
+
+  it('messages with output keywords in title are emitted as output', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'kw-1',
+          content_type: 'text',
+          title: 'Weekly draft is ready',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.kind).toBe('output');
+  });
+
+  it('plain text messages without output keywords stay message kind', () => {
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'plain-1',
+          content_type: 'text',
+          title: 'Quick question',
+          content: 'Hey you around?',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    expect(result.current[0]?.kind).toBe('message');
+  });
+
+  it('a given message is emitted exactly once (no double-emission)', () => {
+    // A markdown message that ALSO has an output keyword in title would
+    // trigger both branches of isMessageOutput — but the partition filter
+    // guarantees only one adapter fires per message.
+    useOverviewStore.setState({
+      messages: [
+        messageRecord({
+          id: 'dup-check',
+          content_type: 'markdown',
+          title: 'Weekly report summary',
+        }),
+      ],
+    });
+    const { result } = renderHook(() => useUnifiedInbox());
+    const matching = result.current.filter((x) => x.source === 'dup-check');
+    expect(matching).toHaveLength(1);
+    expect(matching[0]?.kind).toBe('output');
   });
 });
