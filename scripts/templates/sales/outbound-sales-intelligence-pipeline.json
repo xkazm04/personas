@@ -535,7 +535,7 @@
         "connector_names": [
           "spreadsheet"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which spreadsheet backend should this persona use?",
         "type": "select",
         "dynamic_source": {

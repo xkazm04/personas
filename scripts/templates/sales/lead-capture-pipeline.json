@@ -797,7 +797,7 @@
         "connector_names": [
           "crm"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which CRM should this persona sync with?",
         "type": "select",
         "dynamic_source": {
@@ -816,7 +816,7 @@
         "connector_names": [
           "email"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
         "dynamic_source": {
@@ -835,7 +835,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {

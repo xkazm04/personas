@@ -24,13 +24,16 @@ import {
   TIME_PRESETS,
   WEEKDAYS,
   clampHour,
+  disableEventFamily,
+  disableTimeFamily,
   enableEventFamily,
   enableTimeFamily,
-  getFamily,
+  hasEvent,
+  hasTime,
   makeTriggerUpdater,
-  manualSelection,
   selectionForTimePreset,
-  type TimePreset,
+  updateEvent,
+  updateTime,
   type TriggerSelection,
   type UseCasePickerVariantProps,
 } from './useCasePickerShared';
@@ -98,7 +101,7 @@ export function UseCasePickerStepNeon({
         <div className="max-w-6xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-min">
           {useCases.map((uc, idx) => {
             const enabled = selectedIds.has(uc.id);
-            const sel = triggerSelections[uc.id] ?? uc.defaultSelection ?? manualSelection();
+            const sel = triggerSelections[uc.id] ?? uc.defaultSelection ?? ({} as TriggerSelection);
             const descExpanded = expandedDescId.has(uc.id);
             const hasDescription = uc.description && uc.description !== uc.capability_summary;
             const subtitle = uc.capability_summary ?? uc.description ?? null;
@@ -172,7 +175,7 @@ export function UseCasePickerStepNeon({
 
                 {enabled && (
                   <TriggerFamilies
-                    selection={sel}
+                    selection={sel ?? {}}
                     availableEvents={eventOptions}
                     availableEventKeys={availableEvents}
                     onChange={(next) => updateTrigger(uc.id, next)}
@@ -211,21 +214,26 @@ interface TriggerFamiliesProps {
   onChange: (next: TriggerSelection) => void;
 }
 
+/**
+ * Renders both trigger families independently. Either, neither, or
+ * BOTH can be active simultaneously — enabling one does not collapse
+ * the other. Templates whose author wanted a UC to fire on the weekly
+ * tick AND also react to a cross-capability event can express that
+ * by turning on both panels.
+ */
 function TriggerFamilies({
   selection,
   availableEvents,
   availableEventKeys,
   onChange,
 }: TriggerFamiliesProps) {
-  const family = getFamily(selection);
-
   return (
     <div className="flex flex-col gap-2">
-      {family === 'time' ? (
+      {hasTime(selection) ? (
         <TimeFamilyPanel
           selection={selection}
           onChange={onChange}
-          onDisable={() => onChange(manualSelection())}
+          onDisable={() => onChange(disableTimeFamily(selection))}
         />
       ) : (
         <AddFamilyButton
@@ -235,12 +243,12 @@ function TriggerFamilies({
         />
       )}
 
-      {family === 'event' ? (
+      {hasEvent(selection) ? (
         <EventFamilyPanel
           selection={selection}
           availableEvents={availableEvents}
           onChange={onChange}
-          onDisable={() => onChange(manualSelection())}
+          onDisable={() => onChange(disableEventFamily(selection))}
         />
       ) : (
         <AddFamilyButton
@@ -282,10 +290,10 @@ interface FamilyPanelProps {
 }
 
 function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
-  const sub: TimePreset =
-    selection.preset === 'hourly' || selection.preset === 'daily' || selection.preset === 'weekly'
-      ? selection.preset
-      : 'daily';
+  const time = selection.time;
+  const sub = time?.preset ?? 'daily';
+  const hourOfDay = time?.hourOfDay ?? 9;
+  const weekday = time?.weekday ?? 1;
 
   return (
     <div className="rounded-xl border border-brand-cyan/25 bg-brand-cyan/5 p-3 flex flex-col gap-3">
@@ -333,9 +341,9 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
             type="number"
             min={0}
             max={23}
-            value={selection.hourOfDay ?? 9}
+            value={hourOfDay}
             onChange={(e) =>
-              onChange({ ...selection, preset: 'daily', hourOfDay: clampHour(e.target.value) })
+              onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))
             }
             className="w-14 rounded-md border border-brand-cyan/30 bg-brand-cyan/10 px-2 py-1 font-mono text-foreground focus:outline-none focus:border-brand-cyan text-center"
           />
@@ -350,19 +358,12 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
             <span className="text-foreground/55 font-mono">on</span>
             <div className="inline-flex gap-1 rounded-lg border border-border bg-gradient-to-r from-brand-cyan/10 to-brand-purple/10 p-1">
               {WEEKDAYS.map((d, i) => {
-                const isActive = selection.weekday === i;
+                const isActive = weekday === i;
                 return (
                   <button
                     key={d}
                     type="button"
-                    onClick={() =>
-                      onChange({
-                        ...selection,
-                        preset: 'weekly',
-                        weekday: i,
-                        hourOfDay: selection.hourOfDay ?? 9,
-                      })
-                    }
+                    onClick={() => onChange(updateTime(selection, { weekday: i }))}
                     className={`rounded-md px-2 py-0.5 font-mono transition-colors ${
                       isActive
                         ? 'bg-brand-cyan/25 text-brand-cyan'
@@ -382,14 +383,9 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
               type="number"
               min={0}
               max={23}
-              value={selection.hourOfDay ?? 9}
+              value={hourOfDay}
               onChange={(e) =>
-                onChange({
-                  ...selection,
-                  preset: 'weekly',
-                  hourOfDay: clampHour(e.target.value),
-                  weekday: selection.weekday ?? 1,
-                })
+                onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))
               }
               className="w-14 rounded-md border border-brand-cyan/30 bg-brand-cyan/10 px-2 py-1 font-mono text-foreground focus:outline-none focus:border-brand-cyan text-center"
             />
@@ -443,8 +439,8 @@ function EventFamilyPanel({
               ? availableEvents
               : [{ value: '', label: '(no events defined by any capability)' }]
           }
-          value={selection.eventType ?? ''}
-          onValueChange={(v) => onChange({ preset: 'event', eventType: v })}
+          value={selection.event?.eventType ?? ''}
+          onValueChange={(v) => onChange(updateEvent(selection, { eventType: v }))}
           placeholder="Pick an event"
         />
       </div>

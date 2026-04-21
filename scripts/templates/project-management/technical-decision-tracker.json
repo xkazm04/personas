@@ -689,7 +689,7 @@
         "connector_names": [
           "knowledge_base"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
         "dynamic_source": {
@@ -708,7 +708,7 @@
         "connector_names": [
           "source_control"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which source-control credential should this persona operate with?",
         "type": "select",
         "dynamic_source": {

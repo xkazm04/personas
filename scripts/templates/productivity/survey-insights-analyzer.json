@@ -509,7 +509,7 @@
         "connector_names": [
           "knowledge_base"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
         "dynamic_source": {

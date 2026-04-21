@@ -726,7 +726,7 @@
         "connector_names": [
           "calendar"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which calendar should this persona read and write to?",
         "type": "select",
         "dynamic_source": {
@@ -745,7 +745,7 @@
         "connector_names": [
           "email"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
         "dynamic_source": {
@@ -764,7 +764,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {

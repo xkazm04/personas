@@ -806,7 +806,7 @@
         "connector_names": [
           "ticketing"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which ticketing system should this persona write to?",
         "type": "select",
         "dynamic_source": {
@@ -825,7 +825,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {

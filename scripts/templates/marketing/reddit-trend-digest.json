@@ -552,7 +552,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {

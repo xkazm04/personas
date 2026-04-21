@@ -760,7 +760,7 @@
         "connector_names": [
           "knowledge_base"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
         "dynamic_source": {
@@ -779,7 +779,7 @@
         "connector_names": [
           "email"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
         "dynamic_source": {
@@ -798,7 +798,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {

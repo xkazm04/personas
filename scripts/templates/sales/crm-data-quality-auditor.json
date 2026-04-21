@@ -675,7 +675,7 @@
         "connector_names": [
           "crm"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which CRM should this persona sync with?",
         "type": "select",
         "dynamic_source": {
@@ -694,7 +694,7 @@
         "connector_names": [
           "knowledge_base"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which knowledge base should this persona read from and write to?",
         "type": "select",
         "dynamic_source": {

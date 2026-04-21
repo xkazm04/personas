@@ -359,19 +359,6 @@
         "variable_name": "sector_interest",
         "context": "Shared across the congressional and gem-discovery use cases. Multi-select supported — comma-separate sectors.",
         "dimension": "use-cases"
-      },
-      {
-        "id": "aq_delivery_channel",
-        "scope": "persona",
-        "category": "configuration",
-        "question": "Where should the combined weekly briefing be delivered?",
-        "type": "select",
-        "options": ["In-app messages", "Email", "Slack"],
-        "default": "In-app messages",
-        "maps_to": "persona.notification_channels_default[0].type",
-        "variable_name": "delivery_channel",
-        "context": "All three capabilities concatenate into one combined briefing (message_composition: combined). This is where that briefing lands every Monday.",
-        "dimension": "messages"
       }
     ],
     "persona_meta": {

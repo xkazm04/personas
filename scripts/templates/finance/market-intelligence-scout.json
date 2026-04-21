@@ -656,7 +656,7 @@
         "connector_names": [
           "email"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which email provider should this persona use?",
         "type": "select",
         "dynamic_source": {

@@ -939,7 +939,7 @@
         "connector_names": [
           "social_feed"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which social feed should this persona monitor?",
         "type": "select",
         "dynamic_source": {

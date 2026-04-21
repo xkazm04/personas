@@ -210,86 +210,103 @@ function extractDimensionData(
  */
 function inferSelectionFromCron(cron: string): TriggerSelection {
   const parts = cron.trim().split(/\s+/);
-  if (parts.length !== 5) return { preset: "custom", customCron: cron };
+  if (parts.length !== 5) return { customCron: cron };
   const [minute, hour, dom, , dow] = parts;
   if (minute === "0" && hour === "*" && dom === "*" && dow === "*") {
-    return { preset: "hourly" };
+    return { time: { preset: "hourly" } };
   }
   const hourNum = parseInt(hour ?? "", 10);
   if (!Number.isNaN(hourNum) && dom === "*") {
-    if (dow === "*") return { preset: "daily", hourOfDay: hourNum };
+    if (dow === "*") return { time: { preset: "daily", hourOfDay: hourNum } };
     const dowNum = parseInt(dow ?? "", 10);
     if (!Number.isNaN(dowNum)) {
-      return { preset: "weekly", hourOfDay: hourNum, weekday: dowNum };
+      return { time: { preset: "weekly", hourOfDay: hourNum, weekday: dowNum } };
     }
   }
-  return { preset: "custom", customCron: cron };
+  return { customCron: cron };
 }
 
+type TriggerIR = { trigger_type: string; config: Record<string, string>; description: string };
+
 /**
- * Convert a user's TriggerSelection (preset + values) into a concrete
- * trigger shape the persona builder understands: {trigger_type, config,
- * description}. The returned object can be dropped straight into
- * use_cases[i].suggested_trigger or pushed onto suggested_triggers.
+ * Convert a user's TriggerSelection into one or more concrete trigger
+ * IRs the persona builder understands. The new dual-family model
+ * allows Time AND Event to be active at the same time, so this
+ * returns an array:
  *
- * Preset semantics:
- *   daily   → schedule / cron "0 H * * *"
- *   weekly  → schedule / cron "0 H * * D" (D = 0-6, Sun..Sat)
- *   hourly  → schedule / cron "0 * * * *"
- *   event   → event_listener / config.event_type = eventType
- *   custom  → schedule / cron = customCron verbatim (or manual if empty)
+ *   {}                        → [manual]          (UC runs only when invoked)
+ *   {time}                    → [schedule]        (fires on cron)
+ *   {event}                   → [event_listener]  (fires on emitted event)
+ *   {time, event}             → [schedule, event] (fires on BOTH)
+ *   {customCron}              → [schedule]        (template-authored cron kept verbatim)
  *
- * Timezone defaults to "local" — matches what the templates author.
+ * The first element is the "primary" trigger — it's what legacy
+ * consumers of suggested_trigger (single-valued) will see. The full
+ * array lands on the flat-IR suggested_triggers list so the runtime
+ * scheduler can register every trigger the user wanted.
  */
-function triggerSelectionToTrigger(
-  sel: TriggerSelection,
-): { trigger_type: string; config: Record<string, string>; description: string } {
-  switch (sel.preset) {
-    case "daily": {
-      const h = Math.max(0, Math.min(23, sel.hourOfDay ?? 9));
-      return {
+function triggerSelectionToTriggers(sel: TriggerSelection): TriggerIR[] {
+  const out: TriggerIR[] = [];
+
+  if (sel.time) {
+    const t = sel.time;
+    const h = Math.max(0, Math.min(23, t.hourOfDay ?? 9));
+    if (t.preset === "daily") {
+      out.push({
         trigger_type: "schedule",
         config: { cron: `0 ${h} * * *`, timezone: "local" },
         description: `Daily at ${String(h).padStart(2, "0")}:00 local.`,
-      };
-    }
-    case "weekly": {
-      const h = Math.max(0, Math.min(23, sel.hourOfDay ?? 9));
-      const d = Math.max(0, Math.min(6, sel.weekday ?? 1));
+      });
+    } else if (t.preset === "weekly") {
+      const d = Math.max(0, Math.min(6, t.weekday ?? 1));
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      return {
+      out.push({
         trigger_type: "schedule",
         config: { cron: `0 ${h} * * ${d}`, timezone: "local" },
         description: `Weekly on ${dayNames[d]} at ${String(h).padStart(2, "0")}:00 local.`,
-      };
-    }
-    case "hourly":
-      return {
+      });
+    } else {
+      // hourly — hour/weekday are preserved on the selection for
+      // round-trip UX, but the cron itself ignores them.
+      out.push({
         trigger_type: "schedule",
         config: { cron: "0 * * * *", timezone: "local" },
         description: "Hourly.",
-      };
-    case "event":
-      return {
-        trigger_type: "event_listener",
-        config: { event_type: sel.eventType ?? "" },
-        description: sel.eventType ? `Listens for ${sel.eventType}.` : "Event-driven.",
-      };
-    case "custom":
-      if (sel.customCron?.trim()) {
-        return {
-          trigger_type: "schedule",
-          config: { cron: sel.customCron.trim(), timezone: "local" },
-          description: `Custom cron: ${sel.customCron.trim()}.`,
-        };
-      }
-      return {
+      });
+    }
+  }
+
+  if (sel.event) {
+    const eventType = sel.event.eventType;
+    out.push({
+      trigger_type: "event_listener",
+      config: { event_type: eventType ?? "" },
+      description: eventType ? `Listens for ${eventType}.` : "Event-driven.",
+    });
+  }
+
+  if (out.length === 0) {
+    // No Time + no Event — fall back to the template-authored cron if
+    // present, else Manual. Preserves the Custom escape hatch.
+    const custom = sel.customCron?.trim();
+    if (custom) {
+      out.push({
+        trigger_type: "schedule",
+        config: { cron: custom, timezone: "local" },
+        description: `Custom cron: ${custom}.`,
+      });
+    } else {
+      out.push({
         trigger_type: "manual",
         config: {},
         description: "Manual — user invokes on demand.",
-      };
+      });
+    }
   }
+
+  return out;
 }
+
 
 /**
  * Return a shallow clone of designResult with each use_cases[i].suggested_trigger
@@ -307,19 +324,39 @@ function applyTriggerSelections(
 ): Record<string, unknown> {
   if (Object.keys(perUseCase).length === 0) return designResult;
   const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+  // Materialize each UC's selection into an array of triggers (Time +
+  // Event can both be active). We keep `suggested_trigger` singular for
+  // back-compat with consumers that haven't been migrated to the
+  // multi-trigger shape, and list every trigger on `suggested_triggers`
+  // so the runtime scheduler registers them all.
   const nextUseCases = ucRaw.map((uc) => {
     const id = String(uc.id ?? "");
     const sel = perUseCase[id];
     if (!sel) return uc;
-    return { ...uc, suggested_trigger: triggerSelectionToTrigger(sel) };
+    const triggers = triggerSelectionToTriggers(sel);
+    return {
+      ...uc,
+      suggested_trigger: triggers[0],
+      // Expose per-UC additional triggers for downstream consumers that
+      // know how to read them. Never present on templates the user
+      // left alone (back-compat).
+      additional_triggers: triggers.length > 1 ? triggers.slice(1) : undefined,
+    };
   });
-  // Rebuild suggested_triggers from the materialized per-UC triggers so the
-  // flat list consumers see reflects what the user picked.
+  // Rebuild the top-level suggested_triggers from every per-UC entry so
+  // the flat list consumers see reflects the full set the user picked.
   const nextSuggestedTriggers: Record<string, unknown>[] = [];
   for (const uc of nextUseCases) {
-    const trig = uc.suggested_trigger as Record<string, unknown> | undefined;
-    if (!trig) continue;
-    nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
+    const id = String(uc.id ?? "");
+    const sel = perUseCase[id];
+    if (!sel) {
+      const trig = uc.suggested_trigger as Record<string, unknown> | undefined;
+      if (trig) nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
+      continue;
+    }
+    for (const trig of triggerSelectionToTriggers(sel)) {
+      nextSuggestedTriggers.push({ ...trig, use_case_id: uc.id });
+    }
   }
   return {
     ...designResult,
@@ -468,17 +505,19 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     return persona.trigger_composition === "shared" ? "shared" : "per_use_case";
   }, [designResult]);
 
-  // Cross-UC event options — every emit from any enabled UC becomes a
-  // candidate for event-driven triggers on any other UC. Lets the user
-  // chain capabilities (e.g. "trigger optimization proposals on
-  // marketing.cannibalization.detected").
+  // Cross-UC event options — every emit from ANY capability in the
+  // template becomes a candidate for event-driven triggers, regardless
+  // of whether the emitting UC is currently enabled. Reason: the user
+  // may have a capability turned off at adoption time but still want
+  // another capability to react if/when it starts firing later (via
+  // separate activation, cross-persona events, or re-enabling through
+  // settings). Filtering here would silently hide cross-chain options
+  // the template explicitly documented.
   const availableEventTypes = useMemo<string[]>(() => {
     if (!designResult) return [];
     const ucs = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
     const out = new Set<string>();
     for (const uc of ucs) {
-      const id = String(uc.id ?? "");
-      if (showUseCasePicker && !selectedUseCaseIds.has(id)) continue;
       const subs = (uc.event_subscriptions ?? []) as Array<Record<string, unknown>>;
       for (const s of subs) {
         if (s.direction === "emit" && typeof s.event_type === "string") {
@@ -487,7 +526,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       }
     }
     return Array.from(out);
-  }, [designResult, selectedUseCaseIds, showUseCasePicker]);
+  }, [designResult]);
 
   // Enrich availableUseCases with a defaultSelection inferred from the
   // template's suggested_trigger cron so the combined step shows the
@@ -503,9 +542,9 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       const triggerType = String(suggested.trigger_type ?? "manual");
       let defaultSelection: TriggerSelection | undefined;
       if (triggerType === "event_listener" && typeof cfg.event_type === "string") {
-        defaultSelection = { preset: "event", eventType: cfg.event_type };
+        defaultSelection = { event: { eventType: cfg.event_type } };
       } else if (triggerType === "manual") {
-        defaultSelection = { preset: "custom", customCron: "" };
+        defaultSelection = {};
       } else if (typeof cfg.cron === "string") {
         defaultSelection = inferSelectionFromCron(cfg.cron);
       }
@@ -534,30 +573,30 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     return out;
   }, [availableUseCases]);
 
-  // Canonical dimension order mirrors the chronology / live-preview columns:
-  // triggers → use-cases → connectors → messages → review → memory → events →
-  // error-handling → boundaries → voice (persona-level tail). Questions
-  // without a dimension fall to the end of their bucket.
-  const dimensionOrder = useMemo<Record<string, number>>(() => {
+  // Canonical category order mirrors the Live Preview sidebar's bucket
+  // sequence (QuestionnaireFormFocus groups questions by `q.category` —
+  // the same CATEGORY_META keys that light up each preview section).
+  // Answering top-down thus walks the same order the preview renders, so
+  // the user always sees their latest answer pop into the section they're
+  // currently looking at. Questions with an unknown category fall to the
+  // end; within a bucket, authored order is preserved.
+  const categoryOrder = useMemo<Record<string, number>>(() => {
     const order = [
-      'triggers',
-      'use-cases',
-      'connectors',
-      'messages',
-      'review',
+      'credentials',
+      'configuration',
+      'domain',
+      'human_in_the_loop',
+      'quality',
       'memory',
-      'events',
-      'error-handling',
+      'notifications',
       'boundaries',
-      'voice',
     ];
     return Object.fromEntries(order.map((d, i) => [d, i]));
   }, []);
 
   // Filter adoption questions by selected use cases + sort to match the
-  // live-preview sidebar so answering top-down walks the agent's dimensions
-  // in the same order the preview renders them. Questions with no
-  // use_case_id / use_case_ids (persona or connector scope) always show.
+  // Live Preview bucket order. Questions with no use_case_id / use_case_ids
+  // (persona or connector scope) always show.
   const filteredAdoptionQuestions = useMemo(() => {
     const filtered = !showUseCasePicker
       ? adoptionQuestions
@@ -566,13 +605,13 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           if (tied.length === 0) return true;
           return tied.some((id) => selectedUseCaseIds.has(id));
         });
-    // Stable-sort by dimension then by original index so templates that
-    // don't declare dimensions keep their authored order.
+    // Stable-sort by category then by original index so templates that
+    // don't declare a category keep their authored order.
     return filtered
-      .map((q, idx) => ({ q, idx, dim: dimensionOrder[q.dimension ?? ''] ?? 999 }))
-      .sort((a, b) => (a.dim - b.dim) || (a.idx - b.idx))
+      .map((q, idx) => ({ q, idx, cat: categoryOrder[q.category ?? ''] ?? 999 }))
+      .sort((a, b) => (a.cat - b.cat) || (a.idx - b.idx))
       .map(({ q }) => q);
-  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker, dimensionOrder]);
+  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker, categoryOrder]);
   const hasFilteredQuestions = filteredAdoptionQuestions.length > 0;
 
   // Resolve dynamic option lists (Sentry projects, codebases, ...) from the

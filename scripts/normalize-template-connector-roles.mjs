@@ -282,7 +282,9 @@ function ensureVaultPickersForRoles(connectors, questions) {
       id: `aq_${role}_credential`,
       scope: 'connector',
       connector_names: [role],
-      category: 'configuration',
+      // Vault-picker questions go in the `credentials` bucket so they
+      // surface first in the Live Preview sidebar + questionnaire order.
+      category: 'credentials',
       question: roleDef?.q ?? `Which ${role} credential should this persona use?`,
       type: 'select',
       dynamic_source: {

@@ -720,7 +720,7 @@
         "connector_names": [
           "messaging"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which team messaging platform should this persona post to?",
         "type": "select",
         "dynamic_source": {
@@ -739,7 +739,7 @@
         "connector_names": [
           "source_control"
         ],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which source-control credential should this persona operate with?",
         "type": "select",
         "dynamic_source": {
