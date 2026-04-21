@@ -49,7 +49,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
               key={v.id}
               type="button"
               onClick={() => setView(v.id)}
-              className={`flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-modal border cursor-pointer transition-all ${
+              className={`focus-ring flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-modal border cursor-pointer transition-all ${
                 on
                   ? 'bg-primary/15 border-primary/30 text-foreground'
                   : 'bg-card-bg/50 border-card-border text-foreground/70 hover:bg-primary/5 hover:border-primary/20'
@@ -84,7 +84,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
             type="button"
             onClick={props.onContinue}
             disabled={!canContinue}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-modal bg-btn-primary text-background hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="focus-ring inline-flex items-center gap-2 px-5 py-2 rounded-modal bg-btn-primary text-white hover:bg-btn-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="w-4 h-4" /> Continue
           </button>

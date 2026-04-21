@@ -137,9 +137,9 @@ export function MessagingPickerVariantC() {
                   type="button"
                   onClick={() => setEnabled((prev) => { const n = new Set(prev); if (n.has(uc.id)) n.delete(uc.id); else n.add(uc.id); return n; })}
                   aria-pressed={on}
-                  className={`w-9 h-5 rounded-full transition-colors relative ${on ? 'bg-brand-cyan/70' : 'bg-foreground/20'}`}
+                  className={`focus-ring w-9 h-5 rounded-full transition-colors relative ${on ? 'bg-brand-cyan/70' : 'bg-foreground/20'}`}
                 >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-foreground transition-transform ${on ? 'translate-x-4' : ''}`} />
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${on ? 'translate-x-4' : ''}`} />
                 </button>
                 <h4 className="flex-1 typo-body-lg font-medium text-foreground">{uc.name}</h4>
                 <span className="typo-code text-foreground/50">{uc.id}</span>
@@ -163,7 +163,7 @@ export function MessagingPickerVariantC() {
                               key={chip.id}
                               type="button"
                               onClick={() => setTriggerByUc((prev) => ({ ...prev, [uc.id]: chip.id }))}
-                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 typo-caption transition-all ${
+                              className={`focus-ring inline-flex items-center gap-1 rounded-full border px-2 py-0.5 typo-caption transition-all ${
                                 active
                                   ? 'bg-brand-cyan/15 border-brand-cyan/40 text-brand-cyan'
                                   : 'bg-foreground/[0.03] border-border text-foreground/70 hover:text-foreground'
@@ -210,7 +210,7 @@ export function MessagingPickerVariantC() {
                               onClick={() => toggleChannel(uc.id, ch.id)}
                               title={`${ch.label}${ch.target ? ` · ${ch.target}` : ''}`}
                               aria-pressed={active}
-                              className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                              className={`focus-ring w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
                                 active
                                   ? `bg-card-bg border-brand-cyan/50 ${ch.color}`
                                   : 'bg-foreground/[0.03] border-border text-foreground/40 hover:text-foreground'
@@ -222,7 +222,7 @@ export function MessagingPickerVariantC() {
                         })}
                         <button
                           type="button"
-                          className="w-7 h-7 rounded-full border border-dashed border-border text-foreground/40 hover:text-foreground flex items-center justify-center"
+                          className="focus-ring w-7 h-7 rounded-full border border-dashed border-border text-foreground/40 hover:text-foreground flex items-center justify-center"
                           title="Add messaging credential via Vault"
                         >
                           <Plus className="w-3 h-3" />
@@ -250,7 +250,7 @@ export function MessagingPickerVariantC() {
                               type="button"
                               onClick={() => toggleBellEvent(uc.id, ev.event_type)}
                               aria-pressed={active}
-                              className="w-full flex items-center gap-1.5 text-left px-1 py-0.5 rounded-input hover:bg-foreground/[0.04]"
+                              className="focus-ring w-full flex items-center gap-1.5 text-left px-1 py-0.5 rounded-input hover:bg-foreground/[0.04]"
                             >
                               <div className={`w-3 h-3 rounded-input border flex-shrink-0 flex items-center justify-center ${active ? 'bg-brand-purple/30 border-brand-purple' : 'border-border'}`}>
                                 {active && <CheckCircle2 className="w-2 h-2 text-brand-purple" />}
@@ -269,7 +269,7 @@ export function MessagingPickerVariantC() {
                       type="button"
                       onClick={() => runTest(uc.id)}
                       disabled={testing === uc.id}
-                      className="inline-flex items-center gap-1.5 rounded-card border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 typo-body text-brand-cyan hover:bg-brand-cyan/20 disabled:opacity-50 flex-shrink-0"
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-card border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 typo-body text-brand-cyan hover:bg-brand-cyan/20 disabled:opacity-50 flex-shrink-0"
                     >
                       <Play className={`w-3.5 h-3.5 ${testing === uc.id ? 'animate-pulse' : ''}`} />
                       {testing === uc.id ? 'Running…' : 'Test run'}
