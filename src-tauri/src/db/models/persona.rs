@@ -234,6 +234,89 @@ pub struct DesignFilesSection {
     pub references: Vec<String>,
 }
 
+// v3.2 — helper mirror of the one in notifications.rs; duplicated per D-07 prep
+// guidance to avoid creating a shared module for a 2-line function.
+fn default_true() -> bool {
+    true
+}
+
+/// v3.2 — Sample output declared on a use case, persisted through the promote
+/// path into `design_context.use_cases[i].sample_output` (Phase 20 wires this).
+/// All fields are optional at the schema layer (D-04); missing `format` is
+/// coerced to `SampleOutputFormat::Plain` by `hoist_sample_outputs` in
+/// `engine::template_v3`, so downstream renderers always see a concrete value.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SampleOutput {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format: Option<SampleOutputFormat>,
+}
+
+/// v3.2 — Locked enum for `sample_output.format` (D-01). Unknown values are
+/// rejected at deserialize time by serde; the normalizer also warn-and-coerces
+/// any unknown JSON string it sees before deserialize (defense-in-depth).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum SampleOutputFormat {
+    Markdown,
+    Plain,
+    Json,
+    Html,
+}
+
+/// v3.2 — Shape-v2 notification channel entry on the persona row.
+/// Discriminant vs. legacy shape B: presence of `use_case_ids`.
+/// `credential_id` is optional because `type: "built-in"` and
+/// `type: "titlebar"` have no credential backing them (D-07; spec §4.2).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelSpecV2 {
+    #[serde(rename = "type")]
+    pub channel_type: ChannelSpecV2Type,
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential_id: Option<String>,
+    pub use_case_ids: ChannelScopeV2,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_filter: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Value>,
+}
+
+/// v3.2 — Channel type discriminator for shape v2. Kebab-case on the wire
+/// (`"built-in"`) to match the prototype + handoff doc spec.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "kebab-case")]
+pub enum ChannelSpecV2Type {
+    BuiltIn,
+    Titlebar,
+    Slack,
+    Telegram,
+    Email,
+}
+
+/// v3.2 — `use_case_ids` is either the sentinel string `"*"` (matches all UCs)
+/// or an explicit list of IDs. Empty list is rejected by the validator
+/// (`validation::persona::validate_notification_channels`). Untagged serde
+/// tries `String` before `Vec<String>`, which correctly maps `"*"` → All
+/// and `["uc_a"]` → Specific.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(untagged)]
+pub enum ChannelScopeV2 {
+    All(String),
+    Specific(Vec<String>),
+}
+
 /// A single use-case description extracted from design results.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -260,6 +343,10 @@ pub struct DesignUseCase {
     pub notification_channels: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_subscriptions: Option<serde_json::Value>,
+    // v3.2 — per-UC sample output for adoption preview + test delivery
+    // (SCHEMA-01). Preserved through the promote path as-is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sample_output: Option<SampleOutput>,
     /// Runtime toggle — `None` or `Some(true)` means active. Phase C1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,

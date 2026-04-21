@@ -67,6 +67,10 @@ pub fn normalize_v3_to_flat(payload: &mut Value) {
     default_connector_required(obj);
     hoist_composition_fields(obj);
     hoist_output_assertions(obj);
+    // v3.2 additions — see docs/concepts/persona-capabilities/C3-schema-v3.2-delta.md
+    hoist_sample_outputs(obj);
+    hoist_notify_titlebar_flags(obj);
+    hoist_channel_shape_v2_in_template(obj);
 }
 
 /// v3.1 — Collect persona-level and per-UC `output_assertions[]` into the flat
@@ -250,6 +254,113 @@ fn hoist_composition_fields(obj: &mut Map<String, Value>) {
         .or_insert(Value::String(trig));
     obj.entry("message_composition")
         .or_insert(Value::String(msg));
+}
+
+// v3.2 — Normalize `use_cases[i].sample_output` in place:
+//   • Defaults missing `format` to `"plain"` (D-04).
+//   • Warn-and-coerces any unknown `format` string to `"plain"` and logs
+//     a `tracing::warn!` with the template/use-case context (D-01 interpreted
+//     as warn-and-coerce; see phase RESEARCH.md § Risk 1 / Pitfall 1).
+//   • Missing `sample_output` on a UC is a no-op — field is optional (D-04).
+// Idempotent: second call finds `format: "plain"` (concrete) and does nothing.
+fn hoist_sample_outputs(obj: &mut Map<String, Value>) {
+    const KNOWN_FORMATS: [&str; 4] = ["markdown", "plain", "json", "html"];
+
+    let template_id_for_log = obj
+        .get("template_id")
+        .or_else(|| obj.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("<unknown>")
+        .to_string();
+
+    let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut()) else {
+        return;
+    };
+    for uc in use_cases.iter_mut() {
+        let Some(uc_obj) = uc.as_object_mut() else { continue };
+        let uc_id = uc_obj
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("<unknown>")
+            .to_string();
+        let Some(sample) = uc_obj.get_mut("sample_output").and_then(|v| v.as_object_mut()) else {
+            continue;
+        };
+        match sample.get("format").and_then(|v| v.as_str()) {
+            None => {
+                sample.insert("format".to_string(), Value::String("plain".to_string()));
+            }
+            Some(fmt) if !KNOWN_FORMATS.contains(&fmt) => {
+                tracing::warn!(
+                    template = %template_id_for_log,
+                    use_case_id = %uc_id,
+                    format = %fmt,
+                    "sample_output.format unknown; coercing to \"plain\" (v3.2 D-01)"
+                );
+                sample.insert("format".to_string(), Value::String("plain".to_string()));
+            }
+            Some(_) => { /* known value — leave untouched */ }
+        }
+    }
+}
+
+// v3.2 — Default `event_subscriptions[j].notify_titlebar` to `false` when
+// absent (D-03 — conservative opt-in; old templates get zero bell chatter).
+// Applies ONLY to `direction: "emit"` entries — listen-direction subscriptions
+// never trigger TitleBar notifications, so the field is meaningless there
+// (see RESEARCH.md § Pitfall 3).
+//
+// Operates on both `use_cases[i].event_subscriptions` (template input) and
+// any flattened copy at the top level — the existing `flatten_events_from_use_cases`
+// copies event objects verbatim, so defaulting in the source use_cases[] is
+// sufficient.  Idempotent: second call finds the key present and does nothing.
+fn hoist_notify_titlebar_flags(obj: &mut Map<String, Value>) {
+    fn default_in_subs_array(subs: &mut Vec<Value>) {
+        for sub in subs.iter_mut() {
+            let Some(sub_obj) = sub.as_object_mut() else { continue };
+            let direction = sub_obj.get("direction").and_then(|v| v.as_str()).unwrap_or("");
+            if direction != "emit" {
+                continue;
+            }
+            if !sub_obj.contains_key("notify_titlebar") {
+                sub_obj.insert("notify_titlebar".to_string(), Value::Bool(false));
+            }
+        }
+    }
+
+    // Template per-UC event subscriptions.
+    if let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
+        for uc in use_cases.iter_mut() {
+            let Some(uc_obj) = uc.as_object_mut() else { continue };
+            if let Some(subs) = uc_obj
+                .get_mut("event_subscriptions")
+                .and_then(|v| v.as_array_mut())
+            {
+                default_in_subs_array(subs);
+            }
+        }
+    }
+    // Any persona-level / flat event_subscriptions array that upstream passes
+    // bypassing the per-UC path.
+    if let Some(flat_subs) = obj
+        .get_mut("event_subscriptions")
+        .and_then(|v| v.as_array_mut())
+    {
+        default_in_subs_array(flat_subs);
+    }
+}
+
+// v3.2 — Template-side placeholder for shape-v2 channel defaults.
+// Shape v2 lives on the persona row (assembled at adoption time in Phase 20).
+// When a template declares `persona.notification_channels_default` with
+// shape-v2 entries, the existing `flatten_notification_channels` already copies
+// objects verbatim (keys like `use_case_ids`, `event_filter` survive). This
+// function is a documented no-op hook for future template-side validation —
+// e.g. rejecting `use_case_ids: []` at template-compile time. We leave the
+// guard to the persona-row validator for now (see RESEARCH.md § Risk 7).
+#[allow(clippy::ptr_arg)]
+fn hoist_channel_shape_v2_in_template(_obj: &mut Map<String, Value>) {
+    // Intentionally empty. Present for call-chain completeness + marker comment.
 }
 
 /// For each capability, if it has a `suggested_trigger`, append a copy to
@@ -1028,5 +1139,147 @@ mod tests {
             payload.get("message_composition").and_then(|v| v.as_str()),
             Some("combined")
         );
+    }
+
+    // ------------------------------------------------------------------
+    // v3.2 — sample_output + notify_titlebar + shape-v2 channel defaults
+    // ------------------------------------------------------------------
+
+    fn v32_fixture() -> Value {
+        let mut base = v3_fixture();
+        // Inject v3.2 fields onto the first use case.
+        if let Some(ucs) = base.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
+            if let Some(uc0) = ucs.get_mut(0).and_then(|v| v.as_object_mut()) {
+                uc0.insert(
+                    "sample_output".to_string(),
+                    json!({ "title": "Daily digest", "body": "3 urgent, 12 normal.", "format": "markdown" }),
+                );
+                uc0.insert(
+                    "event_subscriptions".to_string(),
+                    json!([
+                        { "direction": "emit",   "event": "email.digest.ready", "notify_titlebar": true  },
+                        { "direction": "emit",   "event": "email.digest.error"                            },
+                        { "direction": "listen", "event": "calendar.day.start"                            }
+                    ]),
+                );
+            }
+        }
+        base
+    }
+
+    #[test]
+    fn test_hoist_sample_outputs_passes_through() {
+        let mut payload = v32_fixture();
+        normalize_v3_to_flat(&mut payload);
+        let uc0 = &payload["use_cases"][0];
+        assert_eq!(uc0["sample_output"]["title"], "Daily digest");
+        assert_eq!(uc0["sample_output"]["body"], "3 urgent, 12 normal.");
+        assert_eq!(uc0["sample_output"]["format"], "markdown");
+    }
+
+    #[test]
+    fn test_hoist_sample_outputs_defaults_format_to_plain() {
+        let mut payload = v32_fixture();
+        // Remove format to test default.
+        payload["use_cases"][0]["sample_output"].as_object_mut().unwrap().remove("format");
+        normalize_v3_to_flat(&mut payload);
+        assert_eq!(payload["use_cases"][0]["sample_output"]["format"], "plain");
+    }
+
+    #[test]
+    fn test_hoist_sample_outputs_warn_and_coerce_unknown_format() {
+        let mut payload = v32_fixture();
+        payload["use_cases"][0]["sample_output"]["format"] = json!("xml");
+        normalize_v3_to_flat(&mut payload);
+        // Coerced to "plain" — warn side-effect not asserted here (log layer).
+        assert_eq!(payload["use_cases"][0]["sample_output"]["format"], "plain");
+    }
+
+    #[test]
+    fn test_hoist_sample_outputs_missing_field_is_noop() {
+        let mut payload = v3_fixture(); // no sample_output anywhere
+        let before = serde_json::to_string(&payload).unwrap();
+        normalize_v3_to_flat(&mut payload);
+        // v3_fixture normalization is unaffected by v3.2 additions — verifies
+        // regression safety via content equality on use_cases[0].sample_output absence.
+        assert!(payload["use_cases"][0].get("sample_output").is_none());
+        let _ = before; // retained for debugging
+    }
+
+    #[test]
+    fn test_hoist_notify_titlebar_defaults_false_on_emit() {
+        let mut payload = v32_fixture();
+        normalize_v3_to_flat(&mut payload);
+        let subs = payload["use_cases"][0]["event_subscriptions"].as_array().unwrap();
+        // Entry 0: explicit true — preserved.
+        assert_eq!(subs[0]["notify_titlebar"], true);
+        // Entry 1: emit, no explicit — defaulted to false.
+        assert_eq!(subs[1]["notify_titlebar"], false);
+        // Entry 2: listen — no notify_titlebar injected.
+        assert!(subs[2].get("notify_titlebar").is_none());
+    }
+
+    #[test]
+    fn test_hoist_notify_titlebar_preserves_explicit_values() {
+        let mut payload = v32_fixture();
+        payload["use_cases"][0]["event_subscriptions"][1]["notify_titlebar"] = json!(true);
+        normalize_v3_to_flat(&mut payload);
+        let subs = payload["use_cases"][0]["event_subscriptions"].as_array().unwrap();
+        assert_eq!(subs[0]["notify_titlebar"], true);
+        assert_eq!(subs[1]["notify_titlebar"], true);
+    }
+
+    #[test]
+    fn test_hoist_notify_titlebar_skips_listen_direction() {
+        // Separate fixture: single listen-only UC.
+        let mut payload = json!({
+            "use_cases": [{
+                "id": "uc_a",
+                "event_subscriptions": [{ "direction": "listen", "event": "ext.x" }]
+            }]
+        });
+        normalize_v3_to_flat(&mut payload);
+        assert!(payload["use_cases"][0]["event_subscriptions"][0]
+            .get("notify_titlebar")
+            .is_none());
+    }
+
+    #[test]
+    fn test_v32_idempotent() {
+        let mut payload = v32_fixture();
+        normalize_v3_to_flat(&mut payload);
+        let first = payload.clone();
+        normalize_v3_to_flat(&mut payload);
+        assert_eq!(first, payload, "v3.2 normalization must be idempotent");
+    }
+
+    #[test]
+    fn test_v3_1_regression_after_v32_additions() {
+        // v3_fixture carries no v3.2 fields — after normalize, the composition
+        // hoist (v3.1) still runs and the v3.2 code paths leave zero footprint
+        // on fields they don't own.
+        let mut payload = v3_fixture();
+        normalize_v3_to_flat(&mut payload);
+        // v3.1 invariants — existing tests already cover these; this is a smoke check.
+        assert_eq!(payload["trigger_composition"], "per_use_case");
+        assert_eq!(payload["message_composition"], "per_use_case");
+        // v3.2 fields absent.
+        assert!(payload["use_cases"][0].get("sample_output").is_none());
+    }
+
+    #[test]
+    fn test_sample_output_serde_roundtrip() {
+        let json = r#"{"title":"T","body":"B","format":"markdown"}"#;
+        let parsed: crate::db::models::persona::SampleOutput =
+            serde_json::from_str(json).expect("valid markdown format parses");
+        let out = serde_json::to_string(&parsed).unwrap();
+        assert!(out.contains("\"format\":\"markdown\""));
+    }
+
+    #[test]
+    fn test_sample_output_format_unknown_value_deserialize_error() {
+        let json = r#"{"format":"xml"}"#;
+        let parsed: Result<crate::db::models::persona::SampleOutput, _> = serde_json::from_str(json);
+        assert!(parsed.is_err(), "unknown format must fail at serde layer (D-01)");
     }
 }
