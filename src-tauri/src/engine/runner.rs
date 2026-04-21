@@ -1923,9 +1923,13 @@ pub async fn run_execution(
         let msg_id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let _ = pool.get().map(|conn| {
+            // Phase 17: content_type="output" is the canonical marker for execution-
+            // produced summaries. Simple-mode's useUnifiedInbox surfaces these as
+            // `output` kind items via isMessageOutput(), preferring this explicit
+            // signal over the pre-Phase-17 keyword heuristic.
             conn.execute(
                 "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
-                 SELECT ?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6
+                 SELECT ?1, ?2, ?3, ?4, ?5, 'output', 'normal', ?6
                  WHERE NOT EXISTS (
                      SELECT 1 FROM persona_executions WHERE id = ?3
                      AND status IN ('completed', 'failed', 'cancelled')
