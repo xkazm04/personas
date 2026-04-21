@@ -73,8 +73,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Combined weekly briefing — signals + congressional + gems sections in one message."
+          "type": "built-in",
+          "description": "Combined weekly briefing — signals + congressional + gems sections delivered as one in-app message. User can add Slack / Telegram / email at adoption via the channel picker."
         }
       ],
       "core_memories": []
