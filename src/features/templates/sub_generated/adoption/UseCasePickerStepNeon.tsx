@@ -81,7 +81,7 @@ export function UseCasePickerStepNeon({
             <Sparkles className="w-5 h-5 text-brand-purple" />
             <h2 className="text-xl font-semibold text-foreground">Choose capabilities</h2>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 typo-body font-mono uppercase tracking-[0.12em] text-foreground bg-gradient-to-r from-brand-cyan/20 to-brand-purple/20 border border-brand-cyan/30">
+          <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 typo-body font-mono uppercase tracking-[0.12em] text-foreground bg-gradient-to-r from-primary/20 to-brand-purple/20 ring-1 ring-primary/30">
             <Activity className="w-3 h-3" />
             {triggerComposition === 'shared' ? 'shared trigger' : 'per-UC triggers'}
           </span>
@@ -121,10 +121,10 @@ export function UseCasePickerStepNeon({
                   <button
                     type="button"
                     onClick={() => onToggle(uc.id)}
-                    className={`flex-shrink-0 mt-1 w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
+                    className={`focus-ring flex-shrink-0 mt-1 w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
                       enabled
-                        ? 'bg-brand-cyan border-brand-cyan'
-                        : 'bg-transparent border-foreground/25 hover:border-foreground/40'
+                        ? 'bg-primary ring-1 ring-primary'
+                        : 'bg-transparent ring-1 ring-foreground/25 hover:ring-foreground/40'
                     }`}
                     aria-label={enabled ? 'Disable capability' : 'Enable capability'}
                   >
@@ -296,7 +296,7 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
   const weekday = time?.weekday ?? 1;
 
   return (
-    <div className="rounded-xl border border-brand-cyan/25 bg-brand-cyan/5 p-3 flex flex-col gap-3">
+    <div className="rounded-xl ring-1 ring-primary/25 bg-primary/5 p-3 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-1.5 typo-body-lg font-mono uppercase tracking-wider text-brand-cyan">
           <Clock className="w-3.5 h-3.5" />
@@ -345,7 +345,7 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
             onChange={(e) =>
               onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))
             }
-            className="w-14 rounded-md border border-brand-cyan/30 bg-brand-cyan/10 px-2 py-1 font-mono text-foreground focus:outline-none focus:border-brand-cyan text-center"
+            className="focus-ring w-14 rounded-md ring-1 ring-primary/30 focus:ring-primary bg-primary/10 px-2 py-1 font-mono text-foreground focus:outline-none text-center"
           />
           <span className="text-foreground/55 font-mono">:00</span>
         </div>
@@ -356,7 +356,7 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
           {/* Days row */}
           <div className="flex items-center gap-2 typo-body-lg">
             <span className="text-foreground/55 font-mono">on</span>
-            <div className="inline-flex gap-1 rounded-lg border border-border bg-gradient-to-r from-brand-cyan/10 to-brand-purple/10 p-1">
+            <div className="inline-flex gap-1 rounded-lg ring-1 ring-border bg-gradient-to-r from-primary/10 to-brand-purple/10 p-1">
               {WEEKDAYS.map((d, i) => {
                 const isActive = weekday === i;
                 return (
@@ -387,7 +387,7 @@ function TimeFamilyPanel({ selection, onChange, onDisable }: FamilyPanelProps) {
               onChange={(e) =>
                 onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))
               }
-              className="w-14 rounded-md border border-brand-cyan/30 bg-brand-cyan/10 px-2 py-1 font-mono text-foreground focus:outline-none focus:border-brand-cyan text-center"
+              className="focus-ring w-14 rounded-md ring-1 ring-primary/30 focus:ring-primary bg-primary/10 px-2 py-1 font-mono text-foreground focus:outline-none text-center"
             />
             <span className="text-foreground/55 font-mono">:00</span>
           </div>
@@ -414,7 +414,7 @@ function EventFamilyPanel({
   onDisable,
 }: EventFamilyPanelProps) {
   return (
-    <div className="rounded-xl border border-brand-purple/25 bg-brand-purple/5 p-3 flex flex-col gap-3">
+    <div className="rounded-xl ring-1 ring-brand-purple/25 bg-brand-purple/5 p-3 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-1.5 typo-body-lg font-mono uppercase tracking-wider text-brand-purple">
           <Zap className="w-3.5 h-3.5" />
