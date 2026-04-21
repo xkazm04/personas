@@ -1456,7 +1456,12 @@ fn emit_status(
 /// Returns a lowercase category key that matches `CATEGORY_META` in the
 /// frontend (TemplateSearchBar.tsx).  Falls back to `"productivity"` when
 /// no rule matches.
-fn infer_template_category(instruction: &str, connectors_used: Option<&str>) -> String {
+///
+/// Exposed `pub(crate)` in Phase 17 so `template_adopt.rs` can populate the
+/// persona's `template_category` column with the same taxonomy used by the
+/// reviews flow. Keeping the function here avoids moving the private
+/// `RULES` table across modules.
+pub(crate) fn infer_template_category(instruction: &str, connectors_used: Option<&str>) -> String {
     let text = instruction.to_lowercase();
 
     // Ordered by specificity -- more specific patterns first.

@@ -463,11 +463,25 @@ pub fn confirm_template_adopt_draft(
         let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
             .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
-        let draft = normalize_n8n_persona_draft(draft, "Adopted Template");
+        let mut draft = normalize_n8n_persona_draft(draft, "Adopted Template");
 
         if draft.system_prompt.trim().is_empty() {
             return Err(AppError::Validation(
                 "Draft system_prompt cannot be empty".into(),
+            ));
+        }
+
+        // Phase 17: backfill template_category if the UI submitted a draft
+        // without one (e.g. drafts serialized before Phase 17 shipped). Keeps
+        // tier-3 illustration resolution working on every adopted persona.
+        if draft.template_category.is_none() {
+            let connectors_json = draft.required_connectors.as_ref().and_then(|conns| {
+                serde_json::to_string(&conns.iter().map(|c| c.name.clone()).collect::<Vec<_>>())
+                    .ok()
+            });
+            draft.template_category = Some(super::reviews::infer_template_category(
+                &draft.system_prompt,
+                connectors_json.as_deref(),
             ));
         }
 
@@ -615,6 +629,17 @@ pub fn instant_adopt_template_inner(
     });
     let design_context_str = serde_json::to_string(&design_context_obj).unwrap_or_else(|_| "{}".to_string());
 
+    // Phase 17: derive template_category from the instruction text + connector names
+    // so Simple-mode's tier-3 illustration resolver can bucket this persona.
+    // Uses the same heuristic as `review_from_execution` to keep vocabularies aligned.
+    let connectors_json_for_category = required_connectors.as_ref().and_then(|conns| {
+        serde_json::to_string(&conns.iter().map(|c| c.name.clone()).collect::<Vec<_>>()).ok()
+    });
+    let inferred_category = super::reviews::infer_template_category(
+        &full_prompt,
+        connectors_json_for_category.as_deref(),
+    );
+
     // Build the N8nPersonaOutput draft
     let draft = N8nPersonaOutput {
         name: Some(persona_name),
@@ -628,6 +653,7 @@ pub fn instant_adopt_template_inner(
         max_turns: None,
         design_context: Some(design_context_str),
         notification_channels,
+        template_category: Some(inferred_category),
         triggers,
         tools,
         required_connectors,
@@ -782,7 +808,23 @@ fn handle_adopt_result(
     template_name: &str,
 ) {
     match result {
-        Ok((draft, _)) => {
+        Ok((mut draft, _)) => {
+            // Phase 17: ensure every drafted persona carries a template_category
+            // so the Simple-mode illustration tier-3 works on Claude-transformed
+            // drafts too (not just instant-adopt). Uses system_prompt as the
+            // instruction stand-in since that's what the LLM authored.
+            if draft.template_category.is_none() {
+                let connectors_json = draft.required_connectors.as_ref().and_then(|conns| {
+                    serde_json::to_string(
+                        &conns.iter().map(|c| c.name.clone()).collect::<Vec<_>>(),
+                    )
+                    .ok()
+                });
+                draft.template_category = Some(super::reviews::infer_template_category(
+                    &draft.system_prompt,
+                    connectors_json.as_deref(),
+                ));
+            }
             if let Err(err) = set_adopt_draft(adopt_id, &draft) {
                 let msg = format!("Failed to serialize adoption draft: {err}");
                 tracing::error!(adopt_id = %adopt_id, error = %msg, "draft serialization failed");
