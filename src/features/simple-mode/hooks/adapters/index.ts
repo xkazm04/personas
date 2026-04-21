@@ -6,3 +6,4 @@
 export { adaptApproval } from './approvalAdapter';
 export { adaptMessage } from './messageAdapter';
 export { adaptHealing } from './healingAdapter';
+export { adaptOutput, isMessageOutput } from './outputAdapter';
