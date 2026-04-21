@@ -49,7 +49,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("finance/budget-spending-monitor.json", "0009c134edc59d44");
     m.insert("finance/expense-receipt-processor.json", "0003d6d09aab6406");
     m.insert("finance/finance-controller.json", "0019a395cbdc732e");
-    m.insert("finance/financial-stocks-signaller.json", "000701e9a37b52c1");
+    m.insert("finance/financial-stocks-signaller.json", "001cf512f1311624");
     m.insert("finance/freelancer-invoice-autopilot.json", "000f219057b60f84");
     m.insert("finance/invoice-tracker.json", "001aea7e0cacc375");
     m.insert("finance/market-intelligence-scout.json", "0009337e51e62d7c");

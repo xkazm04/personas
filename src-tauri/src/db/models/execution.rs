@@ -95,6 +95,23 @@ pub struct GlobalExecutionRow {
     pub persona_color: Option<String>,
 }
 
+/// Aggregate counts across all executions grouped by the high-level status
+/// categories surfaced in the Activity filter bar. Used to render precise
+/// filter badges independently from the paginated row list.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ExecutionCounts {
+    #[ts(type = "number")]
+    pub total: i64,
+    /// Includes both `running` and `pending` — the UI bucket is "Running".
+    #[ts(type = "number")]
+    pub running: i64,
+    #[ts(type = "number")]
+    pub completed: i64,
+    #[ts(type = "number")]
+    pub failed: i64,
+}
+
 impl PersonaExecution {
     /// Parse the status string into the canonical ExecutionState enum.
     /// Logs an error if the stored status is unrecognised so data corruption

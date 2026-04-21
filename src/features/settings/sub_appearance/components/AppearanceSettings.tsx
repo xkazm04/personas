@@ -204,25 +204,32 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          {/* Interface mode */}
-          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
-            <p className="text-xs text-foreground">
-              {s.interface_mode_hint}
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <ModeComparisonCard
-                mode="starter"
-                isActive={viewMode === TIERS.STARTER}
-                onSelect={() => setViewMode(TIERS.STARTER)}
-              />
-              <ModeComparisonCard
-                mode="team"
-                isActive={viewMode === TIERS.TEAM}
-                onSelect={() => setViewMode(TIERS.TEAM)}
-              />
+          {/* Interface mode — dev preview of Simple-mode redesign */}
+          {import.meta.env.DEV && (
+            <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20 bg-card-bg p-6 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
+                <span className="typo-caption font-semibold tracking-wide uppercase text-amber-400 shrink-0">
+                  Simple-mode redesign · preview
+                </span>
+              </div>
+              <p className="text-xs text-foreground">
+                {s.interface_mode_hint}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <ModeComparisonCard
+                  mode="starter"
+                  isActive={viewMode === TIERS.STARTER}
+                  onSelect={() => setViewMode(TIERS.STARTER)}
+                />
+                <ModeComparisonCard
+                  mode="team"
+                  isActive={viewMode === TIERS.TEAM}
+                  onSelect={() => setViewMode(TIERS.TEAM)}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Text sizing */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">

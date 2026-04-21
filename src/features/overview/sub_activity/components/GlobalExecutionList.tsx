@@ -11,8 +11,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
-import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { ExecutionDetail } from '@/features/agents/sub_executions';
+import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -32,7 +31,8 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 };
 // Note: FILTER_LABELS values are used at module scope; runtime t() calls below.
 
-const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 140px 120px';
+const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 160px';
+const EXEC_ROW_HEIGHT = 56;
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All statuses' },
@@ -51,12 +51,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const {
     globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
     globalExecutionsWarning, fetchGlobalExecutions,
+    globalExecutionCounts, fetchGlobalExecutionCounts,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     globalExecutionsTotal: s.globalExecutionsTotal,
     globalExecutionsOffset: s.globalExecutionsOffset,
     globalExecutionsWarning: s.globalExecutionsWarning,
     fetchGlobalExecutions: s.fetchGlobalExecutions,
+    globalExecutionCounts: s.globalExecutionCounts,
+    fetchGlobalExecutionCounts: s.fetchGlobalExecutionCounts,
   })));
   const personas = useAgentStore((s) => s.personas);
 
@@ -78,15 +81,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
   });
 
-  const statusCounts = useMemo(() => {
-    const counts: Record<FilterStatus, number> = { all: personaFiltered.length, running: 0, completed: 0, failed: 0 };
-    for (const exec of personaFiltered) {
-      if (exec.status === 'running' || exec.status === 'pending') counts.running++;
-      else if (exec.status === 'completed') counts.completed++;
-      else if (exec.status === 'failed') counts.failed++;
-    }
-    return counts;
-  }, [personaFiltered]);
+  // Server-side counts — precise totals for the filter badges, independent
+  // of whichever status/page is currently loaded. Falls back to zero until
+  // the first fetch completes.
+  const statusCounts: Record<FilterStatus, number> = {
+    all: globalExecutionCounts.total,
+    running: globalExecutionCounts.running,
+    completed: globalExecutionCounts.completed,
+    failed: globalExecutionCounts.failed,
+  };
 
   const statusPredicate = useCallback((e: GlobalExecution) =>
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
@@ -115,22 +118,28 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     const load = async () => {
       setIsLoading(true);
       const statusParam = filter === 'all' ? undefined : filter;
-      try { await fetchGlobalExecutions(true, statusParam); }
+      try {
+        await Promise.all([
+          fetchGlobalExecutions(true, statusParam),
+          fetchGlobalExecutionCounts(selectedPersonaId || undefined),
+        ]);
+      }
       finally { if (active) setIsLoading(false); }
     };
     load();
     return () => { active = false; };
-  }, [filter, fetchGlobalExecutions]);
+  }, [filter, fetchGlobalExecutions, fetchGlobalExecutionCounts, selectedPersonaId]);
 
   const hasRunning = useMemo(
     () => globalExecutions.some((e) => e.status === 'running' || e.status === 'pending'),
     [globalExecutions],
   );
 
-  const pollFetch = useCallback(() => {
+  const pollFetch = useCallback(async () => {
     const statusParam = filter === 'all' ? undefined : filter;
-    return fetchGlobalExecutions(true, statusParam);
-  }, [filter, fetchGlobalExecutions]);
+    await fetchGlobalExecutions(true, statusParam);
+    await fetchGlobalExecutionCounts(selectedPersonaId || undefined);
+  }, [filter, fetchGlobalExecutions, fetchGlobalExecutionCounts, selectedPersonaId]);
 
   usePolling(pollFetch, {
     interval: POLLING_CONFIG.runningExecutions.interval,
@@ -147,12 +156,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     setIsRefreshing(true);
     try {
       const statusParam = filter === 'all' ? undefined : filter;
-      await fetchGlobalExecutions(true, statusParam);
+      await Promise.all([
+        fetchGlobalExecutions(true, statusParam),
+        fetchGlobalExecutionCounts(selectedPersonaId || undefined),
+      ]);
     } finally { setIsRefreshing(false); }
   };
 
   const hasMore = globalExecutionsOffset < globalExecutionsTotal;
-  const { parentRef, virtualizer } = useVirtualList(filteredExecutions, 44);
+  const { parentRef, virtualizer } = useVirtualList(filteredExecutions, EXEC_ROW_HEIGHT);
 
   return (
     <ContentBox>
@@ -240,7 +252,6 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
                       <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
                     </div>
-                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground">{t.overview.activity.col_id}</div>
                   </div>
                 )}
 
@@ -295,7 +306,6 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
                         <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
-                        <div className="px-4 min-w-0"><span className="typo-code text-foreground font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
                       </div>
                     );
                   })}
@@ -315,9 +325,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       )}
 
       {selectedExec && (
-        <DetailModal title={`${selectedExec.persona_name || t.overview.activity.unknown} - ${t.overview.activity.execution_label}`} subtitle={`${t.overview.activity.col_id}: ${selectedExec.id}`} onClose={() => setSelectedExec(null)}>
-          <ExecutionDetail execution={selectedExec} />
-        </DetailModal>
+        <ExecutionDetailModal execution={selectedExec} onClose={() => setSelectedExec(null)} />
       )}
     </ContentBox>
   );

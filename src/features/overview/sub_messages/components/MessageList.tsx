@@ -18,7 +18,7 @@ import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/Persona
 import { seedMockMessage } from '@/api/overview/messages';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { priorityConfig, GRID_TEMPLATE_COLUMNS, deliveryStatusConfig } from '../libs/messageHelpers';
+import { priorityConfig, GRID_TEMPLATE_COLUMNS, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
 
 type PriorityFilter = 'all' | 'high' | 'normal' | 'low';
 type ReadFilter = 'all' | 'unread' | 'read';
@@ -50,7 +50,6 @@ export default function MessageList() {
     messages, messagesTotal,
     fetchMessages, fetchUnreadMessageCount,
     markMessageAsRead, markAllMessagesAsRead, deleteMessage,
-    deliverySummaries,
     viewMode, setViewMode,
     threadSummaries, threadCount, expandedThreadId, threadReplies,
     fetchThreadSummaries, expandThread, collapseThread,
@@ -62,7 +61,6 @@ export default function MessageList() {
     markMessageAsRead: s.markMessageAsRead,
     markAllMessagesAsRead: s.markAllMessagesAsRead,
     deleteMessage: s.deleteMessage,
-    deliverySummaries: s.deliverySummaries,
     viewMode: s.viewMode,
     setViewMode: s.setViewMode,
     threadSummaries: s.threadSummaries,
@@ -170,7 +168,23 @@ export default function MessageList() {
   }, [fetchMessages]);
 
   const remaining = messagesTotal - messages.length;
-  const { parentRef, virtualizer } = useVirtualList(filteredMessages, 40);
+  const { parentRef, virtualizer } = useVirtualList(filteredMessages, MESSAGE_ROW_HEIGHT);
+
+  // Keyboard navigation inside the open modal: Left/Right arrows step through
+  // the currently-filtered messages. Wrapping to find the index each keypress
+  // keeps us honest if the list changes underneath us (new realtime arrival,
+  // user deletes one, etc.).
+  const navigateMessage = useCallback((direction: 1 | -1) => {
+    setSelectedMsg((current) => {
+      if (!current) return current;
+      const idx = filteredMessages.findIndex((m) => m.id === current.id);
+      if (idx === -1) return current;
+      const next = filteredMessages[idx + direction];
+      if (!next) return current;
+      if (!next.is_read) markMessageAsRead(next.id);
+      return next;
+    });
+  }, [filteredMessages, markMessageAsRead]);
 
   const defaultPriority = { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
@@ -387,7 +401,6 @@ export default function MessageList() {
                       onChange={(v) => setPriorityFilter(v as PriorityFilter)}
                     />
                   </div>
-                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_delivery}</div>
                   <div role="columnheader" className="px-4 py-1.5 flex items-center justify-center">
                     <ColumnDropdownFilter
                       label="Status"
@@ -419,16 +432,6 @@ export default function MessageList() {
                           </div>
                           <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                           <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-card typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
-                          <div role="gridcell" className="px-4 flex justify-center">
-                            {(() => {
-                              const ds = deliverySummaries.get(message.id);
-                              if (!ds) return <span className="typo-caption text-foreground">—</span>;
-                              if (ds.failed > 0) { const c = deliveryStatusConfig['failed']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.failed} failed</span>; }
-                              if (ds.pending > 0) { const c = deliveryStatusConfig['pending']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.pending} pending</span>; }
-                              if (ds.delivered > 0) { const c = deliveryStatusConfig['delivered']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.delivered} sent</span>; }
-                              return <span className="typo-caption text-foreground">—</span>;
-                            })()}
-                          </div>
                           <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
                           <div role="gridcell" className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(message.created_at)}</span></div>
                         </div>
@@ -444,7 +447,19 @@ export default function MessageList() {
       </ContentBody>
 
       <AnimatePresence>
-        {selectedMsg && <MessageDetailModal message={selectedMsg} onClose={() => setSelectedMsg(null)} onDelete={() => deleteMessage(selectedMsg.id)} />}
+        {selectedMsg && (
+          <MessageDetailModal
+            message={selectedMsg}
+            onClose={() => setSelectedMsg(null)}
+            onDelete={() => deleteMessage(selectedMsg.id)}
+            onNavigate={navigateMessage}
+            hasPrev={filteredMessages.findIndex((m) => m.id === selectedMsg.id) > 0}
+            hasNext={(() => {
+              const i = filteredMessages.findIndex((m) => m.id === selectedMsg.id);
+              return i !== -1 && i < filteredMessages.length - 1;
+            })()}
+          />
+        )}
       </AnimatePresence>
     </ContentBox>
   );

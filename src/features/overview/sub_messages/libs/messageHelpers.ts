@@ -17,12 +17,15 @@ export const FILTER_LABELS: Record<FilterType, string> = {
 export const COLUMN_WIDTHS = {
   persona: '280px',
   priority: '180px',
-  delivery: '100px',
-  status: '70px',
-  created: '100px',
+  status: '120px',
+  created: '140px',
 } as const;
 
-export const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,2fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.delivery} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
+export const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,2fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
+
+/** Row height for the flat message list. Matches the Activity list to keep
+ *  the persona icon + body text comfortably aligned on a single row. */
+export const MESSAGE_ROW_HEIGHT = 56;
 
 export const deliveryStatusConfig: Record<string, { icon: typeof CheckCircle2; color: string; bgColor: string; borderColor: string; label: string }> = {
   delivered: { icon: CheckCircle2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', label: 'Delivered' },

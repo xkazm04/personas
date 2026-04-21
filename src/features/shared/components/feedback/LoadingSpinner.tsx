@@ -1,12 +1,10 @@
-import { Loader2 } from 'lucide-react';
-
 const sizeClasses = {
-  xs: 'w-3 h-3',
-  sm: 'w-3.5 h-3.5',
-  md: 'w-4 h-4',
-  lg: 'w-5 h-5',
-  xl: 'w-6 h-6',
-  '2xl': 'w-8 h-8',
+  xs: '',
+  sm: '',
+  md: '',
+  lg: '',
+  xl: '',
+  '2xl': '',
 } as const;
 
 interface LoadingSpinnerProps {
@@ -15,22 +13,16 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export function LoadingSpinner({ size = 'md', label, className }: LoadingSpinnerProps) {
-  const spinner = (
-    <Loader2
-      aria-hidden="true"
-      className={`${sizeClasses[size]} animate-spin ${className ?? ''}`}
-    />
-  );
-
+// Spinners are intentionally disabled app-wide. The component stays for import
+// compatibility but renders nothing; a screen-reader-only label is preserved
+// when callers provide one so assistive tech still hears loading state.
+export function LoadingSpinner({ label }: LoadingSpinnerProps) {
   if (label) {
     return (
-      <span role="status" className="inline-flex items-center gap-1.5">
-        {spinner}
-        <span className="sr-only">{label}</span>
+      <span role="status" className="sr-only">
+        {label}
       </span>
     );
   }
-
-  return spinner;
+  return null;
 }

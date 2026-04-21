@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus};
+use crate::db::models::{ExecutionCounts, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus};
 use crate::db::DbPool;
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
@@ -127,6 +127,51 @@ pub fn get_all_global(
     let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
 
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Aggregate execution counts by high-level status bucket, optionally
+/// filtered to a single persona. Returns precise server-side totals so the
+/// Activity filter badges do not depend on how many rows have been paged in.
+pub fn count_all_global(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+) -> Result<ExecutionCounts, AppError> {
+    timed_query!("persona_executions", "persona_executions::count_all_global", {
+        let conn = pool.get()?;
+        let mut sql = String::from(
+            "SELECT status, COUNT(*) AS n FROM persona_executions \
+             WHERE (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
+        );
+        if persona_id.is_some() {
+            sql.push_str(" AND persona_id = ?1");
+        }
+        sql.push_str(" GROUP BY status");
+
+        let mut stmt = conn.prepare(&sql)?;
+        let mut counts = ExecutionCounts::default();
+        let map_row = |row: &Row| -> rusqlite::Result<(String, i64)> {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        };
+
+        let iter: Box<dyn Iterator<Item = rusqlite::Result<(String, i64)>>> =
+            if let Some(pid) = persona_id {
+                Box::new(stmt.query_map(params![pid], map_row)?)
+            } else {
+                Box::new(stmt.query_map([], map_row)?)
+            };
+
+        for row in iter {
+            let (status, n) = row.map_err(AppError::Database)?;
+            counts.total += n;
+            match status.as_str() {
+                "running" | "pending" => counts.running += n,
+                "completed" => counts.completed += n,
+                "failed" => counts.failed += n,
+                _ => {}
+            }
+        }
+        Ok(counts)
     })
 }
 

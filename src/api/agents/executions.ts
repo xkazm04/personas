@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { GlobalExecutionRow } from "@/lib/bindings/GlobalExecutionRow";
+import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
@@ -23,6 +24,9 @@ export const listAllExecutions = (limit?: number, status?: string, personaId?: s
     status: status,
     personaId: personaId,
   });
+
+export const countExecutions = (personaId?: string) =>
+  invoke<ExecutionCounts>("count_executions", { personaId });
 
 export const getExecution = (id: string, callerPersonaId: string) =>
   invoke<PersonaExecution>("get_execution", { id, callerPersonaId });

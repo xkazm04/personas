@@ -8,7 +8,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { updateManualReviewStatus } from '@/api/overview/reviews';
 import { deleteMessage } from '@/api/overview/messages';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
+import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
 import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';
@@ -54,13 +54,10 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
   const modals = (
     <>
       {selectedExecution && (
-        <DetailModal
-          title={tx(t.agents.activity.modal_execution_title, { name: personaName })}
-          subtitle={tx(t.agents.activity.modal_execution_subtitle, { id: selectedExecution.id })}
+        <ExecutionDetailModal
+          execution={{ ...selectedExecution, persona_name: personaName }}
           onClose={() => setSelectedExecution(null)}
-        >
-          <ExecutionDetail execution={selectedExecution} />
-        </DetailModal>
+        />
       )}
 
       {selectedEvent && (

@@ -12,7 +12,8 @@ import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
-import { listAllExecutions } from "@/api/agents/executions";
+import { listAllExecutions, countExecutions } from "@/api/agents/executions";
+import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import { getExecutionDashboard, getMetricsChartData, getMetricsSummary } from "@/api/overview/observability";
 import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } from "@/api/overview/reviews";
 
@@ -33,6 +34,10 @@ export interface OverviewSlice {
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
   globalExecutionsLimit: number;
+  /** Precise server-side counts for the Activity filter badges (total /
+   *  running / completed / failed). Updated independently from the paged
+   *  row list so the badges stay accurate regardless of what's loaded. */
+  globalExecutionCounts: ExecutionCounts;
 
   // State -- reviews (local)
   manualReviews: ManualReviewItem[];
@@ -65,6 +70,7 @@ export interface OverviewSlice {
   setPipelineFetchedAt: (source: string) => void;
   clearPipelineErrors: () => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
+  fetchGlobalExecutionCounts: (personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: ManualReviewStatus; reviewer_notes?: string }) => Promise<void>;
   fetchPendingReviewCount: () => Promise<void>;
@@ -114,6 +120,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
+  globalExecutionCounts: { total: 0, running: 0, completed: 0, failed: 0 },
   manualReviews: [],
   manualReviewsTotal: 0,
   pendingReviewCount: 0,
@@ -181,6 +188,15 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     } catch (err) {
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
       reportError(err, "Failed to fetch global executions", set);
+    }
+  },
+
+  fetchGlobalExecutionCounts: async (personaId?: string) => {
+    try {
+      const counts = await countExecutions(personaId);
+      set({ globalExecutionCounts: counts });
+    } catch (err) {
+      log.warn('overviewSlice', 'fetchGlobalExecutionCounts failed', { error: String(err) });
     }
   },
 

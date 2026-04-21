@@ -4,8 +4,8 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface DetailModalProps {
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   onClose: () => void;
   actions?: ReactNode;
   children: ReactNode;
