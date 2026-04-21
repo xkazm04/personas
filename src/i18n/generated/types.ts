@@ -8023,6 +8023,7 @@ export type Translations = {
       of_label: string;
       nav_hint: string;
       the_ask_label: string;
+      the_output_label: string;
       details_label: string;
       suggested_label: string;
       suggested_hint: string;

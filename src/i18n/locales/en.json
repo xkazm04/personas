@@ -8033,6 +8033,7 @@
       "of_label": "of",
       "nav_hint": "arrow keys to navigate",
       "the_ask_label": "The ask",
+      "the_output_label": "Output",
       "details_label": "Details",
       "suggested_label": "Suggested",
       "suggested_hint": "press 1–{n}",
