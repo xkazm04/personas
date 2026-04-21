@@ -8046,7 +8046,14 @@
       "action_dismiss": "Dismiss",
       "action_mark_read": "Mark as read",
       "action_running": "Working…",
-      "try_this_label": "Try this"
+      "try_this_label": "Try this",
+      "relative_just_now": "just now",
+      "relative_minutes_one": "{m}m ago",
+      "relative_minutes_other": "{m}m ago",
+      "relative_hours_one": "{h}h ago",
+      "relative_hours_other": "{h}h ago",
+      "relative_days_one": "{d}d ago",
+      "relative_days_other": "{d}d ago"
     }
   },
   "status_tokens": {

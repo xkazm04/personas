@@ -8037,6 +8037,13 @@ export type Translations = {
       action_mark_read: string;
       action_running: string;
       try_this_label: string;
+      relative_just_now: string;
+      relative_minutes_one: string;
+      relative_minutes_other: string;
+      relative_hours_one: string;
+      relative_hours_other: string;
+      relative_days_one: string;
+      relative_days_other: string;
     };
   };
   status_tokens: {

@@ -13,7 +13,6 @@
  */
 import type { ReactNode } from 'react';
 
-import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 
@@ -31,8 +30,10 @@ export interface DetailHeaderProps {
 }
 
 export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
+  // `t` is the full Translations bundle — passed straight through to
+  // formatRelativeTime which reads plural-aware keys from
+  // `t.simple_mode.inbox.relative_*` (Phase 15-01).
   const { t } = useTranslation();
-  const s: Translations['simple_mode'] = t.simple_mode;
 
   const personas = useAgentStore((st) => st.personas);
   const persona = personas.find((p) => p.id === item.personaId) ?? null;
@@ -73,7 +74,7 @@ export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
           </span>
           <span className="text-foreground/30">·</span>
           <span className="typo-caption text-foreground/55 shrink-0">
-            {formatRelativeTime(s, item.createdAt)}
+            {formatRelativeTime(item.createdAt, t)}
           </span>
         </div>
 

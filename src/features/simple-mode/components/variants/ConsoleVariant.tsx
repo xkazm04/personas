@@ -145,12 +145,14 @@ export default function ConsoleVariant() {
       <div className="flex-1 min-h-0 grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <PersonaGrid
           t={t.simple_mode}
+          tFull={t}
           personas={personas}
           lastRuns={personaLastRun}
           onCreate={startOnboarding}
         />
         <InboxFeed
           t={t.simple_mode}
+          tFull={t}
           items={inbox}
           onRowClick={onRowClick}
         />
@@ -265,6 +267,8 @@ function StatusPill({ tone, icon, label, value, pulse = false }: StatusPillProps
 
 interface PersonaGridProps {
   t: TMap;
+  /** Full translation bundle — needed by leaf formatRelativeTime calls. */
+  tFull: Translations;
   personas: Persona[];
   lastRuns: Record<string, string | null>;
   onCreate: () => void;
@@ -275,7 +279,7 @@ interface PersonaGridProps {
  * persona grid below (with a dashed "create new" tile at the end so the CTA
  * is always visible regardless of persona count).
  */
-function PersonaGrid({ t, personas, lastRuns, onCreate }: PersonaGridProps) {
+function PersonaGrid({ t, tFull, personas, lastRuns, onCreate }: PersonaGridProps) {
   return (
     <section className="border-r border-foreground/10 p-5 flex flex-col min-h-0">
       <div className="mb-4 shrink-0">
@@ -285,7 +289,7 @@ function PersonaGrid({ t, personas, lastRuns, onCreate }: PersonaGridProps) {
       </div>
       <div className="grid grid-cols-2 gap-3 content-start flex-1 min-h-0 overflow-auto pb-1">
         {personas.map((p) => (
-          <PersonaTile key={p.id} t={t} persona={p} lastRun={lastRuns[p.id] ?? null} />
+          <PersonaTile key={p.id} t={t} tFull={tFull} persona={p} lastRun={lastRuns[p.id] ?? null} />
         ))}
         <CreateTile t={t} onClick={onCreate} />
       </div>
@@ -295,6 +299,7 @@ function PersonaGrid({ t, personas, lastRuns, onCreate }: PersonaGridProps) {
 
 interface PersonaTileProps {
   t: TMap;
+  tFull: Translations;
   persona: Persona;
   lastRun: string | null;
 }
@@ -311,7 +316,7 @@ interface PersonaTileProps {
  * of scope for v1 (see Plan 08-01 context). Row renders empty but reserves
  * the space so the last-run footer is always at the same height.
  */
-function PersonaTile({ t, persona, lastRun }: PersonaTileProps) {
+function PersonaTile({ t, tFull, persona, lastRun }: PersonaTileProps) {
   const illustration = useIllustration(persona);
   const tone = toneForPersona(persona);
   const isActive = persona.enabled !== false;
@@ -348,7 +353,7 @@ function PersonaTile({ t, persona, lastRun }: PersonaTileProps) {
           <div className="flex gap-1 flex-wrap min-h-[1px]" aria-hidden />
           <div className="flex items-center justify-between typo-caption text-foreground/60 border-t border-foreground/10 pt-1">
             <span className="italic">{t.tile_last_run_label}</span>
-            <span className="text-foreground/80">{formatRelativeTime(t, lastRun)}</span>
+            <span className="text-foreground/80">{formatRelativeTime(lastRun, tFull)}</span>
           </div>
         </div>
       </div>
@@ -405,6 +410,7 @@ function CreateTile({ t, onClick }: { t: TMap; onClick: () => void }) {
 
 interface InboxFeedProps {
   t: TMap;
+  tFull: Translations;
   items: UnifiedInboxItem[];
   onRowClick: () => void;
 }
@@ -414,7 +420,7 @@ interface InboxFeedProps {
  * feed. Empty state is a centered "all caught up" card so the column never
  * looks broken — it always communicates state.
  */
-function InboxFeed({ t, items, onRowClick }: InboxFeedProps) {
+function InboxFeed({ t, tFull, items, onRowClick }: InboxFeedProps) {
   return (
     <section className="flex flex-col min-h-0 bg-background/30">
       <div className="px-4 py-4 border-b border-foreground/10 shrink-0 flex items-center justify-between">
@@ -430,7 +436,7 @@ function InboxFeed({ t, items, onRowClick }: InboxFeedProps) {
       ) : (
         <div className="flex-1 overflow-auto divide-y divide-foreground/5">
           {items.map((item) => (
-            <InboxRow key={item.id} t={t} item={item} onClick={onRowClick} />
+            <InboxRow key={item.id} t={t} tFull={tFull} item={item} onClick={onRowClick} />
           ))}
         </div>
       )}
@@ -456,11 +462,12 @@ function EmptyFeed({ t }: { t: TMap }) {
 
 interface InboxRowProps {
   t: TMap;
+  tFull: Translations;
   item: UnifiedInboxItem;
   onClick: () => void;
 }
 
-function InboxRow({ t, item, onClick }: InboxRowProps) {
+function InboxRow({ t, tFull, item, onClick }: InboxRowProps) {
   const tone = toneForInbox(item);
   // Phase 09 will promote these to real per-item actions; for now they share
   // the row's fall-through to the Inbox tab but stop the row's onClick so the
@@ -494,7 +501,7 @@ function InboxRow({ t, item, onClick }: InboxRowProps) {
         <div className="typo-caption text-foreground/55 flex items-center gap-1.5">
           <span className="italic truncate">{item.personaName}</span>
           <span className="text-foreground/30">·</span>
-          <span className="shrink-0">{formatRelativeTime(t, item.createdAt)}</span>
+          <span className="shrink-0">{formatRelativeTime(item.createdAt, tFull)}</span>
         </div>
       </div>
 

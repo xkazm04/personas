@@ -25,6 +25,11 @@ import { formatRelativeTime } from '../../utils/formatRelativeTime';
 type SimpleModeT = Translations['simple_mode'];
 type Tone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 
+// formatRelativeTime (Phase 15-01) takes the full Translations bundle so it
+// can resolve plural-aware keys under simple_mode.inbox.relative_*. We thread
+// the full `t` from useTranslation through to each InboxRow alongside the
+// narrowed `simple_mode` slice the rest of the row uses.
+
 type FilterKey = 'all' | 'needsme';
 
 export interface InboxListProps {
@@ -100,6 +105,7 @@ export function InboxList({
           <InboxRow
             key={item.id}
             t={s}
+            tFull={t}
             item={item}
             selected={item.id === selectedId}
             onClick={() => onSelect(item.id)}
@@ -160,12 +166,14 @@ function FilterChip({
 }
 
 function InboxRow({
-  t,
+  t: _t,
+  tFull,
   item,
   selected,
   onClick,
 }: {
   t: SimpleModeT;
+  tFull: Translations;
   item: UnifiedInboxItem;
   selected: boolean;
   onClick: () => void;
@@ -193,7 +201,7 @@ function InboxRow({
           <div className="typo-caption text-foreground/55 flex items-center gap-1.5">
             <span className="italic truncate">{item.personaName}</span>
             <span className="text-foreground/30">·</span>
-            <span className="shrink-0">{formatRelativeTime(t, item.createdAt)}</span>
+            <span className="shrink-0">{formatRelativeTime(item.createdAt, tFull)}</span>
           </div>
         </div>
       </button>
