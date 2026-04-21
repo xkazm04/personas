@@ -27,6 +27,7 @@ function persona(overrides: Partial<ResolverInput> = {}): ResolverInput {
     description: null,
     icon: null,
     design_context: null,
+    template_category: null,
     ...overrides,
   };
 }
@@ -199,6 +200,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       description: 'Processes invoices nightly',
       icon: null,
       design_context: null,
+      template_category: null,
     });
     expect(r.category).toBe('finance');
   });
@@ -210,6 +212,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       description: 'Coordinator for the daily standup',
       icon: null,
       design_context: null,
+      template_category: null,
     });
     expect(r.category).toBe('meetings');
   });
@@ -221,6 +224,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       description: 'Reviews every pull request',
       icon: null,
       design_context: null,
+      template_category: null,
     });
     expect(r.category).toBe('code');
   });
@@ -232,6 +236,7 @@ describe('KEYWORD_MAP false-positive regression', () => {
       description: 'Handles direct message pings',
       icon: null,
       design_context: null,
+      template_category: null,
     });
     expect(r.category).toBe('chat');
   });
@@ -288,6 +293,119 @@ describe('design_context enrichment (Phase 16)', () => {
       }),
     );
     expect(r.category).toBe('code');
+  });
+});
+
+describe('template_category tier-3 (Phase 17)', () => {
+  // Phase 17 Topic A: `persona.template_category` is populated by the Rust
+  // `infer_template_category` helper during template adoption. The resolver
+  // maps its 30+ category vocabulary to the 12 illustration bins via
+  // TEMPLATE_CATEGORY_MAP. Unmapped categories fall through to tier-4 hash.
+
+  it("maps 'development' to 'code'", () => {
+    const r = resolveIllustration(
+      persona({ id: 't1', name: 'Code Assistant', template_category: 'development' }),
+    );
+    expect(r.category).toBe('code');
+  });
+
+  it("maps 'finance' to 'finance'", () => {
+    const r = resolveIllustration(
+      persona({ id: 't2', name: 'Expense Tracker', template_category: 'finance' }),
+    );
+    expect(r.category).toBe('finance');
+  });
+
+  it("maps 'documentation' to 'writing'", () => {
+    const r = resolveIllustration(
+      // Name has 'docs' which could trigger tier-2, but 'writing' is expected
+      // only if tier-3 fires BEFORE tier-2. Use an id so tier-4 isn't empty.
+      // NOTE: tier-3 runs AFTER tier-2 in the cascade — so if name contains a
+      // tier-2 keyword, tier-2 wins. Use a name with no tier-2 hits.
+      persona({
+        id: 't3',
+        name: 'Knowledge Curator',
+        description: null,
+        template_category: 'documentation',
+      }),
+    );
+    expect(r.category).toBe('writing');
+  });
+
+  it("maps 'support' to 'chat'", () => {
+    const r = resolveIllustration(
+      persona({
+        id: 't4',
+        name: 'Helpdesk Agent',
+        description: null,
+        template_category: 'support',
+      }),
+    );
+    expect(r.category).toBe('chat');
+  });
+
+  it("maps 'marketing' to 'social'", () => {
+    const r = resolveIllustration(
+      persona({
+        id: 't5',
+        name: 'Campaign Runner',
+        description: null,
+        template_category: 'marketing',
+      }),
+    );
+    expect(r.category).toBe('social');
+  });
+
+  it('template_category=null falls through to tier-2 keyword (name: "Slack Bot" → chat)', () => {
+    const r = resolveIllustration(
+      persona({
+        id: 't6',
+        name: 'Slack Bot',
+        template_category: null,
+      }),
+    );
+    expect(r.category).toBe('chat');
+  });
+
+  it('unmapped template_category falls through to tier-4 hash (deterministic valid category)', () => {
+    const r = resolveIllustration(
+      persona({
+        id: 't7-unique',
+        name: 'Zzzz', // no tier-2 hit
+        description: 'qqqqq', // no tier-2 hit
+        icon: null,
+        template_category: 'brand-new-category-not-in-map',
+      }),
+    );
+    // The unmapped category should NOT throw, and should return a valid
+    // category from CATEGORIES via the hash tier.
+    expect(CATEGORIES).toContain(r.category as IllustrationCategory);
+    expect(r.url).toMatch(URL_RE);
+  });
+
+  it('tier-3 fires BEFORE tier-4 hash when category maps', () => {
+    // Pick two personas with the same id (→ same tier-4 hash bucket) but
+    // one with template_category='finance' — they should diverge because
+    // tier-3 short-circuits before tier-4 for the mapped persona.
+    const hashOnly = resolveIllustration(
+      persona({ id: 'shared-hash-id', name: 'Zzzz', description: 'qqqqq' }),
+    );
+    const tier3 = resolveIllustration(
+      persona({
+        id: 'shared-hash-id',
+        name: 'Zzzz',
+        description: 'qqqqq',
+        template_category: 'finance',
+      }),
+    );
+    expect(tier3.category).toBe('finance');
+    // Not guaranteed to differ from hashOnly.category, but if they coincide
+    // it must be because hash(id)%12 also lands on 'finance'; the tier-3
+    // path is still correct. What we lock here is that tier-3 returns
+    // 'finance' regardless of the hash-tier outcome.
+    expect(tier3.category).toBe('finance');
+    // Sanity: hashOnly is still a valid category.
+    expect(CATEGORIES).toContain(hashOnly.category as IllustrationCategory);
   });
 });
 
