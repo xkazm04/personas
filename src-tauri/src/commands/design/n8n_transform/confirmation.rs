@@ -98,8 +98,8 @@ pub fn create_persona_atomically(
          (id, project_id, name, description, system_prompt, structured_prompt,
           icon, color, enabled, max_concurrent, timeout_ms,
           model_profile, max_budget_usd, max_turns, design_context, group_id,
-          notification_channels, created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
+          notification_channels, template_category, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
         params![
             persona_id,
             project_id,
@@ -118,6 +118,7 @@ pub fn create_persona_atomically(
             draft.design_context,
             Option::<String>::None, // group_id
             encrypted_channels,
+            draft.template_category,
             now,
         ],
     ) {

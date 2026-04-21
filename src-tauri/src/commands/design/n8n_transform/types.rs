@@ -13,6 +13,12 @@ pub struct N8nPersonaOutput {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub notification_channels: Option<String>,
+    /// Phase 17: lowercase template category derived via `infer_template_category`
+    /// during template adoption. Fed into the persona row's `template_category`
+    /// column so Simple-mode's illustration resolver tier-3 can bucket it.
+    /// Absent for drafts produced by code paths that don't have instruction text.
+    #[serde(default)]
+    pub template_category: Option<String>,
     // Entity fields -- populated by connector-aware transform
     pub triggers: Option<Vec<N8nTriggerDraft>>,
     pub tools: Option<Vec<N8nToolDraft>>,
