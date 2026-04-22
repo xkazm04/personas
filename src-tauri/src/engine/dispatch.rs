@@ -252,11 +252,19 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         let channels = ctx.resolve_notification_channels();
                         let title_str = m.title.clone().unwrap_or_else(|| "New message".to_string());
                         if let Some(app) = ctx.app_handle {
+                            let delivery_ctx = crate::notifications::DeliveryContext {
+                                persona_id: ctx.persona_id.to_string(),
+                                persona_name: ctx.persona_name.to_string(),
+                                use_case_id: ctx.use_case_id.map(|s| s.to_string()),
+                                emit_event_type: None, // UserMessage => always bypasses event_filter (D-02)
+                                priority: None,
+                            };
                             crate::notifications::notify_new_message(
                                 app,
                                 ctx.persona_name,
                                 &title_str,
                                 channels.as_deref(),
+                                &delivery_ctx,
                             );
                         }
                     }
@@ -569,11 +577,19 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     } else {
                         let channels = ctx.resolve_notification_channels();
                         if let Some(app) = ctx.app_handle {
+                            let delivery_ctx = crate::notifications::DeliveryContext {
+                                persona_id: ctx.persona_id.to_string(),
+                                persona_name: ctx.persona_name.to_string(),
+                                use_case_id: ctx.use_case_id.map(|s| s.to_string()),
+                                emit_event_type: None, // ManualReview => always bypasses event_filter (D-02)
+                                priority: None,
+                            };
                             crate::notifications::notify_manual_review(
                                 app,
                                 ctx.persona_name,
                                 title,
                                 channels.as_deref(),
+                                &delivery_ctx,
                             );
                         }
                     }

@@ -286,11 +286,180 @@ pub struct NotificationDeliveryEvent {
 }
 
 // ---------------------------------------------------------------------------
+// Shape-v2 channel filtering helpers (pure — no AppHandle, testable)
+// ---------------------------------------------------------------------------
+
+/// Filter channels by enabled flag and use_case_ids scoping. (DELIV-05)
+/// Pure function: takes owned channels, returns the subset that should receive delivery.
+pub(crate) fn filter_channels_for_delivery(
+    channels: Vec<ChannelSpecV2>,
+    ctx: &DeliveryContext,
+) -> Vec<ChannelSpecV2> {
+    channels
+        .into_iter()
+        .filter(|ch| {
+            if !ch.enabled {
+                return false;
+            }
+            match &ch.use_case_ids {
+                ChannelScopeV2::All(_) => true,
+                ChannelScopeV2::Specific(ids) => ctx
+                    .use_case_id
+                    .as_deref()
+                    .map(|uc| ids.iter().any(|id| id == uc))
+                    .unwrap_or(false),
+            }
+        })
+        .collect()
+}
+
+/// Apply event_filter gating. (DELIV-03, D-02)
+/// - `emit_event_type == None` (UserMessage/ManualReview) → filter bypassed, all channels pass.
+/// - `emit_event_type == Some(evt)` (EmitEvent) → channel only passes if its event_filter is
+///   empty/absent OR explicitly lists `evt`.
+pub(crate) fn apply_event_filter(
+    channels: &[ChannelSpecV2],
+    ctx: &DeliveryContext,
+) -> Vec<ChannelSpecV2> {
+    channels
+        .iter()
+        .filter(|ch| match &ctx.emit_event_type {
+            None => true, // UserMessage + ManualReview bypass filter (D-02)
+            Some(evt) => match &ch.event_filter {
+                None => true,
+                Some(f) if f.is_empty() => true,
+                Some(f) => f.iter().any(|x| x == evt),
+            },
+        })
+        .cloned()
+        .collect()
+}
+
+// ---------------------------------------------------------------------------
+// Shape-v2 channel delivery
+// ---------------------------------------------------------------------------
+
+/// Shape-v2 channel delivery. Applies `use_case_ids` scoping + `event_filter`
+/// gating; dispatches to per-channel-type delivery paths. (DELIV-01, DELIV-02, DELIV-03, DELIV-05)
+fn deliver_v2_channels(
+    app: &AppHandle,
+    channels: Vec<ChannelSpecV2>,
+    title: &str,
+    body: &str,
+    ctx: &DeliveryContext,
+) {
+    let enabled = filter_channels_for_delivery(channels, ctx);
+    let gated = apply_event_filter(&enabled, ctx);
+
+    for ch in gated {
+        match ch.channel_type {
+            ChannelSpecV2Type::BuiltIn => {
+                // True no-op: the messages table insert already happened
+                // upstream in dispatch.rs::dispatch() before channels are resolved.
+                // No metrics, no event. (DELIV-01, D-03)
+                tracing::trace!(
+                    "built-in channel: delivery is a no-op (message already in inbox)"
+                );
+            }
+            ChannelSpecV2Type::Titlebar => {
+                let payload = TitlebarNotificationPayload {
+                    persona_id: ctx.persona_id.clone(),
+                    persona_name: ctx.persona_name.clone(),
+                    use_case_id: ctx.use_case_id.clone(),
+                    event_type: ctx.emit_event_type.clone(),
+                    title: title.to_string(),
+                    body: body.to_string(),
+                    priority: ctx
+                        .priority
+                        .clone()
+                        .unwrap_or_else(|| "normal".to_string()),
+                };
+                emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
+                DELIVERY_METRICS.for_channel("titlebar").record_success(0);
+            }
+            ChannelSpecV2Type::Slack | ChannelSpecV2Type::Telegram | ChannelSpecV2Type::Email => {
+                // Translate ChannelSpecV2 config to the ExternalChannel form expected by
+                // the existing async deliver_* functions.
+                let ch_type = match ch.channel_type {
+                    ChannelSpecV2Type::Slack => "slack",
+                    ChannelSpecV2Type::Telegram => "telegram",
+                    ChannelSpecV2Type::Email => "email",
+                    _ => unreachable!(),
+                };
+                // Build config map from serde_json::Value (shape-v2 config is Value)
+                let config: HashMap<String, String> = ch
+                    .config
+                    .as_ref()
+                    .and_then(|v| v.as_object())
+                    .map(|obj| {
+                        obj.iter()
+                            .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let external = ExternalChannel {
+                    channel_type: ch_type.to_string(),
+                    enabled: ch.enabled,
+                    credential_id: ch.credential_id.clone(),
+                    config,
+                };
+                let app = app.clone();
+                let title = title.to_string();
+                let body = body.to_string();
+                tokio::spawn(async move {
+                    let start = std::time::Instant::now();
+                    let result = match external.channel_type.as_str() {
+                        "slack" => deliver_slack(&external, &title, &body).await,
+                        "telegram" => deliver_telegram(&external, &title, &body).await,
+                        "email" => deliver_email(&external, &title, &body).await,
+                        other => {
+                            tracing::debug!(channel_type = %other, "unknown shape-v2 external type");
+                            Ok(())
+                        }
+                    };
+                    let latency_ms = start.elapsed().as_millis() as u64;
+                    let metrics = DELIVERY_METRICS.for_channel(&external.channel_type);
+                    match &result {
+                        Ok(_) => metrics.record_success(latency_ms),
+                        Err(e) => {
+                            metrics.record_failure();
+                            tracing::warn!(
+                                error = %e,
+                                channel_type = %external.channel_type,
+                                "shape-v2 external delivery failed"
+                            );
+                        }
+                    }
+                });
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Multi-channel delivery
 // ---------------------------------------------------------------------------
 
 /// Deliver a notification to all enabled external channels (fire-and-forget).
-fn deliver_to_channels(app: &AppHandle, channels_json: Option<&str>, title: &str, body: &str) {
+/// Accepts a `DeliveryContext` so that:
+///   - shape-v2 paths can apply `event_filter` gating and `use_case_ids` scoping
+///   - the `"titlebar"` arm can build a correctly-typed `TitlebarNotificationPayload`
+///
+/// Shape-v2 channels (detected by `parse_channels_v2`) are handled by
+/// `deliver_v2_channels`; legacy shape-A/B falls through to the existing loop.
+pub(crate) fn deliver_to_channels(
+    app: &AppHandle,
+    channels_json: Option<&str>,
+    title: &str,
+    body: &str,
+    ctx: &DeliveryContext,
+) {
+    // Shape-v2 path (DELIV-01, DELIV-02, DELIV-03, DELIV-05)
+    if let Some(v2_channels) = parse_channels_v2(channels_json) {
+        deliver_v2_channels(app, v2_channels, title, body, ctx);
+        return;
+    }
+    // Legacy shape-A/B path — no DeliveryContext filtering needed
     let channels = parse_channels(channels_json);
     let enabled: Vec<_> = channels.into_iter().filter(|c| c.enabled).collect();
     if enabled.is_empty() {
@@ -583,7 +752,17 @@ pub fn notify_execution_completed_rich(
         }
     }
     send(app, &title, &body);
-    deliver_to_channels(app, channels, &title, &body);
+    // notify_execution_completed_rich is called from runner.rs which may not have
+    // a DeliveryContext; use an empty-sentinel context (emit_event_type: None so
+    // event_filter is bypassed — execution completion is UserMessage-class per D-02).
+    let delivery_ctx = DeliveryContext {
+        persona_id: String::new(), // sentinel: runner call site lacks persona_id in scope
+        persona_name: persona_name.to_string(),
+        use_case_id: None,
+        emit_event_type: None, // always bypasses event_filter
+        priority: None,
+    };
+    deliver_to_channels(app, channels, &title, &body, &delivery_ctx);
 }
 
 pub fn notify_manual_review(
@@ -591,6 +770,7 @@ pub fn notify_manual_review(
     persona_name: &str,
     title: &str,
     channels: Option<&str>,
+    delivery_ctx: &DeliveryContext,
 ) {
     if !parse_prefs(channels).manual_review {
         return;
@@ -598,7 +778,7 @@ pub fn notify_manual_review(
     let heading = "Manual Review Needed";
     let body = format!("{}: {}", persona_name, title);
     send(app, heading, &body);
-    deliver_to_channels(app, channels, heading, &body);
+    deliver_to_channels(app, channels, heading, &body, delivery_ctx);
 }
 
 pub fn notify_new_message(
@@ -606,13 +786,14 @@ pub fn notify_new_message(
     persona_name: &str,
     title: &str,
     channels: Option<&str>,
+    delivery_ctx: &DeliveryContext,
 ) {
     if !parse_prefs(channels).new_message {
         return;
     }
     let heading = format!("Message from {}", persona_name);
     send(app, &heading, title);
-    deliver_to_channels(app, channels, &heading, title);
+    deliver_to_channels(app, channels, &heading, title, delivery_ctx);
 }
 
 pub fn notify_healing_issue(
@@ -637,7 +818,14 @@ pub fn notify_healing_issue(
     };
     let heading = format!("Healing Alert ({})", severity);
     send(app, &heading, &body);
-    deliver_to_channels(app, channels, &heading, &body);
+    let delivery_ctx = DeliveryContext {
+        persona_id: String::new(),
+        persona_name: persona_name.to_string(),
+        use_case_id: None,
+        emit_event_type: None, // healing alerts are UserMessage-class — bypass filter
+        priority: Some("high".to_string()),
+    };
+    deliver_to_channels(app, channels, &heading, &body, &delivery_ctx);
 }
 
 pub fn notify_n8n_transform_completed(
@@ -913,5 +1101,102 @@ mod tests {
         assert!(json.get("channelType").is_some(), "channelType key missing");
         assert!(json.get("latencyMs").is_some(), "latencyMs key missing");
         assert!(json.get("rateLimited").is_some(), "rateLimited key missing");
+    }
+
+    // ---- Task 2: Phase 19 delivery filtering tests (DELIV-01, DELIV-03, DELIV-05) ----
+
+    fn mk_ctx(use_case_id: Option<&str>, emit_event_type: Option<&str>) -> DeliveryContext {
+        DeliveryContext {
+            persona_id: "p1".into(),
+            persona_name: "Alice".into(),
+            use_case_id: use_case_id.map(String::from),
+            emit_event_type: emit_event_type.map(String::from),
+            priority: None,
+        }
+    }
+
+    #[test]
+    fn test_deliver_built_in_noop() {
+        // built-in passes through filter_channels_for_delivery (enabled + All scope)
+        // but has no side effects — specifically, titlebar counter stays unchanged.
+        let chans = vec![ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::BuiltIn,
+            enabled: true,
+            credential_id: None,
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: None,
+        }];
+        let titlebar_before = DELIVERY_METRICS.for_channel("titlebar").attempted_count();
+        let filtered = filter_channels_for_delivery(chans, &mk_ctx(None, None));
+        assert_eq!(filtered.len(), 1, "built-in should pass through filter");
+        assert!(matches!(filtered[0].channel_type, ChannelSpecV2Type::BuiltIn));
+        // Titlebar counter unchanged because built-in arm does nothing
+        let titlebar_after = DELIVERY_METRICS.for_channel("titlebar").attempted_count();
+        assert_eq!(titlebar_before, titlebar_after, "built-in must not touch titlebar metrics");
+    }
+
+    #[test]
+    fn test_deliver_v2_use_case_scoping() {
+        let chans = vec![
+            ChannelSpecV2 {
+                channel_type: ChannelSpecV2Type::BuiltIn,
+                enabled: true,
+                credential_id: None,
+                use_case_ids: ChannelScopeV2::Specific(vec!["uc_b".into()]),
+                event_filter: None,
+                config: None,
+            },
+            ChannelSpecV2 {
+                channel_type: ChannelSpecV2Type::BuiltIn,
+                enabled: true,
+                credential_id: None,
+                use_case_ids: ChannelScopeV2::All("*".into()),
+                event_filter: None,
+                config: None,
+            },
+        ];
+        // Scope mismatch → first channel filtered out; star → second passes
+        let filtered = filter_channels_for_delivery(chans.clone(), &mk_ctx(Some("uc_a"), None));
+        assert_eq!(filtered.len(), 1, "uc_a should skip uc_b-specific channel");
+        assert!(matches!(filtered[0].use_case_ids, ChannelScopeV2::All(_)));
+        // Matching scope → first channel also passes
+        let filtered = filter_channels_for_delivery(chans, &mk_ctx(Some("uc_b"), None));
+        assert_eq!(filtered.len(), 2, "uc_b should pass both channels");
+    }
+
+    #[test]
+    fn test_deliver_v2_disabled_channel_skipped() {
+        let chans = vec![ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Titlebar,
+            enabled: false,
+            credential_id: None,
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: None,
+        }];
+        let filtered = filter_channels_for_delivery(chans, &mk_ctx(None, None));
+        assert_eq!(filtered.len(), 0, "disabled channel must be skipped");
+    }
+
+    #[test]
+    fn test_event_filter_gates_emit_only() {
+        let chans = vec![ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Titlebar,
+            enabled: true,
+            credential_id: None,
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: Some(vec!["stocks.buy".into()]),
+            config: None,
+        }];
+        // UserMessage (emit_event_type = None) → filter bypassed, channel kept
+        let passed = apply_event_filter(&chans, &mk_ctx(None, None));
+        assert_eq!(passed.len(), 1, "UserMessage must bypass event_filter");
+        // EmitEvent unmatched → channel filtered out
+        let passed = apply_event_filter(&chans, &mk_ctx(None, Some("stocks.sell")));
+        assert_eq!(passed.len(), 0, "unmatched EmitEvent must be filtered");
+        // EmitEvent matched → channel kept
+        let passed = apply_event_filter(&chans, &mk_ctx(None, Some("stocks.buy")));
+        assert_eq!(passed.len(), 1, "matched EmitEvent must pass through");
     }
 }
