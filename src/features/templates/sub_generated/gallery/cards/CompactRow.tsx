@@ -5,6 +5,7 @@ import {
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { getCachedLightFields } from './reviewParseCache';
 import { deriveArchCategories, userHasCategoryCredential } from '../matrix/architecturalCategories';
+import { TemplateCategoryPills } from './TemplateCategoryPills';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
 import type { ModalStackActions } from '../modals/useModalStack';
@@ -42,6 +43,13 @@ export function CompactRow({
             <Sparkles className="w-2.5 h-2.5 inline -mt-px mr-0.5" />AI
           </span>
         )}
+        {/* Inline category pills — compact mode gets the top 3 + overflow
+            count so the row stays one line even for tag-heavy templates. */}
+        <TemplateCategoryPills
+          connectors={connectors}
+          maxVisible={3}
+          className="flex-shrink min-w-0"
+        />
       </div>
       {/* Components */}
       <div className="flex items-center gap-1 flex-shrink-0 ml-2 mr-3">

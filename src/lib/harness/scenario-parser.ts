@@ -200,8 +200,8 @@ const AREAS: ScenarioArea[] = [
     moduleId: 'typography',
     label: 'agents/ Typography (sub-features)',
     description: 'Migrate agents sub-features to typo-* classes.',
-    scope: ['src/features/agents/sub_activity/', 'src/features/agents/sub_connectors/', 'src/features/agents/sub_design/', 'src/features/agents/sub_lab/', 'src/features/agents/sub_prompt/', 'src/features/agents/sub_tests/', 'src/features/agents/sub_tools/', 'src/features/agents/sub_versions/'],
-    features: ['sub_activity/', 'sub_connectors/', 'sub_design/', 'sub_lab/', 'sub_prompt/', 'sub_tests/', 'sub_tools/', 'sub_versions/'],
+    scope: ['src/features/agents/sub_activity/', 'src/features/agents/sub_connectors/', 'src/features/agents/sub_design/', 'src/features/agents/sub_lab/', 'src/features/agents/sub_tests/', 'src/features/agents/sub_tools/', 'src/features/agents/sub_versions/'],
+    features: ['sub_activity/', 'sub_connectors/', 'sub_design/', 'sub_lab/', 'sub_tests/', 'sub_tools/', 'sub_versions/'],
     dependsOn: ['typo-agents-core'],
   },
   {
@@ -291,9 +291,9 @@ const AREAS: ScenarioArea[] = [
     id: 'i18n-agents-sub',
     moduleId: 'i18n',
     label: 'agents/ i18n (sub-features)',
-    description: 'Add i18n to agents sub-features: activity, connectors, design, lab, prompt, tools.',
-    scope: ['src/features/agents/sub_activity/', 'src/features/agents/sub_connectors/', 'src/features/agents/sub_design/', 'src/features/agents/sub_lab/', 'src/features/agents/sub_prompt/', 'src/features/agents/sub_tests/', 'src/features/agents/sub_tools/', 'src/features/agents/sub_versions/'],
-    features: ['Activity labels', 'Connector UI text', 'Design conversation labels', 'Lab result labels', 'Prompt editor labels', 'Tool config text'],
+    description: 'Add i18n to agents sub-features: activity, connectors, design, lab, tools.',
+    scope: ['src/features/agents/sub_activity/', 'src/features/agents/sub_connectors/', 'src/features/agents/sub_design/', 'src/features/agents/sub_lab/', 'src/features/agents/sub_tests/', 'src/features/agents/sub_tools/', 'src/features/agents/sub_versions/'],
+    features: ['Activity labels', 'Connector UI text', 'Design conversation labels', 'Lab result labels', 'Tool config text'],
     dependsOn: ['i18n-agents-core'],
   },
   {

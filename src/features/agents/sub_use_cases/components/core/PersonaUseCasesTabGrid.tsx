@@ -13,6 +13,7 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { DefaultModelSection } from './DefaultModelSection';
 import { CapabilityDisableDialog } from './CapabilityDisableDialog';
 import { CapabilityPolicyControls } from './CapabilityPolicyControls';
+import { UseCasesRefineCard } from './UseCasesRefineCard';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 import { useCapabilityToggle } from '../../libs/useCapabilityToggle';
 import { getMemoryCount } from '@/api/overview/memories';
@@ -111,6 +112,11 @@ export function PersonaUseCasesTabGrid({
 
   return (
     <div className="flex flex-col h-full">
+      {personaId && (
+        <div className="pb-3">
+          <UseCasesRefineCard personaId={personaId} />
+        </div>
+      )}
       {/* Top stats strip */}
       <div className="flex items-center gap-4 px-1 pb-3">
         <span className="typo-label uppercase tracking-wider text-foreground">Capabilities</span>

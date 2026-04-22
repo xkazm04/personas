@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: messaging-and-notifications
 status: active
-next_phase: 17
-stopped_at: "Phase 17 backend-completion (v1.1 carryover) shipped — template_category column + content_type='output' backend signals replace Phase 16 frontend workarounds. Ready for /gsd-plan-phase 17 (Schema v3.2, the v1.2 milestone phase)."
-last_updated: "2026-04-21T22:10:00.000Z"
-last_activity: 2026-04-21
+next_phase: 18
+stopped_at: "Phase 17 (Schema v3.2) COMPLETE — verifier returned 10/10 must-haves passed. Wave 1 (4 commits) + Wave 2 (1 commit, recovered from poisoned worktree merge) landed all 6 REQ-IDs. Ready for Phase 18 (personas_messages builtin connector)."
+last_updated: "2026-04-22T02:45:00.000Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 17
 ---
 
 # Project State
@@ -21,20 +21,20 @@ progress:
 
 See: .planning/PROJECT.md (Current Milestone: v1.2 Messaging & Notifications).
 
-**v1.2 Roadmap:** `.planning/ROADMAP-MESSAGING.md` (6 phases, 34 REQ-IDs, Phases 17–22). Note: Phase 16 slot is occupied by a completed v1.1 deferred-resolution follow-up — see `## Current Position` below.
+**v1.2 Roadmap:** `.planning/ROADMAP.md` (canonical; 6 phases, 34 REQ-IDs, Phases 17–22). v1.0 and v1.1 roadmaps archived to `.planning/ROADMAP-V1-MATRIX.md` and `.planning/ROADMAP-SIMPLE-MODE.md`. Note: Phase 16 slot is a completed v1.1 deferred-resolution follow-up; Phase 16.5 is a completed v1.1 backend-completion follow-up — see below.
 
 **Core value (v1.2):** Every persona gets first-class messaging out of the box — in-app inbox is the always-on default, TitleBar bell subscriptions are opt-in per event, external channels (Slack/Telegram/Email) are configurable per UC with sample-message testing. Composition (shared vs separate triggers/messages) is editable post-creation in the Agents module.
 
-**Current focus:** Roadmap written. Phase 17 (Schema v3.2) is next — extends `template_v3.rs` in place with `sample_output`, `notify_titlebar`, and shape-v2 channel fields; publishes `C3-schema-v3.2-delta.md`. Phase 16 slot retained for the v1.1 deferred-resolution follow-up that closed Simple Mode carryover topics on 2026-04-20.
+**Current focus:** Phase 17 (Schema v3.2) COMPLETE. Phase 18 (personas_messages builtin connector) is next — verify + gap-close the existing `scripts/connectors/builtin/local-messaging.json` + add migration for existing installs. CONTEXT.md for Phase 18 already written via direct Claude tooling at `.planning/phases/18-personas-messages-connector/18-CONTEXT.md`.
 
 ## Current Position
 
-Phase: 17 — Schema v3.2 (Not started). Phase 16 is a completed v1.1 deferred-resolution follow-up (detailed below), not part of the v1.2 phase count.
+Phase: 18 — personas_messages Builtin Connector (Not started)
 Plan: —
-Status: Ready to discuss or plan Phase 17 Schema v3.2
-Last activity: 2026-04-21 — v1.2 phases renumbered 16→17..21→22 to resolve directory-name collision with completed Phase 16 deferred-resolution
+Status: Ready to plan Phase 18 (CONTEXT.md already in place)
+Last activity: 2026-04-22 — Phase 17 verified and closed
 
-Progress: [          ] 0%  (0/6 phases complete)
+Progress: [█         ] 17%  (1/6 phases complete; Phase 17 ✓)
 
 ### Phase 16 deferred-resolution (v1.1 carryover, 2026-04-20)
 
@@ -59,6 +59,7 @@ Outcomes: +18 simple-mode tests (98 → 116), 6 atomic commits `cce2b3f5`, `edc7
 Naming note: this "Phase 17" is a v1.1 carryover and uses directory `17-backend-completion`. The v1.2 milestone also calls its first phase "Phase 17 (Schema v3.2)" — those will live under a separate directory (e.g. `17-schema-v3-2`) when planned. The two are unrelated.
 
 Key architectural outcomes for Simple-mode:
+
 - Persona schema now carries lowercase category strings sourced from the shared `commands::design` category heuristic, keeping the Rust + TS vocabularies aligned.
 - `infer_template_category` is now `pub(crate)` and reused across reviews + template-adopt, avoiding duplicate rule tables.
 - Execution engine owns the canonical `output` content_type tag; frontend heuristics stay as fallbacks for legacy rows + pre-existing emitters that haven't adopted the signal.

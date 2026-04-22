@@ -18,6 +18,7 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SelectPills } from './SelectPills';
+import { CredentialPickerCards } from './CredentialPickerCards';
 
 // Re-export so importers that imported from this file still resolve
 export { SelectPills } from './SelectPills';
@@ -165,24 +166,37 @@ function DynamicSelectBody({
     );
   }
 
+  const isVaultSourced = src.source === 'vault';
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs text-status-success/80">
         <Zap className="w-3 h-3" />
         {tx(t.templates.adopt_modal.loaded_live_from, { service: src.service_type })}
       </div>
-      {/* Vault-sourced pickers never expose a free-text "Other" — the user
-          must either select an existing credential or use the `Add credential`
-          CTA above to create one. Letting a template-author bypass that would
-          produce personas with unresolvable credential references. */}
-      <SelectPills
-        options={state.items.map((i) => ({ value: i.value, label: i.label, sublabel: i.sublabel }))}
-        value={answer}
-        onChange={onAnswer}
-        multi={src.multi}
-        includeAllOption={src.include_all_option}
-        allowCustom={false}
-      />
+      {isVaultSourced ? (
+        // Vault-sourced pickers get the card-tile UI: the user is choosing
+        // between services (Leonardo AI, DALL-E, …) and icons do more work
+        // than a pill row. No "Other" affordance — unresolvable credential
+        // references are worse than a locked list here.
+        <CredentialPickerCards
+          items={state.items}
+          value={answer}
+          onChange={onAnswer}
+          multi={src.multi}
+        />
+      ) : (
+        // Non-vault dynamic sources (codebases, IPC-backed lists) keep the
+        // lightweight pill row — they're usually short, homogeneous lists
+        // where an icon per row would be visual noise.
+        <SelectPills
+          options={state.items.map((i) => ({ value: i.value, label: i.label, sublabel: i.sublabel }))}
+          value={answer}
+          onChange={onAnswer}
+          multi={src.multi}
+          includeAllOption={src.include_all_option}
+          allowCustom={false}
+        />
+      )}
     </div>
   );
 }

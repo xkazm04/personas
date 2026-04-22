@@ -8,7 +8,8 @@
   "categories": [
     "ai",
     "vision",
-    "ocr"
+    "ocr",
+    "image_generation"
   ],
   "fields": [
     {

@@ -30,27 +30,23 @@ export function SelectPills({
   options,
   value,
   onChange,
-  allowCustom: _allowCustom,
+  allowCustom = true,
   multi,
   includeAllOption,
 }: {
   options: PillOption[];
   value: string;
   onChange: (v: string) => void;
-  /** Accepted for backwards-compat with callers that pass the template's
-   *  declared value, but ignored — every select (single or multi) always
-   *  surfaces a "Custom…"/"Other" pill so users can enter an off-list value
-   *  the template didn't enumerate. */
+  /** When true (default), a "Custom…/Other" pill lets the user enter an
+   *  off-list value. Set false for surfaces whose option set is authoritative
+   *  (e.g. vault-sourced credential pickers) — no "Other" pill and incoming
+   *  off-list values are ignored rather than rendered as custom pills. */
   allowCustom?: boolean;
   multi?: boolean;
   includeAllOption?: boolean;
 }) {
   const { t } = useTranslation();
-  // Always allow custom entries. Real-world adoption routinely needs values
-  // templates can't predict (uncommon providers, unique timings, bespoke
-  // categories), and a locked preset list forces users to pick the least-wrong
-  // option and move on. Applied uniformly here so no template can override it.
-  const effectiveAllowCustom = true;
+  const effectiveAllowCustom = allowCustom;
   const optionValueSet = useMemo(() => new Set(options.map((o) => o.value)), [options]);
 
   const selectedValues = useMemo(

@@ -3,9 +3,6 @@ import { lazy } from 'react';
 export const ActivityTab = lazy(() =>
   import('@/features/agents/sub_activity/ActivityTab').then((m) => ({ default: m.ActivityTab })),
 );
-export const MatrixTab = lazy(() =>
-  import('@/features/agents/sub_activity/MatrixTab').then((m) => ({ default: m.MatrixTab })),
-);
 export const PersonaSettingsTab = lazy(() =>
   import('@/features/agents/sub_settings').then((m) => ({ default: m.PersonaSettingsTab })),
 );

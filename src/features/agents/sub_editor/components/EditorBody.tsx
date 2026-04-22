@@ -12,7 +12,7 @@ import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './Edi
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
-  ActivityTab, MatrixTab,
+  ActivityTab,
   PersonaSettingsTab, PersonaUseCasesTab,
   LabTab, ChatTab, DesignTab,
 } from './EditorLazyTabs';
@@ -111,6 +111,10 @@ export function EditorBody() {
     if (isStarter && (editorTab === 'activity' || editorTab === 'matrix' || editorTab === 'lab')) {
       setEditorTab('use-cases');
     }
+    // Legacy persisted state: the matrix tab was removed; bounce users to use-cases.
+    if (editorTab === 'matrix') {
+      setEditorTab('use-cases');
+    }
   }, [isStarter, editorTab, setEditorTab]);
 
   const handleDelete = useCallback(async () => {
@@ -190,11 +194,6 @@ export function EditorBody() {
           >
             <Suspense fallback={<SuspenseFallback />}>
               {editorTab === 'activity' && <ActivityTab />}
-              {editorTab === 'matrix' && (
-                <EditorTabContent className="space-y-6">
-                  <MatrixTab />
-                </EditorTabContent>
-              )}
               {editorTab === 'use-cases' && (
                 <EditorTabContent>
                   <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />

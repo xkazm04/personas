@@ -40,7 +40,7 @@ const SECONDARY_TAGS = {
   deepgram:        ['speech_to_text', 'transcription', 'audio_intelligence', 'ai'],
   leonardo_ai:     ['image_generation', 'video_generation', 'ai'],
   google_gemini:   ['ai_chat', 'text_generation', 'ai'],
-  gemini_vision:   ['vision', 'ocr', 'ai'],
+  gemini_vision:   ['vision', 'ocr', 'image_generation', 'ai'],
 
   // ─── Database / spreadsheet / knowledge ─────────────────────────────
   airtable:              ['spreadsheet', 'database', 'project_management'],

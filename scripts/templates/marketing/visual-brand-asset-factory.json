@@ -398,7 +398,7 @@
         "id": "aq_image_model",
         "scope": "connector",
         "connector_names": ["image_ai"],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which image-generation service should produce the assets?",
         "type": "select",
         "dynamic_source": {
@@ -415,11 +415,11 @@
         "id": "aq_vision_model",
         "scope": "connector",
         "connector_names": ["multimodal_ai"],
-        "category": "configuration",
+        "category": "credentials",
         "question": "Which multimodal AI should evaluate image quality against the brief?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "ai",
+          "service_type": "vision",
           "operation": "list_credentials",
           "source": "vault"
         },

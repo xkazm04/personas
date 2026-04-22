@@ -17,16 +17,20 @@
 import { useState } from 'react';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import { UseCasePickerStepNeon } from './UseCasePickerStepNeon';
-import { MessagingPickerVariantC } from './MessagingPickerVariantC';
+import { MessagingPickerVariantH } from './MessagingPickerVariantH';
+import { MessagingPickerVariantJ } from './MessagingPickerVariantJ';
+import { MessagingPickerVariantK } from './MessagingPickerVariantK';
 import type { UseCaseOption, UseCasePickerVariantProps } from './useCasePickerShared';
 
 export type { UseCaseOption };
 
-type ViewId = 'prod' | 'pipeline';
+type ViewId = 'prod' | 'forge' | 'quickset' | 'ticket';
 
 const VIEWS: Array<{ id: ViewId; label: string; sub: string }> = [
-  { id: 'prod',     label: 'Production',    sub: 'current neon picker'  },
-  { id: 'pipeline', label: 'Pipeline',      sub: 'runtime dataflow'     },
+  { id: 'prod',     label: 'Production', sub: 'current neon picker'            },
+  { id: 'forge',    label: 'Forge',      sub: 'H · baseline · gears + stamps'  },
+  { id: 'quickset', label: 'Quick Set',  sub: 'J · 5-preset + unified deliver' },
+  { id: 'ticket',   label: 'Ticket',     sub: 'K · postmark + address stub'    },
 ];
 
 export function UseCasePickerStep(props: UseCasePickerVariantProps) {
@@ -69,7 +73,9 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
 
       <div className="flex-1 min-h-0">
         {view === 'prod' && <UseCasePickerStepNeon {...props} />}
-        {view === 'pipeline' && <MessagingPickerVariantC />}
+        {view === 'forge' && <MessagingPickerVariantH />}
+        {view === 'quickset' && <MessagingPickerVariantJ />}
+        {view === 'ticket' && <MessagingPickerVariantK />}
       </div>
 
       {/* Continue button is only surfaced while a prototype is active so

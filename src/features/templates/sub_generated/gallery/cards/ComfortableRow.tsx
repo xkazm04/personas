@@ -9,6 +9,7 @@ import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { RowActionMenu } from './RowActionMenu';
 import { ArchCategoryIcons } from './ArchCategoryIcons';
+import { TemplateCategoryPills } from './TemplateCategoryPills';
 import { ExpandedRowContent } from '../matrix/ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -117,6 +118,14 @@ export function ComfortableRow({
                   {review.instruction}
                 </span>
               </div>
+              {/* Third line: connector category pills. Surfaces the per-template
+                  category tags (from connectorCategoryTags + generic slot
+                  names) so the reviewer can spot mis-tagged or under-tagged
+                  templates during the 107-template category review. */}
+              <TemplateCategoryPills
+                connectors={connectors}
+                className="mt-2"
+              />
             </div>
             <ArchCategoryIcons connectors={connectors} credentialServiceTypes={credentialServiceTypes} />
           </div>

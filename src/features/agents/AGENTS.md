@@ -22,7 +22,6 @@ there. If it legitimately spans two modules, the shared helper belongs in
 
 | Module                  | Owns                                                                          | Does NOT own                                                                      |
 | ----------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `sub_prompt`            | System prompt editor, custom sections, persona voice.                         | Connector/credential checks; use-case authoring.                                  |
 | `sub_tools`             | Per-agent tool selector, tool grouping, tool-credential **gating UX**, undo.  | Credential CRUD itself — that's `features/vault`. Connector metadata discovery.   |
 | `sub_connectors`        | Agent↔connector bindings, automation setup (n8n/Zapier/GitHub Actions).       | Credential storage; per-tool credential-requirement checks (those live next to the tool list in `sub_tools`). |
 | `sub_use_cases`         | Use-case cards, editing, activation toggles in the agent editor.              | Free-form chat; execution history.                                                |

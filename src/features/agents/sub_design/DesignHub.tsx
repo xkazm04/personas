@@ -1,13 +1,10 @@
 import { Suspense, lazy } from 'react';
-import { useSystemStore } from '@/stores/systemStore';
+import { Link as LinkIcon } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { EditorTabContent } from '@/features/agents/sub_editor/components/EditorTabContent';
-import { DesignHubHeader } from './components/DesignHubHeader';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { DesignTab } from './DesignTab';
 
-const PersonaPromptEditor = lazy(() =>
-  import('@/features/agents/sub_prompt').then((m) => ({ default: m.PersonaPromptEditor })),
-);
 const PersonaConnectorsTab = lazy(() =>
   import('@/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
 );
@@ -17,30 +14,24 @@ interface DesignHubProps {
 }
 
 /**
- * DesignHub — parent container for the unified Design experience.
- *
- * Absorbs the former standalone Prompt, Connectors, and Health tabs via
- * horizontal sub-tabs and an inline health summary. The Design subtab
- * renders the existing LLM-driven design flow unchanged; Prompt and
- * Connectors sub-tabs embed the original editors verbatim so the data
- * model and save semantics are preserved.
+ * DesignHub — single scroll that pairs the LLM design flow with a
+ * Connectors & Tools section underneath. The former sub-tab nav
+ * (Design / Prompt / Connectors) is gone; Prompt is retired entirely.
  */
 export function DesignHub({ onConnectorsMissingChange }: DesignHubProps) {
-  const designSubTab = useSystemStore((s) => s.designSubTab);
-
   return (
     <div className="flex flex-col min-h-full">
-      <DesignHubHeader />
-      <div className="flex-1 min-h-0 animate-fade-slide-in" key={designSubTab}>
-        <Suspense fallback={<SuspenseFallback />}>
-          {designSubTab === 'design' && <DesignTab />}
-          {designSubTab === 'prompt' && <PersonaPromptEditor />}
-          {designSubTab === 'connectors' && (
+      <div className="flex-1 min-h-0 space-y-8 pb-6">
+        <DesignTab />
+        <div className="border-t border-primary/10" />
+        <section className="space-y-4 px-4">
+          <SectionHeading title="Connectors & Tools" icon={<LinkIcon />} />
+          <Suspense fallback={<SuspenseFallback />}>
             <EditorTabContent>
               <PersonaConnectorsTab onMissingCountChange={onConnectorsMissingChange} />
             </EditorTabContent>
-          )}
-        </Suspense>
+          </Suspense>
+        </section>
       </div>
     </div>
   );

@@ -5,14 +5,18 @@
  * This replaces the 5-step wizard with a single-screen matrix experience.
  */
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import { createLogger } from "@/lib/log";
+import { useVaultStore } from "@/stores/vaultStore";
 
 const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
 import { PersonaChronologyWildcard } from "./chronology/PersonaChronologyWildcard";
+import { PersonaChronologyGlyph } from "./chronology/PersonaChronologyGlyph";
+import { PersonaChronologyDossier } from "./chronology/PersonaChronologyDossier";
 import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
 import { UseCasePickerStep, type UseCaseOption } from "./UseCasePickerStep";
 import { useThemeStore } from "@/stores/themeStore";
@@ -27,6 +31,7 @@ import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 import { matchVaultToQuestions } from "../shared/vaultAdoptionMatcher";
 import { useDynamicQuestionOptions } from "./useDynamicQuestionOptions";
+import { categoryOrderIndex } from "./questionnaireCategoryOrder";
 import { useTranslation } from '@/i18n/useTranslation';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import type { TriggerSelection } from "./useCasePickerShared";
@@ -373,7 +378,9 @@ type MatrixVariant =
   | "original"
   | "glass"
   | "blueprint"
-  | "chrono-wildcard";
+  | "chrono-wildcard"
+  | "chrono-glyph"
+  | "chrono-dossier";
 
 /** Map themes to their preferred matrix visual variant. */
 const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
@@ -392,7 +399,15 @@ function getThemeVariant(themeId: ThemeId): MatrixVariant {
 /** The Wildcard prototype is the go-to multi-use-case view, exposed through
  * the in-view tab switcher alongside the legacy theme-driven variants. */
 const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
-  { id: "chrono-wildcard", label: "Wildcard", sub: "constellation · cards" },
+  { id: "chrono-wildcard", label: "Constellation", sub: "radial · baseline" },
+  { id: "chrono-glyph", label: "Glyph", sub: "sigil · full-bleed" },
+  { id: "chrono-dossier", label: "Dossier", sub: "data · briefing" },
+];
+
+const CHRONO_VARIANTS: ReadonlyArray<MatrixVariant> = [
+  "chrono-wildcard",
+  "chrono-glyph",
+  "chrono-dossier",
 ];
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
@@ -437,9 +452,42 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
   const [questionsComplete, setQuestionsComplete] = useState(false);
   const [autoDetectedIds, setAutoDetectedIds] = useState<Set<string>>(new Set());
-  const [blockedQuestionIds, setBlockedQuestionIds] = useState<Set<string>>(new Set());
-  const [filteredOptions, setFilteredOptions] = useState<Record<string, string[]>>({});
   const defaultsLoaded = useRef(false);
+
+  // Reactive subscription to vault credential service_types — changes here
+  // (new credential added via QuickAddCredentialModal, or user returns from
+  // the catalog after adding one) flow through and recompute blocked state
+  // so tool-picker questions unblock in-place without a reload.
+  //
+  // We select a sorted array (not a Set) so useShallow can do a cheap
+  // element-wise comparison; the Set is rebuilt inside the memo below.
+  const credentialServiceTypes = useVaultStore(
+    useShallow((s) => {
+      const seen = new Set<string>();
+      for (const c of s.credentials) seen.add(c.service_type);
+      return Array.from(seen).sort();
+    }),
+  );
+
+  // Block + narrowed-options state, derived from adoptionQuestions × current
+  // vault credentials. Recomputes whenever either input changes. Prior
+  // implementation stored both in useState and set them inside a one-shot
+  // useEffect, which meant adding a credential mid-flow left a question
+  // stuck in blocked state until the user reloaded. Derived state fixes that.
+  const vaultMatch = useMemo(() => {
+    if (!hasAdoptionQuestions) {
+      return {
+        blockedQuestionIds: new Set<string>(),
+        filteredOptions: {} as Record<string, string[]>,
+      };
+    }
+    const typesSet = new Set(credentialServiceTypes);
+    const { blockedQuestionIds: blocked, filteredOptions: filtered } =
+      matchVaultToQuestions(adoptionQuestions, typesSet);
+    return { blockedQuestionIds: blocked, filteredOptions: filtered };
+  }, [hasAdoptionQuestions, adoptionQuestions, credentialServiceTypes]);
+  const blockedQuestionIds = vaultMatch.blockedQuestionIds;
+  const filteredOptions = vaultMatch.filteredOptions;
 
   // Use-case picker — runs before the questionnaire when the template declares
   // ≥2 use cases (or use_case_flows). User can disable capabilities they don't
@@ -573,30 +621,10 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     return out;
   }, [availableUseCases]);
 
-  // Canonical category order mirrors the Live Preview sidebar's bucket
-  // sequence (QuestionnaireFormFocus groups questions by `q.category` —
-  // the same CATEGORY_META keys that light up each preview section).
-  // Answering top-down thus walks the same order the preview renders, so
-  // the user always sees their latest answer pop into the section they're
-  // currently looking at. Questions with an unknown category fall to the
-  // end; within a bucket, authored order is preserved.
-  const categoryOrder = useMemo<Record<string, number>>(() => {
-    const order = [
-      'credentials',
-      'configuration',
-      'domain',
-      'human_in_the_loop',
-      'quality',
-      'memory',
-      'notifications',
-      'boundaries',
-    ];
-    return Object.fromEntries(order.map((d, i) => [d, i]));
-  }, []);
-
   // Filter adoption questions by selected use cases + sort to match the
-  // Live Preview bucket order. Questions with no use_case_id / use_case_ids
-  // (persona or connector scope) always show.
+  // Live Preview bucket order (questionnaireCategoryOrder shared constant).
+  // Questions with no use_case_id / use_case_ids (persona or connector scope)
+  // always show. Within a bucket, authored order is preserved.
   const filteredAdoptionQuestions = useMemo(() => {
     const filtered = !showUseCasePicker
       ? adoptionQuestions
@@ -605,13 +633,11 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           if (tied.length === 0) return true;
           return tied.some((id) => selectedUseCaseIds.has(id));
         });
-    // Stable-sort by category then by original index so templates that
-    // don't declare a category keep their authored order.
     return filtered
-      .map((q, idx) => ({ q, idx, cat: categoryOrder[q.category ?? ''] ?? 999 }))
+      .map((q, idx) => ({ q, idx, cat: categoryOrderIndex(q.category) }))
       .sort((a, b) => (a.cat - b.cat) || (a.idx - b.idx))
       .map(({ q }) => q);
-  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker, categoryOrder]);
+  }, [adoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
   const hasFilteredQuestions = filteredAdoptionQuestions.length > 0;
 
   // Resolve dynamic option lists (Sentry projects, codebases, ...) from the
@@ -648,21 +674,17 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       sys.setAdoptionDraft(null);
     }
 
-    void import("@/stores/vaultStore").then(({ useVaultStore }) => {
-      const creds = useVaultStore.getState().credentials;
-      const serviceTypes = new Set(creds.map((c) => c.service_type));
-      const { autoAnswers, autoDetectedIds: detected, blockedQuestionIds: blocked, filteredOptions: filtered } =
-        matchVaultToQuestions(adoptionQuestions, serviceTypes);
-      // Order: template defaults < vault auto-answers < restored draft answers
-      const merged = { ...defaults, ...autoAnswers, ...(restoredAnswers ?? {}) };
-      if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
-      if (detected.size > 0) setAutoDetectedIds(detected);
-      if (blocked.size > 0) setBlockedQuestionIds(blocked);
-      if (Object.keys(filtered).length > 0) setFilteredOptions(filtered);
-    }).catch(() => {
-      const merged = { ...defaults, ...(restoredAnswers ?? {}) };
-      if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
-    });
+    // Initial one-shot: seed auto-answers + auto-detected badges from the
+    // current vault snapshot. Blocked-state and narrowed options are derived
+    // reactively via the `vaultMatch` memo above, so we don't set them here.
+    const creds = useVaultStore.getState().credentials;
+    const serviceTypes = new Set(creds.map((c) => c.service_type));
+    const { autoAnswers, autoDetectedIds: detected } =
+      matchVaultToQuestions(adoptionQuestions, serviceTypes);
+    // Order: template defaults < vault auto-answers < restored draft answers
+    const merged = { ...defaults, ...autoAnswers, ...(restoredAnswers ?? {}) };
+    if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
+    if (detected.size > 0) setAutoDetectedIds(detected);
   }, [hasAdoptionQuestions, adoptionQuestions, review.id]);
 
   // When questions are completed, store answers in the build draft and transition to draft_ready.
@@ -1113,7 +1135,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
             </button>
           );
         })}
-        {matrixVariant === "chrono-wildcard" && (
+        {CHRONO_VARIANTS.includes(matrixVariant) && (
           <button
             onClick={() => setMatrixVariant(getThemeVariant(themeId))}
             className="text-[10px] uppercase tracking-wider text-foreground/50 hover:text-foreground cursor-pointer ml-1 px-2 py-1"
@@ -1180,6 +1202,52 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       )}
       {matrixVariant === "chrono-wildcard" && (
         <PersonaChronologyWildcard
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          buildActivity={build.buildActivity}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+      {matrixVariant === "chrono-glyph" && (
+        <PersonaChronologyGlyph
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          buildActivity={build.buildActivity}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onDeleteDraft={handleDeleteDraft}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+      {matrixVariant === "chrono-dossier" && (
+        <PersonaChronologyDossier
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}
