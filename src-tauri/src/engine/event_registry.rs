@@ -208,6 +208,9 @@ event_names! {
 
     // Process activity (unified lifecycle signal for background processes)
     PROCESS_ACTIVITY           => "process-activity",
+
+    // Titlebar notification (persona message delivery — v3.2 DELIV-02)
+    TITLEBAR_NOTIFICATION      => "titlebar-notification",
 }
 
 // ---------------------------------------------------------------------------

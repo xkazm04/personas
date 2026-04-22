@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::LazyLock;
 use tauri::AppHandle;
 use tauri_plugin_notification::NotificationExt;
+use tokio::sync::Mutex as TokioMutex;
 use ts_rs::TS;
 
 use crate::db::models::{ChannelScopeV2, ChannelSpecV2, ChannelSpecV2Type};
@@ -98,6 +101,54 @@ pub(crate) fn parse_channels_v2(json: Option<&str>) -> Option<Vec<ChannelSpecV2>
 }
 
 // ---------------------------------------------------------------------------
+// Shape-v2 delivery types (Phase 19 DELIV-02, D-04, D-07)
+// ---------------------------------------------------------------------------
+
+/// Payload emitted as a Tauri event when a message or emit event is
+/// delivered to the "titlebar" channel type. (DELIV-02, D-04)
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TitlebarNotificationPayload {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub use_case_id: Option<String>,
+    /// Present only for EmitEvent-sourced deliveries; None for UserMessage/ManualReview.
+    pub event_type: Option<String>,
+    pub title: String,
+    pub body: String,
+    pub priority: String,
+}
+
+/// Per-channel result returned by `test_channel_delivery`. (DELIV-06, D-07)
+/// NOTE: the IPC command itself lives in Plan 02; the type lives here so the
+/// binding regen can attach to a single file.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TestDeliveryResult {
+    pub channel_type: String,
+    pub success: bool,
+    pub latency_ms: u64,
+    pub error: Option<String>,
+    pub rate_limited: Option<bool>,
+}
+
+/// Delivery context passed to `deliver_to_channels` so `event_filter` can gate
+/// EmitEvent fanout without the delivery layer knowing about DispatchContext. (D-02)
+///
+/// Invariant: `emit_event_type == None` means UserMessage/ManualReview — those
+/// ALWAYS bypass `event_filter`. `Some(event_type)` means EmitEvent — gate applies.
+#[derive(Debug, Clone)]
+pub(crate) struct DeliveryContext {
+    pub persona_id: String,
+    pub persona_name: String,
+    pub use_case_id: Option<String>,
+    pub emit_event_type: Option<String>,
+    pub priority: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
 // Delivery metrics (in-memory, process-scoped)
 // ---------------------------------------------------------------------------
 
@@ -165,12 +216,19 @@ impl ChannelMetrics {
             consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
         }
     }
+
+    /// Returns the current attempted count (used in tests to detect side effects).
+    #[cfg(test)]
+    fn attempted_count(&self) -> u64 {
+        self.attempted.load(Ordering::Relaxed)
+    }
 }
 
 struct DeliveryMetrics {
     slack: ChannelMetrics,
     telegram: ChannelMetrics,
     email: ChannelMetrics,
+    titlebar: ChannelMetrics,
 }
 
 impl DeliveryMetrics {
@@ -179,6 +237,7 @@ impl DeliveryMetrics {
             "slack" => &self.slack,
             "telegram" => &self.telegram,
             "email" => &self.email,
+            "titlebar" => &self.titlebar,
             // Unknown channels fall back to slack (won't be reached in practice)
             _ => &self.slack,
         }
@@ -189,6 +248,7 @@ static DELIVERY_METRICS: DeliveryMetrics = DeliveryMetrics {
     slack: ChannelMetrics::new(),
     telegram: ChannelMetrics::new(),
     email: ChannelMetrics::new(),
+    titlebar: ChannelMetrics::new(),
 };
 
 /// Per-channel stats returned to the frontend.
@@ -818,5 +878,40 @@ mod tests {
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].channel_type, "slack");
         assert_eq!(channels[0].credential_id.as_deref(), Some("cred_x"));
+    }
+
+    // ---- Task 1: Phase 19 camelCase serde tests (DELIV-02, D-07) ----
+
+    #[test]
+    fn test_titlebar_payload_serde_camelcase() {
+        let p = TitlebarNotificationPayload {
+            persona_id: "p1".into(),
+            persona_name: "Alice".into(),
+            use_case_id: Some("uc1".into()),
+            event_type: None,
+            title: "hi".into(),
+            body: "world".into(),
+            priority: "normal".into(),
+        };
+        let json = serde_json::to_value(&p).unwrap();
+        assert!(json.get("personaId").is_some(), "personaId key missing");
+        assert!(json.get("useCaseId").is_some(), "useCaseId key missing");
+        assert!(json.get("eventType").is_some(), "eventType key missing");
+        assert_eq!(json.get("eventType").unwrap(), &serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_test_delivery_result_serde_camelcase() {
+        let r = TestDeliveryResult {
+            channel_type: "slack".into(),
+            success: true,
+            latency_ms: 42,
+            error: None,
+            rate_limited: None,
+        };
+        let json = serde_json::to_value(&r).unwrap();
+        assert!(json.get("channelType").is_some(), "channelType key missing");
+        assert!(json.get("latencyMs").is_some(), "latencyMs key missing");
+        assert!(json.get("rateLimited").is_some(), "rateLimited key missing");
     }
 }
