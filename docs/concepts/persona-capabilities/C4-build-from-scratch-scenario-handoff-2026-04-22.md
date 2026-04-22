@@ -13,8 +13,21 @@
 | `f1c78796` | **fix(ipc)**: `coerceArgs` must not recurse into class instances (Channel). Root-cause of the original `start_build_session: "invalid type: map, expected a string"` error. 9/9 unit tests. |
 | `38d05c99` | **feat(drive)**: `drive.document.{added,edited,renamed,deleted}` persona events emitted from every Local Drive mutation. Four new entries in `eventTypeTaxonomy.ts`, connector seed regenerated with `metadata.emits[]`. |
 | `53accd50` | **test(harness)**: e2e scenario runner (`tools/test-mcp/e2e_build_from_scratch.py`), new `/bridge-exec` dispatcher, scenario helpers on `window.__TEST__`. |
+| `37d297a0` | **fix(build,test-harness)**: per-UC event subscription persistence + emits hint in build prompt + scenario runner slice-and-loop fixes. Five sub-fixes after live-running the scenario flushed out the actual failure modes. |
 
-All three ship on `master`; `npx tsc --noEmit` clean; `cargo check --features "test-automation desktop"` clean.
+All four ship on `master`; `npx tsc --noEmit` clean; `cargo check --features "test-automation desktop"` clean.
+
+## Session result
+
+Ran the scenario end-to-end against a live `npx tauri dev --features test-automation` app; captured execution rows as proof:
+
+- `build_session 337156da` → persona `132ada2e` promoted with `subscriptions=1` to `drive.document.added`, `trigger_type=event_listener`.
+- Drive write to `fresh-inbox/final-*.md` published `drive.document.added` → event bus matched 1 subscriber → persona invoked.
+- Execution `2991a1f6-7236-4fb5-8c17-0bff47f2450a` completed (12.3s, $0.14), output assertions 1/1 passed, agent emitted `user_message` + `agent_memory` + `emit_event` per protocol.
+
+**What's NOT there yet: the agent reports the translation complete but cannot actually write the translated file**, because `drive_write_text` isn't registered in the runner's tool registry. `execution_config.tool_names` lists only the built-in shims `["ai_generation","text_analysis","file_read","file_write"]`; there's no wiring from those shims to the sandboxed drive commands. The agent therefore produces a convincing `user_message` ("Translation Completed … Output: `fresh-inbox/final-*_czech.md`") without a matching file on disk.
+
+That last-mile gap is the next session's top task — it's entirely separate from the build/subscribe/dispatch chain that this session fixed, and touches the runner + tool registry rather than the build pipeline.
 
 ## How to run the scenario
 
@@ -48,127 +61,56 @@ The scenario runs seven chronological steps, each recorded in a JSON log:
 6. `drive_write_and_wait_execution` — writes the test document via `drive_write_text`, triggers `drive.document.added`, polls `list_executions` for the persona
 7. `cleanup` — `deleteAgent` unless `--no-persona-cleanup`
 
-## Likely first-run surprises & where to look
+## What I observed running the scenario live (2026-04-22 PM)
 
-### Build LLM doesn't produce a `drive.document.added` subscription
+Five fixes were needed after the initial commits landed:
 
-**What to check first.** The `drive.document.added` event is new to the
-taxonomy and the build prompt in `build_session.rs:1426+` doesn't
-mention it by name — it says "use three-level dot syntax" and leaves
-the choice to the model. If the LLM emits `file_changed` or
-`document_added` instead, the persona won't match drive events.
+1. **Per-UC event subscriptions never persisted.** `create_event_subscriptions_in_tx` in `commands/design/build_sessions.rs` iterated only `ir.events[]` (persona-level) and built a reverse lookup from per-UC subs without ever inserting them. The v3 prompt puts event_subscriptions only on use_cases — so `persona_event_subscriptions` stayed empty and the event bus reported `no subscriber matches`. Fixed: the insert loop now runs per-UC first, then falls back to persona-level; `"listen"` and `"subscribe"` directions are both accepted.
 
-**Fix options:**
+2. **Build LLM chose polling, not events.** Even with the user's answer saying "event-driven only", the LLM picked a `polling` trigger because it had no visibility into which event names the platform actually emits. Fixed: `build_session.rs::build_session_prompt` now extracts `metadata.emits[]` from each available connector and appends `[emits: drive.document.added — ...]` to the `## Available Connectors` section. Rule 15 added telling the LLM to subscribe to listed event_types rather than invent plausible names.
 
-- Short-term: add a one-liner to the answer recipe in
-  `tools/test-mcp/e2e_build_from_scratch.py` under `answer_recipes["events"]`
-  naming the exact event type. The recipe already suggests
-  `drive.document.added` explicitly — verify the build LLM honors it in
-  `capability_resolution[field=event_subscriptions]`.
-- Medium-term: surface `metadata.emits[]` from selected connectors into
-  the build prompt's Available Connectors section so the LLM sees the
-  exact event strings it can subscribe to. See
-  `scripts/connectors/builtin/local-drive.json` — the `emits[]` array is
-  populated but `build_session.rs::build_session_prompt` doesn't read it
-  yet. A ~20-line addition where `connector_section` is assembled.
-- The Rust side of the event bus already handles dot-syntax event types
-  (`is_safe_type_string` in `db/repos/communication/events.rs:29`).
+3. **Scenario runner bridge methods got killed at 25s.** `__exec__` has a 25s rejection timer for non-long methods, so any `waitForBuildPhase`/`waitForPersonaExecution` call waiting longer returned `{error: "timeout"}` with no phase/execution field — the Python loop saw `phase: None` forever and never answered. Fixed: both methods slice at 20s and return `{success: false, timedOut: true, ...}` on slice expiry; Python loops per-slice against its own wall-clock budget.
 
-### `awaiting_input` never arrives
+4. **`driveWriteText` swapped its arguments.** `__exec__` uses `Object.values(params)`, which after serde_json alphabetizes keys (`content` < `relPath`) becomes `fn("content_value", "relPath_value")`. Files ended up named after the content string. Fixed: the method accepts either a single `{relPath, content}` object or the alphabetical-positional fallback.
 
-If the LLM skips straight to `draft_ready` because it read the intent
-as unambiguous, the scenario's answer loop is a no-op and promotion
-may proceed without the drive subscription. This is fine — the
-scenario will still promote but step 5 will log
-`subscription.drive: info — not given a drive subscription`.
+5. **Lazy-chunk mount race.** `startBuildFromIntent` waited 400ms for `UnifiedMatrixEntry`'s React lazy chunk to paint the textarea. First mount after `setIsCreatingPersona(true)` took several seconds on a cold reload. Fixed: polls for `[data-testid="agent-intent-input"]` up to 15s. Also swapped the setup order to match `startCreateAgent` (`selectPersona(null)` BEFORE `setIsCreatingPersona(true)`), avoiding a PersonaEditor/matrix race.
 
-Workaround: add a `clarifying_question` guard by making the intent
-*deliberately* ambiguous, e.g. drop "local drive" from the prompt so
-the LLM must ask about source.
+All five fixes land together in `37d297a0`.
 
-### Promotion fails with "Build session has no agent_ir"
+## Final remaining gap: drive tools aren't in the runner's tool registry
 
-Means `test_build_draft` was skipped and the agent_ir field never got
-stamped. The scenario's step 4 calls `triggerBuildTest` before
-`promoteBuildDraft`; the test step is marked `info` on failure
-(non-fatal) but promotion still needs an `agent_ir`. If the build LLM
-hasn't emitted the final `agent_ir` event, check the session row in
-SQLite for the `agent_ir` column.
+The agent runs the capability, produces correct protocol output (`user_message`, `agent_memory`, `emit_event: task_completed`, `outcome_assessment.accomplished: true`), and self-reports success — but the translated file is never written to disk because `drive_write_text` isn't in `execution_config.tool_names`. The runner currently only exposes built-in shims:
 
-### `drive.document.added` fires but no execution
-
-The event matcher wires `source_type=local_drive` against any subscription
-whose `event_type == drive.document.added` (see `engine/bus.rs:match_event`).
-If the persona got a subscription for a different event_type (e.g.
-`file_changed`), no trigger fires. Log the raw pending events:
-
-```sql
-SELECT id, event_type, source_type, source_id, status FROM persona_events
- ORDER BY created_at DESC LIMIT 5;
+```
+"tool_names": ["ai_generation", "text_analysis", "file_read", "file_write"]
 ```
 
-### Persona executes but doesn't actually translate
+To close this, the next session needs to:
 
-This is the deepest gap and probably requires a real LLM call in the
-executor, not just a stub. Once the drive trigger fires, the persona's
-capability runs under the normal execution pipeline — whether the
-agent *emits* a `drive_write_text` call depends on `system_prompt` and
-`tool_hints`. The scenario's step 7 checks for translated sibling
-files; if none appears, inspect `execution.output_lines` on the
-returned execution row — the agent may have written a `user_message`
-but not invoked the drive tool.
+1. **Register drive commands as invokable tools.** Look at `src-tauri/src/engine/tool_*` (tool registry) and `src/lib/personas/platformDefinitions.ts`. `drive_write_text` / `drive_read_text` / `drive_list` already exist as Tauri commands — they just need a tool descriptor so the runner can invoke them via the agent's tool_use messages.
+2. **Seed the persona's tool_hints with those names.** The build LLM already lists tool hints in each capability; once drive tools exist in the registry, the prompt-side rule can steer the LLM to hint at them when the connector is `local_drive`.
+3. **Expose the drive root to the agent's working directory.** Check whether `LOCAL_DRIVE_ROOT` env var is set in `execute_persona`'s process spawn so the agent can call `drive_write_text` with relative paths.
 
-## What's NOT done (explicit backlog)
+Verification: the scenario's step 7 already polls `drive.list` for translated siblings with common suffixes (`.cs.md`, `.cz.md`, `_cs.md`, `.cs`) — once the tool is wired, that check will flip to `ok`.
 
-1. **Build prompt awareness of `metadata.emits[]`.** See "Likely
-   surprises" above. One-line augmentation in
-   `build_session.rs::build_session_prompt`.
-2. **`drive.document.*` surfaced in the Event Builder UI palette.** The
-   taxonomy entries exist; the `EventListenerConfig` dropdown at
-   `src/features/triggers/sub_triggers/configs/EventListenerConfig.tsx`
-   should pick them up automatically via `getEventTypeOptionsGrouped`,
-   but visual verification after running the app is needed.
-3. **Drive tool surface for the runner.** The built-in executor needs
-   `drive_write_text` / `drive_read_text` / `drive_list` exposed as
-   tools the persona can call. Check `src-tauri/src/engine/tool_*` and
-   `src/lib/personas/tool_registry.ts` — if they aren't registered as
-   invokable tools, the agent can't write the translated file.
-4. **Scenario iteration logs.** The Python script records a structured
-   log but has no screenshot capture. `/screenshot` endpoint exists
-   (already in test_automation.rs) — call it at each step transition
-   for a richer post-mortem.
-5. **Regression tests for `coerceArgs + Channel`.** Shipped as unit
-   tests in `src/lib/__tests__/tauriInvoke.coerceArgs.test.ts`. An
-   integration test that actually starts a build session through the
-   harness would be a stronger safety net; the scenario itself doubles
-   as one.
+## Also worth carrying forward
+
+- **`drive.document.*` Event Builder palette.** Taxonomy entries exist; the `EventListenerConfig` dropdown at `src/features/triggers/sub_triggers/configs/EventListenerConfig.tsx` should pick them up automatically via `getEventTypeOptionsGrouped`, but needs visual confirmation.
+- **Scenario screenshots per step.** `/screenshot` endpoint already exists in `test_automation.rs`. Calling it at each chronological step gives a richer post-mortem than the JSON log alone.
+- **`__exec__` alphabetical-args quirk.** `driveWriteText` was fixed defensively, but any future multi-arg bridge method is a trip hazard. Consider modifying `__exec__` to pass the params object as a single arg when `fn.length === 1`, with a one-line migration note for existing positional methods.
 
 ## State of the codebase for next session
 
-- `master` branch, 3 commits ahead of `f33d71fa` (session starting point).
-- Uncommitted working-tree churn is entirely from unrelated UI
-  prototypes (`GlyphCard`, `HomeRoadmapView*`, `GuidedTour*`). None of
-  that is in scope.
-- Preexisting Cargo errors under the default feature set in
-  `test_automation.rs`, `healthcheck.rs`, `ocr/mod.rs`,
-  `auth_detect.rs` still exist and still fail under the default
-  feature set (unchanged from prior handoffs). Build with
-  `--features "test-automation desktop"` to get a clean check.
+- `master` branch, 5 commits ahead of `f33d71fa` (session starting point): `f1c78796`, `38d05c99`, `53accd50`, `999b1525`, `37d297a0`.
+- Uncommitted working-tree churn is entirely from unrelated UI prototypes (`GlyphCard`, `HomeRoadmapView*`, `GuidedTour*`). None of that is in scope.
+- Preexisting Cargo errors under the default feature set in `test_automation.rs`, `healthcheck.rs`, `ocr/mod.rs`, `auth_detect.rs` still exist and still fail under the default feature set (unchanged from prior handoffs). Build with `--features "test-automation desktop"` to get a clean check.
+- Known stray data from the scenario runs: a few personas named `Document Translator`/`Document Auto Translator`/`Document Auto-Translator` and a `fresh-inbox/` folder with test documents. Both are harmless; delete via `/bridge-exec deleteAgent` or the drive UI if they get in the way.
 
 ## Resume checklist
 
-1. Launch dev app with `cargo tauri dev --features "test-automation desktop"`.
+1. Launch dev app with `npx tauri dev -- --features test-automation`.
 2. `curl http://127.0.0.1:17320/health` — verify 200.
-3. `uvx --with httpx python tools/test-mcp/e2e_build_from_scratch.py --report /tmp/run.json`.
-4. Open `/tmp/run.json`; the first `outcome: fail` row is where to
-   start.
-5. If step 3 (`answer_dimensions`) never hits `draft_ready`, follow the
-   "`awaiting_input` never arrives" note.
-6. If step 6 (`persona_execution`) returns no matching execution,
-   follow the `drive.document.added fires but no execution` note and
-   query `persona_events` directly.
-7. If the translation never lands, inspect the execution row — the
-   agent may need tool access to `drive_write_text`.
-
-Each problem above has a pointer to the exact file/line to start at;
-none of them should need re-reading the whole codebase from scratch.
+3. Find the drive tool registration surface (grep `tool_registry` / `platformDefinitions.ts` / `PersonaToolDefinition` for "file_write" — drive_write_text should live adjacent).
+4. Wire `drive_write_text` / `drive_read_text` / `drive_list` as invokable tools.
+5. Rerun `tools/test-mcp/e2e_build_from_scratch.py --no-persona-cleanup --report /tmp/run.json`. Step 7 (`translated_file`) should flip from `info — no translated sibling found` to `ok` with the file contents.
+6. Spot-check the execution detail (use `bridge-exec getPersonaDetail` or query `persona_executions` in SQLite) — look for `tool_use` entries naming `drive_write_text`.
