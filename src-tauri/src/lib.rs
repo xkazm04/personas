@@ -2037,6 +2037,7 @@ pub fn run() {
             notifications::send_app_notification,
             notifications::test_notification_channel,
             notifications::get_notification_delivery_stats,
+            notifications::test_channel_delivery,
             // Network -- Identity (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::identity::get_local_identity,

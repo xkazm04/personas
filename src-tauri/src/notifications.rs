@@ -862,6 +862,246 @@ pub fn send_app_notification(
 }
 
 // ---------------------------------------------------------------------------
+// Per-channel test delivery rate limiter (DELIV-06, D-05)
+// ---------------------------------------------------------------------------
+
+/// Per-channel test delivery rate limiter.
+/// Key = `channel_key(spec)` = "type:credential_id:config_hash"
+/// Value = Instant of last successful call for that channel.
+/// 1 req/sec per channel; in-memory only, resets on app restart. (DELIV-06, D-05)
+static TEST_DELIVERY_RATE_LIMIT: LazyLock<TokioMutex<std::collections::HashMap<String, std::time::Instant>>> =
+    LazyLock::new(|| TokioMutex::new(std::collections::HashMap::new()));
+
+const RATE_LIMIT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
+
+/// Compose a stable rate-limit key for a channel spec.
+/// Hashes sorted config keys so two identical configs produce identical keys.
+pub(crate) fn channel_key(ch: &ChannelSpecV2) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    if let Some(ref cfg) = ch.config {
+        if let Some(obj) = cfg.as_object() {
+            let mut pairs: Vec<(&String, &serde_json::Value)> = obj.iter().collect();
+            pairs.sort_by(|a, b| a.0.cmp(b.0));
+            for (k, v) in pairs {
+                k.hash(&mut h);
+                v.to_string().hash(&mut h);
+            }
+        } else {
+            cfg.to_string().hash(&mut h);
+        }
+    }
+    format!(
+        "{}:{}:{:x}",
+        channel_type_str(&ch.channel_type),
+        ch.credential_id.as_deref().unwrap_or(""),
+        h.finish()
+    )
+}
+
+fn channel_type_str(t: &ChannelSpecV2Type) -> &'static str {
+    match t {
+        ChannelSpecV2Type::BuiltIn => "built-in",
+        ChannelSpecV2Type::Titlebar => "titlebar",
+        ChannelSpecV2Type::Slack => "slack",
+        ChannelSpecV2Type::Telegram => "telegram",
+        ChannelSpecV2Type::Email => "email",
+    }
+}
+
+/// Pure rate-limit check helper. Returns Some(TestDeliveryResult) if rate-limited,
+/// None if the call is allowed. Extracted for testability without AppHandle.
+pub(crate) fn rate_limit_check(
+    map: &std::collections::HashMap<String, std::time::Instant>,
+    now: std::time::Instant,
+    key: &str,
+    channel_type: &str,
+) -> Option<TestDeliveryResult> {
+    match map.get(key) {
+        Some(last) if now.duration_since(*last) < RATE_LIMIT_WINDOW => Some(TestDeliveryResult {
+            channel_type: channel_type.to_string(),
+            success: false,
+            latency_ms: 0,
+            error: Some("rate_limited".to_string()),
+            rate_limited: Some(true),
+        }),
+        _ => None,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// test_channel_delivery IPC command (DELIV-06)
+// ---------------------------------------------------------------------------
+
+/// Test shape-v2 channel delivery end-to-end. (DELIV-06)
+///
+/// For each channel spec:
+/// - Rate-limit check: if same channel key called within 1s, return `rate_limited: true`
+/// - "built-in" → synthesizes a real `messages` row (user sees it in the inbox)
+/// - "titlebar" → emits `titlebar-notification` Tauri event (bell round-trips)
+/// - "slack"/"telegram"/"email" → delegates to the existing `deliver_*` helpers
+///
+/// Returns one `TestDeliveryResult` per channel in input order.
+#[tauri::command]
+pub async fn test_channel_delivery(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+    channel_specs: Vec<ChannelSpecV2>,
+    sample_title: String,
+    sample_body: String,
+) -> Result<Vec<TestDeliveryResult>, String> {
+    let mut results = Vec::with_capacity(channel_specs.len());
+    let now = std::time::Instant::now();
+    let mut rate_map = TEST_DELIVERY_RATE_LIMIT.lock().await;
+
+    for spec in channel_specs.iter() {
+        let key = channel_key(spec);
+        let ch_type_str = channel_type_str(&spec.channel_type);
+        let start = std::time::Instant::now();
+
+        // Rate-limit gate
+        if let Some(limited) = rate_limit_check(&rate_map, now, &key, ch_type_str) {
+            results.push(limited);
+            continue;
+        }
+
+        // Dispatch per channel type
+        let result = match spec.channel_type {
+            ChannelSpecV2Type::BuiltIn => {
+                match test_deliver_built_in(&state, &sample_title, &sample_body).await {
+                    Ok(()) => TestDeliveryResult {
+                        channel_type: "built-in".into(),
+                        success: true,
+                        latency_ms: start.elapsed().as_millis() as u64,
+                        error: None,
+                        rate_limited: None,
+                    },
+                    Err(e) => TestDeliveryResult {
+                        channel_type: "built-in".into(),
+                        success: false,
+                        latency_ms: start.elapsed().as_millis() as u64,
+                        error: Some(e),
+                        rate_limited: None,
+                    },
+                }
+            }
+            ChannelSpecV2Type::Titlebar => {
+                test_deliver_titlebar(&app, spec, &sample_title, &sample_body);
+                TestDeliveryResult {
+                    channel_type: "titlebar".into(),
+                    success: true,
+                    latency_ms: start.elapsed().as_millis() as u64,
+                    error: None,
+                    rate_limited: None,
+                }
+            }
+            ChannelSpecV2Type::Slack | ChannelSpecV2Type::Telegram | ChannelSpecV2Type::Email => {
+                test_deliver_external(spec, &sample_title, &sample_body).await
+            }
+        };
+
+        rate_map.insert(key, now);
+        results.push(result);
+    }
+
+    Ok(results)
+}
+
+async fn test_deliver_built_in(
+    state: &tauri::State<'_, crate::AppState>,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
+    use crate::db::repos::communication::messages as msg_repo;
+    use crate::db::models::CreateMessageInput;
+    let input = CreateMessageInput {
+        persona_id: "__test__".to_string(),
+        execution_id: None,
+        title: Some(title.to_string()),
+        content: body.to_string(),
+        content_type: Some("text".to_string()),
+        priority: Some("normal".to_string()),
+        metadata: None,
+        thread_id: None,
+        use_case_id: None,
+    };
+    // AppState field is `db` (not `pool`) — see lib.rs.
+    msg_repo::create(&state.db, input).map(|_| ()).map_err(|e| e.to_string())
+}
+
+fn test_deliver_titlebar(
+    app: &tauri::AppHandle,
+    spec: &ChannelSpecV2,
+    title: &str,
+    body: &str,
+) {
+    let payload = TitlebarNotificationPayload {
+        persona_id: spec.credential_id.clone().unwrap_or_else(|| "__test__".into()),
+        persona_name: "Test".into(),
+        use_case_id: None,
+        event_type: None,
+        title: title.to_string(),
+        body: body.to_string(),
+        priority: "normal".into(),
+    };
+    let _ = emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
+}
+
+async fn test_deliver_external(
+    spec: &ChannelSpecV2,
+    title: &str,
+    body: &str,
+) -> TestDeliveryResult {
+    let ch_type = channel_type_str(&spec.channel_type).to_string();
+    let start = std::time::Instant::now();
+
+    // Convert ChannelSpecV2 → ExternalChannel so we can call the existing deliver_* helpers.
+    // ExternalChannel.config is HashMap<String,String>; ChannelSpecV2.config is Option<serde_json::Value>.
+    let mut cfg: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    if let Some(v) = spec.config.as_ref().and_then(|c| c.as_object()) {
+        for (k, val) in v {
+            let s = match val {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            cfg.insert(k.clone(), s);
+        }
+    }
+    let ext = ExternalChannel {
+        channel_type: ch_type.clone(),
+        enabled: spec.enabled,
+        credential_id: spec.credential_id.clone(),
+        config: cfg,
+    };
+
+    // deliver_slack/_telegram/_email all return Result<(), String>.
+    let outcome: Result<(), String> = match spec.channel_type {
+        ChannelSpecV2Type::Slack => deliver_slack(&ext, title, body).await,
+        ChannelSpecV2Type::Telegram => deliver_telegram(&ext, title, body).await,
+        ChannelSpecV2Type::Email => deliver_email(&ext, title, body).await,
+        _ => Err("not_external".into()),
+    };
+    let latency_ms = start.elapsed().as_millis() as u64;
+    match outcome {
+        Ok(()) => TestDeliveryResult {
+            channel_type: ch_type,
+            success: true,
+            latency_ms,
+            error: None,
+            rate_limited: None,
+        },
+        Err(e) => TestDeliveryResult {
+            channel_type: ch_type,
+            success: false,
+            latency_ms,
+            error: Some(e),
+            rate_limited: None,
+        },
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Test notification command -- delivers a test message to a single channel
 // ---------------------------------------------------------------------------
 
@@ -1198,5 +1438,78 @@ mod tests {
         // EmitEvent matched → channel kept
         let passed = apply_event_filter(&chans, &mk_ctx(None, Some("stocks.buy")));
         assert_eq!(passed.len(), 1, "matched EmitEvent must pass through");
+    }
+
+    // ---- Task 1: Phase 19 Plan 02 rate-limit and channel_key tests (DELIV-06, D-05) ----
+
+    #[test]
+    fn test_channel_key_stable() {
+        let spec = ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Slack,
+            enabled: true,
+            credential_id: Some("cred-1".into()),
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(serde_json::json!({"channel": "#alerts", "username": "bot"})),
+        };
+        let spec2 = spec.clone();
+        assert_eq!(channel_key(&spec), channel_key(&spec2));
+    }
+
+    #[test]
+    fn test_channel_key_differs_on_credential() {
+        let base = ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Slack,
+            enabled: true,
+            credential_id: Some("cred-1".into()),
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(serde_json::json!({"channel": "#a"})),
+        };
+        let mut other = base.clone();
+        other.credential_id = Some("cred-2".into());
+        assert_ne!(channel_key(&base), channel_key(&other));
+    }
+
+    #[test]
+    fn test_channel_key_differs_on_config() {
+        let base = ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Slack,
+            enabled: true,
+            credential_id: Some("cred-1".into()),
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(serde_json::json!({"channel": "#a"})),
+        };
+        let mut other = base.clone();
+        other.config = Some(serde_json::json!({"channel": "#b"}));
+        assert_ne!(channel_key(&base), channel_key(&other));
+    }
+
+    #[test]
+    fn test_rate_limit_same_channel() {
+        let mut map: std::collections::HashMap<String, std::time::Instant> = std::collections::HashMap::new();
+        let key = "slack:cred-1:abc123";
+        let t0 = std::time::Instant::now();
+        // First check: not in map → allowed
+        assert!(rate_limit_check(&map, t0, key, "slack").is_none());
+        map.insert(key.to_string(), t0);
+        // Second check within 1s → rate-limited
+        let t1 = t0 + std::time::Duration::from_millis(500);
+        let blocked = rate_limit_check(&map, t1, key, "slack");
+        assert!(blocked.is_some());
+        assert_eq!(blocked.unwrap().error.as_deref(), Some("rate_limited"));
+        // Third check after 1.1s → allowed again
+        let t2 = t0 + std::time::Duration::from_millis(1100);
+        assert!(rate_limit_check(&map, t2, key, "slack").is_none());
+    }
+
+    #[test]
+    fn test_rate_limit_key_independence() {
+        let mut map: std::collections::HashMap<String, std::time::Instant> = std::collections::HashMap::new();
+        let t0 = std::time::Instant::now();
+        map.insert("slack:cred-1:abc".into(), t0);
+        // Different credential_id → independent bucket, not rate-limited
+        assert!(rate_limit_check(&map, t0 + std::time::Duration::from_millis(200), "slack:cred-2:abc", "slack").is_none());
     }
 }
