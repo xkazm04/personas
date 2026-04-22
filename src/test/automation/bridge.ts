@@ -54,6 +54,15 @@ interface TestBridge {
     error?: string;
   }>;
   __exec__(id: string, method: string, params: Record<string, unknown>): Promise<void>;
+  // -- Build-from-scratch scenario helpers (see /bridge-exec dispatcher) --
+  startBuildFromIntent(intent: string, timeoutMs?: number): Promise<{ success: boolean; sessionId?: string; personaId?: string | null; phase?: string; error?: string }>;
+  answerPendingBuildQuestions(answers: Record<string, string>): Promise<{ success: boolean; answered?: string[]; pendingKeys?: string[]; error?: string }>;
+  waitForBuildPhase(phases: string[] | string, timeoutMs?: number): Promise<{ success: boolean; phase?: string; pendingCount?: number; error?: string }>;
+  listPendingBuildQuestions(): { success: boolean; questions: unknown[] };
+  driveWriteText(relPath: string, content: string): Promise<{ success: boolean; entry?: unknown; error?: string }>;
+  driveReadText(relPath: string): Promise<{ success: boolean; content?: string; error?: string }>;
+  driveList(relPath?: string): Promise<{ success: boolean; count?: number; entries?: unknown[]; error?: string }>;
+  waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs?: number): Promise<{ success: boolean; execution?: Record<string, unknown>; seen?: number; error?: string }>;
   [key: string]: unknown;
 }
 
@@ -745,6 +754,191 @@ const bridge: TestBridge = {
     } catch (e: unknown) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };
     }
+  },
+
+  // ── Build-from-scratch scenario helpers ──────────────────────────────
+  //
+  // These drive the full chronological flow used by the translation
+  // scenario (docs/guide-adoption-test-framework.md §E):
+  //
+  //   startBuildFromIntent(intent)       — types intent + clicks Launch
+  //   answerPendingBuildQuestions(map)   — batch-submits text answers
+  //   waitForBuildPhase(phase, timeoutMs)
+  //   promoteBuildDraft()                — already defined above
+  //   driveWriteText(path, content)      — fires drive.document.added
+  //   driveReadText(path)                — reads a document back
+  //   waitForPersonaExecution(personaId, sinceIso, timeoutMs)
+
+  /**
+   * Type intent into UnifiedMatrixEntry's textarea and click Launch.
+   * Returns once startBuildSession resolves (buildSessionId set in store).
+   */
+  async startBuildFromIntent(intent: string, timeoutMs: number = 30000) {
+    useSystemStore.getState().setIsCreatingPersona(true);
+    useSystemStore.getState().setSidebarSection('personas');
+    useAgentStore.getState().selectPersona(null);
+    await new Promise((r) => setTimeout(r, 400));
+
+    // Matrix command center uses stable testids (MatrixCommandCenterParts.tsx).
+    const ta = document.querySelector<HTMLTextAreaElement>('[data-testid="agent-intent-input"]');
+    if (!ta || (ta as HTMLElement).offsetParent === null) {
+      return { success: false, error: 'agent-intent-input textarea not visible' };
+    }
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    setter?.call(ta, intent);
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    ta.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 150));
+
+    const btn = document.querySelector<HTMLButtonElement>('[data-testid="agent-launch-btn"]');
+    if (!btn || btn.offsetParent === null) {
+      return { success: false, error: 'agent-launch-btn not visible' };
+    }
+    if (btn.disabled) return { success: false, error: 'agent-launch-btn is disabled (intent empty or already building?)' };
+    btn.click();
+
+    // Poll buildSessionId appearing in the store — that's the signal the
+    // backend start_build_session call resolved.
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const s = useAgentStore.getState();
+      if (s.buildSessionId) {
+        return {
+          success: true,
+          sessionId: s.buildSessionId,
+          personaId: s.buildPersonaId,
+          phase: s.buildPhase,
+        };
+      }
+      if (s.buildError) {
+        return { success: false, error: `buildError: ${s.buildError}` };
+      }
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    return { success: false, error: 'Timed out waiting for buildSessionId' };
+  },
+
+  /**
+   * Batch-answer the currently-pending build questions.
+   * `answers` maps cellKey (use-cases, connectors, triggers, human-review,
+   * messages, events, memory, error-handling) to a free-text string. Keys
+   * for which no question is currently pending are silently dropped.
+   */
+  async answerPendingBuildQuestions(answers: Record<string, string>) {
+    const store = useAgentStore.getState();
+    if (!store.buildSessionId) return { success: false, error: 'No active build session' };
+    const pending = store.buildPendingQuestions ?? [];
+    const pendingKeys = new Set((pending as Array<{ cellKey: string }>).map((q) => q.cellKey));
+
+    for (const [cellKey, answer] of Object.entries(answers)) {
+      if (!pendingKeys.has(cellKey)) continue;
+      store.collectAnswer(cellKey, answer);
+    }
+
+    const collected = store.buildPendingAnswers;
+    const collectedCount = Object.keys(collected).length;
+    if (collectedCount === 0) {
+      return { success: false, error: 'No provided cellKeys match pending questions', pendingKeys: Array.from(pendingKeys) };
+    }
+
+    const escapeAnswer = (raw: string): string =>
+      raw.replace(/\\/g, '\\\\').replace(/\r\n|\r|\n/g, '\\n').replace(/\[/g, '\\[');
+    const combined = Object.entries(collected)
+      .map(([k, v]) => `[${k}]: ${escapeAnswer(v)}`)
+      .join('\n');
+
+    try {
+      await invoke('answer_build_question', {
+        sessionId: store.buildSessionId,
+        cellKey: '_batch',
+        answer: combined,
+      });
+      store.clearPendingAnswers();
+      return { success: true, answered: Object.keys(collected) };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Poll until `buildPhase` reaches one of the target phases, or the
+   *  build surfaces an error. Useful for barriers between scenario steps. */
+  async waitForBuildPhase(phases: string[] | string, timeoutMs: number = 120_000) {
+    const targets = Array.isArray(phases) ? phases : [phases];
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const s = useAgentStore.getState();
+      if (s.buildError) {
+        return { success: false, error: `buildError: ${s.buildError}`, phase: s.buildPhase };
+      }
+      if (targets.includes(s.buildPhase as string)) {
+        return { success: true, phase: s.buildPhase, pendingCount: (s.buildPendingQuestions ?? []).length };
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    const final = useAgentStore.getState().buildPhase;
+    return { success: false, error: `Timed out waiting for ${targets.join('|')} (stuck at ${final})`, phase: final };
+  },
+
+  /** List currently pending build questions. */
+  listPendingBuildQuestions() {
+    const pending = useAgentStore.getState().buildPendingQuestions ?? [];
+    return { success: true, questions: pending };
+  },
+
+  /** Write a text document through the built-in Local Drive. Triggers
+   *  `drive.document.added` (or edited if the path already existed). */
+  async driveWriteText(relPath: string, content: string) {
+    try {
+      const entry = await invoke('drive_write_text', { relPath, content });
+      return { success: true, entry };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Read a text document from Local Drive (for asserting translated output). */
+  async driveReadText(relPath: string) {
+    try {
+      const content = await invoke<string>('drive_read_text', { relPath });
+      return { success: true, content };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** List a folder's entries (smoke-check the drive before/after writes). */
+  async driveList(relPath: string = '') {
+    try {
+      const entries = await invoke<unknown[]>('drive_list', { relPath });
+      return { success: true, count: (entries as unknown[]).length, entries };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Poll list_executions for a persona until a row appears at/after
+   *  `sinceIso` with a terminal status. Returns the most recent execution. */
+  async waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs: number = 180_000) {
+    const sinceMs = Date.parse(sinceIso);
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const rows = await invoke<Array<Record<string, unknown>>>('list_executions', {
+          personaId, limit: 20,
+        });
+        const recent = (rows as Array<{ started_at?: string; status?: string }>)
+          .filter((r) => {
+            const ts = r.started_at ? Date.parse(r.started_at) : NaN;
+            return Number.isFinite(ts) && ts >= sinceMs;
+          });
+        const done = recent.find((r) => ['completed', 'failed', 'cancelled'].includes(String(r.status)));
+        if (done) return { success: true, execution: done, seen: recent.length };
+      } catch {
+        // swallow — keep polling
+      }
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    return { success: false, error: `No execution for persona ${personaId} within ${timeoutMs}ms` };
   },
 
   /** List available credential service types from the vault. */

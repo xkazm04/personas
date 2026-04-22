@@ -119,6 +119,10 @@ const BRIDGE_TIMEOUT_DEFAULT: u64 = 15;
 const BRIDGE_TIMEOUT_MUTATION: u64 = 30;
 /// Maximum timeout for explicit wait operations (wait-for, wait-toast).
 const BRIDGE_TIMEOUT_WAIT_MAX: u64 = 300;
+/// Default timeout for the generic /bridge-exec dispatcher. Covers the
+/// long-running scenario helpers (startBuildFromIntent, waitForBuildPhase,
+/// waitForPersonaExecution) without forcing every caller to pass timeout_secs.
+const BRIDGE_TIMEOUT_LONG_METHOD: u64 = 180;
 
 async fn eval_bridge_method(
     state: &ServerState,
@@ -748,6 +752,52 @@ async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
 
+// ── Generic bridge dispatcher ───────────────────────────────────────────────
+//
+// Allows new scenario helpers to be added on the JS bridge side without
+// adding a per-method Rust handler here. Callers POST
+//
+//   {"method": "<bridge-method>", "params": {...}, "timeout_secs": 120}
+//
+// and receive the JSON the bridge's __test_respond emitted. `timeout_secs`
+// caps the wait; omitted defaults to the long-method budget (90 s).
+
+#[derive(Deserialize)]
+struct BridgeExecRequest {
+    method: String,
+    #[serde(default)]
+    params: serde_json::Value,
+    #[serde(default)]
+    timeout_secs: Option<u64>,
+}
+
+async fn handle_bridge_exec(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BridgeExecRequest>,
+) -> Result<String, (StatusCode, String)> {
+    if req.method.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "method must not be empty".into()));
+    }
+    // Only allow identifier characters so nothing clever slips into the
+    // eval'd JS. Matches the bridge method name shape.
+    if !req.method.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "method must be alphanumeric/underscore only".into(),
+        ));
+    }
+    let params = if req.params.is_null() {
+        serde_json::json!({})
+    } else {
+        req.params
+    };
+    let timeout_secs = req
+        .timeout_secs
+        .unwrap_or(BRIDGE_TIMEOUT_LONG_METHOD)
+        .min(BRIDGE_TIMEOUT_WAIT_MAX);
+    eval_bridge_method_with_timeout(&state, &req.method, &params, timeout_secs).await
+}
+
 // ── Server startup ──────────────────────────────────────────────────────────
 
 /// Default port for dev mode (`--features test-automation`).
@@ -805,6 +855,8 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
         .route("/list-credentials", get(handle_list_credentials))
         .route("/list-cli-capturable", get(handle_list_cli_capturable))
         .route("/cli-capture-run", post(handle_cli_capture_run))
+        // Generic dispatcher — forwards to any bridge method on window.__TEST__.
+        .route("/bridge-exec", post(handle_bridge_exec))
         .with_state(state);
 
     let addr = format!("127.0.0.1:{}", port);
