@@ -25,16 +25,16 @@ See: .planning/PROJECT.md (Current Milestone: v1.2 Messaging & Notifications).
 
 **Core value (v1.2):** Every persona gets first-class messaging out of the box — in-app inbox is the always-on default, TitleBar bell subscriptions are opt-in per event, external channels (Slack/Telegram/Email) are configurable per UC with sample-message testing. Composition (shared vs separate triggers/messages) is editable post-creation in the Agents module.
 
-**Current focus:** Phase 17 (Schema v3.2) COMPLETE. Phase 18 (personas_messages builtin connector) is next — verify + gap-close the existing `scripts/connectors/builtin/local-messaging.json` + add migration for existing installs. CONTEXT.md for Phase 18 already written via direct Claude tooling at `.planning/phases/18-personas-messages-connector/18-CONTEXT.md`.
+**Current focus:** Phase 17 (Schema v3.2) + Phase 18 (personas_messages builtin connector) COMPLETE. Phase 19 (Backend Delivery Glue) is next — extend `deliver_to_channels()` with `built-in` + `titlebar` branches, wire a frontend event bridge for titlebar notifications, and add a debounced `test_channel_delivery` IPC. CONTEXT.md + RESEARCH.md + VALIDATION.md + 19-01-PLAN.md (Wave 1: Rust backend) are already on disk at `.planning/phases/19-backend-delivery-glue/`. Plan 02 (Wave 2: IPC + frontend bridge) pending.
 
 ## Current Position
 
-Phase: 18 — personas_messages Builtin Connector (Not started)
-Plan: —
-Status: Ready to plan Phase 18 (CONTEXT.md already in place)
-Last activity: 2026-04-22 — Phase 17 verified and closed
+Phase: 19 — Backend Delivery Glue (plan 01 drafted; plan 02 + execute pending)
+Plan: 19-02-PLAN.md (Wave 2) to draft; 19-01-PLAN.md (Wave 1) already on disk
+Status: Ready to plan Phase 19 Wave 2; then execute both plans
+Last activity: 2026-04-22 — Phase 18 verified and closed (commit ec12bdbc)
 
-Progress: [█         ] 17%  (1/6 phases complete; Phase 17 ✓)
+Progress: [██        ] 33%  (2/6 phases complete; Phases 17, 18 ✓)
 
 ### Phase 16 deferred-resolution (v1.1 carryover, 2026-04-20)
 
@@ -92,16 +92,21 @@ _(Will populate as phases complete. Pre-milestone decisions captured in .plannin
 - **Frontend keeps Phase 16 heuristics as fallbacks** — `isMessageOutput` short-circuits on explicit signals (`'output'` / `'result'` / `'markdown'`) before the keyword scan. Legacy rows + other emitters still classified correctly.
 - **Manual ts-rs binding update** — Persona.ts was patched by hand because `cargo test` (the project's regen path) fails on 14 pre-existing errors from unresolved crates (`xcap`, `image`, `which`, `desktop_discovery`) unrelated to Phase 17. Manual value matches exactly what ts-rs would emit for `Option<String>`.
 
+### v1.2 Phase 17 — Schema v3.2 (completed 2026-04-21)
+
+Landed on master in 5 commits `5a5b8e2b`, `05a17ca2`, `cf348f6e`, `59bfbdd2`, `1abd49ab`. All 6 SCHEMA-0x requirements met. New types: `SampleOutput`, `ChannelSpecV2`, `ChannelSpecV2Type`, `ChannelScopeV2`. Hoisters: `hoist_sample_outputs`, `hoist_notify_titlebar_flags`. Parser: `parse_channels_v2` with `empty_use_case_ids` validator guard. Delta doc: `docs/concepts/persona-capabilities/C3-schema-v3.2-delta.md`. 5 ts-rs-matching TS bindings hand-patched. Summary: `.planning/phases/17-schema-v3-2/17-01-SUMMARY.md`.
+
+### v1.2 Phase 18 — personas_messages Builtin Connector (completed 2026-04-22)
+
+Single-plan phase landed in 3 commits `3a1f5a3c`, `17067e46`, `ec12bdbc`. Audit revealed `scripts/connectors/builtin/local-messaging.json` + seed path already satisfied CONN-01/02/03; the one real gap was CONN-04 (UI empty-state for zero-config connectors). Shipped: `TemplateFormBody` empty-state branch + i18n keys + vitest regression guards covering seed path + category filter. Summary: `.planning/phases/18-personas-messages-connector/18-01-SUMMARY.md`.
+
 ### Pending Todos (v1.2)
 
-All six phases (17–22) have CONTEXT.md artifacts ready for `/gsd-plan-phase`. Phase 17 via the discuss-phase skill; 18–22 via direct Claude tooling (skill bypassed due to stale-roadmap + frontmatter-corruption bugs encountered during Phase 17 session).
-
-- Plan Phase 17: Schema v3.2 (SCHEMA-01..05) — context at `.planning/phases/17-schema-v3-2/17-CONTEXT.md`
-- Plan Phase 18: personas_messages Builtin Connector (CONN-01..04) — context at `.planning/phases/18-personas-messages-connector/18-CONTEXT.md`. **Surprise finding:** `scripts/connectors/builtin/local-messaging.json` already defines `personas_messages` — phase reduces from "create" to "verify + gap-close"
-- Plan Phase 19: Backend Delivery Glue (DELIV-01..06) — context at `.planning/phases/19-backend-delivery-glue/19-CONTEXT.md`. **Deviation from handoff:** extend `src/lib/eventBridge.ts` directly instead of creating a `eventBridge.titlebarNotifications.ts` sidecar (matches existing centralized-listener convention)
-- Plan Phase 20: Adoption Flow Conversion (ADOPT-01..09) — context at `.planning/phases/20-adoption-flow-conversion/20-CONTEXT.md`. Merge target is `UseCasePickerStepNeon.tsx` (not a new Pipeline file); `save_adoption_answers` payload extended additively
-- Plan Phase 21: Agent-Editor Round-Trip (EDIT-01..07) — context at `.planning/phases/21-agent-editor-round-trip/21-CONTEXT.md`. Uses existing `{draft, patch}` convention; legacy rows get a "re-save to migrate" banner per Phase 17 D-02
-- Plan Phase 22: Template Backfill (TMPL-01..03) — context at `.planning/phases/22-template-backfill/22-CONTEXT.md`. **Correction:** 120 templates (handoff said ~107); parallel category-scoped agent backfill following v3.1 precedent
+- **Plan Phase 19 Wave 2 (19-02-PLAN.md)**: DELIV-04 (eventBridge.ts listener) + DELIV-06 (`test_channel_delivery` IPC). 19-01-PLAN.md (Wave 1 Rust) already drafted. RESEARCH.md Wave 2 spec is at `.planning/phases/19-backend-delivery-glue/19-RESEARCH.md` §"Wave 2: Frontend + Bindings" (line ~847).
+- **Execute Phase 19** (both plans sequentially, no worktree, regular commits — see guardrails).
+- **Plan + execute Phase 20** (ADOPT-01..09). **Prototype deviation alert:** commit `ba7b44f8 Prototypes restore` deleted `MessagingPickerVariantC.tsx` and added `MessagingPickerVariantH/J/K.tsx` after Phase 18 landed. `20-CONTEXT.md` `prototype_impact_analysis` was written against VariantC — Phase 20 research pass must re-baseline.
+- **Plan + execute Phase 21** (EDIT-01..07). Reuses Phase 20 channel matrix helper.
+- **Plan + execute Phase 22** (TMPL-01..03). 120 templates; parallel category-scoped agent backfill.
 
 ### Pre-existing orphans (decide before starting v1.2 execution)
 
