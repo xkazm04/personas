@@ -2404,7 +2404,10 @@
       "authorizing_with": "Authorizing with {label}...",
       "authorize_with": "Authorize with {label}",
       "oauth_consent_hint": "Opens {label} in your browser. Grant access, then return here.",
-      "oauth_connected_at": "{label} connected at {time}"
+      "oauth_connected_at": "{label} connected at {time}",
+      "no_config_required_heading": "No configuration required",
+      "no_config_required_description": "This connector is built into Personas. It works out of the box — no credentials or API keys needed.",
+      "no_config_required_dismiss": "Done"
     },
     "type_picker": {
       "title": "Add Credential",

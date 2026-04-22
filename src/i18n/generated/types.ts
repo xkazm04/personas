@@ -2411,6 +2411,9 @@ export type Translations = {
       authorize_with: string;
       oauth_consent_hint: string;
       oauth_connected_at: string;
+      no_config_required_heading: string;
+      no_config_required_description: string;
+      no_config_required_dismiss: string;
     };
     type_picker: {
       title: string;

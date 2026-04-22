@@ -63,6 +63,37 @@ export function TemplateFormBody({
   const cf = t.vault.forms;
   const label = selectedConnector.label;
 
+  // CONN-04: Zero-config empty-state for builtin connectors with no credential fields.
+  // Triggers when (a) the selected auth variant exposes no fields AND
+  // (b) the connector's metadata declares auth_type "none" or "builtin".
+  // The CTA calls onCancel (not onCreateCredential) because the credential row
+  // for builtin connectors is already seeded by seed_builtin_credentials on every
+  // boot (see 18-RESEARCH.md §CONN-02 + T-18-01). Calling onCreateCredential({})
+  // here would either duplicate the row or error on unique-id violation.
+  const authType = (selectedConnector.metadata as Record<string, unknown> | null)?.auth_type;
+  const isZeroConfig =
+    variantFields.length === 0 && (authType === 'none' || authType === 'builtin');
+
+  if (isZeroConfig) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-modal border border-primary/8 bg-secondary/20 p-4 space-y-2">
+          <p className="typo-body font-medium text-foreground">
+            {cf.no_config_required_heading}
+          </p>
+          <p className="typo-body text-foreground/70">
+            {cf.no_config_required_description}
+          </p>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button variant="primary" size="sm" onClick={onCancel}>
+            {cf.no_config_required_dismiss}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div>
