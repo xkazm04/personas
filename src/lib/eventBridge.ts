@@ -76,6 +76,12 @@ const EVENT_BRIDGE_TIMING = {
    * regresses startup latency on slow machines.
    */
   INIT_BATCH_SIZE: 5,
+  /**
+   * Debounce for `TITLEBAR_NOTIFICATION`. Each persona dispatch is an independent
+   * notification — no coalescing in v1.2 so the bell updates immediately on every message.
+   * A future "grouping" feature would increase this. (DELIV-04)
+   */
+  TITLEBAR_NOTIFICATION_DEBOUNCE_MS: 0,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -521,6 +527,30 @@ const registry: EventRegistration[] = [
       return [unlisten];
     },
   },
+
+  // -- TitleBar notification (persona message delivery — v3.2 DELIV-04) ------
+  {
+    event: EventName.TITLEBAR_NOTIFICATION,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.TITLEBAR_NOTIFICATION,
+        (payload) => {
+          // Pure store.set() — no IPC, no re-entrancy risk (T-19-01 mitigation).
+          useNotificationCenterStore.getState().addNotification({
+            pipelineId: 0,
+            projectId: null,
+            status: 'success',
+            ref: payload.eventType ?? 'message',
+            webUrl: 'agents',
+            title: payload.title,
+            message: payload.body,
+            personaId: payload.personaId,
+          });
+        },
+      );
+      return [unlisten];
+    },
+  },
 ];
 
 function tracing(...args: unknown[]) {
@@ -588,3 +618,10 @@ export async function teardownAllListeners(): Promise<void> {
   unlisteners.length = 0;
   attached = false;
 }
+
+/**
+ * Test-only export: exposes the registry array so tests can assert that a
+ * specific event name is registered without needing a live Tauri AppHandle.
+ * Do NOT use in production code.
+ */
+export const _testRegistry = registry;
