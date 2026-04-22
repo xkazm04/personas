@@ -84,7 +84,14 @@ const inflightByKey = new Map<string, Promise<unknown>>();
  * Recursively walks an args object (or array) and converts every `undefined`
  * value to `null` so that Rust `Option<T>` fields deserialise correctly.
  * Arrays are recursed element-by-element; plain objects are recursed
- * key-by-key; Date instances and primitives are left untouched.
+ * key-by-key; Date instances, class instances (e.g. Tauri `Channel`), and
+ * primitives are left untouched.
+ *
+ * Class instances must NOT be recursed into: Tauri ships specially-
+ * serialised objects (Channel, Image, Resource, DPI sizes) that rely on a
+ * `toJSON` / `SERIALIZE_TO_IPC_FN` method to emit a string or custom payload.
+ * Walking their own enumerable properties produces a plain map and breaks IPC
+ * deserialization — e.g. `Channel` → `"invalid type: map, expected a string"`.
  *
  * @internal — exported for unit tests only; not part of the public API.
  */
@@ -92,10 +99,7 @@ export function coerceArgs(args: InvokeArgs): InvokeArgs {
   if (Array.isArray(args)) {
     return args.map((item: unknown) => {
       if (item === undefined) return null;
-      if (item !== null && typeof item === "object" && !(item instanceof Date)) {
-        // Covers both plain objects and nested arrays — recurse into both.
-        return coerceArgs(item as InvokeArgs);
-      }
+      if (isPlainRecursable(item)) return coerceArgs(item as InvokeArgs);
       return item;
     }) as InvokeArgs;
   }
@@ -105,13 +109,25 @@ export function coerceArgs(args: InvokeArgs): InvokeArgs {
       out[k] = null;
     } else if (Array.isArray(v)) {
       out[k] = coerceArgs(v as InvokeArgs);
-    } else if (v !== null && typeof v === "object" && !(v instanceof Date)) {
+    } else if (isPlainRecursable(v)) {
       out[k] = coerceArgs(v as InvokeArgs);
     } else {
       out[k] = v;
     }
   }
   return out as InvokeArgs;
+}
+
+/**
+ * True only for "plain" containers we may safely walk: plain objects and
+ * null-prototype objects. Class instances, Dates, and anything with a
+ * custom `toJSON` stay opaque so their IPC serialization survives.
+ */
+function isPlainRecursable(v: unknown): boolean {
+  if (v === null || typeof v !== "object") return false;
+  if (Array.isArray(v)) return true;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
 }
 
 export interface InvokeOpts {

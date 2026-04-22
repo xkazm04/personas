@@ -39,4 +39,26 @@ describe("coerceArgs", () => {
     const input = { a: null, b: 1 };
     expect(coerceArgs(input as never)).toEqual({ a: null, b: 1 });
   });
+
+  it("preserves class instances (Tauri Channel-style) without recursing into them", () => {
+    // Regression: coerceArgs used to recurse into any non-Date object. Tauri
+    // `Channel` is a class instance with `toJSON(): string` — walking its own
+    // keys produces a map and the Rust side rejects it with
+    // "invalid type: map, expected a string".
+    class FakeChannel {
+      id = 42;
+      toJSON() { return "__CHANNEL__:42"; }
+    }
+    const ch = new FakeChannel();
+    const result = coerceArgs({ channel: ch } as never) as { channel: FakeChannel };
+    // Same reference: not walked, not cloned.
+    expect(result.channel).toBe(ch);
+    // toJSON still produces the IPC-compatible string form.
+    expect(JSON.stringify(result)).toBe('{"channel":"__CHANNEL__:42"}');
+  });
+
+  it("leaves null-prototype objects intact but still coerces their undefined keys", () => {
+    const obj = Object.assign(Object.create(null), { a: undefined, b: 2 });
+    expect(coerceArgs({ obj } as never)).toEqual({ obj: { a: null, b: 2 } });
+  });
 });
