@@ -196,6 +196,9 @@ export const EventName = {
 
   // Process activity (global background process lifecycle)
   PROCESS_ACTIVITY: 'process-activity',
+
+  // Titlebar notification (persona message delivery — v3.2 DELIV-02)
+  TITLEBAR_NOTIFICATION: 'titlebar-notification',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -503,6 +506,17 @@ export interface PipelineCycleWarningPayload {
   cycle_member_ids: string[];
 }
 
+/** TitleBar notification from persona message delivery (notifications.rs TitlebarNotificationPayload). */
+export interface TitlebarNotificationPayload {
+  personaId: string;
+  personaName: string;
+  useCaseId: string | null;
+  eventType: string | null;
+  title: string;
+  body: string;
+  priority: string;
+}
+
 // ---------------------------------------------------------------------------
 // Payload type map
 // ---------------------------------------------------------------------------
@@ -775,6 +789,9 @@ export interface EventPayloadMap {
     run_id?: string;
     label?: string;
   };
+
+  // Titlebar notification
+  [EventName.TITLEBAR_NOTIFICATION]: TitlebarNotificationPayload;
 }
 
 // ---------------------------------------------------------------------------
