@@ -17,19 +17,30 @@ import { BehaviorCoreEditor } from "@/features/agents/components/matrix/Behavior
 import { CapabilityRowEditor } from "@/features/agents/components/matrix/CapabilityRowEditor";
 import { CapabilityAddModal } from "@/features/agents/components/matrix/CapabilityAddModal";
 import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
+import { GlyphGrid } from "@/features/shared/glyph";
+import {
+  useUseCaseChronology,
+  useUseCaseFlows,
+} from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
+import { MatrixCommandCenter } from "@/features/templates/sub_generated/gallery/matrix/MatrixCommandCenter";
+import {
+  DimensionQuickConfig,
+  serializeQuickConfig,
+  type QuickConfigState,
+} from "@/features/agents/components/matrix/DimensionQuickConfig";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 
-// v3 layout preference — persists across sessions via localStorage.
-type BuildLayout = "legacy-dimensions" | "v3-capabilities";
+// Layout preference — persists across sessions via localStorage.
+type BuildLayout = "legacy-dimensions" | "v3-capabilities" | "glyph";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw === "legacy-dimensions" || raw === "v3-capabilities") return raw;
+    if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return raw;
   } catch { /* SSR or disabled localStorage */ }
   return "v3-capabilities";
 }
@@ -368,6 +379,29 @@ export function UnifiedMatrixEntry() {
   const capabilityOrder = useAgentStore((s) => s.buildCapabilityOrder);
   const [showAddCapability, setShowAddCapability] = useState(false);
 
+  // Glyph layout reads the same buildDraft as the adoption flow, so the shared
+  // chronology builder produces the rows without any edit-mode-specific shim.
+  const glyphRows = useUseCaseChronology();
+  const glyphFlows = useUseCaseFlows();
+
+  // Glyph mode owns its own DimensionQuickConfig state so we can append the
+  // serialized config to intent at launch time — mirrors what PersonaMatrix
+  // does internally for its pre-build quick setup.
+  const [glyphQuickConfig, setGlyphQuickConfig] = useState<QuickConfigState>({
+    frequency: null, days: ['mon'], monthDay: 1, time: '09:00',
+    selectedConnectors: [], connectorTables: {}, selectedEvents: [],
+  });
+  const glyphQuickConfigRef = useRef(glyphQuickConfig);
+  glyphQuickConfigRef.current = glyphQuickConfig;
+  const handleLaunchGlyph = useCallback(() => {
+    const hint = serializeQuickConfig(glyphQuickConfigRef.current);
+    if (hint) setIntentText(intentTextRef.current + hint);
+    void handleLaunch();
+  }, [handleLaunch, setIntentText]);
+
+  // Pre-build = creation mode before the LLM has produced anything
+  const isPreBuildGlyph = !hasBehaviorCore && !hasDesignResult && !isActivelyBuilding;
+
   // -- Render -------------------------------------------------------------
 
   return (
@@ -375,9 +409,9 @@ export function UnifiedMatrixEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
-      {/* Layout toggle — shown only once a build is in progress. */}
-      {(hasBehaviorCore || hasDesignResult || isActivelyBuilding) && (
-        <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
+      {/* Layout toggle — always visible so users can preview the Glyph
+          prototype even in pre-build, not only once content exists. */}
+      <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
           <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
             <button
               type="button"
@@ -405,11 +439,82 @@ export function UnifiedMatrixEntry() {
             >
               {t.matrix_v3.layout_toggle_v3}
             </button>
+            <button
+              type="button"
+              onClick={() => handleLayoutChange("glyph")}
+              className={`rounded-full px-3 py-1 typo-caption transition ${
+                layout === "glyph"
+                  ? "bg-primary/20 text-primary"
+                  : "text-foreground/60 hover:text-foreground"
+              }`}
+              title="Glyph — sigil-first capability view"
+              data-testid="build-layout-toggle-glyph"
+            >
+              Glyph
+            </button>
           </div>
         </div>
-      )}
 
-      {layout === "v3-capabilities" && hasBehaviorCore ? (
+      {layout === "glyph" ? (
+        <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1" data-testid="build-layout-glyph">
+          <div className="flex flex-col gap-4 pb-10">
+            {/* Pre-build: quick setup (triggers / connectors / events) */}
+            {isPreBuildGlyph && (
+              <DimensionQuickConfig onChange={setGlyphQuickConfig} />
+            )}
+
+            {/* Command hub — intent input, launch, test lifecycle, CLI output.
+               Reused standalone from PersonaMatrix's 9th cell so the Glyph
+               layout doesn't need the redundant dimension grid around it. */}
+            <div className="rounded-modal border border-primary/25 ring-1 ring-primary/10 bg-foreground/[0.04] backdrop-blur-lg p-4 2xl:p-5">
+              <MatrixCommandCenter
+                designResult={null}
+                isEditMode={true}
+                variant="creation"
+                intentText={intentText}
+                onIntentChange={setIntentText}
+                onLaunch={handleLaunchGlyph}
+                launchDisabled={launchDisabled}
+                isRunning={build.isBuilding}
+                completeness={build.completeness}
+                cliOutputLines={build.outputLines}
+                agentName={agentName}
+                onAgentNameChange={setAgentName}
+                hasDesignResult={hasDesignResult}
+                buildPhase={build.buildPhase}
+                onStartTest={lifecycle.handleStartTest}
+                onApproveTest={() => { void lifecycle.handlePromote(); }}
+                onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+                onRejectTest={lifecycle.handleRejectTest}
+                onRefine={lifecycle.handleRefine}
+                testOutputLines={build.buildTestOutputLines}
+                testPassed={build.buildTestPassed}
+                testError={build.buildTestError}
+                toolTestResults={lifecycle.buildToolTestResults}
+                testSummary={lifecycle.buildTestSummary}
+                buildActivity={build.buildActivity}
+                onApplyEdits={handleApplyEdits}
+                onDiscardEdits={handleDiscardEdits}
+                onViewAgent={handleViewPromotedAgent}
+                isPreBuild={isPreBuildGlyph}
+              />
+            </div>
+
+            {/* Glyph visualization — empty state message fires if no capabilities
+               have been produced yet. Pending Q&A surfaces inline at the top. */}
+            <GlyphGrid
+              rows={glyphRows}
+              flowsById={glyphFlows}
+              templateName={agentName || undefined}
+              pendingQuestions={build.pendingQuestions}
+              onAnswerBuildQuestion={build.handleAnswer}
+              emptyLabel={isPreBuildGlyph
+                ? "Describe what you want to build above, then launch. Capabilities will appear here as sigils."
+                : undefined}
+            />
+          </div>
+        </div>
+      ) : layout === "v3-capabilities" && hasBehaviorCore ? (
         // v3 capability-first layout
         <div
           className="flex-1 min-h-0 w-full overflow-y-auto pr-1"

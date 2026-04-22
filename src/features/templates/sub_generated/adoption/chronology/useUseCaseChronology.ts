@@ -537,7 +537,7 @@ function coerceNodeType(raw: string): FlowNode['type'] {
     : 'action';
 }
 
-function buildFlowLookup(draft: Record<string, unknown> | null): Map<string, UseCaseFlow> {
+export function buildFlowLookup(draft: Record<string, unknown> | null): Map<string, UseCaseFlow> {
   const out = new Map<string, UseCaseFlow>();
   if (!draft) return out;
   const d = draft as Record<string, unknown>;

@@ -13,12 +13,32 @@ Analyze recent Claude Code CLI sessions to extract business-agnostic behavioral 
 
 ## Constants
 
-- **Obsidian vault:** `C:/Users/mkdol/Documents/Obsidian/personas`
-- **Reflections folder:** `Reflections/` (inside vault)
-- **Patterns folder:** `Patterns/` (inside vault — promoted permanent rules)
+- **Obsidian vault (resolved at runtime):** first existing path from `VAULT_CANDIDATES` below.
+- **Reflections folder:** `Reflections/` (inside the resolved vault)
+- **Patterns folder:** `Patterns/` (inside the resolved vault — promoted permanent rules)
 - **Parser:** `.claude/skills/reflect/tools/parse-transcripts.mjs`
 
-When copying this skill to another repo, the vault path stays the same (it's the user's personal knowledge base, shared across all projects). Only the parser path is relative to the repo root.
+### VAULT_CANDIDATES (ordered by device)
+
+The user works across multiple devices. Each row is one device's vault root. The skill picks the **first path that exists**; extend the list (top or bottom) when onboarding a new device.
+
+1. `C:/Users/mkdol/Documents/Obsidian/personas`
+2. `C:/Users/kazda/Documents/Obsidian/personas`
+
+When copying this skill to another repo, only the parser path is relative to the repo root — `VAULT_CANDIDATES` stays identical because the vault is the user's personal knowledge base, shared across all projects and devices.
+
+## Phase 0: Resolve Vault Path
+
+Run the candidate resolver and capture its output as `{VAULT}` for every subsequent phase:
+
+```bash
+for p in "C:/Users/mkdol/Documents/Obsidian/personas" "C:/Users/kazda/Documents/Obsidian/personas"; do
+  if [ -d "$p" ]; then echo "$p"; break; fi
+done
+```
+
+- **If output is non-empty** → set `{VAULT}` to that path and continue.
+- **If output is empty** → none of the candidates exist. Stop, tell the user which paths were checked, and ask which to use (or to extend the list).
 
 ## Phase 1: Parse Recent Sessions
 
@@ -36,8 +56,8 @@ If `sessionsAnalyzed` is 0, tell the user no recent sessions were found and stop
 
 ## Phase 2: Load Previous Context
 
-1. Glob `C:/Users/mkdol/Documents/Obsidian/personas/Reflections/*.md` — read the 2 most recent (by filename date) for continuity.
-2. Read all `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/*.md` to know which rules are already promoted.
+1. Glob `{VAULT}/Reflections/*.md` — read the 2 most recent (by filename date) for continuity.
+2. Read all `{VAULT}/Patterns/*.md` to know which rules are already promoted.
 
 If neither folder has files, this is the first reflection — skip continuity analysis.
 
@@ -88,13 +108,13 @@ For every insight, ask: **"Would this still be true if the user switched to a co
 
 ## Phase 4: Write to Obsidian
 
-Ensure the folder exists:
+Ensure the folder exists (under the resolved `{VAULT}`):
 
 ```bash
-node -e "require('fs').mkdirSync('C:/Users/mkdol/Documents/Obsidian/personas/Reflections', {recursive:true})"
+node -e "require('fs').mkdirSync('{VAULT}/Reflections', {recursive:true})"
 ```
 
-Write to `C:/Users/mkdol/Documents/Obsidian/personas/Reflections/YYYY-MM-DD-reflection.md` (today's date). If a file for today exists, append counter: `-reflection-2.md`.
+Write to `{VAULT}/Reflections/YYYY-MM-DD-reflection.md` (today's date). If a file for today exists, append counter: `-reflection-2.md`.
 
 ### Output format:
 
@@ -143,8 +163,8 @@ top_categories: [{cat1}, {cat2}, {cat3}]
 
 Scan the reflection just written PLUS previous reflections. If any signal has appeared in 3+ reflections:
 
-1. Check `Patterns/*.md` — skip if already promoted.
-2. Create `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/cli-{slug}.md`:
+1. Check `{VAULT}/Patterns/*.md` — skip if already promoted.
+2. Create `{VAULT}/Patterns/cli-{slug}.md`:
 
 ```markdown
 ---
@@ -168,8 +188,9 @@ observations: {N}
 Print to the user:
 
 ```
-Reflection written → Reflections/{filename}
+Reflection written → {VAULT-short}/Reflections/{filename}
 
+  Device:       {resolved-vault path}
   Period:       {N}d ({M} sessions, {P} projects)
   Corrections:  {N} — top: {top pattern}
   Confirmed:    {N}

@@ -11,16 +11,9 @@ import { createLogger } from "@/lib/log";
 import { useVaultStore } from "@/stores/vaultStore";
 
 const logger = createLogger("template-adoption");
-import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
-import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
-import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
-import { PersonaChronologyWildcard } from "./chronology/PersonaChronologyWildcard";
-import { PersonaChronologyGlyph } from "./chronology/PersonaChronologyGlyph";
-import { PersonaChronologyGlyphWide } from "./chronology/PersonaChronologyGlyphWide";
-import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
-import { UseCasePickerStep, type UseCaseOption } from "./UseCasePickerStep";
-import { useThemeStore } from "@/stores/themeStore";
-import type { ThemeId } from "@/stores/themeStore";
+import { PersonaChronologyGlyph } from "./glyph";
+import { QuestionnaireForm } from "./questionnaire";
+import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -370,58 +363,11 @@ function applyTriggerSelections(
   };
 }
 
-// -- Matrix variant --
-// The "chrono-*" variants are experimental prototypes that unify ALL 8
-// dimensions into a per-use-case view. Exposed via the in-view tab
-// switcher so we can A/B them against each other and the legacy layouts.
-type MatrixVariant =
-  | "original"
-  | "glass"
-  | "blueprint"
-  | "chrono-wildcard"
-  | "chrono-glyph"
-  | "chrono-glyph-wide";
-
-/** Map themes to their preferred matrix visual variant. */
-const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
-  "light-ice": "glass",
-  "dark-red": "glass",
-  "dark-cyan": "glass",
-  "light-news": "blueprint",
-  "dark-frost": "blueprint",
-  "dark-matrix": "blueprint",
-};
-
-function getThemeVariant(themeId: ThemeId): MatrixVariant {
-  return THEME_VARIANT_MAP[themeId] ?? "original";
-}
-
-/** The Wildcard prototype is the go-to multi-use-case view, exposed through
- * the in-view tab switcher alongside the legacy theme-driven variants. */
-const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
-  { id: "chrono-wildcard", label: "Constellation", sub: "radial · baseline" },
-  { id: "chrono-glyph", label: "Glyph", sub: "sigil · full-bleed" },
-  { id: "chrono-glyph-wide", label: "Glyph Wide", sub: "sigil · 2-col" },
-];
-
-const CHRONO_VARIANTS: ReadonlyArray<MatrixVariant> = [
-  "chrono-wildcard",
-  "chrono-glyph",
-  "chrono-glyph-wide",
-];
-
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
   const { t } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
-  const themeId = useThemeStore((s) => s.themeId);
-  const [matrixVariant, setMatrixVariant] = useState<MatrixVariant>(() => getThemeVariant(themeId));
-
-  // Sync variant when theme changes
-  useEffect(() => {
-    setMatrixVariant(getThemeVariant(themeId));
-  }, [themeId]);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
 
@@ -1081,7 +1027,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     // a generic loading screen with the questionnaire trapped underneath it.
     if (hasFilteredQuestions && !questionsComplete) {
       return (
-        <QuestionnaireFormFocus
+        <QuestionnaireForm
           questions={filteredAdoptionQuestions}
           userAnswers={adoptionAnswers}
           autoDetectedIds={autoDetectedIds}
@@ -1109,166 +1055,31 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Experimental chronology prototype switcher — compare Journey vs.
-          Timeline variants of the unified Tasks/Apps/Triggers component.
-          When neither is selected, the theme-mapped legacy variant renders. */}
-      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/50 mr-1">
-          {t.templates.chronology.prototype_label}
-        </span>
-        {CHRONO_TABS.map((tab) => {
-          const active = matrixVariant === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setMatrixVariant(tab.id)}
-              className={`flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-modal border cursor-pointer transition-all ${
-                active
-                  ? "bg-primary/15 border-primary/30 text-foreground"
-                  : "bg-card-bg/50 border-card-border text-foreground/70 hover:bg-primary/5 hover:border-primary/20"
-              }`}
-            >
-              <span className="text-[11px] font-semibold leading-none">{tab.label}</span>
-              <span className="text-[9px] uppercase tracking-wider opacity-70 leading-none">
-                {tab.sub}
-              </span>
-            </button>
-          );
-        })}
-        {CHRONO_VARIANTS.includes(matrixVariant) && (
-          <button
-            onClick={() => setMatrixVariant(getThemeVariant(themeId))}
-            className="text-[10px] uppercase tracking-wider text-foreground/50 hover:text-foreground cursor-pointer ml-1 px-2 py-1"
-          >
-            {t.templates.chronology.back_to_legacy}
-          </button>
-        )}
-      </div>
-
-      {matrixVariant === "original" && (
-        <PersonaMatrix
-          designResult={null}
-          variant="creation"
-          hideHeader
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildLocked={false}
-          cellBuildStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          hasDesignResult={build.buildPhase === "draft_ready" || build.buildPhase === "test_complete" || build.buildPhase === "promoted"}
-          buildPhase={build.buildPhase}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-          buildActivity={build.buildActivity}
-          onApplyEdits={handleApplyEdits}
-          onDiscardEdits={handleDiscardEdits}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-        />
-      )}
-      {matrixVariant === "glass" && (
-        <PersonaMatrixGlass
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
-          buildActivity={build.buildActivity}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onViewAgent={handleViewAgent}
-        />
-      )}
-      {matrixVariant === "blueprint" && (
-        <PersonaMatrixBlueprint
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          cellBuildStates={build.cellStates}
-          buildActivity={build.buildActivity}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onViewAgent={handleViewAgent}
-        />
-      )}
-      {matrixVariant === "chrono-wildcard" && (
-        <PersonaChronologyWildcard
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildActivity={build.buildActivity}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-        />
-      )}
-      {matrixVariant === "chrono-glyph" && (
-        <PersonaChronologyGlyph
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildActivity={build.buildActivity}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-        />
-      )}
-      {matrixVariant === "chrono-glyph-wide" && (
-        <PersonaChronologyGlyphWide
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildActivity={build.buildActivity}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-        />
-      )}
+      <PersonaChronologyGlyph
+        buildPhase={build.buildPhase}
+        completeness={build.completeness}
+        isRunning={build.isBuilding}
+        buildActivity={build.buildActivity}
+        pendingQuestions={build.pendingQuestions}
+        onAnswerBuildQuestion={build.handleAnswer}
+        onSubmitAllAnswers={build.handleSubmitAnswers}
+        onStartTest={lifecycle.handleStartTest}
+        onApproveTest={lifecycle.handlePromote}
+        onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+        onRejectTest={lifecycle.handleRejectTest}
+        onDeleteDraft={handleDeleteDraft}
+        onRefine={lifecycle.handleRefine}
+        testOutputLines={build.buildTestOutputLines}
+        testPassed={build.buildTestPassed}
+        testError={build.buildTestError}
+        toolTestResults={lifecycle.buildToolTestResults}
+        testSummary={lifecycle.buildTestSummary}
+        onViewAgent={handleViewAgent}
+      />
+      {/* Legacy: handleApplyEdits / handleDiscardEdits were wired to the
+          original PersonaMatrix variant; keep the callbacks live for build
+          flow even though no surface currently invokes them. */}
+      {false && (handleApplyEdits || handleDiscardEdits)}
 
       {/* Note: questionnaire is rendered inline in the !seeded branch above.
           Once seeded === true the user has already submitted, so no need

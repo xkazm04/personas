@@ -1,17 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.2
-milestone_name: "**Goal**: The template and persona data models carry all v3.2 fields so every downstream layer"
-status: planning
-stopped_at: "Phase 17 backend-completion (v1.1 carryover) executed + summary written. Six atomic commits, 18 new tests (simple-mode 98→116), tsc clean, eslint 0 errors. The v1.1 orphan PLAN at 17-backend-completion/ is now resolved — both deferred topics ship with first-class backend signals. Next up: v1.2 milestone starts at /gsd-plan-phase for Schema v3.2."
-last_updated: "2026-04-22T12:09:15.687Z"
-last_activity: 2026-04-22 — Phase 18 verified and closed (commit ec12bdbc)
+milestone: v1.2
+milestone_name: messaging-and-notifications
+status: active
+next_phase: 20
+stopped_at: "Phase 19 (Backend Delivery Glue) COMPLETE — verifier returned 5/5 success criteria ACHIEVED. Wave 1 (4 commits: 854ec6cb, 49df82da, 9f9e3c89, 00db7cf3) + Wave 2 (6 commits: 8e34857d, f33d71fa, 7a784beb, a2bbedeb, f39c3132, f75f39c4). DELIV-01..06 all met. 3 deferred items are end-to-end UI round-trip checks (Phase 20/21 UAT). Next: Phase 20 (Adoption Flow Conversion). Prototype deviation alert: ba7b44f8 + 5f5f63ba renamed the adoption variants — 20-CONTEXT.md prototype_impact_analysis needs re-baselining against VariantL/M."
+last_updated: "2026-04-22T14:15:00.000Z"
+last_activity: 2026-04-22
 progress:
-  total_phases: 7
+  total_phases: 6
   completed_phases: 3
   total_plans: 5
-  completed_plans: 6
-  percent: 100
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -24,16 +25,16 @@ See: .planning/PROJECT.md (Current Milestone: v1.2 Messaging & Notifications).
 
 **Core value (v1.2):** Every persona gets first-class messaging out of the box — in-app inbox is the always-on default, TitleBar bell subscriptions are opt-in per event, external channels (Slack/Telegram/Email) are configurable per UC with sample-message testing. Composition (shared vs separate triggers/messages) is editable post-creation in the Agents module.
 
-**Current focus:** Phase 17 (Schema v3.2) + Phase 18 (personas_messages builtin connector) COMPLETE. Phase 19 (Backend Delivery Glue) is next — extend `deliver_to_channels()` with `built-in` + `titlebar` branches, wire a frontend event bridge for titlebar notifications, and add a debounced `test_channel_delivery` IPC. CONTEXT.md + RESEARCH.md + VALIDATION.md + 19-01-PLAN.md (Wave 1: Rust backend) are already on disk at `.planning/phases/19-backend-delivery-glue/`. Plan 02 (Wave 2: IPC + frontend bridge) pending.
+**Current focus:** Phases 17, 18, 19 COMPLETE. Phase 20 (Adoption Flow Conversion) is next — convert the Pipeline-Canvas prototype into the production adoption surface, wired to real vault credentials, the Phase 18 `personas_messages` connector, Phase 19's `test_channel_delivery` IPC, and the shape-v2 channel format. **Prototype scope deviation alert:** commits `ba7b44f8` (Prototypes restore) and `5f5f63ba` (Prototype milestone 2) deleted `MessagingPickerVariantC.tsx` (the file 20-CONTEXT.md was written against) and replaced it with newer variants — at HEAD, the variants on disk are `MessagingPickerVariantH.tsx`, `MessagingPickerVariantL.tsx`, `MessagingPickerVariantM.tsx`. The Phase 20 research pass MUST re-baseline `20-CONTEXT.md`'s `prototype_impact_analysis` section before planning.
 
 ## Current Position
 
-Phase: 19 — Backend Delivery Glue (plan 01 drafted; plan 02 + execute pending)
-Plan: 19-02-PLAN.md (Wave 2) to draft; 19-01-PLAN.md (Wave 1) already on disk
-Status: Ready to plan Phase 19 Wave 2; then execute both plans
-Last activity: 2026-04-22 — Phase 18 verified and closed (commit ec12bdbc)
+Phase: 20 — Adoption Flow Conversion (Not started)
+Plan: — (needs full cycle: research + validation + plan + execute + verify)
+Status: Ready to plan Phase 20; 20-CONTEXT.md in place but prototype_impact_analysis is stale vs current adoption variants
+Last activity: 2026-04-22 — Phase 19 verified, 10 commits landed (854ec6cb..f75f39c4)
 
-Progress: [██        ] 33%  (2/6 phases complete; Phases 17, 18 ✓)
+Progress: [███       ] 50%  (3/6 phases complete; Phases 17, 18, 19 ✓)
 
 ### Phase 16 deferred-resolution (v1.1 carryover, 2026-04-20)
 
@@ -99,13 +100,19 @@ Landed on master in 5 commits `5a5b8e2b`, `05a17ca2`, `cf348f6e`, `59bfbdd2`, `1
 
 Single-plan phase landed in 3 commits `3a1f5a3c`, `17067e46`, `ec12bdbc`. Audit revealed `scripts/connectors/builtin/local-messaging.json` + seed path already satisfied CONN-01/02/03; the one real gap was CONN-04 (UI empty-state for zero-config connectors). Shipped: `TemplateFormBody` empty-state branch + i18n keys + vitest regression guards covering seed path + category filter. Summary: `.planning/phases/18-personas-messages-connector/18-01-SUMMARY.md`.
 
+### v1.2 Phase 19 — Backend Delivery Glue (completed 2026-04-22)
+
+Two-plan phase, 10 commits. **Plan 01 (Wave 1 Rust backend):** commits `854ec6cb`, `49df82da`, `9f9e3c89`, `00db7cf3` — added `TITLEBAR_NOTIFICATION` event constant + `TitlebarNotificationPayload`/`TestDeliveryResult`/`DeliveryContext` structs + `deliver_v2_channels` with `built-in`/`titlebar` arms + pure `filter_channels_for_delivery` and `apply_event_filter` helpers + shape-v2 passthrough in `resolve_notification_channels` + wired `DeliveryContext` through UserMessage/ManualReview/EmitEvent call sites in `dispatch.rs`. **Plan 02 (Wave 2 IPC + frontend):** commits `8e34857d`, `f33d71fa`, `7a784beb`, `a2bbedeb`, `f39c3132`, `f75f39c4` — added `test_channel_delivery` IPC with per-channel 1-req/sec rate limit (`channel_key()` hash + pure `rate_limit_check` helper) + registered in `lib.rs` + hand-patched `TestDeliveryResult.ts`/`TitlebarNotificationPayload.ts` ts-rs bindings + `eventRegistry.ts` + `eventBridge.ts` listener routing payload to `notificationCenterStore.addNotification` + `src/api/agents/channelDelivery.ts` wrapper. 9 new Rust tests (scoped `cargo test` blocked by 16 pre-existing xcap/image/which/desktop_discovery errors — tests are compile-verified + source-present, same constraint Phases 17/18 shipped under). 2 new vitest tests (eventBridge). Verifier: 5/5 success criteria ACHIEVED; 3 UI round-trip verifications deferred to Phase 20/21 UAT. Summaries: `.planning/phases/19-backend-delivery-glue/19-01-SUMMARY.md`, `19-02-SUMMARY.md`. Verification: `19-VERIFICATION.md`.
+
 ### Pending Todos (v1.2)
 
-- **Plan Phase 19 Wave 2 (19-02-PLAN.md)**: DELIV-04 (eventBridge.ts listener) + DELIV-06 (`test_channel_delivery` IPC). 19-01-PLAN.md (Wave 1 Rust) already drafted. RESEARCH.md Wave 2 spec is at `.planning/phases/19-backend-delivery-glue/19-RESEARCH.md` §"Wave 2: Frontend + Bindings" (line ~847).
-- **Execute Phase 19** (both plans sequentially, no worktree, regular commits — see guardrails).
-- **Plan + execute Phase 20** (ADOPT-01..09). **Prototype deviation alert:** commit `ba7b44f8 Prototypes restore` deleted `MessagingPickerVariantC.tsx` and added `MessagingPickerVariantH/J/K.tsx` after Phase 18 landed. `20-CONTEXT.md` `prototype_impact_analysis` was written against VariantC — Phase 20 research pass must re-baseline.
+- **Plan + execute Phase 20** (ADOPT-01..09). **Prototype scope deviation — MUST RE-BASELINE BEFORE PLANNING:** commits `ba7b44f8` (Prototypes restore) and `5f5f63ba` (Prototype milestone 2) iterated the adoption variants after Phase 18 landed. `MessagingPickerVariantC.tsx` (the file `20-CONTEXT.md`'s `prototype_impact_analysis` was written against) is gone; at HEAD, the variants on disk are `MessagingPickerVariantH.tsx`, `MessagingPickerVariantL.tsx`, `MessagingPickerVariantM.tsx`. Phase 20 research pass must re-audit `src/features/templates/sub_generated/adoption/` to determine which variant is the current production target (ask user if unclear) and which prototype patterns survived the iteration.
 - **Plan + execute Phase 21** (EDIT-01..07). Reuses Phase 20 channel matrix helper.
 - **Plan + execute Phase 22** (TMPL-01..03). 120 templates; parallel category-scoped agent backfill.
+
+### Verifier corruption guard (2026-04-22)
+
+One of the Phase 19 subagents (Plan 02 executor or verifier) invoked `gsd-tools state ...` despite the explicit handoff guardrail, which rewrote STATE.md frontmatter to `milestone: v3.2`, wiped `next_phase`, and fabricated `total_phases: 7` / `completed_plans: 6` / `percent: 100`. Orchestrator restored the frontmatter manually after Phase 19 verify. **Reinforce in any future agent prompts:** "Do NOT run `gsd-tools state record-session`, `state begin-phase`, `state planned-phase`, or `phase complete` — they corrupt this file."
 
 ### Pre-existing orphans (decide before starting v1.2 execution)
 
@@ -119,8 +126,8 @@ Single-plan phase landed in 3 commits `3a1f5a3c`, `17067e46`, `ec12bdbc`. Audit 
 
 ## Session Continuity
 
-Last session: 2026-04-21T22:10:00.000Z
-Stopped at: Phase 17 backend-completion (v1.1 carryover) executed + summary written. Six atomic commits, 18 new tests (simple-mode 98→116), tsc clean, eslint 0 errors. The v1.1 orphan PLAN at 17-backend-completion/ is now resolved — both deferred topics ship with first-class backend signals. Next up: v1.2 milestone starts at /gsd-plan-phase for Schema v3.2.
+Last session: 2026-04-22T14:15:00.000Z
+Stopped at: Phase 19 (Backend Delivery Glue) COMPLETE. 10 atomic commits on master (4 Wave 1 + 6 Wave 2). 9 new Rust tests + 2 new vitest tests. Verifier returned 5/5 ACHIEVED. `cargo check --package personas-desktop` holds the 14-error pre-existing baseline. `npx tsc --noEmit` clean. Frontend regression: `npx vitest run src/features/vault src/features/simple-mode src/lib/credentials` 168/168 pass. Frontmatter corruption from gsd-tools state invocation was manually corrected post-verify. Next up: Phase 20 (Adoption Flow Conversion) — MUST re-baseline `20-CONTEXT.md` `prototype_impact_analysis` against the current adoption variants (H/L/M) before planning, since prototype iteration on master deleted VariantC/J/K.
 Resume file: .planning/phases/17-schema-v3-2/17-CONTEXT.md (v1.2 Phase 17 Schema v3.2 — distinct from the just-completed v1.1 carryover)
 
 ## Archived: v1.1 Simple Mode Home Base (completed 2026-04-21)

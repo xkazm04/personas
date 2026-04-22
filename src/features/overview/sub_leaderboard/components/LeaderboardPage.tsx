@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Trophy, RefreshCw, Users } from 'lucide-react';
+import { Trophy, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { useLeaderboardData, type LeaderboardEntry } from '../libs/useLeaderboardData';
-import { LeaderboardCard } from './LeaderboardCard';
-import { ScoreRadar } from './ScoreRadar';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useLeaderboardData } from '../libs/useLeaderboardData';
+import { LeaderboardCard } from './LeaderboardCard';
+import { Podium } from './Podium';
+import { DetailPanel } from './DetailPanel';
+import { EmptyState, SingleAgentView } from './EmptyStates';
 
 export default function LeaderboardPage() {
   const { t } = useTranslation();
@@ -24,12 +26,13 @@ export default function LeaderboardPage() {
         const id = requestIdleCallback(run, { timeout: 2000 });
         return () => cancelIdleCallback(id);
       }
-      const t = setTimeout(run, 200);
-      return () => clearTimeout(t);
+      const handle = setTimeout(run, 200);
+      return () => clearTimeout(handle);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCardClick = useCallback((id: string) => {
+  const handleSelect = useCallback((id: string) => {
     setSelectedId((prev) => (prev === id ? null : id));
   }, []);
 
@@ -38,11 +41,12 @@ export default function LeaderboardPage() {
     useAgentStore.getState().selectPersona(personaId);
   }, []);
 
-  const selectedEntry = leaderboard.find((e) => e.personaId === selectedId) ?? null;
   const topEntry = leaderboard[0] ?? null;
-  const radarEntries: LeaderboardEntry[] = [];
-  if (selectedEntry) radarEntries.push(selectedEntry);
-  else if (topEntry) radarEntries.push(topEntry);
+  const selectedEntry = selectedId
+    ? leaderboard.find((e) => e.personaId === selectedId) ?? null
+    : topEntry;
+  const podiumEntries = leaderboard.slice(0, 3);
+  const listEntries = leaderboard.slice(3);
 
   return (
     <ContentBox>
@@ -82,85 +86,36 @@ export default function LeaderboardPage() {
         ) : leaderboard.length === 0 ? (
           <EmptyState />
         ) : leaderboard.length === 1 ? (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <SingleAgentView entry={leaderboard[0]!} />
-          </div>
+          <SingleAgentView entry={leaderboard[0]!} />
         ) : (
-          <div className="flex gap-6 max-w-5xl mx-auto">
-            {/* Left: ranked list */}
-            <div className="flex-1 space-y-2 min-w-0">
-              {leaderboard.map((entry) => (
-                <LeaderboardCard
-                  key={entry.personaId}
-                  entry={entry}
-                  selected={selectedId === entry.personaId}
-                  onClick={() => handleCardClick(entry.personaId)}
-                  onNavigateToAgent={handleNavigateToAgent}
-                />
-              ))}
-            </div>
+          <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+            <Podium entries={podiumEntries} selectedId={selectedId} onSelect={handleSelect} />
 
-            {/* Right: radar + detail */}
-            <div className="w-64 flex-shrink-0 space-y-4">
-              <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03]">
-                <h4 className="typo-caption font-medium text-foreground mb-3 text-center">
-                  {selectedEntry ? selectedEntry.personaName : 'Top Agent'}
-                </h4>
-                <div className="flex justify-center">
-                  <ScoreRadar entries={radarEntries} size={200} />
+            {listEntries.length > 0 ? (
+              <div className="flex gap-6">
+                <div className="flex-1 space-y-2 min-w-0">
+                  {listEntries.map((entry) => (
+                    <LeaderboardCard
+                      key={entry.personaId}
+                      entry={entry}
+                      selected={selectedId === entry.personaId}
+                      onClick={() => handleSelect(entry.personaId)}
+                      onNavigateToAgent={handleNavigateToAgent}
+                    />
+                  ))}
                 </div>
-                {selectedEntry && (
-                  <div className="mt-3 space-y-1.5">
-                    <StatRow label="Total runs" value={String(selectedEntry.totalExecutions)} />
-                    <StatRow label="Recent (7d)" value={String(selectedEntry.recentExecutions)} />
-                    <StatRow label="Success" value={`${selectedEntry.successRate.toFixed(1)}%`} />
-                    <StatRow label="Avg latency" value={selectedEntry.avgLatencyMs > 0 ? `${(selectedEntry.avgLatencyMs / 1000).toFixed(1)}s` : '—'} />
-                    <StatRow label="Daily burn" value={selectedEntry.dailyBurnRate > 0 ? `$${selectedEntry.dailyBurnRate.toFixed(3)}` : '—'} />
-                  </div>
-                )}
+                <div className="w-64 flex-shrink-0">
+                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="max-w-sm mx-auto w-full">
+                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} />
+              </div>
+            )}
           </div>
         )}
       </ContentBody>
     </ContentBox>
-  );
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-3">
-      <Trophy className="w-10 h-10 text-foreground" />
-      <p className="typo-body font-medium text-foreground">No agent data yet</p>
-      <p className="typo-caption text-foreground max-w-sm text-center">
-        Run some agents to see performance rankings. The leaderboard needs execution
-        history and health data to compute scores.
-      </p>
-    </div>
-  );
-}
-
-function SingleAgentView({ entry }: { entry: LeaderboardEntry }) {
-  return (
-    <div className="flex flex-col items-center gap-4 py-8">
-      <Users className="w-8 h-8 text-foreground" />
-      <p className="typo-body text-foreground">
-        Add more agents to see rankings. Currently only <strong className="text-foreground">{entry.personaName}</strong> has data.
-      </p>
-      <div className="flex justify-center">
-        <ScoreRadar entries={[entry]} size={220} />
-      </div>
-    </div>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between typo-caption">
-      <span className="text-foreground">{label}</span>
-      <span className="text-foreground font-medium">{value}</span>
-    </div>
   );
 }

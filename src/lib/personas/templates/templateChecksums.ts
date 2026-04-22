@@ -55,7 +55,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'legal/editorial-calendar-manager.json': '0012111329694db1',
   'marketing/autonomous-cro-experiment-runner.json': '000d38c14eff766c',
   'marketing/reddit-trend-digest.json': '0013412683ddc805',
-  'marketing/visual-brand-asset-factory.json': '0003585b987b5d28',
+  'marketing/visual-brand-asset-factory.json': '000c0eb3ecb8e9bc',
   'marketing/web-marketing.json': '0018adccee963d18',
   'marketing/website-conversion-audit.json': '000610e9e8281f53',
   'productivity/appointment-orchestrator.json': '001788014a9da3c5',
