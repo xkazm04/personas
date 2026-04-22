@@ -126,7 +126,9 @@ def record(step: str, outcome: str, **kw) -> dict:
     entry = {"ts": datetime.now(timezone.utc).isoformat(), "step": step, "outcome": outcome}
     entry.update(kw)
     log.append(entry)
-    marker = "✓" if outcome == "ok" else ("…" if outcome == "info" else "✗")
+    # ASCII-only markers — some Windows consoles default to cp1250 which
+    # can't encode the pretty Unicode glyphs and crashes sys.stdout.write.
+    marker = "[OK]" if outcome == "ok" else ("[..]" if outcome == "info" else "[XX]")
     sys.stdout.write(f"  {marker} {step}: {outcome}")
     if kw:
         brief = {k: v for k, v in kw.items() if k not in ("detail",) and not isinstance(v, (dict, list))}
@@ -178,10 +180,29 @@ def step_answer_dimensions() -> None:
     print("\n[3/7] Answer build clarifying questions")
 
     answer_recipes = {
+        # Mission / behavior_core scope — LLM sometimes asks what shape
+        # the persona should take before emitting behavior_core.
+        "behavior_core": (
+            "Option: event-driven translator. Every time a new English "
+            "document lands in the built-in local drive, translate it to "
+            "Czech and save the translated copy alongside the original. "
+            "No schedule. No manual review required."
+        ),
+        "mission": (
+            "Option: event-driven translator. Every time a new English "
+            "document lands in the built-in local drive, translate it to "
+            "Czech and save the translated copy alongside the original. "
+            "No schedule. No manual review required."
+        ),
         # Trigger — skip / event-driven (incoming document)
         "triggers": (
-            "Event-driven only — fire whenever a new document is added to the "
-            "local drive. No schedule, no manual trigger needed."
+            "STRICTLY event-driven. DO NOT use polling, DO NOT use a schedule, "
+            "DO NOT use a manual trigger. The trigger MUST be "
+            '`{"trigger_type":"event","config":{}}` and the capability\'s '
+            "event_subscriptions MUST include "
+            '`{"event_type":"drive.document.added","direction":"listen"}` so the '
+            "app's built-in local_drive event bus invokes this persona when a "
+            "new document arrives. No other trigger shape is acceptable."
         ),
         # Source: built-in local_drive connector. Three levels of dot-syntax
         # so the prompt emits drive.document.added in event_subscriptions.
@@ -301,6 +322,17 @@ def step_test_and_promote() -> dict:
     return promote
 
 
+def _parse_maybe_json(v):
+    """Persona detail serializes `design_context` and `last_design_result`
+    as JSON strings over IPC. Parse defensively."""
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except Exception:
+            return {}
+    return v or {}
+
+
 def step_inspect_persona(persona_id: str) -> dict:
     print("\n[5/7] Inspect promoted persona shape")
     detail = bridge("getPersonaDetail", {"personaId": persona_id}, 30)
@@ -308,28 +340,51 @@ def step_inspect_persona(persona_id: str) -> dict:
         record("persona_detail", "fail", error=detail.get("error"))
         return {}
     d = detail.get("detail") or {}
-    use_cases = (d.get("design_context") or {}).get("useCases") or []
+    design_context = _parse_maybe_json(d.get("design_context"))
+    last_design_result = _parse_maybe_json(d.get("last_design_result"))
+    use_cases = design_context.get("useCases") or []
     triggers = d.get("triggers") or []
-    subs = d.get("event_subscriptions") or d.get("eventSubscriptions") or []
-    connectors = (d.get("last_design_result") or {}).get("suggested_connectors") or []
+    # Persona detail uses `subscriptions`; older call sites used `event_subscriptions`.
+    subs = d.get("subscriptions") or d.get("event_subscriptions") or []
+    connectors = last_design_result.get("suggested_connectors") or []
     record(
         "persona_detail",
         "ok",
+        name=d.get("name"),
         use_cases=len(use_cases),
         triggers=len(triggers),
         subscriptions=len(subs),
         connectors=[c if isinstance(c, str) else c.get("name") for c in connectors],
     )
+    # Capture trigger shapes so the run report shows what the LLM chose.
+    for t in triggers:
+        cfg = _parse_maybe_json(t.get("config"))
+        record(
+            "persona_trigger",
+            "ok",
+            trigger_type=t.get("trigger_type"),
+            use_case_id=t.get("use_case_id"),
+            config_keys=list(cfg.keys()) if isinstance(cfg, dict) else None,
+        )
 
-    # Does any subscription point at drive.document.added?
-    drive_subs = [s for s in subs if (s.get("event_type") or "").startswith("drive.document.")]
+    # Did the persona actually get a drive.document.* subscription on a UC?
+    # Collect from both persona-level and per-use-case subscriptions.
+    uc_subs = []
+    for uc in use_cases:
+        for s in (uc.get("event_subscriptions") or []):
+            uc_subs.append({"source": "use_case", "use_case_id": uc.get("id"), **s})
+    persona_subs = [{"source": "persona", **s} for s in subs]
+    all_subs = uc_subs + persona_subs
+
+    drive_subs = [s for s in all_subs if (s.get("event_type") or "").startswith("drive.document.") and s.get("direction") != "emit"]
     if drive_subs:
         record("subscription.drive", "ok", count=len(drive_subs), events=[s.get("event_type") for s in drive_subs])
     else:
         record(
             "subscription.drive",
             "info",
-            note="Persona was not given a drive.document.* subscription. Execution step will not fire from a drive write.",
+            note="Persona was not given a drive.document.* LISTEN subscription. Drive write will not fire this persona — a polling trigger (if any) will pick up changes on its own interval.",
+            all_events=[(s.get("event_type"), s.get("direction")) for s in all_subs],
         )
     return d
 
@@ -353,11 +408,20 @@ def step_drive_write_and_wait_execution(persona_id: str) -> None:
     record("drive_write", "ok", path=args.doc_path)
 
     print("\n[7/7] Wait for persona execution")
-    exe = bridge(
-        "waitForPersonaExecution",
-        {"personaId": persona_id, "sinceIso": before, "timeoutMs": args.exec_timeout * 1000},
-        args.exec_timeout + 10,
-    )
+    # The bridge helper slices at 20s so the __exec__ 25s rejection can't fire.
+    # Loop here until the outer scenario budget expires or a terminal status.
+    deadline = time.time() + args.exec_timeout
+    exe = {"success": False, "timedOut": True}
+    while time.time() < deadline and exe.get("timedOut"):
+        exe = bridge(
+            "waitForPersonaExecution",
+            {"personaId": persona_id, "sinceIso": before, "timeoutMs": 20_000},
+            25,
+        )
+        if exe.get("success"):
+            break
+        if not exe.get("timedOut"):
+            break  # non-timedOut failure — don't keep polling
     if not exe.get("success"):
         record(
             "persona_execution",

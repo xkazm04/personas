@@ -66,6 +66,16 @@ interface TestBridge {
   [key: string]: unknown;
 }
 
+/** Turn an arbitrary caught value into a human-readable error string.
+ *  Tauri IPC errors deserialize as plain objects that stringify to
+ *  `[object Object]` — JSON.stringify is the only thing that surfaces the
+ *  actual AppError variant (e.g. {Validation: "..."}). */
+function _fmtBridgeErr(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
 function generateSelector(el: Element): string {
   if (el.id) return `#${el.id}`;
   const testId = el.getAttribute("data-testid");
@@ -774,15 +784,25 @@ const bridge: TestBridge = {
    * Returns once startBuildSession resolves (buildSessionId set in store).
    */
   async startBuildFromIntent(intent: string, timeoutMs: number = 30000) {
+    // Match startCreateAgent's ordering: clear the selected persona
+    // BEFORE toggling isCreatingPersona, otherwise the
+    // selectedPersonaId-branch in PersonasPage can render PersonaEditor
+    // first and race the matrix mount.
+    useAgentStore.getState().selectPersona(null);
     useSystemStore.getState().setIsCreatingPersona(true);
     useSystemStore.getState().setSidebarSection('personas');
-    useAgentStore.getState().selectPersona(null);
-    await new Promise((r) => setTimeout(r, 400));
-
-    // Matrix command center uses stable testids (MatrixCommandCenterParts.tsx).
-    const ta = document.querySelector<HTMLTextAreaElement>('[data-testid="agent-intent-input"]');
+    // UnifiedMatrixEntry is a lazy chunk behind React.Suspense. On a cold
+    // reload the first mount after setIsCreatingPersona(true) can take
+    // several seconds to paint the textarea. Poll instead of a fixed sleep.
+    const mountDeadline = Date.now() + 15_000;
+    let ta: HTMLTextAreaElement | null = null;
+    while (Date.now() < mountDeadline) {
+      ta = document.querySelector<HTMLTextAreaElement>('[data-testid="agent-intent-input"]');
+      if (ta && (ta as HTMLElement).offsetParent !== null) break;
+      await new Promise((r) => setTimeout(r, 150));
+    }
     if (!ta || (ta as HTMLElement).offsetParent === null) {
-      return { success: false, error: 'agent-intent-input textarea not visible' };
+      return { success: false, error: 'agent-intent-input textarea not visible after 15s' };
     }
     const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
     setter?.call(ta, intent);
@@ -861,22 +881,32 @@ const bridge: TestBridge = {
   },
 
   /** Poll until `buildPhase` reaches one of the target phases, or the
-   *  build surfaces an error. Useful for barriers between scenario steps. */
-  async waitForBuildPhase(phases: string[] | string, timeoutMs: number = 120_000) {
+   *  build surfaces an error. Sliced at 20s so the outer `__exec__`
+   *  25s rejection can never fire — callers poll repeatedly until their
+   *  own wall budget expires. The returned object ALWAYS carries `phase`
+   *  so a timeout result is still actionable. */
+  async waitForBuildPhase(phases: string[] | string, timeoutMs: number = 20_000) {
     const targets = Array.isArray(phases) ? phases : [phases];
+    const slice = Math.min(timeoutMs, 20_000);
     const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
+    while (Date.now() - start < slice) {
       const s = useAgentStore.getState();
       if (s.buildError) {
-        return { success: false, error: `buildError: ${s.buildError}`, phase: s.buildPhase };
+        return { success: false, error: `buildError: ${s.buildError}`, phase: s.buildPhase, pendingCount: (s.buildPendingQuestions ?? []).length };
       }
       if (targets.includes(s.buildPhase as string)) {
         return { success: true, phase: s.buildPhase, pendingCount: (s.buildPendingQuestions ?? []).length };
       }
       await new Promise((r) => setTimeout(r, 400));
     }
-    const final = useAgentStore.getState().buildPhase;
-    return { success: false, error: `Timed out waiting for ${targets.join('|')} (stuck at ${final})`, phase: final };
+    const finalState = useAgentStore.getState();
+    return {
+      success: false,
+      timedOut: true,
+      phase: finalState.buildPhase,
+      pendingCount: (finalState.buildPendingQuestions ?? []).length,
+      sessionId: finalState.buildSessionId,
+    };
   },
 
   /** List currently pending build questions. */
@@ -886,13 +916,37 @@ const bridge: TestBridge = {
   },
 
   /** Write a text document through the built-in Local Drive. Triggers
-   *  `drive.document.added` (or edited if the path already existed). */
-  async driveWriteText(relPath: string, content: string) {
+   *  `drive.document.added` (or edited if the path already existed).
+   *
+   *  NOTE: __exec__ dispatches params via Object.values(params) which yields
+   *  ALPHABETICAL key order from serde_json / V8 alike. For two params named
+   *  (relPath, content), the positional order would be swapped. To keep the
+   *  callsite natural ({"relPath": ..., "content": ...}) the method destructures
+   *  a single object instead of taking positional args. */
+  async driveWriteText(...rawArgs: unknown[]) {
+    // __exec__ → Object.values(params) is ALPHABETICAL, so a POST with
+    // {relPath: "a", content: "b"} arrives as ["b", "a"] here. Accept either:
+    //   - A single {relPath, content} object (preferred; unambiguous).
+    //   - Two positional strings in alphabetical order [content, relPath]
+    //     which is what callers via /bridge-exec inadvertently produce.
+    let relPath: string;
+    let content: string;
+    const first = rawArgs[0];
+    if (first && typeof first === 'object' && !Array.isArray(first)) {
+      const obj = first as { relPath?: string; content?: string };
+      relPath = obj.relPath ?? '';
+      content = obj.content ?? '';
+    } else {
+      // Alphabetical positional fallback: content < relPath
+      content = String(rawArgs[0] ?? '');
+      relPath = String(rawArgs[1] ?? '');
+    }
+    if (!relPath) return { success: false, error: 'driveWriteText: relPath missing' };
     try {
       const entry = await invoke('drive_write_text', { relPath, content });
       return { success: true, entry };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: _fmtBridgeErr(e) };
     }
   },
 
@@ -902,7 +956,7 @@ const bridge: TestBridge = {
       const content = await invoke<string>('drive_read_text', { relPath });
       return { success: true, content };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: _fmtBridgeErr(e) };
     }
   },
 
@@ -912,16 +966,18 @@ const bridge: TestBridge = {
       const entries = await invoke<unknown[]>('drive_list', { relPath });
       return { success: true, count: (entries as unknown[]).length, entries };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: _fmtBridgeErr(e) };
     }
   },
 
   /** Poll list_executions for a persona until a row appears at/after
-   *  `sinceIso` with a terminal status. Returns the most recent execution. */
-  async waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs: number = 180_000) {
+   *  `sinceIso` with a terminal status. Sliced at 20s so the __exec__
+   *  25s rejection can't fire — the Python runner loops per-slice. */
+  async waitForPersonaExecution(personaId: string, sinceIso: string, timeoutMs: number = 20_000) {
     const sinceMs = Date.parse(sinceIso);
+    const slice = Math.min(timeoutMs, 20_000);
     const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
+    while (Date.now() - start < slice) {
       try {
         const rows = await invoke<Array<Record<string, unknown>>>('list_executions', {
           personaId, limit: 20,
@@ -938,7 +994,8 @@ const bridge: TestBridge = {
       }
       await new Promise((r) => setTimeout(r, 800));
     }
-    return { success: false, error: `No execution for persona ${personaId} within ${timeoutMs}ms` };
+    // Slice expired with no execution yet — let the caller loop.
+    return { success: false, timedOut: true, personaId };
   },
 
   /** List available credential service types from the vault. */

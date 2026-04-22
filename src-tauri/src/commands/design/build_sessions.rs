@@ -1035,8 +1035,71 @@ fn create_event_subscriptions_in_tx(
 ) -> Result<u32, AppError> {
     let mut subscriptions_created = 0u32;
 
-    // Build a reverse lookup: event_type -> use_case_id, from the structured
-    // use cases that carry per-use-case event_subscriptions.
+    // Helper: only LISTEN-direction subscriptions become persona_event_subscriptions
+    // rows (EMIT-direction entries are documentation for the agent's outbound
+    // signals). Accept both "subscribe" (legacy v1/v2) and "listen" (v3.1) as
+    // synonyms — the v3 build prompt emits "listen" explicitly.
+    fn is_listen(d: Option<&str>) -> bool {
+        match d.unwrap_or("subscribe") {
+            "subscribe" | "listen" => true,
+            _ => false,
+        }
+    }
+
+    // Track (event_type, source_filter) pairs we've already inserted so the
+    // same subscription declared both on a UC and at the persona level doesn't
+    // produce a duplicate row.
+    let mut seen: std::collections::HashSet<(String, Option<String>)> = std::collections::HashSet::new();
+
+    // -- Per-UC subscriptions (v3 primary location) --------------------------
+    //
+    // Previously: this loop only built a lookup table and never inserted
+    // anything. The v3 prompt puts event_subscriptions ONLY on use_cases,
+    // so nothing ended up in persona_event_subscriptions and the event bus
+    // found no subscriber for `drive.document.added` etc. Now we create a
+    // row per listen subscription found on any use case.
+    for uc in &use_cases.structured {
+        let uc_id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        if uc_id.is_empty() { continue; }
+        let subs = match uc.get("event_subscriptions").and_then(|v| v.as_array()) {
+            Some(s) => s,
+            None => continue,
+        };
+        for sub in subs {
+            let event_type = match sub.get("event_type").and_then(|v| v.as_str()) {
+                Some(et) if !et.is_empty() => et.to_string(),
+                _ => continue,
+            };
+            let direction = sub.get("direction").and_then(|v| v.as_str());
+            if !is_listen(direction) { continue; }
+            let source_filter = sub
+                .get("source_filter")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            let key = (event_type.clone(), source_filter.clone());
+            if !seen.insert(key) { continue; }
+
+            let sub_id = uuid::Uuid::new_v4().to_string();
+            let rows = tx.execute(
+                "INSERT OR IGNORE INTO persona_event_subscriptions
+                 (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?6)",
+                rusqlite::params![sub_id, persona_id, event_type, source_filter, uc_id, now],
+            ).map_err(AppError::Database)?;
+            if rows > 0 { subscriptions_created += 1; }
+        }
+    }
+
+    // -- Persona-level ir.events (legacy path) -------------------------------
+    //
+    // Still supported for older LLM outputs / templates that hoist events.
+    // Per-UC entries take precedence (inserted above); this loop only fills in
+    // entries that did NOT appear per-UC.
+    //
+    // Build a reverse lookup so persona-level events can still be attributed
+    // to the first UC that mentioned the same event_type, keeping the
+    // use_case_id column non-null whenever possible.
     let mut event_to_use_case: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     for uc in &use_cases.structured {
         let uc_id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -1054,13 +1117,13 @@ fn create_event_subscriptions_in_tx(
     for evt in &ir.events {
         let event_type = evt.event_type.as_deref().unwrap_or("").to_string();
         if event_type.is_empty() { continue; }
-
-        let direction = evt.direction.as_deref().unwrap_or("subscribe");
-        if direction != "subscribe" { continue; }
+        if !is_listen(evt.direction.as_deref()) { continue; }
 
         let source_filter: Option<String> = evt.source_filter.clone();
-        let use_case_id: Option<&str> = event_to_use_case.get(&event_type).map(|s| s.as_str());
+        let key = (event_type.clone(), source_filter.clone());
+        if !seen.insert(key) { continue; }
 
+        let use_case_id: Option<&str> = event_to_use_case.get(&event_type).map(|s| s.as_str());
         let sub_id = uuid::Uuid::new_v4().to_string();
         let rows = tx.execute(
             "INSERT OR IGNORE INTO persona_event_subscriptions

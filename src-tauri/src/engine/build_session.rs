@@ -148,12 +148,46 @@ impl BuildSessionManager {
         let connector_summary: Vec<String> = connectors
             .iter()
             .map(|c| {
+                // Parse connector metadata to surface `emits[]` — the set of
+                // three-level-dot event_types this connector publishes. The
+                // build LLM needs this so it can emit matching
+                // event_subscriptions (direction=listen). Without it, the
+                // LLM invents plausible-but-unsubscribable names like
+                // `translation.document.completed` and falls back to
+                // polling triggers.
+                let emits_hint: String = c
+                    .metadata
+                    .as_deref()
+                    .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+                    .and_then(|v| v.get("emits").cloned())
+                    .and_then(|v| v.as_array().cloned())
+                    .map(|arr| {
+                        let items: Vec<String> = arr
+                            .iter()
+                            .filter_map(|e| {
+                                let et = e.get("event_type").and_then(|v| v.as_str())?;
+                                let desc = e.get("description").and_then(|v| v.as_str()).unwrap_or("");
+                                Some(if desc.is_empty() {
+                                    format!("{}", et)
+                                } else {
+                                    format!("{} — {}", et, desc)
+                                })
+                            })
+                            .collect();
+                        if items.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" [emits: {}]", items.join("; "))
+                        }
+                    })
+                    .unwrap_or_default();
+
                 if c.name == "codebase" {
-                    format!("- {} (category: {}) — local codebase access for code analysis, impact assessment, and implementation tasks via Dev Tools projects", c.name, c.category)
+                    format!("- {} (category: {}){} — local codebase access for code analysis, impact assessment, and implementation tasks via Dev Tools projects", c.name, c.category, emits_hint)
                 } else if c.name == "obsidian_memory" {
-                    format!("- {} (category: {}) — graph-aware Obsidian vault access: search notes, walk backlinks, list MOCs/orphans, append to today's daily journal, write structured meeting notes. Prefer this connector for 'search my notes', 'what links to X', 'log this to my journal', and 'capture meeting' intents.", c.name, c.category)
+                    format!("- {} (category: {}){} — graph-aware Obsidian vault access: search notes, walk backlinks, list MOCs/orphans, append to today's daily journal, write structured meeting notes. Prefer this connector for 'search my notes', 'what links to X', 'log this to my journal', and 'capture meeting' intents.", c.name, c.category, emits_hint)
                 } else {
-                    format!("- {} (category: {})", c.name, c.category)
+                    format!("- {} (category: {}){}", c.name, c.category, emits_hint)
                 }
             })
             .collect();
@@ -1735,6 +1769,7 @@ The agent runs on a platform with built-in communication protocols. When composi
 12. **Database rule** — when the persona needs database storage, use `personas_database` (built-in SQLite, no credential). NEVER Supabase/Firebase/PlanetScale.
 13. **Built-in capabilities are not connectors** — never list web_search/web_fetch/web_browse/file_read/file_write/data_processing/text_analysis/ai_generation in `persona.connectors`. Mention them in `persona.tools` or in capability `tool_hints`.
 14. Mission, principles, constraints, operating_instructions, identity/voice prose MUST be in the persona's output language (see LANGUAGE RULE at top of prompt). Capability ids stay in English (`uc_morning_digest`); capability titles/summaries go in the output language.
+15. **Subscribe to emitted connector events before polling.** Every available connector in the "## Available Connectors" section may carry an `[emits: ...]` hint listing exact event_type strings the platform publishes when state changes on that connector. When a capability's intent (or the user's clarifying answer) talks about "react when X happens", "on new X", "when Y arrives" — use those exact event_type strings in `event_subscriptions` with `direction: listen`. DO NOT invent plausible-looking event_types when a matching one is listed. A `polling` trigger is only correct when no listed emit covers the intent. For local_drive specifically, prefer `drive.document.added` / `drive.document.edited` / `drive.document.renamed` over polling the filesystem.
 
 {template_context}
 
