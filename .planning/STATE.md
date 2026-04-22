@@ -1,18 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: messaging-and-notifications
-status: active
-next_phase: 19
-stopped_at: "Phase 18 (personas_messages builtin connector) COMPLETE — single-plan (18-01) delivered CONN-04 zero-config empty state + regression guards for CONN-01/02/03 (existing code already satisfied those). 3 commits on master (3a1f5a3c, 17067e46, ec12bdbc). Phase 19 (Backend Delivery Glue) is next — plan 01 already drafted; needs plan 02 (Wave 2: IPC + frontend bridge) then execute."
-last_updated: "2026-04-22T12:30:00.000Z"
-last_activity: 2026-04-22
+milestone: v3.2
+milestone_name: "**Goal**: The template and persona data models carry all v3.2 fields so every downstream layer"
+status: planning
+stopped_at: "Phase 17 backend-completion (v1.1 carryover) executed + summary written. Six atomic commits, 18 new tests (simple-mode 98→116), tsc clean, eslint 0 errors. The v1.1 orphan PLAN at 17-backend-completion/ is now resolved — both deferred topics ship with first-class backend signals. Next up: v1.2 milestone starts at /gsd-plan-phase for Schema v3.2."
+last_updated: "2026-04-22T12:09:15.687Z"
+last_activity: 2026-04-22 — Phase 18 verified and closed (commit ec12bdbc)
 progress:
-  total_phases: 6
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
-  percent: 33
+  total_phases: 7
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
