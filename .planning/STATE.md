@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: messaging-and-notifications
 status: active
-next_phase: 18
-stopped_at: "Phase 17 (Schema v3.2) COMPLETE — verifier returned 10/10 must-haves passed. Wave 1 (4 commits) + Wave 2 (1 commit, recovered from poisoned worktree merge) landed all 6 REQ-IDs. Ready for Phase 18 (personas_messages builtin connector)."
-last_updated: "2026-04-22T02:45:00.000Z"
+next_phase: 19
+stopped_at: "Phase 18 (personas_messages builtin connector) COMPLETE — single-plan (18-01) delivered CONN-04 zero-config empty state + regression guards for CONN-01/02/03 (existing code already satisfied those). 3 commits on master (3a1f5a3c, 17067e46, ec12bdbc). Phase 19 (Backend Delivery Glue) is next — plan 01 already drafted; needs plan 02 (Wave 2: IPC + frontend bridge) then execute."
+last_updated: "2026-04-22T12:30:00.000Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 17
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State

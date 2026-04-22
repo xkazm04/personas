@@ -28,6 +28,7 @@ import {
   AlertCircle,
   Columns2,
   MessageCircle,
+  LayoutPanelLeft,
 } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -38,6 +39,7 @@ import {
   FALLBACK_CATEGORY,
 } from './QuestionnaireFormGrid';
 import { QuestionnaireFormDialogue } from './QuestionnaireFormDialogue';
+import { QuestionnaireFormComposition } from './QuestionnaireFormComposition';
 import { compareByCategoryOrder } from './questionnaireCategoryOrder';
 
 interface Props {
@@ -61,7 +63,7 @@ interface Props {
 // Tab-switching shell
 // ---------------------------------------------------------------------------
 
-type Variant = 'baseline' | 'dialogue';
+type Variant = 'baseline' | 'dialogue' | 'composition';
 
 const VARIANT_TABS: Array<{
   id: Variant;
@@ -71,6 +73,7 @@ const VARIANT_TABS: Array<{
 }> = [
   { id: 'baseline', label: 'Focus', sub: 'question + orbit', Icon: Columns2 },
   { id: 'dialogue', label: 'Dialogue', sub: 'conversational', Icon: MessageCircle },
+  { id: 'composition', label: 'Composition', sub: 'unified three-pane', Icon: LayoutPanelLeft },
 ];
 
 function VariantSwitcher({
@@ -122,6 +125,7 @@ export function QuestionnaireFormFocus(props: Props) {
       <div className="flex-1 min-h-0 flex flex-col">
         {variant === 'baseline' && <QuestionnaireFormFocusBaseline {...props} />}
         {variant === 'dialogue' && <QuestionnaireFormDialogue {...props} />}
+        {variant === 'composition' && <QuestionnaireFormComposition {...props} />}
       </div>
     </div>
   );

@@ -1,24 +1,28 @@
 /**
- * PersonaChronologyGlyph — Prototype B (R3): full-bleed capability sigil.
+ * PersonaChronologyGlyph — Prototype B (R4): sigil + symbolic side totems.
  *
- * Each use case becomes a unique sigil — eight curved petals around a
- * glowing core — rendered at hero size so the card reads as "one big
- * emblem" instead of a thumbnail above text. Linked dims bloom into
- * filled, glowing petals; shared dims remain dashed outlines; absent
- * dims leave a tiny inward notch.
+ * The sigil encodes the abstract "what dimensions are present" layer; the
+ * card's dead space is now filled with concrete symbolic data read straight
+ * off the template:
  *
- * R3 changes:
- *   • Sigil is now the full-card background, 340px, centered behind a
- *     glass header strip and a gradient-overlaid footer.
- *   • Title and humanised trigger time share a single header row.
- *   • All infinite SVG animations removed (no pulsing petals / tip
- *     sparks / drifting particles). Remaining motion is hover-gated.
+ *   • Right totem — connector brand logos for this capability, stacked at
+ *     mid-height. Center-out placement: 1st at centre, 2nd above, 3rd
+ *     below, 4th above-above, 5th below-below.
+ *   • Left totem  — messaging channels parsed from notification_channels.
+ *     Same stacking pattern so both flanks read as mirror emblems.
+ *   • Policy strip — a footer row of compact chips for review mode, memory
+ *     state, event subscriptions, error handler, and flow step count.
+ *
+ * The `CapabilitySigil`, helpers (`humanizeCron`, `parseChannels`,
+ * `stackOffset`, `DIM_META`, …) and the totem components are exported so
+ * the GlyphWide variant can reuse them without duplication.
  */
 import { useState, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Calendar, Webhook, Mouse, Radio, Eye, Zap, Clock,
   ListTodo, Plug, MessageSquare, UserCheck, Brain, Activity, AlertTriangle,
+  Mail, Bell, Send, Phone, Hash, Workflow,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
@@ -28,20 +32,22 @@ import { useUseCaseChronology, useUseCaseFlows, CHAIN_DIMENSIONS } from './useUs
 import { ChronologyCommandHub, type ChronologyCommandHubProps } from './ChronologyCommandHub';
 import { CapabilityMatrix } from './CapabilityMatrix';
 import type {
-  ChronologyRow, ChronologyTrigger, DimensionKey,
+  ChronologyRow, ChronologyTrigger, ChronologyConnector, DimensionKey,
 } from './useUseCaseChronology';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 
 type Props = ChronologyCommandHubProps;
 
-interface DimMeta {
+/* ── Dimension palette ────────────────────────────────────────────── */
+
+export interface DimMeta {
   labelKey: keyof Translations['templates']['chronology'];
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   colorClass: string;
 }
 
-const DIM_META: Record<DimensionKey, DimMeta> = {
+export const DIM_META: Record<DimensionKey, DimMeta> = {
   trigger:   { labelKey: 'dim_trigger',   icon: Calendar,      color: '#fbbf24', colorClass: 'text-amber-400' },
   task:      { labelKey: 'dim_task',      icon: ListTodo,      color: '#a78bfa', colorClass: 'text-violet-400' },
   connector: { labelKey: 'dim_apps',      icon: Plug,          color: '#22d3ee', colorClass: 'text-cyan-400' },
@@ -62,11 +68,11 @@ const TRIGGER_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   app_focus: Eye,
 };
 
-function triggerIcon(type: string) {
+export function triggerIcon(type: string) {
   return TRIGGER_ICONS[type] ?? Zap;
 }
 
-function prettyTriggerType(t: Translations, type: string): string {
+export function prettyTriggerType(t: Translations, type: string): string {
   const c = t.templates.chronology;
   switch (type) {
     case 'schedule': return c.trigger_schedule;
@@ -80,7 +86,7 @@ function prettyTriggerType(t: Translations, type: string): string {
   }
 }
 
-/* ── Cron humanizer ───────────────────────────────────────────────── */
+/* ── Cron humaniser ───────────────────────────────────────────────── */
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
@@ -97,13 +103,9 @@ export function humanizeCron(cron: string): string {
   })();
 
   const minEvery = /^\*\/(\d+)$/.exec(min);
-  if (minEvery && hour === '*' && dom === '*' && mon === '*' && dow === '*') {
-    return `Every ${minEvery[1]} min`;
-  }
+  if (minEvery && hour === '*' && dom === '*' && mon === '*' && dow === '*') return `Every ${minEvery[1]} min`;
   const hourEvery = /^\*\/(\d+)$/.exec(hour);
-  if (min === '0' && hourEvery && dom === '*' && mon === '*' && dow === '*') {
-    return `Every ${hourEvery[1]}h`;
-  }
+  if (min === '0' && hourEvery && dom === '*' && mon === '*' && dow === '*') return `Every ${hourEvery[1]}h`;
   if (dom === '*' && mon === '*' && dow === '*' && timeStr) return `Daily · ${timeStr}`;
   if ((dow === '1-5' || dow === 'MON-FRI') && dom === '*' && mon === '*' && timeStr) return `Weekdays · ${timeStr}`;
   if ((dow === '0,6' || dow === '6,0' || dow === 'SAT,SUN') && dom === '*' && mon === '*' && timeStr) return `Weekends · ${timeStr}`;
@@ -117,20 +119,10 @@ export function humanizeCron(cron: string): string {
     }
     if (days.length > 0) return `${days.join('/')} · ${timeStr}`;
   }
-  if (mon === '*' && dow === '*' && timeStr) {
-    const domNum = parseInt(dom, 10);
-    if (!Number.isNaN(domNum)) return `Monthly · ${domNum}${ordinalSuffix(domNum)} · ${timeStr}`;
-  }
   return cron;
 }
 
-function ordinalSuffix(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'] as const;
-  const v = n % 100;
-  return s[(v - 20) % 10] ?? s[v] ?? s[0];
-}
-
-function triggerDetail(tr: ChronologyTrigger): string {
+export function triggerDetail(tr: ChronologyTrigger): string {
   if (tr.trigger_type === 'schedule' && tr.config) {
     const cron = typeof tr.config.cron === 'string' ? tr.config.cron : '';
     if (cron) return humanizeCron(cron);
@@ -138,51 +130,248 @@ function triggerDetail(tr: ChronologyTrigger): string {
   return tr.description ?? '';
 }
 
-/* ── Sigil ──────────────────────────────────────────────────────────── */
+/* ── Channel parser ───────────────────────────────────────────────── */
 
-const PETAL_ANGLES: Record<DimensionKey, number> = {
-  trigger:   0,
-  task:      45,
-  connector: 90,
-  message:   135,
-  review:    180,
-  memory:    225,
-  event:     270,
-  error:     315,
+export interface ParsedChannel {
+  type: string;
+  description: string;
+}
+
+export function parseChannels(summary: string | undefined): ParsedChannel[] {
+  if (!summary) return [];
+  return summary.split(' · ').map((seg) => {
+    const [t, ...rest] = seg.split(':');
+    return { type: (t ?? '').trim(), description: rest.join(':').trim() };
+  }).filter((ch) => ch.type.length > 0);
+}
+
+const CHANNEL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  slack: Hash, teams: Hash, discord: Hash,
+  telegram: Send,
+  email: Mail, smtp: Mail, mail: Mail, gmail: Mail, outlook: Mail,
+  sms: Phone,
+  webhook: Webhook,
+  push: Bell, notification: Bell, notify: Bell,
 };
 
-const SIZE = 340;
-const CENTER = SIZE / 2;
-const CORE_R = 42;
-const PETAL_OUTER = 150;
-const PETAL_INNER = 46;
-const ICON_R_LINKED = 96;
-const ICON_R_SHARED = 82;
+const CHANNEL_TINTS: Record<string, string> = {
+  slack: '#4a154b', teams: '#5059C9', discord: '#5865F2',
+  telegram: '#229ED9',
+  email: '#60a5fa', gmail: '#ea4335', outlook: '#0078d4', smtp: '#60a5fa', mail: '#60a5fa',
+  sms: '#22c55e',
+  webhook: '#64748b',
+  push: '#a78bfa', notification: '#a78bfa', notify: '#a78bfa',
+};
 
-function CapabilitySigil({ row, rowIndex, hovered }: {
+export function channelIcon(type: string) {
+  return CHANNEL_ICONS[type.toLowerCase()] ?? MessageSquare;
+}
+
+export function channelTint(type: string): string {
+  return CHANNEL_TINTS[type.toLowerCase()] ?? '#60a5fa';
+}
+
+/* ── Totem positioning ────────────────────────────────────────────── */
+
+/** Center-out vertical stacking: 1st at 0, 2nd above, 3rd below, 4th above², 5th below². */
+export function stackOffset(i: number): number {
+  if (i === 0) return 0;
+  const step = Math.ceil(i / 2);
+  return i % 2 === 1 ? -step : step;
+}
+
+export function ConnectorTotem({ connectors, side, tileSize, spacing, max = 5 }: {
+  connectors: ChronologyConnector[];
+  side: 'left' | 'right';
+  tileSize: number;
+  spacing: number;
+  max?: number;
+}) {
+  const shown = connectors.slice(0, max);
+  const overflow = connectors.length - shown.length;
+  return (
+    <div className="absolute inset-y-0 pointer-events-none" style={{ [side]: 10, width: tileSize } as React.CSSProperties}>
+      {shown.map((cn, i) => {
+        const offset = stackOffset(i);
+        const meta = getConnectorMeta(cn.name);
+        return (
+          <div
+            key={`${cn.name}-${i}`}
+            className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center shadow-elevation-1 transition-transform"
+            style={{
+              top: `calc(50% + ${offset * spacing}px)`,
+              width: tileSize,
+              height: tileSize,
+              transform: 'translateY(-50%)',
+              boxShadow: `0 0 10px ${(meta?.color ?? '#60a5fa')}33, 0 1px 2px rgba(0,0,0,0.25)`,
+            }}
+            title={`${cn.label || cn.name}${cn.purpose ? ` — ${cn.purpose}` : ''}`}
+          >
+            <ConnectorIcon meta={meta} size={tileSize >= 44 ? 'w-6 h-6' : 'w-4 h-4'} />
+          </div>
+        );
+      })}
+      {overflow > 0 && (() => {
+        const offset = stackOffset(max);
+        return (
+          <div
+            className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-dashed border-card-border flex items-center justify-center text-foreground/65 typo-label tabular-nums"
+            style={{
+              top: `calc(50% + ${offset * spacing}px)`,
+              width: tileSize,
+              height: tileSize,
+              transform: 'translateY(-50%)',
+            }}
+          >
+            +{overflow}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+export function ChannelTotem({ channels, side, tileSize, spacing, max = 4 }: {
+  channels: ParsedChannel[];
+  side: 'left' | 'right';
+  tileSize: number;
+  spacing: number;
+  max?: number;
+}) {
+  const shown = channels.slice(0, max);
+  return (
+    <div className="absolute inset-y-0 pointer-events-none" style={{ [side]: 10, width: tileSize } as React.CSSProperties}>
+      {shown.map((ch, i) => {
+        const offset = stackOffset(i);
+        const Icon = channelIcon(ch.type);
+        const tint = channelTint(ch.type);
+        return (
+          <div
+            key={`${ch.type}-${i}`}
+            className="absolute rounded-md bg-card-bg/90 backdrop-blur border border-card-border flex items-center justify-center"
+            style={{
+              top: `calc(50% + ${offset * spacing}px)`,
+              width: tileSize,
+              height: tileSize,
+              transform: 'translateY(-50%)',
+              background: `linear-gradient(135deg, ${tint}22 0%, transparent 100%), rgba(var(--card-bg-rgb), 0.9)`,
+              boxShadow: `0 0 10px ${tint}44, 0 1px 2px rgba(0,0,0,0.25)`,
+            }}
+            title={`${ch.type}${ch.description ? ` — ${ch.description}` : ''}`}
+          >
+            <Icon className={tileSize >= 44 ? 'w-5 h-5' : 'w-4 h-4'} style={{ color: tint }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Policy strip ─────────────────────────────────────────────────── */
+
+function reviewLabel(summary: string | undefined): string | null {
+  if (!summary) return null;
+  const head = summary.split(':')[0]?.trim() ?? '';
+  if (!head) return null;
+  if (head === 'manual_review') return 'Manual review';
+  if (head === 'required') return 'Review required';
+  if (head === 'optional') return 'Review optional';
+  if (head === 'on_output') return 'Review on output';
+  return head.charAt(0).toUpperCase() + head.slice(1).replace(/_/g, ' ');
+}
+
+export function PolicyStrip({ row }: { row: ChronologyRow }) {
+  const chips: Array<{ icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; color: string; label: string; detail?: string }> = [];
+
+  const review = reviewLabel(row.reviewSummary);
+  if (review) chips.push({ icon: UserCheck, color: DIM_META.review.color, label: review });
+
+  if (row.memorySummary) {
+    chips.push({ icon: Brain, color: DIM_META.memory.color, label: 'Memory' });
+  }
+
+  if (row.events.length > 0) {
+    const first = row.events[0]?.event_type ?? '';
+    chips.push({
+      icon: Activity,
+      color: DIM_META.event.color,
+      label: row.events.length > 1 ? `${first} +${row.events.length - 1}` : first,
+    });
+  }
+
+  if (row.errorSummary) {
+    chips.push({ icon: AlertTriangle, color: DIM_META.error.color, label: 'Error plan' });
+  }
+
+  if (row.steps.length > 0) {
+    chips.push({ icon: Workflow, color: DIM_META.task.color, label: `${row.steps.length} steps` });
+  }
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {chips.map((ch, i) => {
+        const Icon = ch.icon;
+        return (
+          <span
+            key={i}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-card-border bg-card-bg/80 backdrop-blur typo-label text-foreground"
+            style={{ boxShadow: `inset 0 0 0 1px ${ch.color}22` }}
+          >
+            <Icon className="w-3 h-3" style={{ color: ch.color }} />
+            <span className="truncate max-w-[110px]">{ch.label}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Sigil ────────────────────────────────────────────────────────── */
+
+const PETAL_ANGLES: Record<DimensionKey, number> = {
+  trigger: 0, task: 45, connector: 90, message: 135,
+  review: 180, memory: 225, event: 270, error: 315,
+};
+
+export function CapabilitySigil({ row, rowIndex, hovered, size }: {
   row: ChronologyRow;
   rowIndex: number;
   hovered: boolean;
+  size: number;
 }) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
   const linkedCount = Object.values(row.presence).filter((p) => p === 'linked').length;
 
+  const center = size / 2;
+  const petalOuter = size * 0.44;
+  const petalInner = size * 0.14;
+  const coreR = size * 0.12;
+  const iconRLinked = size * 0.28;
+  const iconRShared = size * 0.24;
+  const guideInner = size * 0.305;
+
   const petalPath =
-    `M 0 -${PETAL_INNER} C 20 -74, 20 -116, 0 -${PETAL_OUTER} C -20 -116, -20 -74, 0 -${PETAL_INNER} Z`;
+    `M 0 -${petalInner} C ${size * 0.06} -${petalOuter * 0.49}, ${size * 0.06} -${petalOuter * 0.77}, 0 -${petalOuter} ` +
+    `C -${size * 0.06} -${petalOuter * 0.77}, -${size * 0.06} -${petalOuter * 0.49}, 0 -${petalInner} Z`;
   const petalPathDashed =
-    `M 0 -${PETAL_INNER} C 17 -70, 17 -108, 0 -${PETAL_OUTER - 10} C -17 -108, -17 -70, 0 -${PETAL_INNER} Z`;
-  const nubPath = `M 0 -${PETAL_INNER} C 4 -54, 4 -60, 0 -64 C -4 -60, -4 -54, 0 -${PETAL_INNER} Z`;
+    `M 0 -${petalInner} C ${size * 0.05} -${petalOuter * 0.46}, ${size * 0.05} -${petalOuter * 0.71}, 0 -${petalOuter - 10} ` +
+    `C -${size * 0.05} -${petalOuter * 0.71}, -${size * 0.05} -${petalOuter * 0.46}, 0 -${petalInner} Z`;
+  const nubPath =
+    `M 0 -${petalInner} C ${size * 0.012} -${petalInner * 1.15}, ${size * 0.012} -${petalInner * 1.3}, 0 -${petalInner * 1.4} ` +
+    `C -${size * 0.012} -${petalInner * 1.3}, -${size * 0.012} -${petalInner * 1.15}, 0 -${petalInner} Z`;
 
   const coreId = `sigil-core-${row.id}-${rowIndex}`;
   const glowId = `sigil-glow-${row.id}-${rowIndex}`;
 
   return (
-    <div className="relative" style={{ width: SIZE, height: SIZE }}>
+    <div className="relative" style={{ width: size, height: size }}>
       <motion.svg
-        width={SIZE}
-        height={SIZE}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
         className="absolute inset-0"
         style={{ opacity: row.enabled ? 1 : 0.5 }}
         animate={hovered ? { scale: 1.035 } : { scale: 1 }}
@@ -203,11 +392,9 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
           </filter>
         </defs>
 
-        {/* Guide rings */}
-        <circle cx={CENTER} cy={CENTER} r={PETAL_OUTER} fill="none" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
-        <circle cx={CENTER} cy={CENTER} r={104} fill="none" stroke="currentColor" strokeOpacity="0.05" strokeWidth="1" strokeDasharray="2,4" />
+        <circle cx={center} cy={center} r={petalOuter} fill="none" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+        <circle cx={center} cy={center} r={guideInner} fill="none" stroke="currentColor" strokeOpacity="0.05" strokeWidth="1" strokeDasharray="2,4" />
 
-        {/* Petals */}
         {CHAIN_DIMENSIONS.map((dim, i) => {
           const presence = row.presence[dim];
           const meta = DIM_META[dim];
@@ -216,7 +403,7 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
 
           if (presence === 'none') {
             return (
-              <g key={`petal-${dim}`} transform={`translate(${CENTER} ${CENTER}) rotate(${angle})`}>
+              <g key={`petal-${dim}`} transform={`translate(${center} ${center}) rotate(${angle})`}>
                 <path d={nubPath} fill="currentColor" fillOpacity="0.2" />
               </g>
             );
@@ -224,7 +411,7 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
 
           if (presence === 'shared') {
             return (
-              <g key={`petal-${dim}`} transform={`translate(${CENTER} ${CENTER}) rotate(${angle})`}>
+              <g key={`petal-${dim}`} transform={`translate(${center} ${center}) rotate(${angle})`}>
                 <path
                   d={petalPathDashed}
                   fill={meta.color}
@@ -239,9 +426,9 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
           }
 
           return (
-            <g key={`petal-${dim}`} transform={`translate(${CENTER} ${CENTER}) rotate(${angle})`}>
+            <g key={`petal-${dim}`} transform={`translate(${center} ${center}) rotate(${angle})`}>
               <defs>
-                <linearGradient id={petalGrad} x1="0" y1={-PETAL_OUTER} x2="0" y2={-PETAL_INNER} gradientUnits="userSpaceOnUse">
+                <linearGradient id={petalGrad} x1="0" y1={-petalOuter} x2="0" y2={-petalInner} gradientUnits="userSpaceOnUse">
                   <stop offset="0%" stopColor={meta.color} stopOpacity="0.95" />
                   <stop offset="55%" stopColor={meta.color} stopOpacity="0.6" />
                   <stop offset="100%" stopColor={meta.color} stopOpacity="0.12" />
@@ -255,39 +442,36 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
                 strokeOpacity="0.95"
                 filter={`url(#${glowId})`}
               />
-              {/* Tip ornament — static spark at petal crown */}
-              <circle cx={0} cy={-PETAL_OUTER + 8} r={3} fill="#fff" opacity="0.95" />
+              <circle cx={0} cy={-petalOuter + 8} r={3} fill="#fff" opacity="0.95" />
             </g>
           );
         })}
 
-        {/* Core */}
-        <circle cx={CENTER} cy={CENTER} r={CORE_R + 10} fill="none" stroke="currentColor" strokeOpacity="0.12" strokeWidth="1" />
-        <circle cx={CENTER} cy={CENTER} r={CORE_R} fill={`url(#${coreId})`} />
-        <circle cx={CENTER} cy={CENTER} r={CORE_R} fill="none" stroke="currentColor" strokeOpacity={row.enabled ? 0.45 : 0.18} strokeWidth="1.2" />
+        <circle cx={center} cy={center} r={coreR + 10} fill="none" stroke="currentColor" strokeOpacity="0.12" strokeWidth="1" />
+        <circle cx={center} cy={center} r={coreR} fill={`url(#${coreId})`} />
+        <circle cx={center} cy={center} r={coreR} fill="none" stroke="currentColor" strokeOpacity={row.enabled ? 0.45 : 0.18} strokeWidth="1.2" />
         <text
-          x={CENTER}
-          y={CENTER + 2}
+          x={center}
+          y={center + 2}
           textAnchor="middle"
           dominantBaseline="middle"
           className="fill-current"
-          style={{ fontSize: '30px', fontWeight: 700, letterSpacing: '0.03em' }}
+          style={{ fontSize: `${size * 0.09}px`, fontWeight: 700, letterSpacing: '0.03em' }}
         >
           {linkedCount}
         </text>
         <text
-          x={CENTER}
-          y={CENTER + 22}
+          x={center}
+          y={center + size * 0.065}
           textAnchor="middle"
           dominantBaseline="middle"
           className="fill-current"
-          style={{ fontSize: '9px', letterSpacing: '0.3em', opacity: 0.55 }}
+          style={{ fontSize: `${size * 0.027}px`, letterSpacing: '0.3em', opacity: 0.55 }}
         >
           DIMS
         </text>
       </motion.svg>
 
-      {/* HTML icon overlay — one large icon per petal */}
       {CHAIN_DIMENSIONS.map((dim) => {
         const presence = row.presence[dim];
         const meta = DIM_META[dim];
@@ -296,12 +480,12 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
         const label = c[meta.labelKey];
         if (presence === 'none') return null;
 
-        const iconR = presence === 'linked' ? ICON_R_LINKED : ICON_R_SHARED;
-        const iconBox = presence === 'linked' ? 32 : 22;
+        const iconR = presence === 'linked' ? iconRLinked : iconRShared;
+        const iconBox = presence === 'linked' ? size * 0.094 : size * 0.065;
         const rad = (angle - 90) * Math.PI / 180;
         const scale = hovered ? 1.035 : 1;
-        const x = CENTER + iconR * Math.cos(rad) * scale;
-        const y = CENTER + iconR * Math.sin(rad) * scale;
+        const x = center + iconR * Math.cos(rad) * scale;
+        const y = center + iconR * Math.sin(rad) * scale;
 
         return (
           <div
@@ -344,7 +528,7 @@ function CapabilitySigil({ row, rowIndex, hovered }: {
   );
 }
 
-/* ── Card ──────────────────────────────────────────────────────────── */
+/* ── Card ─────────────────────────────────────────────────────────── */
 
 function GlyphCard({ row, index, flow, templateName }: {
   row: ChronologyRow;
@@ -365,6 +549,8 @@ function GlyphCard({ row, index, flow, templateName }: {
     })()
     : c.manual_only;
 
+  const channels = parseChannels(row.messageSummary);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12, scale: 0.96 }}
@@ -378,7 +564,6 @@ function GlyphCard({ row, index, flow, templateName }: {
           : 'border-card-border shadow-elevation-2 hover:border-primary/30 hover:-translate-y-1 hover:shadow-elevation-3'
       }`}
     >
-      {/* Ambient backdrop — trigger + memory hues set the emotional tone */}
       <div
         className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${hovered ? 'opacity-100' : 'opacity-60'}`}
         style={{
@@ -387,7 +572,6 @@ function GlyphCard({ row, index, flow, templateName }: {
             `radial-gradient(ellipse 80% 50% at 50% 100%, ${row.enabled ? DIM_META.memory.color + '18' : 'transparent'} 0%, transparent 70%)`,
         }}
       />
-      {/* Light reflection sheet */}
       <div
         className="absolute top-0 left-0 w-full h-1/3 pointer-events-none"
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)' }}
@@ -396,14 +580,22 @@ function GlyphCard({ row, index, flow, templateName }: {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="relative w-full text-left cursor-pointer min-h-[420px] flex flex-col"
+        className="relative w-full text-left cursor-pointer min-h-[440px] flex flex-col"
       >
-        {/* Hero sigil — centered absolute, behind content */}
+        {/* Hero sigil */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <CapabilitySigil row={row} rowIndex={index} hovered={hovered} />
+          <CapabilitySigil row={row} rowIndex={index} hovered={hovered} size={280} />
         </div>
 
-        {/* Header — title + trigger time on the same row */}
+        {/* Side totems — channels mirror connectors across the sigil's vertical axis */}
+        {channels.length > 0 && (
+          <ChannelTotem channels={channels} side="left" tileSize={32} spacing={40} max={4} />
+        )}
+        {row.connectors.length > 0 && (
+          <ConnectorTotem connectors={row.connectors} side="right" tileSize={36} spacing={44} max={5} />
+        )}
+
+        {/* Header — title + trigger on one row */}
         <div className="relative z-10 flex items-center gap-2 px-4 py-3 bg-gradient-to-b from-card-bg/95 via-card-bg/70 to-transparent backdrop-blur-sm">
           <span className="typo-data text-foreground/55 tabular-nums">
             {String(index + 1).padStart(2, '0')}
@@ -418,37 +610,20 @@ function GlyphCard({ row, index, flow, templateName }: {
           )}
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 typo-body text-foreground shrink-0">
             {TrigIcon && <TrigIcon className="w-3.5 h-3.5 text-amber-400" />}
-            <span className="truncate max-w-[160px]">{trigText}</span>
+            <span className="truncate max-w-[150px]">{trigText}</span>
           </span>
         </div>
 
-        {/* Spacer — pushes footer down while sigil fills the middle */}
         <div className="flex-1" />
 
-        {/* Footer — summary + connectors */}
+        {/* Footer — summary + policy strip */}
         <div className="relative z-10 flex flex-col gap-2 px-4 py-3 bg-gradient-to-t from-card-bg/95 via-card-bg/75 to-transparent backdrop-blur-sm">
           {row.summary && (
             <div className="typo-body text-foreground/90 leading-snug line-clamp-2">
               {row.summary}
             </div>
           )}
-          {row.connectors.length > 0 && (
-            <div className="flex items-center gap-1">
-              {row.connectors.slice(0, 6).map((cn, i) => {
-                const meta = getConnectorMeta(cn.name);
-                return (
-                  <div key={i} className="w-7 h-7 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center shadow-elevation-1">
-                    <ConnectorIcon meta={meta} size="w-4 h-4" />
-                  </div>
-                );
-              })}
-              {row.connectors.length > 6 && (
-                <span className="text-md font-semibold text-foreground ml-0.5 tabular-nums">
-                  +{row.connectors.length - 6}
-                </span>
-              )}
-            </div>
-          )}
+          <PolicyStrip row={row} />
         </div>
       </button>
 
@@ -471,7 +646,7 @@ function GlyphCard({ row, index, flow, templateName }: {
   );
 }
 
-/* ── Legend ─────────────────────────────────────────────────────────── */
+/* ── Legend ───────────────────────────────────────────────────────── */
 
 function GlyphLegend() {
   const { t } = useTranslation();
@@ -501,7 +676,7 @@ function GlyphLegend() {
   );
 }
 
-/* ── Main ───────────────────────────────────────────────────────────── */
+/* ── Main ─────────────────────────────────────────────────────────── */
 
 function PersonaChronologyGlyphImpl(props: Props) {
   const { t } = useTranslation();

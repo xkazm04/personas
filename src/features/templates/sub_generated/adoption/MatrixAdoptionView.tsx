@@ -16,7 +16,7 @@ import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
 import { PersonaChronologyWildcard } from "./chronology/PersonaChronologyWildcard";
 import { PersonaChronologyGlyph } from "./chronology/PersonaChronologyGlyph";
-import { PersonaChronologyDossier } from "./chronology/PersonaChronologyDossier";
+import { PersonaChronologyGlyphWide } from "./chronology/PersonaChronologyGlyphWide";
 import { QuestionnaireFormFocus } from "./QuestionnaireFormFocus";
 import { UseCasePickerStep, type UseCaseOption } from "./UseCasePickerStep";
 import { useThemeStore } from "@/stores/themeStore";
@@ -380,7 +380,7 @@ type MatrixVariant =
   | "blueprint"
   | "chrono-wildcard"
   | "chrono-glyph"
-  | "chrono-dossier";
+  | "chrono-glyph-wide";
 
 /** Map themes to their preferred matrix visual variant. */
 const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
@@ -401,13 +401,13 @@ function getThemeVariant(themeId: ThemeId): MatrixVariant {
 const CHRONO_TABS: Array<{ id: MatrixVariant; label: string; sub: string }> = [
   { id: "chrono-wildcard", label: "Constellation", sub: "radial · baseline" },
   { id: "chrono-glyph", label: "Glyph", sub: "sigil · full-bleed" },
-  { id: "chrono-dossier", label: "Dossier", sub: "data · briefing" },
+  { id: "chrono-glyph-wide", label: "Glyph Wide", sub: "sigil · 2-col" },
 ];
 
 const CHRONO_VARIANTS: ReadonlyArray<MatrixVariant> = [
   "chrono-wildcard",
   "chrono-glyph",
-  "chrono-dossier",
+  "chrono-glyph-wide",
 ];
 
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
@@ -1246,8 +1246,8 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           onViewAgent={handleViewAgent}
         />
       )}
-      {matrixVariant === "chrono-dossier" && (
-        <PersonaChronologyDossier
+      {matrixVariant === "chrono-glyph-wide" && (
+        <PersonaChronologyGlyphWide
           buildPhase={build.buildPhase}
           completeness={build.completeness}
           isRunning={build.isBuilding}
