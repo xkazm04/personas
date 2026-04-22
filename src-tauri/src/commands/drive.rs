@@ -8,7 +8,7 @@
 //! symlinks that escape the sandbox are also caught.
 
 use std::path::{Component, Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -16,6 +16,7 @@ use tauri::{AppHandle, Manager};
 use ts_rs::TS;
 
 use crate::error::AppError;
+use crate::AppState;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -292,6 +293,85 @@ fn build_entry(root: &Path, abs: &Path) -> Result<DriveEntry, AppError> {
 }
 
 // ---------------------------------------------------------------------------
+// Persona event emission — `drive.document.*`
+// ---------------------------------------------------------------------------
+
+/// Canonical connector name declared by `scripts/connectors/builtin/local-drive.json`.
+/// Also the `source_type` for every drive persona event so subscribers can filter.
+const DRIVE_SOURCE_TYPE: &str = "local_drive";
+
+/// Event names the drive surface publishes. Three-level dot syntax per C3 v3.1.
+mod drive_event {
+    pub const ADDED: &str = "drive.document.added";
+    pub const EDITED: &str = "drive.document.edited";
+    pub const RENAMED: &str = "drive.document.renamed";
+    pub const DELETED: &str = "drive.document.deleted";
+}
+
+/// Publish a `drive.document.*` event to `persona_events`. Best-effort — drive
+/// operations must not fail because the event bus can't ingest. `source_id` is
+/// the file path so subscriptions with `source_filter: "some-folder/*"` can
+/// narrow scope (e.g. a persona that only watches `/inbox/*`).
+fn emit_drive_event(
+    app: &AppHandle,
+    event_type: &str,
+    rel_path: &str,
+    extra: Option<serde_json::Value>,
+) {
+    // Under tests the AppState may not be attached yet; skip silently.
+    let state = match app.try_state::<Arc<AppState>>() {
+        Some(s) => s,
+        None => return,
+    };
+
+    let name = std::path::Path::new(rel_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let ext = std::path::Path::new(rel_path)
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_ascii_lowercase());
+
+    let mut payload = serde_json::json!({
+        "path": rel_path,
+        "name": name,
+        "extension": ext,
+    });
+    if let (Some(obj), Some(extra)) = (payload.as_object_mut(), extra) {
+        if let Some(extra_obj) = extra.as_object() {
+            for (k, v) in extra_obj {
+                obj.insert(k.clone(), v.clone());
+            }
+        }
+    }
+
+    let input = crate::db::models::CreatePersonaEventInput {
+        event_type: event_type.to_string(),
+        source_type: DRIVE_SOURCE_TYPE.to_string(),
+        project_id: None,
+        source_id: Some(rel_path.to_string()),
+        target_persona_id: None,
+        payload: serde_json::to_string(&payload).ok(),
+        use_case_id: None,
+    };
+
+    if let Err(e) = crate::db::repos::communication::events::publish(&state.db, input) {
+        tracing::warn!(
+            event_type = %event_type,
+            path = %rel_path,
+            "Failed to publish drive event: {}", e
+        );
+    } else {
+        tracing::debug!(
+            event_type = %event_type,
+            path = %rel_path,
+            "Published drive event"
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Commands — introspection
 // ---------------------------------------------------------------------------
 
@@ -489,11 +569,27 @@ pub fn drive_write(
     }
     let root = managed_root(&app)?;
     let abs = resolve_safe(&root, &rel_path)?;
+    // "Added" vs "edited" is decided BEFORE std::fs::write creates the file.
+    let existed_before = abs.exists();
     if let Some(parent) = abs.parent() {
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&abs, &content)?;
-    build_entry(&root, &abs)
+    let entry = build_entry(&root, &abs)?;
+
+    let event_type = if existed_before {
+        drive_event::EDITED
+    } else {
+        drive_event::ADDED
+    };
+    emit_drive_event(
+        &app,
+        event_type,
+        &entry.path,
+        Some(serde_json::json!({ "size": entry.size, "mime": entry.mime })),
+    );
+
+    Ok(entry)
 }
 
 #[tauri::command]
@@ -528,11 +624,20 @@ pub fn drive_delete(app: AppHandle, rel_path: String) -> Result<(), AppError> {
     if !abs.exists() {
         return Err(AppError::NotFound(format!("Not found: {}", rel_path)));
     }
-    if abs.is_dir() {
+    let was_dir = abs.is_dir();
+    if was_dir {
         std::fs::remove_dir_all(&abs)?;
     } else {
         std::fs::remove_file(&abs)?;
     }
+
+    emit_drive_event(
+        &app,
+        drive_event::DELETED,
+        &rel_path,
+        Some(serde_json::json!({ "was_folder": was_dir })),
+    );
+
     Ok(())
 }
 
@@ -559,7 +664,16 @@ pub fn drive_rename(
         )));
     }
     std::fs::rename(&abs, &dst_resolved)?;
-    build_entry(&root, &dst_resolved)
+    let entry = build_entry(&root, &dst_resolved)?;
+
+    emit_drive_event(
+        &app,
+        drive_event::RENAMED,
+        &entry.path,
+        Some(serde_json::json!({ "from_path": rel_path })),
+    );
+
+    Ok(entry)
 }
 
 #[tauri::command]
@@ -590,7 +704,16 @@ pub fn drive_move(
         ));
     }
     std::fs::rename(&src, &dst)?;
-    build_entry(&root, &dst)
+    let entry = build_entry(&root, &dst)?;
+
+    emit_drive_event(
+        &app,
+        drive_event::RENAMED,
+        &entry.path,
+        Some(serde_json::json!({ "from_path": src_rel })),
+    );
+
+    Ok(entry)
 }
 
 #[tauri::command]
@@ -618,7 +741,19 @@ pub fn drive_copy(
     } else {
         std::fs::copy(&src, &dst)?;
     }
-    build_entry(&root, &dst)
+    let entry = build_entry(&root, &dst)?;
+
+    // A copy always produces a NEW node at the destination. Emit `added` so
+    // subscribed personas trigger on incoming duplicates the same way they do
+    // for newly-written files.
+    emit_drive_event(
+        &app,
+        drive_event::ADDED,
+        &entry.path,
+        Some(serde_json::json!({ "from_path": src_rel, "copied": true })),
+    );
+
+    Ok(entry)
 }
 
 fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), AppError> {

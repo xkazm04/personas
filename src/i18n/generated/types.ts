@@ -9330,6 +9330,14 @@ export type Translations = {
     polling_changed_description: string;
     file_changed_label: string;
     file_changed_description: string;
+    drive_document_added_label: string;
+    drive_document_added_description: string;
+    drive_document_edited_label: string;
+    drive_document_edited_description: string;
+    drive_document_renamed_label: string;
+    drive_document_renamed_description: string;
+    drive_document_deleted_label: string;
+    drive_document_deleted_description: string;
     clipboard_changed_label: string;
     clipboard_changed_description: string;
     app_focus_changed_label: string;

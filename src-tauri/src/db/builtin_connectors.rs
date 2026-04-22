@@ -859,7 +859,7 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             healthcheck_config: None,
             services: r##"[]"##,
             events: r##"[]"##,
-            metadata: Some(r##"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Managed local filesystem for agent exports. Files survive app upgrades, live in the OS app-data directory, and are browsable via the Drive plugin.","auth_type":"builtin","auth_type_label":"Built-in","runtime_env":{"LOCAL_DRIVE_ROOT":"resolved at runtime from drive_get_root"},"auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}]}"##),
+            metadata: Some(r##"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Managed local filesystem for agent exports. Files survive app upgrades, live in the OS app-data directory, and are browsable via the Drive plugin.","auth_type":"builtin","auth_type_label":"Built-in","runtime_env":{"LOCAL_DRIVE_ROOT":"resolved at runtime from drive_get_root"},"auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}],"emits":[{"event_type":"drive.document.added","description":"A new document arrives in the drive (write, import, or copy)."},{"event_type":"drive.document.edited","description":"An existing document's contents are overwritten."},{"event_type":"drive.document.renamed","description":"A document or folder is renamed or moved within the drive."},{"event_type":"drive.document.deleted","description":"A document or folder is removed from the drive."}]}"##),
         },
         BuiltinConnector {
             id: r##"builtin-local-messaging"##,

@@ -78,6 +78,35 @@ export const EVENT_TYPE_REGISTRY: EventTypeEntry[] = [
     category: 'trigger',
     typicalSources: ['file_watcher'],
   },
+  // ── Built-in Local Drive (Plugins.Drive) ────────────────────────────────
+  {
+    type: 'drive.document.added',
+    labelKey: 'drive_document_added_label',
+    descriptionKey: 'drive_document_added_description',
+    category: 'trigger',
+    typicalSources: ['local_drive'],
+  },
+  {
+    type: 'drive.document.edited',
+    labelKey: 'drive_document_edited_label',
+    descriptionKey: 'drive_document_edited_description',
+    category: 'trigger',
+    typicalSources: ['local_drive'],
+  },
+  {
+    type: 'drive.document.renamed',
+    labelKey: 'drive_document_renamed_label',
+    descriptionKey: 'drive_document_renamed_description',
+    category: 'trigger',
+    typicalSources: ['local_drive'],
+  },
+  {
+    type: 'drive.document.deleted',
+    labelKey: 'drive_document_deleted_label',
+    descriptionKey: 'drive_document_deleted_description',
+    category: 'trigger',
+    typicalSources: ['local_drive'],
+  },
   {
     type: 'clipboard_changed',
     labelKey: 'clipboard_changed_label',
