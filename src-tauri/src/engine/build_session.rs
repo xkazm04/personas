@@ -203,6 +203,7 @@ impl BuildSessionManager {
         let guard_map = self.sessions.clone();
         let guard_sid = session_id.clone();
         let sid = session_id.clone();
+        let raw_user_intent = intent.clone();
         tokio::spawn(async move {
             let _handle_guard = HandleDropGuard {
                 sessions: guard_map,
@@ -212,6 +213,7 @@ impl BuildSessionManager {
                 sid,
                 persona_id,
                 system_prompt, // Use the full system prompt, not raw intent
+                raw_user_intent,
                 channel,
                 input_rx,
                 pool,
@@ -457,6 +459,21 @@ fn intent_implies_connectors(intent_lower: &str) -> Gate {
     Gate::Closed
 }
 
+/// Intent-heuristic gate seed — shared by enumeration-time init and lazy
+/// per-capability init on the first resolution event. When capability_enum
+/// fires before any resolution we use it; when the LLM skips enumeration
+/// entirely we still apply the same heuristic on first resolution so gates
+/// work uniformly.
+fn gate_seed_for_intent(intent: &str) -> CapabilityGates {
+    let intent_lower = intent.to_lowercase();
+    CapabilityGates {
+        trigger: intent_implies_trigger(&intent_lower),
+        connectors: intent_implies_connectors(&intent_lower),
+        review_policy: intent_implies_review(&intent_lower),
+        memory_policy: intent_implies_memory(&intent_lower),
+    }
+}
+
 /// Initialize gate state for each capability in the enumeration. Runs the
 /// intent heuristics once per capability — so if intent says "every morning",
 /// EVERY capability's trigger gate auto-opens (intent is persona-wide).
@@ -467,23 +484,29 @@ fn init_gates_from_enumeration(
     intent: &str,
 ) {
     let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else { return };
-    let intent_lower = intent.to_lowercase();
-    let auto_trigger = intent_implies_trigger(&intent_lower);
-    let auto_review = intent_implies_review(&intent_lower);
-    let auto_memory = intent_implies_memory(&intent_lower);
-    let auto_connectors = intent_implies_connectors(&intent_lower);
+    let seed = gate_seed_for_intent(intent);
 
     for cap in caps {
         let Some(id) = cap.get("id").and_then(|v| v.as_str()) else { continue };
         if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
             titles.entry(id.to_string()).or_insert_with(|| title.to_string());
         }
-        coverage.entry(id.to_string()).or_insert_with(|| CapabilityGates {
-            trigger: auto_trigger,
-            connectors: auto_connectors,
-            review_policy: auto_review,
-            memory_policy: auto_memory,
-        });
+        coverage.entry(id.to_string()).or_insert_with(|| seed.clone());
+    }
+}
+
+/// Lazy per-capability gate init — used when the LLM emits a
+/// capability_resolution for a cap_id we haven't seen in any
+/// capability_enumeration yet. Without this path, an LLM that skips
+/// enumeration (or emits resolutions before enumeration lands) bypasses the
+/// gate entirely.
+fn ensure_capability_in_coverage(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    cap_id: &str,
+    intent: &str,
+) {
+    if !coverage.contains_key(cap_id) {
+        coverage.insert(cap_id.to_string(), gate_seed_for_intent(intent));
     }
 }
 
@@ -605,6 +628,11 @@ async fn run_session(
     session_id: String,
     _persona_id: String,
     intent: String,
+    // The raw, user-typed intent (not the full system prompt). We need this
+    // separately so gate heuristics scan the user's words, not the prompt
+    // scaffolding which mentions every keyword we match for. The `intent`
+    // parameter above is misnamed — it's actually the full LLM prompt.
+    raw_user_intent: String,
     channel: Channel<BuildEvent>,
     mut input_rx: mpsc::Receiver<UserAnswer>,
     pool: DbPool,
@@ -801,16 +829,75 @@ async fn run_session(
         // Capability-gate pass — suppress out-of-order resolutions and
         // synthesize missing clarifying_question events locally. See the
         // CapabilityGates doc block above for the state-machine rules.
+        //
+        // IMPORTANT: every CapabilityResolutionUpdate parsed from the LLM is
+        // paired with a legacy CellUpdate mirror (see parse_json_object).
+        // When we suppress the v3 event, we MUST also suppress the paired
+        // legacy mirror — otherwise `resolved_cells` accumulates a partial
+        // resolution and the outer state machine trips the `resolved_count
+        // >= 8` shortcut into draft_ready. The parser emits v3 FIRST then
+        // legacy, so a single forward pass with a suppress-legacy set is
+        // sufficient.
         // -----------------------------------------------------------------
         turn_events = {
+            let event_type_names: Vec<&'static str> = turn_events.iter().map(|e| match e {
+                BuildEvent::CellUpdate { cell_key, .. } => {
+                    if cell_key == "agent_ir" { "cell:agent_ir" }
+                    else if cell_key == "behavior_core" { "cell:behavior_core" }
+                    else if cell_key == "use-cases" { "cell:use-cases" }
+                    else if cell_key == "connectors" { "cell:connectors" }
+                    else if cell_key == "triggers" { "cell:triggers" }
+                    else if cell_key == "events" { "cell:events" }
+                    else if cell_key == "messages" { "cell:messages" }
+                    else if cell_key == "human-review" { "cell:human-review" }
+                    else if cell_key == "memory" { "cell:memory" }
+                    else if cell_key == "error-handling" { "cell:error-handling" }
+                    else { "cell:other" }
+                }
+                BuildEvent::Question { .. } => "Question",
+                BuildEvent::ClarifyingQuestionV3 { .. } => "ClarifyingV3",
+                BuildEvent::CapabilityResolutionUpdate { .. } => "CapRes",
+                BuildEvent::CapabilityEnumerationUpdate { .. } => "CapEnum",
+                BuildEvent::BehaviorCoreUpdate { .. } => "BehaviorCore",
+                BuildEvent::PersonaResolutionUpdate { .. } => "PersonaRes",
+                BuildEvent::Progress { .. } => "Progress",
+                BuildEvent::Error { .. } => "Error",
+                BuildEvent::SessionStatus { .. } => "Status",
+            }).collect();
+            tracing::info!(
+                session_id = %session_id,
+                turn = turn + 1,
+                event_count = turn_events.len(),
+                coverage_caps = coverage.len(),
+                events = ?event_type_names,
+                "Gate-pass entry"
+            );
+
             let mut kept: Vec<BuildEvent> = Vec::with_capacity(turn_events.len());
             let mut synthesized: Vec<BuildEvent> = Vec::new();
+            let mut suppress_legacy: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+            // Only synthesize ONE question per turn. If the LLM batched
+            // multiple closed-gate resolutions into one turn, we still
+            // suppress all of them but only ask the user about one at a
+            // time — the UI queues questions and we'd flood it otherwise.
+            let mut synthesized_this_turn = false;
 
             for event in turn_events {
                 let keep = match &event {
                     BuildEvent::CapabilityEnumerationUpdate { data, .. } => {
                         init_gates_from_enumeration(
-                            &mut coverage, &mut capability_titles, data, &intent,
+                            &mut coverage, &mut capability_titles, data, &raw_user_intent,
+                        );
+                        let gate_summary: Vec<String> = coverage.iter()
+                            .map(|(k, v)| format!("{}:[t={:?},c={:?},r={:?},m={:?}]",
+                                k, v.trigger, v.connectors, v.review_policy, v.memory_policy))
+                            .collect();
+                        tracing::info!(
+                            session_id = %session_id,
+                            raw_intent = %raw_user_intent,
+                            caps = ?gate_summary,
+                            "CapEnum init — gates seeded"
                         );
                         true
                     }
@@ -823,6 +910,7 @@ async fn run_session(
                             (capability_id.as_deref(), field.as_deref())
                         {
                             if is_gated_field(field_name) {
+                                ensure_capability_in_coverage(&mut coverage, cap_id, &raw_user_intent);
                                 if let Some(cg) = coverage.get_mut(cap_id) {
                                     cg.mark_pending(field_name);
                                 }
@@ -837,66 +925,173 @@ async fn run_session(
                     BuildEvent::CapabilityResolutionUpdate {
                         capability_id, field, value, ..
                     } => {
+                        ensure_capability_in_coverage(&mut coverage, capability_id, &raw_user_intent);
                         let gate_open = coverage
                             .get(capability_id)
                             .map(|g| g.is_gate_open(field))
                             .unwrap_or(true);
-                        if !gate_open && is_gated_field(field) {
-                            let title = capability_titles
-                                .get(capability_id)
-                                .cloned()
-                                .unwrap_or_else(|| capability_id.clone());
-                            let synth = synthesize_gate_question(
-                                capability_id, field, &title, value, &pool, &session_id,
-                            );
-                            if !synth.is_empty() {
-                                if let Some(cg) = coverage.get_mut(capability_id) {
-                                    cg.mark_pending(field);
+                        let is_gated = is_gated_field(field);
+                        tracing::info!(
+                            session_id = %session_id,
+                            cap_id = %capability_id,
+                            field = %field,
+                            gate_open = gate_open,
+                            is_gated = is_gated,
+                            "CapRes gate check"
+                        );
+                        if !gate_open && is_gated {
+                            // Always suppress out-of-order resolutions +
+                            // their legacy mirror so resolved_cells doesn't
+                            // accumulate a partial value. Only synthesize a
+                            // NEW question if we haven't already this turn.
+                            if let Some(legacy) =
+                                map_capability_field_to_legacy_dimension(field)
+                            {
+                                suppress_legacy.insert(legacy.to_string());
+                            }
+                            if !synthesized_this_turn {
+                                let title = capability_titles
+                                    .get(capability_id)
+                                    .cloned()
+                                    .unwrap_or_else(|| capability_id.clone());
+                                let synth = synthesize_gate_question(
+                                    capability_id, field, &title, value, &pool, &session_id,
+                                );
+                                if !synth.is_empty() {
+                                    if let Some(cg) = coverage.get_mut(capability_id) {
+                                        cg.mark_pending(field);
+                                    }
+                                    pending_gate = Some(PendingGate {
+                                        cap_id: capability_id.clone(),
+                                        field: field.clone(),
+                                    });
+                                    tracing::warn!(
+                                        session_id = %session_id,
+                                        capability_id = %capability_id,
+                                        field = %field,
+                                        "Gate closed — suppressing capability_resolution, synthesizing clarifying_question"
+                                    );
+                                    synthesized.extend(synth);
+                                    synthesized_this_turn = true;
                                 }
-                                pending_gate = Some(PendingGate {
-                                    cap_id: capability_id.clone(),
-                                    field: field.clone(),
-                                });
-                                tracing::warn!(
+                            } else {
+                                tracing::info!(
                                     session_id = %session_id,
                                     capability_id = %capability_id,
                                     field = %field,
-                                    "Gate closed — suppressing capability_resolution, synthesizing clarifying_question"
+                                    "Gate closed — suppressing (synthesis already fired this turn)"
                                 );
-                                synthesized.extend(synth);
-                                false
-                            } else {
-                                true
                             }
+                            false
                         } else {
                             true
                         }
                     }
-                    BuildEvent::CellUpdate { cell_key, .. } if cell_key == "agent_ir" => {
-                        if let Some((cap_id, field_name)) = find_first_unopen_gate(&coverage) {
-                            let title = capability_titles
-                                .get(&cap_id)
-                                .cloned()
-                                .unwrap_or_else(|| cap_id.clone());
-                            let synth = synthesize_gate_question(
-                                &cap_id, field_name, &title, &serde_json::Value::Null,
-                                &pool, &session_id,
-                            );
-                            if !synth.is_empty() {
-                                if let Some(cg) = coverage.get_mut(&cap_id) {
-                                    cg.mark_pending(field_name);
+                    BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => {
+                        // If the LLM skipped enumeration entirely, bootstrap
+                        // coverage from agent_ir's capabilities/use_cases so
+                        // we have gates to check.
+                        if coverage.is_empty() {
+                            if let Some(caps) = data
+                                .get("persona")
+                                .and_then(|p| p.get("capabilities"))
+                                .and_then(|v| v.as_array())
+                                .or_else(|| data.get("capabilities").and_then(|v| v.as_array()))
+                                .or_else(|| data.get("use_cases").and_then(|v| v.as_array()))
+                            {
+                                let seed = gate_seed_for_intent(&raw_user_intent);
+                                for cap in caps {
+                                    let id = cap.get("id").and_then(|v| v.as_str())
+                                        .or_else(|| cap.get("use_case_id").and_then(|v| v.as_str()));
+                                    let title = cap.get("title").and_then(|v| v.as_str());
+                                    if let Some(id) = id {
+                                        coverage.entry(id.to_string()).or_insert_with(|| seed.clone());
+                                        if let Some(t) = title {
+                                            capability_titles.entry(id.to_string())
+                                                .or_insert_with(|| t.to_string());
+                                        }
+                                    }
                                 }
-                                pending_gate = Some(PendingGate {
-                                    cap_id: cap_id.clone(),
-                                    field: field_name.to_string(),
-                                });
-                                tracing::warn!(
+                            }
+                            // Fallback: if still empty, create a synthetic
+                            // single-cap coverage so at least one gate round
+                            // fires for the user.
+                            if coverage.is_empty() {
+                                coverage.insert(
+                                    "uc_default".to_string(),
+                                    gate_seed_for_intent(&raw_user_intent),
+                                );
+                                capability_titles.entry("uc_default".to_string())
+                                    .or_insert_with(|| "this agent".to_string());
+                            }
+                        }
+                        if let Some((cap_id, field_name)) = find_first_unopen_gate(&coverage) {
+                            if !synthesized_this_turn {
+                                let title = capability_titles
+                                    .get(&cap_id)
+                                    .cloned()
+                                    .unwrap_or_else(|| cap_id.clone());
+                                let synth = synthesize_gate_question(
+                                    &cap_id, field_name, &title, &serde_json::Value::Null,
+                                    &pool, &session_id,
+                                );
+                                if !synth.is_empty() {
+                                    if let Some(cg) = coverage.get_mut(&cap_id) {
+                                        cg.mark_pending(field_name);
+                                    }
+                                    pending_gate = Some(PendingGate {
+                                        cap_id: cap_id.clone(),
+                                        field: field_name.to_string(),
+                                    });
+                                    tracing::warn!(
+                                        session_id = %session_id,
+                                        missing_cap = %cap_id,
+                                        missing_field = %field_name,
+                                        "Gate closed — suppressing agent_ir, synthesizing clarifying_question"
+                                    );
+                                    synthesized.extend(synth);
+                                    synthesized_this_turn = true;
+                                }
+                            } else {
+                                tracing::info!(
                                     session_id = %session_id,
                                     missing_cap = %cap_id,
                                     missing_field = %field_name,
-                                    "Gate closed — suppressing agent_ir, synthesizing clarifying_question"
+                                    "Gate closed — suppressing agent_ir (synthesis already fired this turn)"
                                 );
-                                synthesized.extend(synth);
+                            }
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    BuildEvent::CellUpdate { cell_key, .. } => {
+                        !suppress_legacy.contains(cell_key)
+                    }
+                    BuildEvent::PersonaResolutionUpdate { field, .. } => {
+                        // Persona-wide resolutions for gated v3 fields can
+                        // bypass per-capability gates. If ANY capability
+                        // still has the matching gate closed, suppress the
+                        // persona-wide resolution + its legacy mirror.
+                        let gated = match field.as_str() {
+                            "connectors" => Some("connectors"),
+                            "core_memories" => Some("memory_policy"),
+                            _ => None,
+                        };
+                        if let Some(field_name) = gated {
+                            let any_closed = coverage.values()
+                                .any(|g| !g.is_gate_open(field_name));
+                            if any_closed {
+                                if let Some(legacy) =
+                                    map_persona_field_to_legacy_dimension(field)
+                                {
+                                    suppress_legacy.insert(legacy.to_string());
+                                }
+                                tracing::warn!(
+                                    session_id = %session_id,
+                                    field = %field,
+                                    "Gate closed — suppressing persona_resolution (bypass attempt)"
+                                );
                                 false
                             } else {
                                 true
@@ -1098,7 +1293,41 @@ async fn run_session(
             // The next iteration of the turn loop will spawn a CLI with this prompt
             // and hopefully get agent_ir back. If it still fails after MAX_TURNS,
             // the final checkpoint will persist whatever we have.
-        } else if got_agent_ir || resolved_count >= 8 {
+        } else if (got_agent_ir || resolved_count >= 8) && {
+            // Final gate guard: if any capability gate is still closed, don't
+            // enter DraftReady — force another turn so the LLM is prompted
+            // again. This catches the case where the LLM smuggles enough
+            // resolutions through to trip resolved_count>=8 but our filter
+            // suppressed its agent_ir. Without this guard the outer auto-test
+            // path (UI useEffect on draft_ready) fires and masks the gap.
+            let any_closed = coverage.values().any(|g| g.first_unopen_field().is_some());
+            if any_closed {
+                let (gap_cap, gap_field) = find_first_unopen_gate(&coverage)
+                    .unwrap_or_else(|| ("?".to_string(), "?"));
+                tracing::warn!(
+                    session_id = %session_id,
+                    turn = turn + 1,
+                    gap_cap = %gap_cap,
+                    gap_field = %gap_field,
+                    resolved_count = resolved_count,
+                    got_agent_ir = got_agent_ir,
+                    "Skipping DraftReady — gate still closed; continuing to next turn"
+                );
+                // Inject a direct continue-prompt into the conversation so
+                // the next turn gets a clear correction (alongside our own
+                // synthesized question which the user answered).
+                conversation.push((
+                    "user".to_string(),
+                    format!(
+                        "You emitted agent_ir / enough resolutions but capability {gap_cap} still has an unanswered {gap_field}. Emit a clarifying_question for that field now (do not re-emit agent_ir until it is answered)."
+                    ),
+                ));
+                last_answered_cells.clear();
+                false
+            } else {
+                true
+            }
+        } {
             // All done — enter draft_ready and wait for test/refine
             let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
                 phase: Some(BuildPhase::DraftReady.as_str().to_string()),
