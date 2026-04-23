@@ -845,38 +845,57 @@ const bridge: TestBridge = {
    * for which no question is currently pending are silently dropped.
    */
   async answerPendingBuildQuestions(answers: Record<string, string>) {
-    const store = useAgentStore.getState();
-    if (!store.buildSessionId) return { success: false, error: 'No active build session' };
-    const pending = store.buildPendingQuestions ?? [];
+    // `useAgentStore.getState()` returns a snapshot; subsequent actions do
+    // not mutate it. We re-fetch after collecting so `buildPendingAnswers`
+    // reflects the post-collect state rather than the pre-collect snapshot.
+    const snap1 = useAgentStore.getState();
+    if (!snap1.buildSessionId) return { success: false, error: 'No active build session' };
+    const pending = snap1.buildPendingQuestions ?? [];
     const pendingKeys = new Set((pending as Array<{ cellKey: string }>).map((q) => q.cellKey));
 
+    // Collect every provided key that matches a pending question.
+    let collectedNow = 0;
     for (const [cellKey, answer] of Object.entries(answers)) {
       if (!pendingKeys.has(cellKey)) continue;
-      store.collectAnswer(cellKey, answer);
+      snap1.collectAnswer(cellKey, answer);
+      collectedNow += 1;
+    }
+    if (collectedNow === 0) {
+      return {
+        success: false,
+        error: 'No provided cellKeys match pending questions',
+        pendingKeys: Array.from(pendingKeys),
+        providedKeys: Object.keys(answers),
+      };
     }
 
-    const collected = store.buildPendingAnswers;
-    const collectedCount = Object.keys(collected).length;
-    if (collectedCount === 0) {
-      return { success: false, error: 'No provided cellKeys match pending questions', pendingKeys: Array.from(pendingKeys) };
+    // Re-read to get the post-collect snapshot.
+    const snap2 = useAgentStore.getState();
+    const collected = snap2.buildPendingAnswers;
+    const entries = Object.entries(collected);
+    if (entries.length === 0) {
+      return {
+        success: false,
+        error: 'Collected answers not present in store after collectAnswer',
+      };
     }
 
     const escapeAnswer = (raw: string): string =>
       raw.replace(/\\/g, '\\\\').replace(/\r\n|\r|\n/g, '\\n').replace(/\[/g, '\\[');
-    const combined = Object.entries(collected)
+    const combined = entries
       .map(([k, v]) => `[${k}]: ${escapeAnswer(v)}`)
       .join('\n');
 
     try {
       await invoke('answer_build_question', {
-        sessionId: store.buildSessionId,
+        sessionId: snap2.buildSessionId,
         cellKey: '_batch',
         answer: combined,
       });
-      store.clearPendingAnswers();
-      return { success: true, answered: Object.keys(collected) };
+      snap2.clearPendingAnswers();
+      return { success: true, answered: entries.map(([k]) => k) };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: _fmtBridgeErr(e) };
     }
   },
 

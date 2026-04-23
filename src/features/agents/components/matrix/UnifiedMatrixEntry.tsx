@@ -17,7 +17,7 @@ import { BehaviorCoreEditor } from "@/features/agents/components/matrix/Behavior
 import { CapabilityRowEditor } from "@/features/agents/components/matrix/CapabilityRowEditor";
 import { CapabilityAddModal } from "@/features/agents/components/matrix/CapabilityAddModal";
 import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
-import { GlyphGrid } from "@/features/shared/glyph";
+import { GlyphGrid, GlyphQuestionPanel } from "@/features/shared/glyph";
 import {
   useUseCaseChronology,
   useUseCaseFlows,
@@ -409,6 +409,20 @@ export function UnifiedMatrixEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
+      {/* Inline pending-question panel — renders across ALL layouts, so the
+          8-dim Matrix and the v3-capabilities view answer questions the same
+          way the Glyph prototype does. Prior iteration auto-opened a modal
+          for every pending question in non-Glyph layouts; this inlines the
+          Q&A as a first-class surface of the flow rather than a takeover. */}
+      {build.pendingQuestions && build.pendingQuestions.length > 0 && (
+        <div className="flex-shrink-0 mb-3" data-testid="build-inline-questions">
+          <GlyphQuestionPanel
+            questions={build.pendingQuestions}
+            onAnswer={build.handleAnswer}
+          />
+        </div>
+      )}
+
       {/* Layout toggle — always visible so users can preview the Glyph
           prototype even in pre-build, not only once content exists. */}
       <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
@@ -502,12 +516,13 @@ export function UnifiedMatrixEntry() {
 
             {/* Glyph visualization — empty state message fires if no capabilities
                have been produced yet. Pending Q&A surfaces inline at the top. */}
+            {/* Pending questions are handled by the inline panel above the
+               layout switch so every layout has the same Q&A UX; don't
+               re-render them inside the grid. */}
             <GlyphGrid
               rows={glyphRows}
               flowsById={glyphFlows}
               templateName={agentName || undefined}
-              pendingQuestions={build.pendingQuestions}
-              onAnswerBuildQuestion={build.handleAnswer}
               emptyLabel={isPreBuildGlyph
                 ? "Describe what you want to build above, then launch. Capabilities will appear here as sigils."
                 : undefined}

@@ -163,15 +163,12 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     return () => window.removeEventListener('matrix-cell-click', handler);
   }, []);
 
-  // Auto-open the first pending question when it arrives so the 8-dim view
-  // surfaces clarifying questions without requiring the user to hunt for the
-  // right cell to click. Matches the Glyph surface's always-visible behaviour.
-  // Only opens when nothing is currently open; does not hijack an open modal.
-  useEffect(() => {
-    if (openQuestionKey) return;
-    const first = props.pendingQuestions?.[0];
-    if (first) setOpenQuestionKey(first.cellKey);
-  }, [props.pendingQuestions, openQuestionKey]);
+  // Prior iteration auto-opened the SpatialQuestionPopover on every new
+  // pending question. That turned every LLM turn into a modal takeover
+  // across all three layouts (Glyph already had an inline panel, Matrix/v3
+  // got a full-screen modal they didn't need). The inline rendering now
+  // lives at the UnifiedMatrixEntry level (GlyphQuestionPanel above the
+  // layout switch), so the modal here stays a cell-click escape hatch.
 
   // Ref map for cell DOM elements -- used by SpatialQuestionPopover anchoring
   const cellRefsRef = useRef<Record<string, HTMLElement | null>>({});
