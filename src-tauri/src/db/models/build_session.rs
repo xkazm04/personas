@@ -111,6 +111,11 @@ pub enum BuildEvent {
         cell_key: String,
         question: String,
         options: Option<Vec<String>>,
+        /// Set only when the question was mirrored from a v3
+        /// clarifying_question with scope=connector_category. Carries the
+        /// machine-token category the vault picker should filter by.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        connector_category: Option<String>,
     },
     Progress {
         session_id: String,
@@ -186,12 +191,17 @@ pub enum BuildEvent {
     /// when the CLI is emitting v3 events.
     ClarifyingQuestionV3 {
         session_id: String,
-        /// One of: "mission" | "capability" | "field"
+        /// One of: "mission" | "capability" | "field" | "connector_category"
         scope: String,
         capability_id: Option<String>,
         field: Option<String>,
         question: String,
         options: Option<Vec<String>>,
+        /// For `scope: "connector_category"` — the machine token category the
+        /// frontend vault picker should filter connectors by (e.g. "storage",
+        /// "messaging", "image_generation"). None for other scopes.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        category: Option<String>,
     },
 }
 

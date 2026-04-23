@@ -12,6 +12,8 @@ import { createPortal } from "react-dom";
 import { HelpCircle, Send, X, Hash } from "lucide-react";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
+import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
 
 const DIMENSION_COLORS: Record<string, string> = {
   "use-cases": "text-violet-400",
@@ -138,8 +140,24 @@ function QuestionModal({
             {question.question}
           </p>
 
-          {/* Numbered options */}
-          {hasOptions && (
+          {/* scope=connector_category questions show the vault-aware picker.
+              Selecting a card IS the answer — no option list, no free text. */}
+          {question.connectorCategory && (
+            <div className="mb-5" data-testid="connector-category-body">
+              <VaultConnectorPicker
+                category={question.connectorCategory}
+                value=""
+                onChange={(serviceType) => onAnswer(question.cellKey, serviceType)}
+                onAddFromCatalog={() => {
+                  useSystemStore.getState().setSidebarSection('credentials');
+                  onClose();
+                }}
+              />
+            </div>
+          )}
+
+          {/* Numbered options — hidden for connector-category questions */}
+          {!question.connectorCategory && hasOptions && (
             <div className="flex flex-col gap-2 mb-5" data-testid="options-container">
               {options.map((option, idx) => (
                 <button
@@ -163,7 +181,9 @@ function QuestionModal({
             </div>
           )}
 
-          {/* Free text input — always shown */}
+          {/* Free text input — always shown EXCEPT for connector_category
+              questions where the vault picker IS the answer surface. */}
+          {!question.connectorCategory && (
           <div className="flex flex-col gap-2" data-testid="freetext-container">
             {hasOptions && (
               <div className="flex items-center gap-2 mb-1">
@@ -200,6 +220,7 @@ function QuestionModal({
               {t.agents.spatial_question.submit}
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>,

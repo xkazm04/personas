@@ -18,7 +18,7 @@ import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SelectPills } from './SelectPills';
-import { CredentialPickerCards } from './CredentialPickerCards';
+import { CredentialPickerCards } from '@/features/shared/components/picker/CredentialPickerCards';
 
 // Re-export so importers that imported from this file still resolve
 export { SelectPills } from './SelectPills';

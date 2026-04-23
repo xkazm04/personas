@@ -161,6 +161,10 @@ export type BuildEvent =
       cell_key: string;
       question: string;
       options: string[] | null;
+      /** Set when this legacy Question mirror was derived from a
+       *  clarifying_question_v3 with scope=connector_category. UI should
+       *  route answering through the vault-aware connector picker. */
+      connector_category?: string | null;
     }
   | {
       type: "progress";
@@ -218,12 +222,15 @@ export type BuildEvent =
   | {
       type: "clarifying_question_v3";
       session_id: string;
-      /** "mission" | "capability" | "field" */
+      /** "mission" | "capability" | "field" | "connector_category" */
       scope: string;
       capability_id: string | null;
       field: string | null;
       question: string;
       options: string[] | null;
+      /** For `scope: "connector_category"` — which category the vault picker
+       *  should filter by (e.g. "storage", "messaging"). */
+      category?: string | null;
     };
 
 /** A pending question the user needs to answer for a specific cell. */
@@ -231,6 +238,11 @@ export interface BuildQuestion {
   cellKey: string;
   question: string;
   options: string[] | null;
+  /** Present when this BuildQuestion was mirrored from a v3 clarifying_question
+   *  with `scope: "connector_category"`. The answering UI should render a
+   *  vault-backed connector picker instead of a plain option list, filtered
+   *  by this category token. */
+  connectorCategory?: string | null;
 }
 
 /** Full persisted build session loaded from SQLite. */

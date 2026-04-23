@@ -1771,6 +1771,37 @@ The agent runs on a platform with built-in communication protocols. When composi
 14. Mission, principles, constraints, operating_instructions, identity/voice prose MUST be in the persona's output language (see LANGUAGE RULE at top of prompt). Capability ids stay in English (`uc_morning_digest`); capability titles/summaries go in the output language.
 15. **Subscribe to emitted connector events before polling.** Every available connector in the "## Available Connectors" section may carry an `[emits: ...]` hint listing exact event_type strings the platform publishes when state changes on that connector. When a capability's intent (or the user's clarifying answer) talks about "react when X happens", "on new X", "when Y arrives" — use those exact event_type strings in `event_subscriptions` with `direction: listen`. DO NOT invent plausible-looking event_types when a matching one is listed. A `polling` trigger is only correct when no listed emit covers the intent. For local_drive specifically, prefer `drive.document.added` / `drive.document.edited` / `drive.document.renamed` over polling the filesystem.
 
+16. **ASK, DON'T ASSUME — mandatory clarifying_question gates per capability.** The intent alone almost never pins down *every* field of a capability envelope. For each capability, you MUST emit a `clarifying_question` BEFORE resolving these fields unless the user's intent names the value explicitly and unambiguously:
+
+    a. **Source / input connector** — If the capability reacts to or reads data from an external service, emit:
+       ```
+       {{"clarifying_question": {{"scope": "connector_category", "capability_id": "uc_...", "field": "connectors", "category": "<messaging|storage|email|calendar|ai_vision|image_generation|crm|...>", "question": "Which <category> connector should <capability_title> use?", "options": []}}}}
+       ```
+       Leave `options: []` EMPTY — the UI will populate from the user's vault by category. `category` MUST be one machine token from the connector catalog (see connector `category` column in "## Available Connectors"). Never name a specific connector like "local_drive" directly in `connectors` until this question is answered.
+
+    b. **Destination / output connector** — Same shape as (a) but for where output lands. If the output is a different service from the source (e.g. read-from-drive, write-to-slack), emit TWO separate `clarifying_question`s. If the intent says "save next to the source" or similar, infer and skip.
+
+    c. **Trigger type** — When intent is ambiguous between schedule vs event vs manual, emit:
+       ```
+       {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "suggested_trigger", "question": "How should <capability_title> fire?", "options": ["A: On demand — I'll trigger it manually", "B: On a schedule (daily/weekly/…)", "C: When <event_type_plain_english> happens"]}}}}
+       ```
+       Intent words like "whenever", "when a", "on new" → skip question and pick `event`. Words like "every morning", "daily digest", "cron" → skip and pick `schedule`. Words like "on command", "when I ask" → skip and pick `manual`. Otherwise ASK.
+
+    d. **Review policy (human-in-the-loop)** — If the capability produces output that affects the user or third parties (sends a message, writes to shared storage, modifies an external system), ASK:
+       ```
+       {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "review_policy", "question": "Should <capability_title> wait for your approval before publishing its output?", "options": ["Never — auto-publish; I can undo/discard myself", "On low confidence — only pause when unsure", "Always — I want to sign off every run"]}}}}
+       ```
+       Skip only if intent says "automatically", "no review", "without asking", "auto-publish", etc.
+
+    e. **Memory policy** — Only ASK when the intent is ambiguous about cross-run state. If intent says "each independently" or "stateless", skip with `{{"enabled": false}}`. If intent says "remember my preferences" or "learn over time", skip with `{{"enabled": true, ...}}`. Otherwise ASK:
+       ```
+       {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "memory_policy", "question": "Should <capability_title> remember user decisions across runs?", "options": ["No — each run is independent", "Yes — capture user preferences/corrections for future runs"]}}}}
+       ```
+
+    The spirit of this rule: treat every capability as a short interview, not a one-shot classification. It is CHEAPER for the user to answer a question than to rebuild a wrong persona. If a field is genuinely derivable from plain intent, DON'T ask — but the bar for "genuinely derivable" is high.
+
+17. **When emitting `clarifying_question` with `scope: "connector_category"`, the `category` field is REQUIRED and must be one of the machine tokens present in the `## Available Connectors` section's `(category: ...)` suffix.** Known categories include but are not limited to: `ai`, `ai_chat`, `ai_image`, `ai_vision`, `calendar`, `codebase`, `crm`, `email`, `image_generation`, `messaging`, `monitoring`, `social`, `storage`, `task_management`, `text_generation`, `vision`. The frontend's connector picker is keyed off this category. Example: for "listen for new files in a drive", `category: "storage"`. For "post digest to Slack/Discord/Teams", `category: "messaging"`. For "generate an image", `category: "image_generation"`.
+
 {template_context}
 
 Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###
@@ -2213,6 +2244,7 @@ fn parse_json_object(
             cell_key,
             question,
             options,
+            connector_category: None,
         }];
     }
 
@@ -2316,6 +2348,12 @@ fn build_clarifying_question_events(
                 .collect()
         })
     });
+    // `category` is only meaningful when scope == "connector_category" but we
+    // accept it as an optional field on any scope for forward-compatibility.
+    let category = obj
+        .get("category")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let mut events = vec![BuildEvent::ClarifyingQuestionV3 {
         session_id: session_id.to_string(),
@@ -2324,6 +2362,7 @@ fn build_clarifying_question_events(
         field: field.clone(),
         question: question.clone(),
         options: options.clone(),
+        category: category.clone(),
     }];
 
     // Legacy Question mirror — the old UI keys by `cell_key`. Pick the most
@@ -2332,6 +2371,7 @@ fn build_clarifying_question_events(
     let cell_key = match scope.as_str() {
         "mission" => "behavior_core".to_string(),
         "capability" => "use-cases".to_string(),
+        "connector_category" => "connectors".to_string(),
         "field" => field
             .as_deref()
             .and_then(map_capability_field_to_legacy_dimension)
@@ -2339,11 +2379,19 @@ fn build_clarifying_question_events(
             .to_string(),
         _ => "use-cases".to_string(),
     };
+    // Pass through connector_category on the legacy mirror so the answering
+    // UI can route scope=connector_category questions to the vault picker.
+    let legacy_category = if scope == "connector_category" {
+        category.clone()
+    } else {
+        None
+    };
     events.push(BuildEvent::Question {
         session_id: session_id.to_string(),
         cell_key,
         question,
         options,
+        connector_category: legacy_category,
     });
 
     events

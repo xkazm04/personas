@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { HelpCircle, Send, Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
+import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
 import type { GlyphDimension } from './types';
 
@@ -28,6 +30,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
   const dim = CELL_KEY_TO_DIM[question.cellKey];
   const color = dim ? DIM_META[dim].color : '#60a5fa';
   const options = question.options ?? [];
+  const connectorCategory = question.connectorCategory ?? null;
 
   const submit = (value: string) => {
     const v = value.trim();
@@ -36,10 +39,17 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
     setFreeText('');
   };
 
+  // Route "Add from Catalog" to the Vault catalog so the user can create the
+  // missing connector without losing the build session.
+  const openVaultCatalog = () => {
+    useSystemStore.getState().setSidebarSection('credentials');
+  };
+
   return (
     <div
       className="relative rounded-modal bg-card-bg border border-card-border p-4 flex flex-col gap-3 shadow-elevation-2"
       style={{ boxShadow: `0 0 18px ${color}22, 0 2px 10px rgba(0,0,0,0.2)` }}
+      data-testid={`glyph-question-${question.cellKey}`}
     >
       <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
       <div className="flex items-center gap-2">
@@ -51,41 +61,58 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
         </span>
       </div>
       <p className="typo-body-lg text-foreground leading-snug">{question.question}</p>
-      {options.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {options.map((opt, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => submit(opt)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 border border-card-border hover:border-primary/40 typo-body text-foreground transition-colors cursor-pointer"
-            >
-              <Hash className="w-3 h-3 text-foreground/55" />
-              <span className="tabular-nums text-foreground/55">{i + 1}</span>
-              <span>{opt}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={freeText}
-          onChange={(e) => setFreeText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
-          placeholder="Answer in your own words…"
-          className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border border-card-border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+
+      {connectorCategory ? (
+        /* scope=connector_category — route to the vault-aware picker.
+           Selection IS the answer; no free-text path needed. */
+        <VaultConnectorPicker
+          category={connectorCategory}
+          value=""
+          onChange={(serviceType) => submit(serviceType)}
+          onAddFromCatalog={openVaultCatalog}
         />
-        <button
-          type="button"
-          onClick={() => submit(freeText)}
-          disabled={!freeText.trim()}
-          className="px-3 py-2 rounded-modal bg-primary/20 hover:bg-primary/30 border border-primary/30 typo-body text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
-        >
-          <Send className="w-3.5 h-3.5" />
-          Send
-        </button>
-      </div>
+      ) : (
+        <>
+          {options.length > 0 && (
+            <div className="flex flex-wrap gap-2" data-testid="glyph-options">
+              {options.map((opt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => submit(opt)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 border border-card-border hover:border-primary/40 typo-body text-foreground transition-colors cursor-pointer"
+                  data-testid={`glyph-option-${i}`}
+                >
+                  <Hash className="w-3 h-3 text-foreground/55" />
+                  <span className="tabular-nums text-foreground/55">{i + 1}</span>
+                  <span>{opt}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
+              placeholder="Answer in your own words…"
+              className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border border-card-border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+              data-testid="glyph-freetext-input"
+            />
+            <button
+              type="button"
+              onClick={() => submit(freeText)}
+              disabled={!freeText.trim()}
+              className="px-3 py-2 rounded-modal bg-primary/20 hover:bg-primary/30 border border-primary/30 typo-body text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+              data-testid="glyph-submit-button"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Send
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

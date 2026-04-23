@@ -163,6 +163,16 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     return () => window.removeEventListener('matrix-cell-click', handler);
   }, []);
 
+  // Auto-open the first pending question when it arrives so the 8-dim view
+  // surfaces clarifying questions without requiring the user to hunt for the
+  // right cell to click. Matches the Glyph surface's always-visible behaviour.
+  // Only opens when nothing is currently open; does not hijack an open modal.
+  useEffect(() => {
+    if (openQuestionKey) return;
+    const first = props.pendingQuestions?.[0];
+    if (first) setOpenQuestionKey(first.cellKey);
+  }, [props.pendingQuestions, openQuestionKey]);
+
   // Ref map for cell DOM elements -- used by SpatialQuestionPopover anchoring
   const cellRefsRef = useRef<Record<string, HTMLElement | null>>({});
   const handleCellRef = (key: string, el: HTMLElement | null) => {

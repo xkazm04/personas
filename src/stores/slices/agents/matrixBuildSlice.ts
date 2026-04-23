@@ -93,13 +93,14 @@ export interface BuildSessionState {
   capabilityOrder: string[];
   /** Persona-wide resolution fields (tools, connectors registry, defaults, ...). */
   personaResolution: PersonaResolution;
-  /** v3 clarifying_question — scoped to mission, capability, or field. */
+  /** v3 clarifying_question — scoped to mission, capability, field, or connector_category. */
   clarifyingQuestionV3: {
     scope: string;
     capability_id: string | null;
     field: string | null;
     question: string;
     options: string[] | null;
+    category?: string | null;
   } | null;
 
   createdAt: number;
@@ -615,7 +616,14 @@ export const createMatrixBuildSlice: StateCreator<
         ...sess,
         pendingQuestions: [
           ...filtered,
-          { cellKey: event.cell_key, question: event.question, options: event.options },
+          {
+            cellKey: event.cell_key,
+            question: event.question,
+            options: event.options,
+            // Preserve the connector_category hint from v3 clarifying_question
+            // mirroring so the UI can route to the vault picker.
+            connectorCategory: event.connector_category ?? null,
+          },
         ],
         cellStates: { ...sess.cellStates, [event.cell_key]: "highlighted" },
         phase: "awaiting_input",
@@ -784,6 +792,7 @@ export const createMatrixBuildSlice: StateCreator<
         field: event.field,
         question: event.question,
         options: event.options,
+        category: event.category ?? null,
       },
       phase: 'awaiting_input',
     })));
