@@ -1046,11 +1046,24 @@ const bridge: TestBridge = {
     try {
       const fn = (this as unknown as Record<string, unknown>)[method];
       if (typeof fn !== "function") throw new Error(`Unknown method: ${method}`);
+      // __exec__ KEY-ORDER QUIRK — when Rust serializes params into an IPC
+      // payload, serde_json emits keys alphabetically (no preserve_order
+      // feature enabled). So Object.values(params) below yields values in
+      // ALPHABETICAL order of the key names, NOT the caller's declared
+      // positional order. Examples:
+      //   typeText(selector, text)     — "selector" < "text"   → OK by accident
+      //   driveWriteText(relPath, content) — "content" < "relPath" → SWAPPED
+      // Multi-arg methods that are vulnerable to this trap MUST accept their
+      // arguments as `...rawArgs: unknown[]` and re-derive the intended order
+      // from property names (see driveWriteText for the reference pattern).
+      // Do NOT change the dispatch to pass `params` as a single object —
+      // every existing single-arg positional method depends on the current
+      // shape.
       const args = Object.values(params);
 
       // Race the method call against a timeout to prevent queue blocking
       const result = await Promise.race([
-        fn.apply(this, args),
+        (fn as (...a: unknown[]) => unknown).apply(this, args),
         new Promise((_, reject) => setTimeout(() => reject(new Error(`Bridge method '${method}' timed out after ${EXEC_TIMEOUT / 1000}s`)), EXEC_TIMEOUT)),
       ]);
 

@@ -5,7 +5,7 @@ import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTabl
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { ExportReportButton } from '../shared/ExportReportButton';
-import { AbResultsView } from './AbResultsView';
+import { AbResultsView, type AbVariant } from './AbResultsView';
 import type { LabAbRun } from '@/lib/bindings/LabAbRun';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 
@@ -15,9 +15,10 @@ interface AbHistoryProps {
   expandedRunId: string | null;
   onToggleExpand: (runId: string | null) => void;
   onDelete: (runId: string) => void;
+  variant?: AbVariant;
 }
 
-export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: AbHistoryProps) {
+export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete, variant = 'baseline' }: AbHistoryProps) {
   const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
 
@@ -77,7 +78,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
             ) : undefined
           }
         >
-          <AbResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} />
+          <AbResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} variant={variant} />
         </LabResultModal>
       )}
     </>

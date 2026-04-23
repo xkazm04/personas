@@ -36,6 +36,7 @@ export interface ReleasesTranslation {
   itemStatus: { in_progress: string; planned: string; completed: string };
   priority: { now: string; next: string; later: string };
   summary: { inProgress: string; next: string };
+  live: { updatedPrefix: string; sourceCache: string; sourceFallback: string };
   empty: string;
   releases: Record<string, ReleaseI18n>;
 }
@@ -80,6 +81,11 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     summary: {
       inProgress: r.summary_in_progress,
       next: r.summary_next,
+    },
+    live: {
+      updatedPrefix: r.live_updated_prefix,
+      sourceCache: r.live_source_cache,
+      sourceFallback: r.live_source_fallback,
     },
     empty: r.empty,
     releases: {

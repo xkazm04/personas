@@ -21,6 +21,14 @@ interface GlyphGridProps {
   /** Optional slot rendered above the grid — used by edit-mode in pre-build
    *  to host DimensionQuickConfig (trigger / connector / event preconfig). */
   slotAbove?: ReactNode;
+  /** Optional content rendered after the grid (shared detail tray, etc.). */
+  slotBelow?: ReactNode;
+  /** Per-row customisation — lets consumers decorate each card with a status
+   *  pip, header badge (mode tag), and footer content (policy chips, action
+   *  buttons) without branching the GlyphCard component itself. */
+  renderStatusDot?: (row: GlyphRow) => 'active' | 'paused' | null | undefined;
+  renderHeaderBadge?: (row: GlyphRow) => ReactNode;
+  renderFooterSlot?: (row: GlyphRow) => ReactNode;
 }
 
 /** Stateless grid of Glyph capability cards. All four surfaces — adoption,
@@ -28,7 +36,8 @@ interface GlyphGridProps {
  *  they source `rows`, pending questions, and the pre-build config slot. */
 export function GlyphGrid({
   rows, flowsById, templateName, columns = 2, emptyLabel,
-  pendingQuestions, onAnswerBuildQuestion, slotAbove,
+  pendingQuestions, onAnswerBuildQuestion, slotAbove, slotBelow,
+  renderStatusDot, renderHeaderBadge, renderFooterSlot,
 }: GlyphGridProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
@@ -58,10 +67,14 @@ export function GlyphGrid({
               index={i}
               flow={flowsById?.get(row.id) ?? null}
               templateName={templateName}
+              statusDot={renderStatusDot?.(row) ?? null}
+              headerBadge={renderHeaderBadge?.(row)}
+              footerSlot={renderFooterSlot?.(row)}
             />
           ))}
         </div>
       )}
+      {slotBelow}
     </div>
   );
 }

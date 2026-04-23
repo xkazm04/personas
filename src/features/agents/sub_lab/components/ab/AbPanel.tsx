@@ -1,13 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, Swords, GitCompare } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { AbHistory } from './AbHistory';
+import type { AbVariant } from './AbResultsView';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 import { useTranslation } from '@/i18n/useTranslation';
+
+const VARIANT_TABS: Array<{ id: AbVariant; label: string; subtitle: string; icon: typeof LayoutDashboard }> = [
+  { id: 'baseline', label: 'Baseline', subtitle: 'Scorecard dashboard', icon: LayoutDashboard },
+  { id: 'versus',   label: 'Versus',   subtitle: 'Tale of the tape',    icon: Swords },
+  { id: 'diff',     label: 'Diff',     subtitle: 'Code-review view',    icon: GitCompare },
+];
 
 export function AbPanel() {
   const { t } = useTranslation();
@@ -40,6 +47,7 @@ export function AbPanel() {
   const [versionAId, setVersionAId] = useState<string | null>(abPreselectedA);
   const [versionBId, setVersionBId] = useState<string | null>(abPreselectedB);
   const [testInput, setTestInput] = useState('');
+  const [variant, setVariant] = useState<AbVariant>('baseline');
 
   // Consume pre-selected versions from deep-links
   useEffect(() => {
@@ -90,7 +98,31 @@ export function AbPanel() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Prototype variant switcher — results-view presentation toggle */}
+      <div className="flex items-center gap-1 pb-2 border-b border-primary/10">
+        {VARIANT_TABS.map(({ id, label, subtitle, icon: Icon }) => {
+          const active = variant === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setVariant(id)}
+              className={`flex flex-col items-start gap-0.5 px-3 py-2 rounded-modal transition-colors border ${
+                active
+                  ? 'bg-primary/10 text-foreground border-primary/20'
+                  : 'text-foreground/80 hover:bg-secondary/30 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-1.5 typo-body font-medium">
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </span>
+              <span className="text-[10px] text-foreground/60 font-mono tracking-wide">{subtitle}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <LabPanelShell
         isRunning={isLabRunning}
         onStart={() => void handleStart()}
@@ -123,7 +155,7 @@ export function AbPanel() {
         </div>
       </LabPanelShell>
 
-      <AbHistory runs={abRuns} resultsMap={abResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void deleteAbRun(id)} />
+      <AbHistory runs={abRuns} resultsMap={abResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void deleteAbRun(id)} variant={variant} />
     </div>
   );
 }

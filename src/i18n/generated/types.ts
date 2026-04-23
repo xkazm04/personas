@@ -10345,6 +10345,9 @@ export type Translations = {
       release_roadmap_item_4_description: string;
       release_roadmap_item_6_title: string;
       release_roadmap_item_6_description: string;
+      live_updated_prefix: string;
+      live_source_cache: string;
+      live_source_fallback: string;
     };
   };
 };

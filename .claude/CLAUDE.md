@@ -51,10 +51,11 @@ src-tauri/
 - ESLint `no-restricted-imports` enforces this
 
 ### Styling
-- Semantic design tokens: `typo-*` for text sizes, `rounded-*` for radii, spacing tokens
+- **Canonical reference: [`.claude/Design.md`](./Design.md)** — single source of truth for tokens, typography, color, spacing, radius, elevation, motion, and component primitives. Read it before adding any new UI surface or extending an existing one.
+- Semantic design tokens: `typo-*` for text sizes, `rounded-{interactive,input,card,modal}` for radii, `shadow-elevation-1..4` for depth, JS spacing tokens (`CARD_PADDING`, `SECTION_GAP`, ...) for layout
 - `[data-theme^="light"]` CSS selectors for light theme overrides
 - Never use `text-white/*` or `bg-white/*` directly — use `text-foreground/*` or `bg-secondary/*`
-- ESLint warns on raw Tailwind classes that have semantic equivalents
+- ESLint warns on raw Tailwind classes that have semantic equivalents (see Design.md §8 Do's and Don'ts)
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)

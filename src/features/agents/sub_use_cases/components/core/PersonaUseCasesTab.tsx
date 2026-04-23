@@ -64,7 +64,7 @@ export function PersonaUseCasesTab(props: PersonaUseCasesTabProps) {
         </div>
       </div>
       <div className="flex-1 min-h-0">
-        {view === 'glyph' ? <PersonaUseCasesTabGlyph /> : <PersonaUseCasesTabGrid {...props} />}
+        {view === 'glyph' ? <PersonaUseCasesTabGlyph {...props} /> : <PersonaUseCasesTabGrid {...props} />}
       </div>
     </div>
   );

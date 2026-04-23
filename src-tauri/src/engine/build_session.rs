@@ -286,6 +286,317 @@ impl BuildSessionManager {
 }
 
 // =============================================================================
+// Capability-gate state machine
+// =============================================================================
+//
+// Rule 16/17 of the build prompt instruct the LLM to emit a clarifying_question
+// BEFORE resolving trigger/connectors/review_policy/memory_policy on any
+// capability. In practice Sonnet 4.x treats the rule as advisory and jumps to
+// resolution (or directly to agent_ir) from inference alone. This state
+// machine enforces the rule on the Rust side: it suppresses out-of-order
+// CapabilityResolutionUpdate events for gated fields and SYNTHESIZES a
+// clarifying_question locally so the UI surface doesn't depend on the LLM
+// cooperating. The LLM is still the primary question author when it obeys;
+// synthesis is purely a fallback.
+//
+// Per-capability gate state is keyed by capability_id. A gate goes:
+//   Closed  ──(question asked OR intent-derived)──▶  Pending  ──(user answers)──▶  Open
+// Intent-derived heuristics can also skip straight to Open when the intent
+// unambiguously names the value (e.g. "every morning" → trigger=Open).
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+enum Gate {
+    #[default]
+    Closed,
+    Pending,
+    Open,
+}
+
+#[derive(Clone, Default, Debug)]
+struct CapabilityGates {
+    trigger: Gate,
+    connectors: Gate,
+    review_policy: Gate,
+    memory_policy: Gate,
+}
+
+impl CapabilityGates {
+    fn field_state(&self, field: &str) -> Option<Gate> {
+        match field {
+            "suggested_trigger" => Some(self.trigger),
+            "connectors" => Some(self.connectors),
+            "review_policy" => Some(self.review_policy),
+            "memory_policy" => Some(self.memory_policy),
+            _ => None,
+        }
+    }
+
+    fn is_gate_open(&self, field: &str) -> bool {
+        self.field_state(field).map(|g| g == Gate::Open).unwrap_or(true)
+    }
+
+    fn mark_pending(&mut self, field: &str) {
+        let slot = match field {
+            "suggested_trigger" => &mut self.trigger,
+            "connectors" => &mut self.connectors,
+            "review_policy" => &mut self.review_policy,
+            "memory_policy" => &mut self.memory_policy,
+            _ => return,
+        };
+        if *slot == Gate::Closed {
+            *slot = Gate::Pending;
+        }
+    }
+
+    fn mark_open(&mut self, field: &str) {
+        match field {
+            "suggested_trigger" => self.trigger = Gate::Open,
+            "connectors" => self.connectors = Gate::Open,
+            "review_policy" => self.review_policy = Gate::Open,
+            "memory_policy" => self.memory_policy = Gate::Open,
+            _ => {}
+        }
+    }
+
+    /// First gate that is still closed (Closed OR Pending). Returns the v3
+    /// field name. Order matters — the most-load-bearing gate goes first so
+    /// we don't interview the user for a field that's about to be moot.
+    fn first_unopen_field(&self) -> Option<&'static str> {
+        if self.trigger != Gate::Open { return Some("suggested_trigger"); }
+        if self.connectors != Gate::Open { return Some("connectors"); }
+        if self.review_policy != Gate::Open { return Some("review_policy"); }
+        if self.memory_policy != Gate::Open { return Some("memory_policy"); }
+        None
+    }
+}
+
+/// The currently-pending gate, if any — i.e. the question we're waiting on a
+/// user answer for. Used on user-answer receipt to know which gate to flip
+/// Open.
+#[derive(Clone, Debug)]
+struct PendingGate {
+    cap_id: String,
+    field: String,
+}
+
+const GATED_CAPABILITY_FIELDS: &[&str] =
+    &["suggested_trigger", "connectors", "review_policy", "memory_policy"];
+
+fn is_gated_field(field: &str) -> bool {
+    GATED_CAPABILITY_FIELDS.contains(&field)
+}
+
+/// Map the legacy `cell_key` returned by the frontend when the user answers a
+/// clarifying question back to the v3 field name so we can flip the gate.
+fn legacy_cell_to_v3_field(cell_key: &str) -> Option<&'static str> {
+    match cell_key {
+        "triggers" => Some("suggested_trigger"),
+        "connectors" => Some("connectors"),
+        "human-review" => Some("review_policy"),
+        "memory" => Some("memory_policy"),
+        _ => None,
+    }
+}
+
+// --- Intent heuristics -----------------------------------------------------
+// Each heuristic returns `Gate::Open` when the intent unambiguously names the
+// dimension's value; otherwise `Gate::Closed`. Conservative by design — when
+// in doubt, ask.
+
+fn intent_implies_trigger(intent_lower: &str) -> Gate {
+    const EVENT_KW: &[&str] = &[
+        "whenever", "when a ", "when an ", "when new ", "on new ",
+        "as soon as", "reacts to", "react to", "listen for", "listening for",
+        "incoming ", "arrives", "when arrives",
+    ];
+    const SCHEDULE_KW: &[&str] = &[
+        "every morning", "every day", "every hour", "every week",
+        "daily ", "daily.", "weekly ", "weekly.", "monthly ",
+        "at 9am", "at 8am", "at 7am", "at 6am", "cron",
+    ];
+    const MANUAL_KW: &[&str] = &[
+        "on command", "when i ask", "manually", "on demand",
+        "i'll trigger", "i will trigger",
+    ];
+    for kw in EVENT_KW.iter().chain(SCHEDULE_KW).chain(MANUAL_KW) {
+        if intent_lower.contains(kw) { return Gate::Open; }
+    }
+    Gate::Closed
+}
+
+fn intent_implies_review(intent_lower: &str) -> Gate {
+    const KW: &[&str] = &[
+        "automatically", "auto-publish", "auto publish",
+        "no review", "no approval", "without asking",
+        "without approval", "no human", "fully automated",
+    ];
+    for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    Gate::Closed
+}
+
+fn intent_implies_memory(intent_lower: &str) -> Gate {
+    const KW: &[&str] = &[
+        "stateless", "independently", "each run is independent",
+        "each independently", "no memory", "independent runs",
+        "remember my", "remember user", "learn over time", "remember preferences",
+    ];
+    for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    Gate::Closed
+}
+
+fn intent_implies_connectors(intent_lower: &str) -> Gate {
+    const KNOWN: &[&str] = &[
+        "gmail", "outlook", "slack", "discord", "teams", "github", "gitlab",
+        "linear", "jira", "notion", "trello", "asana", "airtable",
+        "google drive", "google sheets", "google calendar",
+        "local drive", "local-drive", "local_drive", "built-in drive", "built in drive",
+        "hubspot", "salesforce", "stripe", "sentry", "supabase",
+        "telegram", "whatsapp", "twilio",
+    ];
+    for kw in KNOWN { if intent_lower.contains(kw) { return Gate::Open; } }
+    Gate::Closed
+}
+
+/// Initialize gate state for each capability in the enumeration. Runs the
+/// intent heuristics once per capability — so if intent says "every morning",
+/// EVERY capability's trigger gate auto-opens (intent is persona-wide).
+fn init_gates_from_enumeration(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    titles: &mut HashMap<String, String>,
+    data: &serde_json::Value,
+    intent: &str,
+) {
+    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else { return };
+    let intent_lower = intent.to_lowercase();
+    let auto_trigger = intent_implies_trigger(&intent_lower);
+    let auto_review = intent_implies_review(&intent_lower);
+    let auto_memory = intent_implies_memory(&intent_lower);
+    let auto_connectors = intent_implies_connectors(&intent_lower);
+
+    for cap in caps {
+        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else { continue };
+        if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
+            titles.entry(id.to_string()).or_insert_with(|| title.to_string());
+        }
+        coverage.entry(id.to_string()).or_insert_with(|| CapabilityGates {
+            trigger: auto_trigger,
+            connectors: auto_connectors,
+            review_policy: auto_review,
+            memory_policy: auto_memory,
+        });
+    }
+}
+
+/// Walk coverage to find the first capability with a still-unopen gate —
+/// used when the LLM tries to emit agent_ir with missing dimensions.
+fn find_first_unopen_gate(
+    coverage: &HashMap<String, CapabilityGates>,
+) -> Option<(String, &'static str)> {
+    // Deterministic order: sort cap_ids so the same gate fires each turn.
+    let mut ids: Vec<&String> = coverage.keys().collect();
+    ids.sort();
+    for id in ids {
+        if let Some(field) = coverage.get(id).and_then(|g| g.first_unopen_field()) {
+            return Some((id.clone(), field));
+        }
+    }
+    None
+}
+
+/// Look up the catalog category for a named connector. Used to pick the
+/// `category` token on synthesized scope=connector_category questions.
+fn infer_connector_category(
+    value: &serde_json::Value,
+    pool: &DbPool,
+) -> Option<String> {
+    let names: Vec<String> = if let Some(arr) = value.as_array() {
+        arr.iter().filter_map(|v| {
+            v.as_str().map(|s| s.to_string())
+             .or_else(|| v.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+             .or_else(|| v.get("service_type").and_then(|n| n.as_str()).map(|s| s.to_string()))
+        }).collect()
+    } else {
+        Vec::new()
+    };
+    for name in names {
+        if let Ok(Some(conn)) = connector_repo::get_by_name(pool, &name) {
+            if !conn.category.is_empty() {
+                return Some(conn.category);
+            }
+        }
+    }
+    None
+}
+
+/// Synthesize a clarifying_question event for a gate the LLM skipped. Emits
+/// both the v3 `ClarifyingQuestionV3` typed event AND the legacy `Question`
+/// mirror (via `build_clarifying_question_events`) so the existing UI panel
+/// renders it identically to an LLM-authored question.
+fn synthesize_gate_question(
+    cap_id: &str,
+    field: &str,
+    title: &str,
+    proposed_value: &serde_json::Value,
+    pool: &DbPool,
+    session_id: &str,
+) -> Vec<BuildEvent> {
+    let mut obj = serde_json::Map::new();
+    obj.insert("capability_id".into(), serde_json::Value::String(cap_id.to_string()));
+
+    match field {
+        "suggested_trigger" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert("field".into(), serde_json::Value::String("suggested_trigger".into()));
+            obj.insert("question".into(), serde_json::Value::String(
+                format!("How should \"{title}\" fire?")
+            ));
+            obj.insert("options".into(), serde_json::json!([
+                "A: On demand — I'll trigger it manually",
+                "B: On a schedule (daily/weekly/…)",
+                "C: When an external event occurs (e.g. new document, inbound message)",
+            ]));
+        }
+        "review_policy" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert("field".into(), serde_json::Value::String("review_policy".into()));
+            obj.insert("question".into(), serde_json::Value::String(
+                format!("Should \"{title}\" wait for your approval before publishing its output?")
+            ));
+            obj.insert("options".into(), serde_json::json!([
+                "Never — auto-publish; I can undo/discard myself",
+                "On low confidence — only pause when unsure",
+                "Always — I want to sign off every run",
+            ]));
+        }
+        "memory_policy" => {
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert("field".into(), serde_json::Value::String("memory_policy".into()));
+            obj.insert("question".into(), serde_json::Value::String(
+                format!("Should \"{title}\" remember user decisions across runs?")
+            ));
+            obj.insert("options".into(), serde_json::json!([
+                "No — each run is independent",
+                "Yes — capture user preferences/corrections for future runs",
+            ]));
+        }
+        "connectors" => {
+            let category = infer_connector_category(proposed_value, pool)
+                .unwrap_or_else(|| "storage".to_string());
+            obj.insert("scope".into(), serde_json::Value::String("connector_category".into()));
+            obj.insert("field".into(), serde_json::Value::String("connectors".into()));
+            obj.insert("category".into(), serde_json::Value::String(category.clone()));
+            obj.insert("question".into(), serde_json::Value::String(
+                format!("Which {category} connector should \"{title}\" use?")
+            ));
+            obj.insert("options".into(), serde_json::json!([]));
+        }
+        _ => return Vec::new(),
+    }
+
+    build_clarifying_question_events(&obj, session_id)
+}
+
+// =============================================================================
 // run_session -- the long-lived tokio task body
 // =============================================================================
 
@@ -335,6 +646,13 @@ async fn run_session(
     let mut resolved_cells = serde_json::Map::new();
     let mut resolved_count: usize = 0;
     let mut last_answered_cells: Vec<String> = Vec::new();
+
+    // Per-capability gate ledger + currently-pending gate. See CapabilityGates
+    // docs above — these enforce Rule 16/17 on the Rust side and synthesize
+    // clarifying_question events when the LLM skips them.
+    let mut coverage: HashMap<String, CapabilityGates> = HashMap::new();
+    let mut capability_titles: HashMap<String, String> = HashMap::new();
+    let mut pending_gate: Option<PendingGate> = None;
 
     const MAX_TURNS: usize = 12;
 
@@ -479,6 +797,125 @@ async fn run_session(
             });
         }
 
+        // -----------------------------------------------------------------
+        // Capability-gate pass — suppress out-of-order resolutions and
+        // synthesize missing clarifying_question events locally. See the
+        // CapabilityGates doc block above for the state-machine rules.
+        // -----------------------------------------------------------------
+        turn_events = {
+            let mut kept: Vec<BuildEvent> = Vec::with_capacity(turn_events.len());
+            let mut synthesized: Vec<BuildEvent> = Vec::new();
+
+            for event in turn_events {
+                let keep = match &event {
+                    BuildEvent::CapabilityEnumerationUpdate { data, .. } => {
+                        init_gates_from_enumeration(
+                            &mut coverage, &mut capability_titles, data, &intent,
+                        );
+                        true
+                    }
+                    BuildEvent::ClarifyingQuestionV3 { capability_id, field, .. } => {
+                        // The LLM *did* ask — flip the gate to Pending so a
+                        // subsequent user answer opens it. Only act on
+                        // capability-scoped questions (mission/capability
+                        // scopes don't map to a gated field).
+                        if let (Some(cap_id), Some(field_name)) =
+                            (capability_id.as_deref(), field.as_deref())
+                        {
+                            if is_gated_field(field_name) {
+                                if let Some(cg) = coverage.get_mut(cap_id) {
+                                    cg.mark_pending(field_name);
+                                }
+                                pending_gate = Some(PendingGate {
+                                    cap_id: cap_id.to_string(),
+                                    field: field_name.to_string(),
+                                });
+                            }
+                        }
+                        true
+                    }
+                    BuildEvent::CapabilityResolutionUpdate {
+                        capability_id, field, value, ..
+                    } => {
+                        let gate_open = coverage
+                            .get(capability_id)
+                            .map(|g| g.is_gate_open(field))
+                            .unwrap_or(true);
+                        if !gate_open && is_gated_field(field) {
+                            let title = capability_titles
+                                .get(capability_id)
+                                .cloned()
+                                .unwrap_or_else(|| capability_id.clone());
+                            let synth = synthesize_gate_question(
+                                capability_id, field, &title, value, &pool, &session_id,
+                            );
+                            if !synth.is_empty() {
+                                if let Some(cg) = coverage.get_mut(capability_id) {
+                                    cg.mark_pending(field);
+                                }
+                                pending_gate = Some(PendingGate {
+                                    cap_id: capability_id.clone(),
+                                    field: field.clone(),
+                                });
+                                tracing::warn!(
+                                    session_id = %session_id,
+                                    capability_id = %capability_id,
+                                    field = %field,
+                                    "Gate closed — suppressing capability_resolution, synthesizing clarifying_question"
+                                );
+                                synthesized.extend(synth);
+                                false
+                            } else {
+                                true
+                            }
+                        } else {
+                            true
+                        }
+                    }
+                    BuildEvent::CellUpdate { cell_key, .. } if cell_key == "agent_ir" => {
+                        if let Some((cap_id, field_name)) = find_first_unopen_gate(&coverage) {
+                            let title = capability_titles
+                                .get(&cap_id)
+                                .cloned()
+                                .unwrap_or_else(|| cap_id.clone());
+                            let synth = synthesize_gate_question(
+                                &cap_id, field_name, &title, &serde_json::Value::Null,
+                                &pool, &session_id,
+                            );
+                            if !synth.is_empty() {
+                                if let Some(cg) = coverage.get_mut(&cap_id) {
+                                    cg.mark_pending(field_name);
+                                }
+                                pending_gate = Some(PendingGate {
+                                    cap_id: cap_id.clone(),
+                                    field: field_name.to_string(),
+                                });
+                                tracing::warn!(
+                                    session_id = %session_id,
+                                    missing_cap = %cap_id,
+                                    missing_field = %field_name,
+                                    "Gate closed — suppressing agent_ir, synthesizing clarifying_question"
+                                );
+                                synthesized.extend(synth);
+                                false
+                            } else {
+                                true
+                            }
+                        } else {
+                            true
+                        }
+                    }
+                    _ => true,
+                };
+                if keep {
+                    kept.push(event);
+                }
+            }
+
+            kept.extend(synthesized);
+            kept
+        };
+
         // Build assistant text for conversation history
         let assistant_text: String = turn_events.iter().filter_map(|e| match e {
             BuildEvent::Question { question, cell_key, options, .. } => {
@@ -597,6 +1034,32 @@ async fn run_session(
                         ..Default::default()
                     });
                     emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Resolving, resolved_count, 9);
+
+                    // Flip any pending gate to Open. The UI only permits one
+                    // pending question at a time, so a reply is unambiguous.
+                    // When the legacy cell_key matches the pending field we
+                    // trust it; otherwise we still clear pending_gate but
+                    // don't assume which gate the answer belongs to.
+                    if let Some(pg) = pending_gate.take() {
+                        let legacy_matches = legacy_cell_to_v3_field(&answer.cell_key)
+                            .map(|f| f == pg.field.as_str())
+                            .unwrap_or(false);
+                        if legacy_matches || answer.cell_key == "_batch" {
+                            if let Some(cg) = coverage.get_mut(&pg.cap_id) {
+                                cg.mark_open(&pg.field);
+                                tracing::info!(
+                                    session_id = %session_id,
+                                    cap_id = %pg.cap_id,
+                                    field = %pg.field,
+                                    "Gate opened after user answer"
+                                );
+                            }
+                        } else {
+                            // Re-stash — the user answered some other question
+                            // (shouldn't happen today, but be safe).
+                            pending_gate = Some(pg);
+                        }
+                    }
 
                     // Handle batch answers: cell_key="_batch" means multiple dimension answers
                     if answer.cell_key == "_batch" {

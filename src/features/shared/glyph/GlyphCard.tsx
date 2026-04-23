@@ -18,12 +18,20 @@ interface GlyphCardProps {
   index: number;
   flow: UseCaseFlow | null;
   templateName?: string;
+  /** Small visual indicator rendered top-left over the card (status dot). */
+  statusDot?: 'active' | 'paused' | null;
+  /** Pill / badge rendered in the header row before the trigger chip — used
+   *  for mode tags (E2E / MOCK / INFO) and other per-card metadata. */
+  headerBadge?: React.ReactNode;
+  /** Extra content in the card footer below the summary — consumers hang
+   *  policy chips, action buttons, etc. here. */
+  footerSlot?: React.ReactNode;
 }
 
 /** Main capability card. The sigil is the navigation: hover a leaf to see
  *  its name in the header, click to drill into a DimensionPanel. The flow
  *  button (top-right) opens the full ActivityDiagramModal. */
-export function GlyphCard({ row, index, flow, templateName }: GlyphCardProps) {
+export function GlyphCard({ row, index, flow, templateName, statusDot, headerBadge, footerSlot }: GlyphCardProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
@@ -108,6 +116,7 @@ export function GlyphCard({ row, index, flow, templateName }: GlyphCardProps) {
             {!row.enabled && (
               <span className="typo-label px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/70 shrink-0">{c.off_badge}</span>
             )}
+            {headerBadge}
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 typo-body text-foreground shrink-0">
               {TrigIcon && <TrigIcon className="w-4 h-4 text-amber-400" />}
               <span className="truncate max-w-[220px]">{trigText}</span>
@@ -127,12 +136,24 @@ export function GlyphCard({ row, index, flow, templateName }: GlyphCardProps) {
 
           <div className="flex-1" />
 
-          {/* Footer — promoted subtitle */}
+          {/* Footer — promoted subtitle + consumer-owned slot */}
           <div className="relative z-10 flex flex-col gap-2 px-5 py-4 bg-gradient-to-t from-card-bg/95 via-card-bg/75 to-transparent backdrop-blur-sm">
             {row.summary && (
               <p className="text-base text-foreground leading-snug font-medium line-clamp-3">{row.summary}</p>
             )}
+            {footerSlot}
           </div>
+
+          {statusDot && (
+            <span
+              className={`absolute top-2 left-2 z-20 w-2 h-2 rounded-full ${
+                statusDot === 'active'
+                  ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
+                  : 'bg-foreground/30'
+              }`}
+              aria-label={statusDot === 'active' ? 'active' : 'paused'}
+            />
+          )}
 
           <AnimatePresence>
             {activeDim && <DimensionPanel dim={activeDim} row={row} onClose={() => setActiveDim(null)} />}

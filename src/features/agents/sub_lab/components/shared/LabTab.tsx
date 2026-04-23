@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
-import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck } from 'lucide-react';
+import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
@@ -7,6 +7,7 @@ import type { LabMode } from '@/stores/slices/agents/labSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
+const AbPanel = lazy(() => import('../ab/AbPanel').then((m) => ({ default: m.AbPanel })));
 const MatrixPanel = lazy(() => import('../matrix/MatrixPanel').then((m) => ({ default: m.MatrixPanel })));
 const VersionsPanel = lazy(() => import('./VersionsPanel').then((m) => ({ default: m.VersionsPanel })));
 const GenomeBreedingPanel = lazy(() => import('../genome/GenomeBreedingPanel').then((m) => ({ default: m.GenomeBreedingPanel })));
@@ -17,6 +18,7 @@ const LAB_MODE_KEY = 'dac-lab-mode';
 
 const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof FlaskConical }> = [
   { id: 'arena', label: 'Arena', desc: 'Compare models head-to-head', icon: FlaskConical },
+  { id: 'ab', label: 'A/B', desc: 'Compare prompt versions', icon: Scale },
   { id: 'matrix', label: 'Improve', desc: 'AI-driven prompt improvement', icon: Wand2 },
   { id: 'breed', label: 'Breed', desc: 'Cross-breed top performers', icon: Dna },
   { id: 'evolve', label: 'Evolve', desc: 'Auto-evolving optimization', icon: Sparkles },
@@ -94,7 +96,8 @@ export function LabTab() {
       {/* Mode content */}
       <Suspense fallback={<div className="py-8 text-center typo-caption text-foreground">{t.agents.lab.loading}</div>}>
         {labMode === 'arena' && <ArenaPanel />}
-        {(labMode === 'matrix' || labMode === 'ab' || labMode === 'eval') && <MatrixPanel />}
+        {labMode === 'ab' && <AbPanel />}
+        {(labMode === 'matrix' || labMode === 'eval') && <MatrixPanel />}
         {labMode === 'breed' && <GenomeBreedingPanel />}
         {labMode === 'evolve' && <EvolutionPanel />}
         {labMode === 'versions' && <VersionsPanel />}

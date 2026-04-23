@@ -39,6 +39,41 @@ const GENERIC_TOOL_NAMES: &[&str] = &[
     "fetch", "curl", "request",
 ];
 
+/// Built-in drive tools that any persona with a `local_drive` connector or a
+/// `drive.document.*` subscription implicitly needs. Registered automatically
+/// at promote time so `persona_tool_definitions` reflects the intent — the
+/// LLM's agent_ir sometimes names only `file_read`/`file_write` (Claude Code
+/// built-ins) and omits the drive-specific variants, leaving
+/// `execution_config.tool_names` inaccurate.
+///
+/// NOTE: Registering these rows makes the intent visible in the DB and in the
+/// execution config; the *actual* wiring that lets a running Claude Code
+/// session invoke these names as tools is tracked separately — Claude Code
+/// currently only sees its native Read/Write/Glob plus MCP-exposed tools, so
+/// an MCP bridge is the next step for full end-to-end invocation.
+const DRIVE_BUILTIN_TOOLS: &[(&str, &str)] = &[
+    ("drive_write_text", "Write a UTF-8 text file into the persona's local drive (relative path)."),
+    ("drive_read_text",  "Read a UTF-8 text file from the persona's local drive (relative path)."),
+    ("drive_list",       "List entries under a relative path in the persona's local drive."),
+];
+
+/// True when the persona's agent_ir indicates it interacts with the built-in
+/// local drive — either via the `local_drive` connector or a `drive.document.*`
+/// event subscription.
+fn persona_uses_drive(ir: &crate::db::models::AgentIr) -> bool {
+    let has_connector = ir.required_connectors.iter().any(|c| {
+        c.name().map(|n| {
+            let lower = n.to_lowercase();
+            lower == "local_drive" || lower == "local-drive" || lower == "localdrive"
+        }).unwrap_or(false)
+    });
+    if has_connector { return true; }
+
+    ir.events.iter().any(|e| {
+        e.event_type.as_deref().map(|t| t.starts_with("drive.document.")).unwrap_or(false)
+    })
+}
+
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
 /// Optional workflow_json + parser_result_json enable workflow import mode.
@@ -497,6 +532,7 @@ fn prepare_tool_actions(
 
     let mut tool_actions = Vec::new();
     let mut tool_names = Vec::new();
+    let mut seen_names: std::collections::HashSet<String> = std::collections::HashSet::new();
     let default_schema = r#"{"type":"object","properties":{},"additionalProperties":true}"#;
 
     // Pre-extract the first connector from the agent IR for generic tool linkage.
@@ -515,6 +551,7 @@ fn prepare_tool_actions(
             acc
         });
 
+        if !seen_names.insert(normalized.clone()) { continue; }
         tool_names.push(name.clone());
 
         // Try to find an existing tool definition by name
@@ -586,6 +623,42 @@ fn prepare_tool_actions(
                 is_builtin: Some(false),
             }),
         });
+    }
+
+    // Auto-register built-in drive tools for drive-using personas. Prefer
+    // existing definitions (idempotent across rebuilds) — only create fresh
+    // rows the first time a workspace sees them.
+    if persona_uses_drive(ir) {
+        for (tool_name, tool_desc) in DRIVE_BUILTIN_TOOLS {
+            if !seen_names.insert((*tool_name).to_string()) { continue; }
+            let existing_def = tool_repo::get_definition_by_name(db, tool_name)
+                .ok()
+                .flatten();
+            tool_names.push((*tool_name).to_string());
+            if let Some(def) = existing_def {
+                tool_actions.push(ToolAction {
+                    name: (*tool_name).to_string(),
+                    existing_def_id: Some(def.id),
+                    create_input: None,
+                });
+            } else {
+                tool_actions.push(ToolAction {
+                    name: (*tool_name).to_string(),
+                    existing_def_id: None,
+                    create_input: Some(CreateToolDefinitionInput {
+                        name: (*tool_name).to_string(),
+                        category: "drive".to_string(),
+                        description: (*tool_desc).to_string(),
+                        script_path: String::new(),
+                        input_schema: Some(default_schema.to_string()),
+                        output_schema: Some(default_schema.to_string()),
+                        requires_credential_type: None,
+                        implementation_guide: None,
+                        is_builtin: Some(true),
+                    }),
+                });
+            }
+        }
     }
 
     (tool_actions, tool_names)

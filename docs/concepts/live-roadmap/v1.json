@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-23T00:00:00Z",
+  "release": {
+    "version": "roadmap",
+    "status": "roadmap",
+    "items": [
+      { "id": "2", "type": "feature", "status": "in_progress", "priority": "now",  "sortOrder": 1 },
+      { "id": "3", "type": "feature", "status": "in_progress", "priority": "now",  "sortOrder": 2 },
+      { "id": "4", "type": "feature", "status": "in_progress", "priority": "now",  "sortOrder": 3 },
+      { "id": "6", "type": "feature", "status": "planned",     "priority": "next", "sortOrder": 4 }
+    ]
+  },
+  "i18n": {
+    "en": {
+      "label": "Roadmap",
+      "summary": "What we're building next.",
+      "items": {
+        "2": {
+          "title": "Cloud Integration",
+          "description": "Run your agents 24/7 in the cloud and stream their work back to your desktop in real time."
+        },
+        "3": {
+          "title": "Web App",
+          "description": "A web companion for accounts, billing, and managing agents from any browser."
+        },
+        "4": {
+          "title": "Use Personas in your language",
+          "description": "Full multi-language support, including right-to-left layouts and language-specific fonts."
+        },
+        "6": {
+          "title": "Team Workspaces",
+          "description": "Build agents together with your team — shared spaces, role permissions, and live dashboards."
+        }
+      }
+    }
+  }
+}

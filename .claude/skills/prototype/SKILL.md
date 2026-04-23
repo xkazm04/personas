@@ -68,12 +68,29 @@ Principle: the scaffold is throwaway. Don't over-engineer it. A 15-line tab swit
 
 ## Phase 3: Generate 2 **directional** variants
 
+### 3a. Prerequisite — ground your variants in the codebase's actual quality bar
+
+Before writing *any* variant code, spend a few tool calls to calibrate quality. This is the single biggest round-1 uplift: variants that mine the codebase feel like siblings of the app. Variants invented in isolation feel like prototypes.
+
+Do these three things, in order, every time:
+
+1. **Read the design-system doc if one exists.** In Personas it's `.claude/Design.md` — referenced from `CLAUDE.md`. Other projects may have `design-tokens.md`, a Storybook index, or a `styles/` readme. Note the canonical tokens you're expected to use: semantic typography classes (`typo-hero`, `typo-section-title`, `typo-data-lg`, `typo-label`, `typo-caption`), status-token colours (`text-status-success/warning/error/info`), semantic radii (`rounded-card`, `rounded-interactive`, `rounded-input`), elevation tiers (`shadow-elevation-1..4`), brand tokens. **Using these from round 1 is what separates production-grade variants from prototype-grade variants.** Raw `bg-violet-500/15` / `text-amber-300` is a tell.
+
+2. **Find one or two sibling surfaces in the same repo that exemplify the quality bar.** Good candidates: the most elaborate adoption/onboarding flow, the feature's "hero" view, or any folder the user has previously called out as polished. In Personas, strong references are `src/features/templates/sub_generated/adoption/questionnaire/` (three-pane layout, decorative background SVG, header band with animated halo, story thread) and `src/features/templates/sub_generated/adoption/glyph/`. **If the user names inspiration folders, treat that as authoritative** — mine those, even if the filenames don't match the feature you're prototyping.
+
+3. **Extract three things from each reference:** (a) *layout shape* — e.g. header band + 3-pane + footer; (b) *motion language* — what animates, what doesn't, is there a decorative background SVG?; (c) *typography + data patterns* — what's rendered as `typo-data-lg`, where are uppercase-tracked labels used, how are status tokens shown.
+
+Skip this and your first round of variants will get thrown away wholesale. Spend the tool calls.
+
+### 3b. Directional variants
+
 The critical word is *directional*. A variant is not "baseline with spacing tweaked"; it's a completely different **mental model** for the same data.
 
 Good variant pairs:
 - orbital (spatial, SVG animation) + blueprint (engineering drawing, technical aesthetic)
 - dialogue (chat metaphor) + dashboard (dense data grid)
 - scroll/journey (linear narrative) + card-deck (discrete decisions)
+- studio / atelier (atmospheric 3-pane with decorative background) + ledger / record (data-dense single-column with a "benefit" column)
 
 Each variant should earn its name by carrying a **single central metaphor** through:
 - Layout
@@ -89,6 +106,8 @@ Deliverables per variant:
 - Degrade gracefully for edge cases the baseline handles (blocked credentials, dynamic options, etc.).
 - **Prefer data-concrete symbols over abstract markers.** A brand logo or parsed channel chip beats a coloured presence dot. The user evaluates variants partly on "does this encode *real* template data the user already cares about, or is it an abstract diagram?" When the metaphor allows, pull from the live data model (connector names, event types, cron strings) over stylised shapes.
 - **Design for extraction.** The user scores a variant partly on what it contributes back to the rest of the app: named sub-components (`ConnectorTotem`, `DimensionPanel`, `CapabilitySigil`) that could live elsewhere, not a monolithic `.tsx`. If a variant has no extractable pieces, it may be killed on reusability grounds even if it looks good.
+- **Answer "what am I working with?" in round 1.** If the user is manipulating nouns (personas, credentials, connectors, templates), the affordance for picking them must show *meaningful stats* — the facts they'd need to make an informed choice. Name-only chips with a decorative icon are a round-1 failure mode. For a persona: model tier, trust score, prompt weight, turn ceiling, budget cap. For a credential: connector brand, last-used, scope. Derive these from the actual data type bindings — read `@/lib/bindings/{Type}.ts` and surface the non-obvious fields.
+- **Answer "what did I gain?" in round 1 for output-producing components.** If the component produces results (offspring, generated content, ranked suggestions), each result must carry *signal about why it matters*, not just raw numbers: a rank label (Champion / Runner-up / Contender / Experimental), a delta vs an average/baseline (`+15% vs run avg`), and a plain-language inheritance or derivation line (`inherits Alpha model + Beta tools`). Raw fitness bars alone are a round-1 failure mode.
 
 **Do not propose 3+ variants in round 1.** Two is the right number. More = analysis paralysis, and the user will pick direction by round 2 anyway.
 
@@ -206,6 +225,35 @@ Don't run `tsc --noEmit` after every file write — it's slow. Batch file writes
 ### Keep baseline as reference, not as a ceiling
 
 The baseline is preserved for A/B, not because it's the target. Early rounds should feel radically different from it. If the user's feedback keeps pushing variants closer to the baseline, propose a new direction — don't keep compressing.
+
+### Framer-motion on SVG `cx` / `cy` / `r` attributes — use transforms instead
+
+Animating raw SVG attributes via `animate={{ cx: ..., cy: ..., r: ... }}` on a `motion.circle` can briefly render the attribute as literal `"undefined"` during mount, which fails DOM validation and shows up as dev-console errors like `<circle> attribute cx: Expected length, "undefined"`. Two safe patterns:
+
+1. **Position** — wrap in `motion.g` and animate `x` / `y` on the group; children stay at `cx={0} cy={0}`:
+   ```tsx
+   <motion.g initial={false} animate={{ x: px, y: py }} transition={{ type: 'spring', ... }}>
+     <circle cx={0} cy={0} r={5} fill="currentColor" />
+     <circle cx={0} cy={0} r={9} fill="none" stroke="currentColor" />
+   </motion.g>
+   ```
+2. **Size pulse** — keep the static `r={...}` attribute and animate `scale` instead of `r`:
+   ```tsx
+   <motion.circle cx={0} cy={0} r={coreR}
+     animate={{ scale: isActive ? [1, 1.06, 1] : [1, 1.03, 1] }}
+     transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+   />
+   ```
+
+Other safe-to-animate properties on SVG: `strokeDashoffset`, `pathLength`, `opacity`, and any transform (`x`, `y`, `scale`, `rotate`). Unsafe without a concrete `initial`: `cx`, `cy`, `r`, `width`, `height`, `cx`/`cy` on `radialGradient`.
+
+### Don't use `useMemo` for side effects
+
+During consolidation it's easy to write something like:
+```tsx
+useMemo(() => { if (results.length > 0) setStage('offspring'); }, [results.length]);
+```
+This is wrong — `useMemo` is for returning values, not firing effects, and it causes setState during render. The intent is `useEffect`. Before every consolidation or variant-write step, grep your own output for `useMemo\(.*set[A-Z]` and swap to `useEffect`.
 
 ---
 

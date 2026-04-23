@@ -1722,6 +1722,8 @@ pub fn run() {
             commands::drive::drive_copy,
             commands::drive::drive_open_in_os,
             commands::drive::drive_reveal_in_os,
+            // Live Roadmap -- runtime-fetched roadmap content
+            commands::live_roadmap::fetch_roadmap,
             // Obsidian Brain -- Second Brain Sync
             commands::obsidian_brain::obsidian_brain_detect_vaults,
             commands::obsidian_brain::obsidian_brain_test_connection,

@@ -4,12 +4,28 @@ import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
-import { aggregateAbResults, type AbVersionAggregate } from '../../libs/labAggregation';
+import { aggregateAbResults, type AbVersionAggregate, type AbAggregation } from '../../libs/labAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AbResultsViewVersus } from './AbResultsViewVersus';
+import { AbResultsViewDiff } from './AbResultsViewDiff';
 
-interface UserRatingEntry {
+export type AbVariant = 'baseline' | 'versus' | 'diff';
+
+export interface UserRatingEntry {
   rating: number;
   feedback?: string;
+}
+
+export interface SelectedCell {
+  scenario: string;
+  versionId: string;
+}
+
+export interface AbVariantProps {
+  results: LabAbResult[];
+  aggregation: AbAggregation;
+  selectedCell: SelectedCell | null;
+  onSelectCell: (cell: SelectedCell | null) => void;
 }
 
 interface Props {
@@ -17,6 +33,7 @@ interface Props {
   runId?: string;
   userRatings?: Record<string, UserRatingEntry>;
   onRate?: (scenarioName: string, versionId: string, rating: number, feedback?: string) => void;
+  variant?: AbVariant;
 }
 
 function scoreLabel(score: number): string {
@@ -120,17 +137,11 @@ const VERSION_COLORS = [
   { accent: 'violet', gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
 ] as const;
 
-export function AbResultsView({ results, runId: _runId, userRatings, onRate }: Props) {
+export function AbResultsView({ results, runId: _runId, userRatings, onRate, variant = 'baseline' }: Props) {
   const { t } = useTranslation();
-  const { versionAggs, scenarios, matrix, winnerId } = useMemo(
-    () => aggregateAbResults(results),
-    [results],
-  );
-  const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string } | null>(null);
-
-  const summary = useMemo(() => buildSummary(versionAggs, winnerId, scenarios), [versionAggs, winnerId, scenarios]);
-  const topRationale = useMemo(() => collectTopRationale(results), [results]);
-  const topSuggestions = useMemo(() => collectTopSuggestions(results), [results]);
+  const aggregation = useMemo(() => aggregateAbResults(results), [results]);
+  const { versionAggs, matrix } = aggregation;
+  const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
 
   if (results.length === 0) {
     return (
@@ -143,6 +154,59 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
   const selectedResults = selectedCell ? (matrix[selectedCell.scenario]?.[selectedCell.versionId] ?? []) : [];
   const selectedFirst = selectedResults[0] ?? null;
   const selectedVersion = selectedCell ? versionAggs.find((a) => a.versionId === selectedCell.versionId) : null;
+
+  const variantProps: AbVariantProps = {
+    results,
+    aggregation,
+    selectedCell,
+    onSelectCell: setSelectedCell,
+  };
+
+  return (
+    <div className="space-y-4">
+      {variant === 'baseline' && <AbResultsViewBaseline {...variantProps} />}
+      {variant === 'versus' && <AbResultsViewVersus {...variantProps} />}
+      {variant === 'diff' && <AbResultsViewDiff {...variantProps} />}
+
+      {selectedFirst && selectedCell && (() => {
+        const ratingKey = `${selectedCell.scenario}::${selectedCell.versionId}`;
+        const ratingEntry = userRatings?.[ratingKey];
+        return (
+          <ScenarioDetailPanel
+            result={{
+              scenarioName: selectedCell.scenario,
+              modelId: selectedVersion ? `v${selectedVersion.versionNumber}` : undefined,
+              status: selectedFirst.status,
+              toolAccuracyScore: selectedFirst.toolAccuracyScore,
+              outputQualityScore: selectedFirst.outputQualityScore,
+              protocolCompliance: selectedFirst.protocolCompliance,
+              outputPreview: selectedFirst.outputPreview,
+              toolCallsExpected: selectedFirst.toolCallsExpected,
+              toolCallsActual: selectedFirst.toolCallsActual,
+              costUsd: selectedFirst.costUsd,
+              durationMs: selectedFirst.durationMs,
+              errorMessage: selectedFirst.errorMessage,
+              rationale: selectedFirst.rationale ?? null,
+              suggestions: selectedFirst.suggestions ?? null,
+            }}
+            onClose={() => setSelectedCell(null)}
+            rating={ratingEntry?.rating}
+            ratingFeedback={ratingEntry?.feedback}
+            onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.versionId, rating, feedback) : undefined}
+          />
+        );
+      })()}
+    </div>
+  );
+}
+
+function AbResultsViewBaseline({ results, aggregation, selectedCell, onSelectCell }: AbVariantProps) {
+  const { t } = useTranslation();
+  const { versionAggs, scenarios, matrix, winnerId } = aggregation;
+
+  const summary = useMemo(() => buildSummary(versionAggs, winnerId, scenarios), [versionAggs, winnerId, scenarios]);
+  const topRationale = useMemo(() => collectTopRationale(results), [results]);
+  const topSuggestions = useMemo(() => collectTopSuggestions(results), [results]);
 
   return (
     <div className="space-y-6">
@@ -318,7 +382,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
                     return (
                       <td key={agg.versionId} className="px-3 py-1.5 text-center">
                         <button
-                          onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: agg.versionId })}
+                          onClick={() => onSelectCell(isSelected ? null : { scenario, versionId: agg.versionId })}
                           className={`inline-flex items-center gap-1.5 rounded-card px-2.5 py-1.5 transition-all ${
                             isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                           }`}
@@ -335,36 +399,6 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
           </table>
         </div>
       </details>
-
-      {/* Detail panel */}
-      {selectedFirst && selectedCell && (() => {
-        const ratingKey = `${selectedCell.scenario}::${selectedCell.versionId}`;
-        const ratingEntry = userRatings?.[ratingKey];
-        return (
-          <ScenarioDetailPanel
-            result={{
-              scenarioName: selectedCell.scenario,
-              modelId: selectedVersion ? `v${selectedVersion.versionNumber}` : undefined,
-              status: selectedFirst.status,
-              toolAccuracyScore: selectedFirst.toolAccuracyScore,
-              outputQualityScore: selectedFirst.outputQualityScore,
-              protocolCompliance: selectedFirst.protocolCompliance,
-              outputPreview: selectedFirst.outputPreview,
-              toolCallsExpected: selectedFirst.toolCallsExpected,
-              toolCallsActual: selectedFirst.toolCallsActual,
-              costUsd: selectedFirst.costUsd,
-              durationMs: selectedFirst.durationMs,
-              errorMessage: selectedFirst.errorMessage,
-              rationale: selectedFirst.rationale ?? null,
-              suggestions: selectedFirst.suggestions ?? null,
-            }}
-            onClose={() => setSelectedCell(null)}
-            rating={ratingEntry?.rating}
-            ratingFeedback={ratingEntry?.feedback}
-            onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.versionId, rating, feedback) : undefined}
-          />
-        );
-      })()}
     </div>
   );
 }

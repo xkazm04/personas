@@ -1,21 +1,35 @@
 /**
- * Roadmap timeline view — the unique "as-is" UI for the special `roadmap`
- * release entry. Visual is unchanged from the legacy `HomeRoadmap` component;
- * the only difference is that items are now sourced from `releases.json`
- * (structure) + `src/i18n/en.ts` → `releases.whats_new.*` (titles +
- * descriptions + labels) so one config drives both the changelog tabs and
- * this view.
+ * Roadmap view for the special `roadmap` release entry.
  *
- * Per project convention, no English strings live in this file directly —
- * status labels, priority labels, and the summary pill counts are all
- * looked up from `useReleasesTranslation` (backed by the main i18n system).
- * See `.claude/CLAUDE.md` → "Internationalization".
+ * Layout: a hero card on top (the active in-progress item, given full
+ * editorial weight — large title, full description, live indicator). Below
+ * it, the remaining items are grouped into three priority lanes —
+ * NOW / NEXT / LATER — running across in a kanban-style triage board.
+ * Build status appears as a colored stripe down each lane card's left
+ * edge, so priority (lane position) and status (stripe colour) don't fight
+ * each other for the reader's attention.
+ *
+ * Data sources:
+ * - **Structural** (item ids, type, status, priority, sort_order) and
+ *   **content** (titles, descriptions) come from `liveOverride` when the
+ *   prop is provided; otherwise fall back to the bundled `release` +
+ *   `useReleasesTranslation`. This is how the Live Roadmap feature lets
+ *   the developer update the in-app roadmap without cutting a new release.
+ *   See `docs/concepts/live-roadmap.md`.
+ * - **Chrome** (status names, priority names, summary-pill copy) always
+ *   comes from the shipped i18n bundle because those are tied to the UI
+ *   shipped with the binary, not to roadmap content.
+ *
+ * i18n: see `.claude/CLAUDE.md` → "Internationalization".
  */
 import type { Release, ReleaseItem, ReleaseItemPriority, ReleaseItemStatus } from '@/data/releases';
+import type { LiveRoadmap, LiveRoadmapItem } from '@/api/liveRoadmap';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import type { ReleasesTranslation } from './i18n/useReleasesTranslation';
+import type { LiveRoadmapStatus } from './useLiveRoadmap';
+import { LiveRoadmapStatusPill } from './LiveRoadmapStatusPill';
 
-interface RoadmapDisplayItem {
+interface DisplayItem {
   id: string;
   title: string;
   description: string;
@@ -24,40 +38,45 @@ interface RoadmapDisplayItem {
   sort_order: number;
 }
 
-const statusVisual: Record<ReleaseItemStatus, { dotColor: string; badgeBg: string; badgeText: string }> = {
-  in_progress: {
-    dotColor: 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]',
-    badgeBg: 'bg-cyan-500/10 border-cyan-500/20',
-    badgeText: 'text-cyan-400',
-  },
-  planned: {
-    dotColor: 'bg-foreground/30',
-    badgeBg: 'bg-secondary/50 border-primary/10',
-    badgeText: 'text-foreground',
-  },
-  completed: {
-    dotColor: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]',
-    badgeBg: 'bg-emerald-500/10 border-emerald-500/20',
-    badgeText: 'text-emerald-400',
-  },
+const statusDot: Record<ReleaseItemStatus, string> = {
+  in_progress: 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.6)]',
+  planned:     'bg-foreground/30',
+  completed:   'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]',
 };
 
-const priorityVisual: Record<ReleaseItemPriority, string> = {
-  now: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
-  next: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-  later: 'bg-secondary/50 border-primary/10 text-foreground',
+const statusStripe: Record<ReleaseItemStatus, string> = {
+  in_progress: 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.55)]',
+  planned:     'bg-foreground/30',
+  completed:   'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]',
 };
 
-/**
- * Convert a release item from the JSON config + matched i18n entry into the
- * shape this view needs. Items missing roadmap-specific fields fall back to
- * safe defaults so a misconfigured entry never crashes the timeline.
- */
-function toDisplayItem(
+const laneAccent: Record<
+  ReleaseItemPriority,
+  { label: string; bg: string; border: string; chip: string }
+> = {
+  now:   { label: 'text-cyan-400',   bg: 'bg-cyan-500/8',   border: 'border-cyan-500/20',   chip: 'text-cyan-400' },
+  next:  { label: 'text-purple-400', bg: 'bg-purple-500/8', border: 'border-purple-500/20', chip: 'text-purple-400' },
+  later: { label: 'text-foreground', bg: 'bg-secondary/40', border: 'border-primary/12',    chip: 'text-foreground' },
+};
+
+const PRIORITIES: ReleaseItemPriority[] = ['now', 'next', 'later'];
+const KNOWN_STATUSES: ReadonlySet<ReleaseItemStatus> = new Set(['in_progress', 'planned', 'completed']);
+const KNOWN_PRIORITIES: ReadonlySet<ReleaseItemPriority> = new Set(['now', 'next', 'later']);
+
+function narrowStatus(raw: string | null | undefined): ReleaseItemStatus {
+  return raw && KNOWN_STATUSES.has(raw as ReleaseItemStatus) ? (raw as ReleaseItemStatus) : 'planned';
+}
+
+function narrowPriority(raw: string | null | undefined): ReleaseItemPriority {
+  return raw && KNOWN_PRIORITIES.has(raw as ReleaseItemPriority) ? (raw as ReleaseItemPriority) : 'later';
+}
+
+/** Build a DisplayItem from the bundled JSON + i18n entry. */
+function fromBundled(
   item: ReleaseItem,
   fallbackOrder: number,
   i18nItems: Record<string, { title: string; description: string }> | undefined,
-): RoadmapDisplayItem {
+): DisplayItem {
   const i18nEntry = i18nItems?.[item.id];
   return {
     id: item.id,
@@ -69,146 +88,212 @@ function toDisplayItem(
   };
 }
 
-/** Format an interpolated string like `"{count} In Progress"`. */
-function format(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''));
+/** Build a DisplayItem from a live-fetched item + locale block. */
+function fromLive(
+  item: LiveRoadmapItem,
+  fallbackOrder: number,
+  locale: LiveRoadmap['i18n'][string] | undefined,
+): DisplayItem {
+  const content = locale?.items[item.id];
+  return {
+    id: item.id,
+    title: content?.title ?? `[roadmap.${item.id}]`,
+    description: content?.description ?? '',
+    status: narrowStatus(item.status),
+    priority: narrowPriority(item.priority),
+    sort_order: item.sortOrder ?? fallbackOrder,
+  };
 }
 
-function RoadmapCard({
-  item,
-  index,
-  total,
-  t,
-}: {
-  item: RoadmapDisplayItem;
-  index: number;
-  total: number;
-  t: ReleasesTranslation;
-}) {
-  const visual = statusVisual[item.status];
-  const priorityClass = priorityVisual[item.priority];
-  const statusLabel = t.itemStatus[item.status];
-  const priorityLabel = t.priority[item.priority];
+function buildDisplayItems(
+  release: Release,
+  liveOverride: LiveRoadmap | null | undefined,
+  language: string,
+  bundledItems: Record<string, { title: string; description: string }> | undefined,
+): DisplayItem[] {
+  if (liveOverride) {
+    const locale = liveOverride.i18n[language] ?? liveOverride.i18n.en;
+    return liveOverride.release.items
+      .map((item, idx) => fromLive(item, idx + 1, locale))
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }
+  return release.items
+    .map((item, idx) => fromBundled(item, idx + 1, bundledItems))
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
 
+function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {
   return (
-    <div className="animate-fade-slide-in relative flex gap-5">
-      {/* Timeline spine */}
-      <div className="relative flex flex-col items-center pt-1.5">
-        <div className={`relative z-10 h-3 w-3 rounded-full ${visual.dotColor} ring-[3px] ring-[var(--background)]`}>
-          {item.status === 'in_progress' && (
-            <div className="absolute inset-0 rounded-full bg-cyan-400/30 animate-ping" />
+    <article className="animate-fade-slide-in relative">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <span className="relative flex items-center gap-2">
+          <span className={`relative h-2 w-2 rounded-full ${statusDot[item.status]}`}>
+            {item.status === 'in_progress' && (
+              <span className="absolute inset-0 -m-0.5 rounded-full bg-cyan-400/30 animate-ping" />
+            )}
+          </span>
+          <span className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-400">
+            {t.itemStatus[item.status]}
+          </span>
+        </span>
+        <span className="font-mono text-xs text-foreground/60">·</span>
+        <span className="font-mono text-xs text-foreground/80">#{item.sort_order}</span>
+        <span className="font-mono text-xs text-foreground/60">·</span>
+        <span className="font-mono text-xs uppercase tracking-[0.22em] text-foreground/80">
+          {t.priority[item.priority]}
+        </span>
+      </div>
+
+      <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
+        <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
+          {item.title}
+        </h2>
+        {item.description && (
+          <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">
+            {item.description}
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function LaneCard({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {
+  const stripe = statusStripe[item.status];
+  return (
+    <div className="animate-fade-slide-in group relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-4 pl-5 transition-colors duration-200 hover:border-primary/16 hover:bg-primary/[0.04]">
+      <div className={`absolute inset-y-3 left-1.5 w-[3px] rounded-full ${stripe}`} />
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-card bg-primary/10 font-mono typo-code text-sm font-bold text-foreground ring-1 ring-primary/12">
+          {item.sort_order}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="typo-heading text-base font-semibold leading-tight text-primary [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_30%,transparent)]">
+            {item.title}
+          </h3>
+          <div className="mt-1.5">
+            <span className="font-mono text-xs uppercase tracking-wider text-foreground/80">
+              {t.itemStatus[item.status]}
+            </span>
+          </div>
+          {item.description && (
+            <p className="typo-body mt-2 text-sm leading-relaxed text-foreground">
+              {item.description}
+            </p>
           )}
         </div>
-        {index < total - 1 && (
-          <div className={`mt-1 w-px flex-1 ${item.status === 'in_progress' ? 'bg-cyan-500/25' : 'bg-primary/8'}`} />
-        )}
       </div>
+    </div>
+  );
+}
 
-      {/* Card */}
-      <div className="flex-1 pb-6">
-        <div className="rounded-modal border border-primary/6 bg-gradient-to-br from-primary/[0.02] to-transparent p-4 transition-all duration-200 hover:border-primary/12 hover:bg-primary/[0.03]">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-card bg-primary/8 ring-1 ring-primary/10 font-mono typo-code font-bold text-foreground shrink-0">
-              {item.sort_order}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Title uses theme accent + soft glow for hierarchy (see CLAUDE.md UI Conventions). */}
-                <h3 className="typo-heading text-primary text-[14px] [text-shadow:_0_0_10px_color-mix(in_oklab,var(--primary)_35%,transparent)]">
-                  {item.title}
-                </h3>
-                <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wider uppercase ${visual.badgeBg} ${visual.badgeText}`}>
-                  {statusLabel}
-                </span>
-                <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium tracking-wider uppercase ${priorityClass}`}>
-                  {priorityLabel}
-                </span>
-              </div>
-              <p className="typo-body text-foreground mt-1 text-[12px] leading-relaxed">{item.description}</p>
-            </div>
-          </div>
+function LaneColumn({
+  priority,
+  items,
+  t,
+}: {
+  priority: ReleaseItemPriority;
+  items: DisplayItem[];
+  t: ReleasesTranslation;
+}) {
+  const accent = laneAccent[priority];
+  const label = t.priority[priority];
+  return (
+    <div className="flex flex-col gap-3">
+      <header className="flex items-center justify-between border-b border-primary/8 pb-2">
+        <span className={`text-xs font-semibold uppercase tracking-[0.18em] ${accent.label}`}>
+          {label}
+        </span>
+        <span
+          className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-medium ${accent.bg} ${accent.border} ${accent.chip}`}
+        >
+          {items.length}
+        </span>
+      </header>
+      {items.length === 0 ? (
+        <div className="flex h-24 items-center justify-center rounded-modal border border-dashed border-primary/8 text-xs text-foreground/60">
+          —
         </div>
-        {item.status === 'in_progress' && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 left-8 z-10 rounded-modal overflow-hidden">
-            <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
-              <rect
-                x="0.5" y="0.5"
-                width="calc(100% - 1px)" height="calc(100% - 25px)"
-                rx="12" ry="12"
-                fill="none"
-                stroke="rgba(6,182,212,0.15)"
-                strokeWidth="1"
-                strokeDasharray="6 6"
-                style={{ animation: 'dash-flow 2s linear infinite' }}
-              />
-            </svg>
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <LaneCard key={item.id} item={item} t={t} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 interface HomeRoadmapViewProps {
   release: Release;
+  /** Live-fetched roadmap payload. When present, overrides the bundled data. */
+  liveOverride?: LiveRoadmap | null;
+  liveStatus?: LiveRoadmapStatus;
+  liveFetchedAt?: string | null;
+  liveRefreshing?: boolean;
+  onRefresh?: () => void;
 }
 
-export default function HomeRoadmapView({ release }: HomeRoadmapViewProps) {
-  const { t } = useReleasesTranslation();
+export default function HomeRoadmapView({
+  release,
+  liveOverride,
+  liveStatus,
+  liveFetchedAt,
+  liveRefreshing,
+  onRefresh,
+}: HomeRoadmapViewProps) {
+  const { t, language } = useReleasesTranslation();
   const releaseI18n = t.releases[release.version as keyof typeof t.releases];
-  const i18nItems = releaseI18n?.items as Record<string, { title: string; description: string }> | undefined;
+  const bundledItems = releaseI18n?.items as
+    | Record<string, { title: string; description: string }>
+    | undefined;
 
-  const items = release.items
-    .map((item, idx) => toDisplayItem(item, idx + 1, i18nItems))
-    .sort((a, b) => a.sort_order - b.sort_order);
-  const inProgressCount = items.filter((i) => i.status === 'in_progress').length;
-  const nextCount = items.filter((i) => i.status === 'planned').length;
+  const items = buildDisplayItems(release, liveOverride, language, bundledItems);
+
+  // Hero: first in-progress item, or fall back to the first overall.
+  // The hero is excluded from the lanes below so it's not duplicated.
+  const hero = items.find((i) => i.status === 'in_progress') ?? items[0];
+  if (!hero) return null;
+  const remaining = items.filter((i) => i.id !== hero.id);
 
   return (
     <div className="relative">
-      {/* Background mesh */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[20%] w-[400px] h-[400px] bg-cyan-500/4 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[0%] right-[10%] w-[300px] h-[300px] bg-purple-500/3 blur-[100px] rounded-full" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-[-5%] left-[15%] h-[500px] w-[500px] rounded-full bg-cyan-500/4 blur-[140px]" />
+        <div className="absolute right-[5%] bottom-[5%] h-[320px] w-[320px] rounded-full bg-purple-500/4 blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-2xl mx-auto space-y-6 relative z-10">
-        {items.length > 0 && (
-          <>
-            {/* Summary pills */}
-            <div className="animate-fade-slide-in flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-cyan-500/15 bg-cyan-500/5 px-3 py-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
-                <span className="text-[11px] font-mono font-medium text-cyan-400">
-                  {format(t.summary.inProgress, { count: inProgressCount })}
-                </span>
-              </div>
-              {nextCount > 0 && (
-                <div className="flex items-center gap-2 rounded-full border border-purple-500/15 bg-purple-500/5 px-3 py-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-                  <span className="text-[11px] font-mono font-medium text-purple-400">
-                    {format(t.summary.next, { count: nextCount })}
-                  </span>
-                </div>
-              )}
+      <div className="relative z-10 mx-auto w-full max-w-6xl space-y-10">
+        <div className="mx-auto w-full max-w-3xl">
+          {liveStatus && (
+            <div className="mb-3 flex justify-end">
+              <LiveRoadmapStatusPill
+                status={liveStatus}
+                fetchedAt={liveFetchedAt ?? null}
+                refreshing={liveRefreshing ?? false}
+                onRefresh={onRefresh}
+                t={t}
+                language={language}
+              />
             </div>
+          )}
+          <RoadmapHero item={hero} t={t} />
+        </div>
 
-            {/* Timeline */}
-            <div className="pt-2">
-              {items.map((item, i) => (
-                <RoadmapCard key={item.id} item={item} index={i} total={items.length} t={t} />
-              ))}
-            </div>
-          </>
+        {remaining.length > 0 && (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {PRIORITIES.map((p) => (
+              <LaneColumn
+                key={p}
+                priority={p}
+                items={remaining.filter((i) => i.priority === p)}
+                t={t}
+              />
+            ))}
+          </div>
         )}
       </div>
-
-      {/* CSS keyframe for dashed border animation */}
-      <style>{`
-        @keyframes dash-flow {
-          to { stroke-dashoffset: -24; }
-        }
-      `}</style>
     </div>
   );
 }

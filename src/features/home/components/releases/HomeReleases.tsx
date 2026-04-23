@@ -19,6 +19,7 @@ import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import { ReleasesNavBar } from './ReleasesNavBar';
 import ReleaseDetailView from './ReleaseDetailView';
 import HomeRoadmapView from './HomeRoadmapView';
+import { useLiveRoadmap } from './useLiveRoadmap';
 
 const SELECTION_STORAGE_KEY = 'home-releases-selected-version';
 
@@ -36,6 +37,7 @@ function readInitialSelection(): string {
 export default function HomeReleases() {
   const { t } = useReleasesTranslation();
   const [selectedVersion, setSelectedVersion] = useState<string>(() => readInitialSelection());
+  const live = useLiveRoadmap();
 
   const navReleases = getNavReleases();
   const selected = getReleaseByVersion(selectedVersion) ?? getActiveRelease();
@@ -67,7 +69,14 @@ export default function HomeReleases() {
       />
       <ContentBody centered>
         {selected.status === 'roadmap' ? (
-          <HomeRoadmapView release={selected} />
+          <HomeRoadmapView
+            release={selected}
+            liveOverride={live.roadmap}
+            liveStatus={live.status}
+            liveFetchedAt={live.fetchedAt}
+            liveRefreshing={live.refreshing}
+            onRefresh={live.refresh}
+          />
         ) : (
           <ReleaseDetailView release={selected} />
         )}

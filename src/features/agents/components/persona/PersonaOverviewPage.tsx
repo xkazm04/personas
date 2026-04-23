@@ -39,8 +39,14 @@ export default function PersonaOverviewPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
 
+  // A persona is "draft" only if it never finished a build (no design result
+  // was ever saved) AND still carries the placeholder / empty system prompt.
+  // A completed build always populates last_design_result, so fully-built
+  // personas route to the editor even if their prompt coincidentally looks
+  // like the placeholder.
   const isDraft = useCallback(
-    (p: Persona) => p.system_prompt === DRAFT_PROMPT || !p.system_prompt?.trim(),
+    (p: Persona) =>
+      !p.last_design_result && (p.system_prompt === DRAFT_PROMPT || !p.system_prompt?.trim()),
     [],
   );
   const isBuilding = useCallback(

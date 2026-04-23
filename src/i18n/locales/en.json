@@ -10354,7 +10354,10 @@
       "release_roadmap_item_4_title": "Use Personas in your language",
       "release_roadmap_item_4_description": "Full multi-language support, including right-to-left layouts and language-specific fonts.",
       "release_roadmap_item_6_title": "Team Workspaces",
-      "release_roadmap_item_6_description": "Build agents together with your team — shared spaces, role permissions, and live dashboards."
+      "release_roadmap_item_6_description": "Build agents together with your team — shared spaces, role permissions, and live dashboards.",
+      "live_updated_prefix": "Updated",
+      "live_source_cache": "Offline · cached",
+      "live_source_fallback": "Bundled snapshot"
     }
   }
 }
