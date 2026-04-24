@@ -78,7 +78,7 @@ Conventions:
 
 This is how you decompose a "scan → propose → create issue" pipeline: one use case scans and surfaces a `manual_review`, the platform publishes `review_decision.approved` on user acceptance, and a second use case on the same persona subscribes to that event and does the follow-on work.
 
-### 2-Phase Review — exact payload and the `context_data` caveat
+### 2-Phase Review — exact payload
 
 When a human approves/rejects a manual review in the UI, the platform publishes `review_decision.approved` or `review_decision.rejected` with payload:
 
@@ -89,11 +89,12 @@ When a human approves/rejects a manual review in the UI, the platform publishes 
   "persona_id": "...",
   "title": "...",
   "decision": "approved | rejected",
-  "reviewer_notes": "..."
+  "reviewer_notes": "...",
+  "context_data": "<stringified JSON or null>"
 }
 ```
 
-**IMPORTANT GAP:** the event payload does NOT include the review's `context_data` field. If a downstream use case needs the full review body (diffs, proposal content, structured payload), it must fetch the review row via an IPC callback using `review_id`. Document this in your template's `error_handling` whenever a use case subscribes to `review_decision.*`.
+`context_data` carries the original review's structured payload (the surfacing persona writes it when calling `manual_review`). Downstream use cases subscribing to `review_decision.*` should read `payload.context_data` directly — no IPC fetch-back required. Keep a defensive `manual_review` fallback for the edge case where `context_data` is null (old events re-played, or the surfacing persona didn't populate it).
 
 The platform also handles Phase 2 automatically: each review decision becomes a learning memory (`category: "learned"`, importance 5, tags `["review", "approved|rejected"]`) that gets injected into future prompts. Templates get this for free — do NOT re-implement it, but DO shape `manual_review` titles/descriptions so the learnings compose meaningfully across runs.
 

@@ -892,6 +892,7 @@ pub fn update_manual_review_status(
                         "title": review.title,
                         "decision": review.status.as_str(),
                         "reviewer_notes": review.reviewer_notes,
+                        "context_data": review.context_data,
                     })
                     .to_string(),
                 ),

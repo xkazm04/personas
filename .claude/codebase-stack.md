@@ -190,13 +190,13 @@ These exist as separate entities, related by `persona_id`:
 - **Teams** (`persona_teams`, `persona_team_members`, `persona_team_connections`) — the hierarchical team graph. Teams have a `parent_team_id` for nesting, members have a role (`orchestrator`/`worker`/`reviewer`/`router`), and team connections are directed edges between personas (`source_persona_id` → `target_persona_id` with `connection_type`, `condition`, `label`) for hierarchy/dependency/routing relationships. **This is the org-chart primitive** — do NOT propose building one from scratch.
 - **Review queues** (`persona_manual_reviews` + `review_messages`) — manual review items with title, description, severity (`info`/`warning`/`error`), context_data, reviewer_notes, status (`pending`/`resolved`/etc.). Review messages are the per-review conversation thread. Used by the `design-reviews` group.
 
-### `review_decision.*` event payload — missing `context_data` (multi-use-case chaining caveat)
+### `review_decision.*` event payload (multi-use-case chaining)
 
-Discovered in `/research` run on 2026-04-24 (MiniMax-AI/skills) while designing the Skill Librarian template's two-use-case pipeline. The platform publishes `review_decision.approved` / `review_decision.rejected` from `src-tauri/src/commands/design/reviews.rs:878-919` with payload `{ review_id, execution_id, persona_id, title, decision, reviewer_notes }` — note that **`context_data` is NOT in the payload**.
+The platform publishes `review_decision.approved` / `review_decision.rejected` from `src-tauri/src/commands/design/reviews.rs:878-919` with payload `{ review_id, execution_id, persona_id, title, decision, reviewer_notes, context_data }`. The `context_data` field carries the original review's structured payload (proposed diffs, blobs the surfacing persona wrote) so downstream use cases that subscribe to `review_decision.*` can act on the full proposal without an IPC fetch-back.
 
-**Implication for template authors:** any use case that subscribes to `review_decision.*` and needs the original review body (proposed diff, structured proposal payload, anything richer than title + reviewer notes) must call back via an IPC to fetch the review row using `review_id`. The Skill Librarian template's UC2 is the reference implementation — its `error_handling` documents the fetch-back and the fallback `manual_review` on IPC failure.
+**History:** the `context_data` field was added on 2026-04-24 after a `/research` run (MiniMax-AI/skills) designed the Skill Librarian template and discovered the payload was missing it. Patch landed the same session; no backward-compat concerns (no external consumers of the event at the time).
 
-**Candidate platform improvement:** extend the `json!({...})` block at `reviews.rs:887-896` to include `context_data`. Small patch; eliminates the fetch-back requirement for every multi-use-case persona chaining off review approvals. Not blocking — templates work today with the callback pattern — but it's a cleanup that amortizes across every future chaining template.
+**Recommendation for template authors:** chain off `review_decision.approved` and read `payload.context_data` directly. Keep a defensive `manual_review` fallback for the edge case where `context_data` is null (old events re-played, or the surfacing persona didn't populate it), but don't design around the IPC fetch-back as the primary path.
 
 ### Connector binding model — catalog vs runtime (CRITICAL distinction)
 
